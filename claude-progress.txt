@@ -1,4 +1,38 @@
 ==================================================
+SESSION: 2026-03-02 - Features #12, #47, #13
+==================================================
+
+## What was accomplished:
+
+### Feature #12: Graph engine removes node from architecture (PASSING)
+- 8 unit tests in test/unit/core/removeNode.test.ts
+- Verified: 2-node arch → removeNode → 1 node remaining, correct node, removed ID not findable
+- Tests cover: immutability, property preservation, architecture metadata, sequential removal
+- All existing removeNode implementation in graphEngine.ts verified correct
+
+### Feature #47: Text API removeNode() deletes node from graph (PASSING)
+- 7 unit tests in test/unit/api/textApiRemoveNode.test.ts
+- Verified: TextApi.removeNode() via API layer, listNodes() count, getNode() findability
+- Tests cover: edge cleanup, graph state update, non-existent node handling, add-after-remove
+
+### Feature #13: Graph engine updates node display name (PASSING)
+- 9 unit tests in test/unit/core/updateNode.test.ts
+- Verified: updateNode(displayName) preserves type, args, notes, position, children, codeRefs, properties
+- Tests cover: immutability, nested child update, non-existent node handling
+
+## Current completion status:
+- Features passing: 36 of 235 (15.3%)
+- Total unit tests: 422 across 26 test files
+- All tests passing, zero console errors
+
+## What should be worked on next:
+- More graph engine CRUD operations
+- Canvas interaction features (node selection, drag, connection)
+- Side panels (properties, notes, code refs, AI chat)
+- File Save/Save As functionality
+- Additional Text API and Render API features
+
+==================================================
 SESSION: 2026-03-02 - Features #62, #64, #65
 ==================================================
 
