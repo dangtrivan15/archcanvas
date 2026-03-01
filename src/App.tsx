@@ -1,9 +1,34 @@
+import { useEffect } from 'react';
+import { useCoreStore } from '@/store/coreStore';
+
 export function App() {
+  const initialize = useCoreStore((s) => s.initialize);
+  const initialized = useCoreStore((s) => s.initialized);
+  const nodeCount = useCoreStore((s) => s.nodeCount);
+  const edgeCount = useCoreStore((s) => s.edgeCount);
+  const isDirty = useCoreStore((s) => s.isDirty);
+  const fileName = useCoreStore((s) => s.fileName);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  if (!initialized) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
+        <div className="text-muted-foreground">Initializing ArchCanvas...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       {/* Toolbar */}
       <header className="h-12 border-b flex items-center px-4 shrink-0">
         <h1 className="text-lg font-semibold">ArchCanvas</h1>
+        <span className="ml-4 text-sm text-muted-foreground">
+          {fileName}{isDirty ? ' *' : ''}
+        </span>
       </header>
 
       {/* Main content area: left panel, canvas, right panel */}
@@ -32,9 +57,9 @@ export function App() {
 
       {/* Status Bar */}
       <footer className="h-6 border-t flex items-center px-4 text-xs text-muted-foreground shrink-0">
-        <span>Nodes: 0</span>
+        <span>Nodes: {nodeCount}</span>
         <span className="mx-2">|</span>
-        <span>Edges: 0</span>
+        <span>Edges: {edgeCount}</span>
         <span className="mx-2">|</span>
         <span>Zoom: 100%</span>
       </footer>

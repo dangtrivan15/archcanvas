@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "proto:generate": "pbjs -t static-module -w es6 -o src/proto/archcanvas.js proto/archcanvas.proto && pbts -o src/proto/archcanvas.d.ts src/proto/archcanvas.js"
+    "proto:generate": "npx pbjs -t static-module -w es6 -o src/proto/archcanvas.pb.js proto/archcanvas.proto && npx pbts -o src/proto/archcanvas.pb.d.ts src/proto/archcanvas.pb.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -45,6 +45,7 @@
     "globals": "^15.14.0",
     "jsdom": "^26.0.0",
     "postcss": "^8.4.49",
+    "protobufjs-cli": "^2.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "~5.7.0",
     "typescript-eslint": "^8.18.0",
