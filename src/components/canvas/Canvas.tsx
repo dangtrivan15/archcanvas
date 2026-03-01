@@ -26,10 +26,13 @@ import '@xyflow/react/dist/style.css';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useUIStore } from '@/store/uiStore';
 import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
+import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
+import { findNode } from '@/core/graph/graphEngine';
 
 export function Canvas() {
   const graph = useCoreStore((s) => s.graph);
@@ -38,11 +41,14 @@ export function Canvas() {
   const moveNode = useCoreStore((s) => s.moveNode);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
+  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomIn = useNavigationStore((s) => s.zoomIn);
   const zoomOut = useNavigationStore((s) => s.zoomOut);
+  const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
+  const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
 
   // Render the graph through RenderApi
   const rendered = useMemo(() => {
@@ -125,10 +131,10 @@ export function Canvas() {
     [zoomIn],
   );
 
-  // Handle Backspace key to navigate up one level
+  // Handle Delete/Backspace keys for node deletion and navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle Backspace when not typing in an input/textarea
+      // Don't handle when typing in an input/textarea
       const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -138,16 +144,50 @@ export function Canvas() {
         return;
       }
 
-      if (e.key === 'Backspace' && navigationPath.length > 0) {
-        e.preventDefault();
-        console.log('[Canvas] Backspace zoom out from:', navigationPath);
-        zoomOut();
+      // Don't handle if delete dialog is already open
+      if (deleteDialogOpen) return;
+
+      if (e.key === 'Delete') {
+        // Delete key always triggers node deletion if a node is selected
+        if (selectedNodeId) {
+          e.preventDefault();
+          const node = findNode(graph, selectedNodeId);
+          if (node) {
+            const impact = calculateDeletionImpact(graph, selectedNodeId);
+            openDeleteDialog({
+              nodeId: selectedNodeId,
+              nodeName: node.displayName,
+              edgeCount: impact.edgeCount,
+              childCount: impact.childCount,
+            });
+          }
+        }
+      } else if (e.key === 'Backspace') {
+        if (navigationPath.length > 0) {
+          // Backspace with navigation path -> zoom out
+          e.preventDefault();
+          console.log('[Canvas] Backspace zoom out from:', navigationPath);
+          zoomOut();
+        } else if (selectedNodeId) {
+          // Backspace at root level with selected node -> delete
+          e.preventDefault();
+          const node = findNode(graph, selectedNodeId);
+          if (node) {
+            const impact = calculateDeletionImpact(graph, selectedNodeId);
+            openDeleteDialog({
+              nodeId: selectedNodeId,
+              nodeName: node.displayName,
+              edgeCount: impact.edgeCount,
+              childCount: impact.childCount,
+            });
+          }
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [navigationPath, zoomOut]);
+  }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen]);
 
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
