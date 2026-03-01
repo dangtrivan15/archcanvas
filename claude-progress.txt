@@ -100,3 +100,65 @@ SESSION: 2026-03-01 - Features #6, #7
 - File I/O (open/save .archc files)
 - Canvas UI components
 - Side panels
+
+==================================================
+SESSION: 2026-03-01 - Features #67, #100, #150
+==================================================
+
+## What was accomplished:
+
+### Feature #67: App shell loads with toolbar at top (PASSING)
+- Created Toolbar component (src/components/toolbar/Toolbar.tsx)
+- Created FileMenu with New/Open/Save/SaveAs/Export dropdown items
+- Created AddNodeButton for node creation
+- Created LayoutMenu with horizontal/vertical auto-layout and fit view
+- Toolbar is sticky at top with role="toolbar" aria-label
+- Updated App.tsx to use Toolbar component
+
+### Feature #100: Toolbar file menu opens dropdown (PASSING)
+- Already fully implemented as part of Feature #67
+- File menu opens dropdown on click with New, Open, Save, Save As, Export
+- Dropdown closes on click outside or Escape key
+- All menu items have keyboard shortcuts displayed
+
+### Feature #150: File Open loads .archc file (PASSING)
+- Created fileIO.ts with bidirectional proto-to-graph converters
+- Proto→Graph: Handles all protobuf types (nodes, edges, notes, codeRefs, etc.)
+- Graph→Proto: Converts internal types back to protobuf for saving
+- Added openFile() to coreStore (uses File System Access API with fallback)
+- Added loadFromUrl() for dev/testing support
+- Wired File > Open menu to trigger file picker
+- Added FileSystemFileHandle types in vite-env.d.ts
+- Created test .archc file (examples/ecommerce/ecommerce.archc)
+- Verified: 5 nodes and 4 edges render correctly on canvas
+- Zero console errors
+
+## Notes from other agents' parallel work:
+- Canvas component already existed (src/components/canvas/Canvas.tsx)
+- GenericNode, nodeTypeMap, edge components already created
+- NodeDetailPanel and uiStore were already implemented
+- App.tsx was updated by another agent with Canvas/NodeDetailPanel imports
+
+## Current completion status:
+- Features passing: ~10+ of 235 (including #1-7, #67, #100, #150)
+- Total features: 235
+- Dev server runs on port 5174 (5173 may be blocked)
+
+## Architecture overview (for future sessions):
+- ArchCanvas is a browser-based visual architecture design tool
+- No server/database - uses .archc binary files (Protocol Buffers)
+- Tech: React 19, Vite 6, React Flow, Zustand, Tailwind CSS 4
+- Core engines: RegistryManager, GraphEngine, TextApi, RenderApi, ExportApi, UndoManager
+- All wired through Zustand coreStore
+- File I/O: fileIO.ts handles proto↔graph conversion, codec.ts handles binary encoding
+- Canvas: React Flow with GenericNode component and sync/async/dataFlow edges
+- Test files: examples/ecommerce/ecommerce.archc, also in public/ for URL loading
+- Auto-load URL: append ?load=ecommerce.archc to load test file
+
+## What should be worked on next:
+- File Save/Save As functionality
+- NodeDef browser panel (left sidebar)
+- Node creation via Add Node button
+- Connection creation by dragging
+- Keyboard shortcuts
+- Dark mode toggle
