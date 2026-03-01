@@ -7,6 +7,7 @@ import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
+import { DeleteConfirmationDialog } from '@/components/shared/DeleteConfirmationDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function App() {
@@ -85,6 +86,9 @@ export function App() {
           </aside>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog (overlay) */}
+      <DeleteConfirmationDialog />
 
       {/* Status Bar */}
       <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">
