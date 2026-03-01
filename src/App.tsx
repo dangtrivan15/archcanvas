@@ -6,6 +6,7 @@ import { Toolbar } from '@/components/toolbar';
 import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -18,6 +19,9 @@ export function App() {
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
+
+  // Global keyboard shortcuts (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O, Ctrl+Z, Ctrl+Shift+Z)
+  useKeyboardShortcuts();
 
   // Auto-open right panel when a node or edge is selected
   useEffect(() => {
