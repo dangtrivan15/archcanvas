@@ -37,7 +37,6 @@ import { findNode } from '@/core/graph/graphEngine';
 export function Canvas() {
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
-  const storeAddEdge = useCoreStore((s) => s.addEdge);
   const moveNode = useCoreStore((s) => s.moveNode);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
@@ -49,6 +48,7 @@ export function Canvas() {
   const zoomOut = useNavigationStore((s) => s.zoomOut);
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
+  const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
 
   // Render the graph through RenderApi
   const rendered = useMemo(() => {
@@ -90,25 +90,20 @@ export function Canvas() {
     [selectNode, selectEdge, clearSelection],
   );
 
-  // Handle edge connections via drag
+  // Handle edge connections via drag - show connection type dialog
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
       if (connection.source && connection.target) {
-        // Add edge to graph engine
-        const edge = storeAddEdge({
-          fromNode: connection.source,
-          toNode: connection.target,
-          type: 'sync',
-          fromPort: connection.sourceHandle ?? undefined,
-          toPort: connection.targetHandle ?? undefined,
+        // Open connection type dialog to let user choose edge type
+        openConnectionDialog({
+          sourceNodeId: connection.source,
+          targetNodeId: connection.target,
+          sourceHandle: connection.sourceHandle ?? undefined,
+          targetHandle: connection.targetHandle ?? undefined,
         });
-
-        if (edge) {
-          console.log('[Canvas] Edge created:', edge.id);
-        }
       }
     },
-    [storeAddEdge],
+    [openConnectionDialog],
   );
 
   // Handle node drag end - persist position
@@ -185,8 +180,9 @@ export function Canvas() {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // Use capture phase to ensure we handle Delete/Backspace before React Flow
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen]);
 
   // Track viewport changes (pan/zoom) for saving
@@ -213,6 +209,7 @@ export function Canvas() {
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        deleteKeyCode={null}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{ type: 'sync' }}
