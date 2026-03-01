@@ -990,3 +990,49 @@ SESSION: 2026-03-02 - Features #145, #146, #147
 - More canvas interaction features
 - Side panel improvements
 - Keyboard shortcuts
+
+==================================================
+SESSION: 2026-03-02 - Features #114, #171, #172
+==================================================
+
+## What was accomplished:
+
+### Feature #114: Right panel AI Chat tab accessible (PASSING)
+- Created AIChatTab component (src/components/panels/AIChatTab.tsx)
+- Full chat interface: context indicator, message area, text input, send button
+- Integrated into NodeDetailPanel - replaced "AI Chat - coming soon" placeholder
+- AI Chat tab gets special full-height container (overflow-hidden, min-h-0) 
+  for proper scrolling behavior separate from other tabs
+- Placeholder AI responses until real API integration
+
+### Feature #171: AI chat context indicator shows focused node (PASSING)
+- Context indicator at top of AIChatTab shows currently selected node name
+- Shows "No node selected" when no node is selected
+- Dynamically updates when selecting different nodes
+- Uses findNode() from graphEngine to resolve selected node
+
+### Feature #172: AI chat context indicator shows neighbor count (PASSING)
+- Counts unique neighbor nodes connected via edges (both directions)
+- Shows "N neighbors in context" (with correct singular/plural)
+- Shows "No connections" for nodes with 0 neighbors
+- Shows "Select a node to provide context" when no node selected
+- Orders Database: 1 neighbor, Order Service: 2 neighbors (verified)
+
+## Technical details:
+- AIChatTab uses Zustand stores: useCoreStore for graph, useCanvasStore for selectedNodeId
+- Neighbor counting: iterates graph.edges, collects unique connected node IDs
+- Chat messages stored in local component state (ChatMessage[])
+- Enter key sends, Shift+Enter for newlines
+- Auto-scroll to bottom on new messages
+- Bot/User avatars with Lucide icons
+
+## Current completion status:
+- Features passing: 82 of 235 (34.9%)
+- Zero console errors
+- All implementations verified via Playwright browser automation
+
+## What should be worked on next:
+- Real AI API integration (Anthropic Claude API)
+- More AI features (suggestion handling, context depth controls)
+- Canvas interaction features
+- Export API features (PNG, SVG)
