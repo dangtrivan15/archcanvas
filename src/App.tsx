@@ -18,6 +18,7 @@ export function App() {
 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
+  const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
@@ -63,8 +64,15 @@ export function App() {
       {/* Toolbar - sticky at top */}
       <Toolbar />
 
-      {/* Main content area: canvas, right panel */}
+      {/* Main content area: left panel, canvas, right panel */}
       <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - NodeDef Browser */}
+        {leftPanelOpen && (
+          <aside className="w-60 border-r overflow-y-auto shrink-0 bg-white" data-testid="left-panel">
+            <NodeDefBrowser />
+          </aside>
+        )}
+
         {/* Center - Canvas */}
         <main className="flex-1 relative">
           <Canvas />
