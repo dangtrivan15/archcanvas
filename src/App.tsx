@@ -19,6 +19,7 @@ export function App() {
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
+  const zoom = useCanvasStore((s) => s.viewport.zoom);
 
   // Global keyboard shortcuts (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O, Ctrl+Z, Ctrl+Shift+Z)
   useKeyboardShortcuts();
@@ -82,7 +83,7 @@ export function App() {
         <span className="mx-2">|</span>
         <span data-testid="edge-count">Edges: {edgeCount}</span>
         <span className="mx-2">|</span>
-        <span>Zoom: 100%</span>
+        <span>Zoom: {Math.round(zoom * 100)}%</span>
       </footer>
     </div>
   );
