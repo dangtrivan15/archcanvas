@@ -2,6 +2,12 @@
  * GenericNode - a versatile node component for React Flow canvas.
  * Displays: icon, displayName, type, args, port handles, and badge counts.
  * Used as the default node type and base for all specialized node components.
+ *
+ * Port handles are dynamically generated from the nodedef's port definitions:
+ * - Inbound ports appear on the left side (target handles)
+ * - Outbound ports appear on the right side (source handles)
+ * - Each port has a tooltip showing the port name
+ * - Falls back to a single in/out handle if no ports are defined
  */
 
 import { memo } from 'react';
@@ -27,11 +33,16 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
   const Icon = iconMap[nodeData.icon] ?? Box;
 
+  const inboundPorts = nodeData.ports?.inbound ?? [];
+  const outboundPorts = nodeData.ports?.outbound ?? [];
+  const hasDefinedInboundPorts = inboundPorts.length > 0;
+  const hasDefinedOutboundPorts = outboundPorts.length > 0;
+
   return (
     <div
       className={`
         bg-white border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
-        transition-shadow
+        transition-shadow relative
         ${selected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}
       `}
       data-testid={`node-${nodeData.archNodeId}`}
@@ -39,13 +50,36 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       data-node-type={nodeData.nodedefType}
       data-node-name={nodeData.displayName}
     >
-      {/* Inbound port handle */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white"
-        id="in"
-      />
+      {/* Inbound port handles (left side) */}
+      {hasDefinedInboundPorts ? (
+        inboundPorts.map((port, index) => (
+          <Handle
+            key={`in-${port.name}`}
+            type="target"
+            position={Position.Left}
+            id={port.name}
+            title={port.name}
+            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white !rounded-full"
+            style={{
+              top: `${((index + 1) / (inboundPorts.length + 1)) * 100}%`,
+            }}
+            data-testid={`port-in-${port.name}`}
+            data-port-name={port.name}
+            data-port-direction="inbound"
+          />
+        ))
+      ) : (
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white !rounded-full"
+          id="in"
+          title="in"
+          data-testid="port-in-default"
+          data-port-name="in"
+          data-port-direction="inbound"
+        />
+      )}
 
       {/* Node header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
@@ -98,13 +132,36 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         </div>
       )}
 
-      {/* Outbound port handle */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!w-3 !h-3 !bg-green-400 !border-2 !border-white"
-        id="out"
-      />
+      {/* Outbound port handles (right side) */}
+      {hasDefinedOutboundPorts ? (
+        outboundPorts.map((port, index) => (
+          <Handle
+            key={`out-${port.name}`}
+            type="source"
+            position={Position.Right}
+            id={port.name}
+            title={port.name}
+            className="!w-3 !h-3 !bg-green-400 !border-2 !border-white !rounded-full"
+            style={{
+              top: `${((index + 1) / (outboundPorts.length + 1)) * 100}%`,
+            }}
+            data-testid={`port-out-${port.name}`}
+            data-port-name={port.name}
+            data-port-direction="outbound"
+          />
+        ))
+      ) : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="!w-3 !h-3 !bg-green-400 !border-2 !border-white !rounded-full"
+          id="out"
+          title="out"
+          data-testid="port-out-default"
+          data-port-name="out"
+          data-port-direction="outbound"
+        />
+      )}
     </div>
   );
 }
