@@ -12,6 +12,13 @@ export interface DeleteDialogInfo {
   childCount: number;
 }
 
+export interface ConnectionDialogInfo {
+  sourceNodeId: string;
+  targetNodeId: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+}
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
@@ -21,6 +28,10 @@ export interface UIStoreState {
   // Delete confirmation dialog
   deleteDialogOpen: boolean;
   deleteDialogInfo: DeleteDialogInfo | null;
+
+  // Connection type dialog
+  connectionDialogOpen: boolean;
+  connectionDialogInfo: ConnectionDialogInfo | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -32,6 +43,10 @@ export interface UIStoreState {
   // Delete dialog actions
   openDeleteDialog: (info: DeleteDialogInfo) => void;
   closeDeleteDialog: () => void;
+
+  // Connection dialog actions
+  openConnectionDialog: (info: ConnectionDialogInfo) => void;
+  closeConnectionDialog: () => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -41,6 +56,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
+
+  connectionDialogOpen: false,
+  connectionDialogInfo: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -62,4 +80,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeDeleteDialog: () =>
     set({ deleteDialogOpen: false, deleteDialogInfo: null }),
+
+  openConnectionDialog: (info) =>
+    set({ connectionDialogOpen: true, connectionDialogInfo: info }),
+
+  closeConnectionDialog: () =>
+    set({ connectionDialogOpen: false, connectionDialogInfo: null }),
 }));
