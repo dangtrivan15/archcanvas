@@ -5,7 +5,7 @@
 
 import type { Node, Edge } from '@xyflow/react';
 
-export interface CanvasNodeData {
+export interface CanvasNodeData extends Record<string, unknown> {
   archNodeId: string;
   displayName: string;
   nodedefType: string;
@@ -25,7 +25,7 @@ export interface CanvasNodeData {
 
 export type CanvasNode = Node<CanvasNodeData>;
 
-export interface CanvasEdgeData {
+export interface CanvasEdgeData extends Record<string, unknown> {
   archEdgeId: string;
   edgeType: 'sync' | 'async' | 'data-flow';
   label?: string;
