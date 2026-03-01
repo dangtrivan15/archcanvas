@@ -3,21 +3,27 @@
  */
 
 import { create } from 'zustand';
+import type { CanvasViewport } from '@/types/graph';
 
 export interface CanvasStoreState {
   // Selected node/edge
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
 
+  // Viewport
+  viewport: CanvasViewport;
+
   // Actions
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
   clearSelection: () => void;
+  setViewport: (viewport: CanvasViewport) => void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set) => ({
   selectedNodeId: null,
   selectedEdgeId: null,
+  viewport: { x: 0, y: 0, zoom: 1 },
 
   selectNode: (nodeId) =>
     set({ selectedNodeId: nodeId, selectedEdgeId: null }),
@@ -27,4 +33,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
 
   clearSelection: () =>
     set({ selectedNodeId: null, selectedEdgeId: null }),
+
+  setViewport: (viewport) =>
+    set({ viewport }),
 }));

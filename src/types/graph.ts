@@ -65,3 +65,23 @@ export interface Position {
   height: number;
   color?: string;
 }
+
+/**
+ * Canvas viewport and panel state, saved alongside the architecture.
+ */
+export interface CanvasViewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface SavedCanvasState {
+  viewport: CanvasViewport;
+  selectedNodeIds: string[];
+  navigationPath: string[];
+  panelLayout?: {
+    rightPanelOpen: boolean;
+    rightPanelTab: string;
+    rightPanelWidth: number;
+  };
+}
