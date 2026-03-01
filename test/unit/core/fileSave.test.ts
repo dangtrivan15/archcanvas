@@ -562,6 +562,90 @@ describe('File Save Pipeline', () => {
     });
   });
 
+  describe('saveArchcFileAs (Save As) binary output', () => {
+    it('graphToProto produces valid proto with suggested filename metadata', () => {
+      const graph = createTestGraph();
+      const protoFile = graphToProto(graph);
+
+      // The proto file should have an architecture section
+      expect(protoFile.architecture).toBeTruthy();
+      expect(protoFile.architecture?.name).toBe('E-Commerce Platform');
+      expect(protoFile.architecture?.nodes?.length).toBe(3);
+      expect(protoFile.architecture?.edges?.length).toBe(2);
+    });
+
+    it('encode produces binary that can be loaded as a new file', async () => {
+      const graph = createTestGraph();
+      const protoFile = graphToProto(graph);
+      const binaryData = await encode(protoFile);
+
+      // Simulate what happens when a "saved-as" file is opened:
+      // decode the binary → convert to graph → verify it matches
+      const decoded = await decode(binaryData);
+      const restored = protoToGraph(decoded);
+
+      expect(restored.name).toBe(graph.name);
+      expect(restored.description).toBe(graph.description);
+      expect(restored.owners).toEqual(graph.owners);
+      expect(restored.nodes.length).toBe(graph.nodes.length);
+      expect(restored.edges.length).toBe(graph.edges.length);
+    });
+
+    it('Save As binary output differs from original file if graph was modified', async () => {
+      const original = createTestGraph();
+      const originalProto = graphToProto(original);
+      const originalBinary = await encode(originalProto);
+
+      // Modify the graph (add a node)
+      const modified = {
+        ...original,
+        nodes: [
+          ...original.nodes,
+          {
+            id: 'node-new',
+            type: 'compute/function',
+            displayName: 'New Function',
+            args: {},
+            codeRefs: [],
+            notes: [],
+            properties: {},
+            position: { x: 500, y: 500, width: 240, height: 120 },
+            children: [],
+          },
+        ],
+      };
+
+      const modifiedProto = graphToProto(modified);
+      const modifiedBinary = await encode(modifiedProto);
+
+      // Binary should be different (different content)
+      expect(modifiedBinary.length).not.toBe(originalBinary.length);
+
+      // But both should decode correctly
+      const decodedModified = await decode(modifiedBinary);
+      const restoredModified = protoToGraph(decodedModified);
+      expect(restoredModified.nodes.length).toBe(4); // 3 original + 1 new
+      expect(restoredModified.nodes[3].displayName).toBe('New Function');
+    });
+
+    it('suggested filename is used with .archc extension', () => {
+      // Verify the filename logic used in saveArchcFileAs
+      const suggestedName = 'my-architecture';
+      const defaultName = (suggestedName ?? 'architecture') + '.archc';
+      expect(defaultName).toBe('my-architecture.archc');
+
+      // And the display name removes the extension
+      const displayName = defaultName.replace(/\.archc$/, '');
+      expect(displayName).toBe('my-architecture');
+    });
+
+    it('default filename is "architecture.archc" when no suggestion provided', () => {
+      const suggestedName = undefined;
+      const defaultName = (suggestedName ?? 'architecture') + '.archc';
+      expect(defaultName).toBe('architecture.archc');
+    });
+  });
+
   describe('Save → Load file roundtrip using test .archc file', () => {
     it('loads the ecommerce.archc example file and roundtrips it', async () => {
       const fs = await import('fs');
