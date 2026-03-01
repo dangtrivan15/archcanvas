@@ -100,32 +100,63 @@ export function NodeDetailPanel() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {activeTab === 'properties' && (
-          <PropertiesTab node={node} nodeDef={nodeDef} />
-        )}
-        {activeTab === 'notes' && (
-          <NotesTab
-            node={node}
-            noteContent={noteContent}
-            noteAuthor={noteAuthor}
-            onNoteContentChange={setNoteContent}
-            onNoteAuthorChange={setNoteAuthor}
-            onAddNote={handleAddNote}
-          />
-        )}
-        {activeTab === 'coderefs' && (
-          <CodeRefsTab node={node} />
-        )}
-        {activeTab === 'aichat' && (
+      {activeTab === 'aichat' ? (
+        <div className="flex-1 overflow-hidden min-h-0">
           <AIChatTab />
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto p-3">
+          {activeTab === 'properties' && (
+            <PropertiesTab node={node} nodeDef={nodeDef} />
+          )}
+          {activeTab === 'notes' && (
+            <NotesTab
+              node={node}
+              noteContent={noteContent}
+              noteAuthor={noteAuthor}
+              onNoteContentChange={setNoteContent}
+              onNoteAuthorChange={setNoteAuthor}
+              onAddNote={handleAddNote}
+            />
+          )}
+          {activeTab === 'coderefs' && (
+            <CodeRefsTab node={node} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof findNode>>; nodeDef?: NodeDef }) {
+  const updateNode = useCoreStore((s) => s.updateNode);
+  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const handleArgChange = useCallback((argName: string, value: string | number | boolean) => {
+    if (!selectedNodeId) return;
+    const updatedArgs = { ...node.args, [argName]: value };
+    // Remove empty string values (treated as "cleared")
+    if (value === '') {
+      delete updatedArgs[argName];
+    }
+    updateNode(selectedNodeId, { args: updatedArgs });
+    setTouched((prev) => ({ ...prev, [argName]: true }));
+  }, [selectedNodeId, node.args, updateNode]);
+
+  const handleArgBlur = useCallback((argName: string) => {
+    setTouched((prev) => ({ ...prev, [argName]: true }));
+  }, []);
+
+  const getValidationError = useCallback((argDef: ArgDef): string | null => {
+    if (!argDef.required) return null;
+    const value = node.args[argDef.name];
+    if (value === undefined || value === null || value === '') {
+      return `${argDef.name} is required`;
+    }
+    return null;
+  }, [node.args]);
+
   return (
     <div className="space-y-4" data-testid="properties-tab">
       {/* Node ID */}
@@ -152,7 +183,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
         </div>
       </div>
 
-      {/* NodeDef Args - structured display from nodedef schema */}
+      {/* NodeDef Args - editable display from nodedef schema */}
       {nodeDef && nodeDef.spec.args.length > 0 && (
         <div>
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -161,40 +192,98 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
           <div className="mt-1 space-y-2" data-testid="nodedef-args">
             {nodeDef.spec.args.map((argDef: ArgDef) => {
               const currentValue = node.args[argDef.name];
-              const hasValue = currentValue !== undefined && currentValue !== null;
+              const isRequired = argDef.required === true;
+              const validationError = getValidationError(argDef);
+              const isTouched = touched[argDef.name];
+              const showError = isRequired && isTouched && validationError !== null;
+
               return (
-                <div key={argDef.name} className="bg-gray-50 rounded p-2 border border-gray-100" data-testid={`nodedef-arg-${argDef.name}`}>
+                <div
+                  key={argDef.name}
+                  className={`bg-gray-50 rounded p-2 border ${showError ? 'border-red-300 bg-red-50/30' : 'border-gray-100'}`}
+                  data-testid={`nodedef-arg-${argDef.name}`}
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-700" data-testid="arg-name">{argDef.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-mono" data-testid="arg-type">{argDef.type}</span>
+                    <span className="text-xs font-medium text-gray-700 flex items-center gap-1" data-testid="arg-name">
+                      {argDef.name}
+                      {isRequired && (
+                        <span className="text-red-500" data-testid="required-indicator" title="Required">*</span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {isRequired && (
+                        <span className="text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-600 font-medium" data-testid="required-badge">
+                          Required
+                        </span>
+                      )}
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-mono" data-testid="arg-type">{argDef.type}</span>
+                    </div>
                   </div>
                   <div className="text-[11px] text-gray-500 mt-0.5" data-testid="arg-description">{argDef.description}</div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Value:</span>
-                    <span className="text-xs font-mono text-gray-800" data-testid="arg-value">
-                      {hasValue ? String(currentValue) : <span className="text-gray-400 italic">not set</span>}
-                    </span>
+
+                  {/* Editable form control */}
+                  <div className="mt-1.5">
+                    {argDef.type === 'enum' && argDef.options ? (
+                      <select
+                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
+                        onChange={(e) => handleArgChange(argDef.name, e.target.value)}
+                        onBlur={() => handleArgBlur(argDef.name)}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        data-testid={`arg-input-${argDef.name}`}
+                      >
+                        <option value="">— Select —</option>
+                        {argDef.options.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : argDef.type === 'number' ? (
+                      <input
+                        type="number"
+                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleArgChange(argDef.name, val === '' ? '' as unknown as number : Number(val));
+                        }}
+                        onBlur={() => handleArgBlur(argDef.name)}
+                        placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        data-testid={`arg-input-${argDef.name}`}
+                      />
+                    ) : argDef.type === 'boolean' ? (
+                      <label className="flex items-center gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={currentValue === true || currentValue === 'true'}
+                          onChange={(e) => handleArgChange(argDef.name, e.target.checked)}
+                          onBlur={() => handleArgBlur(argDef.name)}
+                          data-testid={`arg-input-${argDef.name}`}
+                        />
+                        <span className="text-gray-600">{currentValue === true || currentValue === 'true' ? 'Enabled' : 'Disabled'}</span>
+                      </label>
+                    ) : (
+                      <input
+                        type="text"
+                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
+                        onChange={(e) => handleArgChange(argDef.name, e.target.value)}
+                        onBlur={() => handleArgBlur(argDef.name)}
+                        placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        data-testid={`arg-input-${argDef.name}`}
+                      />
+                    )}
                   </div>
-                  {argDef.default !== undefined && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-gray-400">Default:</span>
-                      <span className="text-[10px] font-mono text-gray-500" data-testid="arg-default">{String(argDef.default)}</span>
+
+                  {/* Validation error */}
+                  {showError && (
+                    <div className="mt-1 text-[11px] text-red-600 flex items-center gap-1" data-testid={`arg-error-${argDef.name}`}>
+                      <span>⚠</span> {validationError}
                     </div>
                   )}
-                  {argDef.options && argDef.options.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1" data-testid="arg-options">
-                      {argDef.options.map((opt) => (
-                        <span
-                          key={opt}
-                          className={`text-[10px] px-1 py-0.5 rounded ${
-                            String(currentValue) === opt
-                              ? 'bg-blue-100 text-blue-700 font-medium'
-                              : 'bg-gray-100 text-gray-500'
-                          }`}
-                        >
-                          {opt}
-                        </span>
-                      ))}
+
+                  {argDef.default !== undefined && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] text-gray-400">Default:</span>
+                      <span className="text-[10px] font-mono text-gray-500" data-testid="arg-default">{String(argDef.default)}</span>
                     </div>
                   )}
                 </div>
