@@ -10,6 +10,7 @@ export function FileMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const newFile = useCoreStore((s) => s.newFile);
+  const openFile = useCoreStore((s) => s.openFile);
 
   // Close on click outside
   useEffect(() => {
@@ -38,10 +39,9 @@ export function FileMenu() {
     setIsOpen(false);
   };
 
-  const handleOpen = () => {
-    // File open will be implemented by file operations feature
-    console.log('[FileMenu] Open file (not yet implemented)');
+  const handleOpen = async () => {
     setIsOpen(false);
+    await openFile();
   };
 
   const handleSave = () => {
