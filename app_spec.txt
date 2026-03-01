@@ -1,0 +1,613 @@
+<project_specification>
+  <project_name>ArchCanvas</project_name>
+
+  <overview>
+    ArchCanvas is a visual architecture design tool where software systems are represented as typed,
+    composable, code-bound graph nodes on an interactive canvas. The .archc binary file (Protocol Buffers)
+    is the single source of truth, and ALL access flows through three APIs: Render, Text, and Export.
+    AI and humans interact through the same Text API. The canvas and codebase evolve together.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React 19</framework>
+      <build>Vite 6</build>
+      <canvas>React Flow (@xyflow/react) v12</canvas>
+      <layout_engine>elkjs (ELK compiled to JS)</layout_engine>
+      <styling>Tailwind CSS 4 + shadcn/ui</styling>
+      <state>Zustand (global app state)</state>
+      <icons>Lucide React</icons>
+      <id_generation>ulid</id_generation>
+      <export>html-to-image (PNG/SVG)</export>
+    </frontend>
+    <backend>
+      <runtime>Browser-based (no server required for core app)</runtime>
+      <database>none - file-based storage (.archc binary files via Protocol Buffers)</database>
+      <serialization>protobufjs (Protocol Buffers for JS) - compiles .proto schemas to TS classes</serialization>
+      <schema_validation>Zod (validates data at API boundaries)</schema_validation>
+      <file_handling>File System Access API (Chrome) + fallback to File/Blob download</file_handling>
+      <nodedef_format>YAML (npm "yaml" package, YAML 1.2)</nodedef_format>
+    </backend>
+    <ai_integration>
+      <llm>Anthropic Claude API (@anthropic-ai/sdk)</llm>
+      <mcp_server>@modelcontextprotocol/sdk</mcp_server>
+      <mcp_protocol>MCP over stdio (for Claude Code) + MCP over SSE (for web-based agents)</mcp_protocol>
+    </ai_integration>
+    <testing>
+      <unit>Vitest</unit>
+      <component>React Testing Library</component>
+      <e2e>Playwright</e2e>
+      <proto>protobufjs built-in verification</proto>
+    </testing>
+    <communication>
+      <api>Three internal APIs: Text API (read/write architecture), Render API (graph to React Flow), Export API (markdown/mermaid/PNG/SVG)</api>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 20+
+      - npm 10+
+      - Chrome/Edge recommended (for File System Access API)
+      - VITE_ANTHROPIC_API_KEY environment variable (for AI chat features)
+    </environment_setup>
+  </prerequisites>
+
+  <feature_count>234</feature_count>
+
+  <storage_architecture>
+    <description>
+      ArchCanvas uses a BINARY FILE format (.archc) as the single source of truth.
+      There is NO server-side database. All data is serialized via Protocol Buffers
+      and stored in .archc files on the user's local filesystem.
+      The file format includes magic bytes ("ARCHC\x00"), a format version, and a SHA-256
+      checksum for integrity verification.
+    </description>
+    <file_format>
+      - Magic bytes: "ARCHC\x00" + uint16 format version (big-endian)
+      - Payload: Protocol Buffer encoded ArchCanvasFile message
+      - Contains: FileHeader, Architecture (graph), CanvasState, AIState, UndoHistory
+    </file_format>
+    <persistence>
+      - Primary: File System Access API (Chrome) for save-in-place
+      - Fallback: File/Blob download for non-Chrome browsers
+      - Sidecar: Auto-generated .summary.md markdown file alongside .archc
+    </persistence>
+  </storage_architecture>
+
+  <protobuf_schema>
+    <messages>
+      - ArchCanvasFile: top-level container (header, architecture, canvas_state, ai_state, undo_history)
+      - FileHeader: format_version, tool_version, timestamps, checksum_sha256
+      - Architecture: name, description, owners, nodes[], edges[]
+      - Node: id, type, display_name, args (map), code_refs[], notes[], properties (map), position, children[] (recursive), ref_source
+      - Edge: id, from_node, to_node, from_port, to_port, type (enum: SYNC/ASYNC/DATA_FLOW), label, properties, notes[]
+      - Note: id, author, timestamp_ms, content (markdown), tags[], status (enum: NONE/PENDING/ACCEPTED/DISMISSED), suggestion_type
+      - CodeRef: path, role (enum: SOURCE/API_SPEC/SCHEMA/DEPLOYMENT/CONFIG/TEST)
+      - Position: x, y, width, height, color
+      - CanvasState: viewport (x, y, zoom), selected_node_ids[], navigation_path[], panel_layout
+      - PanelLayout: right_panel_open, right_panel_tab, right_panel_width
+      - AIState: conversations[]
+      - AIConversation: id, scoped_to_node_id, messages[], created_at_ms
+      - AIMessage: id, role, content, timestamp_ms, suggestions[]
+      - AISuggestion: id, target_node_id, target_edge_id, suggestion_type, content, status
+      - UndoHistory: entries[], current_index, max_entries
+      - UndoEntry: description, timestamp_ms, architecture_snapshot (bytes)
+      - Value: oneof (string, number, bool, string_list)
+    </messages>
+  </protobuf_schema>
+
+  <core_features>
+    <binary_core_engine>
+      - Protocol Buffer schema compilation and TypeScript codegen
+      - Binary codec: encode/decode .archc files with magic bytes and checksum
+      - Proto-to-TypeScript type converters (bidirectional)
+      - File I/O: open, save, save-as using File System Access API with fallback
+      - File format version migration support
+      - Integrity verification via SHA-256 checksum
+    </binary_core_engine>
+
+    <graph_engine>
+      - Add/remove/update nodes (pure functions, immutable)
+      - Add/remove/update edges
+      - Add/remove/update notes on nodes and edges
+      - Add child nodes (recursive nesting for fractal zoom)
+      - Move node positions
+      - Find node/edge by ID (recursive search through children)
+      - Find node parent
+      - Get node path (navigation breadcrumb path)
+    </graph_engine>
+
+    <graph_query_and_traversal>
+      - Get nodes at navigation level (path-based: [] = root, ["node-id"] = children)
+      - Get edges at navigation level (filter to current visible nodes)
+      - Get external edges (boundary edges crossing navigation levels)
+      - Get neighbors within N hops
+      - Full-text search across node names, properties, notes, edge labels
+    </graph_query_and_traversal>
+
+    <undo_redo>
+      - Snapshot-based undo/redo stack
+      - Max 100 entries (configurable)
+      - Branch behavior: new action after undo discards redo future
+      - Serialized Architecture snapshots for compact storage
+      - Undo/redo state persisted in .archc file
+    </undo_redo>
+
+    <nodedef_registry>
+      - 15 built-in nodedef YAML files organized by namespace
+      - Zod schema validation for nodedef structure
+      - Registry manager: load, resolve by type, list by namespace, search
+      - Build-time YAML import via Vite
+      - Nodedefs organized into categories:
+        - Compute: service, function, worker, api-gateway
+        - Data: database, cache, object-storage, repository
+        - Messaging: message-queue, event-bus, stream-processor
+        - Network: load-balancer, cdn, dns
+        - Observability: logging, monitoring
+    </nodedef_registry>
+
+    <text_api>
+      - describe(): Full architecture description in ai/human/structured formats
+      - listNodes(): Node summaries with child/note/connection counts
+      - getNode(): Detailed node info with args, properties, connections, notes
+      - getEdges(): Edge summaries
+      - getNodeDef(): Resolve nodedef type info
+      - search(): Full-text search across graph
+      - addNode/addEdge/addNote/updateNode/removeNode/removeEdge mutations
+      - suggest(): AI creates pending note suggestions
+      - resolveSuggestion(): Accept or dismiss AI suggestions
+      - getAIContext(): Convenience method for AI context with neighbors
+    </text_api>
+
+    <formatters>
+      - AI Formatter: XML-structured output optimized for LLM token efficiency
+      - Human Formatter: Markdown output for terminal/human readability with emoji badges
+      - Structured Formatter: Clean JSON output for programmatic consumption
+    </formatters>
+
+    <render_api>
+      - Transform internal ArchGraph to React Flow nodes/edges
+      - Navigation-level-aware rendering (fractal zoom)
+      - NodeDef type to React component mapping
+      - Port handle generation from nodedef spec
+      - Badge counts (notes, suggestions, code refs)
+    </render_api>
+
+    <export_api>
+      - Markdown summary sidecar (auto-generated on save)
+      - Mermaid diagram generation with proper shape mapping
+      - PNG export via html-to-image
+      - SVG export via html-to-image
+    </export_api>
+
+    <canvas_ui>
+      - React Flow interactive canvas with custom node/edge components
+      - 7 node component types: ServiceNode, DatabaseNode, QueueNode, CacheNode, GatewayNode, GenericNode, RefNode
+      - 3 edge component types: SyncEdge (solid), AsyncEdge (dashed/animated), DataFlowEdge (thick)
+      - BaseNode layout with icon, name, type, args, ports, and badge counts
+      - Port handles (inbound left, outbound right)
+      - Node selection with visual states (default, hover, selected)
+      - Drag-to-move nodes with position persistence
+      - Connection creation by dragging between port handles
+      - Background grid, minimap, zoom controls
+      - Fit-view button
+    </canvas_ui>
+
+    <fractal_zoom>
+      - Double-click node to zoom into children
+      - Navigation breadcrumb ("Root > Order Service > API Layer")
+      - Clickable breadcrumb segments for navigation
+      - Zoom out via breadcrumb or keyboard
+      - Navigation path state management
+      - Level-aware node/edge filtering
+    </fractal_zoom>
+
+    <toolbar>
+      - File menu: New, Open, Save (Ctrl+S), Save As, Export submenu
+      - Add Node button: Opens NodeDef browser
+      - Layout menu: Auto-layout (horizontal/vertical), fit view
+      - Filename display with dirty indicator
+    </toolbar>
+
+    <side_panels>
+      - Three-panel layout: left (NodeDef browser), center (canvas), right (detail)
+      - Draggable resize dividers between panels
+      - Collapsible left panel
+      - Right panel with 4 tabs: Properties, Notes, Code Refs, AI Chat
+      - Panel opens on node selection
+    </side_panels>
+
+    <nodedef_browser_panel>
+      - Search/filter input
+      - Grouped by namespace: Compute, Data, Messaging, Network, Observability
+      - Icon, displayName, description for each nodedef
+      - Click to enter placement mode (cursor changes, click canvas to place)
+      - Drag from browser onto canvas to create node
+    </nodedef_browser_panel>
+
+    <properties_panel>
+      - Arguments section from nodedef spec (required with validation, optional with defaults)
+      - Input types: text, number, boolean toggle, enum dropdown
+      - Custom properties section (freeform key-value pairs)
+      - Add/edit/remove custom properties
+    </properties_panel>
+
+    <notes_panel>
+      - Chronological note list
+      - NoteCard: author (human name or "AI" badge), relative timestamp, markdown content, tag badges
+      - AI notes with pending status show Accept/Dismiss buttons
+      - Add Note button with inline markdown editor
+      - Edit/delete own notes
+    </notes_panel>
+
+    <code_refs_panel>
+      - List of code references with icon, path, role badge
+      - Click to copy path to clipboard
+      - Add Code Reference form: path input + role dropdown
+    </code_refs_panel>
+
+    <ai_chat_panel>
+      - Scrollable chat message list
+      - Context indicator: focused node + neighbor count or full architecture
+      - Text input with send button
+      - Streaming response display (character by character)
+      - Inline suggestion detection with "Apply" buttons
+      - Apply creates pending note (author="ai")
+      - Message history persisted in AIState (saved in .archc)
+    </ai_chat_panel>
+
+    <ai_integration>
+      - Anthropic Claude API client with browser mode
+      - Architecture-aware system prompt for expert analysis
+      - Context builder: selected node + N-hop neighbors or full graph
+      - Suggestion parser: regex-based XML tag extraction
+      - Streaming responses via messages.stream()
+      - AI conversation store with per-node scoping
+    </ai_integration>
+
+    <mcp_server>
+      - 8 MCP tools: describe, add_node, add_edge, add_note, update_node, remove_node, remove_edge, search, list_nodedefs
+      - Delegates all operations to Text API
+      - CLI entry point for Claude Code integration (stdio transport)
+      - Web-based SSE transport for browser AI agents
+      - Configurable via claude_desktop_config.json
+    </mcp_server>
+
+    <auto_layout>
+      - ELK (elkjs) layered layout algorithm
+      - Configurable direction: DOWN or RIGHT
+      - Configurable spacing
+      - Hierarchical layout support (include children)
+      - Apply layout via toolbar or keyboard shortcut
+    </auto_layout>
+
+    <keyboard_shortcuts>
+      - Ctrl/Cmd + S: Save
+      - Ctrl/Cmd + Shift + S: Save As
+      - Ctrl/Cmd + O: Open
+      - Ctrl/Cmd + N: New
+      - Ctrl/Cmd + Z: Undo
+      - Ctrl/Cmd + Shift + Z: Redo
+      - Delete/Backspace: Delete selected
+      - Ctrl/Cmd + Shift + L: Auto-layout
+      - Escape: Deselect/close panel/exit mode
+      - Enter: Zoom into selected node
+      - Backspace: Zoom out (in child view)
+      - Ctrl/Cmd + F: Search architecture
+      - Ctrl/Cmd + /: Toggle AI chat panel
+    </keyboard_shortcuts>
+
+    <context_menus>
+      - Canvas right-click: Add Node, Paste, Auto-Layout, Fit View
+      - Node right-click: Edit, Add Note, Add Child, Zoom In, Delete
+      - Edge right-click: Edit, Add Note, Delete
+    </context_menus>
+
+    <ui_polish>
+      - Dark mode toggle (Tailwind dark classes + system preference detection)
+      - Loading spinner during file operations
+      - Toast notifications (save success, export complete, errors)
+      - Confirm dialogs for destructive actions (node/edge deletion)
+      - Empty states (no file open, no nodes, no notes)
+      - Keyboard focus indicators for accessibility
+      - Responsive panel resizing with drag handles
+      - Status bar: node count, edge count, dirty indicator, zoom percentage
+    </ui_polish>
+
+    <connection_creation>
+      - Drag from outbound port handle on source node
+      - Drop on inbound port handle on target node
+      - Quick dialog for connection type selection (sync/async/data-flow)
+      - Edge appears with appropriate visual style
+    </connection_creation>
+
+    <node_deletion>
+      - Select node(s) and press Delete/Backspace
+      - Confirmation dialog showing cascade impact (connections, child nodes)
+      - Removes connected edges and child nodes recursively
+    </node_deletion>
+
+    <file_operations>
+      - New file (empty architecture with default name)
+      - Open .archc file (File System Access API or input fallback)
+      - Save in-place (using stored file handle)
+      - Save As (new file picker)
+      - Dirty state tracking (unsaved changes indicator)
+      - Auto-generate .summary.md sidecar on save
+    </file_operations>
+  </core_features>
+
+  <internal_type_system>
+    <graph_types>
+      - ArchGraph: name, description, owners[], nodes[], edges[]
+      - ArchNode: id, type, displayName, args (record), codeRefs[], notes[], properties (record), position, children[] (recursive), refSource?
+      - ArchEdge: id, fromNode, toNode, fromPort?, toPort?, type (sync|async|data-flow), label?, properties (record), notes[]
+      - Note: id, author, timestampMs, content, tags[], status (none|pending|accepted|dismissed), suggestionType?
+      - CodeRef: path, role (source|api-spec|schema|deployment|config|test)
+      - Position: x, y, width, height, color?
+    </graph_types>
+
+    <nodedef_types>
+      - NodeDef: kind, apiVersion, metadata (name, namespace, version, displayName, description, icon, tags, author), spec (args, ports, children, ai), variants[]
+      - ArgDef: name, type (string|number|boolean|enum|duration), description, options?, default?
+      - PortDef: name, protocol[], description, condition?
+      - ChildSlotDef: nodedef, min, max
+      - VariantDef: name, description, args (record)
+    </nodedef_types>
+
+    <canvas_types>
+      - CanvasNodeData: archNodeId, displayName, nodedefType, args, ports (inbound/outbound), hasChildren, noteCount, pendingSuggestionCount, codeRefCount, properties, icon, color?
+      - CanvasNode: React Flow Node with CanvasNodeData
+      - CanvasEdgeData: archEdgeId, edgeType, label?, protocol?, noteCount
+      - CanvasEdge: React Flow Edge with CanvasEdgeData
+    </canvas_types>
+
+    <api_types>
+      - DescribeOptions: scope, nodeId?, nodeIds?, depth?, format, includeNotes?, includeCodeRefs?, includeAIContext?
+      - NodeSummary: id, type, displayName, childCount, noteCount, connectionCount
+      - NodeDetail: id, type, displayName, args, properties, codeRefs, notes, children, inboundEdges, outboundEdges, nodedefAIContext?
+      - EdgeSummary: id, fromNode, toNode, type, label?, noteCount
+      - SearchResult: type (node|edge|note), id, parentId?, displayName, matchContext, score
+      - AddNodeParams, AddEdgeParams, AddNoteParams, UpdateNodeParams, SuggestParams
+    </api_types>
+  </internal_type_system>
+
+  <zustand_stores>
+    <core_store>
+      - graph state, isDirty, fileHandle, fileName
+      - Engine instances: textApi, renderApi, exportApi, undoManager, registry
+      - initialize(): loads registry, sets up engines
+      - File operations: newFile, openFile, saveFile, saveFileAs
+      - Graph mutations: addNode, removeNode, updateNode, addEdge, removeEdge, addNote, updateNote, removeNote, moveNode
+      - Undo/redo: undo, redo, canUndo, canRedo
+      - Every mutation: snapshot before change, call engine, set isDirty
+    </core_store>
+    <canvas_store>React Flow viewport/selection state</canvas_store>
+    <navigation_store>Fractal zoom path[], zoomIn, zoomOut, zoomToRoot, zoomToLevel</navigation_store>
+    <ai_store>Conversations map, currentConversationId, isStreaming, sendMessage, applySuggestion, dismissSuggestion</ai_store>
+    <ui_store>Panel visibility, modals, toasts</ui_store>
+  </zustand_stores>
+
+  <ui_layout>
+    <main_structure>
+      Top: Toolbar (File menu, Add Node, Layout menu, filename)
+      Left: NodeDef Browser panel (collapsible)
+      Center: Canvas (React Flow)
+      Right: Node Detail panel (tabs: Properties, Notes, Code Refs, AI Chat)
+      Bottom: Status bar (node count, edge count, dirty indicator, zoom level)
+      All panels have draggable resize dividers
+    </main_structure>
+    <node_layout>
+      Header: [icon] Display Name [zoom-in arrow if hasChildren]
+      Body: type label, key arg values
+      Ports: inbound (left) and outbound (right) handles
+      Footer: note count, suggestion count, code ref count badges
+    </node_layout>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      - Dark mode and light mode via Tailwind dark: classes
+      - System preference detection with manual toggle
+      - Node colors: customizable per-node via position.color
+      - Edge colors: differentiated by type (sync=solid, async=dashed, data-flow=thick)
+      - shadcn/ui default theme with customizations
+    </color_palette>
+    <typography>
+      - System font stack via Tailwind defaults
+      - Monospace for code references and technical values
+      - Markdown rendering in notes panel
+    </typography>
+    <components>
+      - shadcn/ui: button, input, select, tabs, dialog, dropdown-menu, popover, toast,
+        tooltip, badge, separator, scroll-area, sheet, command, context-menu
+    </components>
+  </design_system>
+
+  <directory_structure>
+    archcanvas/
+    - proto/archcanvas.proto (Protocol Buffer schema)
+    - src/proto/archcanvas.ts (generated from .proto)
+    - src/types/ (nodedef.ts, graph.ts, canvas.ts, api.ts, ai.ts)
+    - src/core/storage/ (codec.ts, fileIO.ts, migration.ts, integrity.ts)
+    - src/core/graph/ (graphEngine.ts, graphQuery.ts, graphValidation.ts, graphTraversal.ts)
+    - src/core/history/ (undoManager.ts)
+    - src/core/layout/ (elkLayout.ts)
+    - src/core/registry/ (registryManager.ts, nodedefValidator.ts, builtins/core/**/*.yaml, loader.ts)
+    - src/api/ (textApi.ts, renderApi.ts, exportApi.ts, formats/aiFormatter.ts, formats/humanFormatter.ts, formats/structuredFormatter.ts)
+    - src/mcp/ (server.ts, tools.ts, handlers.ts, cli.ts)
+    - src/ai/ (client.ts, prompts.ts, contextBuilder.ts, suggestionParser.ts)
+    - src/store/ (coreStore.ts, canvasStore.ts, navigationStore.ts, aiStore.ts, uiStore.ts)
+    - src/components/canvas/ (Canvas.tsx, CanvasControls.tsx, Minimap.tsx, NavigationBreadcrumb.tsx, ConnectionLine.tsx)
+    - src/components/nodes/ (BaseNode.tsx, ServiceNode.tsx, DatabaseNode.tsx, QueueNode.tsx, CacheNode.tsx, GatewayNode.tsx, GenericNode.tsx, RefNode.tsx, nodeTypeMap.ts)
+    - src/components/edges/ (SyncEdge.tsx, AsyncEdge.tsx, DataFlowEdge.tsx, edgeTypeMap.ts)
+    - src/components/panels/ (NodeDetailPanel.tsx, NotesPanel.tsx, PropertiesPanel.tsx, CodeRefPanel.tsx, AIChatPanel.tsx, NodeDefBrowser.tsx)
+    - src/components/toolbar/ (Toolbar.tsx, FileMenu.tsx, AddNodeMenu.tsx, LayoutMenu.tsx)
+    - src/components/shared/ (PortBadge.tsx, NoteCard.tsx, StatusBadge.tsx, ConfirmDialog.tsx)
+    - src/hooks/ (useGraphActions.ts, useFractalZoom.ts, useAutoLayout.ts, useAIChat.ts, useKeyboardShortcuts.ts, useFileOperations.ts)
+    - src/utils/ (idGenerator.ts, constants.ts)
+    - test/unit/ (core/, api/, registry/, ai/)
+    - test/integration/ (binaryRoundtrip, textApiEndToEnd, mcpIntegration, exportSummary)
+    - test/e2e/ (canvasInteraction, fractalZoom, aiChat, fileOperations, addNode)
+    - examples/ecommerce/ (example .archc files)
+  </directory_structure>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Phase 1: Binary Core Engine</title>
+      <tasks>
+        - Project scaffolding (Vite + React + TypeScript + all dependencies)
+        - Protocol Buffer schema + TypeScript codegen
+        - Binary codec (encode/decode .archc with magic bytes + checksum)
+        - Proto-to-TypeScript type converters (bidirectional)
+        - File I/O (open/save .archc via File System Access API)
+        - Graph engine (pure CRUD functions for nodes, edges, notes)
+        - Graph query and traversal (level-based, search, neighbors)
+        - Undo manager (snapshot-based with max entries)
+        - NodeDef registry (YAML loading, Zod validation, 15 built-in defs)
+      </tasks>
+      <checkpoint>Can create, load, modify, save .archc files programmatically. All operations tested.</checkpoint>
+    </step>
+
+    <step number="2">
+      <title>Phase 2: Text API + Export API</title>
+      <tasks>
+        - Text API core (all query + mutation methods)
+        - AI formatter (XML output for LLM reasoning)
+        - Human formatter (Markdown output)
+        - Structured formatter (JSON output)
+        - Export API (markdown summary, Mermaid generator)
+        - Render API (graph to React Flow transformation)
+      </tasks>
+      <checkpoint>Can describe any architecture in 3 formats. Can generate markdown summary. All APIs tested.</checkpoint>
+    </step>
+
+    <step number="3">
+      <title>Phase 3: Canvas UI</title>
+      <tasks>
+        - Core Zustand store (bridge core engine to React)
+        - Navigation store (fractal zoom state)
+        - BaseNode component with port handles
+        - 6 specialized node components (Service, Database, Queue, Cache, Gateway, Generic, Ref)
+        - 3 edge components (Sync, Async, DataFlow)
+        - Main Canvas component (React Flow integration)
+        - Canvas controls + navigation breadcrumb
+        - Toolbar (File menu, Add Node, Layout)
+      </tasks>
+      <checkpoint>Can open .archc file, see interactive canvas, drag nodes, zoom in/out of children.</checkpoint>
+    </step>
+
+    <step number="4">
+      <title>Phase 4: Side Panels + Interactions</title>
+      <tasks>
+        - App layout shell (toolbar + 3-panel layout with resize)
+        - NodeDef browser panel (search, filter, placement mode)
+        - Node detail panel (tab container)
+        - Properties tab (nodedef args + custom properties)
+        - Notes tab (CRUD, markdown render, AI suggestion accept/dismiss)
+        - Code refs tab (list, add, copy path)
+        - Connection creation flow (drag + type picker)
+        - Node deletion with cascade confirmation
+        - Canvas context menus (canvas, node, edge)
+      </tasks>
+      <checkpoint>Full editing workflow: add nodes, connect them, add notes, edit properties, save.</checkpoint>
+    </step>
+
+    <step number="5">
+      <title>Phase 5: AI Integration</title>
+      <tasks>
+        - AI context builder (selected node + neighbors or full graph)
+        - System prompts for architecture assistant
+        - AI client (Anthropic SDK with streaming)
+        - Suggestion parser (XML tag extraction)
+        - AI chat panel (streaming, context indicator, apply suggestions)
+        - AI store (conversations, streaming state)
+      </tasks>
+      <checkpoint>Can chat with AI about architecture, AI suggestions appear as pending notes.</checkpoint>
+    </step>
+
+    <step number="6">
+      <title>Phase 6: MCP Server + Export + Polish</title>
+      <tasks>
+        - MCP server setup with tool registration
+        - 8+ MCP tool definitions and handlers
+        - MCP CLI entry point for Claude Code (stdio transport)
+        - ELK auto-layout integration
+        - Markdown summary auto-generation on save
+        - Mermaid export with shape mapping
+        - PNG/SVG export via html-to-image
+        - Keyboard shortcuts (14 shortcuts)
+        - UI polish: dark mode, toasts, empty states, loading states, accessibility, status bar
+      </tasks>
+      <checkpoint>Complete MVP. AI agents can modify architecture via MCP. Summary appears in git. Full export pipeline.</checkpoint>
+    </step>
+  </implementation_steps>
+
+  <testing_strategy>
+    <unit_tests>
+      - Core: codec roundtrip, corrupt file handling, magic bytes, checksum, large file perf
+      - Graph: every CRUD function, edge cases (remove with children, connected edges)
+      - Query: getNodesAtLevel for paths, getNeighbors with radii, search matching
+      - Traversal: findNode recursive, getNodePath
+      - Undo: undo/redo sequences, max history cap, branch behavior
+      - Text API: all query and mutation methods
+      - Formatters: SNAPSHOT tests for AI (XML) and Human (Markdown) output
+      - Structured: valid JSON, schema-correct output
+      - Export: summary sections, Mermaid syntax validation
+      - Render: React Flow node/edge generation, type mapping
+      - Registry: all 15 YAML files parse and validate
+      - AI: context includes selected node/neighbors/nodedef, suggestion parsing
+    </unit_tests>
+    <integration_tests>
+      - Binary roundtrip: create graph, encode .archc, decode, verify identical
+      - Text API end-to-end: mutations via TextAPI, verify in describe() output
+      - MCP integration: tool calls produce correct graph mutations
+      - Export summary: graph to summary, verify Mermaid validity and stats
+    </integration_tests>
+    <e2e_tests>
+      - Canvas interaction: open file, verify nodes, drag, save, reload, verify
+      - Fractal zoom: double-click, breadcrumb, child visibility, zoom out
+      - AI chat: select node, open panel, send message, apply suggestion
+      - File operations: new, add nodes, save, reopen, verify state
+      - Add node: nodedef browser, search, click, verify creation
+    </e2e_tests>
+  </testing_strategy>
+
+  <success_criteria>
+    <functionality>
+      - Can create, open, edit, and save .archc binary architecture files
+      - All 15 built-in nodedefs load and render correctly on canvas
+      - Fractal zoom navigation works across nested node hierarchies
+      - AI chat provides context-aware architecture analysis with actionable suggestions
+      - MCP server enables external AI agents to read and modify architectures
+      - Export pipeline produces valid Mermaid, PNG, SVG, and markdown summary
+      - Undo/redo works across all graph mutations
+    </functionality>
+    <user_experience>
+      - Intuitive drag-and-drop canvas interaction via React Flow
+      - Smooth fractal zoom with clear breadcrumb navigation
+      - Responsive panel layout with draggable resize handles
+      - Dark/light mode with system preference detection
+      - Keyboard shortcuts for all common operations
+      - Context menus for quick actions on canvas, nodes, and edges
+      - Toast notifications for feedback on all actions
+    </user_experience>
+    <technical_quality>
+      - TypeScript strict mode with no any types
+      - Pure functions in core engine (no mutation, no side effects)
+      - Clean separation: core (no React) / API / store / UI layers
+      - Comprehensive test coverage: unit, integration, and e2e
+      - Binary format integrity via SHA-256 checksums
+      - Protobuf schema versioning for future migration support
+    </technical_quality>
+    <design_polish>
+      - Consistent shadcn/ui component usage throughout
+      - Clear visual hierarchy in node components (icon, name, type, ports, badges)
+      - Differentiated edge styles (solid, dashed, thick) for connection types
+      - Empty states for all panels and canvas
+      - Loading states for async operations
+      - Accessible: keyboard navigation, focus indicators, ARIA labels
+    </design_polish>
+  </success_criteria>
+</project_specification>
