@@ -13,7 +13,7 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { openArchcFile, protoToGraph } from '@/core/storage/fileIO';
+import { openArchcFile, protoToGraph, saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 import { decode } from '@/core/storage/codec';
 
 export interface CoreStoreState {
@@ -43,6 +43,8 @@ export interface CoreStoreState {
   // File operations
   newFile: () => void;
   openFile: () => Promise<boolean>;
+  saveFile: () => Promise<boolean>;
+  saveFileAs: () => Promise<boolean>;
   loadFromUrl: (url: string, fileName?: string) => Promise<boolean>;
 
   // Graph mutations
@@ -196,6 +198,57 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return true;
     } catch (err) {
       console.error('[CoreStore] Failed to open file:', err);
+      return false;
+    }
+  },
+
+  /**
+   * Save the current graph to the opened file (save in-place).
+   * If no file handle exists (new file), falls back to Save As.
+   */
+  saveFile: async () => {
+    const { graph, fileHandle } = get();
+
+    // If no file handle, fall back to Save As
+    if (!fileHandle) {
+      return get().saveFileAs();
+    }
+
+    try {
+      await saveArchcFile(graph, fileHandle);
+      set({ isDirty: false });
+      console.log('[CoreStore] File saved successfully');
+      return true;
+    } catch (err) {
+      console.error('[CoreStore] Failed to save file:', err);
+      return false;
+    }
+  },
+
+  /**
+   * Save the current graph to a new file location (Save As).
+   * Opens a file save picker dialog.
+   */
+  saveFileAs: async () => {
+    const { graph, fileName } = get();
+
+    try {
+      const result = await saveArchcFileAs(graph, fileName);
+      if (!result) {
+        // User cancelled the picker
+        return false;
+      }
+
+      set({
+        isDirty: false,
+        fileName: result.fileName,
+        fileHandle: result.fileHandle ?? null,
+      });
+
+      console.log(`[CoreStore] File saved as: ${result.fileName}`);
+      return true;
+    } catch (err) {
+      console.error('[CoreStore] Failed to save file as:', err);
       return false;
     }
   },
