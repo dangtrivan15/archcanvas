@@ -938,3 +938,55 @@ SESSION: 2026-03-02 - Features #66, #40, #42
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Export API features (mermaid, PNG, SVG)
+
+==================================================
+SESSION: 2026-03-02 - Features #145, #146, #147
+==================================================
+
+## What was accomplished:
+
+### Feature #145: Node deletion via Delete/Backspace key (PASSING)
+- Added Delete and Backspace key handlers to Canvas component
+- Delete key always triggers deletion dialog when a node is selected
+- Backspace triggers deletion at root level (zooms out when in navigation path)
+- Disabled React Flow's built-in deleteKeyCode to prevent conflicts
+- Used capture-phase event listener for reliable key interception
+- Ignores keystrokes in input/textarea fields
+- Prevents double-trigger when dialog is already open
+
+### Feature #146: Deletion confirmation dialog shows cascade impact (PASSING)
+- Created DeleteConfirmationDialog component in src/components/shared/
+- Shows node name being deleted (bold)
+- Yellow alert box showing cascade impact: N connected edges, N child nodes
+- Cancel and Confirm (Delete) buttons with clear visual hierarchy
+- Escape key closes dialog, backdrop click closes dialog
+- "This action can be undone with Ctrl+Z" message
+- Alert triangle warning icon
+- z-100 overlay with semi-transparent backdrop
+
+### Feature #147: Node deletion removes connected edges (PASSING)
+- Graph engine's removeNode() already handled cascading edge removal
+- Created deletionImpact utility (src/core/graph/deletionImpact.ts) for calculating impact
+- Verified: Deleting API Gateway (2 edges) → 5→4 nodes, 4→2 edges
+- Verified: Deleting Order Service (2 edges) → 5→4 nodes, 4→2 edges
+- Other connected nodes preserved correctly
+
+## Technical details:
+- Key insight: React Flow v12 has deleteKeyCode='Backspace' by default, which intercepts
+  Backspace before custom handlers. Fixed with deleteKeyCode={null} on ReactFlow component.
+- Capture-phase event listener (addEventListener('keydown', handler, true)) ensures our
+  handler runs before React Flow's internal event handling.
+- uiStore extended with deleteDialogOpen/deleteDialogInfo state management.
+- DeleteConfirmationDialog uses Zustand stores: useUIStore for dialog state, useCoreStore
+  for removeNode action, useCanvasStore for clearing selection after deletion.
+
+## Current completion status:
+- Features passing: 67+ of 235 (~28.5%)
+- Zero console errors
+- All implementations verified via browser automation on Playwright
+
+## What should be worked on next:
+- Edge deletion features (Delete key on selected edge)
+- More canvas interaction features
+- Side panel improvements
+- Keyboard shortcuts
