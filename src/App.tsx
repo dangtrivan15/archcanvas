@@ -6,6 +6,7 @@ import { Toolbar } from '@/components/toolbar';
 import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
+import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function App() {
