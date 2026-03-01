@@ -1,4 +1,43 @@
 ==================================================
+SESSION: 2026-03-02 - Features #34, #35, #36
+==================================================
+
+## What was accomplished:
+
+### Feature #34: Undo reverts last graph mutation (PASSING)
+- 18 unit tests in test/unit/core/undoManager.test.ts
+- Verified undo restores graph from 2 nodes back to 1 node
+- Tested all mutation types: addNode, removeNode, updateNode, addEdge
+- Verified deep clone independence, multi-step undo, branch behavior
+- canUndo/canRedo tracking, history length, descriptions, clear
+
+### Feature #35: Redo restores undone mutation (PASSING)
+- 13 unit tests in test/unit/core/undoRedo.test.ts
+- Verified redo restores previously undone addNode with all properties
+- Tested redo for addEdge, removeNode, updateNode mutations
+- Multiple undo-redo cycles, branch discard behavior
+- Deep clone independence on redo, metadata preservation
+
+### Feature #36: Undo stack limited to max 100 entries (PASSING)
+- 10 unit tests in test/unit/core/undoMaxEntries.test.ts
+- Verified 105 mutations capped to 100 entries
+- Earliest mutations (0-4) discarded, latest retained
+- Boundary tests: exactly 100, 101st entry, custom max entries
+- Undo/redo works correctly after limit enforcement
+
+## Current completion status:
+- Features passing: 28 of 235 (11.9%)
+- Total unit tests: 333 across 18 test files
+- All tests passing, zero console errors
+
+## What should be worked on next:
+- More undo/redo features (branch behavior, new file clears history)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts (Ctrl+Z for undo, Ctrl+Y for redo)
+
+==================================================
 SESSION: 2026-03-01 - Features #39, #177, #58
 ==================================================
 
