@@ -606,3 +606,45 @@ SESSION: 2026-03-02 - Features #43, #44, #63
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Export API features (mermaid, PNG, SVG)
+
+==================================================
+SESSION: 2026-03-02 - Features #53, #168, #167
+==================================================
+
+## What was accomplished:
+
+### Feature #53: Text API getAIContext() returns context with N-hop nodes (PASSING)
+- 19 unit tests in test/unit/api/textApiGetAIContext.test.ts
+- Linear chain A->B->C: depth=1 returns B only, depth=2 returns B+C
+- Selected node detail verification: id, type, displayName, args, notes, codeRefs
+- Connection types mapped correctly (sync/async/data-flow)
+- Edge cases: no nodeId (global), non-existent ID, isolated node, star topology
+- Default hops parameter, bidirectional connectivity, empty graph
+
+### Feature #168: AI context builder with N-hop depth traversal (PASSING)
+- 13 unit tests in test/unit/api/textApiAIContextNHop.test.ts
+- 4-node chain A->B->C->D: depth=2 returns B+C but not D
+- depth=1 only direct links, depth=3 all reachable nodes
+- Bidirectional: querying from middle of chain finds both directions
+- Branching topology: A->B->C and A->D->E correctly traversed at various depths
+
+### Feature #167: AI context builder has full selected node details (PASSING)
+- 17 unit tests in test/unit/api/textApiAIContextNodeDetails.test.ts
+- Full node with 4 args, 3 notes, 3 codeRefs verified in context
+- Notes stripped to {author, content} for AI context (no tags/status/id)
+- Args preserved as exact key-value pairs
+- Empty args/notes/codeRefs handled correctly
+- Multiple node types tested (service, database, queue, cache)
+- Args copy independence verified (shallow copy, not reference)
+
+## Current completion status:
+- Features passing: 46 of 235 (19.6%)
+- Total unit tests: 654 across 41 test files
+- All tests passing, zero regressions
+
+## What should be worked on next:
+- More AI integration features (chat panel, suggestion handling)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Export API features (mermaid, PNG, SVG)
