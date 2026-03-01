@@ -13,6 +13,8 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
+import { openArchcFile, protoToGraph } from '@/core/storage/fileIO';
+import { decode } from '@/core/storage/codec';
 
 export interface CoreStoreState {
   // State
@@ -35,8 +37,13 @@ export interface CoreStoreState {
   // Initialization
   initialize: () => void;
 
+  // File handle (for save-in-place)
+  fileHandle: FileSystemFileHandle | null;
+
   // File operations
   newFile: () => void;
+  openFile: () => Promise<boolean>;
+  loadFromUrl: (url: string, fileName?: string) => Promise<boolean>;
 
   // Graph mutations
   addNode: (params: AddNodeParams) => ArchNode | undefined;
@@ -70,6 +77,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   renderApi: null,
   exportApi: null,
   undoManager: null,
+
+  // File handle
+  fileHandle: null,
 
   // Computed
   nodeCount: 0,
@@ -146,6 +156,98 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       canUndo: false,
       canRedo: false,
     });
+  },
+
+  /**
+   * Open a .archc file and load its graph into the store.
+   */
+  openFile: async () => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return false;
+
+    try {
+      const result = await openArchcFile();
+      if (!result) {
+        // User cancelled the file picker
+        return false;
+      }
+
+      const { graph, fileName, fileHandle } = result;
+
+      // Set graph in text API
+      textApi.setGraph(graph);
+
+      // Reset undo history for the new file
+      undoManager.clear();
+      undoManager.snapshot('Open file', graph);
+
+      set({
+        graph,
+        isDirty: false,
+        fileName,
+        fileHandle: fileHandle ?? null,
+        nodeCount: countAllNodes(graph),
+        edgeCount: graph.edges.length,
+        canUndo: false,
+        canRedo: false,
+      });
+
+      console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
+      return true;
+    } catch (err) {
+      console.error('[CoreStore] Failed to open file:', err);
+      return false;
+    }
+  },
+
+  /**
+   * Load a .archc file from a URL (for testing and development).
+   */
+  loadFromUrl: async (url: string, displayName?: string) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return false;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.error(`[CoreStore] Failed to fetch file from ${url}: ${response.status}`);
+        return false;
+      }
+
+      const buffer = await response.arrayBuffer();
+      const data = new Uint8Array(buffer);
+
+      // Decode the binary file
+      const decoded = await decode(data);
+      const graph = protoToGraph(decoded);
+
+      // Derive filename
+      const fileName = displayName ?? url.split('/').pop()?.replace(/\.archc$/, '') ?? 'Loaded File';
+
+      // Set graph in text API
+      textApi.setGraph(graph);
+
+      // Reset undo history for the new file
+      undoManager.clear();
+      undoManager.snapshot('Load file', graph);
+
+      set({
+        graph,
+        isDirty: false,
+        fileName,
+        fileHandle: null,
+        nodeCount: countAllNodes(graph),
+        edgeCount: graph.edges.length,
+        canUndo: false,
+        canRedo: false,
+      });
+
+      console.log(`[CoreStore] Loaded file from URL: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
+      return true;
+    } catch (err) {
+      console.error('[CoreStore] Failed to load file from URL:', err);
+      return false;
+    }
   },
 
   /**
