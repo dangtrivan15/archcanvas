@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, MessageSquare, FileCode, Settings, StickyNote } from 'lucide-react';
+import { X, Plus, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -112,6 +112,7 @@ export function NodeDetailPanel() {
           {activeTab === 'notes' && (
             <NotesTab
               node={node}
+              nodeId={selectedNodeId!}
               noteContent={noteContent}
               noteAuthor={noteAuthor}
               onNoteContentChange={setNoteContent}
@@ -195,7 +196,8 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
               const isRequired = argDef.required === true;
               const validationError = getValidationError(argDef);
               const isTouched = touched[argDef.name];
-              const showError = isRequired && isTouched && validationError !== null;
+              // Show error immediately if required and empty, or after touch
+              const showError = isRequired && validationError !== null && (isTouched || (currentValue === undefined || currentValue === null || currentValue === ''));
 
               return (
                 <div
@@ -365,6 +367,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
 
 function NotesTab({
   node,
+  nodeId,
   noteContent,
   noteAuthor,
   onNoteContentChange,
@@ -372,12 +375,15 @@ function NotesTab({
   onAddNote,
 }: {
   node: NonNullable<ReturnType<typeof findNode>>;
+  nodeId: string;
   noteContent: string;
   noteAuthor: string;
   onNoteContentChange: (v: string) => void;
   onNoteAuthorChange: (v: string) => void;
   onAddNote: () => void;
 }) {
+  const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
+
   return (
     <div className="space-y-3" data-testid="notes-tab">
       {/* Add note form */}
@@ -419,7 +425,7 @@ function NotesTab({
       {/* Note list */}
       <div className="space-y-2" data-testid="notes-list">
         {node.notes.length === 0 ? (
-          <div className="text-sm text-gray-400 text-center py-4">No notes yet</div>
+          <div className="text-sm text-gray-400 text-center py-4" data-testid="notes-empty-state">No notes yet</div>
         ) : (
           node.notes.map((note) => (
             <div key={note.id} className="border rounded-lg p-3 bg-white" data-testid={`note-${note.id}`}>
@@ -445,6 +451,27 @@ function NotesTab({
                       {tag}
                     </span>
                   ))}
+                </div>
+              )}
+              {/* Accept/Dismiss buttons for pending AI suggestions */}
+              {note.status === 'pending' && (
+                <div className="flex gap-2 mt-2" data-testid="suggestion-actions">
+                  <button
+                    onClick={() => resolveSuggestion(nodeId, note.id, 'accepted')}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                    data-testid="accept-suggestion"
+                  >
+                    <Check className="w-3 h-3" />
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => resolveSuggestion(nodeId, note.id, 'dismissed')}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                    data-testid="dismiss-suggestion"
+                  >
+                    <XCircle className="w-3 h-3" />
+                    Dismiss
+                  </button>
                 </div>
               )}
             </div>

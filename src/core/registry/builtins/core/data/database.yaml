@@ -15,6 +15,7 @@ spec:
   args:
     - name: engine
       type: enum
+      required: true
       description: Database engine
       options:
         - PostgreSQL
