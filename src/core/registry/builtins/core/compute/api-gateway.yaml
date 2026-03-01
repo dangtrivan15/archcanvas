@@ -16,6 +16,7 @@ spec:
   args:
     - name: provider
       type: enum
+      required: true
       description: Gateway provider
       options:
         - Kong

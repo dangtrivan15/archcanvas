@@ -15,6 +15,7 @@ spec:
   args:
     - name: language
       type: enum
+      required: true
       description: Primary programming language
       options:
         - TypeScript
