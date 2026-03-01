@@ -527,3 +527,45 @@ SESSION: 2026-03-02 - Features #27, #29, #54
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Export API features (mermaid, PNG, SVG)
+
+==================================================
+SESSION: 2026-03-02 - Features #30, #49, #10
+==================================================
+
+## What was accomplished:
+
+### Feature #30: Full-text search finds matches in node names (PASSING)
+- 15 unit tests in test/unit/core/searchNodeNames.test.ts
+- Verified searchGraph() finds 'Order Service' when searching 'Order'
+- Case-insensitive: 'SERVICE', 'oRdEr' all match correctly
+- Partial substring match ('rder' finds 'Order Service')
+- Empty/whitespace queries return empty results
+- Recursive child node name search with parentId tracking
+- Score ranking: name matches (20+) ranked above arg matches (5)
+
+### Feature #49: Text API search() returns matching results (PASSING)
+- 14 unit tests in test/unit/api/textApiSearch.test.ts
+- Diverse architecture: 3 nodes (service, gateway, database), 2 edges, notes
+- SearchResult objects have all required fields: type, id, displayName, matchContext, score
+- Results sorted by score descending (name > args > properties)
+- Searches nodes (name, args, properties), edges (label), notes (content)
+- Case-insensitive, empty query returns empty, non-matching returns empty
+
+### Feature #10: Registry search finds nodedefs by name and tags (PASSING)
+- 13 unit tests in test/unit/registry/registrySearch.test.ts
+- 'database' → finds data/database, 'queue' → messaging/message-queue
+- 'load' → network/load-balancer, 'compute' tag → all 4 compute defs
+- Empty string returns all 15 nodedefs, 'zzzznonexistent' returns empty
+- Case-insensitive, partial match, displayName/description/tags all searchable
+
+## Current completion status:
+- Features passing: 43 of 235 (18.3%)
+- Total unit tests: 607 across 38 test files
+- All tests passing, zero regressions
+
+## What should be worked on next:
+- More graph engine features (updateEdge, addNote, removeNote)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts
