@@ -5,6 +5,7 @@
 
 import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
+import { ConnectNodesButton } from './ConnectNodesButton';
 import { LayoutMenu } from './LayoutMenu';
 import { useCoreStore } from '@/store/coreStore';
 
@@ -32,6 +33,7 @@ export function Toolbar() {
       {/* Menu buttons */}
       <FileMenu />
       <AddNodeButton />
+      <ConnectNodesButton />
       <LayoutMenu />
 
       {/* Divider */}

@@ -11,6 +11,8 @@ export function FileMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const newFile = useCoreStore((s) => s.newFile);
   const openFile = useCoreStore((s) => s.openFile);
+  const saveFile = useCoreStore((s) => s.saveFile);
+  const saveFileAs = useCoreStore((s) => s.saveFileAs);
 
   // Close on click outside
   useEffect(() => {
@@ -44,16 +46,14 @@ export function FileMenu() {
     await openFile();
   };
 
-  const handleSave = () => {
-    // Save will be implemented by file operations feature
-    console.log('[FileMenu] Save file (not yet implemented)');
+  const handleSave = async () => {
     setIsOpen(false);
+    await saveFile();
   };
 
-  const handleSaveAs = () => {
-    // Save As will be implemented by file operations feature
-    console.log('[FileMenu] Save As (not yet implemented)');
+  const handleSaveAs = async () => {
     setIsOpen(false);
+    await saveFileAs();
   };
 
   return (

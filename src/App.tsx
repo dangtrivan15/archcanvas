@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/uiStore';
 import { Toolbar } from '@/components/toolbar';
 import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
+import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -14,15 +15,16 @@ export function App() {
   const loadFromUrl = useCoreStore((s) => s.loadFromUrl);
 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
 
-  // Auto-open right panel when a node is selected
+  // Auto-open right panel when a node or edge is selected
   useEffect(() => {
-    if (selectedNodeId) {
+    if (selectedNodeId || selectedEdgeId) {
       openRightPanel();
     }
-  }, [selectedNodeId, openRightPanel]);
+  }, [selectedNodeId, selectedEdgeId, openRightPanel]);
 
   useEffect(() => {
     initialize();
@@ -62,10 +64,10 @@ export function App() {
           <Canvas />
         </main>
 
-        {/* Right Panel - Node Detail */}
+        {/* Right Panel - Node/Edge Detail */}
         {rightPanelOpen && (
           <aside className="w-80 border-l overflow-y-auto shrink-0 bg-white" data-testid="right-panel">
-            <NodeDetailPanel />
+            {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
           </aside>
         )}
       </div>

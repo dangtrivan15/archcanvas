@@ -6,7 +6,7 @@
 import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole } from '@/types/graph';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { archcanvas } from '@/proto/archcanvas';
-import { decode } from './codec';
+import { decode, encode } from './codec';
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/utils/constants';
 
 // ─── Proto → Graph Converters ────────────────────────────────────
@@ -351,4 +351,106 @@ function openFileViaInput(): Promise<{ data: Uint8Array; name: string } | null> 
 
     input.click();
   });
+}
+
+// ─── File Save Functions ────────────────────────────────────────
+
+/**
+ * Save the current graph to the existing file handle (save in-place).
+ * Uses File System Access API to write directly to the opened file.
+ *
+ * @param graph - The current architecture graph to save
+ * @param fileHandle - The FileSystemFileHandle obtained when the file was opened
+ * @returns true if save succeeded
+ */
+export async function saveArchcFile(
+  graph: ArchGraph,
+  fileHandle: FileSystemFileHandle,
+): Promise<boolean> {
+  // Convert graph to proto format
+  const protoFile = graphToProto(graph);
+
+  // Encode to binary .archc format (with magic bytes, version, checksum)
+  const binaryData = await encode(protoFile);
+
+  // Write to file using File System Access API
+  const writable = await fileHandle.createWritable();
+  await writable.write(binaryData);
+  await writable.close();
+
+  return true;
+}
+
+/**
+ * Save the current graph to a new file (Save As).
+ * Opens a file save picker and writes the .archc binary file.
+ *
+ * @param graph - The current architecture graph to save
+ * @param suggestedName - Suggested filename (without extension)
+ * @returns The new file handle and display name, or null if cancelled
+ */
+export async function saveArchcFileAs(
+  graph: ArchGraph,
+  suggestedName?: string,
+): Promise<{
+  fileHandle?: FileSystemFileHandle;
+  fileName: string;
+} | null> {
+  // Convert graph to proto format
+  const protoFile = graphToProto(graph);
+
+  // Encode to binary .archc format
+  const binaryData = await encode(protoFile);
+
+  const defaultName = (suggestedName ?? 'architecture') + '.archc';
+
+  // Try File System Access API first (Chrome/Edge)
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: defaultName,
+        types: [
+          {
+            description: 'ArchCanvas Files',
+            accept: { 'application/octet-stream': ['.archc'] },
+          },
+        ],
+      });
+
+      // Write to the new file
+      const writable = await handle.createWritable();
+      await writable.write(binaryData);
+      await writable.close();
+
+      // Derive display name from file handle
+      const displayName = handle.name.replace(/\.archc$/, '');
+
+      return {
+        fileHandle: handle,
+        fileName: displayName,
+      };
+    } catch (err) {
+      // User cancelled the picker
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return null;
+      }
+      throw err;
+    }
+  } else {
+    // Fallback: trigger a download using Blob
+    const blob = new Blob([binaryData], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = defaultName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const displayName = defaultName.replace(/\.archc$/, '');
+    return {
+      fileName: displayName,
+    };
+  }
 }
