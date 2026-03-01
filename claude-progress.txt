@@ -1,4 +1,41 @@
 ==================================================
+SESSION: 2026-03-02 - Features #68, #72, #76
+==================================================
+
+## What was accomplished:
+
+### Feature #68: App shell loads with canvas in center (PASSING)
+- Verified React Flow canvas renders in center between toolbar and status bar
+- Toolbar at top, canvas fills main area, status bar at bottom
+- Background dots pattern visible with MiniMap and Controls
+- Zero console errors
+
+### Feature #72: Canvas displays React Flow interactive surface (PASSING)
+- Verified React Flow canvas element mounted (role="application")
+- Zoom In/Out buttons work correctly
+- Fixed status bar zoom indicator to show actual zoom level from canvasStore
+- Dynamic zoom percentage updates on zoom in/out (was hardcoded to 100%)
+
+### Feature #76: Canvas renders nodes from architecture data (PASSING)
+- Loaded ecommerce.archc with 5 nodes and 4 edges
+- All nodes display their names: API Gateway, Order Service, User Service, Orders Database, Users Database
+- Nodes positioned at different coordinates on canvas
+- Each node shows type and args (port, language, framework, engine, version)
+- Edges connect nodes correctly
+- Zero console errors
+
+## Current completion status:
+- Features passing: 56 of 235 (23.8%)
+- Zero console errors across all tests
+
+## What should be worked on next:
+- Canvas interaction features (node selection, connection creation, drag)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts
+- More API and export features
+
+==================================================
 SESSION: 2026-03-02 - Features #151, #152, #155
 ==================================================
 
@@ -692,3 +729,44 @@ SESSION: 2026-03-02 - Features #59, #60, #61
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Keyboard shortcuts (Ctrl+Z for undo, Ctrl+Y for redo)
+
+==================================================
+SESSION: 2026-03-02 - Features #66, #40, #42
+==================================================
+
+## What was accomplished:
+
+### Feature #66: Render API includes badge counts on nodes (PASSING)
+- 15 unit tests in test/unit/api/renderApiBadgeCounts.test.ts
+- Verified noteCount, pendingSuggestionCount, codeRefCount in CanvasNodeData
+- Tests cover: exact counts (3 notes/1 pending/2 codeRefs), zero counts, multiple pending,
+  different code ref roles, multi-node with different counts, type checking
+- RenderApi.toCanvasNode() already had correct implementation
+- Zero console errors in browser
+
+### Feature #40: Text API listNodes() returns node summaries with counts (PASSING)
+- 16 unit tests in test/unit/api/textApiListNodes.test.ts
+- Verified listNodes() returns NodeSummary[] with id, type, displayName
+- connectionCount reflects actual edges (2 for hub node, 1 for leaf nodes)
+- noteCount reflects actual notes per node
+- childCount reflects actual children (parent with 2 children)
+- Empty graph returns empty array, isolated nodes have zero counts
+
+### Feature #42: Text API getEdges() returns edge summaries (PASSING)
+- 14 unit tests in test/unit/api/textApiGetEdges.test.ts
+- Verified getEdges() returns EdgeSummary[] with id, fromNode, toNode, type, label
+- All 3 edge types tested: sync, async, data-flow
+- Edge noteCount reflects actual notes on edges
+- Empty graph returns empty array, edges without labels return undefined
+- All edge IDs are unique
+
+## Current completion status:
+- Features passing: 60 of 235 (25.5%)
+- All unit tests passing, zero regressions
+
+## What should be worked on next:
+- More API features (updateEdge, addNote, removeNote)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Export API features (mermaid, PNG, SVG)
