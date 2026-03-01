@@ -457,3 +457,41 @@ SESSION: 2026-03-02 - Features #51, #52, #41
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Keyboard shortcuts
+
+==================================================
+SESSION: 2026-03-02 - Features #27, #29, #54
+==================================================
+
+## What was accomplished:
+
+### Feature #27: Get edges at navigation level filters correctly (PASSING)
+- 15 unit tests in test/unit/core/getEdgesAtLevel.test.ts
+- Verified getEdgesAtLevel([]) returns only root-level edges (both endpoints at root)
+- Verified getEdgesAtLevel([parentId]) returns only child-level edges
+- Cross-level edges excluded from both root and child views
+- Edge cases: empty graph, non-existent path, grandchild levels, cross-level-only graphs
+
+### Feature #29: Get neighbors within N hops returns correct set (PASSING)
+- 16 unit tests in test/unit/core/getNeighbors.test.ts
+- Chain A->B->C->D: 1-hop from A returns B, 2-hop returns B+C, 3-hop returns B+C+D
+- Bidirectional: 1-hop from B returns both A and C
+- Edge cases: isolated nodes, 0 hops, excessive hops, star topology, chain endpoints
+
+### Feature #54: AI formatter produces valid XML output (PASSING)
+- 19 unit tests in test/unit/api/textApiAIFormat.test.ts
+- Verified describe({format:'ai'}) produces well-formed XML with <architecture> root
+- Contains <node> elements with id, type, name attributes
+- Contains <edge> elements with from, to, type, label attributes
+- Includes args and notes counts, handles empty graphs, label-less edges
+
+## Current completion status:
+- Features passing: 39 of 235 (16.6%)
+- Total unit tests: 519 across 32 test files
+- All tests passing, zero console errors
+
+## What should be worked on next:
+- More graph query and Text API features
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Export API features (mermaid, PNG, SVG)
