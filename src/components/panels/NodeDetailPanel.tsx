@@ -10,12 +10,15 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
+import { AIChatTab } from './AIChatTab';
+import type { NodeDef, ArgDef } from '@/types/nodedef';
 
 type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat';
 
 export function NodeDetailPanel() {
   const graph = useCoreStore((s) => s.graph);
   const addNote = useCoreStore((s) => s.addNote);
+  const registry = useCoreStore((s) => s.registry);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
@@ -27,6 +30,11 @@ export function NodeDetailPanel() {
     if (!selectedNodeId) return null;
     return findNode(graph, selectedNodeId);
   }, [graph, selectedNodeId]);
+
+  const nodeDef = useMemo(() => {
+    if (!node || !registry) return undefined;
+    return registry.resolve(node.type);
+  }, [node, registry]);
 
   const handleAddNote = useCallback(() => {
     if (!selectedNodeId || !noteContent.trim()) return;
@@ -94,7 +102,7 @@ export function NodeDetailPanel() {
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto p-3">
         {activeTab === 'properties' && (
-          <PropertiesTab node={node} />
+          <PropertiesTab node={node} nodeDef={nodeDef} />
         )}
         {activeTab === 'notes' && (
           <NotesTab
@@ -110,16 +118,14 @@ export function NodeDetailPanel() {
           <CodeRefsTab node={node} />
         )}
         {activeTab === 'aichat' && (
-          <div className="text-sm text-gray-400 text-center py-8">
-            AI Chat - coming soon
-          </div>
+          <AIChatTab />
         )}
       </div>
     </div>
   );
 }
 
-function PropertiesTab({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
+function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof findNode>>; nodeDef?: NodeDef }) {
   return (
     <div className="space-y-4" data-testid="properties-tab">
       {/* Node ID */}
@@ -146,16 +152,70 @@ function PropertiesTab({ node }: { node: NonNullable<ReturnType<typeof findNode>
         </div>
       </div>
 
-      {/* Args */}
-      <div>
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Arguments</label>
-        <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded" data-testid="detail-args">
-          {Object.keys(node.args).length === 0
-            ? <span className="text-gray-400">empty object {'{}'}</span>
-            : JSON.stringify(node.args, null, 2)
-          }
+      {/* NodeDef Args - structured display from nodedef schema */}
+      {nodeDef && nodeDef.spec.args.length > 0 && (
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Arguments ({nodeDef.spec.args.length})
+          </label>
+          <div className="mt-1 space-y-2" data-testid="nodedef-args">
+            {nodeDef.spec.args.map((argDef: ArgDef) => {
+              const currentValue = node.args[argDef.name];
+              const hasValue = currentValue !== undefined && currentValue !== null;
+              return (
+                <div key={argDef.name} className="bg-gray-50 rounded p-2 border border-gray-100" data-testid={`nodedef-arg-${argDef.name}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-700" data-testid="arg-name">{argDef.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-mono" data-testid="arg-type">{argDef.type}</span>
+                  </div>
+                  <div className="text-[11px] text-gray-500 mt-0.5" data-testid="arg-description">{argDef.description}</div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Value:</span>
+                    <span className="text-xs font-mono text-gray-800" data-testid="arg-value">
+                      {hasValue ? String(currentValue) : <span className="text-gray-400 italic">not set</span>}
+                    </span>
+                  </div>
+                  {argDef.default !== undefined && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">Default:</span>
+                      <span className="text-[10px] font-mono text-gray-500" data-testid="arg-default">{String(argDef.default)}</span>
+                    </div>
+                  )}
+                  {argDef.options && argDef.options.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1" data-testid="arg-options">
+                      {argDef.options.map((opt) => (
+                        <span
+                          key={opt}
+                          className={`text-[10px] px-1 py-0.5 rounded ${
+                            String(currentValue) === opt
+                              ? 'bg-blue-100 text-blue-700 font-medium'
+                              : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          {opt}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Fallback: Raw args when nodedef is not available */}
+      {!nodeDef && (
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Arguments</label>
+          <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded" data-testid="detail-args">
+            {Object.keys(node.args).length === 0
+              ? <span className="text-gray-400">empty object {'{}'}</span>
+              : JSON.stringify(node.args, null, 2)
+            }
+          </div>
+        </div>
+      )}
 
       {/* Properties */}
       <div>
