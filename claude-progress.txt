@@ -1,36 +1,43 @@
 ==================================================
-SESSION: 2026-03-01 - Features #4 and #5
+SESSION: 2026-03-01 - Features #1, #2, #3
 ==================================================
 
 ## What was accomplished:
 
+### Feature #1: Application builds and starts without errors (PASSING)
+- Fixed tsconfig.node.json (added composite, emitDeclarationOnly, declaration settings)
+- Fixed canvas.ts types (CanvasNodeData/CanvasEdgeData extend Record<string, unknown> for React Flow v12)
+- Installed @tailwindcss/postcss for Tailwind CSS v4 support
+- Verified: page loads with 0 JS errors, layout renders correctly
+
+### Feature #2: Protocol Buffer schema compiles to TypeScript correctly (PASSING)
+- Installed protobufjs-cli for pbjs/pbts code generation
+- Generated archcanvas.pb.js and archcanvas.pb.d.ts from proto/archcanvas.proto
+- Created src/proto/archcanvas.ts TypeScript wrapper re-exporting all 18 message classes and 3 enums
+- 23 unit tests covering class exports, enum values, instance creation, encode/decode roundtrip
+
+### Feature #3: Binary codec roundtrip preserves data integrity (PASSING)
+- Implemented src/core/storage/codec.ts with encode/decode functions
+- Binary format: [magic 6B "ARCHC\0"][version 2B uint16 BE][sha256 32B][protobuf NB]
+- SHA-256 integrity verification using Web Crypto API with Node.js fallback
+- Error types: CodecError (format issues), IntegrityError (corruption detection)
+- 23 unit tests covering magic bytes, version, roundtrip, corruption detection, edge cases
+
+## Previous session (parallel agent - Features #4, #5):
+
 ### Feature #4: No mock data patterns in codebase (PASSING)
 - Ran all required grep checks for mock/fake/placeholder patterns
 - All checks returned empty - codebase is clean
-- No mock libraries (json-server, miragejs, msw) in package.json
 
 ### Feature #5: Core engines initialize correctly (PASSING)
-- Implemented RenderApi (transforms ArchGraph to React Flow nodes/edges)
-- Implemented ExportApi (generates markdown summaries, Mermaid diagrams)
-- Implemented Zustand coreStore (wires all engines together)
-- Updated App.tsx to initialize store on mount with loading state
-- Verified via browser automation:
-  - [RegistryManager] Loaded 15 built-in nodedefs
-  - [TextApi] Initialized
-  - [RenderApi] Initialized
-  - [ExportApi] Initialized
-  - [UndoManager] Initialized with max 100 entries
-  - [CoreStore] All engines initialized successfully
-  - ZERO console errors
-
-## Previously completed by other agents:
-- Feature #1: marked passing (another agent)
-- Core implementations: GraphEngine, GraphQuery, TextApi, RegistryManager,
-  UndoManager, nodedef builtins and validator were committed by another agent
+- Implemented RenderApi, ExportApi, Zustand coreStore
+- Updated App.tsx to initialize store on mount
+- All 15 nodedefs load, all engines init successfully
 
 ## Current completion status:
-- Features passing: #1, #4, #5 (at least 3 of 235)
+- Features passing: #1, #2, #3, #4, #5 (5 of 235)
 - Total features: 235
+- All 46 unit tests pass (proto: 23, codec: 23)
 
 ## Architecture overview (for future sessions):
 - ArchCanvas is a browser-based visual architecture design tool
@@ -38,10 +45,14 @@ SESSION: 2026-03-01 - Features #4 and #5
 - Tech: React 19, Vite 6, React Flow, Zustand, Tailwind CSS 4, shadcn/ui
 - Core engines: RegistryManager, GraphEngine, TextApi, RenderApi, ExportApi, UndoManager
 - All wired through Zustand coreStore
-- Dev server runs on port 5174 (5173 may be blocked by sandbox)
+- Dev server runs on port 5173
+
+## Technical notes:
+- Playwright browser config: channel set to "chromium" in .playwright/cli.config.json (not "chrome")
+- protobufjs-cli is a devDependency for proto:generate script
 
 ## What should be worked on next:
-- Canvas/UI implementation (React Flow integration)
-- File operations (open/save .archc files)
+- Graph engine CRUD operations (nodes, edges, notes)
+- File I/O (open/save .archc files via File System Access API)
+- Canvas UI (React Flow integration with custom node/edge components)
 - Side panels (NodeDef browser, properties, notes, code refs, AI chat)
-- Node/edge creation UI
