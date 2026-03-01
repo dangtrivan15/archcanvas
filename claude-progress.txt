@@ -569,3 +569,40 @@ SESSION: 2026-03-02 - Features #30, #49, #10
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Keyboard shortcuts
+
+==================================================
+SESSION: 2026-03-02 - Features #43, #44, #63
+==================================================
+
+## What was accomplished:
+
+### Feature #43: Text API addNode() creates node in graph (PASSING)
+- 14 unit tests in test/unit/api/textApiAddNode.test.ts
+- Verified addNode({type: 'data/database', displayName: 'Users DB'}) succeeds
+- listNodes() shows new node, getNode() returns correct displayName
+- Tests cover: args, position, child nodes, unique IDs, multiple types, connection counts
+
+### Feature #44: Text API addEdge() creates edge in graph (PASSING)
+- 13 unit tests in test/unit/api/textApiAddEdge.test.ts
+- Verified addEdge({fromNode, toNode, type: 'async'}) succeeds
+- getEdges() shows new edge with correct type
+- Tests cover: all 3 edge types (sync/async/data-flow), labels, ports, unique IDs
+- Node connection counts and inbound/outbound edge lists verified
+
+### Feature #63: Render API transforms graph to React Flow edges (PASSING)
+- 17 unit tests in test/unit/api/renderApiEdges.test.ts
+- 3 nodes + 2 edges → render() returns 2 CanvasEdge objects
+- source/target match node IDs, data includes edgeType/label/noteCount
+- Edge type mapping: sync→sync, async→async, data-flow→dataFlow
+- Port handles, label-less edges, empty graph edge case
+
+## Current completion status:
+- Features passing: 47 of 235 (20.0%)
+- All unit tests passing, zero regressions
+
+## What should be worked on next:
+- More API features (addNote, updateNode, search)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Export API features (mermaid, PNG, SVG)
