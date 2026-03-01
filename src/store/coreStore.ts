@@ -3,5 +3,354 @@
  * Manages graph state, isDirty, fileHandle, and engine instances.
  */
 
-export { };
-// Implementation will be added by coding agents
+import { create } from 'zustand';
+import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
+import type { AddNodeParams, AddEdgeParams, AddNoteParams, UpdateNodeParams } from '@/types/api';
+import { RegistryManager } from '@/core/registry/registryManager';
+import { createEmptyGraph, moveNode as engineMoveNode } from '@/core/graph/graphEngine';
+import { countAllNodes } from '@/core/graph/graphQuery';
+import { UndoManager } from '@/core/history/undoManager';
+import { TextApi } from '@/api/textApi';
+import { RenderApi } from '@/api/renderApi';
+import { ExportApi } from '@/api/exportApi';
+
+export interface CoreStoreState {
+  // State
+  graph: ArchGraph;
+  isDirty: boolean;
+  fileName: string;
+  initialized: boolean;
+
+  // Engine instances
+  registry: RegistryManager | null;
+  textApi: TextApi | null;
+  renderApi: RenderApi | null;
+  exportApi: ExportApi | null;
+  undoManager: UndoManager | null;
+
+  // Computed counts
+  nodeCount: number;
+  edgeCount: number;
+
+  // Initialization
+  initialize: () => void;
+
+  // File operations
+  newFile: () => void;
+
+  // Graph mutations
+  addNode: (params: AddNodeParams) => ArchNode | undefined;
+  removeNode: (nodeId: string) => void;
+  updateNode: (nodeId: string, params: UpdateNodeParams) => void;
+  addEdge: (params: AddEdgeParams) => ArchEdge | undefined;
+  removeEdge: (edgeId: string) => void;
+  addNote: (params: AddNoteParams) => Note | undefined;
+  moveNode: (nodeId: string, x: number, y: number) => void;
+
+  // Undo/redo
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+
+  // Internal: set the graph (used by other stores)
+  _setGraph: (graph: ArchGraph) => void;
+}
+
+export const useCoreStore = create<CoreStoreState>((set, get) => ({
+  // Initial state
+  graph: createEmptyGraph(),
+  isDirty: false,
+  fileName: 'Untitled Architecture',
+  initialized: false,
+
+  // Engine instances (null until initialized)
+  registry: null,
+  textApi: null,
+  renderApi: null,
+  exportApi: null,
+  undoManager: null,
+
+  // Computed
+  nodeCount: 0,
+  edgeCount: 0,
+
+  // Undo/redo state
+  canUndo: false,
+  canRedo: false,
+
+  /**
+   * Initialize all core engines and wire them together.
+   */
+  initialize: () => {
+    const state = get();
+    if (state.initialized) {
+      return;
+    }
+
+    console.log('[CoreStore] Initializing engines...');
+
+    // 1. Initialize Registry
+    const registry = new RegistryManager();
+    registry.initialize();
+
+    // 2. Create empty graph
+    const graph = createEmptyGraph();
+
+    // 3. Initialize APIs
+    const textApi = new TextApi(graph, registry);
+    const renderApi = new RenderApi(registry);
+    const exportApi = new ExportApi();
+
+    // 4. Initialize Undo Manager
+    const undoManager = new UndoManager();
+
+    // 5. Take initial snapshot
+    undoManager.snapshot('Initial state', graph);
+
+    set({
+      initialized: true,
+      registry,
+      textApi,
+      renderApi,
+      exportApi,
+      undoManager,
+      graph,
+      nodeCount: 0,
+      edgeCount: 0,
+      canUndo: false,
+      canRedo: false,
+    });
+
+    console.log('[CoreStore] All engines initialized successfully');
+  },
+
+  /**
+   * Create a new empty file.
+   */
+  newFile: () => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    const graph = createEmptyGraph();
+    textApi.setGraph(graph);
+    undoManager.clear();
+    undoManager.snapshot('New file', graph);
+
+    set({
+      graph,
+      isDirty: false,
+      fileName: 'Untitled Architecture',
+      nodeCount: 0,
+      edgeCount: 0,
+      canUndo: false,
+      canRedo: false,
+    });
+  },
+
+  /**
+   * Add a node to the graph.
+   */
+  addNode: (params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return undefined;
+
+    undoManager.snapshot('Add node', graph);
+
+    const node = textApi.addNode(params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      nodeCount: countAllNodes(updatedGraph),
+      edgeCount: updatedGraph.edges.length,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+
+    return node;
+  },
+
+  /**
+   * Remove a node from the graph.
+   */
+  removeNode: (nodeId) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot('Remove node', graph);
+
+    textApi.removeNode(nodeId);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      nodeCount: countAllNodes(updatedGraph),
+      edgeCount: updatedGraph.edges.length,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Update a node's properties.
+   */
+  updateNode: (nodeId, params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot('Update node', graph);
+
+    textApi.updateNode(nodeId, params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Add an edge to the graph.
+   */
+  addEdge: (params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return undefined;
+
+    undoManager.snapshot('Add edge', graph);
+
+    const edge = textApi.addEdge(params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      edgeCount: updatedGraph.edges.length,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+
+    return edge;
+  },
+
+  /**
+   * Remove an edge from the graph.
+   */
+  removeEdge: (edgeId) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot('Remove edge', graph);
+
+    textApi.removeEdge(edgeId);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      edgeCount: updatedGraph.edges.length,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Add a note to a node or edge.
+   */
+  addNote: (params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return undefined;
+
+    undoManager.snapshot('Add note', graph);
+
+    const note = textApi.addNote(params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+
+    return note;
+  },
+
+  /**
+   * Move a node to a new position.
+   */
+  moveNode: (nodeId, x, y) => {
+    const { textApi, graph } = get();
+    if (!textApi) return;
+
+    // Don't snapshot on move (too frequent), just update position
+    const updatedGraph = engineMoveNode(graph, nodeId, x, y);
+    textApi.setGraph(updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+    });
+  },
+
+  /**
+   * Undo the last action.
+   */
+  undo: () => {
+    const { undoManager, textApi } = get();
+    if (!undoManager || !textApi) return;
+
+    const previousGraph = undoManager.undo();
+    if (previousGraph) {
+      textApi.setGraph(previousGraph);
+      set({
+        graph: previousGraph,
+        isDirty: true,
+        nodeCount: countAllNodes(previousGraph),
+        edgeCount: previousGraph.edges.length,
+        canUndo: undoManager.canUndo,
+        canRedo: undoManager.canRedo,
+      });
+    }
+  },
+
+  /**
+   * Redo the last undone action.
+   */
+  redo: () => {
+    const { undoManager, textApi } = get();
+    if (!undoManager || !textApi) return;
+
+    const nextGraph = undoManager.redo();
+    if (nextGraph) {
+      textApi.setGraph(nextGraph);
+      set({
+        graph: nextGraph,
+        isDirty: true,
+        nodeCount: countAllNodes(nextGraph),
+        edgeCount: nextGraph.edges.length,
+        canUndo: undoManager.canUndo,
+        canRedo: undoManager.canRedo,
+      });
+    }
+  },
+
+  /**
+   * Internal: directly set the graph state.
+   */
+  _setGraph: (graph) => {
+    const { textApi } = get();
+    if (textApi) {
+      textApi.setGraph(graph);
+    }
+    set({
+      graph,
+      nodeCount: countAllNodes(graph),
+      edgeCount: graph.edges.length,
+    });
+  },
+}));

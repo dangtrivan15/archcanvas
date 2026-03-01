@@ -27,7 +27,6 @@ import {
   createEdge,
   createNote,
   findNode,
-  findEdge,
   addNode as engineAddNode,
   addEdge as engineAddEdge,
   addChildNode,
