@@ -1,0 +1,51 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: cdn
+  namespace: network
+  version: "1.0.0"
+  displayName: CDN
+  description: A content delivery network for caching and serving static and dynamic content globally.
+  icon: Globe
+  tags:
+    - network
+    - cdn
+    - caching
+    - edge
+spec:
+  args:
+    - name: provider
+      type: enum
+      description: CDN provider
+      options:
+        - CloudFront
+        - Cloudflare
+        - Fastly
+        - Akamai
+      default: CloudFront
+    - name: cacheTTL
+      type: number
+      description: Default cache TTL in seconds
+      default: 86400
+    - name: customDomain
+      type: string
+      description: Custom domain name
+  ports:
+    - name: edge-in
+      direction: inbound
+      protocol:
+        - HTTP
+        - HTTPS
+      description: Edge requests from users
+    - name: origin-out
+      direction: outbound
+      protocol:
+        - HTTP
+        - HTTPS
+      description: Origin fetch on cache miss
+  ai:
+    context: "This is a CDN. Consider cache invalidation strategy, origin shield, and edge compute capabilities."
+    reviewHints:
+      - Verify cache invalidation on deploy
+      - Check origin shield configuration
+      - Consider edge compute for personalization

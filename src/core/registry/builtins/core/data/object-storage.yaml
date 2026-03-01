@@ -1,0 +1,56 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: object-storage
+  namespace: data
+  version: "1.0.0"
+  displayName: Object Storage
+  description: Blob/object storage for files, images, backups, and large binary data.
+  icon: Archive
+  tags:
+    - data
+    - storage
+    - blob
+    - files
+spec:
+  args:
+    - name: provider
+      type: enum
+      description: Storage provider
+      options:
+        - S3
+        - GCS
+        - Azure Blob
+        - MinIO
+        - R2
+      default: S3
+    - name: bucketName
+      type: string
+      description: Storage bucket name
+    - name: versioning
+      type: boolean
+      description: Enable object versioning
+      default: false
+    - name: publicAccess
+      type: boolean
+      description: Allow public read access
+      default: false
+  ports:
+    - name: storage-in
+      direction: inbound
+      protocol:
+        - S3
+        - HTTP
+      description: Storage operations (put/get/delete)
+    - name: event-out
+      direction: outbound
+      protocol:
+        - Event
+        - SNS
+      description: Object lifecycle events
+  ai:
+    context: "This is object storage. Consider access policies, lifecycle rules, CDN integration, and cost optimization."
+    reviewHints:
+      - Verify access policies are restrictive
+      - Check for lifecycle rules on temporary objects
+      - Consider CDN for frequently accessed objects

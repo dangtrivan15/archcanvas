@@ -1,0 +1,62 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: load-balancer
+  namespace: network
+  version: "1.0.0"
+  displayName: Load Balancer
+  description: Distributes incoming traffic across multiple service instances.
+  icon: GitFork
+  tags:
+    - network
+    - traffic
+    - scaling
+spec:
+  args:
+    - name: type
+      type: enum
+      description: Load balancer type
+      options:
+        - ALB
+        - NLB
+        - HAProxy
+        - Nginx
+        - Envoy
+      default: ALB
+    - name: algorithm
+      type: enum
+      description: Routing algorithm
+      options:
+        - round-robin
+        - least-connections
+        - ip-hash
+        - weighted
+      default: round-robin
+    - name: healthCheckPath
+      type: string
+      description: Health check endpoint
+      default: /health
+    - name: stickySession
+      type: boolean
+      description: Enable session affinity
+      default: false
+  ports:
+    - name: traffic-in
+      direction: inbound
+      protocol:
+        - HTTP
+        - HTTPS
+        - TCP
+      description: Incoming traffic
+    - name: backend-out
+      direction: outbound
+      protocol:
+        - HTTP
+        - TCP
+      description: Traffic to backend instances
+  ai:
+    context: "This is a load balancer. Consider health check configuration, SSL termination, and connection draining."
+    reviewHints:
+      - Verify health check configuration
+      - Check SSL/TLS termination
+      - Consider connection draining for deployments

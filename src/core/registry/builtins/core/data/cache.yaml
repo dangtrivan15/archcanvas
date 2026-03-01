@@ -1,0 +1,53 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: cache
+  namespace: data
+  version: "1.0.0"
+  displayName: Cache
+  description: An in-memory cache for fast data access and reducing database load.
+  icon: HardDrive
+  tags:
+    - data
+    - cache
+    - performance
+spec:
+  args:
+    - name: engine
+      type: enum
+      description: Cache engine
+      options:
+        - Redis
+        - Memcached
+        - Valkey
+      default: Redis
+    - name: maxMemoryMB
+      type: number
+      description: Maximum memory allocation in MB
+      default: 512
+    - name: evictionPolicy
+      type: enum
+      description: Key eviction policy
+      options:
+        - LRU
+        - LFU
+        - TTL
+        - noeviction
+      default: LRU
+    - name: ttlSeconds
+      type: number
+      description: Default TTL in seconds
+      default: 3600
+  ports:
+    - name: cache-in
+      direction: inbound
+      protocol:
+        - Redis
+        - Memcached
+      description: Cache operations
+  ai:
+    context: "This is a cache layer. Consider cache invalidation strategy, TTL policies, and cache-aside vs write-through patterns."
+    reviewHints:
+      - Verify cache invalidation strategy
+      - Check for cache stampede protection
+      - Consider cache warming on deploy

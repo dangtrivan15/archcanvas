@@ -1,0 +1,73 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: database
+  namespace: data
+  version: "1.0.0"
+  displayName: Database
+  description: A persistent data store for structured or unstructured data.
+  icon: Database
+  tags:
+    - data
+    - storage
+    - persistence
+spec:
+  args:
+    - name: engine
+      type: enum
+      description: Database engine
+      options:
+        - PostgreSQL
+        - MySQL
+        - MongoDB
+        - SQLite
+        - DynamoDB
+        - CockroachDB
+      default: PostgreSQL
+    - name: version
+      type: string
+      description: Engine version
+      default: "16"
+    - name: storageGB
+      type: number
+      description: Allocated storage in GB
+      default: 20
+    - name: replication
+      type: enum
+      description: Replication mode
+      options:
+        - none
+        - primary-replica
+        - multi-primary
+      default: none
+  ports:
+    - name: query-in
+      direction: inbound
+      protocol:
+        - SQL
+        - MongoDB Wire
+        - HTTP
+      description: Incoming queries
+    - name: replication-out
+      direction: outbound
+      protocol:
+        - WAL
+        - Oplog
+      description: Replication stream
+  ai:
+    context: "This is a database. Consider schema design, indexing strategy, backup policy, and connection pooling."
+    reviewHints:
+      - Check for proper indexing
+      - Verify backup and recovery plan
+      - Consider connection pool sizing
+variants:
+  - name: PostgreSQL
+    description: Relational database with strong ACID compliance
+    args:
+      engine: PostgreSQL
+      version: "16"
+  - name: MongoDB
+    description: Document database for flexible schemas
+    args:
+      engine: MongoDB
+      version: "7"

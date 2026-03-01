@@ -1,0 +1,56 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: monitoring
+  namespace: observability
+  version: "1.0.0"
+  displayName: Monitoring
+  description: A monitoring and alerting system for tracking metrics, health, and performance.
+  icon: BarChart3
+  tags:
+    - observability
+    - monitoring
+    - metrics
+    - alerting
+spec:
+  args:
+    - name: platform
+      type: enum
+      description: Monitoring platform
+      options:
+        - Prometheus/Grafana
+        - Datadog
+        - New Relic
+        - CloudWatch
+        - Custom
+      default: Prometheus/Grafana
+    - name: scrapeInterval
+      type: duration
+      description: Metrics scrape interval
+      default: 15s
+    - name: alertChannels
+      type: string
+      description: Alert notification channels
+      default: slack,email
+  ports:
+    - name: metrics-in
+      direction: inbound
+      protocol:
+        - Prometheus
+        - StatsD
+        - OTLP
+      description: Metrics ingestion
+    - name: alerts-out
+      direction: outbound
+      protocol:
+        - HTTP
+        - Email
+        - Slack
+        - PagerDuty
+      description: Alert notifications
+  ai:
+    context: "This is a monitoring system. Consider SLIs/SLOs, dashboard design, alert fatigue, and on-call rotation."
+    reviewHints:
+      - Verify SLIs and SLOs are defined
+      - Check alert thresholds for false positive rate
+      - Consider runbook links in alerts
