@@ -648,3 +648,47 @@ SESSION: 2026-03-02 - Features #53, #168, #167
 - Side panels (NodeDef browser, properties, notes)
 - File Save/Save As functionality
 - Export API features (mermaid, PNG, SVG)
+
+==================================================
+SESSION: 2026-03-02 - Features #59, #60, #61
+==================================================
+
+## What was accomplished:
+
+### Feature #59: Export API generates valid Mermaid diagram (PASSING)
+- 18 unit tests in test/unit/api/exportApiMermaid.test.ts
+- Verified generateMermaid() starts with 'graph LR' directive
+- All 3 nodes appear with correct labels in quotes
+- Edges connect correct node IDs with correct arrow syntax
+- Sync (-->), async (-.->), data-flow (==>) arrows verified
+- Shape mapping: service (rect), database (cylinder), queue (stadium), gateway (hexagon)
+- Edge cases: empty graph, no-label edges, special character escaping, nested children
+
+### Feature #60: Mermaid export maps node types to correct shapes (PASSING)
+- 14 unit tests in test/unit/api/exportApiMermaidShapes.test.ts
+- Rectangle: service, function, worker, unknown fallback
+- Cylinder: database, cache
+- Stadium: message-queue, event-bus
+- Hexagon: api-gateway, load-balancer
+- Rounded: logging, monitoring (observability namespace)
+- Multi-node test verifies all 4 primary shapes are visually distinguishable
+
+### Feature #61: Markdown summary includes architecture statistics (PASSING)
+- 18 unit tests in test/unit/api/exportApiMarkdownStats.test.ts
+- 5 nodes, 4 edges, 3 notes, 2 owners test architecture
+- Statistics table: node count (5), edge count (4), owner count (2)
+- All section headers verified: Overview, Components, Connections, Owners
+- Node types, args, notes counts, edge labels, edge types all verified
+- Nested child nodes counted in totals
+
+## Current completion status:
+- Features passing: 53 of 235 (22.6%)
+- Total unit tests: 719 across 45 test files
+- All tests passing, zero regressions
+
+## What should be worked on next:
+- More Export API features (PNG export, SVG export)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts (Ctrl+Z for undo, Ctrl+Y for redo)
