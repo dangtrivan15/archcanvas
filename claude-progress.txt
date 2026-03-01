@@ -1,4 +1,36 @@
 ==================================================
+SESSION: 2026-03-01 - Features #21, #26, #25
+==================================================
+
+## What was accomplished:
+
+### Feature #21: Graph engine adds child node for recursive nesting (PASSING)
+- Verified addChildNode() works for parent/child, multiple children, 3-level nesting
+- Verified immutability (original graph unchanged)
+- 27 unit tests in test/unit/core/graphEngine.test.ts
+
+### Feature #26: Get nodes at navigation level returns correct set (PASSING)
+- Verified getNodesAtLevel() returns correct nodes for root level and child levels
+- Root nodes excluded from child level view
+- 15 unit tests in test/unit/core/graphQuery.test.ts
+
+### Feature #25: Get node path returns full breadcrumb path (PASSING)
+- Verified getNodePath() returns [root, child, grandchild] for nested hierarchy
+- Returns single-element path for root-level node
+- Returns empty array for non-existent nodes
+
+## Current completion status:
+- Features passing: ~16 of 235 (including #21, #26, #25)
+- All 227 unit tests pass across 10 test files
+- App loads with 0 JS errors, no mock data patterns
+
+## What should be worked on next:
+- More graph engine features (removeNode with edges, updateNode)
+- Canvas interaction features (node selection, drag)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+
+==================================================
 SESSION: 2026-03-01 - Features #1, #2, #3
 ==================================================
 
