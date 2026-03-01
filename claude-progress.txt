@@ -162,3 +162,40 @@ SESSION: 2026-03-01 - Features #67, #100, #150
 - Connection creation by dragging
 - Keyboard shortcuts
 - Dark mode toggle
+
+==================================================
+SESSION: 2026-03-01 - Features #8, #9, #50
+==================================================
+
+## What was accomplished:
+
+### Feature #8: Registry resolves nodedefs by type identifier (PASSING)
+- 12 unit tests verifying RegistryManager.resolve() for all 15 built-in types
+- Covers all 5 namespaces: compute, data, messaging, network, observability
+- Edge cases: empty string, partial type, reversed order, uninitialized registry
+- Browser verified: 0 console errors
+
+### Feature #9: Registry lists nodedefs grouped by namespace (PASSING)
+- 10 unit tests verifying RegistryManager.listByNamespace() for all 5 namespaces
+- Correct counts: compute(4), data(4), messaging(3), network(2), observability(2)
+- All namespaces total to 15 nodedefs
+- Edge cases: nonexistent namespace, empty string
+
+### Feature #50: Text API getNodeDef() resolves nodedef type info (PASSING)
+- 10 unit tests verifying TextApi.getNodeDef() delegates correctly to registry
+- Verifies metadata (namespace, name, displayName, description, icon, version, tags)
+- Verifies spec includes args array with name/type/description and ports array with name/protocol
+- Error cases: invalid/type returns undefined, empty string returns undefined
+- Browser verified: 0 console errors
+
+## Current completion status:
+- Features passing: 14 of 235 (6.0%)
+- Total features: 235
+- All unit tests pass
+
+## What should be worked on next:
+- Graph engine CRUD operations
+- File Save/Save As functionality
+- NodeDef browser panel
+- Canvas interactions (connection creation, node deletion)
+- Side panels (properties, notes, code refs, AI chat)
