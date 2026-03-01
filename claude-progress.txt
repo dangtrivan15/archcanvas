@@ -346,3 +346,40 @@ SESSION: 2026-03-01 - Features #8, #9, #50
 - NodeDef browser panel
 - Canvas interactions (connection creation, node deletion)
 - Side panels (properties, notes, code refs, AI chat)
+
+==================================================
+SESSION: 2026-03-02 - Features #51, #52, #41
+==================================================
+
+## What was accomplished:
+
+### Feature #51: Text API suggest() creates pending AI suggestion (PASSING)
+- 12 unit tests in test/unit/api/textApiSuggest.test.ts
+- Verified suggest() creates note with author='ai', status='pending'
+- Content matches suggestion, suggestionType stored correctly
+- Multiple suggestions, existing notes, unique IDs, timestamps
+- End-to-end flow: addNode → suggest → getNode → verify note
+
+### Feature #52: Text API resolveSuggestion() accepts or dismisses suggestion (PASSING)
+- 7 unit tests in test/unit/api/textApiResolveSuggestion.test.ts
+- Verified accept changes status from 'pending' to 'accepted'
+- Verified dismiss changes status from 'pending' to 'dismissed'
+- Only targeted note changed, other notes unaffected
+- Property preservation after resolution
+
+### Feature #41: Text API getNode() returns detailed node information (PASSING)
+- 14 unit tests in test/unit/api/textApiGetNode.test.ts
+- Full NodeDetail verification: args, properties, notes, codeRefs, edges, children
+- Separate inbound/outbound edge lists with correct direction
+- Edge cases: empty fields, non-existent node, multiple connections
+
+## Current completion status:
+- Features passing: 33 of 235 (14.0%)
+- All unit tests passing across all test files
+
+## What should be worked on next:
+- More Text API features (listNodes, search, addNode, addEdge)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts
