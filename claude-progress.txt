@@ -1,4 +1,44 @@
 ==================================================
+SESSION: 2026-03-02 - Features #14, #31, #16
+==================================================
+
+## What was accomplished:
+
+### Feature #14: Graph engine updates node args (PASSING)
+- 15 unit tests in test/unit/core/updateNodeArgs.test.ts
+- Verified updateNode() correctly modifies args map (port 8080→3000, adds replicas)
+- Verified displayName, position, notes, codeRefs, children, properties all preserved
+- Immutability test, recursive child node update, empty args, numeric/boolean values
+- Graph metadata preservation, non-existent node ID handling
+
+### Feature #31: Full-text search finds matches in node properties (PASSING)
+- 15 unit tests in test/unit/core/searchNodeProperties.test.ts
+- Verified searchGraph() finds nodes by arg values (host: 'api.example.com', port: '8080')
+- Verified search by arg keys, custom property keys and values
+- Case-insensitive, partial matches, numeric/boolean arg values
+- Score ranking (name matches > arg matches), multiple node matching
+- Empty/non-matching queries return empty results
+
+### Feature #16: Graph engine removes edge from architecture (PASSING)
+- 10 unit tests in test/unit/core/removeEdge.test.ts
+- Verified removeEdge() deletes edge, leaves 0 edges, both nodes intact
+- Immutability, selective removal from multiple edges, property preservation
+- All 3 edge types (sync, async, data-flow), sequential removal
+- Non-existent edge ID handling, graph metadata preservation
+
+## Current completion status:
+- Features passing: 36 of 235 (15.3%)
+- Total unit tests: 477 across 30 test files
+- All tests passing, zero regressions
+
+## What should be worked on next:
+- More graph engine features (updateEdge, addNote, removeNote)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts
+
+==================================================
 SESSION: 2026-03-02 - Features #12, #47, #13
 ==================================================
 
