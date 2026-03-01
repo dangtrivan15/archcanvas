@@ -1,4 +1,36 @@
 ==================================================
+SESSION: 2026-03-02 - Features #151, #152, #155
+==================================================
+
+## What was accomplished:
+
+### Feature #151: File Save writes .archc file in-place (PASSING)
+- Created useKeyboardShortcuts hook (src/hooks/useKeyboardShortcuts.ts)
+  - Ctrl+S Save, Ctrl+Shift+S Save As, Ctrl+N New, Ctrl+O Open
+  - Ctrl+Z Undo, Ctrl+Shift+Z / Ctrl+Y Redo
+- Wired hook into App.tsx
+- 14 initial unit tests for save pipeline roundtrip
+- Verified dirty indicator shows when changes made
+- Zero console errors
+
+### Feature #152: File Save As opens new file picker (PASSING)
+- saveFileAs() already implemented, added 5 Save As-specific unit tests
+- Total: 19 tests in fileSave.test.ts
+- Blob fallback for non-Chrome browsers
+
+### Feature #155: File saved and reopened contains identical data (PASSING)
+- Added SavedCanvasState type (viewport, selectedNodeIds, navigationPath, panelLayout)
+- Extended graphToProto/protoToGraphFull for canvas state in binary files
+- Canvas onMoveEnd handler syncs viewport to canvasStore
+- Save includes canvas state, open/loadFromUrl restores it
+- 26 unit tests covering complete roundtrip with all data types
+- 500 total unit tests passing across 31 test files
+- Zero console errors
+
+## Current completion status:
+- Features passing: 25+ of 235
+
+==================================================
 SESSION: 2026-03-02 - Features #14, #31, #16
 ==================================================
 
