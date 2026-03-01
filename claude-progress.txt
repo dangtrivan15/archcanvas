@@ -1,4 +1,41 @@
 ==================================================
+SESSION: 2026-03-01 - Features #39, #177, #58
+==================================================
+
+## What was accomplished:
+
+### Feature #39: Text API describe() returns architecture overview (PASSING)
+- TextApi.describe() was already implemented with structured/human/AI formats
+- 11 unit tests verifying structured output includes name, nodeCount, edgeCount, node summaries, edge summaries
+- All 3 formats tested (structured JSON, human markdown, AI XML)
+- Zero console errors in browser
+
+### Feature #177: MCP server registers 8+ tools (PASSING)
+- Implemented full MCP server with 9 tools:
+  - describe, add_node, add_edge, add_note, update_node, remove_node, remove_edge, search, list_nodedefs
+- Created src/mcp/tools.ts (tool definitions with Zod input schemas)
+- Created src/mcp/handlers.ts (handler dispatch delegating to TextApi)
+- Created src/mcp/server.ts (McpServer from @modelcontextprotocol/sdk)
+- Created src/mcp/cli.ts (CLI entry point for stdio transport)
+- 20 unit tests verifying tool registration, handler dispatch, and error cases
+
+### Feature #58: Export API generates markdown summary (PASSING)
+- ExportApi.generateMarkdownSummary() was already implemented
+- 14 unit tests verifying markdown output includes heading, nodes, edges, types, args, stats table
+- Empty graph edge case handled correctly
+
+## Current completion status:
+- Features passing: 21 of 235 (8.9%)
+- Total features: 235
+
+## What should be worked on next:
+- More Text API features (listNodes, getNode, search, mutations)
+- MCP tool handler integration tests
+- Canvas UI interactions (node selection, connection creation)
+- Side panels (properties, notes, code refs, AI chat)
+- File save/save-as functionality
+
+==================================================
 SESSION: 2026-03-01 - Features #21, #26, #25
 ==================================================
 
