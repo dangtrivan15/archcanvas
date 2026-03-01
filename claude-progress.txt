@@ -1,4 +1,44 @@
 ==================================================
+SESSION: 2026-03-02 - Features #77, #85, #86
+==================================================
+
+## What was accomplished:
+
+### Feature #77: Canvas renders edges from architecture data (PASSING)
+- Loaded ecommerce.archc (5 nodes, 4 edges) and verified all edges render on canvas
+- Created edge-types-test.archc with all 3 edge types (sync, async, data-flow)
+- Verified sync edges: solid gray lines connecting correct nodes
+- Verified data-flow edges: thick purple lines connecting correct nodes
+- Status bar confirms correct node/edge counts
+- Zero console errors
+
+### Feature #85: SyncEdge renders as solid line (PASSING)
+- Verified sync edge (Service A → Service B) renders as solid gray line
+- No dashing or animation on sync edges (confirmed in code: no strokeDasharray)
+- Edge is selectable: clicking opens EdgeDetailPanel with correct info
+- Detail panel shows type: "sync", label: "REST API", correct from/to nodes
+
+### Feature #86: AsyncEdge renders as dashed animated line (PASSING)
+- Added CSS @keyframes animation (stroke-dashoffset) to AsyncEdge component
+- Async edge renders as dashed amber/orange line with flowing animation
+- Animation: 0.6s linear infinite stroke-dashoffset cycle
+- Visually distinct from sync (solid gray) and data-flow (thick purple)
+- Edge is selectable: clicking opens EdgeDetailPanel showing type: "async"
+- Zero console errors, 749/749 unit tests passing
+
+## Current completion status:
+- Features passing: 70 of 235 (29.8%)
+- All 749 unit tests pass across 47 test files
+- Dev server runs on port 5181
+
+## What should be worked on next:
+- More edge type features (DataFlowEdge rendering)
+- Canvas interaction features (node selection, drag, connection creation)
+- Side panels (NodeDef browser, properties, notes)
+- File Save/Save As functionality
+- Keyboard shortcuts
+
+==================================================
 SESSION: 2026-03-02 - Features #92, #93, #96
 ==================================================
 
