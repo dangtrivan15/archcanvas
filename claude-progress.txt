@@ -56,3 +56,47 @@ SESSION: 2026-03-01 - Features #1, #2, #3
 - File I/O (open/save .archc files via File System Access API)
 - Canvas UI (React Flow integration with custom node/edge components)
 - Side panels (NodeDef browser, properties, notes, code refs, AI chat)
+
+==================================================
+SESSION: 2026-03-01 - Features #6, #7
+==================================================
+
+## What was accomplished:
+
+### Feature #6: All 15 built-in NodeDef YAML files parse correctly (PASSING)
+- Created 15 YAML nodedef files in src/core/registry/builtins/core/ across 5 namespaces:
+  - Compute (4): service, function, worker, api-gateway
+  - Data (4): database, cache, object-storage, repository
+  - Messaging (3): message-queue, event-bus, stream-processor
+  - Network (2): load-balancer, cdn
+  - Observability (2): logging, monitoring
+- Created src/core/registry/loader.ts: YAML loader using Vite ?raw imports + yaml package
+- Refactored builtins.ts from hardcoded TypeScript to YAML-based loading
+- 18 unit tests: each file loads, parses, has required fields (kind, apiVersion, metadata, spec)
+- Completeness tests verify all 15 files exist and are valid
+
+### Feature #7: NodeDef Zod validation passes for all built-in definitions (PASSING)
+- 78 unit tests covering:
+  - All 15 nodedefs pass safeValidateNodeDef() and validateNodeDef()
+  - All metadata fields verified (name, namespace, displayName, description, icon, version, tags)
+  - All spec.args validated (correct types, enum options present)
+  - All spec.ports validated (direction, protocol arrays)
+  - Negative tests for invalid data (missing kind, wrong kind, invalid arg type)
+
+## Current completion status:
+- Features passing: #1, #2, #3, #4, #5, #6, #7 (7 of 235)
+- Total features: 235
+- All 142 unit tests pass (proto: 23, codec: 23, yaml: 18, validation: 78)
+- App loads with 0 JS errors, RegistryManager loads all 15 nodedefs from YAML
+
+## Technical notes:
+- YAML files use Vite ?raw suffix for build-time string imports
+- Tests use fs.readFileSync + yaml.parse for direct file reading (Node.js context)
+- No additional Vite plugins needed - ?raw is built-in
+
+## What should be worked on next:
+- Graph engine CRUD operations (nodes, edges, notes)
+- Text API implementation
+- File I/O (open/save .archc files)
+- Canvas UI components
+- Side panels
