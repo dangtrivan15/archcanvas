@@ -1,6 +1,7 @@
 /**
  * Canvas - main React Flow interactive canvas component.
  * Renders architecture graph as nodes and edges with selection support.
+ * Supports fractal zoom: double-click a node with children to navigate into it.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,7 +28,8 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
-import type { CanvasNode, CanvasEdge } from '@/types/canvas';
+import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
+import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 
 export function Canvas() {
   const graph = useCoreStore((s) => s.graph);
@@ -39,6 +41,8 @@ export function Canvas() {
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const navigationPath = useNavigationStore((s) => s.path);
+  const zoomIn = useNavigationStore((s) => s.zoomIn);
+  const zoomOut = useNavigationStore((s) => s.zoomOut);
 
   // Render the graph through RenderApi
   const rendered = useMemo(() => {
@@ -109,6 +113,42 @@ export function Canvas() {
     [moveNode],
   );
 
+  // Handle double-click on node - fractal zoom into children
+  const onNodeDoubleClick = useCallback(
+    (_event: React.MouseEvent, node: CanvasNode) => {
+      const nodeData = node.data as unknown as CanvasNodeData;
+      if (nodeData.hasChildren) {
+        console.log('[Canvas] Fractal zoom into:', node.id, nodeData.displayName);
+        zoomIn(node.id);
+      }
+    },
+    [zoomIn],
+  );
+
+  // Handle Backspace key to navigate up one level
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle Backspace when not typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === 'Backspace' && navigationPath.length > 0) {
+        e.preventDefault();
+        console.log('[Canvas] Backspace zoom out from:', navigationPath);
+        zoomOut();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [navigationPath, zoomOut]);
+
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
@@ -118,7 +158,9 @@ export function Canvas() {
   );
 
   return (
-    <div className="w-full h-full" data-testid="canvas">
+    <div className="w-full h-full relative" data-testid="canvas">
+      {/* Navigation Breadcrumb - shown at top of canvas */}
+      <NavigationBreadcrumb />
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -126,6 +168,7 @@ export function Canvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
+        onNodeDoubleClick={onNodeDoubleClick}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
