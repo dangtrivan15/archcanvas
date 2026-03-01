@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { ArchGraph, ArchNode, ArchEdge } from '@/types/graph';
-import { graphToProto, protoToGraph } from '@/core/storage/fileIO';
+import type { ArchGraph, ArchNode, ArchEdge, SavedCanvasState } from '@/types/graph';
+import { graphToProto, protoToGraph, protoToGraphFull } from '@/core/storage/fileIO';
 import { encode, decode, isArchcFile } from '@/core/storage/codec';
 
 // ─── Test Data Factory ──────────────────────────────────────────
@@ -646,8 +646,186 @@ describe('File Save Pipeline', () => {
     });
   });
 
-  describe('Save → Load file roundtrip using test .archc file', () => {
-    it('loads the ecommerce.archc example file and roundtrips it', async () => {
+  describe('Canvas state roundtrip', () => {
+    it('preserves viewport (x, y, zoom) through binary roundtrip', async () => {
+      const graph = createTestGraph();
+      const canvasState: SavedCanvasState = {
+        viewport: { x: 150.5, y: -200.3, zoom: 1.5 },
+        selectedNodeIds: ['node-api-gw'],
+        navigationPath: ['node-parent', 'node-child-1'],
+      };
+
+      const protoFile = graphToProto(graph, canvasState);
+      const binaryData = await encode(protoFile);
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      expect(result.canvasState).toBeTruthy();
+      expect(result.canvasState!.viewport.x).toBeCloseTo(150.5, 1);
+      expect(result.canvasState!.viewport.y).toBeCloseTo(-200.3, 1);
+      expect(result.canvasState!.viewport.zoom).toBeCloseTo(1.5, 1);
+    });
+
+    it('preserves selected node IDs through roundtrip', async () => {
+      const graph = createTestGraph();
+      const canvasState: SavedCanvasState = {
+        viewport: { x: 0, y: 0, zoom: 1 },
+        selectedNodeIds: ['node-api-gw', 'node-order-svc'],
+        navigationPath: [],
+      };
+
+      const protoFile = graphToProto(graph, canvasState);
+      const binaryData = await encode(protoFile);
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      expect(result.canvasState!.selectedNodeIds).toEqual(['node-api-gw', 'node-order-svc']);
+    });
+
+    it('preserves navigation path through roundtrip', async () => {
+      const graph = createTestGraph();
+      const canvasState: SavedCanvasState = {
+        viewport: { x: 0, y: 0, zoom: 1 },
+        selectedNodeIds: [],
+        navigationPath: ['node-parent', 'node-child'],
+      };
+
+      const protoFile = graphToProto(graph, canvasState);
+      const binaryData = await encode(protoFile);
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      expect(result.canvasState!.navigationPath).toEqual(['node-parent', 'node-child']);
+    });
+
+    it('preserves panel layout through roundtrip', async () => {
+      const graph = createTestGraph();
+      const canvasState: SavedCanvasState = {
+        viewport: { x: 0, y: 0, zoom: 1 },
+        selectedNodeIds: [],
+        navigationPath: [],
+        panelLayout: {
+          rightPanelOpen: true,
+          rightPanelTab: 'notes',
+          rightPanelWidth: 400,
+        },
+      };
+
+      const protoFile = graphToProto(graph, canvasState);
+      const binaryData = await encode(protoFile);
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      expect(result.canvasState!.panelLayout).toBeTruthy();
+      expect(result.canvasState!.panelLayout!.rightPanelOpen).toBe(true);
+      expect(result.canvasState!.panelLayout!.rightPanelTab).toBe('notes');
+      expect(result.canvasState!.panelLayout!.rightPanelWidth).toBe(400);
+    });
+
+    it('handles file without canvas state gracefully', async () => {
+      const graph = createTestGraph();
+
+      // Save without canvas state
+      const protoFile = graphToProto(graph);
+      const binaryData = await encode(protoFile);
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      // canvasState should be undefined (not an error)
+      expect(result.canvasState).toBeUndefined();
+      // But graph should still be present
+      expect(result.graph.name).toBe('E-Commerce Platform');
+      expect(result.graph.nodes.length).toBe(3);
+    });
+  });
+
+  describe('Feature #155: Saved and reopened file contains identical data', () => {
+    it('full roundtrip with 3 nodes, 2 edges, notes, code refs, custom properties', async () => {
+      const original = createTestGraph();
+
+      // Save: graph → proto → binary
+      const protoFile = graphToProto(original);
+      const binaryData = await encode(protoFile);
+
+      // Reopen: binary → proto → graph
+      const decoded = await decode(binaryData);
+      const restored = protoToGraph(decoded);
+
+      // Step 4: Verify all 3 nodes present with correct display names
+      expect(restored.nodes.length).toBe(3);
+      expect(restored.nodes[0].displayName).toBe('API Gateway');
+      expect(restored.nodes[1].displayName).toBe('Order Service');
+      expect(restored.nodes[2].displayName).toBe('Orders Database');
+
+      // Step 5: Verify all 2 edges present with correct types
+      expect(restored.edges.length).toBe(2);
+      expect(restored.edges[0].type).toBe('sync');
+      expect(restored.edges[1].type).toBe('sync');
+
+      // Step 6: Verify all notes present with correct content
+      expect(restored.nodes[0].notes.length).toBe(1);
+      expect(restored.nodes[0].notes[0].content).toBe('Rate limiting needed');
+      expect(restored.nodes[0].notes[0].author).toBe('alice');
+      expect(restored.nodes[0].notes[0].status).toBe('pending');
+      expect(restored.nodes[0].notes[0].tags).toEqual(['security']);
+      expect(restored.edges[1].notes.length).toBe(1);
+      expect(restored.edges[1].notes[0].content).toBe('Connection pooling configured');
+      expect(restored.edges[1].notes[0].status).toBe('accepted');
+
+      // Step 7: Verify all code refs present
+      expect(restored.nodes[0].codeRefs).toEqual([{ path: 'src/gateway/index.ts', role: 'source' }]);
+      expect(restored.nodes[1].codeRefs.length).toBe(2);
+      expect(restored.nodes[1].codeRefs[0]).toEqual({ path: 'src/orders/index.ts', role: 'source' });
+      expect(restored.nodes[1].codeRefs[1]).toEqual({ path: 'src/orders/api.yaml', role: 'api-spec' });
+      expect(restored.nodes[2].codeRefs).toEqual([{ path: 'db/schema.sql', role: 'schema' }]);
+
+      // Step 8: Verify all custom properties present
+      expect(restored.nodes[0].properties).toEqual({ region: 'us-east-1', autoscale: true });
+      expect(restored.nodes[0].args).toEqual({ port: 8080 });
+      expect(restored.nodes[1].args).toEqual({ language: 'TypeScript', framework: 'Express' });
+      expect(restored.nodes[2].args).toEqual({ engine: 'PostgreSQL', version: '16' });
+      expect(restored.nodes[2].properties).toEqual({ replicas: 3 });
+      expect(restored.edges[0].properties).toEqual({ protocol: 'HTTP/2' });
+
+      // Step 10: Verify node positions match exactly
+      expect(restored.nodes[0].position).toEqual({ x: 100, y: 200, width: 240, height: 120, color: '#3b82f6' });
+      expect(restored.nodes[1].position).toEqual({ x: 400, y: 200, width: 240, height: 120 });
+      expect(restored.nodes[2].position).toEqual({ x: 400, y: 400, width: 240, height: 120 });
+    });
+
+    it('full roundtrip with canvas state (viewport)', async () => {
+      const original = createTestGraph();
+      const canvasState: SavedCanvasState = {
+        viewport: { x: 123.45, y: -67.89, zoom: 0.75 },
+        selectedNodeIds: ['node-api-gw'],
+        navigationPath: [],
+        panelLayout: {
+          rightPanelOpen: true,
+          rightPanelTab: 'properties',
+          rightPanelWidth: 320,
+        },
+      };
+
+      // Save with canvas state
+      const protoFile = graphToProto(original, canvasState);
+      const binaryData = await encode(protoFile);
+
+      // Reopen
+      const decoded = await decode(binaryData);
+      const result = protoToGraphFull(decoded);
+
+      // Step 9: Verify canvas state (viewport) is restored
+      expect(result.canvasState).toBeTruthy();
+      expect(result.canvasState!.viewport.x).toBeCloseTo(123.45, 1);
+      expect(result.canvasState!.viewport.y).toBeCloseTo(-67.89, 1);
+      expect(result.canvasState!.viewport.zoom).toBeCloseTo(0.75, 1);
+
+      // Verify graph data also preserved
+      expect(result.graph.nodes.length).toBe(3);
+      expect(result.graph.edges.length).toBe(2);
+    });
+
+    it('loads ecommerce.archc example and roundtrips it identically', async () => {
       const fs = await import('fs');
       const path = await import('path');
 
@@ -677,6 +855,8 @@ describe('File Save Pipeline', () => {
         expect(reGraph.nodes[i].id).toBe(graph.nodes[i].id);
         expect(reGraph.nodes[i].displayName).toBe(graph.nodes[i].displayName);
         expect(reGraph.nodes[i].type).toBe(graph.nodes[i].type);
+        expect(reGraph.nodes[i].position.x).toBe(graph.nodes[i].position.x);
+        expect(reGraph.nodes[i].position.y).toBe(graph.nodes[i].position.y);
       }
 
       // Verify each edge

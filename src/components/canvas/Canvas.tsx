@@ -11,9 +11,11 @@ import {
   MiniMap,
   type OnSelectionChangeFunc,
   type OnConnect,
+  type OnMoveEnd,
   type Connection,
   type NodeChange,
   type EdgeChange,
+  type Viewport,
   applyNodeChanges,
   applyEdgeChanges,
   BackgroundVariant,
@@ -35,6 +37,7 @@ export function Canvas() {
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
+  const setViewport = useCanvasStore((s) => s.setViewport);
   const navigationPath = useNavigationStore((s) => s.path);
 
   // Render the graph through RenderApi
@@ -106,6 +109,14 @@ export function Canvas() {
     [moveNode],
   );
 
+  // Track viewport changes (pan/zoom) for saving
+  const onMoveEnd: OnMoveEnd = useCallback(
+    (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
+      setViewport({ x: viewport.x, y: viewport.y, zoom: viewport.zoom });
+    },
+    [setViewport],
+  );
+
   return (
     <div className="w-full h-full" data-testid="canvas">
       <ReactFlow
@@ -116,6 +127,7 @@ export function Canvas() {
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
         onNodeDragStop={onNodeDragStop}
+        onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView

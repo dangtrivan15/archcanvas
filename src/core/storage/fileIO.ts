@@ -3,7 +3,7 @@
  * Handles File System Access API with fallback, and proto-to-graph conversion.
  */
 
-import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole } from '@/types/graph';
+import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState } from '@/types/graph';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { archcanvas } from '@/proto/archcanvas';
 import { decode, encode } from './codec';
@@ -12,27 +12,65 @@ import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/utils/constants';
 // ─── Proto → Graph Converters ────────────────────────────────────
 
 /**
+ * Result of converting a proto file to internal types.
+ */
+export interface ProtoToGraphResult {
+  graph: ArchGraph;
+  canvasState?: SavedCanvasState;
+}
+
+/**
  * Convert a decoded ArchCanvasFile (protobuf) to our internal ArchGraph type.
+ * Also extracts canvas state (viewport, selection, panel layout) if present.
  */
 export function protoToGraph(file: IArchCanvasFile): ArchGraph {
+  return protoToGraphFull(file).graph;
+}
+
+/**
+ * Convert a decoded ArchCanvasFile to internal types, including canvas state.
+ */
+export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
   const arch = file.architecture;
-  if (!arch) {
-    return {
-      name: 'Untitled Architecture',
-      description: '',
-      owners: [],
-      nodes: [],
-      edges: [],
+  const graph: ArchGraph = arch
+    ? {
+        name: arch.name ?? 'Untitled Architecture',
+        description: arch.description ?? '',
+        owners: arch.owners ? [...arch.owners] : [],
+        nodes: (arch.nodes ?? []).map(protoNodeToNode),
+        edges: (arch.edges ?? []).map(protoEdgeToEdge),
+      }
+    : {
+        name: 'Untitled Architecture',
+        description: '',
+        owners: [],
+        nodes: [],
+        edges: [],
+      };
+
+  // Extract canvas state if present
+  let canvasState: SavedCanvasState | undefined;
+  if (file.canvasState) {
+    const cs = file.canvasState;
+    canvasState = {
+      viewport: {
+        x: cs.viewportX ?? 0,
+        y: cs.viewportY ?? 0,
+        zoom: cs.viewportZoom ?? 1,
+      },
+      selectedNodeIds: cs.selectedNodeIds ? [...cs.selectedNodeIds] : [],
+      navigationPath: cs.navigationPath ? [...cs.navigationPath] : [],
     };
+    if (cs.panelLayout) {
+      canvasState.panelLayout = {
+        rightPanelOpen: cs.panelLayout.rightPanelOpen ?? false,
+        rightPanelTab: cs.panelLayout.rightPanelTab ?? '',
+        rightPanelWidth: cs.panelLayout.rightPanelWidth ?? 320,
+      };
+    }
   }
 
-  return {
-    name: arch.name ?? 'Untitled Architecture',
-    description: arch.description ?? '',
-    owners: arch.owners ? [...arch.owners] : [],
-    nodes: (arch.nodes ?? []).map(protoNodeToNode),
-    edges: (arch.edges ?? []).map(protoEdgeToEdge),
-  };
+  return { graph, canvasState };
 }
 
 function protoNodeToNode(protoNode: archcanvas.INode): ArchNode {
@@ -159,9 +197,10 @@ function protoValueMapToRecord(
 
 /**
  * Convert our internal ArchGraph to an IArchCanvasFile protobuf structure.
+ * Optionally includes canvas state (viewport, selection, panel layout).
  */
-export function graphToProto(graph: ArchGraph): IArchCanvasFile {
-  return {
+export function graphToProto(graph: ArchGraph, canvasState?: SavedCanvasState): IArchCanvasFile {
+  const file: IArchCanvasFile = {
     architecture: {
       name: graph.name,
       description: graph.description,
@@ -170,6 +209,25 @@ export function graphToProto(graph: ArchGraph): IArchCanvasFile {
       edges: graph.edges.map(edgeToProtoEdge),
     },
   };
+
+  if (canvasState) {
+    file.canvasState = {
+      viewportX: canvasState.viewport.x,
+      viewportY: canvasState.viewport.y,
+      viewportZoom: canvasState.viewport.zoom,
+      selectedNodeIds: [...canvasState.selectedNodeIds],
+      navigationPath: [...canvasState.navigationPath],
+    };
+    if (canvasState.panelLayout) {
+      file.canvasState.panelLayout = {
+        rightPanelOpen: canvasState.panelLayout.rightPanelOpen,
+        rightPanelTab: canvasState.panelLayout.rightPanelTab,
+        rightPanelWidth: canvasState.panelLayout.rightPanelWidth,
+      };
+    }
+  }
+
+  return file;
 }
 
 function nodeToProtoNode(node: ArchNode): archcanvas.INode {
@@ -265,12 +323,13 @@ function recordToProtoValueMap(
 
 /**
  * Open a .archc file using File System Access API (with fallback).
- * Returns the decoded graph and filename.
+ * Returns the decoded graph, filename, and canvas state.
  */
 export async function openArchcFile(): Promise<{
   graph: ArchGraph;
   fileName: string;
   fileHandle?: FileSystemFileHandle;
+  canvasState?: SavedCanvasState;
 } | null> {
   let fileData: Uint8Array;
   let fileName: string;
@@ -310,9 +369,9 @@ export async function openArchcFile(): Promise<{
     fileName = result.name;
   }
 
-  // Decode the binary file
+  // Decode the binary file, including canvas state
   const decoded = await decode(fileData);
-  const graph = protoToGraph(decoded);
+  const { graph, canvasState } = protoToGraphFull(decoded);
 
   // Clean up the filename (remove .archc extension for display)
   const displayName = fileName.replace(/\.archc$/, '');
@@ -321,6 +380,7 @@ export async function openArchcFile(): Promise<{
     graph,
     fileName: displayName,
     fileHandle,
+    canvasState,
   };
 }
 
@@ -361,14 +421,16 @@ function openFileViaInput(): Promise<{ data: Uint8Array; name: string } | null> 
  *
  * @param graph - The current architecture graph to save
  * @param fileHandle - The FileSystemFileHandle obtained when the file was opened
+ * @param canvasState - Optional canvas state (viewport, selection, panel layout)
  * @returns true if save succeeded
  */
 export async function saveArchcFile(
   graph: ArchGraph,
   fileHandle: FileSystemFileHandle,
+  canvasState?: SavedCanvasState,
 ): Promise<boolean> {
-  // Convert graph to proto format
-  const protoFile = graphToProto(graph);
+  // Convert graph to proto format (including canvas state if provided)
+  const protoFile = graphToProto(graph, canvasState);
 
   // Encode to binary .archc format (with magic bytes, version, checksum)
   const binaryData = await encode(protoFile);
@@ -387,17 +449,19 @@ export async function saveArchcFile(
  *
  * @param graph - The current architecture graph to save
  * @param suggestedName - Suggested filename (without extension)
+ * @param canvasState - Optional canvas state (viewport, selection, panel layout)
  * @returns The new file handle and display name, or null if cancelled
  */
 export async function saveArchcFileAs(
   graph: ArchGraph,
   suggestedName?: string,
+  canvasState?: SavedCanvasState,
 ): Promise<{
   fileHandle?: FileSystemFileHandle;
   fileName: string;
 } | null> {
-  // Convert graph to proto format
-  const protoFile = graphToProto(graph);
+  // Convert graph to proto format (including canvas state if provided)
+  const protoFile = graphToProto(graph, canvasState);
 
   // Encode to binary .archc format
   const binaryData = await encode(protoFile);

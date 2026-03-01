@@ -13,8 +13,10 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { openArchcFile, protoToGraph, saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
+import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 import { decode } from '@/core/storage/codec';
+import { useCanvasStore } from '@/store/canvasStore';
+import { useUIStore } from '@/store/uiStore';
 
 export interface CoreStoreState {
   // State
@@ -174,7 +176,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         return false;
       }
 
-      const { graph, fileName, fileHandle } = result;
+      const { graph, fileName, fileHandle, canvasState } = result;
 
       // Set graph in text API
       textApi.setGraph(graph);
@@ -194,6 +196,19 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         canRedo: false,
       });
 
+      // Restore canvas state if present
+      if (canvasState) {
+        useCanvasStore.getState().setViewport(canvasState.viewport);
+        if (canvasState.panelLayout) {
+          const uiActions = useUIStore.getState();
+          if (canvasState.panelLayout.rightPanelOpen) {
+            uiActions.openRightPanel();
+          } else {
+            uiActions.closeRightPanel();
+          }
+        }
+      }
+
       console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
       return true;
     } catch (err) {
@@ -205,6 +220,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   /**
    * Save the current graph to the opened file (save in-place).
    * If no file handle exists (new file), falls back to Save As.
+   * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFile: async () => {
     const { graph, fileHandle } = get();
@@ -215,7 +231,8 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     }
 
     try {
-      await saveArchcFile(graph, fileHandle);
+      const canvasState = _getCanvasStateForSave();
+      await saveArchcFile(graph, fileHandle, canvasState);
       set({ isDirty: false });
       console.log('[CoreStore] File saved successfully');
       return true;
@@ -228,12 +245,14 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   /**
    * Save the current graph to a new file location (Save As).
    * Opens a file save picker dialog.
+   * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFileAs: async () => {
     const { graph, fileName } = get();
 
     try {
-      const result = await saveArchcFileAs(graph, fileName);
+      const canvasState = _getCanvasStateForSave();
+      const result = await saveArchcFileAs(graph, fileName, canvasState);
       if (!result) {
         // User cancelled the picker
         return false;
@@ -270,9 +289,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const buffer = await response.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      // Decode the binary file
+      // Decode the binary file, including canvas state
       const decoded = await decode(data);
-      const graph = protoToGraph(decoded);
+      const { graph, canvasState } = protoToGraphFull(decoded);
 
       // Derive filename
       const fileName = displayName ?? url.split('/').pop()?.replace(/\.archc$/, '') ?? 'Loaded File';
@@ -294,6 +313,11 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         canUndo: false,
         canRedo: false,
       });
+
+      // Restore canvas state if present
+      if (canvasState) {
+        useCanvasStore.getState().setViewport(canvasState.viewport);
+      }
 
       console.log(`[CoreStore] Loaded file from URL: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
       return true;
@@ -509,3 +533,22 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
   },
 }));
+
+/**
+ * Gather canvas state from external stores for saving.
+ */
+function _getCanvasStateForSave() {
+  const canvasStoreState = useCanvasStore.getState();
+  const uiStoreState = useUIStore.getState();
+
+  return {
+    viewport: canvasStoreState.viewport,
+    selectedNodeIds: canvasStoreState.selectedNodeId ? [canvasStoreState.selectedNodeId] : [],
+    navigationPath: [] as string[],
+    panelLayout: {
+      rightPanelOpen: uiStoreState.rightPanelOpen ?? false,
+      rightPanelTab: (uiStoreState.rightPanelTab as string) ?? '',
+      rightPanelWidth: 320,
+    },
+  };
+}
