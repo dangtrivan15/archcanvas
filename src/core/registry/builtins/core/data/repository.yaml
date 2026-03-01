@@ -1,0 +1,50 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: repository
+  namespace: data
+  version: "1.0.0"
+  displayName: Repository
+  description: A data access layer that abstracts database queries behind a clean interface.
+  icon: Layers
+  tags:
+    - data
+    - abstraction
+    - DAL
+spec:
+  args:
+    - name: entity
+      type: string
+      description: Primary entity/model name
+    - name: orm
+      type: enum
+      description: ORM or query builder
+      options:
+        - Prisma
+        - Drizzle
+        - TypeORM
+        - Knex
+        - Raw SQL
+      default: Prisma
+    - name: softDelete
+      type: boolean
+      description: Use soft deletes
+      default: false
+  ports:
+    - name: api-in
+      direction: inbound
+      protocol:
+        - TypeScript
+      description: Method calls from services
+    - name: db-out
+      direction: outbound
+      protocol:
+        - SQL
+        - ORM
+      description: Database queries
+  ai:
+    context: "This is a repository/data access layer. Consider query optimization, transaction boundaries, and data validation."
+    reviewHints:
+      - Check for N+1 query issues
+      - Verify transaction boundaries
+      - Consider pagination for list queries

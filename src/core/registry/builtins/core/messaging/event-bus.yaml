@@ -1,0 +1,51 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: event-bus
+  namespace: messaging
+  version: "1.0.0"
+  displayName: Event Bus
+  description: A publish-subscribe event bus for decoupled event-driven communication.
+  icon: Radio
+  tags:
+    - messaging
+    - events
+    - pubsub
+spec:
+  args:
+    - name: provider
+      type: enum
+      description: Event bus provider
+      options:
+        - Kafka
+        - SNS/SQS
+        - EventBridge
+        - NATS
+        - Redis Pub/Sub
+      default: Kafka
+    - name: partitions
+      type: number
+      description: Number of partitions (Kafka)
+      default: 6
+    - name: retentionHours
+      type: number
+      description: Event retention in hours
+      default: 168
+  ports:
+    - name: publish-in
+      direction: inbound
+      protocol:
+        - Event
+        - HTTP
+      description: Event publishing
+    - name: subscribe-out
+      direction: outbound
+      protocol:
+        - Event
+      description: Event subscription/consumption
+  ai:
+    context: "This is an event bus. Consider event schema versioning, ordering guarantees, and consumer group management."
+    reviewHints:
+      - Check event schema registry
+      - Verify consumer group configuration
+      - Consider exactly-once processing needs
