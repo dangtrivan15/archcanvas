@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -169,6 +169,21 @@ export function FileMenu() {
                 >
                   <Image className="w-4 h-4" />
                   <span>PNG</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    setShowExportSub(false);
+                    if (exportApi) {
+                      await exportApi.exportToSvg(fileName);
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+                  role="menuitem"
+                  data-testid="export-svg-button"
+                >
+                  <FileImage className="w-4 h-4" />
+                  <span>SVG</span>
                 </button>
               </div>
             )}
