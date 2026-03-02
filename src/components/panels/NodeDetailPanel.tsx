@@ -681,6 +681,7 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
   const [isAdding, setIsAdding] = useState(false);
   const [path, setPath] = useState('');
   const [role, setRole] = useState<'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'>('source');
+  const [pathError, setPathError] = useState('');
 
   const roleOptions: { value: typeof role; label: string }[] = [
     { value: 'source', label: 'Source' },
@@ -692,7 +693,11 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
   ];
 
   const handleSubmit = useCallback(() => {
-    if (!path.trim()) return;
+    if (!path.trim()) {
+      setPathError('Path is required');
+      return;
+    }
+    setPathError('');
     addCodeRef({ nodeId, path: path.trim(), role });
     setPath('');
     setRole('source');
@@ -708,6 +713,7 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
       setIsAdding(false);
       setPath('');
       setRole('source');
+      setPathError('');
     }
   }, [handleSubmit]);
 
@@ -731,13 +737,16 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
             <input
               type="text"
               value={path}
-              onChange={(e) => setPath(e.target.value)}
+              onChange={(e) => { setPath(e.target.value); if (pathError) setPathError(''); }}
               onKeyDown={handleKeyDown}
               placeholder="e.g., src/api/handler.ts"
-              className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              className={`w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white focus:outline-none ${pathError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`}
               autoFocus
               data-testid="coderef-path-input"
             />
+            {pathError && (
+              <div className="text-xs text-red-500 mt-0.5" data-testid="coderef-path-error">{pathError}</div>
+            )}
           </div>
           <div>
             <label className="text-xs text-gray-500">Role</label>
@@ -755,15 +764,14 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
           <div className="flex gap-2">
             <button
               onClick={handleSubmit}
-              disabled={!path.trim()}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
               data-testid="submit-coderef-button"
             >
               <Plus className="w-3 h-3" />
               Add
             </button>
             <button
-              onClick={() => { setIsAdding(false); setPath(''); setRole('source'); }}
+              onClick={() => { setIsAdding(false); setPath(''); setRole('source'); setPathError(''); }}
               className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
               data-testid="cancel-coderef-button"
             >
