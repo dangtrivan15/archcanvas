@@ -1,4 +1,52 @@
 ==================================================
+SESSION: 2026-03-02 - Features #158, #159
+==================================================
+
+## What was accomplished:
+
+### Feature #158: Node context menu: Edit, Add Note, Add Child, Zoom In, Delete (PASSING)
+- Created NodeContextMenu component (src/components/canvas/NodeContextMenu.tsx)
+- Right-clicking a node shows context menu with 5 node-specific options:
+  - Edit: selects node and opens properties panel
+  - Add Note: selects node and opens notes panel
+  - Add Child: adds a child node of type compute/service
+  - Zoom In: fractal zoom into node (disabled when no children, enabled when children exist)
+  - Delete: opens delete confirmation dialog
+- Shows node display name as menu header
+- Integrated with Canvas.tsx using React Flow's onNodeContextMenu callback
+- Moved canvas background right-click from wrapper div to onPaneContextMenu
+- All context menus (canvas, node, edge) properly close when another opens
+- Zero console errors, zero warnings
+
+### Feature #159: Edge context menu: Edit, Add Note, Delete (PASSING)
+- Created EdgeContextMenu component (src/components/canvas/EdgeContextMenu.tsx)
+- Right-clicking an edge shows context menu with 3 edge-specific options:
+  - Edit: selects edge and opens right panel
+  - Add Note: selects edge and opens notes panel
+  - Delete: removes edge immediately (no confirmation needed)
+- Shows edge label as menu header (falls back to fromNode → toNode)
+- Integrated with Canvas.tsx using React Flow's onEdgeContextMenu callback
+- Delete verified: edge count decreased from 4 to 3 after deletion
+- Zero console errors, zero warnings
+
+## Key implementation details:
+- Both menus follow same pattern as existing CanvasContextMenu
+- Close on outside click (with setTimeout to prevent immediate dismissal)
+- Close on Escape key
+- Delete button uses red hover styling for visual distinction
+- Disabled items shown grayed out with cursor-not-allowed
+
+## Current completion status:
+- Features passing: ~174 of 235 (~74%)
+- Zero console errors
+- All changes committed
+
+## What should be worked on next:
+- More canvas interaction features
+- Export API features
+- File persistence features
+
+==================================================
 SESSION: 2026-03-02 - Features #163, #200, #201
 ==================================================
 
