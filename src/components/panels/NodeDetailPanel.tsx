@@ -14,18 +14,23 @@ import { AIChatTab } from './AIChatTab';
 import type { NodeDef, ArgDef } from '@/types/nodedef';
 import { formatRelativeTime } from '@/utils/formatRelativeTime';
 import { marked } from 'marked';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 // Configure marked for inline rendering (no wrapping <p> tags for short content)
 const markedInline = new marked.Renderer();
 
-/** Render markdown content to sanitized HTML */
+/** Render markdown content to sanitized HTML (XSS-safe) */
 function renderMarkdown(content: string): string {
   // Use marked.parse for full markdown, parseInline for single-line content
   const hasBlockElements = /\n\n|^#{1,6}\s|^[-*]\s|^\d+\.\s|^>/m.test(content);
+  let html: string;
   if (hasBlockElements) {
-    return marked.parse(content, { async: false, renderer: markedInline }) as string;
+    html = marked.parse(content, { async: false, renderer: markedInline }) as string;
+  } else {
+    html = marked.parseInline(content, { async: false }) as string;
   }
-  return marked.parseInline(content, { async: false }) as string;
+  // Sanitize HTML to prevent XSS attacks
+  return sanitizeHtml(html);
 }
 
 type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat';
