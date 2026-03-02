@@ -1265,3 +1265,29 @@ SESSION: 2026-03-02 - Feature #140
 
 ## Current completion status:
 - Features passing: 89 of 235 (37.9%)
+
+==================================================
+SESSION: 2026-03-02 - Feature #123
+==================================================
+
+## What was accomplished:
+
+### Feature #123: Custom properties section: remove property (PASSING)
+- Verified existing implementation in CustomPropertiesSection (NodeDetailPanel.tsx lines 386-391, 541-548)
+- handleRemoveProperty() creates copy of properties, deletes key, calls updateNode
+- Remove button: Trash2 icon, appears on hover (opacity-0 group-hover:opacity-100), red hover color
+- Data flow: handleRemoveProperty → coreStore.updateNode → undoManager.snapshot → textApi.updateNode → graphEngine.updateNode
+- GraphEngine uses immutable spread: properties: { ...updates.properties }
+- Browser verification via Playwright:
+  1. Selected Order Service node → right panel opened with Properties tab
+  2. Clicked Add Property → form appeared with key/value inputs
+  3. Added "TEST_REMOVE_123" = "test_value_for_removal" → Custom Properties (1)
+  4. Clicked "Remove property" button → Custom Properties (0), empty state shown
+  5. Property fully removed from UI and node data
+- Zero console errors (0 errors, 0 warnings, 116 total messages all info/log)
+- Mock data grep: only legitimate globalThis.crypto usage in codec.ts
+- No code changes needed - implementation was already complete from feature #121
+
+## Current completion status:
+- Features passing: 88 of 235 (37.4%)
+- Zero console errors
