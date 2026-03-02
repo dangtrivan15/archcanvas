@@ -2694,3 +2694,34 @@ SESSION: 2026-03-02 - Feature #161
 - Features passing: 165 of 235 (70.2%)
 - Zero console errors
 - Committed: b741daa
+
+==================================================
+SESSION: 2026-03-02 - Feature #144
+==================================================
+
+## What was accomplished:
+
+### Feature #144: Created edge appears with correct visual style (PASSING)
+- Created edge-test.archc test file with 4 nodes in a 2x2 grid, no edges
+- Used ConnectNodesButton dropdown UI to create 3 edges of different types:
+  1. SYNC edge (Node A → Node B): Renders as solid gray line (#6b7280, 2px width) ✓
+  2. ASYNC edge (Node C → Node D): Renders as dashed orange/amber line (#f59e0b, 2px, dash 8,4) with flowing animation ✓
+  3. DATA_FLOW edge (Node A → Node D): Renders as thick purple line (#8b5cf6, 3px width) ✓
+- All 3 edge types visually distinct and match their type specification
+- Console log confirms edge creation: [ConnectNodes] Edge created messages for all 3 types
+- Zero console errors (0 errors, 0 warnings)
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- No code changes needed - all edge components (SyncEdge, AsyncEdge, DataFlowEdge) already implemented
+
+## Edge component locations:
+- SyncEdge: src/components/edges/SyncEdge.tsx (solid gray, 2px)
+- AsyncEdge: src/components/edges/AsyncEdge.tsx (dashed orange, animated)
+- DataFlowEdge: src/components/edges/DataFlowEdge.tsx (solid purple, 3px)
+- Edge type mapping: src/components/edges/edgeTypeMap.ts
+- Connection dialog: src/components/shared/ConnectionTypeDialog.tsx
+- Connect button: src/components/toolbar/ConnectNodesButton.tsx
+
+## Current completion status:
+- Features passing: 164 of 235 (69.8%)
+- Zero console errors
+- No code changes needed
