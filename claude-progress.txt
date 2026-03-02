@@ -2216,3 +2216,44 @@ SESSION: 2026-03-02 - Features #91, #98, #99
 - Export API features
 - File persistence features
 - AI integration features
+
+==================================================
+SESSION: 2026-03-02 - Features #97, #149, #174
+==================================================
+
+## What was accomplished:
+
+### Feature #97: Navigation path state updates correctly on zoom (PASSING)
+- Verified existing implementation in src/store/navigationStore.ts
+- 16 unit tests in test/unit/store/navigationPathZoom.test.ts all passing
+- Browser verified: zoom in/out through nested nodes, breadcrumb navigation works correctly
+- No code changes needed - implementation was already complete
+
+### Feature #149: File New creates empty architecture (PASSING)
+- Implemented unsaved changes confirmation dialog (UnsavedChangesDialog)
+- Added isDirty check in FileMenu.tsx and useKeyboardShortcuts.ts (Ctrl+N)
+- Added UnsavedChangesDialogInfo to uiStore with open/close actions
+- FileMenu: doNewFile() calls newFile() + zoomToRoot(), handleNew() checks isDirty
+- coreStore.ts: newFile() now also resets fileHandle to null
+- Browser verified: clean state = immediate new, dirty state = shows dialog, Cancel preserves data, Discard clears canvas
+- Committed: adac858
+
+### Feature #174: AI message history persisted in .archc file (PASSING)
+- Created full Zustand AI store (src/store/aiStore.ts) with conversations, addMessage, getMessages, setConversations, clearConversations
+- Extended fileIO.ts with AIStateData interface and proto-to-internal converters for conversations, messages, suggestions
+- Updated graphToProto to accept aiState parameter, protoToGraphFull to extract aiState
+- Updated saveArchcFile/saveArchcFileAs to pass aiState through
+- Wired coreStore.ts: newFile clears AI, openFile/loadFromUrl restores AI, saveFile/saveFileAs includes AI state
+- Rewrote AIChatTab.tsx to use persisted store (fixed infinite re-render caused by getMessages() selector)
+- 13 unit tests covering store operations, serialization round-trip, end-to-end store->save->load->store
+- All 1112 project tests passing, zero browser console errors
+- Changes committed in c421c1b (bundled with parallel agent work)
+
+## Key fixes:
+- AIChatTab infinite re-render: useAIStore((s) => s.getMessages()) returned new array each render;
+  fixed by selecting raw conversations array and deriving messages in useMemo
+
+## Current completion status:
+- Features passing: ~150 of 235
+- Zero console errors
+- 1112 unit tests across 73 test files, all passing
