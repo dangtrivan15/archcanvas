@@ -3,18 +3,21 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 
 export function FileMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showExportSub, setShowExportSub] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const newFile = useCoreStore((s) => s.newFile);
   const openFile = useCoreStore((s) => s.openFile);
   const saveFile = useCoreStore((s) => s.saveFile);
   const saveFileAs = useCoreStore((s) => s.saveFileAs);
+  const exportApi = useCoreStore((s) => s.exportApi);
+  const fileName = useCoreStore((s) => s.fileName);
   const isDirty = useCoreStore((s) => s.isDirty);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
@@ -25,6 +28,7 @@ export function FileMenu() {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setShowExportSub(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -35,7 +39,10 @@ export function FileMenu() {
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setShowExportSub(false);
+      }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -128,15 +135,44 @@ export function FileMenu() {
             <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+Shift+S</span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
-          <button
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
-            role="menuitem"
+          <div
+            className="relative"
+            onMouseEnter={() => setShowExportSub(true)}
+            onMouseLeave={() => setShowExportSub(false)}
           >
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-            <ChevronDown className="w-3 h-3 ml-auto -rotate-90" />
-          </button>
+            <button
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+              role="menuitem"
+              data-testid="export-menu-button"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export</span>
+              <ChevronDown className="w-3 h-3 ml-auto -rotate-90" />
+            </button>
+            {showExportSub && (
+              <div
+                className="absolute left-full top-0 ml-1 w-48 bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 z-50"
+                role="menu"
+                data-testid="export-submenu"
+              >
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    setShowExportSub(false);
+                    if (exportApi) {
+                      await exportApi.exportToPng(fileName);
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+                  role="menuitem"
+                  data-testid="export-png-button"
+                >
+                  <Image className="w-4 h-4" />
+                  <span>PNG</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

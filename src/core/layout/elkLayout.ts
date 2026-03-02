@@ -12,10 +12,17 @@ const elk = new ELK();
 // Default node dimensions when not specified
 const DEFAULT_NODE_WIDTH = 240;
 const DEFAULT_NODE_HEIGHT = 100;
-const NODE_SPACING = 60;
-const LAYER_SPACING = 100;
+
+// Default spacing values (used when no custom spacing is provided)
+export const DEFAULT_NODE_SPACING = 60;
+export const DEFAULT_LAYER_SPACING = 100;
 
 export type LayoutDirection = 'horizontal' | 'vertical';
+
+export interface LayoutSpacingOptions {
+  nodeSpacing?: number;
+  layerSpacing?: number;
+}
 
 interface LayoutResult {
   /** Map of node ID -> { x, y } */
@@ -25,11 +32,13 @@ interface LayoutResult {
 /**
  * Compute ELK layout for a set of nodes and edges.
  * Returns a map of node ID -> new position.
+ * Accepts optional spacing configuration to override defaults.
  */
 export async function computeElkLayout(
   nodes: ArchNode[],
   edges: ArchEdge[],
   direction: LayoutDirection = 'horizontal',
+  spacing?: LayoutSpacingOptions,
 ): Promise<LayoutResult> {
   if (nodes.length === 0) {
     return { positions: new Map() };
@@ -57,14 +66,17 @@ export async function computeElkLayout(
       targets: [edge.toNode],
     }));
 
+  const nodeSpacing = spacing?.nodeSpacing ?? DEFAULT_NODE_SPACING;
+  const layerSpacing = spacing?.layerSpacing ?? DEFAULT_LAYER_SPACING;
+
   const elkGraph: ElkNode = {
     id: 'root',
     layoutOptions: {
       'elk.algorithm': 'layered',
       'elk.direction': elkDirection,
-      'elk.spacing.nodeNode': String(NODE_SPACING),
-      'elk.layered.spacing.nodeNodeBetweenLayers': String(LAYER_SPACING),
-      'elk.layered.spacing.edgeNodeBetweenLayers': String(LAYER_SPACING / 2),
+      'elk.spacing.nodeNode': String(nodeSpacing),
+      'elk.layered.spacing.nodeNodeBetweenLayers': String(layerSpacing),
+      'elk.layered.spacing.edgeNodeBetweenLayers': String(layerSpacing / 2),
       'elk.edgeRouting': 'POLYLINE',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
       'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
@@ -93,11 +105,13 @@ export async function computeElkLayout(
 /**
  * Apply ELK layout to an ArchGraph, returning a new graph with updated positions.
  * Only lays out nodes at the given navigation level (root by default).
+ * Accepts optional spacing configuration to override default node/layer spacing.
  */
 export async function applyElkLayout(
   graph: ArchGraph,
   direction: LayoutDirection = 'horizontal',
   navigationPath: string[] = [],
+  spacing?: LayoutSpacingOptions,
 ): Promise<ArchGraph> {
   // Get nodes at the current navigation level
   let targetNodes: ArchNode[];
@@ -122,8 +136,8 @@ export async function applyElkLayout(
     (e) => nodeIds.has(e.fromNode) && nodeIds.has(e.toNode),
   );
 
-  // Compute layout
-  const result = await computeElkLayout(targetNodes, relevantEdges, direction);
+  // Compute layout with optional spacing configuration
+  const result = await computeElkLayout(targetNodes, relevantEdges, direction, spacing);
 
   // Apply positions to the graph
   const updatedNodes = applyPositionsToNodes(

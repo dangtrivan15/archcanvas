@@ -655,13 +655,21 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
   /**
    * Auto-layout nodes using the ELK layered algorithm.
+   * Uses spacing configuration from canvasStore.
    */
   autoLayout: async (direction, navigationPath = []) => {
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
     try {
-      const updatedGraph = await applyElkLayout(graph, direction, navigationPath);
+      // Get layout spacing from canvas store
+      const { layoutSpacing } = useCanvasStore.getState();
+      const spacing = {
+        nodeSpacing: layoutSpacing.nodeSpacing,
+        layerSpacing: layoutSpacing.layerSpacing,
+      };
+
+      const updatedGraph = await applyElkLayout(graph, direction, navigationPath, spacing);
       textApi.setGraph(updatedGraph);
       undoManager.snapshot('Auto-layout', updatedGraph);
 
@@ -672,7 +680,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         canRedo: undoManager.canRedo,
       });
 
-      console.log('[CoreStore] Auto-layout applied:', direction);
+      console.log('[CoreStore] Auto-layout applied:', direction, 'spacing:', spacing);
     } catch (error) {
       console.error('[CoreStore] Auto-layout failed:', error);
     }
