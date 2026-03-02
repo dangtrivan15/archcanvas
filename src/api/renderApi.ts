@@ -52,6 +52,9 @@ export class RenderApi {
       (n) => n.status === 'pending',
     ).length;
 
+    // Note count excludes pending suggestions (they have their own badge)
+    const regularNoteCount = node.notes.length - pendingSuggestionCount;
+
     // Determine component type - ref nodes get 'ref' type, others based on namespace
     const nodeType = node.refSource
       ? 'ref'
@@ -67,7 +70,7 @@ export class RenderApi {
         outbound: outboundPorts,
       },
       hasChildren: node.children.length > 0,
-      noteCount: node.notes.length,
+      noteCount: regularNoteCount,
       pendingSuggestionCount,
       codeRefCount: node.codeRefs.length,
       properties: { ...node.properties },

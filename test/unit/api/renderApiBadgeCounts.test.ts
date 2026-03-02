@@ -89,9 +89,9 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       canvasNode = result.nodes[0];
     });
 
-    // Step 3: Verify noteCount equals 3
-    it('has noteCount equal to 3', () => {
-      expect(canvasNode.data.noteCount).toBe(3);
+    // Step 3: Verify noteCount equals 2 (excludes pending suggestions)
+    it('has noteCount equal to 2 (excluding pending suggestion)', () => {
+      expect(canvasNode.data.noteCount).toBe(2);
     });
 
     // Step 4: Verify pendingSuggestionCount equals 1
@@ -167,8 +167,8 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       canvasNode = result.nodes[0];
     });
 
-    it('has noteCount equal to 5', () => {
-      expect(canvasNode.data.noteCount).toBe(5);
+    it('has noteCount equal to 2 (excluding 3 pending suggestions)', () => {
+      expect(canvasNode.data.noteCount).toBe(2);
     });
 
     it('has pendingSuggestionCount equal to 3', () => {
@@ -258,9 +258,9 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       expect(gateway.data.codeRefCount).toBe(1);
     });
 
-    it('second node has noteCount=1, pendingSuggestionCount=1, codeRefCount=3', () => {
+    it('second node has noteCount=0 (only pending note), pendingSuggestionCount=1, codeRefCount=3', () => {
       const db = canvasNodes.find((n) => n.data.displayName === 'Main DB')!;
-      expect(db.data.noteCount).toBe(1);
+      expect(db.data.noteCount).toBe(0);
       expect(db.data.pendingSuggestionCount).toBe(1);
       expect(db.data.codeRefCount).toBe(3);
     });
