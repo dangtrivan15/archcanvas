@@ -3003,3 +3003,55 @@ SESSION: 2026-03-02 - Feature #176
 - Features passing: 181 of 235 (77.0%)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-02 - Features #179, #180, #181
+==================================================
+
+## What was accomplished:
+
+### Feature #179: MCP add_node tool creates node (PASSING)
+- Wrote 10 comprehensive tests in test/unit/mcp/mcpAddNode.test.ts
+- Tests verify: add_node with type+displayName, success response with nodeId,
+  node appears in describe output (structured/human/AI formats),
+  multiple nodes, position args, custom args, unique IDs, dispatch routing
+- handleAddNode in handlers.ts delegates to textApi.addNode() which calls
+  graphEngine.createNode() + engineAddNode()
+- Returns JSON: { success: true, nodeId, displayName }
+- All 10 tests passing, zero console errors
+
+### Feature #180: MCP add_edge tool creates edge (PASSING)
+- Wrote 12 comprehensive tests in test/unit/mcp/mcpAddEdge.test.ts
+- Tests verify: create edge between 2 nodes, success response with edgeId,
+  edge appears in describe output, sync/async/data-flow types, labels,
+  unique edge IDs, human/AI format, dispatch routing, multiple edges
+- handleAddEdge in handlers.ts delegates to textApi.addEdge() which calls
+  graphEngine.createEdge() + engineAddEdge()
+- Returns JSON: { success: true, edgeId }
+- All 12 tests passing, zero console errors
+
+### Feature #181: MCP add_note tool creates note (PASSING)
+- Wrote 10 comprehensive tests in test/unit/mcp/mcpAddNote.test.ts
+- Tests verify: add note to node with content, success response with noteId,
+  note appears in describe output, note content in AI format,
+  tags support, multiple notes, unique IDs, dispatch routing, note on edge
+- handleAddNote in handlers.ts delegates to textApi.addNote() which calls
+  graphEngine.createNote() + addNoteToNode()/addNoteToEdge()
+- Returns JSON: { success: true, noteId }
+- All 10 tests passing, zero console errors
+
+## Browser verification:
+- App loads with zero console errors (0 errors, 0 warnings)
+- Node creation verified through UI (Service node placed on canvas)
+- Status bar shows correct counts (Nodes: 1, Edges: 0)
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+
+## Test results:
+- 32 new tests across 3 test files (all passing)
+- 1196 total tests across 80 test files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: ~183 of 235 (~77.9%)
+- Zero console errors
+- No mock data patterns in production code
