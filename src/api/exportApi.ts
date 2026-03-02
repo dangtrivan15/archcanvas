@@ -4,6 +4,7 @@
 
 import type { ArchGraph, ArchNode } from '@/types/graph';
 import { flattenNodes, countAllNodes } from '@/core/graph/graphQuery';
+import { toPng } from 'html-to-image';
 
 export class ExportApi {
   constructor() {
@@ -113,6 +114,54 @@ export class ExportApi {
     }
 
     return lines.join('\n');
+  }
+
+  /**
+   * Export the canvas to a PNG image and trigger a download.
+   * Captures the React Flow viewport element from the DOM.
+   *
+   * @param fileName - Base name for the exported file (without extension)
+   * @returns true if export succeeded
+   */
+  async exportToPng(fileName: string = 'architecture'): Promise<boolean> {
+    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null;
+    if (!viewport) {
+      console.error('[ExportApi] Cannot find React Flow viewport element for PNG export');
+      return false;
+    }
+
+    try {
+      const dataUrl = await toPng(viewport, {
+        backgroundColor: '#f9fafb', // gray-50 to match canvas background
+        pixelRatio: 2, // High-res export
+        filter: (node: HTMLElement) => {
+          // Filter out UI controls that shouldn't be in the export
+          const className = node.className;
+          if (typeof className === 'string') {
+            if (className.includes('react-flow__minimap')) return false;
+            if (className.includes('react-flow__controls')) return false;
+            if (className.includes('react-flow__panel')) return false;
+          }
+          return true;
+        },
+      });
+
+      // Trigger download
+      const baseName = fileName.replace(/\.archc$/, '').replace(/\.png$/, '');
+      const link = document.createElement('a');
+      link.download = `${baseName}.png`;
+      link.href = dataUrl;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log(`[ExportApi] PNG exported: ${baseName}.png`);
+      return true;
+    } catch (err) {
+      console.error('[ExportApi] PNG export failed:', err);
+      return false;
+    }
   }
 
   // ============================================================
