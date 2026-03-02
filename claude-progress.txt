@@ -1325,3 +1325,47 @@ SESSION: 2026-03-02 - Feature #141
 ## Current completion status:
 - Features passing: 90 of 235 (38.3%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Features #136, #138, #23
+==================================================
+
+## What was accomplished:
+
+### Feature #136: Code refs panel lists references with path and icon (PASSING)
+- Added role-based file type icons to code ref entries in CodeRefsTab
+- Icons: FileCode (source/blue), FileText (api-spec/green), Database (schema/purple),
+  Cloud (deployment/orange), Cog (config/gray), TestTube2 (test/yellow), File (default)
+- Each code ref displays icon + file path (monospace) + role label
+- Browser verified: 2 code refs (src/service.ts source, api/spec.yaml api-spec) displayed with distinct icons
+- Zero console errors
+
+### Feature #138: Click code ref copies path to clipboard (PASSING)
+- Added click-to-copy functionality on code ref items
+- Uses navigator.clipboard.writeText() with document.execCommand fallback
+- Visual feedback: "Copied\!" tooltip appears for 2 seconds
+- Copy icon changes to green CheckCircle during feedback
+- Hover state shows Copy icon with pointer cursor
+- Browser verified: clicking code ref shows "Copied\!" feedback in DOM
+- Zero console errors
+
+### Feature #23: Find node by ID searches recursively through children (PASSING)
+- 10 unit tests in test/unit/core/findNodeRecursive.test.ts
+- Created nested architecture: root A → child B → grandchild C
+- findNode(A.id) returns A at root level
+- findNode(B.id) returns B at child level
+- findNode(C.id) returns C at grandchild level
+- findNode('nonexistent') returns undefined
+- Additional: empty graph, multiple branches, same reference, similar names
+- All tests passing
+
+## Current completion status:
+- Features passing: 97 of 235 (41.3%)
+- Zero console errors
+- All unit tests passing
+
+## What should be worked on next:
+- More graph engine features
+- Canvas interaction features
+- Side panel improvements
+- File Save/Save As functionality
