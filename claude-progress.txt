@@ -1,4 +1,48 @@
 ==================================================
+SESSION: 2026-03-02 - Features #163, #200, #201
+==================================================
+
+## What was accomplished:
+
+### Feature #163: Auto-layout uses configurable spacing (PASSING)
+- Added LayoutSpacing interface and DEFAULT_LAYOUT_SPACING to canvasStore
+- Updated elkLayout.ts to accept optional LayoutSpacingOptions parameter
+- Updated coreStore.autoLayout to read spacing from canvasStore and pass to ELK
+- Enhanced LayoutMenu.tsx with collapsible "Layout Spacing" panel:
+  - Node Spacing slider (range 10-300, step 10, default 60)
+  - Layer Spacing slider (range 20-500, step 10, default 100)
+  - "Reset to defaults" button appears when values differ from defaults
+- Verified: applied layout with 60/100, changed to 200/300, re-applied - nodes visibly more spread out
+- Console confirmed: spacing:{nodeSpacing:60,layerSpacing:100} → spacing:{nodeSpacing:200,layerSpacing:300}
+- 0 console errors, 0 warnings
+- Changes committed in d6a1f8a (bundled with parallel agent work on feature #234)
+
+### Feature #200: New file starts with default architecture name (PASSING)
+- No code changes needed - already fully implemented
+- Loaded ecommerce.archc (5 nodes, 4 edges, toolbar shows "ecommerce.archc")
+- Clicked File > New
+- Verified: toolbar shows "Untitled Architecture", canvas empty, status bar "Nodes: 0 | Edges: 0"
+- 0 console errors, 0 warnings
+
+### Feature #201: Properties panel resets when different node selected (PASSING)
+- No code changes needed - already fully implemented
+- Selected API Gateway → Properties showed: provider, rateLimit, authMethod
+- Selected Order Service → Properties showed: language, framework, replicas, healthCheck
+- No stale data from API Gateway visible after switching to Order Service
+- 0 console errors, 0 warnings
+
+## Current completion status:
+- Features passing: 179 of 235 (76.2%)
+- Zero console errors
+- No mock data patterns in production code
+
+## What should be worked on next:
+- More canvas interaction features
+- Export API features
+- File persistence features
+- AI integration features
+
+==================================================
 SESSION: 2026-03-02 - Feature #148
 ==================================================
 
