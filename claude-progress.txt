@@ -1,4 +1,39 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #122
+==================================================
+
+## What was accomplished:
+
+### Feature #122: Custom properties section: edit property (PASSING)
+- Verified existing CustomPropertiesSection component in NodeDetailPanel.tsx
+- Edit functionality was already implemented: click value text → inline edit → save on blur/Enter
+- Added explicit Pencil (edit) icon button from lucide-react for better discoverability
+- Edit button appears on hover alongside delete (trash) button in property rows
+- data-testid="edit-property-{key}" added for testing
+- Full workflow verified via Playwright:
+  1. Added custom property 'env' = 'dev' via Add Property form
+  2. Clicked on value to enter edit mode (inline textbox replaced value)
+  3. Changed value to 'staging' via fill + blur
+  4. Verified updated value 'staging' shown in property row
+  5. Switched to Order Service node, switched back to API Gateway
+  6. Property 'env' = 'staging' persisted correctly in node data
+- Zero console errors (0 errors, 0 warnings out of 116 messages)
+- No mock data patterns in production code (only legitimate globalThis.crypto usage)
+
+## Technical details:
+- CustomPropertiesSection (lines 360-546 in NodeDetailPanel.tsx) manages full CRUD
+- Edit state: editingKey (string|null), editValue (string)
+- handleStartEdit: sets editingKey and pre-fills editValue from node.properties
+- handleSaveEdit: creates new properties object via spread, calls updateNode()
+- Data flow: updateNode → coreStore → undoManager.snapshot → textApi.updateNode → graphEngine
+- Immutable updates throughout (new object creation, not mutation)
+- Keyboard support: Enter to save, Escape to cancel
+
+## Current completion status:
+- Features passing: 87 of 235 (37.0%)
+- Zero console errors
+
+==================================================
 SESSION: 2026-03-02 - Feature #139
 ==================================================
 
