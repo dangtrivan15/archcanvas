@@ -2303,3 +2303,50 @@ SESSION: 2026-03-02 - Features #103, #104, #128
 - Features passing: 149 of 235 (63.4%)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-02 - Features #116, #117, #118
+==================================================
+
+## What was accomplished:
+
+### Feature #116: Properties panel shows optional args with defaults (PASSING)
+- Modified coreStore.addNode() to resolve nodedef from registry and pre-fill default values
+- When creating nodes, default arg values from nodedef are merged with explicit args
+- Explicit args take priority over defaults (spread merge: { ...defaults, ...params.args })
+- Verified with Database node: engine=PostgreSQL, version=16, storageGB=20, replication=none
+- Optional args show without Required indicator; only required args show red * and badge
+- Zero console errors, no mock data patterns
+
+### Feature #117: Properties text input validates string fields (PASSING)
+- Existing implementation already handles string fields correctly
+- Tested: entered "NestJS" in framework field - accepted without errors
+- Value persisted after deselecting and reselecting the node
+- Canvas body updated in real-time to show new value
+- Zero console errors, no code changes needed
+
+### Feature #118: Properties number input validates numeric fields (PASSING)
+- Changed number inputs from type="number" to type="text" with inputMode="numeric"
+- Added numberInputValues state to track raw text for validation
+- Added handleNumberInputChange handler for number-specific validation
+- getValidationError now checks for NaN on number fields
+- showError now includes isNumberError flag for non-required number field validation
+- Valid numbers accepted: "5" shows without error, updates node
+- Non-numeric text rejected: "abc" shows validation error with red border
+- Negative numbers handled: "-3" accepted as valid (no error)
+- Zero console errors, no mock data patterns
+
+## Key code changes:
+- src/store/coreStore.ts: addNode() now pre-fills defaults from nodedef registry
+- src/components/panels/NodeDetailPanel.tsx: number validation with text input + NaN detection
+
+## Current completion status:
+- Features passing: 154 of 235 (65.5%)
+- Zero console errors
+- All changes committed
+
+## What should be worked on next:
+- More form validation features
+- Canvas interaction features
+- Export API features
+- File persistence features
