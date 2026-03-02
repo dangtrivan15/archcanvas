@@ -1232,3 +1232,36 @@ SESSION: 2026-03-02 - Feature #112
 ## Current completion status:
 - Features passing: 84 of 235 (35.7%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Feature #140
+==================================================
+
+## What was accomplished:
+
+### Feature #140: Code ref path validates non-empty (PASSING)
+- Verified CodeRefsTab in NodeDetailPanel.tsx has pathError validation state
+- Empty path submission shows "Path is required" red error text below input
+- Input border turns red on validation error
+- Error clears when user starts typing
+- Submit button is enabled (not disabled) so user can click it to trigger validation
+- Cancel button and Escape key both clear the error state
+- Valid path submission (src/api/gateway.ts) succeeds and shows code ref in list
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+
+## Verification steps completed:
+1. Loaded ecommerce.archc test file (5 nodes, 4 edges)
+2. Selected API Gateway node → right panel opens
+3. Clicked Code Refs tab → tab becomes active
+4. Clicked Add Code Reference → form opens with empty path
+5. Clicked Add with empty path → "Path is required" error shown in red
+6. Typed "src/api/gateway.ts" → error cleared
+7. Clicked Add → code reference added successfully, form closed
+8. Code ref visible in list: src/api/gateway.ts (source)
+9. Node badge shows 📎 1 code ref count
+10. Console: 0 errors, 0 warnings
+11. Grep for mock data: clean (only legitimate globalThis.crypto)
+
+## Current completion status:
+- Features passing: 89 of 235 (37.9%)
