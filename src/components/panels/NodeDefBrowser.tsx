@@ -184,11 +184,13 @@ export function NodeDefBrowser() {
                         >
                           <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                           <div className="min-w-0 flex-1">
-                            <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-800' : 'text-gray-800'}`}>
+                            <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-800' : 'text-gray-800'}`}
+                                 data-testid={`nodedef-name-${typeKey}`}>
                               {def.metadata.displayName}
                             </div>
-                            <div className={`text-xs truncate ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
-                              {typeKey}
+                            <div className={`text-xs truncate ${isActive ? 'text-blue-500' : 'text-gray-400'}`}
+                                 data-testid={`nodedef-desc-${typeKey}`}>
+                              {def.metadata.description}
                             </div>
                           </div>
                         </div>
