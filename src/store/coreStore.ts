@@ -163,6 +163,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       graph,
       isDirty: false,
       fileName: 'Untitled Architecture',
+      fileHandle: null,
       nodeCount: 0,
       edgeCount: 0,
       canUndo: false,
