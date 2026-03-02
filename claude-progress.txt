@@ -2620,3 +2620,39 @@ SESSION: 2026-03-02 - Feature #137
 - Features passing: 164 of 235 (69.8%)
 - Zero console errors
 - Committed: c12a526
+
+==================================================
+SESSION: 2026-03-02 - Feature #161
+==================================================
+
+## What was accomplished:
+
+### Feature #161: Auto-layout supports horizontal direction (PASSING)
+- Verified the complete horizontal auto-layout flow end-to-end
+- Created layout-test.archc test file with 4 nodes in a chain (A→B→C→D) with SCATTERED initial positions
+- Nodes initially placed at random positions: A(500,400), B(100,50), C(600,100), D(50,300)
+- Applied "Auto-Layout (Horizontal)" from Layout menu
+- After layout, all 4 nodes rearranged in a clean left-to-right horizontal line:
+  - Gateway A (source) → leftmost position
+  - Service B → second from left
+  - Service C → third from left
+  - Database D (target/sink) → rightmost position
+- Also verified on ecommerce.archc (5 nodes, 4 edges):
+  - API Gateway (source) on left → Services in middle → Databases (targets) on right
+- Implementation uses ELK layered algorithm with direction='RIGHT' for horizontal
+- Console log confirms: "[CoreStore] Auto-layout applied: horizontal"
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in layout code
+- No code changes needed - implementation was already complete
+
+## Verification steps completed:
+1. Created 4-node architecture with chain edges (A→B→C→D) - scattered positions
+2. Selected horizontal layout direction via Layout menu
+3. Applied auto-layout - ELK computed new positions
+4. Verified nodes flow from left to right (visual screenshot confirmation)
+5. Verified source nodes on left (Gateway A), target nodes on right (Database D)
+
+## Current completion status:
+- Features passing: 165 of 235 (70.2%)
+- Zero console errors
+- Committed: b741daa
