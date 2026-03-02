@@ -447,6 +447,47 @@ function updateNoteInNodeList(
   });
 }
 
+/**
+ * Update a note's content while preserving author, timestamp, and id.
+ * Searches recursively through node children.
+ */
+export function updateNoteContent(
+  graph: ArchGraph,
+  nodeId: string,
+  noteId: string,
+  content: string,
+): ArchGraph {
+  return {
+    ...graph,
+    nodes: updateNoteContentInNodeList(graph.nodes, nodeId, noteId, content),
+  };
+}
+
+function updateNoteContentInNodeList(
+  nodes: ArchNode[],
+  nodeId: string,
+  noteId: string,
+  content: string,
+): ArchNode[] {
+  return nodes.map((node) => {
+    if (node.id === nodeId) {
+      return {
+        ...node,
+        notes: node.notes.map((n) =>
+          n.id === noteId ? { ...n, content } : n,
+        ),
+      };
+    }
+    if (node.children.length > 0) {
+      return {
+        ...node,
+        children: updateNoteContentInNodeList(node.children, nodeId, noteId, content),
+      };
+    }
+    return node;
+  });
+}
+
 // ============================================================
 // Code Ref CRUD
 // ============================================================
