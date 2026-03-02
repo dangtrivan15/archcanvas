@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { Search, ChevronRight, ChevronDown } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, X } from 'lucide-react';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
 } from 'lucide-react';
@@ -40,6 +40,7 @@ export function NodeDefBrowser() {
   const placementInfo = useUIStore((s) => s.placementInfo);
   const enterPlacementMode = useUIStore((s) => s.enterPlacementMode);
   const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
+  const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedNamespaces, setCollapsedNamespaces] = useState<Set<string>>(new Set());
 
@@ -103,8 +104,16 @@ export function NodeDefBrowser() {
   return (
     <div className="h-full flex flex-col" data-testid="nodedef-browser">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-gray-200 shrink-0">
+      <div className="px-3 py-2 border-b border-gray-200 shrink-0 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-700">Node Types</h2>
+        <button
+          onClick={toggleLeftPanel}
+          className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          aria-label="Close node types panel"
+          data-testid="nodedef-browser-close"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Search Input */}
