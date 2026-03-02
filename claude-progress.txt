@@ -1,4 +1,56 @@
 ==================================================
+SESSION: 2026-03-02 - Features #82, #83, #84
+==================================================
+
+## What was accomplished:
+
+### Feature #82: GatewayNode renders with correct icon and layout (PASSING)
+- Verified existing implementation: compute/api-gateway maps to 'gateway' type in renderApi
+- nodeTypeMap.ts: gateway → GenericNode, api-gateway.yaml defines icon: Shield
+- Browser verified: Shield icon, "API Gateway" display name, "compute/api-gateway" type label
+- Port handles: public-in (inbound), route-out (outbound)
+- Zero console errors (0 errors, 0 warnings)
+- No code changes needed - implementation was already complete
+
+### Feature #83: GenericNode renders for unknown types (PASSING)
+- Created test .archc file (public/unknown-type.archc) with nodes of unregistered types:
+  - custom/unknown (Custom Unknown Widget)
+  - bizarre/nonexistent-thing (Bizarre Node)
+- renderApi.getNodeComponentType() defaults to 'generic' for unknown namespaces
+- Both unknown type nodes rendered correctly using GenericNode with Box fallback icon
+- Display names and type labels shown correctly
+- Fallback default in/out ports used (no nodedef-defined ports)
+- Edge between known and unknown type nodes renders correctly
+- Zero console errors
+
+### Feature #84: RefNode renders with reference indicator (PASSING)
+- Added refSource field to CanvasNodeData type (src/types/canvas.ts)
+- Updated renderApi.ts to pass refSource to canvas data and use 'ref' node type for ref nodes
+- Updated GenericNode.tsx with visual ref node indicators:
+  - Purple-tinted background (bg-purple-50)
+  - Dashed border (border-dashed, border-purple-300)
+  - ExternalLink icon in header (from Lucide)
+  - "ref: <source>" indicator text in purple below header
+  - Icon color changed to purple for ref nodes
+- Created test .archc file (public/ref-node-test.archc) with ref nodes:
+  - Service Reference (refSource: node-original-service)
+  - Shared DB Ref (refSource: external://shared-infra/primary-db)
+- Both ref nodes render with distinct purple styling vs. normal white nodes
+- Fixed unrelated regression: noteCount filter was incorrectly excluding pending notes
+- Zero console errors, all 1059 unit tests passing
+
+## Current completion status:
+- Features passing: 134 of 235 (57.0%)
+- Zero console errors
+- All 1059 unit tests passing across 69 test files
+
+## What should be worked on next:
+- More canvas interaction features
+- Export API features (PNG, SVG, Mermaid)
+- File persistence features (Save/Save As)
+- AI chat integration features
+
+==================================================
 SESSION: 2026-03-02 - Features #79, #80, #81
 ==================================================
 
@@ -2018,3 +2070,50 @@ SESSION: 2026-03-02 - Features #75, #94, #95
 - Features passing: 128 of 235 (54.5%)
 - Zero console errors
 - No code changes needed for these 3 features
+
+==================================================
+SESSION: 2026-03-02 - Features #87, #88, #90
+==================================================
+
+## What was accomplished:
+
+### Feature #87: DataFlowEdge renders as thick line (PASSING)
+- DataFlowEdge component already implemented at src/components/edges/DataFlowEdge.tsx
+- Stroke width: 3px normal, 4px selected (vs 2px/2.5px for sync and async edges)
+- Purple color (#8b5cf6) visually distinct from gray sync and amber async
+- Verified on ecommerce.archc: Order Service→Orders Database and User Service→Users Database edges
+- Both DATA_FLOW edges clearly thicker and purple compared to thin gray SYNC edges
+- Zero console errors (0 errors, 0 warnings)
+- No code changes needed
+
+### Feature #88: BaseNode displays icon, name, and type label (PASSING)
+- GenericNode component (base for all nodes) shows icon, display name, and type label
+- Icon: Lucide icon from nodedef metadata (e.g., Server for compute/service)
+- Display name: bold text in header (data-testid="node-display-name")
+- Type label: gray text below name (data-testid="node-type-label")
+- Verified with ecommerce.archc: "Order Service" shows Server icon, name, and "compute/service" type
+- Also verified by creating fresh Service node on clean canvas
+- Zero console errors (0 errors, 0 warnings)
+- No code changes needed
+
+### Feature #90: BaseNode displays arg values in body (PASSING)
+- GenericNode body section shows up to 3 args as key: value pairs
+- Verified with ecommerce.archc:
+  - API Gateway: port: 8080
+  - Order Service: language: TypeScript, framework: Express
+  - Orders Database: engine: PostgreSQL, version: 16
+  - Users Database: engine: MongoDB
+- Args rendered with monospace key and plain value text
+- Zero console errors (0 errors, 0 warnings)
+- No code changes needed
+
+## Current completion status:
+- Features passing: ~135 of 235 (57.4%)
+- Zero console errors
+- No code changes were needed - all features already implemented
+
+## What should be worked on next:
+- More canvas interaction features
+- Export API features
+- File persistence features
+- AI integration features
