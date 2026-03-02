@@ -6,6 +6,8 @@
 
 import { useEffect, useCallback } from 'react';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
+import { useNavigationStore } from '@/store/navigationStore';
 
 export function useKeyboardShortcuts() {
   const saveFile = useCoreStore((s) => s.saveFile);
@@ -14,6 +16,8 @@ export function useKeyboardShortcuts() {
   const openFile = useCoreStore((s) => s.openFile);
   const undo = useCoreStore((s) => s.undo);
   const redo = useCoreStore((s) => s.redo);
+  const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
+  const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -36,8 +40,17 @@ export function useKeyboardShortcuts() {
         case 'n':
           if (!e.shiftKey) {
             e.preventDefault();
-            // Ctrl+N → New file
-            newFile();
+            // Ctrl+N → New file (check unsaved changes)
+            const isDirty = useCoreStore.getState().isDirty;
+            const doNew = () => {
+              newFile();
+              zoomToRoot();
+            };
+            if (isDirty) {
+              openUnsavedChangesDialog({ onConfirm: doNew });
+            } else {
+              doNew();
+            }
           }
           break;
 
@@ -69,7 +82,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, zoomToRoot],
   );
 
   useEffect(() => {

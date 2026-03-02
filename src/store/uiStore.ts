@@ -24,6 +24,11 @@ export interface PlacementModeInfo {
   displayName: string;     // e.g. 'Service'
 }
 
+export interface UnsavedChangesDialogInfo {
+  /** The action to execute if the user confirms discarding changes */
+  onConfirm: () => void;
+}
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
@@ -37,6 +42,10 @@ export interface UIStoreState {
   // Connection type dialog
   connectionDialogOpen: boolean;
   connectionDialogInfo: ConnectionDialogInfo | null;
+
+  // Unsaved changes dialog
+  unsavedChangesDialogOpen: boolean;
+  unsavedChangesDialogInfo: UnsavedChangesDialogInfo | null;
 
   // Placement mode (click-to-place node on canvas)
   placementMode: boolean;
@@ -57,6 +66,10 @@ export interface UIStoreState {
   openConnectionDialog: (info: ConnectionDialogInfo) => void;
   closeConnectionDialog: () => void;
 
+  // Unsaved changes dialog actions
+  openUnsavedChangesDialog: (info: UnsavedChangesDialogInfo) => void;
+  closeUnsavedChangesDialog: () => void;
+
   // Placement mode actions
   enterPlacementMode: (info: PlacementModeInfo) => void;
   exitPlacementMode: () => void;
@@ -72,6 +85,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   connectionDialogOpen: false,
   connectionDialogInfo: null,
+
+  unsavedChangesDialogOpen: false,
+  unsavedChangesDialogInfo: null,
 
   placementMode: false,
   placementInfo: null,
@@ -102,6 +118,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeConnectionDialog: () =>
     set({ connectionDialogOpen: false, connectionDialogInfo: null }),
+
+  openUnsavedChangesDialog: (info) =>
+    set({ unsavedChangesDialogOpen: true, unsavedChangesDialogInfo: info }),
+
+  closeUnsavedChangesDialog: () =>
+    set({ unsavedChangesDialogOpen: false, unsavedChangesDialogInfo: null }),
 
   enterPlacementMode: (info) =>
     set({ placementMode: true, placementInfo: info }),
