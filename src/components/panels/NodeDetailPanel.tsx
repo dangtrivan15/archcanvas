@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File } from 'lucide-react';
+import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -736,6 +736,25 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
   const [path, setPath] = useState('');
   const [role, setRole] = useState<'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'>('source');
   const [pathError, setPathError] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopyPath = useCallback(async (refPath: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(refPath);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch {
+      // Fallback for non-secure contexts
+      const textarea = document.createElement('textarea');
+      textarea.value = refPath;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    }
+  }, []);
 
   const roleOptions: { value: typeof role; label: string }[] = [
     { value: 'source', label: 'Source' },
@@ -854,12 +873,30 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
         ) : (
           <div className="space-y-2">
             {node.codeRefs.map((ref, i) => (
-              <div key={i} className="border rounded p-2 bg-white flex items-start gap-2" data-testid={`coderef-${i}`}>
+              <div
+                key={i}
+                className="border rounded p-2 bg-white flex items-start gap-2 cursor-pointer hover:bg-gray-50 transition-colors group relative"
+                data-testid={`coderef-${i}`}
+                onClick={() => handleCopyPath(ref.path, i)}
+                title="Click to copy path"
+              >
                 <div className="mt-0.5" data-testid="coderef-icon">{getRoleIcon(ref.role)}</div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-mono truncate" data-testid="coderef-path">{ref.path}</div>
                   <div className="text-xs text-gray-400" data-testid="coderef-role">{ref.role}</div>
                 </div>
+                <div className="mt-0.5 shrink-0" data-testid={`coderef-copy-${i}`}>
+                  {copiedIndex === i ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-gray-300 group-hover:text-gray-500" />
+                  )}
+                </div>
+                {copiedIndex === i && (
+                  <div className="absolute right-2 top-0 -translate-y-full bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg" data-testid="copy-feedback">
+                    Copied!
+                  </div>
+                )}
               </div>
             ))}
           </div>
