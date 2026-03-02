@@ -238,8 +238,26 @@ export class TextApi {
 
   /**
    * Add a new edge to the architecture.
+   * Validates that both fromNode and toNode exist in the graph.
+   * Throws an error with a descriptive message if either node ID is invalid.
    */
   addEdge(params: AddEdgeParams): ArchEdge {
+    // Validate that fromNode exists
+    const fromNodeObj = findNode(this.graph, params.fromNode);
+    if (!fromNodeObj) {
+      throw new Error(
+        `Cannot create edge: source node '${params.fromNode}' does not exist in the architecture.`,
+      );
+    }
+
+    // Validate that toNode exists
+    const toNodeObj = findNode(this.graph, params.toNode);
+    if (!toNodeObj) {
+      throw new Error(
+        `Cannot create edge: target node '${params.toNode}' does not exist in the architecture.`,
+      );
+    }
+
     const edge = createEdge({
       fromNode: params.fromNode,
       toNode: params.toNode,

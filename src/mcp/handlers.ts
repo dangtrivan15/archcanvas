@@ -56,6 +56,7 @@ export function handleAddNode(
 
 /**
  * Handle the 'add_edge' tool call.
+ * Returns error response if either node ID is invalid.
  */
 export function handleAddEdge(
   ctx: ToolHandlerContext,
@@ -68,15 +69,20 @@ export function handleAddEdge(
     label?: string;
   },
 ): string {
-  const edge = ctx.textApi.addEdge({
-    fromNode: args.fromNode,
-    toNode: args.toNode,
-    type: args.type,
-    fromPort: args.fromPort,
-    toPort: args.toPort,
-    label: args.label,
-  });
-  return JSON.stringify({ success: true, edgeId: edge.id });
+  try {
+    const edge = ctx.textApi.addEdge({
+      fromNode: args.fromNode,
+      toNode: args.toNode,
+      type: args.type,
+      fromPort: args.fromPort,
+      toPort: args.toPort,
+      label: args.label,
+    });
+    return JSON.stringify({ success: true, edgeId: edge.id });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return JSON.stringify({ success: false, error: message });
+  }
 }
 
 /**
