@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
+import { X, Plus, Trash2, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -308,16 +308,8 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
         </div>
       )}
 
-      {/* Properties */}
-      <div>
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Properties</label>
-        <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded" data-testid="detail-properties">
-          {Object.keys(node.properties).length === 0
-            ? <span className="text-gray-400">empty object {'{}'}</span>
-            : JSON.stringify(node.properties, null, 2)
-          }
-        </div>
-      </div>
+      {/* Custom Properties */}
+      <CustomPropertiesSection node={node} />
 
       {/* Children */}
       <div>
@@ -365,6 +357,194 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   );
 }
 
+function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
+  const updateNode = useCoreStore((s) => s.updateNode);
+  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const propertyEntries = useMemo(
+    () => Object.entries(node.properties).sort(([a], [b]) => a.localeCompare(b)),
+    [node.properties],
+  );
+
+  const handleAddProperty = useCallback(() => {
+    if (!selectedNodeId || !newKey.trim()) return;
+    const trimmedKey = newKey.trim();
+    // Don't allow duplicate keys
+    if (trimmedKey in node.properties) return;
+    const updatedProperties = { ...node.properties, [trimmedKey]: newValue };
+    updateNode(selectedNodeId, { properties: updatedProperties });
+    setNewKey('');
+    setNewValue('');
+    setIsAdding(false);
+  }, [selectedNodeId, newKey, newValue, node.properties, updateNode]);
+
+  const handleRemoveProperty = useCallback((key: string) => {
+    if (!selectedNodeId) return;
+    const updatedProperties = { ...node.properties };
+    delete updatedProperties[key];
+    updateNode(selectedNodeId, { properties: updatedProperties });
+  }, [selectedNodeId, node.properties, updateNode]);
+
+  const handleStartEdit = useCallback((key: string) => {
+    setEditingKey(key);
+    setEditValue(String(node.properties[key] ?? ''));
+  }, [node.properties]);
+
+  const handleSaveEdit = useCallback(() => {
+    if (!selectedNodeId || editingKey === null) return;
+    const updatedProperties = { ...node.properties, [editingKey]: editValue };
+    updateNode(selectedNodeId, { properties: updatedProperties });
+    setEditingKey(null);
+    setEditValue('');
+  }, [selectedNodeId, editingKey, editValue, node.properties, updateNode]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingKey(null);
+    setEditValue('');
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      action();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      if (isAdding) {
+        setIsAdding(false);
+        setNewKey('');
+        setNewValue('');
+      }
+      if (editingKey !== null) {
+        handleCancelEdit();
+      }
+    }
+  }, [isAdding, editingKey, handleCancelEdit]);
+
+  return (
+    <div data-testid="custom-properties-section">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Custom Properties ({propertyEntries.length})
+        </label>
+        {!isAdding && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            data-testid="add-property-button"
+          >
+            <Plus className="w-3 h-3" />
+            Add Property
+          </button>
+        )}
+      </div>
+
+      {/* Add new property form */}
+      {isAdding && (
+        <div className="mt-2 border rounded-lg p-2 bg-blue-50/50 border-blue-200 space-y-2" data-testid="add-property-form">
+          <div>
+            <label className="text-xs text-gray-500">Key</label>
+            <input
+              type="text"
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, handleAddProperty)}
+              placeholder="Property name (e.g., environment)"
+              className="w-full mt-0.5 text-xs border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              autoFocus
+              data-testid="new-property-key-input"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Value</label>
+            <input
+              type="text"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, handleAddProperty)}
+              placeholder="Property value (e.g., production)"
+              className="w-full mt-0.5 text-xs border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              data-testid="new-property-value-input"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAddProperty}
+              disabled={!newKey.trim()}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              data-testid="confirm-add-property"
+            >
+              <Plus className="w-3 h-3" />
+              Add
+            </button>
+            <button
+              onClick={() => { setIsAdding(false); setNewKey(''); setNewValue(''); }}
+              className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+              data-testid="cancel-add-property"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Property list */}
+      <div className="mt-2 space-y-1" data-testid="properties-list">
+        {propertyEntries.length === 0 && !isAdding && (
+          <div className="text-xs text-gray-400 text-center py-3" data-testid="properties-empty-state">
+            No custom properties. Click "Add Property" to create one.
+          </div>
+        )}
+        {propertyEntries.map(([key, value]) => (
+          <div
+            key={key}
+            className="flex items-center gap-2 bg-gray-50 rounded p-2 border border-gray-100 group"
+            data-testid={`property-${key}`}
+          >
+            <span className="text-xs font-medium text-gray-700 shrink-0" data-testid="property-key">
+              {key}
+            </span>
+            <span className="text-gray-300">=</span>
+            {editingKey === key ? (
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, handleSaveEdit)}
+                onBlur={handleSaveEdit}
+                className="flex-1 min-w-0 text-xs border rounded px-1.5 py-0.5 bg-white border-blue-300 focus:outline-none"
+                autoFocus
+                data-testid="property-value-edit"
+              />
+            ) : (
+              <span
+                className="flex-1 min-w-0 text-xs text-gray-600 font-mono truncate cursor-pointer hover:text-blue-600"
+                onClick={() => handleStartEdit(key)}
+                title="Click to edit"
+                data-testid="property-value"
+              >
+                {String(value) || <span className="text-gray-400 italic">empty</span>}
+              </span>
+            )}
+            <button
+              onClick={() => handleRemoveProperty(key)}
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 rounded transition-opacity"
+              title="Remove property"
+              data-testid={`remove-property-${key}`}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NotesTab({
   node,
   nodeId,
@@ -383,6 +563,12 @@ function NotesTab({
   onAddNote: () => void;
 }) {
   const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
+
+  // Sort notes chronologically (oldest first) by timestamp
+  const sortedNotes = useMemo(
+    () => [...node.notes].sort((a, b) => a.timestampMs - b.timestampMs),
+    [node.notes],
+  );
 
   return (
     <div className="space-y-3" data-testid="notes-tab">
@@ -422,12 +608,12 @@ function NotesTab({
         </button>
       </div>
 
-      {/* Note list */}
+      {/* Note list - chronologically sorted (oldest first) */}
       <div className="space-y-2" data-testid="notes-list">
-        {node.notes.length === 0 ? (
+        {sortedNotes.length === 0 ? (
           <div className="text-sm text-gray-400 text-center py-4" data-testid="notes-empty-state">No notes yet</div>
         ) : (
-          node.notes.map((note) => (
+          sortedNotes.map((note) => (
             <div key={note.id} className="border rounded-lg p-3 bg-white" data-testid={`note-${note.id}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium text-gray-700" data-testid="note-author">
