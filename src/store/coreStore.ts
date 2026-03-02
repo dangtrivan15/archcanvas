@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
-import type { AddNodeParams, AddEdgeParams, AddNoteParams, UpdateNodeParams } from '@/types/api';
+import type { AddNodeParams, AddEdgeParams, AddNoteParams, AddCodeRefParams, UpdateNodeParams, SuggestParams } from '@/types/api';
 import { RegistryManager } from '@/core/registry/registryManager';
 import { createEmptyGraph, moveNode as engineMoveNode } from '@/core/graph/graphEngine';
 import { countAllNodes } from '@/core/graph/graphQuery';
@@ -56,6 +56,9 @@ export interface CoreStoreState {
   addEdge: (params: AddEdgeParams) => ArchEdge | undefined;
   removeEdge: (edgeId: string) => void;
   addNote: (params: AddNoteParams) => Note | undefined;
+  addCodeRef: (params: AddCodeRefParams) => void;
+  suggest: (params: SuggestParams) => Note | undefined;
+  resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
 
   // Undo/redo
@@ -457,6 +460,68 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
 
     return note;
+  },
+
+  /**
+   * Add a code reference to a node.
+   */
+  addCodeRef: (params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot('Add code reference', graph);
+
+    textApi.addCodeRef(params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Create a pending AI suggestion note on a node.
+   */
+  suggest: (params) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return undefined;
+
+    undoManager.snapshot('AI suggestion', graph);
+
+    const note = textApi.suggest(params);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+
+    return note;
+  },
+
+  /**
+   * Accept or dismiss an AI suggestion note.
+   */
+  resolveSuggestion: (nodeId, noteId, action) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot(`${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`, graph);
+
+    textApi.resolveSuggestion(nodeId, noteId, action);
+    const updatedGraph = textApi.getGraph();
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
   },
 
   /**

@@ -50,6 +50,8 @@ export function AIChatTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const suggest = useCoreStore((s) => s.suggest);
+
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed) return;
@@ -67,6 +69,10 @@ export function AIChatTab() {
 
     // Simulate AI response (placeholder until real API integration)
     setTimeout(() => {
+      const suggestionContent = node
+        ? `Consider reviewing the configuration of "${node.displayName}". ${trimmed}`
+        : `Here are some thoughts on the architecture. ${trimmed}`;
+
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now()}-assistant`,
         role: 'assistant',
@@ -74,8 +80,17 @@ export function AIChatTab() {
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Create a pending AI suggestion note on the selected node
+      if (selectedNodeId) {
+        suggest({
+          nodeId: selectedNodeId,
+          content: suggestionContent,
+          suggestionType: 'general',
+        });
+      }
     }, 500);
-  }, [inputValue, node]);
+  }, [inputValue, node, selectedNodeId, suggest]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
