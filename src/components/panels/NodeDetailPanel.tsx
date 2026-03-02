@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle } from 'lucide-react';
+import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -134,6 +134,8 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   const updateNode = useCoreStore((s) => s.updateNode);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  // Track raw text input for number fields so we can validate non-numeric text
+  const [numberInputValues, setNumberInputValues] = useState<Record<string, string>>({});
 
   const handleArgChange = useCallback((argName: string, value: string | number | boolean) => {
     if (!selectedNodeId) return;
@@ -146,18 +148,47 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
     setTouched((prev) => ({ ...prev, [argName]: true }));
   }, [selectedNodeId, node.args, updateNode]);
 
+  const handleNumberInputChange = useCallback((argName: string, rawValue: string) => {
+    setNumberInputValues((prev) => ({ ...prev, [argName]: rawValue }));
+    setTouched((prev) => ({ ...prev, [argName]: true }));
+    if (!selectedNodeId) return;
+    // Only update the actual arg value if the input is a valid number or empty
+    if (rawValue === '' || rawValue === '-') {
+      const updatedArgs = { ...node.args };
+      delete updatedArgs[argName];
+      updateNode(selectedNodeId, { args: updatedArgs });
+    } else {
+      const num = Number(rawValue);
+      if (!isNaN(num) && rawValue.trim() !== '') {
+        const updatedArgs = { ...node.args, [argName]: num };
+        updateNode(selectedNodeId, { args: updatedArgs });
+      }
+    }
+  }, [selectedNodeId, node.args, updateNode]);
+
   const handleArgBlur = useCallback((argName: string) => {
     setTouched((prev) => ({ ...prev, [argName]: true }));
   }, []);
 
   const getValidationError = useCallback((argDef: ArgDef): string | null => {
+    // Number field validation: check for non-numeric text
+    if (argDef.type === 'number') {
+      const rawValue = numberInputValues[argDef.name];
+      if (rawValue !== undefined && rawValue !== '' && rawValue !== '-') {
+        const num = Number(rawValue);
+        if (isNaN(num)) {
+          return `${argDef.name} must be a valid number`;
+        }
+      }
+    }
+    // Required field validation
     if (!argDef.required) return null;
     const value = node.args[argDef.name];
     if (value === undefined || value === null || value === '') {
       return `${argDef.name} is required`;
     }
     return null;
-  }, [node.args]);
+  }, [node.args, numberInputValues]);
 
   return (
     <div className="space-y-4" data-testid="properties-tab">
@@ -197,8 +228,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
               const isRequired = argDef.required === true;
               const validationError = getValidationError(argDef);
               const isTouched = touched[argDef.name];
-              // Show error immediately if required and empty, or after touch
-              const showError = isRequired && validationError !== null && (isTouched || (currentValue === undefined || currentValue === null || currentValue === ''));
+              // Show error for: required field empty, or number field with invalid input
+              const isNumberError = argDef.type === 'number' && validationError !== null && isTouched;
+              const showError = isNumberError || (isRequired && validationError !== null && (isTouched || (currentValue === undefined || currentValue === null || currentValue === '')));
 
               return (
                 <div
@@ -241,28 +273,39 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                       </select>
                     ) : argDef.type === 'number' ? (
                       <input
-                        type="number"
-                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          handleArgChange(argDef.name, val === '' ? '' as unknown as number : Number(val));
-                        }}
+                        type="text"
+                        inputMode="numeric"
+                        value={numberInputValues[argDef.name] !== undefined ? numberInputValues[argDef.name] : (currentValue !== undefined && currentValue !== null ? String(currentValue) : '')}
+                        onChange={(e) => handleNumberInputChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
                         placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
                       />
                     ) : argDef.type === 'boolean' ? (
-                      <label className="flex items-center gap-2 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={currentValue === true || currentValue === 'true'}
-                          onChange={(e) => handleArgChange(argDef.name, e.target.checked)}
-                          onBlur={() => handleArgBlur(argDef.name)}
-                          data-testid={`arg-input-${argDef.name}`}
-                        />
-                        <span className="text-gray-600">{currentValue === true || currentValue === 'true' ? 'Enabled' : 'Disabled'}</span>
-                      </label>
+                      (() => {
+                        const isChecked = currentValue === true || currentValue === 'true';
+                        return (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={isChecked}
+                              onClick={() => handleArgChange(argDef.name, !isChecked)}
+                              onBlur={() => handleArgBlur(argDef.name)}
+                              className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${isChecked ? 'bg-blue-600' : 'bg-gray-300'}`}
+                              data-testid={`arg-input-${argDef.name}`}
+                            >
+                              <span
+                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${isChecked ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}
+                              />
+                            </button>
+                            <span className="text-xs text-gray-600" data-testid={`arg-toggle-label-${argDef.name}`}>
+                              {isChecked ? 'Enabled' : 'Disabled'}
+                            </span>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <input
                         type="text"
@@ -764,9 +807,20 @@ function NotesTab({
           sortedNotes.map((note) => (
             <div key={note.id} className="border rounded-lg p-3 bg-white" data-testid={`note-${note.id}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-gray-700" data-testid="note-author">
-                  {note.author}
-                </span>
+                {note.author.toLowerCase() === 'ai' ? (
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
+                    data-testid="note-author"
+                    data-author-type="ai"
+                  >
+                    <Bot className="w-3 h-3" />
+                    AI
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium text-gray-700" data-testid="note-author">
+                    {note.author}
+                  </span>
+                )}
                 <span className="text-xs text-gray-400" data-testid="note-timestamp">
                   {new Date(note.timestampMs).toLocaleTimeString()}
                 </span>
