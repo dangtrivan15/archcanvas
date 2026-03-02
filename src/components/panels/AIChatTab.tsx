@@ -8,13 +8,64 @@
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Send, Bot, User, Info, Loader2, Sparkles, Check } from 'lucide-react';
+import { Send, Bot, User, Info, Loader2, Sparkles, Check, AlertTriangle } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useAIStore } from '@/store/aiStore';
 import { findNode } from '@/core/graph/graphEngine';
-import { sendMessage as sendAIMessage } from '@/ai/client';
+import { sendMessage as sendAIMessage, AIClientError } from '@/ai/client';
 import { isAIConfigured } from '@/ai/config';
+
+/**
+ * Convert an AI API error into a user-friendly message.
+ * Maps common error types and status codes to helpful, actionable text.
+ */
+function getUserFriendlyErrorMessage(error: unknown): string {
+  if (error instanceof AIClientError) {
+    const { statusCode, errorType } = error;
+
+    // API key issues
+    if (error.message.includes('API key not configured')) {
+      return 'AI is not configured. Please set your VITE_ANTHROPIC_API_KEY environment variable.';
+    }
+    if (statusCode === 401 || errorType === 'authentication_error') {
+      return 'Invalid API key. Please check your VITE_ANTHROPIC_API_KEY setting.';
+    }
+
+    // Rate limiting
+    if (statusCode === 429 || errorType === 'rate_limit_error') {
+      return 'Rate limit exceeded. Please wait a moment and try again.';
+    }
+
+    // Overloaded
+    if (statusCode === 529 || errorType === 'overloaded_error') {
+      return 'The AI service is currently overloaded. Please try again in a few minutes.';
+    }
+
+    // Server errors
+    if (statusCode && statusCode >= 500) {
+      return 'The AI service is temporarily unavailable. Please try again later.';
+    }
+
+    // Bad request (e.g., context too long)
+    if (statusCode === 400 || errorType === 'invalid_request_error') {
+      return 'The request was too large or invalid. Try shortening your message or starting a new conversation.';
+    }
+
+    // Fallback with the original message if it's informative
+    return `AI error: ${error.message}`;
+  }
+
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return 'Network error. Please check your internet connection and try again.';
+  }
+
+  if (error instanceof Error) {
+    return `Something went wrong: ${error.message}`;
+  }
+
+  return 'An unexpected error occurred. Please try again.';
+}
 
 interface ChatMessage {
   id: string;
@@ -193,9 +244,10 @@ export function AIChatTab() {
           return;
         }
 
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        // Persist the error message
-        persistMessage('assistant', `Error: ${errorMsg}`);
+        const friendlyMsg = getUserFriendlyErrorMessage(error);
+        console.warn('[AIChatTab] AI API error:', error);
+        // Persist the user-friendly error message (prefixed for visual distinction)
+        persistMessage('assistant', `⚠ ${friendlyMsg}`);
         setStreamingMessage(null);
       } finally {
         abortControllerRef.current = null;
@@ -314,6 +366,31 @@ export function AIChatTab() {
         </div>
       </div>
 
+      {/* Missing API key banner */}
+      {!isAIConfigured() && (
+        <div className="mx-3 mt-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg" data-testid="ai-missing-key-banner">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800" data-testid="ai-missing-key-title">
+                AI API key not configured
+              </p>
+              <p className="text-xs text-amber-700 mt-1" data-testid="ai-missing-key-instructions">
+                To enable AI-powered analysis, add your Anthropic API key:
+              </p>
+              <ol className="text-xs text-amber-700 mt-1 ml-4 list-decimal space-y-0.5">
+                <li>Create a <code className="bg-amber-100 px-1 rounded">.env</code> file in the project root</li>
+                <li>Add: <code className="bg-amber-100 px-1 rounded">VITE_ANTHROPIC_API_KEY=sk-ant-...</code></li>
+                <li>Restart the development server</li>
+              </ol>
+              <p className="text-xs text-amber-600 mt-1.5">
+                You can still use the app — AI chat will use placeholder responses.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0" data-testid="ai-messages">
         {messages.length === 0 ? (
@@ -323,23 +400,33 @@ export function AIChatTab() {
             <p className="text-xs mt-1">AI will use the selected node and its neighbors as context</p>
           </div>
         ) : (
-          messages.map((msg) => (
+          messages.map((msg) => {
+            const isError = msg.role === 'assistant' && (msg.content.startsWith('⚠ ') || msg.content.startsWith('Error: '));
+            return (
             <div
               key={msg.id}
               className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              data-testid={`ai-message-${msg.role}`}
+              data-testid={isError ? 'ai-message-error' : `ai-message-${msg.role}`}
             >
               {msg.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-3.5 h-3.5 text-blue-600" />
-                </div>
+                isError ? (
+                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                    <Bot className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                )
               )}
               <div className={`max-w-[85%] ${msg.role === 'assistant' ? '' : ''}`}>
                 <div
                   className={`rounded-lg px-3 py-2 text-sm ${
                     msg.role === 'user'
                       ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-800'
+                      : isError
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-gray-100 text-gray-800'
                   }`}
                 >
                   {msg.content}
@@ -349,8 +436,8 @@ export function AIChatTab() {
                     </span>
                   )}
                 </div>
-                {/* Apply button for completed assistant messages when a node is selected */}
-                {msg.role === 'assistant' && !msg.isStreaming && selectedNodeId && msg.content && (
+                {/* Apply button for completed assistant messages when a node is selected (not for errors) */}
+                {msg.role === 'assistant' && !msg.isStreaming && !isError && selectedNodeId && msg.content && (
                   <div className="mt-1">
                     {appliedMessageIds.has(msg.id) ? (
                       <span
@@ -380,7 +467,7 @@ export function AIChatTab() {
                 </div>
               )}
             </div>
-          ))
+          );})
         )}
         <div ref={messagesEndRef} />
       </div>
