@@ -14,11 +14,17 @@ export interface AIStoreState {
   /** Add a message to the current global conversation (creates one if none exists) */
   addMessage: (role: 'user' | 'assistant', content: string) => AIMessage;
 
+  /** Add a message to a node-scoped conversation (creates one if none exists) */
+  addMessageToNode: (nodeId: string, role: 'user' | 'assistant', content: string) => AIMessage;
+
   /** Get or create the global (unscoped) conversation */
   getGlobalConversation: () => AIConversation;
 
   /** Get all messages from the global conversation */
   getMessages: () => AIMessage[];
+
+  /** Get all messages from a node-scoped conversation */
+  getNodeMessages: (nodeId: string) => AIMessage[];
 
   /** Set conversations from loaded file data */
   setConversations: (conversations: AIConversation[]) => void;
@@ -68,6 +74,45 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
     return msg;
   },
 
+  addMessageToNode: (nodeId, role, content) => {
+    const msg: AIMessage = {
+      id: ulid(),
+      role,
+      content,
+      timestampMs: Date.now(),
+      suggestions: [],
+    };
+
+    set((s) => {
+      // Find or create node-scoped conversation
+      let nodeConv = s.conversations.find((c) => c.scopedToNodeId === nodeId);
+      if (!nodeConv) {
+        nodeConv = {
+          id: ulid(),
+          scopedToNodeId: nodeId,
+          messages: [],
+          createdAtMs: Date.now(),
+        };
+        return {
+          conversations: [
+            ...s.conversations,
+            { ...nodeConv, messages: [msg] },
+          ],
+        };
+      }
+
+      return {
+        conversations: s.conversations.map((c) =>
+          c.id === nodeConv!.id
+            ? { ...c, messages: [...c.messages, msg] }
+            : c,
+        ),
+      };
+    });
+
+    return msg;
+  },
+
   getGlobalConversation: () => {
     const state = get();
     let conv = state.conversations.find((c) => !c.scopedToNodeId);
@@ -85,6 +130,12 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
     const state = get();
     const globalConv = state.conversations.find((c) => !c.scopedToNodeId);
     return globalConv?.messages ?? [];
+  },
+
+  getNodeMessages: (nodeId) => {
+    const state = get();
+    const nodeConv = state.conversations.find((c) => c.scopedToNodeId === nodeId);
+    return nodeConv?.messages ?? [];
   },
 
   setConversations: (conversations) => {

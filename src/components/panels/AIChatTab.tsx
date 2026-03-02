@@ -31,12 +31,19 @@ export function AIChatTab() {
   // Persisted messages from AI store (select raw conversations to avoid infinite re-render)
   const conversations = useAIStore((s) => s.conversations);
   const addStoreMessage = useAIStore((s) => s.addMessage);
+  const addStoreMessageToNode = useAIStore((s) => s.addMessageToNode);
 
-  // Derive store messages from conversations
+  // Derive store messages from conversations - scoped to selected node
   const storeMessages = useMemo(() => {
+    if (selectedNodeId) {
+      // Show node-scoped conversation when a node is selected
+      const nodeConv = conversations.find((c) => c.scopedToNodeId === selectedNodeId);
+      return nodeConv?.messages ?? [];
+    }
+    // Fall back to global conversation when no node is selected
     const globalConv = conversations.find((c) => !c.scopedToNodeId);
     return globalConv?.messages ?? [];
-  }, [conversations]);
+  }, [conversations, selectedNodeId]);
 
   // Local UI state for streaming
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
@@ -85,7 +92,24 @@ export function AIChatTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Clear streaming state when switching nodes (prevents stale streaming message)
+  useEffect(() => {
+    setStreamingMessage(null);
+    setInputValue('');
+  }, [selectedNodeId]);
+
   const suggest = useCoreStore((s) => s.suggest);
+
+  /** Persist a message to the correct conversation (node-scoped or global) */
+  const persistMessage = useCallback(
+    (role: 'user' | 'assistant', content: string) => {
+      if (selectedNodeId) {
+        return addStoreMessageToNode(selectedNodeId, role, content);
+      }
+      return addStoreMessage(role, content);
+    },
+    [selectedNodeId, addStoreMessage, addStoreMessageToNode],
+  );
 
   /**
    * Build system prompt with architecture context.
@@ -143,8 +167,8 @@ export function AIChatTab() {
           },
         });
 
-        // Persist the completed assistant message to the store
-        addStoreMessage('assistant', result.content);
+        // Persist the completed assistant message to the store (node-scoped or global)
+        persistMessage('assistant', result.content);
         // Clear streaming message
         setStreamingMessage(null);
 
@@ -164,14 +188,14 @@ export function AIChatTab() {
 
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         // Persist the error message
-        addStoreMessage('assistant', `Error: ${errorMsg}`);
+        persistMessage('assistant', `Error: ${errorMsg}`);
         setStreamingMessage(null);
       } finally {
         abortControllerRef.current = null;
         setIsStreaming(false);
       }
     },
-    [buildSystemPrompt, selectedNodeId, suggest, addStoreMessage],
+    [buildSystemPrompt, selectedNodeId, suggest, persistMessage],
   );
 
   /**
@@ -200,8 +224,8 @@ export function AIChatTab() {
         charIndex += 2; // Reveal 2 chars at a time for visible streaming effect
         if (charIndex >= fullResponse.length) {
           clearInterval(interval);
-          // Persist the completed assistant message to the store
-          addStoreMessage('assistant', fullResponse);
+          // Persist the completed assistant message to the store (node-scoped or global)
+          persistMessage('assistant', fullResponse);
           setStreamingMessage(null);
           setIsStreaming(false);
 
@@ -221,15 +245,15 @@ export function AIChatTab() {
         }
       }, 20);
     },
-    [node, selectedNodeId, suggest, addStoreMessage],
+    [node, selectedNodeId, suggest, persistMessage],
   );
 
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed || isStreaming) return;
 
-    // Persist user message to the AI store
-    addStoreMessage('user', trimmed);
+    // Persist user message to the AI store (node-scoped or global)
+    persistMessage('user', trimmed);
 
     // Build conversation history for API call (from store + the new user message)
     const allMessages: ChatMessage[] = messages.map((m) => ({
@@ -254,7 +278,7 @@ export function AIChatTab() {
     } else {
       sendWithPlaceholder(trimmed);
     }
-  }, [inputValue, isStreaming, messages, sendWithAI, sendWithPlaceholder, addStoreMessage]);
+  }, [inputValue, isStreaming, messages, sendWithAI, sendWithPlaceholder, persistMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
