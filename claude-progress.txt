@@ -2505,3 +2505,46 @@ SESSION: 2026-03-02 - Feature #130
 - Features passing: 161 of 235 (68.5%)
 - Zero console errors
 - No code changes needed for this feature
+
+==================================================
+SESSION: 2026-03-02 - Feature #135
+==================================================
+
+## What was accomplished:
+
+### Feature #135: Delete own note removes it from list (PASSING)
+- Feature was already fully implemented - only browser verification needed
+- Complete delete flow verified end-to-end:
+  1. Loaded ecommerce.archc test file (5 nodes, 4 edges)
+  2. Selected Order Service node, switched to Notes tab
+  3. Created first note with content "FIRST_NOTE_TO_DELETE"
+  4. Created second note with content "SECOND_NOTE_TO_KEEP"
+  5. Both notes visible in list with Edit and Delete buttons
+  6. Clicked Delete button (Trash2 icon) on first note
+  7. First note immediately removed from DOM
+  8. Only second note "SECOND_NOTE_TO_KEEP" remains
+- Implementation components:
+  - NodeDetailPanel.tsx: removeNote selector from coreStore, Trash2 delete button per note
+  - coreStore.ts: removeNote action with undo snapshot support
+  - textApi.ts: removeNote method delegates to graphEngine.removeNoteFromNode
+  - graphEngine.ts: removeNoteFromNode/removeNoteFromNodeList (recursive for nested nodes)
+- Zero console errors (0 errors, 0 warnings)
+- Mock data grep: only legitimate globalThis.crypto usage in codec.ts
+- No code changes needed - implementation was already complete
+
+## Verification steps completed:
+1. Loaded ecommerce.archc via ?load=ecommerce.archc URL parameter
+2. Selected Order Service node, switched to Notes tab
+3. Created note "FIRST_NOTE_TO_DELETE" via Add Note button
+4. Created note "SECOND_NOTE_TO_KEEP" via Add Note button
+5. Verified both notes visible (2 note cards in list)
+6. Clicked Delete button on first note (FIRST_NOTE_TO_DELETE)
+7. Verified only 1 note remains (SECOND_NOTE_TO_KEEP)
+8. Verified deleted note is completely gone from DOM
+9. Console: 0 errors, 0 warnings
+10. Mock data grep: only legitimate globalThis.crypto usage
+
+## Current completion status:
+- Features passing: 163 of 235 (69.4%)
+- Zero console errors
+- No code changes required
