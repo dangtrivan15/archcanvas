@@ -571,6 +571,7 @@ function NotesTab({
   onAddNote: () => void;
 }) {
   const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
+  const removeNote = useCoreStore((s) => s.removeNote);
   const [isEditing, setIsEditing] = useState(false);
   const [contentError, setContentError] = useState('');
 
@@ -688,9 +689,19 @@ function NotesTab({
               <div className="text-sm text-gray-800" data-testid="note-content">
                 {note.content}
               </div>
-              <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                <span data-testid="note-id">ID: {note.id}</span>
-                <span data-testid="note-status">Status: {note.status}</span>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span data-testid="note-id">ID: {note.id}</span>
+                  <span data-testid="note-status">Status: {note.status}</span>
+                </div>
+                <button
+                  onClick={() => removeNote(nodeId, note.id)}
+                  className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
+                  title="Delete note"
+                  data-testid={`delete-note-${note.id}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
               {note.tags.length > 0 && (
                 <div className="flex gap-1 mt-1">

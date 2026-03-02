@@ -38,6 +38,7 @@ import {
   addNoteToEdge,
   updateNoteStatus,
   addCodeRef as engineAddCodeRef,
+  removeNoteFromNode,
 } from '@/core/graph/graphEngine';
 import {
   searchGraph,
@@ -268,6 +269,13 @@ export class TextApi {
     }
 
     return note;
+  }
+
+  /**
+   * Remove a note from a node.
+   */
+  removeNote(nodeId: string, noteId: string): void {
+    this.graph = removeNoteFromNode(this.graph, nodeId, noteId);
   }
 
   /**

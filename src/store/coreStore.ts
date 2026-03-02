@@ -57,6 +57,7 @@ export interface CoreStoreState {
   addEdge: (params: AddEdgeParams) => ArchEdge | undefined;
   removeEdge: (edgeId: string) => void;
   addNote: (params: AddNoteParams) => Note | undefined;
+  removeNote: (nodeId: string, noteId: string) => void;
   addCodeRef: (params: AddCodeRefParams) => void;
   suggest: (params: SuggestParams) => Note | undefined;
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
@@ -458,6 +459,25 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
 
     return note;
+  },
+
+  /**
+   * Remove a note from a node.
+   */
+  removeNote: (nodeId, noteId) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    textApi.removeNote(nodeId, noteId);
+    const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Remove note', updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
   },
 
   /**
