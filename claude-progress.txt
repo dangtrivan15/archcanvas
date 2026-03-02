@@ -1818,3 +1818,34 @@ SESSION: 2026-03-02 - Feature #69
 ## Current completion status:
 - Features passing: 122 of 235 (51.9%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Feature #74
+==================================================
+
+## What was accomplished:
+
+### Feature #74: Canvas minimap displays (PASSING)
+- MiniMap was already implemented in Canvas.tsx (lines 329-335) using React Flow's built-in MiniMap component
+- MiniMap positioned at bottom-left corner with pannable and zoomable enabled
+- Styled with white background and gray border (\!bg-white \!border \!border-gray-200)
+- nodeStrokeWidth=3 for visible node outlines
+- Verified by loading ecommerce.archc test file (5 nodes, 4 edges)
+- MiniMap shows all 5 architecture nodes as small rectangles in their relative positions
+- Viewport rectangle visible in minimap highlighting current view
+- Accessible as img "Mini Map" in DOM snapshot
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code (only legitimate globalThis.crypto usage)
+
+## Verification steps completed:
+1. Loaded ecommerce.archc via ?load=ecommerce.archc URL parameter
+2. Verified minimap component visible in bottom-left corner (DOM snapshot + screenshot)
+3. Verified minimap shows node positions (5 small rectangles matching node layout)
+4. Verified minimap highlights current viewport (viewport rectangle visible)
+5. Checked console: 0 errors, 0 warnings
+6. Grep for mock data patterns: only legitimate globalThis.crypto usage
+7. No code changes needed - implementation was already complete
+
+## Current completion status:
+- Features passing: 122 of 235 (51.9%)
+- Zero console errors
