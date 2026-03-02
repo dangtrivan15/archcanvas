@@ -1,4 +1,35 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #139
+==================================================
+
+## What was accomplished:
+
+### Feature #139: Add Code Reference form with path and role (PASSING)
+- Added AddCodeRefParams type to src/types/api.ts
+- Added addCodeRef() method to TextApi (src/api/textApi.ts) delegating to graphEngine.addCodeRef
+- Updated CodeRefsTab in NodeDetailPanel.tsx with full CRUD form:
+  - "Add Code Reference" button toggles form visibility
+  - Path input field with placeholder "e.g., src/api/handler.ts"
+  - Role dropdown with all 6 roles: Source, API Spec, Schema, Deployment, Config, Test
+  - Default role is "source"
+  - Add button (disabled when path empty) and Cancel button
+  - Enter key submits, Escape key cancels
+  - Form closes after successful submission
+- coreStore.addCodeRef was already wired by a previous agent session
+- Verified: form appears, submission works, code refs persist across node switches
+- Zero console errors, no mock data patterns
+
+## Current completion status:
+- Features passing: 86 of 235 (36.6%)
+- Zero console errors
+- All implementations verified via Playwright browser automation
+
+## What should be worked on next:
+- More workflow features (code ref deletion, edge editing)
+- Canvas interaction features
+- Export API features (PNG, SVG)
+
+==================================================
 SESSION: 2026-03-02 - Feature #121
 ==================================================
 
