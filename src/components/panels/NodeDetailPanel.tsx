@@ -4,7 +4,7 @@
  * Used to verify node data (id, type, displayName, args, notes, codeRefs, children).
  */
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -12,6 +12,21 @@ import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { AIChatTab } from './AIChatTab';
 import type { NodeDef, ArgDef } from '@/types/nodedef';
+import { formatRelativeTime } from '@/utils/formatRelativeTime';
+import { marked } from 'marked';
+
+// Configure marked for inline rendering (no wrapping <p> tags for short content)
+const markedInline = new marked.Renderer();
+
+/** Render markdown content to sanitized HTML */
+function renderMarkdown(content: string): string {
+  // Use marked.parse for full markdown, parseInline for single-line content
+  const hasBlockElements = /\n\n|^#{1,6}\s|^[-*]\s|^\d+\.\s|^>/m.test(content);
+  if (hasBlockElements) {
+    return marked.parse(content, { async: false, renderer: markedInline }) as string;
+  }
+  return marked.parseInline(content, { async: false }) as string;
+}
 
 type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat';
 
@@ -643,6 +658,13 @@ function NotesTab({
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
 
+  // Auto-update relative timestamps every 30 seconds
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Sort notes chronologically (oldest first) by timestamp
   const sortedNotes = useMemo(
     () => [...node.notes].sort((a, b) => a.timestampMs - b.timestampMs),
@@ -821,13 +843,15 @@ function NotesTab({
                     {note.author}
                   </span>
                 )}
-                <span className="text-xs text-gray-400" data-testid="note-timestamp">
-                  {new Date(note.timestampMs).toLocaleTimeString()}
+                <span className="text-xs text-gray-400" data-testid="note-timestamp" title={new Date(note.timestampMs).toLocaleString()}>
+                  {formatRelativeTime(note.timestampMs)}
                 </span>
               </div>
-              <div className="text-sm text-gray-800" data-testid="note-content">
-                {note.content}
-              </div>
+              <div
+                className="text-sm text-gray-800 prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
+                data-testid="note-content"
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
+              />
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span data-testid="note-id">ID: {note.id}</span>
