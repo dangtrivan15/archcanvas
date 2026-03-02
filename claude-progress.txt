@@ -1,4 +1,43 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #121
+==================================================
+
+## What was accomplished:
+
+### Feature #121: Custom properties section: add new property (PASSING)
+- Created CustomPropertiesSection component in NodeDetailPanel.tsx
+- Add Property form: key and value text inputs with blue highlight styling
+- Validation: Add button disabled when key is empty, prevents duplicate keys
+- Property display: sorted key-value pairs with "=" separator, click-to-edit values
+- Remove property: hover-reveal trash button on each property row
+- Properties persist in node.properties via coreStore.updateNode()
+- Form supports Enter to submit, Escape to cancel
+- Empty state: "No custom properties" message with call-to-action
+
+### Bug fix: Canvas selection preservation during graph updates
+- Fixed issue where editing Properties/Notes deselected the node
+- Root cause: React Flow lost selection when node objects were replaced via useEffect
+- Fix: Preserve `selected` state from previous nodes when syncing new rendered nodes
+- This improves UX across all editing operations in the right panel
+
+## Technical details:
+- CustomPropertiesSection uses Zustand stores: useCoreStore (updateNode), useCanvasStore (selectedNodeId)
+- Properties stored as Record<string, string | number | boolean> in ArchNode
+- UpdateNodeParams.properties already existed in the API - just needed UI
+- Canvas.tsx fix: setRfNodes now carries over selectedIds from prevNodes
+
+## Current completion status:
+- Features passing: 84+ of 235 (~35.7%)
+- Zero console errors
+- All implementations verified via Playwright browser automation
+
+## What should be worked on next:
+- Property editing features (edit/remove custom properties - related features)
+- More canvas interaction features
+- Export API features (PNG, SVG)
+- Keyboard shortcuts
+
+==================================================
 SESSION: 2026-03-02 - Feature #129
 ==================================================
 
