@@ -3560,3 +3560,93 @@ SESSION: 2026-03-03 - Features #193, #194, #195
 - Zero console errors
 - No mock data patterns in production code
 - Commits: 4a8fe78, c852906, bcae343
+
+==================================================
+SESSION: 2026-03-03 - Features #202, #203
+==================================================
+
+## What was accomplished:
+
+### Feature #202: NodeDef browser resets search on close/reopen (PASSING)
+- Added close button (X icon) to NodeDefBrowser header panel
+- Imported X icon from lucide-react, added toggleLeftPanel action from uiStore
+- The search reset works automatically because NodeDefBrowser uses useState('') for searchQuery
+  and the component is conditionally rendered ({leftPanelOpen && ...}) - so it unmounts on close
+  and remounts with fresh empty state on reopen
+- Browser verified full flow:
+  1. Opened NodeDef browser, typed "database" in search → filtered to Data group (3 items)
+  2. Clicked X close button → panel disappeared (component unmounted)
+  3. Clicked "Add Node" to reopen → panel appeared with empty search, all 15 nodedefs visible
+  4. All 5 namespace groups present: Compute 4, Data 4, Messaging 3, Network 2, Observability 2
+- Zero console errors
+- Committed: 0eead6a
+
+### Feature #203: Canvas viewport resets to fit view on file open (PASSING)
+- Added requestFitView() call to _applyDecodedFile() in coreStore.ts
+- This triggers Canvas's fitView mechanism (via fitViewCounter) after graph data is set
+- The Canvas component watches fitViewCounter and calls fitView({ padding: 0.2, duration: 300 })
+  with a 50ms delay to ensure React Flow has updated positions
+- Browser verified with two files:
+  1. ecommerce.archc: All 5 nodes visible, 4 edges, Zoom: 96%
+  2. layout-test.archc: All 4 scattered nodes visible, 3 edges, Zoom: 116%
+- Zoom levels appropriate for content (slightly adjusted to fit everything)
+- Zero console errors
+- Committed: 054e466
+
+## Current completion status:
+- Features passing: 204 of 235 (86.8%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-03 - Feature #207
+==================================================
+
+## What was accomplished:
+
+### Feature #207: Sanitized user input in node display names (PASSING)
+- Verified that HTML and special characters in node display names are safely rendered
+- React's JSX text rendering ({displayName}) auto-escapes HTML entities by default
+- No dangerouslySetInnerHTML is used for node display names anywhere in the codebase
+
+## Test file: test/unit/ui/sanitizedDisplayNames.test.ts (23 tests, all passing)
+Tests cover:
+1. Graph engine stores HTML injection as literal strings (8 tests)
+   - <b>Bold</b>Injection, <script>alert("xss")</script>, <img onerror=...>
+   - Quotes, ampersands, angle brackets, unicode, pre-encoded entities
+2. RenderApi passes special chars through to CanvasNodeData (8 tests)
+   - All injection payloads preserved verbatim in displayName
+3. Display names are not interpreted as HTML (3 tests)
+   - Type is always string, angle brackets preserved literally
+4. Multiple special-char nodes coexist correctly (2 tests)
+5. Edges reference special-char nodes correctly (1 test)
+6. data-node-name attribute safety (1 test)
+
+## Browser verification steps completed:
+1. Created node with displayName '<b>Bold</b>Injection' via Add Node UI
+2. Verified text renders as literal '<b>Bold</b>Injection' not as bold ✓
+3. Created node with displayName 'DB "primary" & cache <hot>' via Add Node UI
+4. Verified all special characters (quotes, ampersand, angle brackets) are properly escaped ✓
+5. Fit View showed both nodes with literal special chars in their names ✓
+6. Clicked on HTML injection node → detail panel shows literal '<b>Bold</b>Injection' ✓
+7. All 3 rendering locations (canvas node, detail panel header, properties tab) show safe text ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Rendering locations verified safe (all use React JSX text nodes, no innerHTML):
+- GenericNode.tsx line 102: {nodeData.displayName}
+- NodeDetailPanel.tsx line 84: {node.displayName}
+- NodeDetailPanel.tsx line 227: {node.displayName}
+- NodeDetailPanel.tsx line 388: {child.displayName}
+- NavigationBreadcrumb.tsx lines 75, 82: {segment.displayName}
+- EdgeDetailPanel.tsx line 50, 78, 87: {fromNode?.displayName} / {toNode?.displayName}
+- AIChatTab.tsx line 384: {node.displayName}
+
+## Only dangerouslySetInnerHTML usage is in note content rendering (markdown),
+   which goes through sanitizeHtml() for XSS prevention.
+
+## Current completion status:
+- Features passing: 205 of 235 (87.2%)
+- Zero console errors
+- All 1460 tests passing across 100 test files
+- No mock data patterns in production code
