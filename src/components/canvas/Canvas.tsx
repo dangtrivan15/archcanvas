@@ -34,6 +34,7 @@ import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
+import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 
@@ -68,8 +69,10 @@ function CanvasInner() {
   const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
   const prevFitViewCounterRef = useRef(fitViewCounter);
 
-  // Context menu state
+  // Context menu state (canvas background)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  // Node context menu state (right-click on a node)
+  const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
 
   // Watch for fitView requests from other components (e.g., LayoutMenu)
   useEffect(() => {
@@ -168,8 +171,9 @@ function CanvasInner() {
   // Handle click on canvas during placement mode - place node at click position
   const onPaneClick = useCallback(
     (event: React.MouseEvent) => {
-      // Close context menu on any left-click
+      // Close context menus on any left-click
       setContextMenu(null);
+      setNodeContextMenu(null);
 
       if (placementMode && placementInfo) {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -211,18 +215,34 @@ function CanvasInner() {
     [screenToFlowPosition, addNode],
   );
 
-  // Handle right-click on canvas - show context menu
-  const onContextMenu = useCallback(
-    (event: React.MouseEvent) => {
+  // Handle right-click on canvas background (via React Flow onPaneContextMenu)
+  const onPaneContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
+      setNodeContextMenu(null);
       setContextMenu({ x: event.clientX, y: event.clientY });
     },
     [],
   );
 
-  // Close context menu
+  // Handle right-click on a node - show node context menu
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: CanvasNode) => {
+      event.preventDefault();
+      setContextMenu(null);
+      setNodeContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+    },
+    [],
+  );
+
+  // Close canvas context menu
   const closeContextMenu = useCallback(() => {
     setContextMenu(null);
+  }, []);
+
+  // Close node context menu
+  const closeNodeContextMenu = useCallback(() => {
+    setNodeContextMenu(null);
   }, []);
 
   // Handle Delete/Backspace keys for node deletion and navigation
@@ -300,7 +320,7 @@ function CanvasInner() {
   );
 
   return (
-    <div className="w-full h-full relative" data-testid="canvas" onContextMenu={onContextMenu}>
+    <div className="w-full h-full relative" data-testid="canvas" onContextMenu={(e) => e.preventDefault()}>
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
@@ -331,6 +351,8 @@ function CanvasInner() {
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneContextMenu={onPaneContextMenu}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
         onPaneClick={onPaneClick}
@@ -362,12 +384,22 @@ function CanvasInner() {
         />
       </ReactFlow>
 
-      {/* Canvas Context Menu - shown on right-click */}
+      {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (
         <CanvasContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={closeContextMenu}
+        />
+      )}
+
+      {/* Node Context Menu - shown on right-click on a node */}
+      {nodeContextMenu && (
+        <NodeContextMenu
+          x={nodeContextMenu.x}
+          y={nodeContextMenu.y}
+          nodeId={nodeContextMenu.nodeId}
+          onClose={closeNodeContextMenu}
         />
       )}
     </div>
