@@ -13,7 +13,7 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
+import { openArchcFile, pickArchcFile, decodeArchcData, protoToGraphFull, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
 import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -79,6 +79,16 @@ export interface CoreStoreState {
 
   // Internal: set the graph (used by other stores)
   _setGraph: (graph: ArchGraph) => void;
+
+  // Internal: apply decoded file data to the store
+  _applyDecodedFile: (
+    graph: ArchGraph,
+    fileName: string,
+    fileHandle: FileSystemFileHandle | null,
+    canvasState?: import('@/types/graph').SavedCanvasState,
+    aiState?: import('@/core/storage/fileIO').AIStateData,
+    createdAtMs?: number,
+  ) => void;
 }
 
 export const useCoreStore = create<CoreStoreState>((set, get) => ({
@@ -184,73 +194,143 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   },
 
   /**
+   * Internal helper: apply decoded file data to the store.
+   * Shared by openFile and loadFromUrl.
+   */
+  _applyDecodedFile: (
+    graph: import('@/types/graph').ArchGraph,
+    fileName: string,
+    fileHandle: FileSystemFileHandle | null,
+    canvasState?: import('@/types/graph').SavedCanvasState,
+    aiState?: import('@/core/storage/fileIO').AIStateData,
+    createdAtMs?: number,
+  ) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    textApi.setGraph(graph);
+    undoManager.clear();
+    undoManager.snapshot('Open file', graph);
+
+    set({
+      graph,
+      isDirty: false,
+      fileName,
+      fileHandle,
+      fileCreatedAtMs: createdAtMs ?? null,
+      nodeCount: countAllNodes(graph),
+      edgeCount: graph.edges.length,
+      canUndo: false,
+      canRedo: false,
+    });
+
+    if (canvasState) {
+      useCanvasStore.getState().setViewport(canvasState.viewport);
+      if (canvasState.panelLayout) {
+        const uiActions = useUIStore.getState();
+        if (canvasState.panelLayout.rightPanelOpen) {
+          uiActions.openRightPanel();
+        } else {
+          uiActions.closeRightPanel();
+        }
+      }
+    }
+
+    if (aiState && aiState.conversations.length > 0) {
+      useAIStore.getState().setConversations(aiState.conversations);
+    } else {
+      useAIStore.getState().clearConversations();
+    }
+
+    console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
+  },
+
+  /**
    * Open a .archc file and load its graph into the store.
+   * If checksum mismatch is detected (IntegrityError), shows a warning dialog
+   * that lets the user choose to proceed anyway or cancel.
    */
   openFile: async () => {
     const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return false;
 
     try {
-      const result = await openArchcFile();
-      if (!result) {
-        // User cancelled the file picker
-        return false;
-      }
+      // Step 1: Pick the file (user selects from file picker)
+      const picked = await pickArchcFile();
+      if (!picked) return false; // User cancelled
 
-      const { graph, fileName, fileHandle, canvasState, aiState, createdAtMs } = result;
+      // Show loading indicator while decoding
+      const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
+      setFileOperationLoading('Opening file...');
 
-      // Set graph in text API
-      textApi.setGraph(graph);
+      try {
+        // Step 2: Decode the file data
+        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(picked.data);
 
-      // Reset undo history for the new file
-      undoManager.clear();
-      undoManager.snapshot('Open file', graph);
-
-      set({
-        graph,
-        isDirty: false,
-        fileName,
-        fileHandle: fileHandle ?? null,
-        fileCreatedAtMs: createdAtMs ?? null,
-        nodeCount: countAllNodes(graph),
-        edgeCount: graph.edges.length,
-        canUndo: false,
-        canRedo: false,
-      });
-
-      // Restore canvas state if present
-      if (canvasState) {
-        useCanvasStore.getState().setViewport(canvasState.viewport);
-        if (canvasState.panelLayout) {
-          const uiActions = useUIStore.getState();
-          if (canvasState.panelLayout.rightPanelOpen) {
-            uiActions.openRightPanel();
-          } else {
-            uiActions.closeRightPanel();
-          }
+        // Step 3: Apply to store
+        get()._applyDecodedFile(
+          graph,
+          picked.fileName,
+          picked.fileHandle ?? null,
+          canvasState,
+          aiState,
+          createdAtMs,
+        );
+        clearFileOperationLoading();
+        return true;
+      } catch (decodeErr) {
+        clearFileOperationLoading();
+        if (decodeErr instanceof IntegrityError) {
+          // Show warning dialog with option to proceed or cancel
+          console.warn('[CoreStore] File integrity check failed:', decodeErr.message);
+          const { openIntegrityWarningDialog } = useUIStore.getState();
+          openIntegrityWarningDialog({
+            message:
+              'The file\'s integrity checksum does not match its contents. ' +
+              'The file may have been corrupted or modified outside of ArchCanvas. ' +
+              'Opening it anyway may result in unexpected behavior.',
+            onProceed: async () => {
+              try {
+                setFileOperationLoading('Opening file...');
+                // Retry decoding with checksum verification skipped
+                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
+                  picked.data,
+                  { skipChecksumVerification: true },
+                );
+                get()._applyDecodedFile(
+                  graph,
+                  picked.fileName,
+                  picked.fileHandle ?? null,
+                  canvasState,
+                  aiState,
+                  createdAtMs,
+                );
+                clearFileOperationLoading();
+                console.log(`[CoreStore] Opened file with skipped checksum: ${picked.fileName}`);
+              } catch (retryErr) {
+                clearFileOperationLoading();
+                console.error('[CoreStore] Failed to open file even with skipped checksum:', retryErr);
+                const { openErrorDialog } = useUIStore.getState();
+                openErrorDialog({
+                  title: 'Failed to Open File',
+                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the file contents.',
+                });
+              }
+            },
+          });
+          return false;
         }
+        // Re-throw non-integrity errors
+        throw decodeErr;
       }
-
-      // Restore AI conversations if present
-      if (aiState && aiState.conversations.length > 0) {
-        useAIStore.getState().setConversations(aiState.conversations);
-      } else {
-        useAIStore.getState().clearConversations();
-      }
-
-      console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
-      return true;
     } catch (err) {
+      // Clear loading on error
+      useUIStore.getState().clearFileOperationLoading();
       console.error('[CoreStore] Failed to open file:', err);
 
       // Show user-friendly error dialog
       const { openErrorDialog } = useUIStore.getState();
-      if (err instanceof IntegrityError) {
-        openErrorDialog({
-          title: 'File Corrupted',
-          message: 'The file appears to be corrupted. The integrity checksum does not match, which means the file data may have been modified or damaged.',
-        });
-      } else if (err instanceof CodecError) {
+      if (err instanceof CodecError) {
         openErrorDialog({
           title: 'Invalid File Format',
           message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
@@ -305,6 +385,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return true;
     } catch (err) {
       console.error('[CoreStore] Failed to save file:', err);
+      const { openErrorDialog } = useUIStore.getState();
+      openErrorDialog({
+        title: 'Save Failed',
+        message: err instanceof Error
+          ? `Could not save the file: ${err.message}`
+          : 'An unexpected error occurred while saving the file. Please try again.',
+      });
       return false;
     }
   },
@@ -350,12 +437,20 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return true;
     } catch (err) {
       console.error('[CoreStore] Failed to save file as:', err);
+      const { openErrorDialog } = useUIStore.getState();
+      openErrorDialog({
+        title: 'Save Failed',
+        message: err instanceof Error
+          ? `Could not save the file: ${err.message}`
+          : 'An unexpected error occurred while saving the file. Please try again.',
+      });
       return false;
     }
   },
 
   /**
    * Load a .archc file from a URL (for testing and development).
+   * If checksum mismatch is detected, shows a warning dialog with proceed/cancel options.
    */
   loadFromUrl: async (url: string, displayName?: string) => {
     const { textApi, undoManager } = get();
@@ -370,58 +465,49 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
       const buffer = await response.arrayBuffer();
       const data = new Uint8Array(buffer);
-
-      // Decode the binary file, including canvas state, AI state, and header timestamps
-      const decoded = await decode(data);
-      const { graph, canvasState, aiState, createdAtMs } = protoToGraphFull(decoded);
-
-      // Derive filename (keep .archc extension for display)
       const fileName = displayName ?? url.split('/').pop() ?? 'Loaded File';
 
-      // Set graph in text API
-      textApi.setGraph(graph);
-
-      // Reset undo history for the new file
-      undoManager.clear();
-      undoManager.snapshot('Load file', graph);
-
-      set({
-        graph,
-        isDirty: false,
-        fileName,
-        fileHandle: null,
-        fileCreatedAtMs: createdAtMs ?? null,
-        nodeCount: countAllNodes(graph),
-        edgeCount: graph.edges.length,
-        canUndo: false,
-        canRedo: false,
-      });
-
-      // Restore canvas state if present
-      if (canvasState) {
-        useCanvasStore.getState().setViewport(canvasState.viewport);
+      try {
+        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
+        get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+        return true;
+      } catch (decodeErr) {
+        if (decodeErr instanceof IntegrityError) {
+          // Show warning dialog with option to proceed or cancel
+          console.warn('[CoreStore] File integrity check failed:', decodeErr.message);
+          const { openIntegrityWarningDialog } = useUIStore.getState();
+          openIntegrityWarningDialog({
+            message:
+              'The file\'s integrity checksum does not match its contents. ' +
+              'The file may have been corrupted or modified outside of ArchCanvas. ' +
+              'Opening it anyway may result in unexpected behavior.',
+            onProceed: async () => {
+              try {
+                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
+                  data,
+                  { skipChecksumVerification: true },
+                );
+                get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+                console.log(`[CoreStore] Loaded file from URL with skipped checksum: ${fileName}`);
+              } catch (retryErr) {
+                console.error('[CoreStore] Failed to load file even with skipped checksum:', retryErr);
+                const { openErrorDialog } = useUIStore.getState();
+                openErrorDialog({
+                  title: 'Failed to Open File',
+                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the file contents.',
+                });
+              }
+            },
+          });
+          return false;
+        }
+        throw decodeErr;
       }
-
-      // Restore AI conversations if present
-      if (aiState && aiState.conversations.length > 0) {
-        useAIStore.getState().setConversations(aiState.conversations);
-      } else {
-        useAIStore.getState().clearConversations();
-      }
-
-      console.log(`[CoreStore] Loaded file from URL: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
-      return true;
     } catch (err) {
       console.error('[CoreStore] Failed to load file from URL:', err);
 
-      // Show user-friendly error dialog
       const { openErrorDialog } = useUIStore.getState();
-      if (err instanceof IntegrityError) {
-        openErrorDialog({
-          title: 'File Corrupted',
-          message: 'The file appears to be corrupted. The integrity checksum does not match, which means the file data may have been modified or damaged.',
-        });
-      } else if (err instanceof CodecError) {
+      if (err instanceof CodecError) {
         openErrorDialog({
           title: 'Invalid File Format',
           message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',

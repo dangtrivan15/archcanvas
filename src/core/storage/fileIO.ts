@@ -524,21 +524,29 @@ function suggestionToProtoAISuggestion(sug: AISuggestion): archcanvas.IAISuggest
 // ─── File Open/Save Functions ────────────────────────────────────
 
 /**
- * Open a .archc file using File System Access API (with fallback).
- * Returns the decoded graph, filename, and canvas state.
+ * Decode raw .archc binary data into graph, canvas state, AI state, etc.
+ * Useful for retrying with different decode options (e.g., skipChecksumVerification).
  */
-export async function openArchcFile(): Promise<{
-  graph: ArchGraph;
+export async function decodeArchcData(
+  data: Uint8Array,
+  decodeOptions?: import('./codec').DecodeOptions,
+): Promise<{ graph: ArchGraph; canvasState?: SavedCanvasState; aiState?: AIStateData; createdAtMs?: number }> {
+  const decoded = await decode(data, decodeOptions);
+  return protoToGraphFull(decoded);
+}
+
+/** Result of picking a file (raw data, no decoding) */
+export interface PickedFile {
+  data: Uint8Array;
   fileName: string;
   fileHandle?: FileSystemFileHandle;
-  canvasState?: SavedCanvasState;
-  aiState?: AIStateData;
-  createdAtMs?: number;
-} | null> {
-  let fileData: Uint8Array;
-  let fileName: string;
-  let fileHandle: FileSystemFileHandle | undefined;
+}
 
+/**
+ * Pick a .archc file from the user (File System Access API with fallback).
+ * Returns raw file data without decoding. Returns null if user cancels.
+ */
+export async function pickArchcFile(): Promise<PickedFile | null> {
   // Try File System Access API first (Chrome/Edge)
   if ('showOpenFilePicker' in window) {
     try {
@@ -553,11 +561,13 @@ export async function openArchcFile(): Promise<{
       });
       const handle = handles[0];
       if (!handle) return null;
-      fileHandle = handle;
       const file = await handle.getFile();
-      fileName = file.name;
       const buffer = await file.arrayBuffer();
-      fileData = new Uint8Array(buffer);
+      return {
+        data: new Uint8Array(buffer),
+        fileName: file.name,
+        fileHandle: handle,
+      };
     } catch (err) {
       // User cancelled the picker
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -569,18 +579,33 @@ export async function openArchcFile(): Promise<{
     // Fallback: use hidden <input type="file">
     const result = await openFileViaInput();
     if (!result) return null;
-    fileData = result.data;
-    fileName = result.name;
+    return { data: result.data, fileName: result.name };
   }
+}
+
+/**
+ * Open a .archc file using File System Access API (with fallback).
+ * Returns the decoded graph, filename, and canvas state.
+ */
+export async function openArchcFile(decodeOptions?: import('./codec').DecodeOptions): Promise<{
+  graph: ArchGraph;
+  fileName: string;
+  fileHandle?: FileSystemFileHandle;
+  canvasState?: SavedCanvasState;
+  aiState?: AIStateData;
+  createdAtMs?: number;
+} | null> {
+  const picked = await pickArchcFile();
+  if (!picked) return null;
 
   // Decode the binary file, including canvas state, AI state, and header timestamps
-  const decoded = await decode(fileData);
+  const decoded = await decode(picked.data, decodeOptions);
   const { graph, canvasState, aiState, createdAtMs } = protoToGraphFull(decoded);
 
   return {
     graph,
-    fileName,
-    fileHandle,
+    fileName: picked.fileName,
+    fileHandle: picked.fileHandle,
     canvasState,
     aiState,
     createdAtMs,
