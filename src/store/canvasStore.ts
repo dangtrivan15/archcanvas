@@ -13,17 +13,22 @@ export interface CanvasStoreState {
   // Viewport
   viewport: CanvasViewport;
 
+  // Fit view request counter (Canvas watches for changes)
+  fitViewCounter: number;
+
   // Actions
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
   clearSelection: () => void;
   setViewport: (viewport: CanvasViewport) => void;
+  requestFitView: () => void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set) => ({
   selectedNodeId: null,
   selectedEdgeId: null,
   viewport: { x: 0, y: 0, zoom: 1 },
+  fitViewCounter: 0,
 
   selectNode: (nodeId) =>
     set({ selectedNodeId: nodeId, selectedEdgeId: null }),
@@ -36,4 +41,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
 
   setViewport: (viewport) =>
     set({ viewport }),
+
+  requestFitView: () =>
+    set((s) => ({ fitViewCounter: s.fitViewCounter + 1 })),
 }));

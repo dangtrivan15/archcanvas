@@ -4,12 +4,14 @@
  * Supports fractal zoom: double-click a node with children to navigate into it.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
+  useReactFlow,
   type OnSelectionChangeFunc,
   type OnConnect,
   type OnMoveEnd,
@@ -35,6 +37,15 @@ import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 
 export function Canvas() {
+  return (
+    <ReactFlowProvider>
+      <CanvasInner />
+    </ReactFlowProvider>
+  );
+}
+
+function CanvasInner() {
+  const { fitView } = useReactFlow();
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
   const moveNode = useCoreStore((s) => s.moveNode);
@@ -49,6 +60,19 @@ export function Canvas() {
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
   const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
+  const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
+  const prevFitViewCounterRef = useRef(fitViewCounter);
+
+  // Watch for fitView requests from other components (e.g., LayoutMenu)
+  useEffect(() => {
+    if (fitViewCounter !== prevFitViewCounterRef.current) {
+      prevFitViewCounterRef.current = fitViewCounter;
+      // Slight delay to allow React Flow to update positions first
+      setTimeout(() => {
+        fitView({ padding: 0.2, duration: 300 });
+      }, 50);
+    }
+  }, [fitViewCounter, fitView]);
 
   // Render the graph through RenderApi
   const rendered = useMemo(() => {

@@ -2,12 +2,18 @@
  * Layout menu - auto-layout options (horizontal/vertical) and fit view.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { LayoutGrid, ChevronDown, ArrowRightFromLine, ArrowDownFromLine, Maximize } from 'lucide-react';
+import { useCoreStore } from '@/store/coreStore';
+import { useCanvasStore } from '@/store/canvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
 
 export function LayoutMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const autoLayout = useCoreStore((s) => s.autoLayout);
+  const requestFitView = useCanvasStore((s) => s.requestFitView);
+  const navigationPath = useNavigationStore((s) => s.path);
 
   // Close on click outside
   useEffect(() => {
@@ -31,20 +37,23 @@ export function LayoutMenu() {
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen]);
 
-  const handleAutoLayoutHorizontal = () => {
-    console.log('[LayoutMenu] Auto-layout horizontal');
+  const handleAutoLayoutHorizontal = useCallback(async () => {
     setIsOpen(false);
-  };
+    await autoLayout('horizontal', navigationPath);
+    // Fit view after layout so all repositioned nodes are visible
+    requestFitView();
+  }, [autoLayout, navigationPath, requestFitView]);
 
-  const handleAutoLayoutVertical = () => {
-    console.log('[LayoutMenu] Auto-layout vertical');
+  const handleAutoLayoutVertical = useCallback(async () => {
     setIsOpen(false);
-  };
+    await autoLayout('vertical', navigationPath);
+    requestFitView();
+  }, [autoLayout, navigationPath, requestFitView]);
 
-  const handleFitView = () => {
-    console.log('[LayoutMenu] Fit view');
+  const handleFitView = useCallback(() => {
     setIsOpen(false);
-  };
+    requestFitView();
+  }, [requestFitView]);
 
   return (
     <div className="relative" ref={menuRef}>
@@ -70,6 +79,7 @@ export function LayoutMenu() {
             onClick={handleAutoLayoutHorizontal}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
             role="menuitem"
+            data-testid="auto-layout-horizontal"
           >
             <ArrowRightFromLine className="w-4 h-4" />
             <span>Auto-Layout (Horizontal)</span>
@@ -78,6 +88,7 @@ export function LayoutMenu() {
             onClick={handleAutoLayoutVertical}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
             role="menuitem"
+            data-testid="auto-layout-vertical"
           >
             <ArrowDownFromLine className="w-4 h-4" />
             <span>Auto-Layout (Vertical)</span>
@@ -87,6 +98,7 @@ export function LayoutMenu() {
             onClick={handleFitView}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
             role="menuitem"
+            data-testid="fit-view-button"
           >
             <Maximize className="w-4 h-4" />
             <span>Fit View</span>
