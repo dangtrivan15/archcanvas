@@ -242,6 +242,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       useAIStore.getState().clearConversations();
     }
 
+    // Request fit view so the canvas adjusts to show all nodes
+    useCanvasStore.getState().requestFitView();
+
     console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
   },
 
