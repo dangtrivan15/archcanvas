@@ -10,6 +10,7 @@ import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
 import type { NodeDef } from '@/types/nodedef';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -35,6 +36,10 @@ const namespaceLabels: Record<string, string> = {
 
 export function NodeDefBrowser() {
   const registry = useCoreStore((s) => s.registry);
+  const placementMode = useUIStore((s) => s.placementMode);
+  const placementInfo = useUIStore((s) => s.placementInfo);
+  const enterPlacementMode = useUIStore((s) => s.enterPlacementMode);
+  const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedNamespaces, setCollapsedNamespaces] = useState<Set<string>>(new Set());
 
@@ -81,6 +86,18 @@ export function NodeDefBrowser() {
       setSearchQuery(e.target.value);
     },
     [],
+  );
+
+  const handleNodeDefClick = useCallback(
+    (typeKey: string, displayName: string) => {
+      if (placementMode && placementInfo?.nodeType === typeKey) {
+        // Clicking the same nodedef again exits placement mode
+        exitPlacementMode();
+      } else {
+        enterPlacementMode({ nodeType: typeKey, displayName });
+      }
+    },
+    [placementMode, placementInfo, enterPlacementMode, exitPlacementMode],
   );
 
   return (
@@ -143,20 +160,34 @@ export function NodeDefBrowser() {
                     {defs.map((def) => {
                       const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
                       const Icon = iconMap[def.metadata.icon] ?? Box;
+                      const isActive = placementMode && placementInfo?.nodeType === typeKey;
                       return (
                         <div
                           key={typeKey}
-                          className="flex items-start gap-2 px-3 py-2 hover:bg-blue-50 cursor-pointer
-                                     border-l-2 border-transparent hover:border-blue-400 transition-colors"
+                          className={`flex items-start gap-2 px-3 py-2 cursor-pointer
+                                     border-l-2 transition-colors
+                                     ${isActive
+                                       ? 'bg-blue-100 border-blue-500 ring-1 ring-blue-300'
+                                       : 'border-transparent hover:bg-blue-50 hover:border-blue-400'
+                                     }`}
                           data-testid={`nodedef-entry-${typeKey}`}
                           title={def.metadata.description}
+                          onClick={() => handleNodeDefClick(typeKey, def.metadata.displayName)}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/archcanvas-nodedef', JSON.stringify({
+                              nodeType: typeKey,
+                              displayName: def.metadata.displayName,
+                            }));
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
                         >
-                          <Icon className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                          <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm text-gray-800 font-medium truncate">
+                            <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-800' : 'text-gray-800'}`}>
                               {def.metadata.displayName}
                             </div>
-                            <div className="text-xs text-gray-400 truncate">
+                            <div className={`text-xs truncate ${isActive ? 'text-blue-500' : 'text-gray-400'}`}>
                               {typeKey}
                             </div>
                           </div>

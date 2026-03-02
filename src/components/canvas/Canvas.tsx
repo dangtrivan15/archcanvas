@@ -45,9 +45,10 @@ export function Canvas() {
 }
 
 function CanvasInner() {
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
+  const addNode = useCoreStore((s) => s.addNode);
   const moveNode = useCoreStore((s) => s.moveNode);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
@@ -60,6 +61,9 @@ function CanvasInner() {
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
   const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
+  const placementMode = useUIStore((s) => s.placementMode);
+  const placementInfo = useUIStore((s) => s.placementInfo);
+  const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
   const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
   const prevFitViewCounterRef = useRef(fitViewCounter);
 
@@ -157,6 +161,49 @@ function CanvasInner() {
     [zoomIn],
   );
 
+  // Handle click on canvas during placement mode - place node at click position
+  const onPaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (placementMode && placementInfo) {
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        addNode({
+          type: placementInfo.nodeType,
+          displayName: placementInfo.displayName,
+          position: { x: position.x, y: position.y },
+        });
+        exitPlacementMode();
+      }
+    },
+    [placementMode, placementInfo, screenToFlowPosition, addNode, exitPlacementMode],
+  );
+
+  // Handle drag and drop from NodeDefBrowser onto canvas
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const data = event.dataTransfer.getData('application/archcanvas-nodedef');
+      if (!data) return;
+
+      try {
+        const { nodeType, displayName } = JSON.parse(data);
+        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        addNode({
+          type: nodeType,
+          displayName,
+          position: { x: position.x, y: position.y },
+        });
+      } catch {
+        console.warn('[Canvas] Invalid drop data');
+      }
+    },
+    [screenToFlowPosition, addNode],
+  );
+
   // Handle Delete/Backspace keys for node deletion and navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -167,6 +214,13 @@ function CanvasInner() {
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable
       ) {
+        return;
+      }
+
+      // Escape exits placement mode
+      if (e.key === 'Escape' && placementMode) {
+        e.preventDefault();
+        exitPlacementMode();
         return;
       }
 
@@ -214,7 +268,7 @@ function CanvasInner() {
     // Use capture phase to ensure we handle Delete/Backspace before React Flow
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen]);
+  }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode]);
 
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
@@ -228,6 +282,26 @@ function CanvasInner() {
     <div className="w-full h-full relative" data-testid="canvas">
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
+
+      {/* Placement mode indicator */}
+      {placementMode && placementInfo && (
+        <div
+          className="absolute top-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2
+                     bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium"
+          data-testid="placement-mode-indicator"
+        >
+          <span className="inline-block w-2 h-2 bg-white rounded-full animate-pulse" />
+          Click on canvas to place <strong>{placementInfo.displayName}</strong>
+          <button
+            onClick={exitPlacementMode}
+            className="ml-2 px-2 py-0.5 bg-blue-500 hover:bg-blue-400 rounded text-xs cursor-pointer"
+            data-testid="placement-mode-cancel"
+          >
+            Esc to cancel
+          </button>
+        </div>
+      )}
+
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
@@ -238,6 +312,9 @@ function CanvasInner() {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
+        onPaneClick={onPaneClick}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode={null}
@@ -245,7 +322,7 @@ function CanvasInner() {
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{ type: 'sync' }}
         proOptions={{ hideAttribution: true }}
-        className="bg-gray-50"
+        className={`bg-gray-50 ${placementMode ? 'cursor-crosshair' : ''}`}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
         <Controls position="bottom-right" />
