@@ -1291,3 +1291,37 @@ SESSION: 2026-03-02 - Feature #123
 ## Current completion status:
 - Features passing: 88 of 235 (37.4%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Feature #141
+==================================================
+
+## What was accomplished:
+
+### Feature #141: Code ref role dropdown requires selection (PASSING)
+- Verified the Add Code Reference form's role dropdown enforces a valid selection
+- The role dropdown defaults to "Source" when the form opens, ensuring a role is always selected
+- Tested full flow: opened form → entered valid path → submitted without changing role → default "source" role applied
+- Also tested with explicit role selection ("Config") → correctly applied
+- Path validation still works: empty path shows "Path is required" error
+- The TypeScript type system ensures only valid CodeRefRole values can be submitted
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code (only legitimate globalThis.crypto usage)
+
+## Verification steps completed:
+1. Loaded ecommerce.archc test file (5 nodes, 4 edges)
+2. Selected API Gateway node → right panel opens
+3. Clicked Code Refs tab → tab becomes active
+4. Clicked "Add Code Reference" → form opens with File Path input and Role dropdown
+5. Role dropdown shows "Source" pre-selected (default)
+6. Entered valid path "src/test/handler.ts" without changing role
+7. Clicked Add → code ref created with role "source" (default applied)
+8. Opened form again, entered "src/config/database.yml", selected "Config" role
+9. Clicked Add → code ref created with role "config" (explicit selection works)
+10. Tested empty path submission → "Path is required" validation error shown
+11. Checked console: 0 errors, 0 warnings
+12. Grep for mock data patterns: only legitimate globalThis.crypto usage
+
+## Current completion status:
+- Features passing: 90 of 235 (38.3%)
+- Zero console errors
