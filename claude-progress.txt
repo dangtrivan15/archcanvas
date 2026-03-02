@@ -3180,3 +3180,49 @@ SESSION: 2026-03-02 - Feature #183
 - Features passing: 187 of 235 (79.6%)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-02 - Feature #184
+==================================================
+
+## What was accomplished:
+
+### Feature #184: MCP remove_edge tool deletes edge (PASSING)
+- Verified existing implementation works correctly end-to-end
+- All code was already in place from previous implementations:
+  - handlers.ts: handleRemoveEdge(ctx, { edgeId }) → ctx.textApi.removeEdge(edgeId)
+  - textApi.ts: removeEdge(edgeId) → engineRemoveEdge(graph, edgeId)
+  - graphEngine.ts: removeEdge() filters edges array by id (pure/immutable)
+  - tools.ts: remove_edge tool registered with { edgeId: z.string() } schema
+  - dispatchToolCall routes 'remove_edge' to handleRemoveEdge
+- Test file: test/unit/mcp/mcpRemoveEdge.test.ts (8 tests, all passing)
+  1. removes an edge and returns success (success: true, edgeId)
+  2. removed edge no longer appears in describe output (edgeCount: 0)
+  3. handleRemoveEdge returns success with edgeId (direct handler call)
+  4. removed edge not in human-readable describe
+  5. removed edge not in AI describe format
+  6. does not affect nodes when removing edge (nodes preserved)
+  7. only removes the targeted edge, others remain (selective removal)
+  8. dispatchToolCall correctly routes to remove_edge
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc with 5 nodes and 4 edges
+2. Status bar showed "Nodes: 5 | Edges: 4"
+3. Right-clicked on edge from API Gateway to Order Service
+4. Context menu appeared with Edit, Add Note, Delete options
+5. Clicked Delete - edge immediately removed from canvas
+6. Status bar updated to "Nodes: 5 | Edges: 3"
+7. Only 3 edges remain - deleted edge visually gone
+8. All 5 nodes still present (deletion doesn't cascade to nodes)
+9. Console: 0 errors, 0 warnings
+10. Mock data grep: only legitimate globalThis.crypto in codec.ts
+
+## Test results:
+- All 1238 tests passing across 84 test files
+- Zero regressions
+
+## Current completion status:
+- Features passing: 188 of 235 (80.0%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 879e64d
