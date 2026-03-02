@@ -52,8 +52,10 @@ export class RenderApi {
       (n) => n.status === 'pending',
     ).length;
 
-    // Determine component type from nodedef namespace
-    const nodeType = this.getNodeComponentType(node.type);
+    // Determine component type - ref nodes get 'ref' type, others based on namespace
+    const nodeType = node.refSource
+      ? 'ref'
+      : this.getNodeComponentType(node.type);
 
     const data: CanvasNodeData = {
       archNodeId: node.id,
@@ -71,6 +73,7 @@ export class RenderApi {
       properties: { ...node.properties },
       icon: nodeDef?.metadata.icon ?? 'Box',
       color: node.position.color,
+      refSource: node.refSource,
     };
 
     return {
