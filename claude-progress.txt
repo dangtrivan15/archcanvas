@@ -3055,3 +3055,45 @@ SESSION: 2026-03-02 - Features #179, #180, #181
 - Features passing: ~183 of 235 (~77.9%)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-02 - Feature #178
+==================================================
+
+## What was accomplished:
+
+### Feature #178: MCP describe tool returns architecture description (PASSING)
+- Created comprehensive test file: test/unit/mcp/mcpDescribe.test.ts (17 tests)
+- Tests verify the MCP describe tool delegates to Text API correctly:
+  1. dispatchToolCall routes to describe handler and returns valid JSON
+  2. handleDescribe returns valid structured JSON by default
+  3. Response contains architecture name ("E-Commerce System")
+  4. Response contains architecture description
+  5. Response contains owners
+  6. Response contains node list with correct count (3 nodes)
+  7. Node list contains all node display names
+  8. Each node in list has required fields (id, type, displayName, childCount, noteCount, connectionCount)
+  9. Response contains edge list with correct count (2 edges)
+  10. Each edge in list has required fields (id, fromNode, toNode, type, noteCount)
+  11. Edge list contains correct edge types and labels
+  12. Human format returns architecture name and counts
+  13. Human format lists node names
+  14. AI format returns architecture info in XML structure
+  15. AI format includes node and edge details
+  16. Returns zero counts for empty architecture
+  17. Defaults to structured format when no format specified
+- All implementation was already in place (handlers.ts, textApi.ts)
+- No code changes needed beyond the test file
+
+## Verification:
+- All 17 new tests passing
+- All 1238 total tests passing across 84 test files
+- Zero console errors (0 errors, 0 warnings)
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- Browser verified: app loads correctly with ecommerce.archc (5 nodes, 4 edges)
+
+## Current completion status:
+- Features passing: 186 of 235 (79.1%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 5a8fc4f
