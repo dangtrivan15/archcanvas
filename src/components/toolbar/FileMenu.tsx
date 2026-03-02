@@ -5,6 +5,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { File, FolderOpen, Save, Download, ChevronDown, FilePlus } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
+import { useNavigationStore } from '@/store/navigationStore';
 
 export function FileMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +15,9 @@ export function FileMenu() {
   const openFile = useCoreStore((s) => s.openFile);
   const saveFile = useCoreStore((s) => s.saveFile);
   const saveFileAs = useCoreStore((s) => s.saveFileAs);
+  const isDirty = useCoreStore((s) => s.isDirty);
+  const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
+  const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
   // Close on click outside
   useEffect(() => {
@@ -36,9 +41,18 @@ export function FileMenu() {
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen]);
 
-  const handleNew = () => {
+  const doNewFile = () => {
     newFile();
+    zoomToRoot();
+  };
+
+  const handleNew = () => {
     setIsOpen(false);
+    if (isDirty) {
+      openUnsavedChangesDialog({ onConfirm: doNewFile });
+    } else {
+      doNewFile();
+    }
   };
 
   const handleOpen = async () => {
