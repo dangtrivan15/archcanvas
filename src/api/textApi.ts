@@ -17,6 +17,7 @@ import type {
   AddNodeParams,
   AddEdgeParams,
   AddNoteParams,
+  AddCodeRefParams,
   UpdateNodeParams,
   SuggestParams,
 } from '@/types/api';
@@ -36,6 +37,7 @@ import {
   addNoteToNode,
   addNoteToEdge,
   updateNoteStatus,
+  addCodeRef as engineAddCodeRef,
 } from '@/core/graph/graphEngine';
 import {
   searchGraph,
@@ -266,6 +268,14 @@ export class TextApi {
     }
 
     return note;
+  }
+
+  /**
+   * Add a code reference to a node.
+   */
+  addCodeRef(params: AddCodeRefParams): void {
+    const codeRef = { path: params.path, role: params.role };
+    this.graph = engineAddCodeRef(this.graph, params.nodeId, codeRef);
   }
 
   /**
