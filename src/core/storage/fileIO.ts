@@ -4,6 +4,7 @@
  */
 
 import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState } from '@/types/graph';
+import type { AIConversation, AIMessage, AISuggestion } from '@/types/ai';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { archcanvas, Architecture } from '@/proto/archcanvas';
 import { decode, encode } from './codec';
@@ -22,12 +23,20 @@ export interface UndoHistoryData {
 }
 
 /**
+ * AI state data for file persistence.
+ */
+export interface AIStateData {
+  conversations: AIConversation[];
+}
+
+/**
  * Result of converting a proto file to internal types.
  */
 export interface ProtoToGraphResult {
   graph: ArchGraph;
   canvasState?: SavedCanvasState;
   undoHistory?: UndoHistoryData;
+  aiState?: AIStateData;
 }
 
 /**
@@ -129,7 +138,15 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
     };
   }
 
-  return { graph, canvasState, undoHistory };
+  // Extract AI state if present
+  let aiState: AIStateData | undefined;
+  if (file.aiState && file.aiState.conversations && file.aiState.conversations.length > 0) {
+    aiState = {
+      conversations: file.aiState.conversations.map(protoConversationToConversation),
+    };
+  }
+
+  return { graph, canvasState, undoHistory, aiState };
 }
 
 function protoNodeToNode(protoNode: archcanvas.INode): ArchNode {
@@ -252,6 +269,43 @@ function protoValueMapToRecord(
   return result;
 }
 
+// ─── Proto → AI State Converters ──────────────────────────────────
+
+function protoConversationToConversation(protoConv: archcanvas.IAIConversation): AIConversation {
+  return {
+    id: protoConv.id ?? '',
+    scopedToNodeId: protoConv.scopedToNodeId || undefined,
+    messages: (protoConv.messages ?? []).map(protoAIMessageToMessage),
+    createdAtMs: Number(protoConv.createdAtMs ?? 0),
+  };
+}
+
+function protoAIMessageToMessage(protoMsg: archcanvas.IAIMessage): AIMessage {
+  return {
+    id: protoMsg.id ?? '',
+    role: (protoMsg.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+    content: protoMsg.content ?? '',
+    timestampMs: Number(protoMsg.timestampMs ?? 0),
+    suggestions: (protoMsg.suggestions ?? []).map(protoAISuggestionToSuggestion),
+  };
+}
+
+function protoAISuggestionToSuggestion(protoSug: archcanvas.IAISuggestion): AISuggestion {
+  const statusMap: Record<number, 'pending' | 'accepted' | 'dismissed'> = {
+    1: 'pending',
+    2: 'accepted',
+    3: 'dismissed',
+  };
+  return {
+    id: protoSug.id ?? '',
+    targetNodeId: protoSug.targetNodeId || undefined,
+    targetEdgeId: protoSug.targetEdgeId || undefined,
+    suggestionType: protoSug.suggestionType ?? '',
+    content: protoSug.content ?? '',
+    status: statusMap[protoSug.status as number] ?? 'pending',
+  };
+}
+
 // ─── Graph → Proto Converters ────────────────────────────────────
 
 /**
@@ -277,6 +331,7 @@ export function graphToProto(
   graph: ArchGraph,
   canvasState?: SavedCanvasState,
   undoHistory?: UndoHistoryData,
+  aiState?: AIStateData,
 ): IArchCanvasFile {
   const file: IArchCanvasFile = {
     architecture: graphToArchitectureProto(graph),
@@ -316,6 +371,12 @@ export function graphToProto(
           architectureSnapshot,
         };
       }),
+    };
+  }
+
+  if (aiState && aiState.conversations.length > 0) {
+    file.aiState = {
+      conversations: aiState.conversations.map(conversationToProtoConversation),
     };
   }
 
@@ -411,6 +472,43 @@ function recordToProtoValueMap(
   return result;
 }
 
+// ─── AI State → Proto Converters ──────────────────────────────────
+
+function conversationToProtoConversation(conv: AIConversation): archcanvas.IAIConversation {
+  return {
+    id: conv.id,
+    scopedToNodeId: conv.scopedToNodeId ?? '',
+    messages: conv.messages.map(messageToProtoAIMessage),
+    createdAtMs: conv.createdAtMs,
+  };
+}
+
+function messageToProtoAIMessage(msg: AIMessage): archcanvas.IAIMessage {
+  return {
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestampMs: msg.timestampMs,
+    suggestions: msg.suggestions.map(suggestionToProtoAISuggestion),
+  };
+}
+
+function suggestionToProtoAISuggestion(sug: AISuggestion): archcanvas.IAISuggestion {
+  const statusMap: Record<string, number> = {
+    'pending': 1,
+    'accepted': 2,
+    'dismissed': 3,
+  };
+  return {
+    id: sug.id,
+    targetNodeId: sug.targetNodeId ?? '',
+    targetEdgeId: sug.targetEdgeId ?? '',
+    suggestionType: sug.suggestionType,
+    content: sug.content,
+    status: statusMap[sug.status] ?? 1,
+  };
+}
+
 // ─── File Open/Save Functions ────────────────────────────────────
 
 /**
@@ -422,6 +520,7 @@ export async function openArchcFile(): Promise<{
   fileName: string;
   fileHandle?: FileSystemFileHandle;
   canvasState?: SavedCanvasState;
+  aiState?: AIStateData;
 } | null> {
   let fileData: Uint8Array;
   let fileName: string;
@@ -461,18 +560,16 @@ export async function openArchcFile(): Promise<{
     fileName = result.name;
   }
 
-  // Decode the binary file, including canvas state
+  // Decode the binary file, including canvas state and AI state
   const decoded = await decode(fileData);
-  const { graph, canvasState } = protoToGraphFull(decoded);
-
-  // Clean up the filename (remove .archc extension for display)
-  const displayName = fileName.replace(/\.archc$/, '');
+  const { graph, canvasState, aiState } = protoToGraphFull(decoded);
 
   return {
     graph,
-    fileName: displayName,
+    fileName,
     fileHandle,
     canvasState,
+    aiState,
   };
 }
 
@@ -520,9 +617,10 @@ export async function saveArchcFile(
   graph: ArchGraph,
   fileHandle: FileSystemFileHandle,
   canvasState?: SavedCanvasState,
+  aiState?: AIStateData,
 ): Promise<boolean> {
-  // Convert graph to proto format (including canvas state if provided)
-  const protoFile = graphToProto(graph, canvasState);
+  // Convert graph to proto format (including canvas state and AI state if provided)
+  const protoFile = graphToProto(graph, canvasState, undefined, aiState);
 
   // Encode to binary .archc format (with magic bytes, version, checksum)
   const binaryData = await encode(protoFile);
@@ -548,17 +646,19 @@ export async function saveArchcFileAs(
   graph: ArchGraph,
   suggestedName?: string,
   canvasState?: SavedCanvasState,
+  aiState?: AIStateData,
 ): Promise<{
   fileHandle?: FileSystemFileHandle;
   fileName: string;
 } | null> {
-  // Convert graph to proto format (including canvas state if provided)
-  const protoFile = graphToProto(graph, canvasState);
+  // Convert graph to proto format (including canvas state and AI state if provided)
+  const protoFile = graphToProto(graph, canvasState, undefined, aiState);
 
   // Encode to binary .archc format
   const binaryData = await encode(protoFile);
 
-  const defaultName = (suggestedName ?? 'architecture') + '.archc';
+  const baseName = (suggestedName ?? 'architecture').replace(/\.archc$/, '');
+  const defaultName = baseName + '.archc';
 
   // Try File System Access API first (Chrome/Edge)
   if ('showSaveFilePicker' in window) {
@@ -578,12 +678,9 @@ export async function saveArchcFileAs(
       await writable.write(binaryData);
       await writable.close();
 
-      // Derive display name from file handle
-      const displayName = handle.name.replace(/\.archc$/, '');
-
       return {
         fileHandle: handle,
-        fileName: displayName,
+        fileName: handle.name,
       };
     } catch (err) {
       // User cancelled the picker
@@ -604,9 +701,8 @@ export async function saveArchcFileAs(
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    const displayName = defaultName.replace(/\.archc$/, '');
     return {
-      fileName: displayName,
+      fileName: defaultName,
     };
   }
 }

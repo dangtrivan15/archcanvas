@@ -2165,3 +2165,54 @@ SESSION: 2026-03-02 - Features #101, #102, #157
 - Export API features
 - File persistence features
 - AI integration features
+
+==================================================
+SESSION: 2026-03-02 - Features #91, #98, #99
+==================================================
+
+## What was accomplished:
+
+### Feature #91: BaseNode displays badge counts in footer (PASSING)
+- Fixed noteCount calculation in renderApi.ts to exclude pending suggestions
+  - Previously noteCount included ALL notes; now it only counts non-pending notes
+  - Pending suggestions have their own separate badge count
+- Added data-testid attributes to GenericNode.tsx badge elements:
+  - data-testid="node-badges" on container
+  - data-testid="badge-notes", "badge-suggestions", "badge-coderefs" on individual badges
+- Added removeNote() method to textApi.ts using removeNoteFromNode from graphEngine
+- Added removeNote action to coreStore.ts with undo support
+- Added delete button (Trash2 icon) to each note in NodeDetailPanel.tsx
+- Created badges-test.archc test file for browser verification
+- Updated renderApiBadgeCounts.test.ts expectations for new noteCount behavior
+- Browser verified: badges show correct counts, deleting note updates badge dynamically
+
+### Feature #98: Level-aware filtering shows correct nodes at each depth (PASSING)
+- Created 19 unit tests in test/unit/core/levelAwareNodeFiltering.test.ts
+- Tests verify getNodesAtLevel and RenderApi.render at root, depth 1, depth 2
+- Created level-filter-test.archc with nested structure: A(children: D(child: F), E), B, C
+- Browser verified: double-click drill-down through 3 depths shows correct nodes
+- Root shows A, B, C; into A shows D, E; into D shows F
+
+### Feature #99: Level-aware filtering shows correct edges at each depth (PASSING)
+- Created 18 unit tests in test/unit/core/levelAwareEdgeFiltering.test.ts
+- Tests verify getEdgesAtLevel and RenderApi.render for edge visibility per depth
+- Used existing level-filter-test.archc with edges at root (A->B, B->C) and child (D->E)
+- Browser verified: root shows A->B and B->C edges; into A shows only D->E
+- Edge cases covered: invalid path, empty children, edge data fields
+
+## Key fixes:
+- renderApi.ts: noteCount inline filter expression kept being reverted by linter;
+  fixed by extracting to named variable regularNoteCount
+- Playwright: clicking node display names caused timeouts due to html pointer interception;
+  fixed by clicking React Flow group elements via testid rf__node-{nodeId}
+
+## Current completion status:
+- Features passing: 147 of 235 (62.6%)
+- Zero console errors
+- 1096 unit tests across 71 test files, all passing
+
+## What should be worked on next:
+- More canvas interaction features
+- Export API features
+- File persistence features
+- AI integration features

@@ -4,12 +4,14 @@
  * message history, text input, and send button.
  * Integrates with Anthropic Claude API for real responses with streaming.
  * Falls back to placeholder responses when API key is not configured.
+ * Messages are persisted via AI store → .archc file.
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Send, Bot, User, Info, Loader2 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useAIStore } from '@/store/aiStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { sendMessage as sendAIMessage } from '@/ai/client';
 import { isAIConfigured } from '@/ai/config';
@@ -26,11 +28,37 @@ export function AIChatTab() {
   const graph = useCoreStore((s) => s.graph);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Persisted messages from AI store (select raw conversations to avoid infinite re-render)
+  const conversations = useAIStore((s) => s.conversations);
+  const addStoreMessage = useAIStore((s) => s.addMessage);
+
+  // Derive store messages from conversations
+  const storeMessages = useMemo(() => {
+    const globalConv = conversations.find((c) => !c.scopedToNodeId);
+    return globalConv?.messages ?? [];
+  }, [conversations]);
+
+  // Local UI state for streaming
+  const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Derive display messages: persisted + any in-progress streaming message
+  const messages: ChatMessage[] = useMemo(() => {
+    const persisted: ChatMessage[] = storeMessages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestampMs,
+      isStreaming: false,
+    }));
+    if (streamingMessage) {
+      return [...persisted, streamingMessage];
+    }
+    return persisted;
+  }, [storeMessages, streamingMessage]);
 
   // Get the focused node
   const node = useMemo(() => {
@@ -83,20 +111,17 @@ export function AIChatTab() {
    * Send message using real AI client with streaming.
    */
   const sendWithAI = useCallback(
-    async (userContent: string, conversationHistory: ChatMessage[]) => {
+    async (_userContent: string, conversationHistory: ChatMessage[]) => {
       const assistantMsgId = `msg-${Date.now()}-assistant`;
 
-      // Add empty assistant message that will be filled by streaming
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantMsgId,
-          role: 'assistant',
-          content: '',
-          timestamp: Date.now(),
-          isStreaming: true,
-        },
-      ]);
+      // Create streaming placeholder
+      setStreamingMessage({
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isStreaming: true,
+      });
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -112,22 +137,16 @@ export function AIChatTab() {
           stream: true,
           signal: controller.signal,
           onChunk: (text) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsgId ? { ...m, content: m.content + text } : m,
-              ),
+            setStreamingMessage((prev) =>
+              prev ? { ...prev, content: prev.content + text } : null,
             );
           },
         });
 
-        // Mark streaming as complete
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? { ...m, content: result.content, isStreaming: false }
-              : m,
-          ),
-        );
+        // Persist the completed assistant message to the store
+        addStoreMessage('assistant', result.content);
+        // Clear streaming message
+        setStreamingMessage(null);
 
         // Create a pending AI suggestion note on the selected node
         if (selectedNodeId && result.content) {
@@ -138,26 +157,21 @@ export function AIChatTab() {
           });
         }
       } catch (error) {
-        if ((error as Error).name === 'AbortError') return;
+        if ((error as Error).name === 'AbortError') {
+          setStreamingMessage(null);
+          return;
+        }
 
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? {
-                  ...m,
-                  content: `Error: ${errorMsg}`,
-                  isStreaming: false,
-                }
-              : m,
-          ),
-        );
+        // Persist the error message
+        addStoreMessage('assistant', `Error: ${errorMsg}`);
+        setStreamingMessage(null);
       } finally {
         abortControllerRef.current = null;
         setIsStreaming(false);
       }
     },
-    [buildSystemPrompt, selectedNodeId, suggest],
+    [buildSystemPrompt, selectedNodeId, suggest, addStoreMessage],
   );
 
   /**
@@ -167,17 +181,14 @@ export function AIChatTab() {
     (userContent: string) => {
       const assistantMsgId = `msg-${Date.now()}-assistant`;
 
-      // Add assistant message with streaming indicator
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantMsgId,
-          role: 'assistant',
-          content: '',
-          timestamp: Date.now(),
-          isStreaming: true,
-        },
-      ]);
+      // Create streaming placeholder
+      setStreamingMessage({
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+        isStreaming: true,
+      });
 
       // Simulate streaming with character-by-character reveal
       const fullResponse = node
@@ -189,13 +200,9 @@ export function AIChatTab() {
         charIndex += 3; // Reveal 3 chars at a time for speed
         if (charIndex >= fullResponse.length) {
           clearInterval(interval);
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsgId
-                ? { ...m, content: fullResponse, isStreaming: false }
-                : m,
-            ),
-          );
+          // Persist the completed assistant message to the store
+          addStoreMessage('assistant', fullResponse);
+          setStreamingMessage(null);
           setIsStreaming(false);
 
           // Create a pending AI suggestion note on the selected node
@@ -208,42 +215,46 @@ export function AIChatTab() {
             });
           }
         } else {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMsgId
-                ? { ...m, content: fullResponse.slice(0, charIndex) }
-                : m,
-            ),
+          setStreamingMessage((prev) =>
+            prev ? { ...prev, content: fullResponse.slice(0, charIndex) } : null,
           );
         }
       }, 20);
     },
-    [node, selectedNodeId, suggest],
+    [node, selectedNodeId, suggest, addStoreMessage],
   );
 
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed || isStreaming) return;
 
-    // Add user message
-    const userMessage: ChatMessage = {
+    // Persist user message to the AI store
+    addStoreMessage('user', trimmed);
+
+    // Build conversation history for API call (from store + the new user message)
+    const allMessages: ChatMessage[] = messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp,
+    }));
+    // Add new user message to history (it's already in the store, but for the API call we need the full list)
+    allMessages.push({
       id: `msg-${Date.now()}-user`,
       role: 'user',
       content: trimmed,
       timestamp: Date.now(),
-    };
+    });
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
     setInputValue('');
     setIsStreaming(true);
 
     if (isAIConfigured()) {
-      sendWithAI(trimmed, newMessages);
+      sendWithAI(trimmed, allMessages);
     } else {
       sendWithPlaceholder(trimmed);
     }
-  }, [inputValue, isStreaming, messages, sendWithAI, sendWithPlaceholder]);
+  }, [inputValue, isStreaming, messages, sendWithAI, sendWithPlaceholder, addStoreMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

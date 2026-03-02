@@ -36,12 +36,13 @@ export function NodeDetailPanel() {
     return registry.resolve(node.type);
   }, [node, registry]);
 
-  const handleAddNote = useCallback(() => {
+  const handleAddNote = useCallback((noteTags?: string[]) => {
     if (!selectedNodeId || !noteContent.trim()) return;
     addNote({
       nodeId: selectedNodeId,
       author: noteAuthor,
       content: noteContent.trim(),
+      tags: noteTags,
     });
     setNoteContent('');
   }, [selectedNodeId, noteContent, noteAuthor, addNote]);
@@ -553,6 +554,28 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
   );
 }
 
+/** Color palette for tag badges - cycles through these colors */
+const TAG_COLORS = [
+  { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+  { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+  { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
+  { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-200' },
+  { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-200' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200' },
+  { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+];
+
+function getTagColor(tag: string) {
+  // Deterministic color based on tag string hash
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = ((hash << 5) - hash) + tag.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+}
+
 function NotesTab({
   node,
   nodeId,
@@ -568,12 +591,14 @@ function NotesTab({
   noteAuthor: string;
   onNoteContentChange: (v: string) => void;
   onNoteAuthorChange: (v: string) => void;
-  onAddNote: () => void;
+  onAddNote: (tags?: string[]) => void;
 }) {
   const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
   const removeNote = useCoreStore((s) => s.removeNote);
   const [isEditing, setIsEditing] = useState(false);
   const [contentError, setContentError] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
   // Sort notes chronologically (oldest first) by timestamp
   const sortedNotes = useMemo(
@@ -581,20 +606,45 @@ function NotesTab({
     [node.notes],
   );
 
+  const handleAddTag = useCallback(() => {
+    const trimmed = tagInput.trim().toLowerCase();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags((prev) => [...prev, trimmed]);
+    }
+    setTagInput('');
+  }, [tagInput, tags]);
+
+  const handleRemoveTag = useCallback((tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag));
+  }, []);
+
+  const handleTagKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      handleAddTag();
+    } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
+      setTags((prev) => prev.slice(0, -1));
+    }
+  }, [tagInput, tags, handleAddTag]);
+
   const handleSave = useCallback(() => {
     if (!noteContent.trim()) {
       setContentError('Note content cannot be empty');
       return;
     }
     setContentError('');
-    onAddNote();
+    onAddNote(tags.length > 0 ? tags : undefined);
     setIsEditing(false);
-  }, [noteContent, onAddNote]);
+    setTags([]);
+    setTagInput('');
+  }, [noteContent, onAddNote, tags]);
 
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     onNoteContentChange('');
     setContentError('');
+    setTags([]);
+    setTagInput('');
   }, [onNoteContentChange]);
 
   const handleOpenEditor = useCallback(() => {
@@ -651,6 +701,41 @@ function NotesTab({
               <div className="text-xs text-red-500 mt-0.5" data-testid="note-content-error">{contentError}</div>
             )}
           </div>
+          <div>
+            <label className="text-xs text-gray-500">Tags</label>
+            <div className="flex flex-wrap items-center gap-1 mt-0.5 p-1 border rounded bg-white border-gray-200 min-h-[30px]">
+              {tags.map((tag) => {
+                const color = getTagColor(tag);
+                return (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full border ${color.bg} ${color.text} ${color.border}`}
+                    data-testid={`editor-tag-${tag}`}
+                  >
+                    {tag}
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      className="ml-0.5 hover:opacity-70"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={handleAddTag}
+                placeholder={tags.length === 0 ? "Type tag and press Enter..." : ""}
+                className="flex-1 min-w-[80px] text-xs border-none outline-none bg-transparent px-1 py-0.5"
+                data-testid="note-tags-input"
+              />
+            </div>
+            <div className="text-[10px] text-gray-400 mt-0.5">Press Enter or comma to add tags</div>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={handleSave}
@@ -704,12 +789,19 @@ function NotesTab({
                 </button>
               </div>
               {note.tags.length > 0 && (
-                <div className="flex gap-1 mt-1">
-                  {note.tags.map((tag) => (
-                    <span key={tag} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-1 mt-2" data-testid="note-tags">
+                  {note.tags.map((tag) => {
+                    const color = getTagColor(tag);
+                    return (
+                      <span
+                        key={tag}
+                        className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${color.bg} ${color.text} ${color.border}`}
+                        data-testid={`tag-badge-${tag}`}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
               {/* Accept/Dismiss buttons for pending AI suggestions */}
