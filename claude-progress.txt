@@ -2469,3 +2469,39 @@ SESSION: 2026-03-02 - Feature #131
 - Features passing: 161 of 235 (68.5%)
 - Zero console errors
 - Committed: 2cca0f7
+
+==================================================
+SESSION: 2026-03-02 - Feature #130
+==================================================
+
+## What was accomplished:
+
+### Feature #130: Accept AI suggestion changes note status (PASSING)
+- Verified the complete Accept suggestion workflow end-to-end through browser automation
+- Created suggestion-test.archc test file with 2 pending AI suggestions and 1 regular note
+- All functionality was already implemented in prior sessions:
+  - NodeDetailPanel.tsx: Accept/Dismiss buttons shown when note.status === 'pending'
+  - Accept button calls resolveSuggestion(nodeId, noteId, 'accepted')
+  - coreStore.resolveSuggestion() calls textApi.resolveSuggestion() + creates undo snapshot
+  - textApi.resolveSuggestion() calls graphEngine.updateNoteStatus()
+  - After accepting: status changes to 'accepted', buttons removed, green badge with CheckCircle icon appears
+  - Card background changes to green-50 with green-300 border for accepted notes
+- No code changes needed - verification only
+
+## Verification steps completed:
+1. Loaded suggestion-test.archc with pending AI suggestion notes
+2. Selected node and navigated to Notes tab
+3. Confirmed 2 AI suggestions with Status: pending and Accept/Dismiss buttons
+4. Clicked Accept on first suggestion
+5. Verified Status changed from 'pending' to 'accepted'
+6. Verified Accept/Dismiss buttons removed for accepted note
+7. Verified green 'Accepted' badge with CheckCircle icon appeared
+8. Verified second suggestion still shows pending with Accept/Dismiss buttons
+9. Verified regular note (Status: none) unaffected
+10. Console: 0 errors, 0 warnings
+11. Mock data grep: only legitimate globalThis.crypto usage
+
+## Current completion status:
+- Features passing: 161 of 235 (68.5%)
+- Zero console errors
+- No code changes needed for this feature
