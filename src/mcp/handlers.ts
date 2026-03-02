@@ -167,6 +167,8 @@ export function handleListNodedefs(
     return JSON.stringify({
       namespace: args.namespace,
       nodedefs: defs.map((d) => ({
+        name: d.metadata.name,
+        namespace: d.metadata.namespace,
         type: `${d.metadata.namespace}/${d.metadata.name}`,
         displayName: d.metadata.displayName,
         description: d.metadata.description,
@@ -179,11 +181,12 @@ export function handleListNodedefs(
   const allDefs = ctx.registry.listAll();
   return JSON.stringify({
     nodedefs: allDefs.map((d) => ({
+      name: d.metadata.name,
+      namespace: d.metadata.namespace,
       type: `${d.metadata.namespace}/${d.metadata.name}`,
       displayName: d.metadata.displayName,
       description: d.metadata.description,
       icon: d.metadata.icon,
-      namespace: d.metadata.namespace,
     })),
     count: allDefs.length,
   });
