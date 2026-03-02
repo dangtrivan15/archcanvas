@@ -378,11 +378,18 @@ export class TextApi {
     lines.push(`- Edges: ${this.graph.edges.length}`);
     lines.push(`- Owners: ${this.graph.owners.join(', ') || 'none'}`);
 
-    if (this.graph.nodes.length > 0) {
+    const allNodes = flattenNodes(this.graph.nodes);
+    const nodeIdToName = new Map<string, string>();
+    for (const node of allNodes) {
+      nodeIdToName.set(node.id, node.displayName);
+    }
+
+    if (allNodes.length > 0) {
       lines.push(`\n## Nodes`);
-      for (const node of flattenNodes(this.graph.nodes)) {
+      for (const node of allNodes) {
+        const emoji = getNodeTypeEmoji(node.type);
         lines.push(
-          `- **${node.displayName}** (${node.type}) — ${node.notes.length} notes, ${node.children.length} children`,
+          `- ${emoji} **${node.displayName}** (${node.type}) — ${node.notes.length} notes, ${node.children.length} children`,
         );
       }
     }
@@ -390,8 +397,10 @@ export class TextApi {
     if (this.graph.edges.length > 0) {
       lines.push(`\n## Edges`);
       for (const edge of this.graph.edges) {
+        const fromName = nodeIdToName.get(edge.fromNode) ?? edge.fromNode;
+        const toName = nodeIdToName.get(edge.toNode) ?? edge.toNode;
         lines.push(
-          `- ${edge.fromNode} → ${edge.toNode} [${edge.type}]${edge.label ? ` "${edge.label}"` : ''}`,
+          `- ${fromName} → ${toName} [${edge.type}]${edge.label ? ` "${edge.label}"` : ''}`,
         );
       }
     }
@@ -424,4 +433,60 @@ export class TextApi {
     lines.push(`</architecture>`);
     return lines.join('\n');
   }
+}
+
+// ============================================================
+// Emoji badge mapping for human-readable output
+// ============================================================
+
+const NODE_TYPE_EMOJI_MAP: Record<string, string> = {
+  // Compute namespace
+  'compute/service': '⚙️',
+  'compute/function': '⚡',
+  'compute/worker': '👷',
+  'compute/api-gateway': '🚪',
+  // Data namespace
+  'data/database': '🗄️',
+  'data/cache': '📦',
+  'data/object-storage': '📁',
+  'data/repository': '📚',
+  // Messaging namespace
+  'messaging/message-queue': '📨',
+  'messaging/event-bus': '🚌',
+  'messaging/stream-processor': '🌊',
+  // Network namespace
+  'network/load-balancer': '⚖️',
+  'network/cdn': '🌐',
+  'network/dns': '🔍',
+  // Observability namespace
+  'observability/logging': '📋',
+  'observability/monitoring': '📊',
+};
+
+const NAMESPACE_EMOJI_FALLBACK: Record<string, string> = {
+  compute: '⚙️',
+  data: '🗄️',
+  messaging: '📨',
+  network: '🌐',
+  observability: '📊',
+};
+
+/**
+ * Get an emoji badge for a node type.
+ * Falls back to namespace emoji, then a generic icon.
+ */
+export function getNodeTypeEmoji(type: string): string {
+  // Exact match
+  if (NODE_TYPE_EMOJI_MAP[type]) {
+    return NODE_TYPE_EMOJI_MAP[type];
+  }
+
+  // Namespace fallback
+  const namespace = type.split('/')[0];
+  if (NAMESPACE_EMOJI_FALLBACK[namespace]) {
+    return NAMESPACE_EMOJI_FALLBACK[namespace];
+  }
+
+  // Generic fallback
+  return '📦';
 }
