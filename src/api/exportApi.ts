@@ -4,7 +4,7 @@
 
 import type { ArchGraph, ArchNode } from '@/types/graph';
 import { flattenNodes, countAllNodes } from '@/core/graph/graphQuery';
-import { toPng } from 'html-to-image';
+import { toPng, toSvg } from 'html-to-image';
 
 export class ExportApi {
   constructor() {
@@ -160,6 +160,60 @@ export class ExportApi {
       return true;
     } catch (err) {
       console.error('[ExportApi] PNG export failed:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Export the canvas to an SVG vector image and trigger a download.
+   * Captures the React Flow viewport element from the DOM.
+   *
+   * @param fileName - Base name for the exported file (without extension)
+   * @returns true if export succeeded
+   */
+  async exportToSvg(fileName: string = 'architecture'): Promise<boolean> {
+    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null;
+    if (!viewport) {
+      console.error('[ExportApi] Cannot find React Flow viewport element for SVG export');
+      return false;
+    }
+
+    try {
+      const dataUrl = await toSvg(viewport, {
+        backgroundColor: '#f9fafb', // gray-50 to match canvas background
+        filter: (node: HTMLElement) => {
+          // Filter out UI controls that shouldn't be in the export
+          const className = node.className;
+          if (typeof className === 'string') {
+            if (className.includes('react-flow__minimap')) return false;
+            if (className.includes('react-flow__controls')) return false;
+            if (className.includes('react-flow__panel')) return false;
+          }
+          return true;
+        },
+      });
+
+      // Convert data URL to SVG text for clean download
+      const baseName = fileName.replace(/\.archc$/, '').replace(/\.svg$/, '');
+
+      // Decode the data URL to get raw SVG content
+      const svgContent = decodeURIComponent(dataUrl.split(',')[1] || '');
+
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `${baseName}.svg`;
+      link.href = url;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log(`[ExportApi] SVG exported: ${baseName}.svg`);
+      return true;
+    } catch (err) {
+      console.error('[ExportApi] SVG export failed:', err);
       return false;
     }
   }
