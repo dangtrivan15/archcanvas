@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Send, Bot, User, Info, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Info, Loader2, Sparkles, Check } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useAIStore } from '@/store/aiStore';
@@ -49,6 +49,7 @@ export function AIChatTab() {
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -92,13 +93,28 @@ export function AIChatTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Clear streaming state when switching nodes (prevents stale streaming message)
+  // Clear streaming state and applied tracking when switching nodes
   useEffect(() => {
     setStreamingMessage(null);
     setInputValue('');
+    setAppliedMessageIds(new Set());
   }, [selectedNodeId]);
 
   const suggest = useCoreStore((s) => s.suggest);
+
+  /** Apply an AI suggestion: creates a pending note on the selected node */
+  const handleApply = useCallback(
+    (messageId: string, content: string) => {
+      if (!selectedNodeId || !content) return;
+      suggest({
+        nodeId: selectedNodeId,
+        content: content.slice(0, 200),
+        suggestionType: 'general',
+      });
+      setAppliedMessageIds((prev) => new Set(prev).add(messageId));
+    },
+    [selectedNodeId, suggest],
+  );
 
   /** Persist a message to the correct conversation (node-scoped or global) */
   const persistMessage = useCallback(
@@ -171,15 +187,6 @@ export function AIChatTab() {
         persistMessage('assistant', result.content);
         // Clear streaming message
         setStreamingMessage(null);
-
-        // Create a pending AI suggestion note on the selected node
-        if (selectedNodeId && result.content) {
-          suggest({
-            nodeId: selectedNodeId,
-            content: result.content.slice(0, 200),
-            suggestionType: 'general',
-          });
-        }
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
           setStreamingMessage(null);
@@ -195,7 +202,7 @@ export function AIChatTab() {
         setIsStreaming(false);
       }
     },
-    [buildSystemPrompt, selectedNodeId, suggest, persistMessage],
+    [buildSystemPrompt, persistMessage],
   );
 
   /**
@@ -228,16 +235,6 @@ export function AIChatTab() {
           persistMessage('assistant', fullResponse);
           setStreamingMessage(null);
           setIsStreaming(false);
-
-          // Create a pending AI suggestion note on the selected node
-          if (selectedNodeId) {
-            const suggestionContent = `Consider reviewing the configuration of "${node?.displayName || 'this component'}". ${userContent}`;
-            suggest({
-              nodeId: selectedNodeId,
-              content: suggestionContent,
-              suggestionType: 'general',
-            });
-          }
         } else {
           setStreamingMessage((prev) =>
             prev ? { ...prev, content: fullResponse.slice(0, charIndex) } : null,
@@ -245,7 +242,7 @@ export function AIChatTab() {
         }
       }, 20);
     },
-    [node, selectedNodeId, suggest, persistMessage],
+    [node, persistMessage],
   );
 
   const handleSend = useCallback(() => {
@@ -337,18 +334,44 @@ export function AIChatTab() {
                   <Bot className="w-3.5 h-3.5 text-blue-600" />
                 </div>
               )}
-              <div
-                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {msg.content}
-                {msg.isStreaming && (
-                  <span className="inline-block ml-1 animate-pulse" data-testid="ai-streaming-indicator">
-                    <Loader2 className="w-3 h-3 inline animate-spin" />
-                  </span>
+              <div className={`max-w-[85%] ${msg.role === 'assistant' ? '' : ''}`}>
+                <div
+                  className={`rounded-lg px-3 py-2 text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {msg.content}
+                  {msg.isStreaming && (
+                    <span className="inline-block ml-1 animate-pulse" data-testid="ai-streaming-indicator">
+                      <Loader2 className="w-3 h-3 inline animate-spin" />
+                    </span>
+                  )}
+                </div>
+                {/* Apply button for completed assistant messages when a node is selected */}
+                {msg.role === 'assistant' && !msg.isStreaming && selectedNodeId && msg.content && (
+                  <div className="mt-1">
+                    {appliedMessageIds.has(msg.id) ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-xs text-green-600 px-2 py-0.5"
+                        data-testid="ai-suggestion-applied"
+                      >
+                        <Check className="w-3 h-3" />
+                        Applied as note
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleApply(msg.id, msg.content)}
+                        className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2 py-0.5 rounded transition-colors"
+                        title="Apply as pending note on this node"
+                        data-testid="ai-apply-suggestion"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Apply
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
               {msg.role === 'user' && (
