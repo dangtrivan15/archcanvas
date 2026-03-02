@@ -29,6 +29,13 @@ export interface UnsavedChangesDialogInfo {
   onConfirm: () => void;
 }
 
+export interface ErrorDialogInfo {
+  /** Short title describing the error */
+  title: string;
+  /** Detailed error message for the user */
+  message: string;
+}
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
@@ -46,6 +53,10 @@ export interface UIStoreState {
   // Unsaved changes dialog
   unsavedChangesDialogOpen: boolean;
   unsavedChangesDialogInfo: UnsavedChangesDialogInfo | null;
+
+  // Error dialog
+  errorDialogOpen: boolean;
+  errorDialogInfo: ErrorDialogInfo | null;
 
   // Placement mode (click-to-place node on canvas)
   placementMode: boolean;
@@ -70,6 +81,10 @@ export interface UIStoreState {
   openUnsavedChangesDialog: (info: UnsavedChangesDialogInfo) => void;
   closeUnsavedChangesDialog: () => void;
 
+  // Error dialog actions
+  openErrorDialog: (info: ErrorDialogInfo) => void;
+  closeErrorDialog: () => void;
+
   // Placement mode actions
   enterPlacementMode: (info: PlacementModeInfo) => void;
   exitPlacementMode: () => void;
@@ -88,6 +103,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   unsavedChangesDialogOpen: false,
   unsavedChangesDialogInfo: null,
+
+  errorDialogOpen: false,
+  errorDialogInfo: null,
 
   placementMode: false,
   placementInfo: null,
@@ -124,6 +142,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeUnsavedChangesDialog: () =>
     set({ unsavedChangesDialogOpen: false, unsavedChangesDialogInfo: null }),
+
+  openErrorDialog: (info) =>
+    set({ errorDialogOpen: true, errorDialogInfo: info }),
+
+  closeErrorDialog: () =>
+    set({ errorDialogOpen: false, errorDialogInfo: null }),
 
   enterPlacementMode: (info) =>
     set({ placementMode: true, placementInfo: info }),

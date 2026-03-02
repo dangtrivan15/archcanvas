@@ -14,7 +14,7 @@ import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
 import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
-import { decode } from '@/core/storage/codec';
+import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAIStore } from '@/store/aiStore';
@@ -242,6 +242,26 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return true;
     } catch (err) {
       console.error('[CoreStore] Failed to open file:', err);
+
+      // Show user-friendly error dialog
+      const { openErrorDialog } = useUIStore.getState();
+      if (err instanceof IntegrityError) {
+        openErrorDialog({
+          title: 'File Corrupted',
+          message: 'The file appears to be corrupted. The integrity checksum does not match, which means the file data may have been modified or damaged.',
+        });
+      } else if (err instanceof CodecError) {
+        openErrorDialog({
+          title: 'Invalid File Format',
+          message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
+        });
+      } else {
+        openErrorDialog({
+          title: 'Failed to Open File',
+          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the file.',
+        });
+      }
+
       return false;
     }
   },
@@ -393,6 +413,26 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return true;
     } catch (err) {
       console.error('[CoreStore] Failed to load file from URL:', err);
+
+      // Show user-friendly error dialog
+      const { openErrorDialog } = useUIStore.getState();
+      if (err instanceof IntegrityError) {
+        openErrorDialog({
+          title: 'File Corrupted',
+          message: 'The file appears to be corrupted. The integrity checksum does not match, which means the file data may have been modified or damaged.',
+        });
+      } else if (err instanceof CodecError) {
+        openErrorDialog({
+          title: 'Invalid File Format',
+          message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
+        });
+      } else {
+        openErrorDialog({
+          title: 'Failed to Open File',
+          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the file.',
+        });
+      }
+
       return false;
     }
   },
