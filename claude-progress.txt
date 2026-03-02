@@ -1,4 +1,39 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #56
+==================================================
+
+## What was accomplished:
+
+### Feature #56: Structured formatter produces valid JSON output (PASSING)
+- 19 unit tests in test/unit/api/structuredFormatterJson.test.ts
+- Created architecture with 3 nodes, 2 edges, 3 notes for thorough testing
+- Verified describe({format: 'structured'}) returns valid parseable JSON
+- Verified JSON has nodes array with correct length (3)
+- Verified JSON has edges array with correct length (2)
+- Verified every node has id, type, displayName string fields (non-empty)
+- Verified NodeSummary shape: childCount, noteCount, connectionCount (numeric)
+- Verified note counts match actual notes (2 on Gateway, 1 on DB, 0 on Service)
+- Verified EdgeSummary shape: id, fromNode, toNode, type, noteCount
+- Verified edge references point to valid node IDs
+- Verified edge types and labels match created edges
+- Verified top-level metadata: name, description, owners, nodeCount, edgeCount
+- Verified pretty-printed JSON with indentation
+- Verified round-trip idempotency (parse→stringify === original)
+- Edge case: empty architecture produces valid JSON with empty arrays
+- Edge case: nested child nodes are flattened into nodes array
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- All 19 tests passing, zero regressions
+
+## Current completion status:
+- Features passing: 121 of 235 (51.5%)
+- Zero regressions in existing test suite (1036+ tests)
+
+## What should be worked on next:
+- More Data Verification features
+- Canvas interaction features
+- Export API features
+
+==================================================
 SESSION: 2026-03-02 - Features #165, #166, #173
 ==================================================
 
@@ -1720,3 +1755,27 @@ SESSION: 2026-03-02 - Feature #48
 ## Current completion status:
 - Features passing: 121 of 235 (51.5%)
 - All unit tests passing
+
+==================================================
+SESSION: 2026-03-02 - Feature #57
+==================================================
+
+## What was accomplished:
+
+### Feature #57: AI formatter includes all node details in output (PASSING)
+- Updated buildAIDescription() in src/api/textApi.ts to include:
+  - <properties> section: JSON-serialized node properties (version, region, replicas, etc.)
+  - <coderefs> section: <ref path="..." role="..." /> elements for each code reference
+  - <notes> section: expanded from count-only to full <note author="..." status="...">content</note>
+- Previously, AI formatter only included args and note count
+- Now includes all four detail types: args, properties, code refs, notes
+- 20 unit tests in test/unit/api/aiFormatterNodeDetails.test.ts
+- Tests verify: args JSON, property values, code ref paths/roles, note content/author/status
+- Sections correctly omitted for nodes without those details
+- Well-formed XML verified (matching open/close tags)
+- Zero regressions: all 437 API tests pass, all 19 Feature #54 tests pass
+- No mock data patterns in production code
+
+## Current completion status:
+- Features passing: 121 of 235 (51.5%)
+- Zero regressions
