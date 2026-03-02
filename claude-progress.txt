@@ -2968,3 +2968,38 @@ SESSION: 2026-03-02 - Features #156, #234, #235
 - AI integration features
 - Remaining canvas interaction features
 - File persistence features
+
+==================================================
+SESSION: 2026-03-02 - Feature #176
+==================================================
+
+## What was accomplished:
+
+### Feature #176: AI conversations scoped per selected node (PASSING)
+- Implemented node-scoped AI conversations so each node has its own chat history
+- Changes to aiStore.ts:
+  - Added addMessageToNode(nodeId, role, content) method for node-scoped messages
+  - Added getNodeMessages(nodeId) method for retrieving node-scoped messages
+  - Both create new conversation with scopedToNodeId if one doesn't exist
+- Changes to AIChatTab.tsx:
+  - Added addStoreMessageToNode selector from aiStore
+  - Updated storeMessages useMemo to derive from node-scoped conversation when selectedNodeId exists
+  - Added persistMessage() callback that routes to addMessageToNode or addMessage based on selectedNodeId
+  - Updated sendWithAI, sendWithPlaceholder, and handleSend to use persistMessage
+  - Added useEffect to clear streaming state and input when switching nodes
+
+## Verification steps completed:
+1. Loaded ecommerce.archc with 5 nodes and 4 edges
+2. Selected API Gateway node → AI Chat tab showed empty state ✓
+3. Sent message "GATEWAY_MSG_FOR_NODE_A" → received response mentioning "API Gateway" ✓
+4. Selected Order Service node → chat was EMPTY (no Gateway messages) ✓
+5. Sent message "ORDER_MSG_FOR_NODE_B" → received response mentioning "Order Service" ✓
+6. Selected API Gateway again → showed GATEWAY_MSG_FOR_NODE_A + response (not Order Service messages) ✓
+7. Selected Order Service again → showed ORDER_MSG_FOR_NODE_B + response (not Gateway messages) ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 181 of 235 (77.0%)
+- Zero console errors
+- No mock data patterns in production code
