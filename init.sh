@@ -59,8 +59,8 @@ echo ""
 echo -e "${YELLOW}Generating Protocol Buffer types...${NC}"
 
 if [ -f "proto/archcanvas.proto" ]; then
-    npx pbjs -t static-module -w es6 -o src/proto/archcanvas.js proto/archcanvas.proto 2>/dev/null || true
-    npx pbts -o src/proto/archcanvas.d.ts src/proto/archcanvas.js 2>/dev/null || true
+    npx pbjs -t static-module -w es6 -o src/proto/archcanvas.pb.js proto/archcanvas.proto 2>/dev/null || true
+    npx pbts -o src/proto/archcanvas.pb.d.ts src/proto/archcanvas.pb.js 2>/dev/null || true
     echo -e "  ${GREEN}✓${NC} Proto types generated"
 else
     echo -e "  ${YELLOW}⚠${NC} Proto file not found yet (will be created during implementation)"
