@@ -1,4 +1,52 @@
 ==================================================
+SESSION: 2026-03-02 - Features #165, #166, #173
+==================================================
+
+## What was accomplished:
+
+### Feature #165: AI API key stored as environment variable (PASSING)
+- Created src/ai/config.ts with getAnthropicApiKey() and isAIConfigured()
+- Loads VITE_ANTHROPIC_API_KEY from import.meta.env
+- Verified: no hardcoded API keys in source code
+- .env.example documents variable without value, .env is gitignored
+- vite-env.d.ts declares TypeScript type for env var
+
+### Feature #166: AI client sends messages to Anthropic Claude API (PASSING)
+- Created src/ai/client.ts with sendMessage() function
+- Supports both streaming (SSE) and non-streaming responses
+- Added Vite proxy (/api/anthropic → api.anthropic.com) for CORS
+- Streaming: parses message_start, content_block_delta, message_delta events
+- onChunk callback for real-time text updates during streaming
+- AIClientError class with statusCode and errorType for error handling
+- AbortSignal support for cancellation
+- 15 unit tests in test/unit/ai/aiClient.test.ts
+- Tests cover: request format, headers, streaming, non-streaming, error handling,
+  rate limits, custom model, AbortSignal, multi-block responses
+
+### Feature #173: AI chat text input and send button work (PASSING)
+- Updated AIChatTab to integrate with real AI client (sendMessage)
+- Streaming indicator (Loader2 spinner) shows during response
+- Fallback placeholder with character-by-character streaming when no API key
+- System prompt includes architecture context and focused node details
+- Input disabled during streaming, cleared after send
+- AbortController for cancellation on unmount
+- Browser verified via Playwright: type, send, user msg appears, AI response streams, input cleared
+- Zero console errors
+- No mock data patterns in production code
+
+## Current completion status:
+- Features passing: 107 of 235 (45.5%)
+- Total unit tests: 774 across 49 test files
+- All tests passing, zero regressions
+
+## What should be worked on next:
+- More AI features (context depth controls, suggestion parsing)
+- Real AI API integration testing (with actual API key)
+- Canvas interaction features
+- Export API features (PNG, SVG)
+- File Save/Save As functionality
+
+==================================================
 SESSION: 2026-03-02 - Features #132, #133, #160
 ==================================================
 
