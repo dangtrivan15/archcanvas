@@ -1779,3 +1779,42 @@ SESSION: 2026-03-02 - Feature #57
 ## Current completion status:
 - Features passing: 121 of 235 (51.5%)
 - Zero regressions
+
+==================================================
+SESSION: 2026-03-02 - Feature #69
+==================================================
+
+## What was accomplished:
+
+### Feature #69: Status bar displays at bottom of app (PASSING)
+- Status bar already existed in App.tsx with node count, edge count, and zoom level
+- Added dirty indicator to the status bar (● Modified / ✓ Saved)
+- Added data-testid attributes for dirty-indicator and zoom-level
+- isDirty state subscribed from coreStore
+- Verified all 4 status bar elements:
+  - Nodes: 0 initially, updates to 1 after adding a node
+  - Edges: 0 displayed correctly
+  - Dirty indicator: "✓ Saved" initially, "● Modified" after changes
+  - Zoom: 100% initially, updates dynamically
+- Fixed proto file collision issue (archcanvas.js deleted, only archcanvas.pb.js remains)
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+
+## Verification steps completed:
+1. Loaded app on http://localhost:5174
+2. Verified status bar exists at bottom (footer element with data-testid="status-bar")
+3. Verified node count shows "Nodes: 0"
+4. Verified edge count shows "Edges: 0"
+5. Verified zoom shows "Zoom: 100%"
+6. Verified dirty indicator shows "✓ Saved"
+7. Clicked Service nodedef to enter placement mode
+8. Clicked canvas to place node
+9. Verified node count updated to "Nodes: 1"
+10. Verified dirty indicator changed to "● Modified"
+11. Verified zoom updated to "Zoom: 200%"
+12. Console: 0 errors, 0 warnings
+13. Mock data grep: only legitimate globalThis.crypto usage
+
+## Current completion status:
+- Features passing: 122 of 235 (51.9%)
+- Zero console errors
