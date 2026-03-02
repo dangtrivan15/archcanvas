@@ -1885,3 +1885,46 @@ SESSION: 2026-03-02 - Feature #74
 ## Current completion status:
 - Features passing: 122 of 235 (51.9%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Feature #78
+==================================================
+
+## What was accomplished:
+
+### Feature #78: ServiceNode renders with correct icon and layout (PASSING)
+- Created a node of type 'compute/service' on the canvas via NodeDef browser click-to-place
+- Verified the node uses GenericNode component (via 'service' React Flow type in nodeTypeMap.ts)
+- Architecture uses a single versatile GenericNode for all node types including service
+- RenderApi maps 'compute/service' → 'service' type → GenericNode component
+- Correct icon: Server (from Lucide, defined in service.yaml metadata.icon)
+- Display name "Service" shown in node header (verified via snapshot ref=e239)
+- Type label "compute/service" appears below display name (verified via snapshot ref=e240)
+- Port handles correctly rendered: http-in, grpc-in (inbound), http-out, grpc-out (outbound)
+- Right panel shows full details: ID, Display Name, Type, Arguments (4)
+- Arguments: language (enum), framework (string), replicas (number), healthCheck (string)
+- Status bar: "Nodes: 1", "● Modified" after placing node
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code (only legitimate globalThis.crypto usage)
+
+## Verification steps completed:
+1. Opened app at http://localhost:5174
+2. Clicked "Service" in NodeDef browser under Compute category
+3. Placement mode activated: "Click on canvas to place Service"
+4. Clicked on canvas → node created successfully
+5. Snapshot verified: node group with Server icon, "Service" display name, "compute/service" type label
+6. Port handles verified: http-in, grpc-in (left), http-out, grpc-out (right)
+7. Right panel opened with node details: ID, Display Name, Type, Arguments
+8. Status bar confirmed: "Nodes: 1"
+9. Console: 0 errors, 0 warnings
+10. Mock data grep: only legitimate globalThis.crypto in codec.ts
+
+## Code verification (no changes needed):
+- nodeTypeMap.ts: service → GenericNode (line 10)
+- renderApi.ts: compute/service → 'service' type (line 119)
+- service.yaml: icon: Server, displayName: Service (lines 8-9)
+- GenericNode.tsx: Server in iconMap (line 21), displays icon + displayName + nodedefType
+
+## Current completion status:
+- Features passing: 126 of 235 (53.6%)
+- Zero console errors
