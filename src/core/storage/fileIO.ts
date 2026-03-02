@@ -37,6 +37,8 @@ export interface ProtoToGraphResult {
   canvasState?: SavedCanvasState;
   undoHistory?: UndoHistoryData;
   aiState?: AIStateData;
+  createdAtMs?: number;
+  updatedAtMs?: number;
 }
 
 /**
@@ -146,7 +148,11 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
     };
   }
 
-  return { graph, canvasState, undoHistory, aiState };
+  // Extract header timestamps if present
+  const createdAtMs = file.header?.createdAtMs ? Number(file.header.createdAtMs) : undefined;
+  const updatedAtMs = file.header?.updatedAtMs ? Number(file.header.updatedAtMs) : undefined;
+
+  return { graph, canvasState, undoHistory, aiState, createdAtMs, updatedAtMs };
 }
 
 function protoNodeToNode(protoNode: archcanvas.INode): ArchNode {
@@ -332,10 +338,16 @@ export function graphToProto(
   canvasState?: SavedCanvasState,
   undoHistory?: UndoHistoryData,
   aiState?: AIStateData,
+  createdAtMs?: number,
 ): IArchCanvasFile {
   const file: IArchCanvasFile = {
     architecture: graphToArchitectureProto(graph),
   };
+
+  // Set header with createdAtMs if provided (preserves original creation time on re-save)
+  if (createdAtMs) {
+    file.header = { createdAtMs };
+  }
 
   if (canvasState) {
     file.canvasState = {
@@ -521,6 +533,7 @@ export async function openArchcFile(): Promise<{
   fileHandle?: FileSystemFileHandle;
   canvasState?: SavedCanvasState;
   aiState?: AIStateData;
+  createdAtMs?: number;
 } | null> {
   let fileData: Uint8Array;
   let fileName: string;
@@ -560,9 +573,9 @@ export async function openArchcFile(): Promise<{
     fileName = result.name;
   }
 
-  // Decode the binary file, including canvas state and AI state
+  // Decode the binary file, including canvas state, AI state, and header timestamps
   const decoded = await decode(fileData);
-  const { graph, canvasState, aiState } = protoToGraphFull(decoded);
+  const { graph, canvasState, aiState, createdAtMs } = protoToGraphFull(decoded);
 
   return {
     graph,
@@ -570,6 +583,7 @@ export async function openArchcFile(): Promise<{
     fileHandle,
     canvasState,
     aiState,
+    createdAtMs,
   };
 }
 
@@ -618,9 +632,10 @@ export async function saveArchcFile(
   fileHandle: FileSystemFileHandle,
   canvasState?: SavedCanvasState,
   aiState?: AIStateData,
+  createdAtMs?: number,
 ): Promise<boolean> {
-  // Convert graph to proto format (including canvas state and AI state if provided)
-  const protoFile = graphToProto(graph, canvasState, undefined, aiState);
+  // Convert graph to proto format (including canvas state, AI state, and header timestamps)
+  const protoFile = graphToProto(graph, canvasState, undefined, aiState, createdAtMs);
 
   // Encode to binary .archc format (with magic bytes, version, checksum)
   const binaryData = await encode(protoFile);
@@ -647,12 +662,13 @@ export async function saveArchcFileAs(
   suggestedName?: string,
   canvasState?: SavedCanvasState,
   aiState?: AIStateData,
+  createdAtMs?: number,
 ): Promise<{
   fileHandle?: FileSystemFileHandle;
   fileName: string;
 } | null> {
-  // Convert graph to proto format (including canvas state and AI state if provided)
-  const protoFile = graphToProto(graph, canvasState, undefined, aiState);
+  // Convert graph to proto format (including canvas state, AI state, and header timestamps)
+  const protoFile = graphToProto(graph, canvasState, undefined, aiState, createdAtMs);
 
   // Encode to binary .archc format
   const binaryData = await encode(protoFile);
@@ -705,4 +721,35 @@ export async function saveArchcFileAs(
       fileName: defaultName,
     };
   }
+}
+
+// ─── Sidecar Summary File ────────────────────────────────────────
+
+/**
+ * Derive the .summary.md filename from an .archc filename.
+ * e.g. "my-project.archc" → "my-project.summary.md"
+ */
+export function deriveSummaryFileName(archcFileName: string): string {
+  return archcFileName.replace(/\.archc$/, '.summary.md');
+}
+
+/**
+ * Save the .summary.md sidecar file alongside the .archc file.
+ * Uses Blob download as the cross-browser mechanism.
+ *
+ * @param content - The markdown summary content
+ * @param summaryFileName - The filename for the .summary.md file
+ */
+export function saveSummaryMarkdown(content: string, summaryFileName: string): void {
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = summaryFileName;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  console.log(`[FileIO] Summary sidecar saved: ${summaryFileName}`);
 }

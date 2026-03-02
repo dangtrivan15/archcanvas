@@ -37,6 +37,7 @@ import {
   addNoteToNode,
   addNoteToEdge,
   updateNoteStatus,
+  updateNoteContent,
   addCodeRef as engineAddCodeRef,
   removeNoteFromNode,
 } from '@/core/graph/graphEngine';
@@ -320,6 +321,13 @@ export class TextApi {
 
     this.graph = addNoteToNode(this.graph, params.nodeId, note);
     return note;
+  }
+
+  /**
+   * Update a note's content.
+   */
+  updateNote(nodeId: string, noteId: string, content: string): void {
+    this.graph = updateNoteContent(this.graph, nodeId, noteId, content);
   }
 
   /**

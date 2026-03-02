@@ -69,6 +69,26 @@ export class ExportApi {
   }
 
   /**
+   * Generate the full .summary.md sidecar content, combining
+   * the markdown summary with a fenced Mermaid diagram block.
+   */
+  generateSummaryWithMermaid(graph: ArchGraph): string {
+    const summary = this.generateMarkdownSummary(graph);
+    const mermaid = this.generateMermaid(graph);
+
+    const mermaidSection = [
+      '## Architecture Diagram',
+      '',
+      '```mermaid',
+      mermaid,
+      '```',
+      '',
+    ].join('\n');
+
+    return summary + mermaidSection;
+  }
+
+  /**
    * Generate a Mermaid diagram representation of the architecture.
    */
   generateMermaid(graph: ArchGraph): string {
