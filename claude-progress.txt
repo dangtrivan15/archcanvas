@@ -3529,3 +3529,34 @@ SESSION: 2026-03-03 - Features #196, #197, #198
 - All 1412 tests passing across 98 test files
 - No mock data patterns in production code
 - Commits: ae3f297, 80e72cf, 2e8ab4c
+
+==================================================
+SESSION: 2026-03-03 - Features #193, #194, #195
+==================================================
+
+## What was accomplished:
+
+### Feature #193: File save failure shows error toast (PASSING)
+- Added openErrorDialog() calls in coreStore saveFile() and saveFileAs() catch blocks
+- Error message includes the actual error description for Error objects
+- isDirty remains true on failure (changes not lost)
+- 10 unit tests covering save failure, retry, and dialog content
+
+### Feature #194: AI API error displays user-friendly message (PASSING)
+- Added getUserFriendlyErrorMessage() that maps AIClientError types to clear messages
+- Error messages displayed with amber styling and AlertTriangle icon
+- 21 unit tests for error message mapping
+- Browser verified: fake API key triggers 401, shows friendly error in chat
+
+### Feature #195: Network failure during AI chat shows retry option (PASSING)
+- Added Retry button (RefreshCw icon) below error messages in AI chat
+- handleRetry re-sends last failed message, filtering errors from history
+- 18 unit tests for retry logic and error detection
+- Browser verified: error shows retry button, clicking retries the API call
+
+## Current completion status:
+- Features passing: ~199 of 235 (~84.7%)
+- All 1412 tests passing across 98 test files
+- Zero console errors
+- No mock data patterns in production code
+- Commits: 4a8fe78, c852906, bcae343
