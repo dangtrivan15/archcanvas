@@ -121,7 +121,7 @@ export function NodeDetailPanel() {
             />
           )}
           {activeTab === 'coderefs' && (
-            <CodeRefsTab node={node} />
+            <CodeRefsTab node={node} nodeId={selectedNodeId!} />
           )}
         </div>
       )}
@@ -668,21 +668,118 @@ function NotesTab({
   );
 }
 
-function CodeRefsTab({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
+function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof findNode>>; nodeId: string }) {
+  const addCodeRef = useCoreStore((s) => s.addCodeRef);
+  const [isAdding, setIsAdding] = useState(false);
+  const [path, setPath] = useState('');
+  const [role, setRole] = useState<'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'>('source');
+
+  const roleOptions: { value: typeof role; label: string }[] = [
+    { value: 'source', label: 'Source' },
+    { value: 'api-spec', label: 'API Spec' },
+    { value: 'schema', label: 'Schema' },
+    { value: 'deployment', label: 'Deployment' },
+    { value: 'config', label: 'Config' },
+    { value: 'test', label: 'Test' },
+  ];
+
+  const handleSubmit = useCallback(() => {
+    if (!path.trim()) return;
+    addCodeRef({ nodeId, path: path.trim(), role });
+    setPath('');
+    setRole('source');
+    setIsAdding(false);
+  }, [nodeId, path, role, addCodeRef]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsAdding(false);
+      setPath('');
+      setRole('source');
+    }
+  }, [handleSubmit]);
+
   return (
-    <div data-testid="coderefs-tab">
-      {node.codeRefs.length === 0 ? (
-        <div className="text-sm text-gray-400 text-center py-8">No code references</div>
+    <div className="space-y-3" data-testid="coderefs-tab">
+      {/* Add Code Reference button / form */}
+      {!isAdding ? (
+        <button
+          onClick={() => setIsAdding(true)}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          data-testid="add-coderef-button"
+        >
+          <Plus className="w-3 h-3" />
+          Add Code Reference
+        </button>
       ) : (
-        <div className="space-y-2">
-          {node.codeRefs.map((ref, i) => (
-            <div key={i} className="border rounded p-2">
-              <div className="text-sm font-mono">{ref.path}</div>
-              <div className="text-xs text-gray-400">{ref.role}</div>
-            </div>
-          ))}
+        <div className="border rounded-lg p-3 bg-gray-50 space-y-2" data-testid="add-coderef-form">
+          <div className="text-xs font-medium text-gray-500 uppercase">Add Code Reference</div>
+          <div>
+            <label className="text-xs text-gray-500">File Path</label>
+            <input
+              type="text"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="e.g., src/api/handler.ts"
+              className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              autoFocus
+              data-testid="coderef-path-input"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as typeof role)}
+              className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              data-testid="coderef-role-select"
+            >
+              {roleOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSubmit}
+              disabled={!path.trim()}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              data-testid="submit-coderef-button"
+            >
+              <Plus className="w-3 h-3" />
+              Add
+            </button>
+            <button
+              onClick={() => { setIsAdding(false); setPath(''); setRole('source'); }}
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+              data-testid="cancel-coderef-button"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Code References list */}
+      <div data-testid="coderefs-list">
+        {node.codeRefs.length === 0 ? (
+          <div className="text-sm text-gray-400 text-center py-4" data-testid="coderefs-empty-state">No code references</div>
+        ) : (
+          <div className="space-y-2">
+            {node.codeRefs.map((ref, i) => (
+              <div key={i} className="border rounded p-2 bg-white" data-testid={`coderef-${i}`}>
+                <div className="text-sm font-mono" data-testid="coderef-path">{ref.path}</div>
+                <div className="text-xs text-gray-400" data-testid="coderef-role">{ref.role}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
