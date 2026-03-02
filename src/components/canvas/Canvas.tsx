@@ -33,6 +33,7 @@ import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
+import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 
@@ -66,6 +67,9 @@ function CanvasInner() {
   const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
   const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
   const prevFitViewCounterRef = useRef(fitViewCounter);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   // Watch for fitView requests from other components (e.g., LayoutMenu)
   useEffect(() => {
@@ -164,6 +168,9 @@ function CanvasInner() {
   // Handle click on canvas during placement mode - place node at click position
   const onPaneClick = useCallback(
     (event: React.MouseEvent) => {
+      // Close context menu on any left-click
+      setContextMenu(null);
+
       if (placementMode && placementInfo) {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
         addNode({
@@ -203,6 +210,20 @@ function CanvasInner() {
     },
     [screenToFlowPosition, addNode],
   );
+
+  // Handle right-click on canvas - show context menu
+  const onContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      setContextMenu({ x: event.clientX, y: event.clientY });
+    },
+    [],
+  );
+
+  // Close context menu
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
 
   // Handle Delete/Backspace keys for node deletion and navigation
   useEffect(() => {
@@ -279,7 +300,7 @@ function CanvasInner() {
   );
 
   return (
-    <div className="w-full h-full relative" data-testid="canvas">
+    <div className="w-full h-full relative" data-testid="canvas" onContextMenu={onContextMenu}>
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
@@ -340,6 +361,15 @@ function CanvasInner() {
           className="!bg-white !border !border-gray-200"
         />
       </ReactFlow>
+
+      {/* Canvas Context Menu - shown on right-click */}
+      {contextMenu && (
+        <CanvasContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   );
 }

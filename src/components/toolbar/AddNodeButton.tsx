@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
 
 const NODE_TYPES = [
   { type: 'compute/service', label: 'Service', group: 'Compute' },
@@ -26,6 +27,8 @@ export function AddNodeButton() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const addNode = useCoreStore((s) => s.addNode);
   const graph = useCoreStore((s) => s.graph);
+  const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
+  const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -63,7 +66,13 @@ export function AddNodeButton() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          // Open the NodeDef browser panel if not already open
+          if (!leftPanelOpen) {
+            toggleLeftPanel();
+          }
+          setIsOpen(!isOpen);
+        }}
         className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors"
         data-testid="add-node-button"
         title="Add Node"
