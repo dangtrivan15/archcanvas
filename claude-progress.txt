@@ -3141,3 +3141,42 @@ SESSION: 2026-03-02 - Feature #178
 - Zero console errors
 - No mock data patterns in production code
 - Committed: 5a8fc4f
+
+==================================================
+SESSION: 2026-03-02 - Feature #183
+==================================================
+
+## What was accomplished:
+
+### Feature #183: MCP remove_node tool deletes node (PASSING)
+- Verified existing implementation and comprehensive test suite
+- All code was already in place from previous feature implementations:
+  - handlers.ts: handleRemoveNode(ctx, {nodeId}) calls textApi.removeNode(nodeId), returns {success: true, nodeId}
+  - textApi.ts: removeNode(nodeId) delegates to engineRemoveNode(graph, nodeId)
+  - graphEngine.ts: removeNode() recursively collects child IDs, removes node from tree, filters connected edges
+  - tools.ts: remove_node tool definition with nodeId input schema
+  - server.ts: remove_node registered on McpServer
+  - handlers.ts dispatchToolCall: routes 'remove_node' to handleRemoveNode
+
+## Test file: test/unit/mcp/mcpRemoveNode.test.ts (8 tests, all passing)
+1. removes a node and returns success
+2. removed node no longer appears in describe output (structured format)
+3. handleRemoveNode returns success with nodeId (direct handler call)
+4. can remove all nodes leaving empty architecture
+5. removed node not in human-readable describe
+6. removed node not in AI describe format
+7. removes connected edges when node is removed
+8. dispatchToolCall correctly routes to remove_node
+
+## Verification steps completed:
+1. All 8 unit tests passing
+2. Full test suite: 1238 tests passing across 84 files
+3. Browser verification: app loads ecommerce.archc (5 nodes, 4 edges) with zero console errors
+4. Mock data grep: only legitimate globalThis.crypto in codec.ts
+5. No code changes needed - implementation was already complete
+6. Committed test file: 7eb31d5
+
+## Current completion status:
+- Features passing: 187 of 235 (79.6%)
+- Zero console errors
+- No mock data patterns in production code
