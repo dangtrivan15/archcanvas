@@ -1928,3 +1928,46 @@ SESSION: 2026-03-02 - Feature #78
 ## Current completion status:
 - Features passing: 126 of 235 (53.6%)
 - Zero console errors
+
+==================================================
+SESSION: 2026-03-02 - Features #75, #94, #95
+==================================================
+
+## What was accomplished:
+
+### Feature #75: Canvas zoom controls display (PASSING)
+- Verified existing React Flow <Controls /> component in Canvas.tsx (line 334)
+- Controls positioned at bottom-right corner with zoom-in, zoom-out, fit-view, toggle-interactivity buttons
+- Zoom In click: zoom increases (100% → 120%)
+- Zoom Out click: zoom decreases (100% → 83%)
+- All 4 buttons visible and functional
+- Zero console errors (0 errors, 0 warnings)
+- No code changes needed - implementation was already complete
+
+### Feature #94: Breadcrumb segments are clickable for navigation (PASSING)
+- Created nested test architecture: Root > Platform > Backend > OrderService > OrderHandler
+- Created examples/nested/create-nested-test.mjs to generate nested.archc test file
+- Navigated 3 levels deep: Root > Platform > Backend > OrderService
+- Clicked "Platform" breadcrumb segment → navigated to Platform level
+- Canvas correctly showed Platform's children (Backend, Frontend)
+- Breadcrumb correctly updated to "Root > Platform"
+- OrderService no longer visible after clicking Platform breadcrumb
+- NavigationBreadcrumb component already had full implementation:
+  - Root button calls zoomToRoot()
+  - Intermediate segments are clickable buttons calling zoomToLevel(pathToHere)
+  - Last segment rendered as non-clickable text
+- Zero console errors
+
+### Feature #95: Zoom out via breadcrumb navigation (PASSING)
+- Navigated 2 levels deep: Root > Platform > Backend
+- Clicked "Root" in breadcrumb → returned to top level immediately
+- Canvas showed root-level nodes (Platform, Database)
+- Breadcrumb hidden at root level (correct behavior - path.length === 0)
+- NavigationBreadcrumb returns null when at root level
+- zoomToRoot() sets path to empty array
+- Zero console errors
+
+## Current completion status:
+- Features passing: 128 of 235 (54.5%)
+- Zero console errors
+- No code changes needed for these 3 features
