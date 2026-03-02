@@ -1,4 +1,33 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #162
+==================================================
+
+## What was accomplished:
+
+### Feature #162: Auto-layout supports vertical direction (PASSING)
+- Verified existing vertical auto-layout implementation works correctly end-to-end
+- All code was already in place:
+  - elkLayout.ts: Maps 'vertical' → 'DOWN' for ELK direction parameter
+  - LayoutMenu.tsx: "Auto-Layout (Vertical)" menu item with ArrowDownFromLine icon
+  - coreStore.ts: autoLayout('vertical', navigationPath) action with undo support
+- Loaded ecommerce.archc test file (5 nodes, 4 edges)
+- Clicked Layout → Auto-Layout (Vertical) from toolbar dropdown menu
+- Verified nodes arranged in clear top-to-bottom flow:
+  - Top layer: API Gateway (source node, no incoming edges)
+  - Middle layer: Order Service, User Service (intermediate nodes)
+  - Bottom layer: Orders Database, Users Database (target nodes, no outgoing edges)
+- Console confirmed: "[CoreStore] Auto-layout applied: vertical"
+- Status bar showed "● Modified" after layout change
+- Zero console errors (0 errors, 0 warnings)
+- Mock data grep: only legitimate globalThis.crypto usage in codec.ts
+- No code changes needed - verification only
+
+## Current completion status:
+- Features passing: 166 of 235 (70.6%)
+- Zero console errors
+- No code changes required
+
+==================================================
 SESSION: 2026-03-02 - Features #82, #83, #84
 ==================================================
 
@@ -2548,3 +2577,46 @@ SESSION: 2026-03-02 - Feature #135
 - Features passing: 163 of 235 (69.4%)
 - Zero console errors
 - No code changes required
+
+==================================================
+SESSION: 2026-03-02 - Feature #137
+==================================================
+
+## What was accomplished:
+
+### Feature #137: Code refs panel shows role badge per reference (PASSING)
+- Verified existing implementation works correctly end-to-end
+- All code was already in place from previous feature implementations:
+  - NodeDetailPanel.tsx: getRoleBadgeStyle() returns color classes per role
+  - NodeDetailPanel.tsx: getRoleBadgeLabel() returns display text per role
+  - NodeDetailPanel.tsx: getRoleIcon() returns Lucide icon per role
+  - Badge rendered as inline-flex rounded-full pill with border
+- Created test file (examples/create-coderef-roles-test.mjs):
+  - Generates .archc with 1 node (Auth Service) + 4 code refs with different roles
+  - source, api-spec, schema, deployment roles all represented
+  - Copied to public/ for URL loading (?load=coderef-roles-test.archc)
+
+## Verification steps completed:
+1. Loaded coderef-roles-test.archc via URL parameter
+2. Node showed 📎 4 badge on canvas (4 code references)
+3. Clicked on node to open right panel
+4. Navigated to Code Refs tab
+5. Verified 4 code refs displayed as cards:
+   - src/auth/handler.ts → "Source" badge (blue: bg-blue-100 text-blue-700)
+   - api/auth-spec.yaml → "API Spec" badge (green: bg-green-100 text-green-700)
+   - schema/auth.sql → "Schema" badge (purple: bg-purple-100 text-purple-700)
+   - deploy/auth-service.yaml → "Deployment" badge (orange: bg-orange-100 text-orange-700)
+6. Each badge has distinct color confirming different roles = different colors
+7. Badge text matches the role name exactly
+8. Each card has role-specific icon (FileCode, FileText, Database, Cloud)
+9. Console: 0 errors, 0 warnings
+10. Mock data grep: only legitimate globalThis.crypto in codec.ts
+
+## No code changes needed - implementation was already complete
+- NodeDetailPanel.tsx: getRoleBadgeStyle(), getRoleBadgeLabel(), getRoleIcon() functions
+- Code refs tab renders each ref with icon, monospace path, colored role badge, copy button
+
+## Current completion status:
+- Features passing: 164 of 235 (69.8%)
+- Zero console errors
+- Committed: c12a526
