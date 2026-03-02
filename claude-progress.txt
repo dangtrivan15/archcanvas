@@ -2774,3 +2774,105 @@ SESSION: 2026-03-02 - Feature #144
 - Features passing: 164 of 235 (69.8%)
 - Zero console errors
 - No code changes needed
+
+==================================================
+SESSION: 2026-03-02 - Features #143, #170
+==================================================
+
+## What was accomplished:
+
+### Feature #143: Connection type dialog shows sync/async/data-flow options (PASSING)
+- Verified the complete connection type dialog workflow end-to-end
+- Two UI paths for creating connections:
+  1. Drag-connect on canvas → ConnectionTypeDialog modal appears
+  2. Connect toolbar button → dropdown with source/target/type selectors
+- ConnectionTypeDialog verified via drag from Order Service output → User Service input:
+  - Modal displays with "Create Connection" heading
+  - Three radio-button options: Synchronous, Asynchronous, Data Flow
+  - Each option has icon, label, and description
+  - Optional edge label input field
+  - Cancel and Create buttons
+- Selected "Data Flow" option and created edge
+- Console confirmed: [ConnectionTypeDialog] Edge created: data-flow node-order-service -> node-user-service
+- Also tested Connect toolbar button: all 3 types (sync/async/data-flow) available
+- 0 console errors, 0 warnings
+- No code changes needed - implementation was already complete
+
+### Feature #170: AI streaming response displays character by character (PASSING)
+- Verified AI streaming animation in AIChatTab component
+- Implementation uses two modes:
+  1. Placeholder mode (no API key): setInterval reveals chars progressively
+  2. Real API mode: SSE streaming with onChunk callback
+- Streaming indicator: Loader2 spinning icon in message bubble + send button
+- Captured mid-stream state: partial text "API_K" (truncated from "API_KEY") with spinner icon
+- After completion: indicator gone, textbox re-enabled
+- Adjusted streaming speed: 3→2 chars per 20ms tick for more visible streaming effect
+- Real API streaming in client.ts: ReadableStream with getReader(), handles content_block_delta events
+- 0 console errors, 0 warnings
+- No mock data patterns in production code
+
+## Key change:
+- AIChatTab.tsx: Changed placeholder streaming from 3 chars/tick to 2 chars/tick
+  for a slightly more visible streaming animation (~1.5s instead of ~1s for 150 chars)
+
+## Current completion status:
+- Features passing: ~169 of 235 (71.9%)
+- Zero console errors
+- Committed: 1d1b44d
+
+==================================================
+SESSION: 2026-03-02 - Features #156, #234, #235
+==================================================
+
+## What was accomplished:
+
+### Feature #156: Save auto-generates .summary.md sidecar file (PASSING)
+- Implementation was already committed by parallel agent (commit 1d1b44d)
+- Added generateSummaryWithMermaid() method to ExportApi
+  - Combines markdown summary with fenced Mermaid diagram block
+  - Includes architecture name, description, node list, connections, and diagram
+- Added deriveSummaryFileName() and saveSummaryMarkdown() to fileIO.ts
+  - Derives .summary.md filename from .archc filename (e.g., ecommerce.archc → ecommerce.summary.md)
+  - Uses Blob download for cross-browser compatibility
+- Hooked into coreStore saveFile() and saveFileAs() to auto-generate on every save
+- 21 unit tests: 15 for generateSummaryWithMermaid, 6 for deriveSummaryFileName
+- All 1164 project tests passing, zero console errors
+
+### Feature #234: PNG export produces valid image file (PASSING)
+- Added exportToPng() method to ExportApi using html-to-image toPng
+- Added Export submenu to FileMenu with PNG option
+  - File > Export > PNG triggers PNG download
+  - Submenu appears on hover over Export menu item
+- Captures React Flow viewport with:
+  - 2x pixel ratio for high-res export
+  - Gray-50 background matching canvas
+  - Filters out minimap, controls, and panel UI
+- Browser verified: ecommerce.archc → ecommerce.png (176KB)
+  - All 5 nodes visible: API Gateway, Order Service, Orders Database, User Service, Users Database
+  - All 4 edges visible: sync and data-flow edges
+  - Clean export with no UI controls
+- Console: [ExportApi] PNG exported: ecommerce.png
+- Zero console errors
+
+### Feature #235: SVG export produces valid vector file (PASSING)
+- Added exportToSvg() method to ExportApi using html-to-image toSvg
+- Added SVG option to Export submenu alongside PNG
+  - File > Export > SVG triggers SVG download
+- SVG contains proper elements: <svg>, foreignObject, viewBox
+- Node names present in SVG: API Gateway, Order Service, User Service
+- React Flow edge and node class elements present
+- Browser verified: ecommerce.archc → ecommerce.svg (1MB)
+- Console: [ExportApi] SVG exported: ecommerce.svg
+- Zero console errors
+
+## Current completion status:
+- Features passing: ~174 of 235 (~74%)
+- Zero console errors
+- All 1164 unit tests passing (77 test files)
+- No mock data patterns in production code
+
+## What should be worked on next:
+- More export features
+- AI integration features
+- Remaining canvas interaction features
+- File persistence features
