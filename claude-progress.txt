@@ -1,4 +1,72 @@
 ==================================================
+SESSION: 2026-03-02 - Features #190, #191, #192
+==================================================
+
+## What was accomplished:
+
+### Feature #190: Invalid nodedef YAML shows validation error (PASSING)
+- Created test file: test/unit/registry/nodedefInvalidYaml.test.ts (15 tests)
+- Tests verify:
+  1. Missing 'metadata' field produces Zod validation error with path pointing to 'metadata'
+  2. Missing 'spec' field produces Zod validation error with path pointing to 'spec'
+  3. Missing metadata.name/namespace/icon produce errors with specific field paths
+  4. Wrong kind value error mentions 'NodeDef'
+  5. Invalid arg type error path points to spec.args
+  6. Invalid port direction error path points to spec.ports
+  7. Error messages contain "Required" for missing fields
+  8. RegistryManager still loads 15 built-in nodedefs after encountering invalid YAML
+  9. Valid YAML still validates correctly after invalid YAML was rejected
+- No code changes needed (validation already existed), only test verification
+- Committed: baa4e22
+
+### Feature #191: Adding edge between non-existent nodes fails gracefully (PASSING)
+- Added node ID validation to textApi.addEdge() (src/api/textApi.ts)
+  - Checks if fromNode exists using findNode() before creating edge
+  - Checks if toNode exists using findNode() before creating edge
+  - Throws descriptive Error mentioning the specific invalid node ID
+- Updated MCP handleAddEdge (src/mcp/handlers.ts)
+  - Wrapped in try/catch to return { success: false, error: message } instead of crashing
+- Created test file: test/unit/mcp/mcpAddEdgeInvalidNodes.test.ts (10 tests)
+- Tests verify:
+  1. Returns error when fromNode ID does not exist
+  2. Returns error when toNode ID does not exist
+  3. Returns error when both IDs are invalid
+  4. Error message mentions "does not exist"
+  5. Architecture state is unchanged after failed edge creation
+  6. textApi.addEdge() throws for invalid fromNode/toNode
+  7. Error contains the specific invalid node ID
+  8. Valid edge creation still works after failed attempt
+  9. handleAddEdge returns error JSON instead of throwing
+- Committed: a2df07f
+
+### Feature #192: Empty search returns appropriate empty state (PASSING)
+- Created test file: test/unit/core/searchEmptyResults.test.ts (15 tests)
+- Tests verify:
+  1. textApi.search returns empty array for 'zzznonexistentzz'
+  2. Returns empty for unrelated queries, whitespace-only, empty string
+  3. MCP search handler returns { results: [], count: 0 }
+  4. Search still returns valid results after empty search
+  5. Multiple empty searches don't break subsequent valid searches
+  6. searchGraph returns empty for empty graph
+  7. Registry search returns empty for non-matching queries
+- Browser verification:
+  - Typed 'zzznonexistentzz' in NodeDef browser search
+  - UI showed "No matching node types" empty state message
+  - Typed 'service' afterward → results appeared correctly
+  - Console: 0 errors, 0 warnings
+- Committed: a7e0a14
+
+## Test results:
+- 46 new tests across 3 test files (all passing)
+- 1328 total tests across 91 test files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: 196 of 235 (83.4%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-02 - Feature #175
 ==================================================
 
