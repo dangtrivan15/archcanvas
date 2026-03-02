@@ -1506,3 +1506,45 @@ SESSION: 2026-03-02 - Features #18, #19, #20
 - Features passing: 103 of 235 (43.8%)
 - Total unit tests: 829 across 53 test files
 - All tests passing, zero regressions
+
+==================================================
+SESSION: 2026-03-02 - Features #169, #45, #46
+==================================================
+
+## What was accomplished:
+
+### Feature #169: AI suggestion parser extracts XML tag suggestions (PASSING)
+- Created src/ai/suggestionParser.ts with 3 exported functions:
+  - parseSuggestions(): extracts <suggestion target='nodeId'>content</suggestion> XML tags
+  - parseAISuggestions(): converts to AISuggestion objects with unique IDs and pending status
+  - stripSuggestionTags(): removes XML tags while preserving content
+- Supports single/double quotes, custom type attribute, multiline content
+- 21 unit tests in test/unit/ai/suggestionParser.test.ts
+- Regex state properly resets between calls
+
+### Feature #45: Text API addNote() creates note on node or edge (PASSING)
+- 12 unit tests in test/unit/api/textApiAddNote.test.ts
+- Verified addNote({nodeId, author: 'dev', content: 'Test note'}) succeeds
+- Note appears in getNode() with correct author, content, timestamp
+- Tags support, default empty tags, default 'none' status
+- Multiple notes on same node, unique IDs, noteCount in listNodes
+- Edge note support, other nodes unaffected
+
+### Feature #46: Text API updateNode() modifies node properties (PASSING)
+- 13 unit tests in test/unit/api/textApiUpdateNode.test.ts
+- Verified updateNode(id, {displayName: 'New'}) changes name from Old to New
+- Args and properties update, multi-field update
+- Preserves notes, codeRefs, edges, ID, and type after update
+- Changes reflected in listNodes(), other nodes unaffected
+- Empty args object handling
+
+## Current completion status:
+- Features passing: 109 of 235 (46.4%)
+- Total unit tests: ~890+ across 58 test files
+- All tests passing, zero regressions (pre-existing undoRedoBranch test failure unrelated)
+
+## What should be worked on next:
+- More AI integration features (chat store, streaming, suggestion handling)
+- Canvas interaction features
+- Export API features
+- File persistence features
