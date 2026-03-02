@@ -16,6 +16,7 @@ import type { CanvasNodeData } from '@/types/canvas';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
+  ExternalLink,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -41,6 +42,7 @@ const iconMap: Record<string, React.ElementType> = {
 function GenericNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
   const Icon = iconMap[nodeData.icon] ?? Box;
+  const isRef = !!nodeData.refSource;
 
   const inboundPorts = nodeData.ports?.inbound ?? [];
   const outboundPorts = nodeData.ports?.outbound ?? [];
@@ -50,14 +52,16 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   return (
     <div
       className={`
-        bg-white border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
+        border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
         transition-shadow relative
-        ${selected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}
+        ${isRef ? 'bg-purple-50 border-dashed' : 'bg-white'}
+        ${selected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : isRef ? 'border-purple-300 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'}
       `}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
       data-node-type={nodeData.nodedefType}
       data-node-name={nodeData.displayName}
+      data-ref-source={nodeData.refSource || undefined}
     >
       {/* Inbound port handles (left side) */}
       {hasDefinedInboundPorts ? (
@@ -92,7 +96,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Node header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <Icon className="w-4 h-4 text-gray-500 shrink-0" />
+        <Icon className={`w-4 h-4 shrink-0 ${isRef ? 'text-purple-500' : 'text-gray-500'}`} />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-gray-900 truncate" data-testid="node-display-name">
             {nodeData.displayName}
@@ -101,12 +105,33 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             {nodeData.nodedefType}
           </div>
         </div>
+        {isRef && (
+          <span
+            className="shrink-0"
+            data-testid="ref-indicator"
+            title={`Reference to: ${nodeData.refSource}`}
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-purple-500" />
+          </span>
+        )}
         {nodeData.hasChildren && (
           <div className="text-xs text-blue-500 cursor-pointer" title="Has children - double click to zoom in">
             ▶
           </div>
         )}
       </div>
+
+      {/* Reference source indicator */}
+      {isRef && (
+        <div
+          className="flex items-center gap-1 px-3 py-1 text-xs text-purple-600 bg-purple-50 border-b border-purple-100"
+          data-testid="ref-source-indicator"
+          title={`References: ${nodeData.refSource}`}
+        >
+          <span className="font-medium">ref:</span>
+          <span className="truncate font-mono">{nodeData.refSource}</span>
+        </div>
+      )}
 
       {/* Node body - show key args */}
       {Object.keys(nodeData.args).length > 0 && (
@@ -122,19 +147,19 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Badges */}
       {(nodeData.noteCount > 0 || nodeData.pendingSuggestionCount > 0 || nodeData.codeRefCount > 0) && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-gray-100 text-xs">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-gray-100 text-xs" data-testid="node-badges">
           {nodeData.noteCount > 0 && (
-            <span className="text-gray-400" title={`${nodeData.noteCount} notes`}>
+            <span className="text-gray-400" title={`${nodeData.noteCount} notes`} data-testid="badge-notes">
               📝 {nodeData.noteCount}
             </span>
           )}
           {nodeData.pendingSuggestionCount > 0 && (
-            <span className="text-amber-500" title={`${nodeData.pendingSuggestionCount} pending suggestions`}>
+            <span className="text-amber-500" title={`${nodeData.pendingSuggestionCount} pending suggestions`} data-testid="badge-suggestions">
               💡 {nodeData.pendingSuggestionCount}
             </span>
           )}
           {nodeData.codeRefCount > 0 && (
-            <span className="text-gray-400" title={`${nodeData.codeRefCount} code references`}>
+            <span className="text-gray-400" title={`${nodeData.codeRefCount} code references`} data-testid="badge-coderefs">
               📎 {nodeData.codeRefCount}
             </span>
           )}

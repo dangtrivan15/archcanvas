@@ -21,6 +21,7 @@ export interface CanvasNodeData extends Record<string, unknown> {
   properties: Record<string, string | number | boolean>;
   icon: string;
   color?: string;
+  refSource?: string;
 }
 
 export type CanvasNode = Node<CanvasNodeData>;
