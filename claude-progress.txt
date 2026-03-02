@@ -1694,3 +1694,29 @@ SESSION: 2026-03-02 - Features #22, #108, #109
 - Side panel improvements
 - File Save/Save As functionality
 - Export API features
+
+==================================================
+SESSION: 2026-03-02 - Feature #48
+==================================================
+
+## What was accomplished:
+
+### Feature #48: Text API removeEdge() deletes edge from graph (PASSING)
+- Verified existing implementation in textApi.ts (removeEdge method at line 298)
+- Graph engine removeEdge() in graphEngine.ts filters edges by ID (immutable)
+- Comprehensive test suite already existed: test/unit/api/textApiRemoveEdge.test.ts
+- 13 tests all passing covering:
+  - Basic removal: 2 nodes, 1 edge → removeEdge → getEdges() empty, both nodes exist
+  - Remove one edge from multiple (selective deletion)
+  - Connection count updates after removal
+  - Non-existent edge (graceful no-op)
+  - Empty graph edge case
+  - Edge notes fully removed (no leak)
+  - Immutability verified (original graph reference unchanged)
+  - Sequential removal of all edges
+  - Idempotent double removal
+  - Graph metadata preserved after removal
+
+## Current completion status:
+- Features passing: 121 of 235 (51.5%)
+- All unit tests passing
