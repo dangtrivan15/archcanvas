@@ -40,6 +40,8 @@ vi.mock('@/store/uiStore', () => ({
       rightPanelTab: 'properties',
       openRightPanel: vi.fn(),
       closeRightPanel: vi.fn(),
+      setFileOperationLoading: vi.fn(),
+      clearFileOperationLoading: vi.fn(),
     }),
   },
 }));
