@@ -1,4 +1,29 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #124
+==================================================
+
+## What was accomplished:
+
+### Feature #124: Notes panel displays chronological note list (PASSING)
+- Added explicit chronological sorting to NotesTab using useMemo
+- Notes sorted by timestampMs (oldest first) before rendering
+- Previously notes relied on array insertion order; now explicitly sorted
+- Verified with 3 notes added at different times (7:05:02, 7:05:31, 7:06:23)
+- All notes display content preview, author, timestamp, ID, and status
+- Zero console errors
+
+## Current completion status:
+- Features passing: 84 of 235 (35.7%)
+- Zero console errors
+- All implementations verified via Playwright browser automation
+
+## What should be worked on next:
+- More Notes panel features (editing, deleting notes)
+- More canvas interaction features
+- File Save/Save As functionality
+- Export API features (PNG, SVG)
+
+==================================================
 SESSION: 2026-03-02 - Features #71, #110, #113
 ==================================================
 
