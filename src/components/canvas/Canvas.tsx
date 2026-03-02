@@ -35,6 +35,7 @@ import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
+import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 
@@ -73,6 +74,8 @@ function CanvasInner() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   // Node context menu state (right-click on a node)
   const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  // Edge context menu state (right-click on an edge)
+  const [edgeContextMenu, setEdgeContextMenu] = useState<{ x: number; y: number; edgeId: string } | null>(null);
 
   // Watch for fitView requests from other components (e.g., LayoutMenu)
   useEffect(() => {
@@ -174,6 +177,7 @@ function CanvasInner() {
       // Close context menus on any left-click
       setContextMenu(null);
       setNodeContextMenu(null);
+      setEdgeContextMenu(null);
 
       if (placementMode && placementInfo) {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
@@ -220,6 +224,7 @@ function CanvasInner() {
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       setNodeContextMenu(null);
+      setEdgeContextMenu(null);
       setContextMenu({ x: event.clientX, y: event.clientY });
     },
     [],
@@ -230,7 +235,19 @@ function CanvasInner() {
     (event: React.MouseEvent, node: CanvasNode) => {
       event.preventDefault();
       setContextMenu(null);
+      setEdgeContextMenu(null);
       setNodeContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+    },
+    [],
+  );
+
+  // Handle right-click on an edge - show edge context menu
+  const onEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: CanvasEdge) => {
+      event.preventDefault();
+      setContextMenu(null);
+      setNodeContextMenu(null);
+      setEdgeContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id });
     },
     [],
   );
@@ -243,6 +260,11 @@ function CanvasInner() {
   // Close node context menu
   const closeNodeContextMenu = useCallback(() => {
     setNodeContextMenu(null);
+  }, []);
+
+  // Close edge context menu
+  const closeEdgeContextMenu = useCallback(() => {
+    setEdgeContextMenu(null);
   }, []);
 
   // Handle Delete/Backspace keys for node deletion and navigation
@@ -352,6 +374,7 @@ function CanvasInner() {
         onSelectionChange={onSelectionChange}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
+        onEdgeContextMenu={onEdgeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
         onNodeDragStop={onNodeDragStop}
         onMoveEnd={onMoveEnd}
@@ -400,6 +423,16 @@ function CanvasInner() {
           y={nodeContextMenu.y}
           nodeId={nodeContextMenu.nodeId}
           onClose={closeNodeContextMenu}
+        />
+      )}
+
+      {/* Edge Context Menu - shown on right-click on an edge */}
+      {edgeContextMenu && (
+        <EdgeContextMenu
+          x={edgeContextMenu.x}
+          y={edgeContextMenu.y}
+          edgeId={edgeContextMenu.edgeId}
+          onClose={closeEdgeContextMenu}
         />
       )}
     </div>
