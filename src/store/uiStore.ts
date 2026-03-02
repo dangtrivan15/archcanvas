@@ -19,6 +19,11 @@ export interface ConnectionDialogInfo {
   targetHandle?: string;
 }
 
+export interface PlacementModeInfo {
+  nodeType: string;        // e.g. 'compute/service'
+  displayName: string;     // e.g. 'Service'
+}
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
@@ -32,6 +37,10 @@ export interface UIStoreState {
   // Connection type dialog
   connectionDialogOpen: boolean;
   connectionDialogInfo: ConnectionDialogInfo | null;
+
+  // Placement mode (click-to-place node on canvas)
+  placementMode: boolean;
+  placementInfo: PlacementModeInfo | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -47,6 +56,10 @@ export interface UIStoreState {
   // Connection dialog actions
   openConnectionDialog: (info: ConnectionDialogInfo) => void;
   closeConnectionDialog: () => void;
+
+  // Placement mode actions
+  enterPlacementMode: (info: PlacementModeInfo) => void;
+  exitPlacementMode: () => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -59,6 +72,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   connectionDialogOpen: false,
   connectionDialogInfo: null,
+
+  placementMode: false,
+  placementInfo: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -86,4 +102,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeConnectionDialog: () =>
     set({ connectionDialogOpen: false, connectionDialogInfo: null }),
+
+  enterPlacementMode: (info) =>
+    set({ placementMode: true, placementInfo: info }),
+
+  exitPlacementMode: () =>
+    set({ placementMode: false, placementInfo: null }),
 }));
