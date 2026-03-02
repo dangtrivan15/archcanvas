@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X, Bot } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -125,7 +125,14 @@ export function EdgeDetailPanel() {
                 ? <span className="text-gray-400">empty array []</span>
                 : edge.notes.map((note) => (
                     <div key={note.id} className="border rounded p-2 mt-1">
-                      <div className="font-medium">{note.author}</div>
+                      {note.author.toLowerCase() === 'ai' ? (
+                        <div className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200" data-testid="note-author" data-author-type="ai">
+                          <Bot className="w-3 h-3" />
+                          AI
+                        </div>
+                      ) : (
+                        <div className="font-medium" data-testid="note-author">{note.author}</div>
+                      )}
                       <div>{note.content}</div>
                     </div>
                   ))
