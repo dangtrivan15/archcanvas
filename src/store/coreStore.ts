@@ -17,6 +17,7 @@ import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs } from 
 import { decode } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAIStore } from '@/store/aiStore';
 import { applyElkLayout } from '@/core/layout/elkLayout';
 
 export interface CoreStoreState {
@@ -159,6 +160,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     undoManager.clear();
     undoManager.snapshot('New file', graph);
 
+    // Clear AI conversations
+    useAIStore.getState().clearConversations();
+
     set({
       graph,
       isDirty: false,
@@ -185,7 +189,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         return false;
       }
 
-      const { graph, fileName, fileHandle, canvasState } = result;
+      const { graph, fileName, fileHandle, canvasState, aiState } = result;
 
       // Set graph in text API
       textApi.setGraph(graph);
@@ -218,6 +222,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         }
       }
 
+      // Restore AI conversations if present
+      if (aiState && aiState.conversations.length > 0) {
+        useAIStore.getState().setConversations(aiState.conversations);
+      } else {
+        useAIStore.getState().clearConversations();
+      }
+
       console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
       return true;
     } catch (err) {
@@ -241,7 +252,8 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
     try {
       const canvasState = _getCanvasStateForSave();
-      await saveArchcFile(graph, fileHandle, canvasState);
+      const aiState = _getAIStateForSave();
+      await saveArchcFile(graph, fileHandle, canvasState, aiState);
       set({ isDirty: false });
       console.log('[CoreStore] File saved successfully');
       return true;
@@ -261,7 +273,8 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
     try {
       const canvasState = _getCanvasStateForSave();
-      const result = await saveArchcFileAs(graph, fileName, canvasState);
+      const aiState = _getAIStateForSave();
+      const result = await saveArchcFileAs(graph, fileName, canvasState, aiState);
       if (!result) {
         // User cancelled the picker
         return false;
@@ -298,12 +311,12 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const buffer = await response.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      // Decode the binary file, including canvas state
+      // Decode the binary file, including canvas state and AI state
       const decoded = await decode(data);
-      const { graph, canvasState } = protoToGraphFull(decoded);
+      const { graph, canvasState, aiState } = protoToGraphFull(decoded);
 
-      // Derive filename
-      const fileName = displayName ?? url.split('/').pop()?.replace(/\.archc$/, '') ?? 'Loaded File';
+      // Derive filename (keep .archc extension for display)
+      const fileName = displayName ?? url.split('/').pop() ?? 'Loaded File';
 
       // Set graph in text API
       textApi.setGraph(graph);
@@ -328,6 +341,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         useCanvasStore.getState().setViewport(canvasState.viewport);
       }
 
+      // Restore AI conversations if present
+      if (aiState && aiState.conversations.length > 0) {
+        useAIStore.getState().setConversations(aiState.conversations);
+      } else {
+        useAIStore.getState().clearConversations();
+      }
+
       console.log(`[CoreStore] Loaded file from URL: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
       return true;
     } catch (err) {
@@ -338,10 +358,26 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
   /**
    * Add a node to the graph.
+   * Automatically pre-fills default arg values from the nodedef when no explicit args are provided.
    */
   addNode: (params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager, graph, registry } = get();
     if (!textApi || !undoManager) return undefined;
+
+    // Pre-fill default values from nodedef for args not explicitly provided
+    if (registry) {
+      const nodeDef = registry.resolve(params.type);
+      if (nodeDef && nodeDef.spec.args.length > 0) {
+        const defaults: Record<string, string | number | boolean> = {};
+        for (const argDef of nodeDef.spec.args) {
+          if (argDef.default !== undefined) {
+            defaults[argDef.name] = argDef.default;
+          }
+        }
+        // Merge: explicit args override defaults
+        params = { ...params, args: { ...defaults, ...params.args } };
+      }
+    }
 
     const node = textApi.addNode(params);
     const updatedGraph = textApi.getGraph();
@@ -657,4 +693,11 @@ function _getCanvasStateForSave() {
       rightPanelWidth: 320,
     },
   };
+}
+
+function _getAIStateForSave() {
+  const aiStoreState = useAIStore.getState();
+  const conversations = aiStoreState.conversations;
+  if (conversations.length === 0) return undefined;
+  return { conversations };
 }
