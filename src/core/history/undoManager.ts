@@ -121,4 +121,51 @@ export class UndoManager {
     this.entries = [];
     this.currentIndex = -1;
   }
+
+  /**
+   * Export the full undo history for serialization (e.g., saving to .archc file).
+   * Returns a snapshot of entries, current index, and max entries.
+   */
+  exportHistory(): {
+    entries: UndoEntry[];
+    currentIndex: number;
+    maxEntries: number;
+  } {
+    return {
+      entries: this.entries.map((e) => ({
+        description: e.description,
+        timestampMs: e.timestampMs,
+        snapshot: structuredClone(e.snapshot),
+      })),
+      currentIndex: this.currentIndex,
+      maxEntries: this.maxEntries,
+    };
+  }
+
+  /**
+   * Import undo history from deserialized data (e.g., loading from .archc file).
+   * Replaces current history with the imported data.
+   */
+  importHistory(
+    entries: UndoEntry[],
+    currentIndex: number,
+  ): void {
+    this.entries = entries.map((e) => ({
+      description: e.description,
+      timestampMs: e.timestampMs,
+      snapshot: structuredClone(e.snapshot),
+    }));
+    this.currentIndex = currentIndex;
+
+    // Enforce max entries limit
+    if (this.entries.length > this.maxEntries) {
+      const overflow = this.entries.length - this.maxEntries;
+      this.entries = this.entries.slice(overflow);
+      this.currentIndex = Math.max(0, this.currentIndex - overflow);
+    }
+
+    console.log(
+      `[UndoManager] Imported ${this.entries.length} entries, currentIndex=${this.currentIndex}`,
+    );
+  }
 }

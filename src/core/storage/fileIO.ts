@@ -5,11 +5,21 @@
 
 import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState } from '@/types/graph';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
-import { archcanvas } from '@/proto/archcanvas';
+import { archcanvas, Architecture } from '@/proto/archcanvas';
 import { decode, encode } from './codec';
 import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/utils/constants';
+import type { UndoEntry } from '@/core/history/undoManager';
 
 // ─── Proto → Graph Converters ────────────────────────────────────
+
+/**
+ * Serializable undo history data for file persistence.
+ */
+export interface UndoHistoryData {
+  entries: UndoEntry[];
+  currentIndex: number;
+  maxEntries: number;
+}
 
 /**
  * Result of converting a proto file to internal types.
@@ -17,6 +27,7 @@ import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT } from '@/utils/constants';
 export interface ProtoToGraphResult {
   graph: ArchGraph;
   canvasState?: SavedCanvasState;
+  undoHistory?: UndoHistoryData;
 }
 
 /**
@@ -70,7 +81,55 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
     }
   }
 
-  return { graph, canvasState };
+  // Extract undo history if present
+  let undoHistory: UndoHistoryData | undefined;
+  if (file.undoHistory && file.undoHistory.entries && file.undoHistory.entries.length > 0) {
+    undoHistory = {
+      entries: file.undoHistory.entries.map((protoEntry) => {
+        // Decode the architecture_snapshot bytes back to an ArchGraph
+        let snapshot: ArchGraph;
+        if (protoEntry.architectureSnapshot && protoEntry.architectureSnapshot.length > 0) {
+          try {
+            const arch = Architecture.decode(protoEntry.architectureSnapshot as Uint8Array);
+            snapshot = {
+              name: arch.name ?? 'Untitled Architecture',
+              description: arch.description ?? '',
+              owners: arch.owners ? [...arch.owners] : [],
+              nodes: (arch.nodes ?? []).map(protoNodeToNode),
+              edges: (arch.edges ?? []).map(protoEdgeToEdge),
+            };
+          } catch {
+            // If snapshot decoding fails, create empty graph
+            snapshot = {
+              name: 'Untitled Architecture',
+              description: '',
+              owners: [],
+              nodes: [],
+              edges: [],
+            };
+          }
+        } else {
+          snapshot = {
+            name: 'Untitled Architecture',
+            description: '',
+            owners: [],
+            nodes: [],
+            edges: [],
+          };
+        }
+
+        return {
+          description: protoEntry.description ?? '',
+          timestampMs: Number(protoEntry.timestampMs ?? 0),
+          snapshot,
+        };
+      }),
+      currentIndex: file.undoHistory.currentIndex ?? -1,
+      maxEntries: file.undoHistory.maxEntries ?? 100,
+    };
+  }
+
+  return { graph, canvasState, undoHistory };
 }
 
 function protoNodeToNode(protoNode: archcanvas.INode): ArchNode {
@@ -196,18 +255,31 @@ function protoValueMapToRecord(
 // ─── Graph → Proto Converters ────────────────────────────────────
 
 /**
- * Convert our internal ArchGraph to an IArchCanvasFile protobuf structure.
- * Optionally includes canvas state (viewport, selection, panel layout).
+ * Convert an ArchGraph to a proto Architecture structure (without the file wrapper).
+ * Used internally for both the main architecture and undo history snapshot encoding.
  */
-export function graphToProto(graph: ArchGraph, canvasState?: SavedCanvasState): IArchCanvasFile {
+function graphToArchitectureProto(graph: ArchGraph): archcanvas.IArchitecture {
+  return {
+    name: graph.name,
+    description: graph.description,
+    owners: [...graph.owners],
+    nodes: graph.nodes.map(nodeToProtoNode),
+    edges: graph.edges.map(edgeToProtoEdge),
+  };
+}
+
+/**
+ * Convert our internal ArchGraph to an IArchCanvasFile protobuf structure.
+ * Optionally includes canvas state (viewport, selection, panel layout)
+ * and undo history for persistence.
+ */
+export function graphToProto(
+  graph: ArchGraph,
+  canvasState?: SavedCanvasState,
+  undoHistory?: UndoHistoryData,
+): IArchCanvasFile {
   const file: IArchCanvasFile = {
-    architecture: {
-      name: graph.name,
-      description: graph.description,
-      owners: [...graph.owners],
-      nodes: graph.nodes.map(nodeToProtoNode),
-      edges: graph.edges.map(edgeToProtoEdge),
-    },
+    architecture: graphToArchitectureProto(graph),
   };
 
   if (canvasState) {
@@ -225,6 +297,26 @@ export function graphToProto(graph: ArchGraph, canvasState?: SavedCanvasState): 
         rightPanelWidth: canvasState.panelLayout.rightPanelWidth,
       };
     }
+  }
+
+  if (undoHistory && undoHistory.entries.length > 0) {
+    file.undoHistory = {
+      currentIndex: undoHistory.currentIndex,
+      maxEntries: undoHistory.maxEntries,
+      entries: undoHistory.entries.map((entry) => {
+        // Encode the ArchGraph snapshot to Architecture proto bytes
+        const archProto = graphToArchitectureProto(entry.snapshot);
+        const architectureSnapshot = Architecture.encode(
+          Architecture.create(archProto),
+        ).finish();
+
+        return {
+          description: entry.description,
+          timestampMs: entry.timestampMs,
+          architectureSnapshot,
+        };
+      }),
+    };
   }
 
   return file;
