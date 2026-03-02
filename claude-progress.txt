@@ -1,4 +1,54 @@
 ==================================================
+SESSION: 2026-03-02 - Features #132, #133, #160
+==================================================
+
+## What was accomplished:
+
+### Feature #132: Add Note button opens inline markdown editor (PASSING)
+- Refactored NotesTab from always-visible form to toggle-based inline editor
+- "Add Note" button toggles inline editor with Author input, Content textarea
+- Editor has Save and Cancel buttons (not just the old "Add Note" button)
+- Save closes editor and creates note, Cancel closes editor and clears content
+- Escape key also cancels the editor
+- Auto-focus on content textarea when editor opens
+
+### Feature #133: Note editor validates non-empty content (PASSING)
+- Added contentError state and validation on Save click
+- Empty content shows "Note content cannot be empty" red error message
+- Error clears when user starts typing content
+- Note is NOT created when validation fails (editor stays open)
+- Typing content and saving works correctly after error state
+
+### Feature #160: Auto-layout arranges nodes via ELK algorithm (PASSING)
+- Created src/core/layout/elkLayout.ts with ELK layered algorithm
+- ELK options: layered algorithm, LAYER_SWEEP crossing minimization, BRANDES_KOEPF node placement
+- Supports both horizontal (LEFT→RIGHT) and vertical (TOP→DOWN) directions
+- Added autoLayout action to coreStore with undo snapshot support
+- Wired LayoutMenu buttons to trigger autoLayout store action
+- Added ReactFlowProvider wrapper and fitView mechanism for post-layout view centering
+- Added fitViewCounter pattern in canvasStore for cross-component fitView requests
+- Verified: 5 nodes repositioned without overlap, edges still connect correctly
+- Both horizontal and vertical layouts produce distinct, organized arrangements
+
+## Technical details:
+- Notes tab: pattern matches CodeRefsTab (toggle isAdding/isEditing) for consistency
+- ELK: elkjs/lib/elk.bundled.js used (synchronous bundled version)
+- Layout respects navigation path (works at root and child levels)
+- fitView uses a 50ms delay + 300ms animation for smooth post-layout transition
+- Canvas wrapped in ReactFlowProvider to enable useReactFlow() hook
+
+## Current completion status:
+- Features passing: 100 of 235 (42.6%)
+- Zero console errors
+- All implementations verified via Playwright browser automation
+
+## What should be worked on next:
+- Keyboard shortcut for auto-layout (Ctrl+Shift+L)
+- More canvas interaction features
+- Export API features (PNG, SVG)
+- File Save/Save As improvements
+
+==================================================
 SESSION: 2026-03-02 - Feature #122
 ==================================================
 
