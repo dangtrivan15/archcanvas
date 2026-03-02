@@ -2,19 +2,24 @@
  * AIChatTab - AI chat interface for the right panel.
  * Shows context indicator with focused node name and neighbor count,
  * message history, text input, and send button.
+ * Integrates with Anthropic Claude API for real responses with streaming.
+ * Falls back to placeholder responses when API key is not configured.
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Send, Bot, User, Info } from 'lucide-react';
+import { Send, Bot, User, Info, Loader2 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { findNode } from '@/core/graph/graphEngine';
+import { sendMessage as sendAIMessage } from '@/ai/client';
+import { isAIConfigured } from '@/ai/config';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: number;
+  isStreaming?: boolean;
 }
 
 export function AIChatTab() {
@@ -23,7 +28,9 @@ export function AIChatTab() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Get the focused node
   const node = useMemo(() => {
@@ -52,9 +59,171 @@ export function AIChatTab() {
 
   const suggest = useCoreStore((s) => s.suggest);
 
+  /**
+   * Build system prompt with architecture context.
+   */
+  const buildSystemPrompt = useCallback(() => {
+    let context = 'You are an AI architecture assistant for ArchCanvas, a visual architecture design tool. ';
+    context += `The architecture "${graph.name || 'Untitled'}" has ${graph.nodes.length} nodes and ${graph.edges.length} edges. `;
+
+    if (node) {
+      context += `\n\nThe user is currently focused on node "${node.displayName}" (type: ${node.type}).`;
+      if (Object.keys(node.args).length > 0) {
+        context += `\nNode args: ${JSON.stringify(node.args)}`;
+      }
+      if (node.notes && node.notes.length > 0) {
+        context += `\nNode has ${node.notes.length} notes.`;
+      }
+    }
+
+    return context;
+  }, [graph, node]);
+
+  /**
+   * Send message using real AI client with streaming.
+   */
+  const sendWithAI = useCallback(
+    async (userContent: string, conversationHistory: ChatMessage[]) => {
+      const assistantMsgId = `msg-${Date.now()}-assistant`;
+
+      // Add empty assistant message that will be filled by streaming
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          isStreaming: true,
+        },
+      ]);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        const apiMessages = conversationHistory
+          .filter((m) => !m.isStreaming)
+          .map((m) => ({ role: m.role, content: m.content }));
+
+        const result = await sendAIMessage({
+          messages: apiMessages,
+          system: buildSystemPrompt(),
+          stream: true,
+          signal: controller.signal,
+          onChunk: (text) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId ? { ...m, content: m.content + text } : m,
+              ),
+            );
+          },
+        });
+
+        // Mark streaming as complete
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? { ...m, content: result.content, isStreaming: false }
+              : m,
+          ),
+        );
+
+        // Create a pending AI suggestion note on the selected node
+        if (selectedNodeId && result.content) {
+          suggest({
+            nodeId: selectedNodeId,
+            content: result.content.slice(0, 200),
+            suggestionType: 'general',
+          });
+        }
+      } catch (error) {
+        if ((error as Error).name === 'AbortError') return;
+
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? {
+                  ...m,
+                  content: `Error: ${errorMsg}`,
+                  isStreaming: false,
+                }
+              : m,
+          ),
+        );
+      } finally {
+        abortControllerRef.current = null;
+        setIsStreaming(false);
+      }
+    },
+    [buildSystemPrompt, selectedNodeId, suggest],
+  );
+
+  /**
+   * Send with placeholder response (when API key is not configured).
+   */
+  const sendWithPlaceholder = useCallback(
+    (userContent: string) => {
+      const assistantMsgId = `msg-${Date.now()}-assistant`;
+
+      // Add assistant message with streaming indicator
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: '',
+          timestamp: Date.now(),
+          isStreaming: true,
+        },
+      ]);
+
+      // Simulate streaming with character-by-character reveal
+      const fullResponse = node
+        ? `I understand you're asking about "${node.displayName}". To enable real AI responses, set the VITE_ANTHROPIC_API_KEY environment variable in your .env file.`
+        : `To enable AI-powered architecture analysis, set the VITE_ANTHROPIC_API_KEY environment variable in your .env file.`;
+
+      let charIndex = 0;
+      const interval = setInterval(() => {
+        charIndex += 3; // Reveal 3 chars at a time for speed
+        if (charIndex >= fullResponse.length) {
+          clearInterval(interval);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? { ...m, content: fullResponse, isStreaming: false }
+                : m,
+            ),
+          );
+          setIsStreaming(false);
+
+          // Create a pending AI suggestion note on the selected node
+          if (selectedNodeId) {
+            const suggestionContent = `Consider reviewing the configuration of "${node?.displayName || 'this component'}". ${userContent}`;
+            suggest({
+              nodeId: selectedNodeId,
+              content: suggestionContent,
+              suggestionType: 'general',
+            });
+          }
+        } else {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantMsgId
+                ? { ...m, content: fullResponse.slice(0, charIndex) }
+                : m,
+            ),
+          );
+        }
+      }, 20);
+    },
+    [node, selectedNodeId, suggest],
+  );
+
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || isStreaming) return;
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -64,33 +233,17 @@ export function AIChatTab() {
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInputValue('');
+    setIsStreaming(true);
 
-    // Simulate AI response (placeholder until real API integration)
-    setTimeout(() => {
-      const suggestionContent = node
-        ? `Consider reviewing the configuration of "${node.displayName}". ${trimmed}`
-        : `Here are some thoughts on the architecture. ${trimmed}`;
-
-      const assistantMessage: ChatMessage = {
-        id: `msg-${Date.now()}-assistant`,
-        role: 'assistant',
-        content: `I understand you're asking about${node ? ` "${node.displayName}"` : ' the architecture'}. AI integration is not yet connected. This is a placeholder response.`,
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-
-      // Create a pending AI suggestion note on the selected node
-      if (selectedNodeId) {
-        suggest({
-          nodeId: selectedNodeId,
-          content: suggestionContent,
-          suggestionType: 'general',
-        });
-      }
-    }, 500);
-  }, [inputValue, node, selectedNodeId, suggest]);
+    if (isAIConfigured()) {
+      sendWithAI(trimmed, newMessages);
+    } else {
+      sendWithPlaceholder(trimmed);
+    }
+  }, [inputValue, isStreaming, messages, sendWithAI, sendWithPlaceholder]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -101,6 +254,13 @@ export function AIChatTab() {
     },
     [handleSend],
   );
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-full" data-testid="aichat-tab">
@@ -150,6 +310,11 @@ export function AIChatTab() {
                 }`}
               >
                 {msg.content}
+                {msg.isStreaming && (
+                  <span className="inline-block ml-1 animate-pulse" data-testid="ai-streaming-indicator">
+                    <Loader2 className="w-3 h-3 inline animate-spin" />
+                  </span>
+                )}
               </div>
               {msg.role === 'user' && (
                 <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
@@ -171,17 +336,22 @@ export function AIChatTab() {
             onKeyDown={handleKeyDown}
             placeholder={node ? `Ask about ${node.displayName}...` : 'Select a node first...'}
             rows={2}
-            className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400"
+            disabled={isStreaming}
+            className="flex-1 resize-none text-sm border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="ai-chat-input"
           />
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isStreaming}
             className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
             title="Send message"
             data-testid="ai-send-button"
           >
-            <Send className="w-4 h-4" />
+            {isStreaming ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
