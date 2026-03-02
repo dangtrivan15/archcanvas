@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Send, Bot, User, Info, Loader2, Sparkles, Check, AlertTriangle } from 'lucide-react';
+import { Send, Bot, User, Info, Loader2, Sparkles, Check, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useAIStore } from '@/store/aiStore';
@@ -103,6 +103,8 @@ export function AIChatTab() {
   const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Track last failed message content for retry capability
+  const lastFailedContentRef = useRef<string | null>(null);
 
   // Derive display messages: persisted + any in-progress streaming message
   const messages: ChatMessage[] = useMemo(() => {
@@ -202,7 +204,7 @@ export function AIChatTab() {
    * Send message using real AI client with streaming.
    */
   const sendWithAI = useCallback(
-    async (_userContent: string, conversationHistory: ChatMessage[]) => {
+    async (userContent: string, conversationHistory: ChatMessage[]) => {
       const assistantMsgId = `msg-${Date.now()}-assistant`;
 
       // Create streaming placeholder
@@ -236,8 +238,9 @@ export function AIChatTab() {
 
         // Persist the completed assistant message to the store (node-scoped or global)
         persistMessage('assistant', result.content);
-        // Clear streaming message
+        // Clear streaming message and any failed state
         setStreamingMessage(null);
+        lastFailedContentRef.current = null;
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
           setStreamingMessage(null);
@@ -249,6 +252,8 @@ export function AIChatTab() {
         // Persist the user-friendly error message (prefixed for visual distinction)
         persistMessage('assistant', `⚠ ${friendlyMsg}`);
         setStreamingMessage(null);
+        // Store the user content for retry capability
+        lastFailedContentRef.current = userContent;
       } finally {
         abortControllerRef.current = null;
         setIsStreaming(false);
