@@ -12,6 +12,7 @@ import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
 import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
+import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function App() {
@@ -106,6 +107,9 @@ export function App() {
 
       {/* Integrity Warning Dialog (overlay) */}
       <IntegrityWarningDialog />
+
+      {/* Loading Overlay (file operations) */}
+      <LoadingOverlay />
 
       {/* Status Bar */}
       <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">

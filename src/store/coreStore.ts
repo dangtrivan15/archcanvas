@@ -359,6 +359,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return get().saveFileAs();
     }
 
+    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
+    setFileOperationLoading('Saving file...');
+
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
@@ -381,9 +384,11 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         }
       }
 
+      clearFileOperationLoading();
       console.log('[CoreStore] File saved successfully');
       return true;
     } catch (err) {
+      clearFileOperationLoading();
       console.error('[CoreStore] Failed to save file:', err);
       const { openErrorDialog } = useUIStore.getState();
       openErrorDialog({
@@ -413,6 +418,10 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         return false;
       }
 
+      // Show loading after user selects save location
+      const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
+      setFileOperationLoading('Saving file...');
+
       // After first save, store createdAtMs if not already set
       const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
       set({
@@ -433,9 +442,11 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         }
       }
 
+      clearFileOperationLoading();
       console.log(`[CoreStore] File saved as: ${result.fileName}`);
       return true;
     } catch (err) {
+      useUIStore.getState().clearFileOperationLoading();
       console.error('[CoreStore] Failed to save file as:', err);
       const { openErrorDialog } = useUIStore.getState();
       openErrorDialog({
@@ -456,9 +467,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return false;
 
+    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
+    setFileOperationLoading('Loading file...');
+
     try {
       const response = await fetch(url);
       if (!response.ok) {
+        clearFileOperationLoading();
         console.error(`[CoreStore] Failed to fetch file from ${url}: ${response.status}`);
         return false;
       }
@@ -470,8 +485,10 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       try {
         const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
         get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+        clearFileOperationLoading();
         return true;
       } catch (decodeErr) {
+        clearFileOperationLoading();
         if (decodeErr instanceof IntegrityError) {
           // Show warning dialog with option to proceed or cancel
           console.warn('[CoreStore] File integrity check failed:', decodeErr.message);
@@ -483,13 +500,16 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
               'Opening it anyway may result in unexpected behavior.',
             onProceed: async () => {
               try {
+                setFileOperationLoading('Loading file...');
                 const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
                   data,
                   { skipChecksumVerification: true },
                 );
                 get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+                clearFileOperationLoading();
                 console.log(`[CoreStore] Loaded file from URL with skipped checksum: ${fileName}`);
               } catch (retryErr) {
+                clearFileOperationLoading();
                 console.error('[CoreStore] Failed to load file even with skipped checksum:', retryErr);
                 const { openErrorDialog } = useUIStore.getState();
                 openErrorDialog({
@@ -504,6 +524,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         throw decodeErr;
       }
     } catch (err) {
+      clearFileOperationLoading();
       console.error('[CoreStore] Failed to load file from URL:', err);
 
       const { openErrorDialog } = useUIStore.getState();
