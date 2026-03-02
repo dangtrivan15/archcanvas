@@ -2350,3 +2350,44 @@ SESSION: 2026-03-02 - Features #116, #117, #118
 - Canvas interaction features
 - Export API features
 - File persistence features
+
+==================================================
+SESSION: 2026-03-02 - Features #119, #120
+==================================================
+
+## What was accomplished:
+
+### Feature #119: Properties boolean toggle switches correctly (PASSING)
+- Boolean arg fields render as styled toggle switches (not basic checkboxes)
+- Toggle uses role="switch" with aria-checked for accessibility
+- Blue ON state (bg-blue-600) with smooth sliding animation (200ms transition)
+- Gray OFF state (bg-gray-300) with white circular knob
+- Shows "Enabled" / "Disabled" label next to toggle
+- Verified with Message Queue node: durable (default: true) and dlqEnabled (default: true)
+- Clicking toggle correctly switches value true → false → true
+- Canvas node body updates dynamically (durable: true → false)
+- Implementation was already in place from feature #118 session (commit 693fdc9)
+- No new code changes needed - verification only
+
+### Feature #120: Properties enum dropdown shows all options (PASSING)
+- Enum arg fields render as <select> dropdowns with all defined options
+- "— Select —" placeholder option included
+- All options from nodedef YAML spec listed in dropdown
+- Verified with Database node:
+  - engine enum: PostgreSQL, MySQL, MongoDB, SQLite, DynamoDB, CockroachDB (6 options) ✓
+  - replication enum: none, primary-replica, multi-primary (3 options) ✓
+- Default values correctly pre-selected (PostgreSQL for engine, none for replication)
+- Selecting different option updates both dropdown UI and canvas node body
+- Changed engine from PostgreSQL to MongoDB → canvas showed "engine: MongoDB"
+- Changed replication from none to primary-replica → dropdown showed [selected]
+- No new code changes needed - implementation already existed
+
+## Verification:
+- 0 console errors, 0 warnings
+- No mock data patterns in production code (only legitimate globalThis.crypto)
+- Both features verified through browser automation (Playwright)
+
+## Current completion status:
+- Features passing: ~155 of 235 (~66%)
+- Zero console errors
+- No code changes required for either feature
