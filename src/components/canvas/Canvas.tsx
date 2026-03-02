@@ -61,8 +61,15 @@ export function Canvas() {
   const [rfEdges, setRfEdges] = useState<CanvasEdge[]>(rendered.edges);
 
   // Sync from store -> React Flow whenever the rendered graph changes
+  // Preserve selection state so that editing node properties doesn't deselect the node
   useEffect(() => {
-    setRfNodes(rendered.nodes);
+    setRfNodes((prevNodes) => {
+      const selectedIds = new Set(prevNodes.filter((n) => n.selected).map((n) => n.id));
+      if (selectedIds.size === 0) return rendered.nodes;
+      return rendered.nodes.map((n) =>
+        selectedIds.has(n.id) ? { ...n, selected: true } : n,
+      );
+    });
     setRfEdges(rendered.edges);
   }, [rendered]);
 
