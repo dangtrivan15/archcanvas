@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, Trash2, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
+import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -530,6 +530,14 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
                 {String(value) || <span className="text-gray-400 italic">empty</span>}
               </span>
             )}
+            <button
+              onClick={() => handleStartEdit(key)}
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-500 rounded transition-opacity"
+              title="Edit property"
+              data-testid={`edit-property-${key}`}
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
             <button
               onClick={() => handleRemoveProperty(key)}
               className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 rounded transition-opacity"

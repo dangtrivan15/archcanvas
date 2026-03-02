@@ -87,6 +87,12 @@ export interface UpdateNodeParams {
   properties?: Record<string, string | number | boolean>;
 }
 
+export interface AddCodeRefParams {
+  nodeId: string;
+  path: string;
+  role: 'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test';
+}
+
 export interface SuggestParams {
   nodeId: string;
   content: string;
