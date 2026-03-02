@@ -15,6 +15,7 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
+  Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
 } from 'lucide-react';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -27,6 +28,14 @@ const iconMap: Record<string, React.ElementType> = {
   Cpu,
   Layers,
   Box,
+  Inbox,
+  GitFork,
+  Activity,
+  BarChart3,
+  FileText,
+  Cog,
+  Zap,
+  Archive,
 };
 
 function GenericNodeComponent({ data, selected }: NodeProps) {
