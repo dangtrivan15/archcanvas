@@ -16,6 +16,7 @@ export function App() {
   const initialized = useCoreStore((s) => s.initialized);
   const nodeCount = useCoreStore((s) => s.nodeCount);
   const edgeCount = useCoreStore((s) => s.edgeCount);
+  const isDirty = useCoreStore((s) => s.isDirty);
   const loadFromUrl = useCoreStore((s) => s.loadFromUrl);
 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
@@ -100,7 +101,9 @@ export function App() {
         <span className="mx-2">|</span>
         <span data-testid="edge-count">Edges: {edgeCount}</span>
         <span className="mx-2">|</span>
-        <span>Zoom: {Math.round(zoom * 100)}%</span>
+        <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+        <span className="mx-2">|</span>
+        <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
       </footer>
     </div>
   );
