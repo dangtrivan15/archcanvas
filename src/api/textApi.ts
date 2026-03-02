@@ -418,8 +418,22 @@ export class TextApi {
       if (Object.keys(node.args).length > 0) {
         lines.push(`    <args>${JSON.stringify(node.args)}</args>`);
       }
+      if (Object.keys(node.properties).length > 0) {
+        lines.push(`    <properties>${JSON.stringify(node.properties)}</properties>`);
+      }
+      if (node.codeRefs.length > 0) {
+        lines.push(`    <coderefs>`);
+        for (const ref of node.codeRefs) {
+          lines.push(`      <ref path="${ref.path}" role="${ref.role}" />`);
+        }
+        lines.push(`    </coderefs>`);
+      }
       if (node.notes.length > 0) {
-        lines.push(`    <notes count="${node.notes.length}" />`);
+        lines.push(`    <notes count="${node.notes.length}">`);
+        for (const note of node.notes) {
+          lines.push(`      <note author="${note.author}" status="${note.status}">${note.content}</note>`);
+        }
+        lines.push(`    </notes>`);
       }
       lines.push(`  </node>`);
     }
