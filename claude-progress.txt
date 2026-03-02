@@ -1,4 +1,35 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #129
+==================================================
+
+## What was accomplished:
+
+### Feature #129: AI suggestion notes show Accept and Dismiss buttons (PASSING)
+- Verified NotesTab already has Accept/Dismiss buttons for notes with status='pending'
+- Added suggest() action to coreStore (wraps TextApi.suggest())
+- Updated AIChatTab to create a real pending AI suggestion note when AI responds
+- This enables end-to-end testing: AI Chat → creates suggestion → Notes tab shows buttons
+- Verified via Playwright e2e tests:
+  1. Regular notes (status='none') do NOT show Accept/Dismiss buttons
+  2. AI suggestion notes (status='pending') show green Accept button with checkmark icon
+  3. AI suggestion notes show red Dismiss button with X icon
+  4. Clicking Accept: buttons disappear, status changes to 'accepted'
+  5. Clicking Dismiss: buttons disappear, status changes to 'dismissed'
+- Zero console errors
+- No mock data patterns in production code
+- All 749 unit tests passing
+
+## Current completion status:
+- Features passing: 85 of 235 (36.2%)
+- Zero console errors, zero test regressions
+
+## What should be worked on next:
+- More AI features (real API integration, suggestion types)
+- Canvas interaction features
+- Export API features (PNG, SVG)
+- File Save/Save As functionality
+
+==================================================
 SESSION: 2026-03-02 - Feature #124
 ==================================================
 
