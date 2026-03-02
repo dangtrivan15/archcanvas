@@ -1,4 +1,53 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #148
+==================================================
+
+## What was accomplished:
+
+### Feature #148: Node deletion removes child nodes recursively (PASSING)
+- Verified existing implementation works correctly end-to-end through browser automation
+- All code was already in place from previous feature implementations:
+  - graphEngine.ts: removeNode() uses collectNodeIds() to recursively gather all descendant IDs
+  - collectAllIds() recursively traverses node tree to build complete ID set
+  - removeNodeFromList() recursively removes target from root and children arrays
+  - Edge cleanup: filters edges where fromNode or toNode is in removed ID set
+  - textApi.ts: removeNode() delegates to graphEngine removeNode
+  - coreStore.ts: removeNode action with undo snapshot support
+- Created two test .archc files for browser verification:
+  1. recursive-delete-test.archc: A(child B(child C)) + external D with edge A→D
+  2. only-root-delete-test.archc: A(child B(child C)) as only root node
+
+## Verification steps completed:
+
+### Test 1: Parent with external sibling
+1. Loaded recursive-delete-test.archc (4 nodes, 1 edge)
+2. Selected Parent A node, pressed Delete key
+3. Delete dialog showed: "2 child nodes" and "1 connected edge" will be removed
+4. Clicked Delete to confirm
+5. Verified: Nodes: 1 (only External DB remains), Edges: 0
+6. Verified: Parent A, Child B, Grandchild C all removed from canvas
+7. Verified: Edge A→D also removed (edge cleanup)
+
+### Test 2: Only root node
+1. Loaded only-root-delete-test.archc (3 nodes, 0 edges) - A is only root
+2. Selected Parent A, pressed Delete key
+3. Delete dialog showed: "2 child nodes" will be removed
+4. Clicked Delete to confirm
+5. Verified: Nodes: 0, Edges: 0 - architecture completely empty
+6. Verified: No node groups visible on canvas at all
+
+### Additional checks:
+- Console: 0 errors, 0 warnings on both tests
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- All 27 graphEngine unit tests passing (including recursive deletion tests)
+- No code changes needed - implementation was already complete
+
+## Current completion status:
+- Features passing: 169 of 235 (71.9%)
+- Zero console errors
+- No code changes required for this feature
+
+==================================================
 SESSION: 2026-03-02 - Feature #186
 ==================================================
 
