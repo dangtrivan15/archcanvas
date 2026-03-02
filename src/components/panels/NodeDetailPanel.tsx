@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle } from 'lucide-react';
+import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -571,6 +571,8 @@ function NotesTab({
   onAddNote: () => void;
 }) {
   const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
+  const [isEditing, setIsEditing] = useState(false);
+  const [contentError, setContentError] = useState('');
 
   // Sort notes chronologically (oldest first) by timestamp
   const sortedNotes = useMemo(
@@ -578,43 +580,95 @@ function NotesTab({
     [node.notes],
   );
 
+  const handleSave = useCallback(() => {
+    if (!noteContent.trim()) {
+      setContentError('Note content cannot be empty');
+      return;
+    }
+    setContentError('');
+    onAddNote();
+    setIsEditing(false);
+  }, [noteContent, onAddNote]);
+
+  const handleCancel = useCallback(() => {
+    setIsEditing(false);
+    onNoteContentChange('');
+    setContentError('');
+  }, [onNoteContentChange]);
+
+  const handleOpenEditor = useCallback(() => {
+    setIsEditing(true);
+    setContentError('');
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  }, [handleCancel]);
+
   return (
     <div className="space-y-3" data-testid="notes-tab">
-      {/* Add note form */}
-      <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
-        <div className="text-xs font-medium text-gray-500 uppercase">Add Note</div>
-        <div>
-          <label className="text-xs text-gray-500">Author</label>
-          <input
-            type="text"
-            value={noteAuthor}
-            onChange={(e) => onNoteAuthorChange(e.target.value)}
-            className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white"
-            placeholder="Author name"
-            data-testid="note-author-input"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500">Content</label>
-          <textarea
-            value={noteContent}
-            onChange={(e) => onNoteContentChange(e.target.value)}
-            className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white resize-none"
-            rows={3}
-            placeholder="Write your note..."
-            data-testid="note-content-input"
-          />
-        </div>
+      {/* Add Note button / inline editor */}
+      {!isEditing ? (
         <button
-          onClick={onAddNote}
-          disabled={!noteContent.trim()}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={handleOpenEditor}
+          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
           data-testid="add-note-button"
         >
           <Plus className="w-3 h-3" />
           Add Note
         </button>
-      </div>
+      ) : (
+        <div className="space-y-2 border rounded-lg p-3 bg-gray-50" data-testid="note-editor">
+          <div className="text-xs font-medium text-gray-500 uppercase">New Note</div>
+          <div>
+            <label className="text-xs text-gray-500">Author</label>
+            <input
+              type="text"
+              value={noteAuthor}
+              onChange={(e) => onNoteAuthorChange(e.target.value)}
+              className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"
+              placeholder="Author name"
+              data-testid="note-author-input"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Content</label>
+            <textarea
+              value={noteContent}
+              onChange={(e) => { onNoteContentChange(e.target.value); if (contentError) setContentError(''); }}
+              onKeyDown={handleKeyDown}
+              className={`w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white resize-none focus:outline-none ${contentError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`}
+              rows={3}
+              placeholder="Write your note (markdown supported)..."
+              autoFocus
+              data-testid="note-content-input"
+            />
+            {contentError && (
+              <div className="text-xs text-red-500 mt-0.5" data-testid="note-content-error">{contentError}</div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              data-testid="save-note-button"
+            >
+              <Check className="w-3 h-3" />
+              Save
+            </button>
+            <button
+              onClick={handleCancel}
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+              data-testid="cancel-note-button"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Note list - chronologically sorted (oldest first) */}
       <div className="space-y-2" data-testid="notes-list">
@@ -691,6 +745,18 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
     { value: 'config', label: 'Config' },
     { value: 'test', label: 'Test' },
   ];
+
+  const getRoleIcon = (refRole: string) => {
+    switch (refRole) {
+      case 'source': return <FileCode className="w-4 h-4 text-blue-500 shrink-0" />;
+      case 'api-spec': return <FileText className="w-4 h-4 text-green-500 shrink-0" />;
+      case 'schema': return <Database className="w-4 h-4 text-purple-500 shrink-0" />;
+      case 'deployment': return <Cloud className="w-4 h-4 text-orange-500 shrink-0" />;
+      case 'config': return <Cog className="w-4 h-4 text-gray-500 shrink-0" />;
+      case 'test': return <TestTube2 className="w-4 h-4 text-yellow-500 shrink-0" />;
+      default: return <File className="w-4 h-4 text-gray-400 shrink-0" />;
+    }
+  };
 
   const handleSubmit = useCallback(() => {
     if (!path.trim()) {
@@ -788,9 +854,12 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
         ) : (
           <div className="space-y-2">
             {node.codeRefs.map((ref, i) => (
-              <div key={i} className="border rounded p-2 bg-white" data-testid={`coderef-${i}`}>
-                <div className="text-sm font-mono" data-testid="coderef-path">{ref.path}</div>
-                <div className="text-xs text-gray-400" data-testid="coderef-role">{ref.role}</div>
+              <div key={i} className="border rounded p-2 bg-white flex items-start gap-2" data-testid={`coderef-${i}`}>
+                <div className="mt-0.5" data-testid="coderef-icon">{getRoleIcon(ref.role)}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-mono truncate" data-testid="coderef-path">{ref.path}</div>
+                  <div className="text-xs text-gray-400" data-testid="coderef-role">{ref.role}</div>
+                </div>
               </div>
             ))}
           </div>
