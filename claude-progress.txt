@@ -1,4 +1,48 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #182
+==================================================
+
+## What was accomplished:
+
+### Feature #182: MCP update_node tool modifies node (PASSING)
+- Verified the complete update_node MCP tool implementation end-to-end
+- All code was already in place from previous feature implementations:
+  - handlers.ts: handleUpdateNode() accepts nodeId, displayName?, args?, properties?
+  - textApi.ts: updateNode() delegates to engineUpdateNode from graphEngine
+  - graphEngine.ts: updateNode() immutably updates node, with recursive child search
+  - tools.ts: update_node tool definition with Zod schema
+  - server.ts: tool registration via dispatchToolCall
+- 9 comprehensive unit tests all passing:
+  1. Updates displayName via dispatchToolCall
+  2. DisplayName change reflected in structured describe output
+  3. handleUpdateNode returns success with nodeId
+  4. Updates node args via MCP (PostgreSQL engine)
+  5. Updates node properties via MCP (production/us-east-1)
+  6. Updates displayName, args, and properties simultaneously
+  7. Updated name appears in human-readable describe
+  8. Updated name appears in AI describe format
+  9. Does not affect other nodes when updating one
+
+### Bug fix: Proto file shadowing in init.sh
+- init.sh was generating archcanvas.js/archcanvas.d.ts alongside archcanvas.ts
+- Vite resolved @/proto/archcanvas to archcanvas.js instead of archcanvas.ts
+- The .js file only exports namespace, not individual named exports like ArchCanvasFile
+- Fixed init.sh to generate archcanvas.pb.js/archcanvas.pb.d.ts (matching package.json)
+- Removed the shadowing archcanvas.js and archcanvas.d.ts files
+
+## Verification steps completed:
+1. All 9 unit tests passing (dispatchToolCall routing, all update fields, describe formats)
+2. App loads with zero console errors (0 errors, 0 warnings)
+3. ecommerce.archc loaded: 5 nodes, 4 edges visible on canvas
+4. Mock data grep: only legitimate globalThis.crypto in codec.ts
+5. No code changes needed for feature logic - only proto build fix
+
+## Current completion status:
+- Features passing: 186 of 235 (79.1%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-02 - Features #158, #159
 ==================================================
 
