@@ -1,4 +1,42 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #186
+==================================================
+
+## What was accomplished:
+
+### Feature #186: MCP list_nodedefs returns all built-in definitions (PASSING)
+- Added explicit `name` field to handleListNodedefs response in handlers.ts
+  - Both filtered (namespace param) and unfiltered responses now include name, namespace, type, displayName, description, icon
+  - Previously only had `type` (namespace/name combined) without a separate `name` field
+- Wrote 11 comprehensive unit tests in test/unit/mcp/mcpListNodedefs.test.ts:
+  - Valid JSON response structure
+  - 15+ nodedefs returned (count and array length)
+  - Each entry has name, namespace, displayName fields (non-empty strings)
+  - Type field matches namespace/name format
+  - All 5 namespaces represented (compute, data, messaging, network, observability)
+  - Correct distribution: compute=4, data=4, messaging=3, network=2, observability=2
+  - All 15 specific types present (service, function, worker, api-gateway, etc.)
+  - Description and icon fields present
+  - Namespace filtering works correctly
+  - Dispatch routing works
+- Browser verified: NodeDef browser shows all 15 types across 5 namespaces
+- Console: 0 errors, 0 warnings
+- All 1143 project tests passing across 75 test files
+- No mock data patterns in MCP source code
+- Committed: 1c18928
+
+## Current completion status:
+- Features passing: 168 of 235 (71.5%)
+- Zero console errors
+- 1143 unit tests across 75 test files, all passing
+
+## What should be worked on next:
+- More MCP and API features
+- Export API features
+- File persistence features
+- AI integration features
+
+==================================================
 SESSION: 2026-03-02 - Feature #162
 ==================================================
 
