@@ -1636,3 +1636,61 @@ SESSION: 2026-03-02 - Features #32, #33, #107
 - Canvas interaction features
 - File persistence features
 - Export API features (PNG, SVG)
+
+==================================================
+SESSION: 2026-03-02 - Features #22, #108, #109
+==================================================
+
+## What was accomplished:
+
+### Feature #22: Graph engine moves node position (PASSING)
+- 15 unit tests in test/unit/core/moveNodePosition.test.ts
+- Verified moveNode() updates x, y coordinates correctly
+- Tests cover: default position, new position, preserve width/height/color
+- Tests cover: negative coords, decimal coords, large coords, same position
+- Immutability verified (original graph unchanged)
+- Recursive child/grandchild node moves tested
+- Multiple sequential moves tested
+- Nonexistent node ID handled gracefully
+
+### Feature #108: Click nodedef enters placement mode (PASSING)
+- Added PlacementModeInfo and state to uiStore (placementMode, placementInfo)
+- enterPlacementMode/exitPlacementMode actions added
+- NodeDefBrowser entries now click to enter placement mode
+- Active nodedef highlighted with blue background/border/ring
+- Canvas shows blue indicator bar: "Click on canvas to place [NodeType]"
+- Escape key exits placement mode (capture-phase keydown handler)
+- "Esc to cancel" button also exits placement mode
+- Clicking same nodedef again toggles off placement mode
+- Crosshair cursor on canvas during placement mode
+- Browser verified: zero console errors
+
+### Feature #109: Drag nodedef from browser onto canvas creates node (PASSING)
+- NodeDefBrowser entries have draggable=true with onDragStart handler
+- onDragStart sets application/archcanvas-nodedef dataTransfer data (JSON)
+- Canvas has onDragOver (preventDefault, dropEffect=copy) and onDrop handlers
+- onDrop reads dataTransfer, converts screen coords to flow coords, calls addNode()
+- Click-to-place also works (same addNode path as drag-and-drop)
+- Verified: Database node created with type "data/database" and name "Database"
+- Right panel shows full node details: ID, displayName, type, arguments
+- Footer shows "Nodes: 1" confirming architecture data updated
+- Zero console errors, no mock data patterns
+
+## Technical details:
+- Placement mode state in uiStore: placementMode (boolean), placementInfo (PlacementModeInfo)
+- PlacementModeInfo: { nodeType: string, displayName: string }
+- Canvas onPaneClick: in placement mode, converts screen coords and calls addNode()
+- Canvas onDrop: reads JSON from dataTransfer, converts coords, calls addNode()
+- Both methods use screenToFlowPosition() from useReactFlow() for accurate placement
+- NodeDefBrowser linter change: now shows descriptions instead of type keys
+
+## Current completion status:
+- Features passing: 111 of 235 (47.2%)
+- Zero console errors
+- All unit tests passing
+
+## What should be worked on next:
+- More canvas interaction features
+- Side panel improvements
+- File Save/Save As functionality
+- Export API features
