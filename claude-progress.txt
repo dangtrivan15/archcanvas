@@ -1,4 +1,57 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #185
+==================================================
+
+## What was accomplished:
+
+### Feature #185: MCP search tool finds matching items (PASSING)
+- Created comprehensive test file: test/unit/mcp/mcpSearch.test.ts (12 tests)
+- All MCP search functionality was already implemented - tests verify correctness
+- Tests cover all feature verification steps:
+  1. Create nodes with distinct names → add_node creates Payment Gateway, User Database, Order Queue
+  2. Call MCP search with matching query → "Payment" returns Payment Gateway node
+  3. Verify matching node returned with correct structure (type, id, displayName, matchContext, score)
+  4. Call MCP search with non-matching query → "Nonexistent XYZ" returns empty
+  5. Verify empty results → count=0, results=[]
+- Additional test coverage:
+  - Search matches node type (e.g., "database" matches data/database)
+  - Search is case-insensitive (API Gateway found via "api gateway", "API GATEWAY", "Api GateWay")
+  - Search finds matching edge labels (edge with label "fetch orders")
+  - Search finds matching note content (note about "Stripe webhook processing")
+  - Results sorted by score (display name match > type match)
+  - handleSearch direct call works
+  - dispatchToolCall routes to search handler correctly
+  - Empty query returns empty results
+  - Multiple matching nodes all returned (2 "User" nodes found, "Order" excluded)
+
+## Implementation verified (already complete):
+- tools.ts: search tool definition with query input schema
+- server.ts: search tool registered on McpServer
+- handlers.ts: handleSearch delegates to textApi.search(), returns {results, count}
+- handlers.ts: dispatchToolCall routes 'search' to handleSearch
+- textApi.ts: search() delegates to searchGraph()
+- graphQuery.ts: searchGraph() performs full-text search with scoring:
+  - Node display name match: score 20
+  - Node type match: score 10
+  - Node args/properties match: score 5
+  - Note content match: score 5
+  - Edge label match: score 10
+  - Recursive search into child nodes
+  - Results sorted by score descending
+
+## Verification:
+- All 12 new tests passing
+- All 1250 total tests passing across 85 test files
+- Browser: app loads ecommerce.archc (5 nodes, 4 edges) with zero console errors
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- Committed: d0d3c03
+
+## Current completion status:
+- Features passing: 189 of 235 (80.4%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-02 - Feature #182
 ==================================================
 
