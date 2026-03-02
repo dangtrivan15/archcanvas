@@ -28,6 +28,10 @@ playwright-report/
 .autoforge/
 features.db
 
+# Proto generated duplicates (only .pb.js/.pb.d.ts are tracked)
+src/proto/archcanvas.js
+src/proto/archcanvas.d.ts
+
 # Misc
 *.log
 coverage/
