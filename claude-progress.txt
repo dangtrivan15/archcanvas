@@ -3389,3 +3389,60 @@ SESSION: 2026-03-02 - Feature #184
 - Zero console errors
 - No mock data patterns in production code
 - Committed: 879e64d
+
+==================================================
+SESSION: 2026-03-02 - Features #187, #188, #189
+==================================================
+
+## What was accomplished:
+
+### Feature #187: Opening corrupt .archc file shows error message (PASSING)
+- Created ErrorDialog component (src/components/shared/ErrorDialog.tsx)
+  - Red XCircle icon, title, message, OK dismiss button
+  - Keyboard support: Escape/Enter to dismiss, backdrop click
+  - data-testid attributes for testing
+- Added error dialog state to uiStore (openErrorDialog, closeErrorDialog)
+- Updated coreStore openFile/loadFromUrl to surface errors:
+  - IntegrityError -> "File Corrupted" dialog
+  - CodecError -> "Invalid File Format" dialog
+  - Generic Error -> "Failed to Open File" dialog
+- Added ErrorDialog to App.tsx
+- 17 unit tests in test/unit/store/corruptFileError.test.ts
+- Browser verified: error dialog appears, OK dismisses, app continues working
+
+### Feature #188: Opening file with invalid magic bytes shows error (PASSING)
+- All implementation from #187 handles this case
+- 11 unit tests in test/unit/store/invalidMagicBytesError.test.ts
+  - Tests PDF-like, ZIP-like, zero-byte, text, partial magic rejection
+  - Error messages include position, expected/actual byte values
+- Browser verified: "Invalid File Format" dialog with magic bytes details
+
+### Feature #189: Opening file with checksum mismatch shows warning (PASSING)
+- Created IntegrityWarningDialog component (src/components/shared/IntegrityWarningDialog.tsx)
+  - Amber warning triangle icon, "File Integrity Warning" title
+  - Two buttons: "Cancel" (outlined, safe default) and "Open Anyway" (amber)
+  - Keyboard support: Escape to cancel
+- Added integrity warning dialog state to uiStore
+- Refactored coreStore to separate file picking from decoding:
+  - Added pickArchcFile() for file picking only
+  - Added decodeArchcData() for decoding with options
+  - Added _applyDecodedFile() helper to share load logic
+  - IntegrityError now shows warning dialog with proceed/cancel choice
+  - "Open Anyway" retries decode with skipChecksumVerification: true
+- Created public/checksum-mismatch.archc test file (corrupted SHA-256 checksum)
+- 11 unit tests in test/unit/store/checksumMismatchWarning.test.ts
+- Browser verified:
+  - Warning dialog appears with Cancel and Open Anyway buttons
+  - Cancel dismisses dialog, file NOT loaded (Nodes: 0)
+  - Open Anyway loads file successfully (Nodes: 5, Edges: 4)
+  - Zero console errors
+
+## Test results:
+- 39 new tests across 3 test files (all passing)
+- 1339 total tests across 92 files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: ~192 of 235 (~81.7%)
+- Zero console errors
+- No mock data patterns in production code
