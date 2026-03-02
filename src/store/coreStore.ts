@@ -13,7 +13,7 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
+import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
 import { decode } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -44,6 +44,9 @@ export interface CoreStoreState {
   // File handle (for save-in-place)
   fileHandle: FileSystemFileHandle | null;
 
+  // File header timestamp (preserved across re-saves)
+  fileCreatedAtMs: number | null;
+
   // File operations
   newFile: () => void;
   openFile: () => Promise<boolean>;
@@ -59,6 +62,7 @@ export interface CoreStoreState {
   removeEdge: (edgeId: string) => void;
   addNote: (params: AddNoteParams) => Note | undefined;
   removeNote: (nodeId: string, noteId: string) => void;
+  updateNote: (nodeId: string, noteId: string, content: string) => void;
   addCodeRef: (params: AddCodeRefParams) => void;
   suggest: (params: SuggestParams) => Note | undefined;
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
@@ -93,6 +97,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
   // File handle
   fileHandle: null,
+
+  // File header timestamp
+  fileCreatedAtMs: null,
 
   // Computed
   nodeCount: 0,
@@ -168,6 +175,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       isDirty: false,
       fileName: 'Untitled Architecture',
       fileHandle: null,
+      fileCreatedAtMs: null,
       nodeCount: 0,
       edgeCount: 0,
       canUndo: false,
@@ -189,7 +197,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         return false;
       }
 
-      const { graph, fileName, fileHandle, canvasState, aiState } = result;
+      const { graph, fileName, fileHandle, canvasState, aiState, createdAtMs } = result;
 
       // Set graph in text API
       textApi.setGraph(graph);
@@ -203,6 +211,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         isDirty: false,
         fileName,
         fileHandle: fileHandle ?? null,
+        fileCreatedAtMs: createdAtMs ?? null,
         nodeCount: countAllNodes(graph),
         edgeCount: graph.edges.length,
         canUndo: false,
@@ -243,7 +252,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFile: async () => {
-    const { graph, fileHandle } = get();
+    const { graph, fileHandle, fileCreatedAtMs, fileName, exportApi } = get();
 
     // If no file handle, fall back to Save As
     if (!fileHandle) {
@@ -253,8 +262,25 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
-      await saveArchcFile(graph, fileHandle, canvasState, aiState);
-      set({ isDirty: false });
+      await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
+      // After first save, store createdAtMs if not already set
+      if (!fileCreatedAtMs) {
+        set({ isDirty: false, fileCreatedAtMs: Date.now() });
+      } else {
+        set({ isDirty: false });
+      }
+
+      // Auto-generate .summary.md sidecar file
+      if (exportApi) {
+        try {
+          const summaryContent = exportApi.generateSummaryWithMermaid(graph);
+          const summaryFileName = deriveSummaryFileName(fileName);
+          saveSummaryMarkdown(summaryContent, summaryFileName);
+        } catch (summaryErr) {
+          console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
+        }
+      }
+
       console.log('[CoreStore] File saved successfully');
       return true;
     } catch (err) {
@@ -269,22 +295,36 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFileAs: async () => {
-    const { graph, fileName } = get();
+    const { graph, fileName, fileCreatedAtMs, exportApi } = get();
 
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
-      const result = await saveArchcFileAs(graph, fileName, canvasState, aiState);
+      const result = await saveArchcFileAs(graph, fileName, canvasState, aiState, fileCreatedAtMs ?? undefined);
       if (!result) {
         // User cancelled the picker
         return false;
       }
 
+      // After first save, store createdAtMs if not already set
+      const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
       set({
         isDirty: false,
         fileName: result.fileName,
         fileHandle: result.fileHandle ?? null,
+        fileCreatedAtMs: newCreatedAtMs,
       });
+
+      // Auto-generate .summary.md sidecar file
+      if (exportApi) {
+        try {
+          const summaryContent = exportApi.generateSummaryWithMermaid(graph);
+          const summaryFileName = deriveSummaryFileName(result.fileName);
+          saveSummaryMarkdown(summaryContent, summaryFileName);
+        } catch (summaryErr) {
+          console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
+        }
+      }
 
       console.log(`[CoreStore] File saved as: ${result.fileName}`);
       return true;
@@ -311,9 +351,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const buffer = await response.arrayBuffer();
       const data = new Uint8Array(buffer);
 
-      // Decode the binary file, including canvas state and AI state
+      // Decode the binary file, including canvas state, AI state, and header timestamps
       const decoded = await decode(data);
-      const { graph, canvasState, aiState } = protoToGraphFull(decoded);
+      const { graph, canvasState, aiState, createdAtMs } = protoToGraphFull(decoded);
 
       // Derive filename (keep .archc extension for display)
       const fileName = displayName ?? url.split('/').pop() ?? 'Loaded File';
@@ -330,6 +370,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         isDirty: false,
         fileName,
         fileHandle: null,
+        fileCreatedAtMs: createdAtMs ?? null,
         nodeCount: countAllNodes(graph),
         edgeCount: graph.edges.length,
         canUndo: false,
@@ -508,6 +549,25 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     textApi.removeNote(nodeId, noteId);
     const updatedGraph = textApi.getGraph();
     undoManager.snapshot('Remove note', updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Update a note's content.
+   */
+  updateNote: (nodeId, noteId, content) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    textApi.updateNote(nodeId, noteId, content);
+    const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Edit note', updatedGraph);
 
     set({
       graph: updatedGraph,

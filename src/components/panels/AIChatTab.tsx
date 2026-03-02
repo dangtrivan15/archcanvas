@@ -197,7 +197,7 @@ export function AIChatTab() {
 
       let charIndex = 0;
       const interval = setInterval(() => {
-        charIndex += 3; // Reveal 3 chars at a time for speed
+        charIndex += 2; // Reveal 2 chars at a time for visible streaming effect
         if (charIndex >= fullResponse.length) {
           clearInterval(interval);
           // Persist the completed assistant message to the store

@@ -85,7 +85,7 @@ export async function encode(file: IArchCanvasFile): Promise<Uint8Array> {
   if (!header.formatVersion) {
     header.formatVersion = FORMAT_VERSION;
   }
-  if (!header.createdAtMs) {
+  if (!header.createdAtMs || Number(header.createdAtMs) === 0) {
     header.createdAtMs = now;
   }
   header.updatedAtMs = now;

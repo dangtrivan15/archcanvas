@@ -653,10 +653,14 @@ function NotesTab({
 }) {
   const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
   const removeNote = useCoreStore((s) => s.removeNote);
+  const updateNote = useCoreStore((s) => s.updateNote);
   const [isEditing, setIsEditing] = useState(false);
   const [contentError, setContentError] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  // Edit existing note state
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
   // Auto-update relative timestamps every 30 seconds
   const [, setTick] = useState(0);
@@ -723,6 +727,19 @@ function NotesTab({
       handleCancel();
     }
   }, [handleCancel]);
+
+  // Edit existing note handlers
+  const handleStartEdit = useCallback((note: { id: string; content: string }) => {
+    setEditingNoteId(note.id);
+    setEditContent(note.content);
+  }, []);
+
+  const handleSaveEdit = useCallback((noteId: string) => {
+    if (!editContent.trim()) return;
+    updateNote(nodeId, noteId, editContent.trim());
+    setEditingNoteId(null);
+    setEditContent('');
+  }, [editContent, nodeId, updateNote]);
 
   return (
     <div className="space-y-3" data-testid="notes-tab">
@@ -826,45 +843,129 @@ function NotesTab({
         {sortedNotes.length === 0 ? (
           <div className="text-sm text-gray-400 text-center py-4" data-testid="notes-empty-state">No notes yet</div>
         ) : (
-          sortedNotes.map((note) => (
-            <div key={note.id} className="border rounded-lg p-3 bg-white" data-testid={`note-${note.id}`}>
+          sortedNotes.map((note) => {
+            // Compute note card styles based on status
+            const isAccepted = note.status === 'accepted';
+            const isDismissed = note.status === 'dismissed';
+            const cardClassName = [
+              'border rounded-lg p-3',
+              isAccepted ? 'bg-green-50 border-green-300' : '',
+              isDismissed ? 'bg-gray-50 border-gray-200 opacity-60' : '',
+              !isAccepted && !isDismissed ? 'bg-white' : '',
+            ].filter(Boolean).join(' ');
+
+            return (
+            <div key={note.id} className={cardClassName} data-testid={`note-${note.id}`}>
               <div className="flex items-center justify-between mb-1">
-                {note.author.toLowerCase() === 'ai' ? (
-                  <span
-                    className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
-                    data-testid="note-author"
-                    data-author-type="ai"
-                  >
-                    <Bot className="w-3 h-3" />
-                    AI
-                  </span>
-                ) : (
-                  <span className="text-xs font-medium text-gray-700" data-testid="note-author">
-                    {note.author}
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {note.author.toLowerCase() === 'ai' ? (
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
+                      data-testid="note-author"
+                      data-author-type="ai"
+                    >
+                      <Bot className="w-3 h-3" />
+                      AI
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-gray-700" data-testid="note-author">
+                      {note.author}
+                    </span>
+                  )}
+                  {/* Accepted visual indicator */}
+                  {isAccepted && (
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"
+                      data-testid="accepted-indicator"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      Accepted
+                    </span>
+                  )}
+                  {/* Dismissed visual indicator */}
+                  {isDismissed && (
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300"
+                      data-testid="dismissed-indicator"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      Dismissed
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-gray-400" data-testid="note-timestamp" title={new Date(note.timestampMs).toLocaleString()}>
                   {formatRelativeTime(note.timestampMs)}
                 </span>
               </div>
-              <div
-                className="text-sm text-gray-800 prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
-                data-testid="note-content"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
-              />
+              {/* Note content - dimmed text for dismissed notes */}
+              {editingNoteId === note.id ? (
+                <div className="space-y-2 mt-1" data-testid="note-edit-form">
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full text-sm border rounded px-2 py-1.5 bg-white border-gray-200 focus:border-blue-400 focus:outline-none resize-none"
+                    rows={3}
+                    data-testid="note-edit-input"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        setEditingNoteId(null);
+                        setEditContent('');
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSaveEdit(note.id)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                      data-testid="save-edit-button"
+                    >
+                      <Check className="w-3 h-3" />
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setEditingNoteId(null); setEditContent(''); }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      data-testid="cancel-edit-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={`text-sm prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 ${isDismissed ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                  data-testid="note-content"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
+                />
+              )}
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span data-testid="note-id">ID: {note.id}</span>
                   <span data-testid="note-status">Status: {note.status}</span>
                 </div>
-                <button
-                  onClick={() => removeNote(nodeId, note.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
-                  title="Delete note"
-                  data-testid={`delete-note-${note.id}`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {/* Edit button - only show when not editing */}
+                  {editingNoteId !== note.id && (
+                    <button
+                      onClick={() => handleStartEdit(note)}
+                      className="p-1 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors"
+                      title="Edit note"
+                      data-testid={`edit-note-${note.id}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => removeNote(nodeId, note.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
+                    title="Delete note"
+                    data-testid={`delete-note-${note.id}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               {note.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2" data-testid="note-tags">
@@ -904,7 +1005,8 @@ function NotesTab({
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -955,6 +1057,30 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
       case 'config': return <Cog className="w-4 h-4 text-gray-500 shrink-0" />;
       case 'test': return <TestTube2 className="w-4 h-4 text-yellow-500 shrink-0" />;
       default: return <File className="w-4 h-4 text-gray-400 shrink-0" />;
+    }
+  };
+
+  const getRoleBadgeStyle = (refRole: string): string => {
+    switch (refRole) {
+      case 'source': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'api-spec': return 'bg-green-100 text-green-700 border-green-200';
+      case 'schema': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'deployment': return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'config': return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'test': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      default: return 'bg-gray-100 text-gray-500 border-gray-200';
+    }
+  };
+
+  const getRoleBadgeLabel = (refRole: string): string => {
+    switch (refRole) {
+      case 'source': return 'Source';
+      case 'api-spec': return 'API Spec';
+      case 'schema': return 'Schema';
+      case 'deployment': return 'Deployment';
+      case 'config': return 'Config';
+      case 'test': return 'Test';
+      default: return refRole;
     }
   };
 
@@ -1064,7 +1190,12 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
                 <div className="mt-0.5" data-testid="coderef-icon">{getRoleIcon(ref.role)}</div>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-mono truncate" data-testid="coderef-path">{ref.path}</div>
-                  <div className="text-xs text-gray-400" data-testid="coderef-role">{ref.role}</div>
+                  <span
+                    className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border mt-0.5 ${getRoleBadgeStyle(ref.role)}`}
+                    data-testid="coderef-role"
+                  >
+                    {getRoleBadgeLabel(ref.role)}
+                  </span>
                 </div>
                 <div className="mt-0.5 shrink-0" data-testid={`coderef-copy-${i}`}>
                   {copiedIndex === i ? (
