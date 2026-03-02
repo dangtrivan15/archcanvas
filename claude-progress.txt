@@ -1590,3 +1590,49 @@ SESSION: 2026-03-02 - Features #24, #28, #55
 - Canvas interaction features
 - Export API features (PNG, SVG)
 - File persistence features
+
+==================================================
+SESSION: 2026-03-02 - Features #32, #33, #107
+==================================================
+
+## What was accomplished:
+
+### Feature #32: Full-text search finds matches in note content (PASSING)
+- 15 unit tests in test/unit/core/searchNoteContent.test.ts
+- Verified searchGraph() finds note content on nodes (type='note' results)
+- Verified note content on edges contributes to edge results
+- Case-insensitive matching, partial matches
+- Note result has correct id (note ID), parentId (owning node ID)
+- matchContext contains note content excerpt
+- displayName shows "Note on {nodeName}"
+- Score of 5 for note matches
+- Recursive search through child node notes
+- Multiple notes on same node searched independently
+
+### Feature #33: Full-text search finds matches in edge labels (PASSING)
+- 14 unit tests in test/unit/core/searchEdgeLabels.test.ts
+- Created edge with label 'HTTP REST', verified 'REST' and 'HTTP' searches both match
+- Edge results have type='edge', matchContext contains "Label: HTTP REST"
+- Case-insensitive matching, partial substring matching
+- Score of 10 for label matches
+- Multiple edges with different labels tested independently
+- Unlabelled edges correctly not matched for label search
+- displayName uses edge label when available, arrow format when not
+
+### Feature #107: NodeDef browser shows icon, name, description per entry (PASSING)
+- Modified NodeDefBrowser.tsx to show description instead of type key below displayName
+- Each entry now displays: icon (Lucide), displayName (bold), description (gray, truncated)
+- Added data-testid attributes for name and description elements
+- Verified via Playwright screenshot: all 15 entries show icon, name, and description
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+
+## Current completion status:
+- Features passing: 117 of 235 (49.8%)
+- All unit tests passing, zero regressions
+
+## What should be worked on next:
+- More Search and Filter features
+- Canvas interaction features
+- File persistence features
+- Export API features (PNG, SVG)
