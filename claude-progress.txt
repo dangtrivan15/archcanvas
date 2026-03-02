@@ -3446,3 +3446,86 @@ SESSION: 2026-03-02 - Features #187, #188, #189
 - Features passing: ~192 of 235 (~81.7%)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-02 - Feature #199
+==================================================
+
+## What was accomplished:
+
+### Feature #199: Proto deserialization handles truncated messages (PASSING)
+- Verified that truncated .archc files are handled gracefully with proper error reporting
+- Created comprehensive test file: test/unit/store/truncatedProtoMessage.test.ts (14 tests)
+  - Tests truncation to half total length → IntegrityError (checksum mismatch)
+  - Tests truncation of payload only → IntegrityError
+  - Tests header-only file (no payload) → IntegrityError
+  - Tests truncated payload with skipChecksumVerification → CodecError (protobuf decode failure)
+  - Tests all truncation variants below header size → CodecError (file too small)
+  - Tests that all truncation errors are proper Error instances (no crashes)
+  - Tests user-visible error categorization (IntegrityWarning vs ErrorDialog)
+- Created test fixture generator: examples/create-truncated-proto-test.mjs
+  - Generates valid .archc file (465 bytes), truncates to half (232 bytes)
+  - Preserves header (40 bytes) intact but truncates protobuf payload from 425 → 192 bytes
+- Created public/truncated-proto.archc for browser testing via ?load= URL
+
+## Browser verification steps completed:
+1. Loaded truncated-proto.archc via ?load=truncated-proto.archc URL parameter
+2. IntegrityWarningDialog appeared: "File Integrity Warning" with checksum mismatch message ✓
+3. Clicked "Open Anyway" to skip checksum and attempt protobuf decode
+4. ErrorDialog appeared: "Failed to Open File" with message "Failed to decode protobuf payload: index out of range: 181 + 15 > 192" ✓
+5. Error message is meaningful - shows exact byte range error from protobuf decoder ✓
+6. Clicked OK to dismiss → app continued working normally ✓
+7. Navigated to clean page → 0 errors, 0 warnings in console ✓
+8. App fully functional after error handling (not crashed) ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+10. All 14 unit tests passing ✓
+
+## Two-stage error handling flow for truncated files:
+1. Stage 1: Checksum mismatch → IntegrityWarningDialog (Cancel / Open Anyway)
+2. Stage 2: If "Open Anyway" → protobuf decode failure → ErrorDialog (OK)
+3. Result: App remains fully functional, no data corruption
+
+## Current completion status:
+- Features passing: 199 of 235 (84.7%)
+- Zero console errors on clean app load
+- No mock data patterns in production code
+- Committed: 0ca255d
+
+==================================================
+SESSION: 2026-03-03 - Features #196, #197, #198
+==================================================
+
+## What was accomplished:
+
+### Feature #196: Large file operation shows loading indicator (PASSING)
+- Added loading state to uiStore: fileOperationLoading (boolean) + fileOperationMessage (string)
+- Created LoadingOverlay component with Loader2 spinner, centered on semi-transparent backdrop
+- Wrapped all file operations in coreStore with loading state:
+  - openFile: "Opening file..." during decode
+  - saveFile: "Saving file..." during write
+  - saveFileAs: "Saving file..." after user picks location
+  - loadFromUrl: "Loading file..." during fetch+decode
+- Loading state clears on success, error, and user cancellation
+- Added LoadingOverlay to App.tsx rendering
+- Updated test mocks in dirtyStateSave and undoRedoBranchStore tests
+- 10 unit tests: 6 for overlay state management + 4 for save integration
+
+### Feature #197: Missing AI API key shows setup instructions (PASSING)
+- Added amber warning banner to AIChatTab when isAIConfigured() returns false
+- Banner includes AlertTriangle icon, title, 3-step setup instructions, and reassurance message
+- Chat input still functional in placeholder mode (verified by sending a message)
+- Zero console errors
+
+### Feature #198: File System Access API fallback for non-Chrome browsers (PASSING)
+- Verified existing fallback implementation in fileIO.ts:
+  - pickArchcFile: Falls back to hidden input[type=file] when showOpenFilePicker unavailable
+  - saveArchcFileAs: Falls back to Blob download with anchor element when showSaveFilePicker unavailable
+  - In coreStore, saveFile delegates to saveFileAs if no fileHandle exists
+- Created comprehensive test suite (10 tests) for fallback codepaths
+
+## Current completion status:
+- Features passing: 203 of 235 (86.4%)
+- Zero console errors
+- All 1412 tests passing across 98 test files
+- No mock data patterns in production code
+- Commits: ae3f297, 80e72cf, 2e8ab4c
