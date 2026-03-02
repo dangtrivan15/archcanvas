@@ -2423,3 +2423,49 @@ SESSION: 2026-03-02 - Feature #134
 - Features passing: 161 of 235 (68.5%)
 - Zero console errors
 - No code changes required
+
+==================================================
+SESSION: 2026-03-02 - Feature #131
+==================================================
+
+## What was accomplished:
+
+### Feature #131: Dismiss AI suggestion changes note status (PASSING)
+- Verified existing implementation works correctly end-to-end
+- All code was already in place from previous feature implementations:
+  - resolveSuggestion() in coreStore.ts calls textApi.resolveSuggestion()
+  - textApi.resolveSuggestion() calls updateNoteStatus() from graphEngine
+  - updateNoteStatus() updates note status in graph immutably
+  - NodeDetailPanel renders Accept/Dismiss buttons only for status === 'pending'
+  - Dismissed notes styled with opacity-60, bg-gray-50, line-through text
+  - Dismissed indicator badge shows XCircle icon + "Dismissed" text
+- Created suggestion test file (examples/create-suggestion-test-file.mjs)
+  - Generates .archc with 1 regular note + 2 pending AI suggestions
+  - Copied to public/ for URL loading (?load=suggestion-test.archc)
+
+## Verification steps completed:
+1. Loaded suggestion-test.archc via URL parameter
+2. Node showed 1 regular note + 2 pending AI suggestions in badges
+3. Clicked on node to open right panel
+4. Navigated to Notes tab
+5. Verified both pending notes had Accept and Dismiss buttons
+6. Clicked Dismiss on first pending suggestion (note-pending-1)
+7. Verified status changed from "pending" to "dismissed"
+8. Verified Accept/Dismiss buttons removed from dismissed note
+9. Verified "Dismissed" indicator badge appeared (XCircle icon + gray text)
+10. Verified note content visually dimmed (opacity-60) with line-through text
+11. Verified second suggestion still shows pending with Accept/Dismiss buttons
+12. Node badges updated: notes count increased, suggestion count decreased
+13. Console: 0 errors, 0 warnings
+14. Mock data grep: only legitimate globalThis.crypto in codec.ts
+
+## No code changes needed - implementation was already complete
+- graphEngine.ts: updateNoteStatus() function
+- textApi.ts: resolveSuggestion() method
+- coreStore.ts: resolveSuggestion action with undo support
+- NodeDetailPanel.tsx: conditional rendering of buttons and dismissed styling
+
+## Current completion status:
+- Features passing: 161 of 235 (68.5%)
+- Zero console errors
+- Committed: 2cca0f7
