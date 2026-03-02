@@ -1,4 +1,46 @@
 ==================================================
+SESSION: 2026-03-02 - Feature #175
+==================================================
+
+## What was accomplished:
+
+### Feature #175: Apply AI suggestion creates pending note (PASSING)
+- Added explicit "Apply" button on AI assistant messages in the AI Chat tab
+- Previously, suggestions were auto-created after every AI response
+- Now, user has control: click "Apply" to create a pending note from the AI response
+- Changes to AIChatTab.tsx:
+  - Added Sparkles and Check icons from lucide-react
+  - Added appliedMessageIds state (Set<string>) to track which messages have been applied
+  - Added handleApply callback: calls suggest() from coreStore with selectedNodeId
+  - Removed auto-suggestion creation from sendWithAI and sendWithPlaceholder callbacks
+  - Added Apply button UI: purple text with Sparkles icon, transitions to "Applied as note" with Check icon
+  - Apply button only shown on completed assistant messages when a node is selected
+  - Cleared appliedMessageIds when switching nodes
+  - Cleaned up dependency arrays for sendWithAI and sendWithPlaceholder
+
+## Verification steps completed:
+1. Loaded ecommerce.archc with 5 nodes and 4 edges
+2. Selected Order Service node → opened AI Chat tab
+3. Sent message "TEST_175 Suggest improvements"
+4. AI placeholder response streamed character-by-character
+5. After streaming completed, "Apply" button appeared below the assistant message ✓
+6. Clicked Apply → button changed to "Applied as note" with green check icon ✓
+7. Status bar changed from "✓ Saved" to "● Modified" ✓
+8. Switched to Notes tab ✓
+9. Verified new note exists with AI content (first 200 chars of response) ✓
+10. Verified note has "AI" badge (author: 'ai') ✓
+11. Verified note Status: pending ✓
+12. Verified Accept and Dismiss buttons shown (pending status) ✓
+13. Canvas node shows 📝 1 note badge ✓
+14. Console: 0 errors, 0 warnings ✓
+15. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 186 of 235 (79.1%)
+- Zero console errors
+- Committed: 3218ca7
+
+==================================================
 SESSION: 2026-03-02 - Feature #185
 ==================================================
 
