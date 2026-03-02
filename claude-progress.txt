@@ -2257,3 +2257,49 @@ SESSION: 2026-03-02 - Features #97, #149, #174
 - Features passing: ~150 of 235
 - Zero console errors
 - 1112 unit tests across 73 test files, all passing
+
+==================================================
+SESSION: 2026-03-02 - Features #103, #104, #128
+==================================================
+
+## What was accomplished:
+
+### Feature #103: Toolbar displays filename (PASSING)
+- Fixed filename display to show full filename with .archc extension
+- Previously stripped .archc extension from display (openArchcFile, loadFromUrl, saveArchcFileAs)
+- Updated fileIO.ts: removed .replace(/\.archc$/, '') from openArchcFile return
+- Updated fileIO.ts: saveArchcFileAs now strips extension from suggestedName to avoid double .archc
+- Updated fileIO.ts: saveArchcFileAs returns handle.name (full filename) instead of stripped name
+- Updated coreStore.ts: loadFromUrl keeps full filename from URL
+- Verified: toolbar shows "ecommerce.archc" when loading file, "Untitled Architecture" for new file
+- Zero console errors
+
+### Feature #104: Toolbar shows dirty indicator for unsaved changes (PASSING)
+- Already implemented in Toolbar.tsx: asterisk (*) shown when isDirty is true
+- Verified full lifecycle:
+  - Fresh file: no asterisk shown, status bar "✓ Saved"
+  - After adding node: asterisk (*) appears next to filename, status bar "● Modified"
+  - After File > New (discards changes): asterisk removed, back to clean state
+- isDirty toggled by all graph mutations (addNode, removeNode, etc.)
+- isDirty cleared by newFile(), openFile(), saveFile(), saveFileAs()
+- Zero console errors
+
+### Feature #128: NoteCard displays tag badges (PASSING)
+- Added colorful tag badge system with 8 deterministic colors based on tag name hash
+- TAG_COLORS array: blue, purple, green, amber, pink, teal, indigo, orange
+- getTagColor() hashes tag string to pick consistent color
+- Updated note card display: tags render as colored rounded-full pills with border
+- Added data-testid="note-tags" and data-testid="tag-badge-{tag}" for testing
+- Added tag input field to note creation editor:
+  - Enter or comma key adds tags
+  - Backspace on empty input removes last tag
+  - Tags shown as inline colorful badges with remove (×) button
+  - "Press Enter or comma to add tags" helper text
+- Updated handleAddNote to accept tags parameter
+- Verified: created note with tags ['architecture', 'review'], both display as colored badges
+- Zero console errors
+
+## Current completion status:
+- Features passing: 149 of 235 (63.4%)
+- Zero console errors
+- No mock data patterns in production code
