@@ -344,6 +344,28 @@ export function AIChatTab() {
     [handleSend],
   );
 
+  /**
+   * Retry the last failed message. Rebuilds conversation history
+   * (filtering out error messages) and re-sends via AI.
+   */
+  const handleRetry = useCallback(() => {
+    const content = lastFailedContentRef.current;
+    if (!content || isStreaming || !isAIConfigured()) return;
+
+    // Build conversation history from current messages, filtering out error messages
+    const retryHistory: ChatMessage[] = messages
+      .filter((m) => !(m.role === 'assistant' && (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))))
+      .map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+      }));
+
+    setIsStreaming(true);
+    sendWithAI(content, retryHistory);
+  }, [isStreaming, messages, sendWithAI]);
+
   // Cleanup abort controller on unmount
   useEffect(() => {
     return () => {
@@ -463,6 +485,20 @@ export function AIChatTab() {
                         Apply
                       </button>
                     )}
+                  </div>
+                )}
+                {/* Retry button for error messages */}
+                {isError && !isStreaming && lastFailedContentRef.current && (
+                  <div className="mt-1">
+                    <button
+                      onClick={handleRetry}
+                      className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 px-2 py-0.5 rounded transition-colors"
+                      title="Retry sending the last message"
+                      data-testid="ai-retry-button"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Retry
+                    </button>
                   </div>
                 )}
               </div>
