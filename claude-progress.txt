@@ -1419,3 +1419,42 @@ SESSION: 2026-03-02 - Features #136, #138, #23
 - Canvas interaction features
 - Side panel improvements
 - File Save/Save As functionality
+
+==================================================
+SESSION: 2026-03-02 - Features #18, #19, #20
+==================================================
+
+## What was accomplished:
+
+### Feature #18: Graph engine adds note to edge (PASSING)
+- 14 unit tests in test/unit/core/addNoteToEdge.test.ts
+- Verified addNoteToEdge() attaches note to edge with correct author, content, tags
+- Note has valid id, timestampMs, default status='none', empty tags
+- Multiple notes can be added to same edge
+- Immutability verified (original graph unchanged)
+- Non-existent edge handled gracefully
+- Custom tags and pending status preserved
+
+### Feature #19: Graph engine removes note from node (PASSING)
+- 12 unit tests in test/unit/core/removeNoteFromNode.test.ts
+- Create node with 2 notes, remove first → 1 note remains (second one)
+- Remove second → first remains
+- Recursive search: removes from child and grandchild nodes
+- Immutability verified
+- Non-existent note/node handled gracefully
+- Other nodes' notes unaffected
+
+### Feature #20: Graph engine updates note content (PASSING)
+- Added updateNoteContent() function to graphEngine.ts
+- 14 unit tests in test/unit/core/updateNoteContent.test.ts
+- Updates content from 'Original content' to 'Updated content'
+- Preserves note.author, note.id, note.timestampMs, note.tags, note.status
+- Recursive search through child/grandchild nodes
+- Immutability verified
+- Only targeted note updated among multiple notes
+- Non-existent note/node handled gracefully
+
+## Current completion status:
+- Features passing: 103 of 235 (43.8%)
+- Total unit tests: 829 across 53 test files
+- All tests passing, zero regressions
