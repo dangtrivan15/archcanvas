@@ -17,6 +17,7 @@ import { openArchcFile, protoToGraphFull, saveArchcFile, saveArchcFileAs } from 
 import { decode } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
+import { applyElkLayout } from '@/core/layout/elkLayout';
 
 export interface CoreStoreState {
   // State
@@ -60,6 +61,9 @@ export interface CoreStoreState {
   suggest: (params: SuggestParams) => Note | undefined;
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
+
+  // Layout
+  autoLayout: (direction: 'horizontal' | 'vertical', navigationPath?: string[]) => Promise<void>;
 
   // Undo/redo
   undo: () => void;
@@ -539,6 +543,32 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       graph: updatedGraph,
       isDirty: true,
     });
+  },
+
+  /**
+   * Auto-layout nodes using the ELK layered algorithm.
+   */
+  autoLayout: async (direction, navigationPath = []) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager) return;
+
+    undoManager.snapshot('Auto-layout', graph);
+
+    try {
+      const updatedGraph = await applyElkLayout(graph, direction, navigationPath);
+      textApi.setGraph(updatedGraph);
+
+      set({
+        graph: updatedGraph,
+        isDirty: true,
+        canUndo: undoManager.canUndo,
+        canRedo: undoManager.canRedo,
+      });
+
+      console.log('[CoreStore] Auto-layout applied:', direction);
+    } catch (error) {
+      console.error('[CoreStore] Auto-layout failed:', error);
+    }
   },
 
   /**
