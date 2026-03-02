@@ -324,7 +324,13 @@ function CanvasInner() {
         proOptions={{ hideAttribution: true }}
         className={`bg-gray-50 ${placementMode ? 'cursor-crosshair' : ''}`}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={20}
+          size={1.5}
+          color="#cbd5e1"
+          data-testid="canvas-background-grid"
+        />
         <Controls position="bottom-right" />
         <MiniMap
           position="bottom-left"
