@@ -36,6 +36,13 @@ export interface ErrorDialogInfo {
   message: string;
 }
 
+export interface IntegrityWarningDialogInfo {
+  /** Warning message about the integrity issue */
+  message: string;
+  /** Callback when user chooses to open the file anyway */
+  onProceed: () => void;
+}
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
@@ -58,9 +65,17 @@ export interface UIStoreState {
   errorDialogOpen: boolean;
   errorDialogInfo: ErrorDialogInfo | null;
 
+  // Integrity warning dialog (checksum mismatch - user can proceed or cancel)
+  integrityWarningDialogOpen: boolean;
+  integrityWarningDialogInfo: IntegrityWarningDialogInfo | null;
+
   // Placement mode (click-to-place node on canvas)
   placementMode: boolean;
   placementInfo: PlacementModeInfo | null;
+
+  // File operation loading indicator
+  fileOperationLoading: boolean;
+  fileOperationMessage: string | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -85,9 +100,17 @@ export interface UIStoreState {
   openErrorDialog: (info: ErrorDialogInfo) => void;
   closeErrorDialog: () => void;
 
+  // Integrity warning dialog actions
+  openIntegrityWarningDialog: (info: IntegrityWarningDialogInfo) => void;
+  closeIntegrityWarningDialog: () => void;
+
   // Placement mode actions
   enterPlacementMode: (info: PlacementModeInfo) => void;
   exitPlacementMode: () => void;
+
+  // File operation loading actions
+  setFileOperationLoading: (message: string) => void;
+  clearFileOperationLoading: () => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -107,8 +130,14 @@ export const useUIStore = create<UIStoreState>((set) => ({
   errorDialogOpen: false,
   errorDialogInfo: null,
 
+  integrityWarningDialogOpen: false,
+  integrityWarningDialogInfo: null,
+
   placementMode: false,
   placementInfo: null,
+
+  fileOperationLoading: false,
+  fileOperationMessage: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -149,9 +178,21 @@ export const useUIStore = create<UIStoreState>((set) => ({
   closeErrorDialog: () =>
     set({ errorDialogOpen: false, errorDialogInfo: null }),
 
+  openIntegrityWarningDialog: (info) =>
+    set({ integrityWarningDialogOpen: true, integrityWarningDialogInfo: info }),
+
+  closeIntegrityWarningDialog: () =>
+    set({ integrityWarningDialogOpen: false, integrityWarningDialogInfo: null }),
+
   enterPlacementMode: (info) =>
     set({ placementMode: true, placementInfo: info }),
 
   exitPlacementMode: () =>
     set({ placementMode: false, placementInfo: null }),
+
+  setFileOperationLoading: (message) =>
+    set({ fileOperationLoading: true, fileOperationMessage: message }),
+
+  clearFileOperationLoading: () =>
+    set({ fileOperationLoading: false, fileOperationMessage: null }),
 }));

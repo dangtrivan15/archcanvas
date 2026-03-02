@@ -11,6 +11,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/DeleteConfirmation
 import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
 import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
+import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function App() {
@@ -102,6 +103,9 @@ export function App() {
 
       {/* Error Dialog (overlay) */}
       <ErrorDialog />
+
+      {/* Integrity Warning Dialog (overlay) */}
+      <IntegrityWarningDialog />
 
       {/* Status Bar */}
       <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">
