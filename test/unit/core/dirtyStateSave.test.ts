@@ -146,7 +146,7 @@ describe('Feature #154: Dirty state clears after save', () => {
     useCoreStore.setState({ isDirty: false });
 
     useCoreStore.getState().addNote({
-      targetNodeId: node!.id,
+      nodeId: node!.id,
       author: 'tester',
       content: 'Test note',
     });
@@ -270,7 +270,7 @@ describe('Feature #154: Dirty state clears after save', () => {
 
     // Add a note → still dirty
     useCoreStore.getState().addNote({
-      targetNodeId: node!.id,
+      nodeId: node!.id,
       author: 'tester',
       content: 'Test note',
     });

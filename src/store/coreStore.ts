@@ -341,10 +341,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return undefined;
 
-    undoManager.snapshot('Add node', graph);
-
     const node = textApi.addNode(params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Add node', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -365,10 +364,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot('Remove node', graph);
-
     textApi.removeNode(nodeId);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Remove node', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -387,10 +385,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot('Update node', graph);
-
     textApi.updateNode(nodeId, params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Update node', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -407,10 +404,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return undefined;
 
-    undoManager.snapshot('Add edge', graph);
-
     const edge = textApi.addEdge(params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Add edge', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -430,10 +426,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot('Remove edge', graph);
-
     textApi.removeEdge(edgeId);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Remove edge', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -451,10 +446,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return undefined;
 
-    undoManager.snapshot('Add note', graph);
-
     const note = textApi.addNote(params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Add note', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -473,10 +467,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot('Add code reference', graph);
-
     textApi.addCodeRef(params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Add code reference', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -493,10 +486,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return undefined;
 
-    undoManager.snapshot('AI suggestion', graph);
-
     const note = textApi.suggest(params);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('AI suggestion', updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -515,10 +507,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot(`${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`, graph);
-
     textApi.resolveSuggestion(nodeId, noteId, action);
     const updatedGraph = textApi.getGraph();
+    undoManager.snapshot(`${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`, updatedGraph);
 
     set({
       graph: updatedGraph,
@@ -552,11 +543,10 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { textApi, undoManager, graph } = get();
     if (!textApi || !undoManager) return;
 
-    undoManager.snapshot('Auto-layout', graph);
-
     try {
       const updatedGraph = await applyElkLayout(graph, direction, navigationPath);
       textApi.setGraph(updatedGraph);
+      undoManager.snapshot('Auto-layout', updatedGraph);
 
       set({
         graph: updatedGraph,
