@@ -90,6 +90,9 @@ export interface UIStoreState {
   // Keyboard shortcuts help dialog
   shortcutsHelpOpen: boolean;
 
+  // Command palette
+  commandPaletteOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
@@ -138,6 +141,11 @@ export interface UIStoreState {
   closeShortcutsHelp: () => void;
   toggleShortcutsHelp: () => void;
 
+  // Command palette actions
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  toggleCommandPalette: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -173,6 +181,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   placementInfo: null,
 
   shortcutsHelpOpen: false,
+
+  commandPaletteOpen: false,
 
   fileOperationLoading: false,
   fileOperationMessage: null,
@@ -245,6 +255,15 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   toggleShortcutsHelp: () =>
     set((s) => ({ shortcutsHelpOpen: !s.shortcutsHelpOpen })),
+
+  openCommandPalette: () =>
+    set({ commandPaletteOpen: true }),
+
+  closeCommandPalette: () =>
+    set({ commandPaletteOpen: false }),
+
+  toggleCommandPalette: () =>
+    set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),

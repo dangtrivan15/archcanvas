@@ -84,6 +84,13 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
 
   // === Canvas ===
   {
+    id: 'command-palette',
+    category: 'Canvas',
+    description: 'Open command palette',
+    macKeys: '⌘ K',
+    winKeys: 'Ctrl+K',
+  },
+  {
     id: 'deselect',
     category: 'Canvas',
     description: 'Deselect / close panel / cancel placement',
