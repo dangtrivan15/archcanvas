@@ -19,6 +19,7 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAIStore } from '@/store/aiStore';
 import { applyElkLayout } from '@/core/layout/elkLayout';
+import { generateId } from '@/utils/idGenerator';
 
 export interface CoreStoreState {
   // State
@@ -71,6 +72,7 @@ export interface CoreStoreState {
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   updateNodeColor: (nodeId: string, color: string | undefined) => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
+  duplicateSelection: (nodeIds: string[]) => string[];
 
   // Layout
   autoLayout: (direction: 'horizontal' | 'vertical', navigationPath?: string[]) => Promise<void>;
@@ -858,6 +860,92 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       graph: updatedGraph,
       isDirty: true,
     });
+  },
+
+  /**
+   * Duplicate selected node(s). Returns array of newly created node IDs.
+   * - Single node: deep clone with new ID, offset +50px, ' (copy)' suffix
+   * - Multi-node: preserve relative positions, duplicate internal edges
+   */
+  duplicateSelection: (nodeIds) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager || nodeIds.length === 0) return [];
+
+    const OFFSET = 50;
+    const nodeIdSet = new Set(nodeIds);
+
+    // Find all source nodes (recursive search)
+    function findNode(nodes: ArchNode[], id: string): ArchNode | undefined {
+      for (const node of nodes) {
+        if (node.id === id) return node;
+        if (node.children.length > 0) {
+          const found = findNode(node.children, id);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    }
+
+    const sourceNodes: ArchNode[] = [];
+    for (const id of nodeIds) {
+      const node = findNode(graph.nodes, id);
+      if (node) sourceNodes.push(node);
+    }
+    if (sourceNodes.length === 0) return [];
+
+    // Map old IDs to new IDs for edge rewiring
+    const idMap = new Map<string, string>();
+    const newNodeIds: string[] = [];
+
+    // Create duplicates
+    for (const node of sourceNodes) {
+      const newNode = textApi.addNode({
+        type: node.type,
+        displayName: `${node.displayName} (copy)`,
+        position: {
+          x: node.position.x + OFFSET,
+          y: node.position.y + OFFSET,
+        },
+        args: { ...node.args },
+      });
+      if (newNode) {
+        idMap.set(node.id, newNode.id);
+        newNodeIds.push(newNode.id);
+      }
+    }
+
+    // Duplicate internal edges (edges where both endpoints are in the selection)
+    if (nodeIds.length > 1) {
+      for (const edge of graph.edges) {
+        if (nodeIdSet.has(edge.fromNode) && nodeIdSet.has(edge.toNode)) {
+          const newFromId = idMap.get(edge.fromNode);
+          const newToId = idMap.get(edge.toNode);
+          if (newFromId && newToId) {
+            textApi.addEdge({
+              fromNode: newFromId,
+              toNode: newToId,
+              type: edge.type,
+              label: edge.label,
+            });
+          }
+        }
+      }
+    }
+
+    const updatedGraph = textApi.getGraph();
+    const count = newNodeIds.length;
+    undoManager.snapshot(`Duplicate ${count} node${count === 1 ? '' : 's'}`, updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      nodeCount: countAllNodes(updatedGraph),
+      edgeCount: updatedGraph.edges.length,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+
+    return newNodeIds;
   },
 
   /**

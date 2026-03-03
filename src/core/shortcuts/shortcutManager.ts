@@ -57,6 +57,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'edit:redo', label: 'Redo', category: 'Edit', defaultBinding: 'mod+shift+z' },
   { id: 'edit:redo-alt', label: 'Redo (Alt)', category: 'Edit', defaultBinding: 'mod+y' },
   { id: 'edit:delete', label: 'Delete Node', category: 'Edit', defaultBinding: 'delete' },
+  { id: 'edit:duplicate', label: 'Duplicate', category: 'Edit', defaultBinding: 'mod+d' },
   { id: 'node:rename', label: 'Quick Rename', category: 'Edit', defaultBinding: 'f2' },
 
   // Selection

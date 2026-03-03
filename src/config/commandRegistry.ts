@@ -136,6 +136,39 @@ export function getStaticCommands(): Command[] {
       isEnabled: () => useCanvasStore.getState().selectedNodeId !== null,
     },
 
+    {
+      id: 'edit:duplicate',
+      label: 'Duplicate Selected',
+      category: 'Edit',
+      shortcut: shortcut('mod+d'),
+      keywords: ['duplicate', 'copy', 'clone', 'replicate'],
+      iconName: 'Copy',
+      execute: () => {
+        const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } = useCanvasStore.getState();
+        const { duplicateSelection } = useCoreStore.getState();
+
+        let nodeIds: string[] = [];
+        if (selectedNodeIds.length > 0) {
+          nodeIds = selectedNodeIds;
+        } else if (selectedNodeId) {
+          nodeIds = [selectedNodeId];
+        }
+
+        if (nodeIds.length > 0) {
+          const newIds = duplicateSelection(nodeIds);
+          if (newIds.length === 1) {
+            selectNode(newIds[0]!);
+          } else if (newIds.length > 1) {
+            selectNodes(newIds);
+          }
+        }
+      },
+      isEnabled: () => {
+        const { selectedNodeId, selectedNodeIds } = useCanvasStore.getState();
+        return selectedNodeIds.length > 0 || selectedNodeId !== null;
+      },
+    },
+
     // === View ===
     {
       id: 'view:toggle-left-panel',
