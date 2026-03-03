@@ -14,6 +14,7 @@ import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -32,6 +33,9 @@ export function App() {
 
   // Global keyboard shortcuts (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O, Ctrl+Z, Ctrl+Shift+Z)
   useKeyboardShortcuts();
+
+  // Responsive layout: auto-close panels when window is narrow
+  useResponsiveLayout();
 
   // Auto-open right panel when a node or edge is selected
   useEffect(() => {
@@ -73,21 +77,21 @@ export function App() {
 
       {/* Main content area: left panel, canvas, right panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - NodeDef Browser */}
+        {/* Left Panel - NodeDef Browser (shrinkable with min width) */}
         {leftPanelOpen && (
-          <aside className="w-60 border-r overflow-y-auto shrink-0 bg-white" data-testid="left-panel">
+          <aside className="w-60 min-w-[180px] border-r overflow-y-auto shrink bg-white" data-testid="left-panel">
             <NodeDefBrowser />
           </aside>
         )}
 
-        {/* Center - Canvas */}
-        <main className="flex-1 relative">
+        {/* Center - Canvas (always gets minimum usable space) */}
+        <main className="flex-1 min-w-[200px] relative">
           <Canvas />
         </main>
 
-        {/* Right Panel - Node/Edge Detail */}
+        {/* Right Panel - Node/Edge Detail (shrinkable with min width) */}
         {rightPanelOpen && (
-          <aside className="w-80 border-l overflow-y-auto shrink-0 bg-white" data-testid="right-panel">
+          <aside className="w-80 min-w-[220px] border-l overflow-y-auto shrink bg-white" data-testid="right-panel">
             {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
           </aside>
         )}
