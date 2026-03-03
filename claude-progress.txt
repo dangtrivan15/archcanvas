@@ -1,4 +1,59 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #214
+==================================================
+
+## What was accomplished:
+
+### Feature #214: Double-click Add Note doesn't create duplicate notes (PASSING)
+- Added useRef-based savingNoteRef guard in NotesTab component (NodeDetailPanel.tsx)
+- The guard prevents handleSave from executing twice on rapid double-click:
+  - First Save: sets savingNoteRef.current = true, calls onAddNote, closes editor
+  - Second Save: savingNoteRef.current is true → returns immediately (no duplicate)
+- Guard lifecycle:
+  - Resets to false on handleOpenEditor (new editor session)
+  - Resets to false on handleCancel (so next note creation works)
+  - Stays true after save until editor opens again (prevents race condition)
+- Also added useRef import to the file's React import line
+
+## Test file: test/unit/ui/doubleClickAddNote.test.ts (27 tests, all passing)
+1. Add Note button opens exactly one editor (4 tests)
+   - Single click, rapid double-click, five rapid clicks, button hidden while editing
+2. Save button creates exactly one note (6 tests)
+   - Single Save, double-click Save, five rapid Saves, second Save returns false
+   - Empty content doesn't trigger guard (allows retry), whitespace-only validation
+3. Guard resets for subsequent note creation (3 tests)
+   - After Save + new editor, three sequential notes, cancel + new note
+4. Editor state management (5 tests)
+   - Save closes editor, cancel closes editor, ref starts false, becomes true after save, resets on open
+5. Tags handling with idempotent save (2 tests)
+   - Tags included in call, double-click with tags creates one note
+6. Store-level addNote (3 tests)
+   - TextApi creates one note, two calls create two, UI guard prevents at component level
+7. Complete workflow (4 tests)
+   - Full workflow single note, rapid double-click one note, tags workflow, sequential notes
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) ✓
+2. Clicked Order Service node → right panel opened ✓
+3. Clicked Notes tab → "No notes yet" + Add Note button ✓
+4. Clicked Add Note → single editor opened (Author, Content, Tags, Save/Cancel) ✓
+5. Typed "TEST_214_IDEMPOTENT: This note tests double-click protection" ✓
+6. Clicked Save → exactly ONE note created, editor closed, badge "📝 1" on node ✓
+7. Deleted test note → "No notes yet" again ✓
+8. Clicked Add Note again → editor opened normally (guard reset) ✓
+9. Typed "DOUBLE_CLICK_TEST_214: Verifying only one note is created" ✓
+10. Clicked Save → exactly ONE note created ✓
+11. Console: 0 errors, 0 warnings ✓
+12. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 215 of 235 (91.5%)
+- All 1638 tests passing across 110 test files (27 new tests)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 0b9edb7
+
+==================================================
 SESSION: 2026-03-03 - Feature #215
 ==================================================
 
