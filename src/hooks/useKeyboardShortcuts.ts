@@ -147,11 +147,8 @@ export function useKeyboardShortcuts() {
       }
 
       // ── Standard ShortcutManager matching ──
-      console.log('[KeyboardShortcuts] key:', key, 'ctrl:', e.ctrlKey, 'meta:', e.metaKey, 'shift:', e.shiftKey);
       const manager = getShortcutManager();
       const actionId = manager.matchEvent(e);
-
-      console.log('[KeyboardShortcuts] matched actionId:', actionId);
       if (!actionId) return;
 
       // Filter mode-prefixed actions by current mode
@@ -320,26 +317,17 @@ export function useKeyboardShortcuts() {
             const { selectedEdgeId } = useCanvasStore.getState();
             const { showToast } = useUIStore.getState();
 
-            console.log('[edge:cycle-type] selectedEdgeId:', selectedEdgeId, 'edgeCount:', graph.edges.length);
             if (!selectedEdgeId) break;
 
             const edge = graph.edges.find((ed) => ed.id === selectedEdgeId);
-            if (!edge) {
-              console.log('[edge:cycle-type] Edge NOT FOUND in graph.edges');
-              break;
-            }
+            if (!edge) break;
 
             const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
             const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
             const currentIdx = types.indexOf(edge.type);
             const nextType = types[(currentIdx + 1) % types.length]!;
 
-            console.log('[edge:cycle-type] currentType:', edge.type, 'currentIdx:', currentIdx, 'nextType:', nextType);
             updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
-            // Verify the graph was actually updated
-            const afterGraph = useCoreStore.getState().graph;
-            const afterEdge = afterGraph.edges.find((ed) => ed.id === selectedEdgeId);
-            console.log('[edge:cycle-type] AFTER update - edge type:', afterEdge?.type, 'graph ref changed:', afterGraph !== graph);
             showToast(`Changed to ${typeLabels[nextType]}`);
           }
           break;
