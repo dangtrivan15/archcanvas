@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { RightPanelTab } from '@/utils/constants';
+import { CanvasMode, isValidTransition } from '@/core/input/canvasMode';
 
 export interface DeleteDialogInfo {
   nodeId: string;
@@ -107,6 +108,10 @@ export interface UIStoreState {
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
 
+  // Vim-style canvas mode (Normal / Connect / Edit)
+  canvasMode: CanvasMode;
+  previousCanvasMode: CanvasMode;
+
   // Actions
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -167,6 +172,11 @@ export interface UIStoreState {
   // Autosave actions
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
+
+  // Canvas mode actions
+  enterMode: (mode: CanvasMode) => void;
+  exitToNormal: () => void;
+  getCanvasMode: () => CanvasMode;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -207,6 +217,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
+
+  canvasMode: CanvasMode.Normal,
+  previousCanvasMode: CanvasMode.Normal,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -306,4 +319,21 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setAutosaveStatusMessage: (message) =>
     set({ autosaveStatusMessage: message }),
+
+  enterMode: (mode) =>
+    set((s) => {
+      if (!isValidTransition(s.canvasMode, mode)) {
+        console.warn(`[CanvasMode] Invalid transition: ${s.canvasMode} → ${mode}`);
+        return {};
+      }
+      return { canvasMode: mode, previousCanvasMode: s.canvasMode };
+    }),
+
+  exitToNormal: () =>
+    set((s) => ({
+      canvasMode: CanvasMode.Normal,
+      previousCanvasMode: s.canvasMode,
+    })),
+
+  getCanvasMode: () => useUIStore.getState().canvasMode,
 }));

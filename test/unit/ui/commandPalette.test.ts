@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getStaticCommands,
   getNodeCommands,
+  getNodeCreationCommands,
   getAllCommands,
   searchCommands,
   type Command,
@@ -140,14 +141,15 @@ describe('Command Registry', () => {
   });
 
   describe('getAllCommands', () => {
-    it('combines static and node commands', () => {
+    it('combines static, node creation, and node navigation commands', () => {
       const textApi = useCoreStore.getState().textApi!;
       textApi.addNode({ type: 'compute/service', displayName: 'Node1' });
 
       const all = getAllCommands();
       const staticCount = getStaticCommands().length;
+      const creationCount = getNodeCreationCommands().length;
       const nodeCount = getNodeCommands().length;
-      expect(all.length).toBe(staticCount + nodeCount);
+      expect(all.length).toBe(staticCount + creationCount + nodeCount);
     });
   });
 });
