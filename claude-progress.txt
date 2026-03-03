@@ -1,4 +1,48 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #209
+==================================================
+
+## What was accomplished:
+
+### Feature #209: Keyboard shortcut Ctrl+Z triggers undo (PASSING)
+- Verified existing Ctrl+Z/Ctrl+Shift+Z keyboard shortcut implementation works correctly
+- All functionality was already in place:
+  - useKeyboardShortcuts.ts handles Ctrl+Z → undo(), Ctrl+Shift+Z → redo(), Ctrl+Y → redo()
+  - UndoManager class in undoManager.ts manages snapshot-based undo/redo history
+  - All mutations (addNode, removeNode, addEdge, etc.) properly snapshot graph state
+  - coreStore.ts exposes undo/redo functions and canUndo/canRedo state
+
+## Browser verification steps completed:
+1. Loaded fresh app (Nodes: 0) ✓
+2. Added Service node via NodeDef browser (Nodes: 1) ✓
+3. Pressed Ctrl+Z → node removed (Nodes: 0) ✓
+4. Pressed Ctrl+Shift+Z → node reappeared (Nodes: 1) ✓
+5. Also verified Ctrl+Y alternative redo shortcut works ✓
+6. Screenshot confirmed Service node visible on canvas after redo ✓
+7. Console: 0 errors, 0 warnings ✓
+8. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Test file: test/unit/ui/keyboardShortcutUndo.test.ts (21 tests, all passing)
+Tests cover:
+- Undo tests (6): add node undo, canUndo/canRedo state, dirty flag, no-op when empty, multiple undos
+- Redo tests (5): redo after undo, canRedo/canUndo state, dirty flag, no-op when empty
+- Keyboard detection (6): Ctrl+Z, Ctrl+Shift+Z, Cmd+Z, Cmd+Shift+Z, Ctrl+Y, preventDefault
+- Edge cases (4): undo-redo-undo cycle, branch behavior, edge undo/redo, plain Z no modifier
+
+## Debug investigation notes:
+- Initial Ctrl+Shift+Z appeared to fail, but was caused by Vite HMR reload resetting state
+- Added debug logging to confirm: keyboard events correctly detected (key: z, ctrl: true, shift: true)
+- Store correctly updated (nodeCount: 1 after redo), but HMR re-initialized engines and reset graph
+- After removing debug logging and doing clean test without file edits, Ctrl+Shift+Z works perfectly
+
+## Current completion status:
+- Features passing: 210 of 235 (89.4%)
+- All 1571 tests passing across 106 test files
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 5ec949f
+
+==================================================
 SESSION: 2026-03-02 - Features #190, #191, #192
 ==================================================
 
