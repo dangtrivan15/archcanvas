@@ -21,8 +21,6 @@ import { countAllNodes } from '@/core/graph/graphQuery';
 import { encode, decode } from '@/core/storage/codec';
 import { graphToProto, protoToGraphFull, decodeArchcData } from '@/core/storage/fileIO';
 import type { ArchGraph } from '@/types/graph';
-import type { IArchCanvasFile } from '@/proto/archcanvas';
-import { FileHeader, ArchCanvasFile } from '@/proto/archcanvas';
 
 // Node types for variety
 const NODE_TYPES = [
@@ -101,24 +99,6 @@ function createMediumArchitecture(nodeCount: number, edgeCount: number): ArchGra
   return graph;
 }
 
-/**
- * Helper: convert graph to proto file for encoding.
- */
-function graphToArchCanvasFile(graph: ArchGraph, createdAtMs?: number): IArchCanvasFile {
-  const architecture = graphToProto(graph);
-  const now = Date.now();
-
-  return {
-    header: FileHeader.create({
-      formatVersion: 1,
-      toolVersion: '0.1.0',
-      createdAtMs: createdAtMs ?? now,
-      updatedAtMs: now,
-    }),
-    architecture,
-  };
-}
-
 describe('File save/load under 2 seconds for medium architecture', () => {
   let graph50: ArchGraph;
 
@@ -169,7 +149,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
   describe('Save operation under 2 seconds', () => {
     it('encode 50-node graph completes under 2 seconds', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const start = performance.now();
       const binary = await encode(file);
       const elapsed = performance.now() - start;
@@ -180,7 +160,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
     });
 
     it('encode produces valid binary format', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const binary = await encode(file);
 
       // Check magic bytes "ARCHC\0"
@@ -202,13 +182,12 @@ describe('File save/load under 2 seconds for medium architecture', () => {
     });
 
     it('encode 50-node graph produces reasonable file size', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const binary = await encode(file);
 
-      // 50 nodes with edges, notes, code refs should be < 50KB
-      expect(binary.length).toBeLessThan(50 * 1024);
-      // But should be > 1KB (not empty)
+      // 50 nodes with edges, notes, code refs should be > 1KB but < 50KB
       expect(binary.length).toBeGreaterThan(1024);
+      expect(binary.length).toBeLessThan(50 * 1024);
     });
 
     it('graphToProto conversion is fast', () => {
@@ -220,7 +199,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
     it('encode 100-node graph still under 2 seconds', async () => {
       const graph100 = createMediumArchitecture(100, 80);
-      const file = graphToArchCanvasFile(graph100);
+      const file = graphToProto(graph100);
       const start = performance.now();
       const binary = await encode(file);
       const elapsed = performance.now() - start;
@@ -238,7 +217,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
     let savedBinary: Uint8Array;
 
     beforeEach(async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       savedBinary = await encode(file);
     });
 
@@ -253,7 +232,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
     it('full load pipeline (decode + proto-to-graph) under 2 seconds', async () => {
       const start = performance.now();
-      const { graph, canvasState } = await decodeArchcData(savedBinary);
+      const { graph } = await decodeArchcData(savedBinary);
       const elapsed = performance.now() - start;
 
       expect(elapsed).toBeLessThan(2000);
@@ -279,8 +258,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
     it('decoded graph preserves node positions', async () => {
       const { graph } = await decodeArchcData(savedBinary);
-      for (let i = 0; i < graph.nodes.length; i++) {
-        const original = graph50.nodes[i];
+      for (const original of graph50.nodes) {
         const decoded = graph.nodes.find((n) => n.displayName === original.displayName);
         expect(decoded).toBeDefined();
         expect(decoded!.position.x).toBe(original.position.x);
@@ -321,13 +299,10 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
     it('decoded graph preserves args', async () => {
       const { graph } = await decodeArchcData(savedBinary);
-      for (const node of graph.nodes) {
-        expect(node.args).toBeDefined();
-        // Original nodes have environment, version, replicas args
-        if (Object.keys(node.args).length > 0) {
-          expect(node.args).toHaveProperty('environment');
-        }
-      }
+      // Find a node that should have args
+      const nodeWithArgs = graph.nodes.find((n) => Object.keys(n.args).length > 0);
+      expect(nodeWithArgs).toBeDefined();
+      expect(nodeWithArgs!.args).toHaveProperty('environment');
     });
   });
 
@@ -335,30 +310,30 @@ describe('File save/load under 2 seconds for medium architecture', () => {
   // 4. Round-trip integrity
   // ========================================================
 
-  describe('Round-trip save→load integrity', () => {
+  describe('Round-trip save to load integrity', () => {
     it('round-trip preserves all 50 nodes', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const binary = await encode(file);
       const { graph } = await decodeArchcData(binary);
       expect(countAllNodes(graph)).toBe(50);
     });
 
     it('round-trip preserves all 40 edges', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const binary = await encode(file);
       const { graph } = await decodeArchcData(binary);
       expect(graph.edges).toHaveLength(40);
     });
 
     it('round-trip preserves architecture name', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
       const binary = await encode(file);
       const { graph } = await decodeArchcData(binary);
       expect(graph.name).toBe('Medium Architecture');
     });
 
     it('complete round-trip under 2 seconds', async () => {
-      const file = graphToArchCanvasFile(graph50);
+      const file = graphToProto(graph50);
 
       const start = performance.now();
       const binary = await encode(file);
@@ -371,12 +346,12 @@ describe('File save/load under 2 seconds for medium architecture', () => {
     });
 
     it('double round-trip preserves data', async () => {
-      // Save → Load → Save → Load
-      const file1 = graphToArchCanvasFile(graph50);
+      // Save -> Load -> Save -> Load
+      const file1 = graphToProto(graph50);
       const binary1 = await encode(file1);
       const { graph: graph1 } = await decodeArchcData(binary1);
 
-      const file2 = graphToArchCanvasFile(graph1);
+      const file2 = graphToProto(graph1);
       const binary2 = await encode(file2);
       const { graph: graph2 } = await decodeArchcData(binary2);
 
@@ -393,7 +368,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
   describe('Scaling to larger architectures', () => {
     it('100-node graph round-trip under 2 seconds', async () => {
       const graph100 = createMediumArchitecture(100, 80);
-      const file = graphToArchCanvasFile(graph100);
+      const file = graphToProto(graph100);
 
       const start = performance.now();
       const binary = await encode(file);
@@ -406,7 +381,7 @@ describe('File save/load under 2 seconds for medium architecture', () => {
 
     it('200-node graph round-trip under 2 seconds', async () => {
       const graph200 = createMediumArchitecture(200, 160);
-      const file = graphToArchCanvasFile(graph200);
+      const file = graphToProto(graph200);
 
       const start = performance.now();
       const binary = await encode(file);
