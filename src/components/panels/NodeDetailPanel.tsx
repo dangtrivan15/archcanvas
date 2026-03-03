@@ -5,7 +5,7 @@
  */
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot } from 'lucide-react';
+import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot, Palette, RotateCcw } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -15,6 +15,7 @@ import type { NodeDef, ArgDef } from '@/types/nodedef';
 import { formatRelativeTime } from '@/utils/formatRelativeTime';
 import { marked } from 'marked';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
+import { NODE_COLOR_PALETTE, getDefaultNodeColor, getEffectiveNodeColor } from '@/utils/nodeColors';
 
 // Configure marked for inline rendering (no wrapping <p> tags for short content)
 const markedInline = new marked.Renderer();
@@ -236,6 +237,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
         </div>
       </div>
 
+      {/* Node Color Picker */}
+      <NodeColorPicker node={node} />
+
       {/* NodeDef Args - editable display from nodedef schema */}
       {nodeDef && nodeDef.spec.args.length > 0 && (
         <div>
@@ -420,6 +424,104 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
             : <span>{node.codeRefs.length} reference(s)</span>
           }
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * NodeColorPicker - allows users to pick a custom color for a node.
+ * Shows current effective color (custom or type-default) and a palette of predefined colors.
+ * Includes a "Reset to default" button to clear custom color.
+ */
+function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
+  const updateNodeColor = useCoreStore((s) => s.updateNodeColor);
+  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const customColor = node.position.color;
+  const defaultColor = getDefaultNodeColor(node.type);
+  const effectiveColor = getEffectiveNodeColor(customColor, node.type);
+  const hasCustomColor = !!customColor && customColor.trim() !== '';
+
+  const handleColorSelect = useCallback((color: string) => {
+    if (!selectedNodeId) return;
+    updateNodeColor(selectedNodeId, color);
+  }, [selectedNodeId, updateNodeColor]);
+
+  const handleResetColor = useCallback(() => {
+    if (!selectedNodeId) return;
+    updateNodeColor(selectedNodeId, undefined);
+  }, [selectedNodeId, updateNodeColor]);
+
+  return (
+    <div data-testid="node-color-picker">
+      <label className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1">
+        <Palette className="w-3 h-3" />
+        Color
+      </label>
+      <div className="mt-1">
+        <div className="flex items-center gap-2">
+          {/* Current color swatch + toggle button */}
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 px-2 py-1 text-xs border border-gray-200 rounded hover:border-gray-300 bg-white"
+            data-testid="color-picker-toggle"
+            aria-label="Pick node color"
+          >
+            <span
+              className="w-4 h-4 rounded border border-gray-300"
+              style={{ backgroundColor: effectiveColor }}
+              data-testid="current-color-swatch"
+            />
+            <span className="font-mono text-gray-600">{effectiveColor}</span>
+            {hasCustomColor && (
+              <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-600 font-medium">custom</span>
+            )}
+          </button>
+
+          {/* Reset to default button */}
+          {hasCustomColor && (
+            <button
+              type="button"
+              onClick={handleResetColor}
+              className="flex items-center gap-1 px-1.5 py-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded hover:border-gray-300"
+              data-testid="color-reset-button"
+              title="Reset to default type color"
+              aria-label="Reset to default color"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Color palette (expandable) */}
+        {isOpen && (
+          <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200" data-testid="color-palette">
+            <div className="text-[10px] text-gray-500 mb-1.5">
+              Type default: <span className="font-mono">{defaultColor}</span>
+            </div>
+            <div className="grid grid-cols-6 gap-1.5">
+              {NODE_COLOR_PALETTE.map((paletteColor) => (
+                <button
+                  key={paletteColor.value}
+                  type="button"
+                  onClick={() => handleColorSelect(paletteColor.value)}
+                  className={`w-6 h-6 rounded border-2 transition-all hover:scale-110 ${
+                    effectiveColor === paletteColor.value
+                      ? 'border-gray-800 ring-1 ring-gray-400'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}
+                  style={{ backgroundColor: paletteColor.value }}
+                  title={paletteColor.name}
+                  aria-label={`Set color to ${paletteColor.name}`}
+                  data-testid={`color-option-${paletteColor.name.toLowerCase()}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

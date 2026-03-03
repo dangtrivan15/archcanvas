@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, Loader2 } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, Loader2, Check } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -21,6 +21,8 @@ export function FileMenu() {
   const isDirty = useCoreStore((s) => s.isDirty);
   const isSaving = useCoreStore((s) => s.isSaving);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
+  const autosaveOnBlur = useUIStore((s) => s.autosaveOnBlur);
+  const setAutosaveOnBlur = useUIStore((s) => s.setAutosaveOnBlur);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
   // Close on click outside
@@ -209,6 +211,19 @@ export function FileMenu() {
               </div>
             )}
           </div>
+          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <button
+            onClick={() => setAutosaveOnBlur(!autosaveOnBlur)}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            role="menuitemcheckbox"
+            aria-checked={autosaveOnBlur}
+            data-testid="autosave-toggle"
+          >
+            <span className="w-4 h-4 flex items-center justify-center">
+              {autosaveOnBlur && <Check className="w-3.5 h-3.5" />}
+            </span>
+            <span>Autosave on blur</span>
+          </button>
         </div>
       )}
     </div>

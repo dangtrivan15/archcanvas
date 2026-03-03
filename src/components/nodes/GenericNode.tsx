@@ -8,18 +8,24 @@
  * - Outbound ports appear on the right side (source handles)
  * - Each port has a tooltip showing the port name
  * - Falls back to a single in/out handle if no ports are defined
+ *
+ * Color support:
+ * - Each node has a type-based default color (from nodeColors utility)
+ * - Users can override with a custom color (stored in position.color)
+ * - Color is applied as a left accent bar and tinted header background
  */
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
+import { getEffectiveNodeColor, colorToBackground } from '@/utils/nodeColors';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
   ExternalLink,
 } from 'lucide-react';
 
-const iconMap: Record<string, React.ElementType> = {
+export const iconMap: Record<string, React.ElementType> = {
   Server,
   Database,
   HardDrive,
@@ -49,20 +55,56 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   const hasDefinedInboundPorts = inboundPorts.length > 0;
   const hasDefinedOutboundPorts = outboundPorts.length > 0;
 
+  // Compute effective color (custom or type-default)
+  const effectiveColor = useMemo(
+    () => isRef ? '#A855F7' : getEffectiveNodeColor(nodeData.color, nodeData.nodedefType),
+    [nodeData.color, nodeData.nodedefType, isRef],
+  );
+
+  // Compute style objects for color application
+  const headerBgStyle = useMemo(
+    () => ({ backgroundColor: colorToBackground(effectiveColor, 0.1) }),
+    [effectiveColor],
+  );
+
+  const accentBarStyle = useMemo(
+    () => ({ backgroundColor: effectiveColor }),
+    [effectiveColor],
+  );
+
+  const borderStyle = useMemo(
+    () => ({
+      borderColor: selected ? '#3B82F6' : `${effectiveColor}66`,
+    }),
+    [effectiveColor, selected],
+  );
+
   return (
     <div
       className={`
         border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
         transition-shadow relative overflow-hidden
-        ${isRef ? 'bg-purple-50 border-dashed' : 'bg-white'}
-        ${selected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : isRef ? 'border-purple-300 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'}
+        ${isRef ? 'border-dashed' : ''}
+        ${selected ? 'shadow-md ring-2 ring-blue-200' : 'hover:shadow-md'}
       `}
+      style={{
+        ...borderStyle,
+        backgroundColor: isRef ? '#FAF5FF' : '#FFFFFF',
+      }}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
       data-node-type={nodeData.nodedefType}
       data-node-name={nodeData.displayName}
+      data-node-color={effectiveColor}
       data-ref-source={nodeData.refSource || undefined}
     >
+      {/* Color accent bar (left edge) */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l"
+        style={accentBarStyle}
+        data-testid="node-color-accent"
+      />
+
       {/* Inbound port handles (left side) */}
       {hasDefinedInboundPorts ? (
         inboundPorts.map((port, index) => (
@@ -94,9 +136,17 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         />
       )}
 
-      {/* Node header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <Icon className={`w-4 h-4 shrink-0 ${isRef ? 'text-purple-500' : 'text-gray-500'}`} />
+      {/* Node header with tinted background */}
+      <div
+        className="flex items-center gap-2 px-3 py-2 border-b border-gray-100"
+        style={headerBgStyle}
+        data-testid="node-header"
+      >
+        <Icon
+          className="w-4 h-4 shrink-0"
+          style={{ color: effectiveColor }}
+          data-testid="node-icon"
+        />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-gray-900 truncate" data-testid="node-display-name">
             {nodeData.displayName}
