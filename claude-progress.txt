@@ -1,4 +1,61 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #238
+==================================================
+
+## What was accomplished:
+
+### Feature #238: Autosave on Focus Change (PASSING)
+- Created useAutoSaveOnBlur hook (src/hooks/useAutoSaveOnBlur.ts):
+  - Listens for both 'visibilitychange' (tab hidden) and 'blur' (window blur) events
+  - Checks all conditions before saving: autosaveOnBlur enabled, isDirty, !isSaving, fileHandle exists
+  - fileHandle required (can't show file picker when tab is hidden)
+  - Debounce protection (1000ms minimum between autosaves)
+  - Shows "Autosaved" status message in green in status bar for 3 seconds
+  - Cleans up event listeners and timeouts on unmount
+- Added autosave preference state to uiStore.ts:
+  - autosaveOnBlur: boolean (default: true)
+  - autosaveStatusMessage: string | null
+  - setAutosaveOnBlur() and setAutosaveStatusMessage() actions
+- Updated App.tsx:
+  - Calls useAutoSaveOnBlur() hook
+  - Reads autosaveStatusMessage from uiStore
+  - Conditionally renders green "Autosaved" text in status bar
+- Added toggle to FileMenu.tsx:
+  - "Autosave on blur" menuitemcheckbox at bottom of File menu
+  - Shows checkmark when enabled, aria-checked for accessibility
+  - Toggles autosaveOnBlur preference on click
+
+## Test file: test/unit/ui/autoSaveOnBlur.test.ts (56 tests, all passing)
+Categories:
+1. UI Store: autosave preference (5 tests)
+2. Autosave conditions (5 tests)
+3. Status message lifecycle (3 tests)
+4. Hook source code verification (15 tests)
+5. App.tsx integration (6 tests)
+6. FileMenu autosave toggle (8 tests)
+7. Toggle state integration (5 tests)
+8. Debounce logic (5 tests)
+9. Event handling (4 tests)
+
+## Browser verification steps completed:
+1. App loaded with ecommerce.archc (5 nodes, 4 edges) ✓
+2. Status bar: "Nodes: 5 | Edges: 4 | ✓ Saved | Zoom: 96%" ✓
+3. File menu opened → "Autosave on blur" toggle visible with checkmark ✓
+4. Clicked toggle → checkmark removed (disabled) ✓
+5. Reopened menu → toggle unchecked ✓
+6. Re-enabled toggle → checkmark restored ✓
+7. Screenshot captured showing full File menu with autosave toggle ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 236+ of 238
+- All 2245 tests passing across 130 test files (56 new)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 78aa1ff
+
+==================================================
 SESSION: 2026-03-03 - Feature #236
 ==================================================
 
