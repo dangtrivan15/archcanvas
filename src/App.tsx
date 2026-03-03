@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -13,6 +13,7 @@ import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
+import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 
@@ -29,7 +30,19 @@ export function App() {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
+  const leftPanelWidth = useUIStore((s) => s.leftPanelWidth);
+  const rightPanelWidth = useUIStore((s) => s.rightPanelWidth);
+  const setLeftPanelWidth = useUIStore((s) => s.setLeftPanelWidth);
+  const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
+
+  const handleLeftResize = useCallback((delta: number) => {
+    setLeftPanelWidth(leftPanelWidth + delta);
+  }, [leftPanelWidth, setLeftPanelWidth]);
+
+  const handleRightResize = useCallback((delta: number) => {
+    setRightPanelWidth(rightPanelWidth + delta);
+  }, [rightPanelWidth, setRightPanelWidth]);
 
   // Global keyboard shortcuts (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O, Ctrl+Z, Ctrl+Shift+Z)
   useKeyboardShortcuts();
@@ -77,11 +90,18 @@ export function App() {
 
       {/* Main content area: left panel, canvas, right panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - NodeDef Browser (shrinkable with min width) */}
+        {/* Left Panel - NodeDef Browser (draggable width) */}
         {leftPanelOpen && (
-          <aside className="w-60 min-w-[180px] border-r overflow-y-auto shrink bg-white" data-testid="left-panel">
-            <NodeDefBrowser />
-          </aside>
+          <>
+            <aside
+              className="overflow-y-auto shrink-0 bg-white border-r"
+              style={{ width: leftPanelWidth }}
+              data-testid="left-panel"
+            >
+              <NodeDefBrowser />
+            </aside>
+            <ResizeHandle side="left" onResize={handleLeftResize} />
+          </>
         )}
 
         {/* Center - Canvas (always gets minimum usable space) */}
@@ -89,11 +109,18 @@ export function App() {
           <Canvas />
         </main>
 
-        {/* Right Panel - Node/Edge Detail (shrinkable with min width) */}
+        {/* Right Panel - Node/Edge Detail (draggable width) */}
         {rightPanelOpen && (
-          <aside className="w-80 min-w-[220px] border-l overflow-y-auto shrink bg-white" data-testid="right-panel">
-            {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
-          </aside>
+          <>
+            <ResizeHandle side="right" onResize={handleRightResize} />
+            <aside
+              className="overflow-y-auto shrink-0 bg-white border-l"
+              style={{ width: rightPanelWidth }}
+              data-testid="right-panel"
+            >
+              {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
+            </aside>
+          </>
         )}
       </div>
 

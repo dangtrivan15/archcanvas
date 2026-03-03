@@ -43,11 +43,23 @@ export interface IntegrityWarningDialogInfo {
   onProceed: () => void;
 }
 
+/** Default and min/max panel widths in pixels */
+export const LEFT_PANEL_DEFAULT_WIDTH = 240;
+export const LEFT_PANEL_MIN_WIDTH = 180;
+export const LEFT_PANEL_MAX_WIDTH = 400;
+export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
+export const RIGHT_PANEL_MIN_WIDTH = 220;
+export const RIGHT_PANEL_MAX_WIDTH = 500;
+
 export interface UIStoreState {
   // Panel visibility
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
   rightPanelTab: RightPanelTab;
+
+  // Panel widths (in pixels, for drag-resize)
+  leftPanelWidth: number;
+  rightPanelWidth: number;
 
   // Delete confirmation dialog
   deleteDialogOpen: boolean;
@@ -108,6 +120,10 @@ export interface UIStoreState {
   enterPlacementMode: (info: PlacementModeInfo) => void;
   exitPlacementMode: () => void;
 
+  // Panel width actions (for drag-resize)
+  setLeftPanelWidth: (width: number) => void;
+  setRightPanelWidth: (width: number) => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -117,6 +133,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   leftPanelOpen: true,
   rightPanelOpen: false,
   rightPanelTab: 'properties',
+  leftPanelWidth: LEFT_PANEL_DEFAULT_WIDTH,
+  rightPanelWidth: RIGHT_PANEL_DEFAULT_WIDTH,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -189,6 +207,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   exitPlacementMode: () =>
     set({ placementMode: false, placementInfo: null }),
+
+  setLeftPanelWidth: (width) =>
+    set({ leftPanelWidth: Math.max(LEFT_PANEL_MIN_WIDTH, Math.min(LEFT_PANEL_MAX_WIDTH, width)) }),
+
+  setRightPanelWidth: (width) =>
+    set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)) }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
