@@ -1,17 +1,20 @@
 /**
  * Main Toolbar component - renders at the top of the app shell.
- * Contains File menu, Add Node button, Layout menu, and filename display.
+ * Contains File menu, Add Node button, Layout menu, filename display, and help button.
  */
 
+import { Keyboard } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
 import { ConnectNodesButton } from './ConnectNodesButton';
 import { LayoutMenu } from './LayoutMenu';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
 
 export function Toolbar() {
   const fileName = useCoreStore((s) => s.fileName);
   const isDirty = useCoreStore((s) => s.isDirty);
+  const openShortcutsHelp = useUIStore((s) => s.openShortcutsHelp);
 
   return (
     <header
@@ -53,6 +56,21 @@ export function Toolbar() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Help button - keyboard shortcuts */}
+      <button
+        type="button"
+        onClick={openShortcutsHelp}
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+        title="Keyboard shortcuts (?)"
+        aria-label="Keyboard shortcuts"
+        data-testid="shortcuts-help-button"
+      >
+        <Keyboard className="w-4 h-4" />
+        <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium bg-gray-100 border border-gray-200 rounded">
+          ?
+        </kbd>
+      </button>
     </header>
   );
 }
