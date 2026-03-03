@@ -4,7 +4,7 @@
  * Used to verify node data (id, type, displayName, args, notes, codeRefs, children).
  */
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -663,6 +663,8 @@ function NotesTab({
   const [contentError, setContentError] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  // Guard against double-click creating duplicate notes
+  const savingNoteRef = useRef(false);
   // Edit existing note state
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -702,10 +704,13 @@ function NotesTab({
   }, [tagInput, tags, handleAddTag]);
 
   const handleSave = useCallback(() => {
+    // Guard against double-click creating duplicate notes
+    if (savingNoteRef.current) return;
     if (!noteContent.trim()) {
       setContentError('Note content cannot be empty');
       return;
     }
+    savingNoteRef.current = true;
     setContentError('');
     onAddNote(tags.length > 0 ? tags : undefined);
     setIsEditing(false);
@@ -714,6 +719,7 @@ function NotesTab({
   }, [noteContent, onAddNote, tags]);
 
   const handleCancel = useCallback(() => {
+    savingNoteRef.current = false; // Reset guard on cancel
     setIsEditing(false);
     onNoteContentChange('');
     setContentError('');
@@ -722,6 +728,7 @@ function NotesTab({
   }, [onNoteContentChange]);
 
   const handleOpenEditor = useCallback(() => {
+    savingNoteRef.current = false; // Reset guard for new editor session
     setIsEditing(true);
     setContentError('');
   }, []);
