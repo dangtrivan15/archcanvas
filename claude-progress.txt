@@ -4224,3 +4224,57 @@ SESSION: 2026-03-03 - Feature #211
 - Zero console errors
 - No mock data patterns in production code
 - Committed: 5434cf0
+
+==================================================
+SESSION: 2026-03-03 - Features #216, #217, #218
+==================================================
+
+## What was accomplished:
+
+### Feature #216: Three-panel layout responds to window resize (PASSING)
+- Created useResponsiveLayout hook (src/hooks/useResponsiveLayout.ts):
+  - Monitors window resize events
+  - NARROW_BREAKPOINT (768px): auto-closes left panel
+  - VERY_NARROW_BREAKPOINT (640px): auto-closes both panels
+  - No auto-reopen on grow (user controls panel visibility)
+- Updated App.tsx panel layout:
+  - Panels now use shrink + min-w instead of shrink-0
+  - Left panel: min-w-[180px], Right panel: min-w-[220px]
+  - Canvas: min-w-[200px] for usability
+- 20 unit tests all passing
+- Browser verified: panels visible at normal width, auto-collapse at narrow width
+- Committed: b0de499
+
+### Feature #217: Panel resize handles are draggable (PASSING)
+- Created ResizeHandle component (src/components/shared/ResizeHandle.tsx):
+  - Draggable divider with mousedown/mousemove/mouseup events
+  - col-resize cursor, blue highlight on hover/active
+  - aria-label and role="separator" for accessibility
+  - Attaches to document for drag beyond handle bounds
+  - Prevents text selection during drag
+- Added panel width state to uiStore:
+  - leftPanelWidth (default 240, min 180, max 400)
+  - rightPanelWidth (default 320, min 220, max 500)
+  - setLeftPanelWidth/setRightPanelWidth with clamping
+- Updated App.tsx to use dynamic style widths and ResizeHandle components
+- 24 unit tests for panel width state management
+- Browser verified: drag works, both handles visible, panels resize correctly
+- Committed: b51fb1c
+
+### Feature #218: Left panel collapses fully (PASSING)
+- Added LEFT_PANEL_COLLAPSE_THRESHOLD (120px) to uiStore
+- Snap-to-collapse: dragging left resize handle below threshold collapses panel
+- Collapsed expand strip: thin button with ChevronRight icon on left edge
+  - data-testid="left-panel-expand"
+  - Click to restore panel with preserved width
+- Panel width preserved across collapse/expand cycles
+- X button collapse + expand strip restore flow verified
+- 17 unit tests all passing
+- Browser verified: collapse via X → canvas fills space → expand strip appears → click to restore
+- Changes bundled into commit 204c3af by concurrent agent
+
+## Current completion status:
+- Features passing: 220+ of 235 (93.6%+)
+- Zero console errors
+- No mock data patterns in production code
+- All my tests (61 new across 3 files) passing
