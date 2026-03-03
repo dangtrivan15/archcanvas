@@ -230,21 +230,22 @@ describe('Quick Rename (F2) - Command Palette', () => {
     expect(renameCmd.isEnabled!()).toBe(true);
   });
 
-  it('Rename Node command execute sets pendingRenameNodeId and opens panel', () => {
+  it('Rename Node command execute activates inline edit on the canvas node', () => {
     const testNode = createTestNode();
     useCoreStore.setState({
       graph: { ...createEmptyGraph(), nodes: [testNode] },
     });
     useCanvasStore.setState({ selectedNodeId: 'node-1' });
-    useUIStore.setState({ rightPanelOpen: false });
+    useUIStore.setState({ rightPanelOpen: false, inlineEditNodeId: null });
 
     const commands = getStaticCommands();
     const renameCmd = commands.find((c) => c.id === 'node:rename')!;
     renameCmd.execute();
 
-    expect(useUIStore.getState().pendingRenameNodeId).toBe('node-1');
-    expect(useUIStore.getState().rightPanelOpen).toBe(true);
-    expect(useUIStore.getState().rightPanelTab).toBe('properties');
+    // Now uses inline edit directly on the node card (Feature #259)
+    expect(useUIStore.getState().inlineEditNodeId).toBe('node-1');
+    // Should NOT open right panel for inline edit
+    expect(useUIStore.getState().rightPanelOpen).toBe(false);
   });
 
   it('Rename Node command has Pencil icon', () => {

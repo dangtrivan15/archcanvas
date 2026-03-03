@@ -235,8 +235,8 @@ export function useKeyboardShortcuts() {
           {
             const selectedNodeId = useCanvasStore.getState().selectedNodeId;
             if (selectedNodeId) {
-              useUIStore.getState().setPendingRenameNodeId(selectedNodeId);
-              useUIStore.getState().openRightPanel('properties');
+              // Activate inline edit on the canvas node (F2 quick-edit)
+              useUIStore.getState().setInlineEditNodeId(selectedNodeId);
             }
           }
           break;
@@ -295,6 +295,30 @@ export function useKeyboardShortcuts() {
           if (inInput) return;
           e.preventDefault();
           toggleQuickSearch();
+          break;
+
+        // Edge Type Cycling (Normal mode only, not in text input)
+        case 'edge:cycle-type':
+          if (inInput || currentMode !== CanvasMode.Normal) return;
+          e.preventDefault();
+          {
+            const { graph, updateEdge } = useCoreStore.getState();
+            const { selectedEdgeId } = useCanvasStore.getState();
+            const { showToast } = useUIStore.getState();
+
+            if (!selectedEdgeId) break;
+
+            const edge = graph.edges.find((ed) => ed.id === selectedEdgeId);
+            if (!edge) break;
+
+            const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
+            const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+            const currentIdx = types.indexOf(edge.type);
+            const nextType = types[(currentIdx + 1) % types.length]!;
+
+            updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+            showToast(`Changed to ${typeLabels[nextType]}`);
+          }
           break;
 
         // Node Quick Create hotkeys (Normal mode only, not in text input)
