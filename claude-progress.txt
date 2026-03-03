@@ -1,4 +1,64 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #215
+==================================================
+
+## What was accomplished:
+
+### Feature #215: Save button disabled during save operation (PASSING)
+- Subscribed to `isSaving` state from coreStore in FileMenu component
+- Save and Save As buttons now:
+  - Are disabled (HTML disabled attribute) when `isSaving` is true
+  - Show opacity-50 and cursor-not-allowed CSS classes when saving
+  - Display Loader2 spinning icon instead of Save icon when saving
+  - Change text to "Saving..." during save operation
+  - Re-enable and restore normal appearance after save completes or fails
+- Imported Loader2 icon from lucide-react for loading spinner
+- Added data-testid attributes to Save and Save As buttons for testing
+
+## Test file: test/unit/ui/saveButtonDisabledDuringSave.test.tsx (20 tests, all passing)
+1. Save button disabled state when isSaving is true (4 tests)
+   - Save enabled when not saving, disabled when saving
+   - Save As enabled when not saving, disabled when saving
+2. Save button shows loading indicator when saving (7 tests)
+   - "Save" text when not saving, "Saving..." when saving
+   - "Save As..." text when not saving, "Saving..." when saving
+   - opacity-50 and cursor-not-allowed classes when saving
+   - No opacity-50 when not saving
+3. Clicking Save during save-in-progress has no effect (2 tests)
+   - Clicking disabled Save button does not call saveFile
+   - Clicking disabled Save As button does not call saveFileAs
+4. Button re-enables after save completes (3 tests)
+   - Save button enabled after isSaving changes to false
+   - Save As button enabled after isSaving changes to false
+   - Text changes back from "Saving..." to "Save"
+5. Full save lifecycle with disabled state (2 tests)
+   - Button disables during save and re-enables after successful save
+   - Button re-enables after failed save
+6. Store-level isSaving guard integration (2 tests)
+   - saveFile returns false when isSaving is true
+   - saveFileAs returns false when isSaving is true
+
+## Browser verification steps completed:
+1. Loaded app → File menu opens, Save and Save As visible ✓
+2. Save button enabled (no disabled attribute, no opacity) when not saving ✓
+3. Save As button enabled when not saving ✓
+4. Save text shows "Save" and "Save As..." (not "Saving...") ✓
+5. Loaded ecommerce.archc (5 nodes, 4 edges) ✓
+6. File menu Save/Save As buttons both enabled with file loaded ✓
+7. Console: 0 errors, 0 warnings ✓
+8. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Test results:
+- 20 new tests (all passing)
+- 1669 total tests across 111 files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: 216 of 235 (91.9%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-03 - Feature #213
 ==================================================
 
