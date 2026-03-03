@@ -104,6 +104,13 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: '⌘ ⇧ A',
     winKeys: 'Ctrl+Shift+A',
   },
+  {
+    id: 'duplicate',
+    category: 'Edit',
+    description: 'Duplicate selected node(s)',
+    macKeys: '⌘ D',
+    winKeys: 'Ctrl+D',
+  },
 
   // === View / Zoom ===
   {
@@ -276,6 +283,7 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'quick-rename': 'node:rename',
   'select-all': 'select:all',
   'select-all-edges': 'select:all-edges',
+  'duplicate': 'edit:duplicate',
   'command-palette': 'canvas:command-palette',
   'deselect': 'canvas:deselect',
   'shortcuts-help': 'canvas:shortcuts-help',

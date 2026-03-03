@@ -186,6 +186,31 @@ export function useKeyboardShortcuts() {
           redo();
           break;
 
+        case 'edit:duplicate':
+          e.preventDefault();
+          {
+            const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } = useCanvasStore.getState();
+            const { duplicateSelection } = useCoreStore.getState();
+
+            // Determine which nodes to duplicate
+            let nodeIds: string[] = [];
+            if (selectedNodeIds.length > 0) {
+              nodeIds = selectedNodeIds;
+            } else if (selectedNodeId) {
+              nodeIds = [selectedNodeId];
+            }
+
+            if (nodeIds.length > 0) {
+              const newIds = duplicateSelection(nodeIds);
+              if (newIds.length === 1) {
+                selectNode(newIds[0]!);
+              } else if (newIds.length > 1) {
+                selectNodes(newIds);
+              }
+            }
+          }
+          break;
+
         case 'node:rename':
           if (inInput) return;
           e.preventDefault();
