@@ -34,6 +34,7 @@ import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { ModeIndicator } from '@/components/canvas/ModeIndicator';
+import { ShortcutHints } from '@/components/canvas/ShortcutHints';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
@@ -628,6 +629,9 @@ function CanvasInner() {
 
       {/* Vim-style mode indicator (bottom-left, above minimap) */}
       <ModeIndicator />
+
+      {/* Contextual shortcut hints (bottom-right, above controls) */}
+      <ShortcutHints />
 
       {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (
