@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { Keyboard, X } from 'lucide-react';
+import { Keyboard, X, Settings } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
@@ -154,10 +154,23 @@ export function ShortcutsHelpPanel() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t text-center shrink-0">
+        <div className="px-6 py-3 border-t flex items-center justify-between shrink-0">
           <p className="text-xs text-gray-400">
             Press <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border border-gray-200 rounded">?</kbd> to toggle this panel
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              closeDialog();
+              useUIStore.getState().openShortcutSettings();
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors cursor-pointer"
+            data-testid="shortcuts-help-customize"
+            aria-label="Customize keyboard shortcuts"
+          >
+            <Settings className="w-3 h-3" />
+            Customize
+          </button>
         </div>
       </div>
     </div>

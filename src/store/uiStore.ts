@@ -93,6 +93,9 @@ export interface UIStoreState {
   // Command palette
   commandPaletteOpen: boolean;
 
+  // Shortcut settings dialog
+  shortcutSettingsOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
@@ -146,6 +149,10 @@ export interface UIStoreState {
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
 
+  // Shortcut settings actions
+  openShortcutSettings: () => void;
+  closeShortcutSettings: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -183,6 +190,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   shortcutsHelpOpen: false,
 
   commandPaletteOpen: false,
+
+  shortcutSettingsOpen: false,
 
   fileOperationLoading: false,
   fileOperationMessage: null,
@@ -264,6 +273,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   toggleCommandPalette: () =>
     set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
+
+  openShortcutSettings: () =>
+    set({ shortcutSettingsOpen: true }),
+
+  closeShortcutSettings: () =>
+    set({ shortcutSettingsOpen: false }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),

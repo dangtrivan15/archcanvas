@@ -152,6 +152,15 @@ export function getStaticCommands(): Command[] {
         useUIStore.getState().openShortcutsHelp();
       },
     },
+    {
+      id: 'view:customize-shortcuts',
+      label: 'Customize Keyboard Shortcuts',
+      category: 'View',
+      keywords: ['rebind', 'keybindings', 'configure', 'settings', 'remap'],
+      execute: () => {
+        useUIStore.getState().openShortcutSettings();
+      },
+    },
 
     // === Canvas ===
     {

@@ -15,6 +15,7 @@ import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
+import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -168,6 +169,9 @@ export function App() {
 
       {/* Keyboard Shortcuts Help Panel (overlay) */}
       <ShortcutsHelpPanel />
+
+      {/* Keyboard Shortcut Settings Panel (overlay) */}
+      <ShortcutSettingsPanel />
 
       {/* Command Palette (Cmd+K) */}
       <CommandPalette />

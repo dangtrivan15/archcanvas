@@ -1,14 +1,16 @@
 /**
  * Global keyboard shortcuts hook.
+ * Uses the configurable ShortcutManager to resolve key events to actions.
  * Handles file operations (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O),
  * undo/redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y),
- * and help (? to toggle shortcuts panel).
+ * command palette (Ctrl+K), and help (? to toggle shortcuts panel).
  */
 
 import { useEffect, useCallback } from 'react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 
 export function useKeyboardShortcuts() {
   const saveFile = useCoreStore((s) => s.saveFile);
@@ -24,51 +26,43 @@ export function useKeyboardShortcuts() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // '?' key (Shift + /) toggles shortcuts help panel
-      // Must check before the mod guard since '?' doesn't require Ctrl/Cmd
-      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Don't trigger when typing in an input/textarea
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable
-        ) {
-          return;
-        }
-        e.preventDefault();
-        toggleShortcutsHelp();
-        return;
-      }
+      const manager = getShortcutManager();
+      const actionId = manager.matchEvent(e);
 
-      // Use metaKey for Mac (Cmd), ctrlKey for Windows/Linux
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
+      if (!actionId) return;
 
-      switch (e.key.toLowerCase()) {
-        case 'k':
-          if (!e.shiftKey) {
-            e.preventDefault();
-            // Ctrl+K / Cmd+K → Toggle command palette
-            toggleCommandPalette();
-          }
-          break;
+      // For shortcuts without mod key (like '?'), check input focus
+      const target = e.target as HTMLElement;
+      const inInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
 
-        case 's':
+      switch (actionId) {
+        case 'canvas:shortcuts-help':
+          if (inInput) return;
           e.preventDefault();
-          if (e.shiftKey) {
-            // Ctrl+Shift+S → Save As
-            saveFileAs();
-          } else {
-            // Ctrl+S → Save
-            saveFile();
-          }
+          toggleShortcutsHelp();
           break;
 
-        case 'n':
-          if (!e.shiftKey) {
-            e.preventDefault();
-            // Ctrl+N → New file (check unsaved changes)
+        case 'canvas:command-palette':
+          e.preventDefault();
+          toggleCommandPalette();
+          break;
+
+        case 'file:save':
+          e.preventDefault();
+          saveFile();
+          break;
+
+        case 'file:save-as':
+          e.preventDefault();
+          saveFileAs();
+          break;
+
+        case 'file:new':
+          e.preventDefault();
+          {
             const isDirty = useCoreStore.getState().isDirty;
             const doNew = () => {
               newFile();
@@ -82,31 +76,20 @@ export function useKeyboardShortcuts() {
           }
           break;
 
-        case 'o':
-          if (!e.shiftKey) {
-            e.preventDefault();
-            // Ctrl+O → Open file
-            openFile();
-          }
-          break;
-
-        case 'z':
+        case 'file:open':
           e.preventDefault();
-          if (e.shiftKey) {
-            // Ctrl+Shift+Z → Redo
-            redo();
-          } else {
-            // Ctrl+Z → Undo
-            undo();
-          }
+          openFile();
           break;
 
-        case 'y':
-          if (!e.shiftKey) {
-            e.preventDefault();
-            // Ctrl+Y → Redo (alternative)
-            redo();
-          }
+        case 'edit:undo':
+          e.preventDefault();
+          undo();
+          break;
+
+        case 'edit:redo':
+        case 'edit:redo-alt':
+          e.preventDefault();
+          redo();
           break;
       }
     },
