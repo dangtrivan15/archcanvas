@@ -4417,3 +4417,58 @@ SESSION: 2026-03-03 - Features #221, #222, #223
 - Zero console errors
 - No mock data patterns in production code
 - Commits: 8ca19b9, 37fb9af, bf72705
+
+==================================================
+SESSION: 2026-03-03 - Features #228, #229, #230
+==================================================
+
+## What was accomplished:
+
+### Feature #228: Undo during save doesn't corrupt state (PASSING)
+- Verified existing concurrency protection in coreStore.ts:
+  - saveFile() captures graph reference at start (graphAtSaveStart)
+  - Undo modifies in-memory graph independently during async save
+  - After save completes, graphChangedDuringSave detects if undo happened
+  - isDirty remains true when graph changed during save
+  - isSaving guard prevents concurrent save operations
+- Fixed test expecting historyLength=3 when initialize() adds initial snapshot (total=4)
+- 17 unit tests: save graph capture, undo during save, isDirty tracking, redo during save,
+  multiple undos, saveFileAs concurrency, undo history preservation, save failure + undo,
+  graph reference integrity
+- Browser verified: undo/redo work with loaded file, zero console errors
+- Committed: cb762e5
+
+### Feature #229: Rapid node additions don't lose data (PASSING)
+- Verified addNode is synchronous (TextApi → snapshot → store update)
+- Single-threaded JS ensures no data loss between rapid calls
+- 17 unit tests: rapid 5-node addition, unique IDs, correct types/names,
+  nodeCount consistency, mixed types, state consistency (isDirty, canUndo),
+  undo/redo after rapid additions, 20-node scale test, positions, edge count
+- Browser verified: rapidly added 5 different node types (Service, Function,
+  Database, Message Queue, Worker), all visible on canvas with correct names
+- Zero console errors
+- Committed: e709751
+
+### Feature #230: Streaming AI response handles panel close gracefully (PASSING)
+- Verified existing implementation handles panel close during streaming:
+  - AbortController created per stream, stored in useRef
+  - Cleanup useEffect on unmount calls abort()
+  - AbortError caught and handled gracefully (clears streaming message, returns early)
+  - finally block resets isStreaming and abortControllerRef
+  - User messages persisted to Zustand aiStore BEFORE streaming begins
+  - Zustand global state persists across component unmount/remount
+- 28 unit tests: AbortController behavior, error handling patterns,
+  conversation persistence across panel close, node-scoped vs global conversations,
+  streaming message lifecycle, cleanup effect safety, ReadableStream abort,
+  source code verification (6 tests checking implementation patterns)
+- Browser verified:
+  1. Sent message, closed panel during streaming → zero errors
+  2. Reopened panel → conversation state preserved (user message + assistant response visible)
+  3. Console: 0 errors, 0 warnings throughout entire session
+- Committed: 133ef3c
+
+## Current completion status:
+- Features passing: 234 of 235 (99.6%)
+- Zero console errors across all browser testing
+- No mock data patterns in production code
+- All new tests passing (62 tests across 3 test files)
