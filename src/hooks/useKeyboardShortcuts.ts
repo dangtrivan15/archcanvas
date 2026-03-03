@@ -19,6 +19,7 @@ export function useKeyboardShortcuts() {
   const redo = useCoreStore((s) => s.redo);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const toggleShortcutsHelp = useUIStore((s) => s.toggleShortcutsHelp);
+  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
   const handleKeyDown = useCallback(
@@ -45,6 +46,14 @@ export function useKeyboardShortcuts() {
       if (!mod) return;
 
       switch (e.key.toLowerCase()) {
+        case 'k':
+          if (!e.shiftKey) {
+            e.preventDefault();
+            // Ctrl+K / Cmd+K → Toggle command palette
+            toggleCommandPalette();
+          }
+          break;
+
         case 's':
           e.preventDefault();
           if (e.shiftKey) {
@@ -101,7 +110,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, zoomToRoot],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, zoomToRoot],
   );
 
   useEffect(() => {
