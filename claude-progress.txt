@@ -1,4 +1,67 @@
 ==================================================
+SESSION: 2026-03-03 - Features #240 & #239
+==================================================
+
+## What was accomplished:
+
+### Feature #240: Command Palette (Cmd+K) (PASSING)
+- Created src/config/commandRegistry.ts:
+  - Central command registry with Command interface and CommandCategory type
+  - getStaticCommands(): 16 static commands (file, edit, view, canvas, navigation)
+  - getNodeCommands(): dynamic "Go to: {nodeName}" commands from current graph
+  - searchCommands(): fuzzy search with scoring (exact > starts with > contains > keyword)
+  - Multi-word query support, case-insensitive
+- Created src/components/shared/CommandPalette.tsx:
+  - Overlay component with search input and scrollable results list
+  - Full keyboard navigation (ArrowUp/Down, Enter, Escape)
+  - Category badges with colors, shortcut hints, disabled state
+  - Focus trapping, z-index 110, positioned at top 15vh
+  - ARIA roles: dialog, combobox, listbox, option
+- Updated uiStore.ts: commandPaletteOpen state + toggle/open/close actions
+- Updated useKeyboardShortcuts.ts: added Ctrl/Cmd+K binding
+- Updated keyboardShortcuts.ts: added Command Palette to help panel
+- Updated App.tsx: rendered CommandPalette component
+- 42 unit tests all passing
+- Browser verified: opens/closes, search works, commands execute, node search works
+- Committed: aba4518
+
+### Feature #239: Configurable Keyboard Shortcuts (PASSING)
+- Created src/core/shortcuts/shortcutManager.ts:
+  - SHORTCUT_ACTIONS: 12 configurable actions with IDs, labels, categories, defaults
+  - parseBinding(): parses "mod+s" format to KeyBinding object
+  - formatBindingForDisplay(): platform-aware display (⌘ on Mac, Ctrl on Windows)
+  - eventMatchesBinding(): matches KeyboardEvent to parsed binding
+  - eventToBindingString(): records key events as binding strings
+  - ShortcutManager class: matchEvent, setBinding (with conflict detection),
+    resetBinding, resetAll, localStorage persistence ("archcanvas:keyboard-shortcuts")
+  - Global singleton via getShortcutManager()/resetShortcutManager()
+- Created src/components/shared/ShortcutSettingsPanel.tsx:
+  - Settings dialog for viewing and rebinding shortcuts
+  - Recording mode: click binding → "..." with blue pulse → press key → updates
+  - Conflict detection: amber warning bar with Override/Cancel buttons
+  - Reset individual bindings (↻ icon) and Reset All button
+  - Customized bindings shown with purple-tinted badges
+  - Groups actions by category with colored headers
+- Refactored useKeyboardShortcuts.ts to use ShortcutManager:
+  - Replaced hardcoded key checks with manager.matchEvent(e) → action ID switch
+  - All existing shortcuts preserved, now fully configurable
+- Updated ShortcutsHelpPanel.tsx: added "Customize" button in footer
+- Updated keyboardShortcuts.ts: HELP_TO_ACTION_MAP for customized display in help panel
+- Updated commandRegistry.ts: added "Customize Keyboard Shortcuts" command
+- Updated uiStore.ts: shortcutSettingsOpen state + open/close actions
+- Updated App.tsx: rendered ShortcutSettingsPanel
+- 62 unit tests all passing
+- Browser verified: settings panel opens, recording mode works, rebinding works,
+  conflict detection shows warning, customized bindings display correctly
+- Committed: 902a02c
+
+## Current completion status:
+- Features passing: 240 of 240 (100%!)
+- All 2349 tests passing across 132 test files (104 new tests)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-03 - Feature #237
 ==================================================
 
