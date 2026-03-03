@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, Loader2 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -19,6 +19,7 @@ export function FileMenu() {
   const exportApi = useCoreStore((s) => s.exportApi);
   const fileName = useCoreStore((s) => s.fileName);
   const isDirty = useCoreStore((s) => s.isDirty);
+  const isSaving = useCoreStore((s) => s.isSaving);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
@@ -118,20 +119,40 @@ export function FileMenu() {
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            disabled={isSaving}
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left ${
+              isSaving
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-[hsl(var(--muted))]'
+            }`}
             role="menuitem"
+            data-testid="save-button"
           >
-            <Save className="w-4 h-4" />
-            <span>Save</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? 'Saving...' : 'Save'}</span>
             <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+S</span>
           </button>
           <button
             onClick={handleSaveAs}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            disabled={isSaving}
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left ${
+              isSaving
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-[hsl(var(--muted))]'
+            }`}
             role="menuitem"
+            data-testid="save-as-button"
           >
-            <Save className="w-4 h-4" />
-            <span>Save As...</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? 'Saving...' : 'Save As...'}</span>
             <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+Shift+S</span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
