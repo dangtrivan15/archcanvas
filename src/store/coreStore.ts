@@ -73,6 +73,7 @@ export interface CoreStoreState {
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   updateNodeColor: (nodeId: string, color: string | undefined) => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
+  moveNodes: (moves: Array<{ nodeId: string; x: number; y: number }>, snapshotDescription?: string) => void;
   duplicateSelection: (nodeIds: string[]) => string[];
 
   // Layout
@@ -879,6 +880,35 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     set({
       graph: updatedGraph,
       isDirty: true,
+    });
+  },
+
+  /**
+   * Move multiple nodes at once with a single undo snapshot.
+   * Used for keyboard bulk movement (Alt+Arrow).
+   * Coordinates are clamped to prevent negative values.
+   */
+  moveNodes: (moves, snapshotDescription) => {
+    const { textApi, undoManager, graph } = get();
+    if (!textApi || !undoManager || moves.length === 0) return;
+
+    let currentGraph = graph;
+    for (const { nodeId, x, y } of moves) {
+      // Clamp to prevent negative coordinates
+      const clampedX = Math.max(0, x);
+      const clampedY = Math.max(0, y);
+      currentGraph = engineMoveNode(currentGraph, nodeId, clampedX, clampedY);
+    }
+    textApi.setGraph(currentGraph);
+
+    const desc = snapshotDescription || `Move ${moves.length} node(s)`;
+    undoManager.snapshot(desc, currentGraph);
+
+    set({
+      graph: currentGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
     });
   },
 

@@ -60,6 +60,7 @@ function CanvasInner() {
   const renderApi = useCoreStore((s) => s.renderApi);
   const addNode = useCoreStore((s) => s.addNode);
   const moveNode = useCoreStore((s) => s.moveNode);
+  const moveNodes = useCoreStore((s) => s.moveNodes);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
@@ -682,6 +683,86 @@ function CanvasInner() {
     document.addEventListener('keydown', handleArrowNav);
     return () => document.removeEventListener('keydown', handleArrowNav);
   }, [rfNodes, selectNode, addNodeToSelection, toggleNodeInSelection, setCenter, getViewport, placementMode]);
+
+  // Alt+Arrow: bulk move selected nodes by 20px (or 100px with Shift+Alt)
+  // Single undo snapshot per key press. Coordinates clamped to >= 0.
+  useEffect(() => {
+    const SMALL_STEP = 20;
+    const LARGE_STEP = 100;
+
+    const ARROW_OFFSETS: Record<string, { dx: number; dy: number }> = {
+      ArrowUp: { dx: 0, dy: -1 },
+      ArrowDown: { dx: 0, dy: 1 },
+      ArrowLeft: { dx: -1, dy: 0 },
+      ArrowRight: { dx: 1, dy: 0 },
+    };
+
+    const handleBulkMove = (e: KeyboardEvent) => {
+      // Only handle Alt+Arrow (with or without Shift)
+      if (!e.altKey) return;
+
+      const offset = ARROW_OFFSETS[e.key];
+      if (!offset) return;
+
+      // Don't handle when typing in text inputs
+      if (isActiveElementTextInput()) return;
+
+      // Don't handle when any dialog/overlay is open
+      const uiState = useUIStore.getState();
+      if (
+        uiState.deleteDialogOpen ||
+        uiState.connectionDialogOpen ||
+        uiState.unsavedChangesDialogOpen ||
+        uiState.errorDialogOpen ||
+        uiState.integrityWarningDialogOpen ||
+        uiState.shortcutsHelpOpen ||
+        uiState.commandPaletteOpen ||
+        uiState.quickSearchOpen
+      ) {
+        return;
+      }
+
+      // Don't handle in Connect mode or placement mode
+      if (uiState.canvasMode === CanvasMode.Connect) return;
+      if (placementMode) return;
+
+      // Get selected node IDs
+      const canvasState = useCanvasStore.getState();
+      const selectedIds = canvasState.selectedNodeIds;
+      if (selectedIds.length === 0) return;
+
+      e.preventDefault();
+
+      // Determine step size: Shift+Alt = large, Alt-only = small
+      const step = e.shiftKey ? LARGE_STEP : SMALL_STEP;
+      const dx = offset.dx * step;
+      const dy = offset.dy * step;
+
+      // Build batch moves from current graph positions
+      const currentGraph = useCoreStore.getState().graph;
+      const moves: Array<{ nodeId: string; x: number; y: number }> = [];
+
+      for (const nodeId of selectedIds) {
+        const node = findNode(currentGraph, nodeId);
+        if (node) {
+          moves.push({
+            nodeId,
+            x: node.position.x + dx,
+            y: node.position.y + dy,
+          });
+        }
+      }
+
+      if (moves.length > 0) {
+        const count = moves.length;
+        moveNodes(moves, `Move ${count} node${count === 1 ? '' : 's'}`);
+      }
+    };
+
+    // Use capture phase so it fires before the normal arrow handler (which skips altKey)
+    document.addEventListener('keydown', handleBulkMove, true);
+    return () => document.removeEventListener('keydown', handleBulkMove, true);
+  }, [moveNodes, placementMode]);
 
   // Connect mode keyboard handler:
   // - Arrow keys: navigate between nodes to pick target (or source if no source yet)
