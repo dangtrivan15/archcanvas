@@ -15,6 +15,7 @@ import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
+import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
 import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { Toast } from '@/components/shared/Toast';
@@ -24,6 +25,8 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
+import { useNavigationStore } from '@/store/navigationStore';
+import { findNode } from '@/core/graph/graphEngine';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -48,6 +51,8 @@ export function App() {
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
   const canvasMode = useUIStore((s) => s.canvasMode);
+  const navigationPath = useNavigationStore((s) => s.path);
+  const graph = useCoreStore((s) => s.graph);
 
   const handleLeftResize = useCallback((delta: number) => {
     const newWidth = leftPanelWidth + delta;
@@ -187,6 +192,9 @@ export function App() {
         {/* Command Palette (Cmd+K) */}
         <CommandPalette />
 
+        {/* Quick Search (/) */}
+        <QuickSearchOverlay />
+
         {/* Loading Overlay (file operations) */}
         <LoadingOverlay />
 
@@ -216,6 +224,21 @@ export function App() {
           )}
           <span className="mx-2">|</span>
           <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
+          {navigationPath.length > 0 && (
+            <>
+              <span className="mx-2">|</span>
+              <span data-testid="breadcrumb" className="text-blue-600 font-medium">
+                {(() => {
+                  const parts = ['Root'];
+                  for (const nodeId of navigationPath) {
+                    const node = findNode(graph, nodeId);
+                    parts.push(node ? node.displayName : nodeId);
+                  }
+                  return parts.join(' > ');
+                })()}
+              </span>
+            </>
+          )}
           {canvasMode !== CanvasMode.Normal && (
             <>
               <span className="mx-2">|</span>

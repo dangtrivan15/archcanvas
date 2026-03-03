@@ -19,6 +19,7 @@ import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
 import { CanvasMode } from '@/core/input/canvasMode';
 import { quickSearchNext, quickSearchPrev } from '@/components/shared/QuickSearchOverlay';
+import { findNode } from '@/core/graph/graphEngine';
 
 /**
  * Map from node:add-* action IDs to NodeDef type keys.
@@ -122,22 +123,35 @@ export function useKeyboardShortcuts() {
           return;
         }
 
-        // Enter → Enter Edit mode (requires selected node)
+        // Enter → Drill into group node (fractal zoom) or Enter Edit mode (leaf node)
         if (noModifiers && key === 'Enter') {
           const selectedNodeId = useCanvasStore.getState().selectedNodeId;
           if (selectedNodeId) {
             e.preventDefault();
-            enterMode(CanvasMode.Edit);
-            useUIStore.getState().openRightPanel('properties');
+            const { graph } = useCoreStore.getState();
+            const node = findNode(graph, selectedNodeId);
+            if (node && node.children.length > 0) {
+              // Group node: drill in (fractal zoom)
+              console.log('[KeyboardNav] Drill into group node:', node.displayName);
+              useNavigationStore.getState().zoomIn(selectedNodeId);
+              useCanvasStore.getState().clearSelection();
+              useCanvasStore.getState().requestFitView();
+            } else {
+              // Leaf node: enter Edit mode
+              enterMode(CanvasMode.Edit);
+              useUIStore.getState().openRightPanel('properties');
+            }
             return;
           }
         }
       }
 
       // ── Standard ShortcutManager matching ──
+      console.log('[KeyboardShortcuts] key:', key, 'ctrl:', e.ctrlKey, 'meta:', e.metaKey, 'shift:', e.shiftKey);
       const manager = getShortcutManager();
       const actionId = manager.matchEvent(e);
 
+      console.log('[KeyboardShortcuts] matched actionId:', actionId);
       if (!actionId) return;
 
       // Filter mode-prefixed actions by current mode
@@ -306,17 +320,26 @@ export function useKeyboardShortcuts() {
             const { selectedEdgeId } = useCanvasStore.getState();
             const { showToast } = useUIStore.getState();
 
+            console.log('[edge:cycle-type] selectedEdgeId:', selectedEdgeId, 'edgeCount:', graph.edges.length);
             if (!selectedEdgeId) break;
 
             const edge = graph.edges.find((ed) => ed.id === selectedEdgeId);
-            if (!edge) break;
+            if (!edge) {
+              console.log('[edge:cycle-type] Edge NOT FOUND in graph.edges');
+              break;
+            }
 
             const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
             const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
             const currentIdx = types.indexOf(edge.type);
             const nextType = types[(currentIdx + 1) % types.length]!;
 
+            console.log('[edge:cycle-type] currentType:', edge.type, 'currentIdx:', currentIdx, 'nextType:', nextType);
             updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+            // Verify the graph was actually updated
+            const afterGraph = useCoreStore.getState().graph;
+            const afterEdge = afterGraph.edges.find((ed) => ed.id === selectedEdgeId);
+            console.log('[edge:cycle-type] AFTER update - edge type:', afterEdge?.type, 'graph ref changed:', afterGraph !== graph);
             showToast(`Changed to ${typeLabels[nextType]}`);
           }
           break;

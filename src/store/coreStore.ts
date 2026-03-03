@@ -63,6 +63,7 @@ export interface CoreStoreState {
   removeNode: (nodeId: string) => void;
   updateNode: (nodeId: string, params: UpdateNodeParams) => void;
   addEdge: (params: AddEdgeParams) => ArchEdge | undefined;
+  updateEdge: (edgeId: string, updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>, snapshotDescription?: string) => void;
   removeEdge: (edgeId: string) => void;
   addNote: (params: AddNoteParams) => Note | undefined;
   removeNote: (nodeId: string, noteId: string) => void;
@@ -685,6 +686,25 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
 
     return edge;
+  },
+
+  /**
+   * Update an edge's type, label, or properties.
+   */
+  updateEdge: (edgeId, updates, snapshotDescription) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    textApi.updateEdge(edgeId, updates);
+    const updatedGraph = textApi.getGraph();
+    undoManager.snapshot(snapshotDescription || 'Update edge', updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
   },
 
   /**

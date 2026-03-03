@@ -33,6 +33,7 @@ import {
   addChildNode,
   removeNode as engineRemoveNode,
   removeEdge as engineRemoveEdge,
+  updateEdge as engineUpdateEdge,
   updateNode as engineUpdateNode,
   updateNodeColor as engineUpdateNodeColor,
   addNoteToNode,
@@ -326,6 +327,13 @@ export class TextApi {
    */
   removeNode(nodeId: string): void {
     this.graph = engineRemoveNode(this.graph, nodeId);
+  }
+
+  /**
+   * Update an edge's type, label, or properties.
+   */
+  updateEdge(edgeId: string, updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>): void {
+    this.graph = engineUpdateEdge(this.graph, edgeId, updates);
   }
 
   /**
