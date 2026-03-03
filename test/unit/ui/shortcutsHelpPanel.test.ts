@@ -389,12 +389,12 @@ describe('ShortcutsHelpPanel component structure', () => {
 // ================================================================
 
 describe('Category display order', () => {
-  it('categories are in logical order: File, Edit, View, Canvas, Navigation', () => {
-    expect(SHORTCUT_CATEGORIES).toEqual(['File', 'Edit', 'View', 'Canvas', 'Navigation']);
+  it('categories are in logical order: File, Edit, View, Canvas, Navigation, Quick Create', () => {
+    expect(SHORTCUT_CATEGORIES).toEqual(['File', 'Edit', 'View', 'Canvas', 'Navigation', 'Quick Create']);
   });
 
-  it('SHORTCUT_CATEGORIES has exactly 5 entries', () => {
-    expect(SHORTCUT_CATEGORIES).toHaveLength(5);
+  it('SHORTCUT_CATEGORIES has exactly 6 entries', () => {
+    expect(SHORTCUT_CATEGORIES).toHaveLength(6);
   });
 });
 

@@ -1,4 +1,47 @@
 ==================================================
+SESSION: 2026-03-03 - Features #248, #244, #246
+==================================================
+
+## What was accomplished:
+
+### Feature #248: Quick Rename (F2) (PASSING)
+- Added 'node:rename' action to ShortcutManager with F2 default binding
+- Added help panel entry for quick-rename keyboard shortcut
+- Added 'Rename Node' command to command registry (id: 'node:rename')
+- Added 'node:rename' case to useKeyboardShortcuts.ts handler
+- Key decision: Used 'node:rename' instead of 'edit:rename' to avoid mode prefix filter
+  blocking the action in Normal mode
+- 25 unit tests in test/unit/ui/quickRenameF2.test.ts
+
+### Feature #244: Command Palette Node Creation (PASSING)
+- Discovered getNodeCreationCommands() was already fully implemented in commandRegistry.ts
+- Wrote 29 comprehensive tests verifying: command generation, search keywords, execute,
+  nested navigation, getAllCommands integration
+- Fixed nested navigation test: needed to create actual parent node first
+- Test file: test/unit/ui/commandPaletteNodeCreation.test.ts
+
+### Feature #246: Keyboard Node Deletion with Undo Hint (PASSING)
+- Created toast notification system:
+  - Added toastMessage/toastTimerId state + showToast/clearToast actions to uiStore
+  - Created src/components/shared/Toast.tsx component (fixed bottom-center, auto-dismiss 4s)
+  - Added <Toast /> to App.tsx
+- Enhanced DeleteConfirmationDialog:
+  - Added Enter key confirmation (keyboard accessible)
+  - Added toast after deletion: "Deleted {name}. Cmd+Z to undo"
+- Added edge deletion via Delete key in Canvas.tsx (direct, no confirmation)
+- Fixed critical mode filter bug in useKeyboardShortcuts.ts:
+  - Old: `if (actionId.startsWith('edit:') && currentMode !== CanvasMode.Edit) return;`
+  - New: `if (actionId === 'edit:exit' && currentMode !== CanvasMode.Edit) return;`
+  - This was blocking edit:undo, edit:redo, edit:delete in Normal mode
+- 18 unit tests in test/unit/ui/keyboardDeletionWithUndo.test.ts
+- Browser verified: node delete+toast+undo, edge delete+toast all working
+
+## Key bug fixes:
+- Mode filter was overly broad, blocking ALL edit:* actions in Normal mode.
+  Only edit:exit (the mode transition action) should be gated by mode.
+  Category-based actions (edit:undo, edit:redo, edit:delete) work in ALL modes.
+
+==================================================
 SESSION: 2026-03-03 - Features #240 & #239
 ==================================================
 

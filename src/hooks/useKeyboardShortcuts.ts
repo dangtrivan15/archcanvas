@@ -246,6 +246,71 @@ export function useKeyboardShortcuts() {
             }
           }
           break;
+
+        // Node Quick Create hotkeys (Normal mode only, not in text input)
+        case 'node:add-service':
+        case 'node:add-database':
+        case 'node:add-queue':
+        case 'node:add-gateway':
+        case 'node:add-cache':
+          if (inInput || currentMode !== CanvasMode.Normal) return;
+          e.preventDefault();
+          {
+            const typeKey = HOTKEY_NODE_TYPE_MAP[actionId];
+            if (!typeKey) break;
+
+            const { addNode, registry, graph } = useCoreStore.getState();
+            const { viewport, selectedNodeId, selectNode } = useCanvasStore.getState();
+            const { openRightPanel, setPendingRenameNodeId } = useUIStore.getState();
+            const { path } = useNavigationStore.getState();
+
+            if (!registry) break;
+
+            // Resolve NodeDef to get display name
+            const nodeDef = registry.resolve(typeKey);
+            if (!nodeDef) break;
+            const displayName = nodeDef.metadata.displayName;
+
+            // Position logic: if node selected, offset +150px right; else viewport center
+            let x: number;
+            let y: number;
+
+            if (selectedNodeId) {
+              const selectedNode = _findNodeById(graph.nodes, selectedNodeId);
+              if (selectedNode) {
+                x = selectedNode.position.x + 150;
+                y = selectedNode.position.y;
+              } else {
+                const center = _viewportCenter(viewport);
+                x = center.x;
+                y = center.y;
+              }
+            } else {
+              const center = _viewportCenter(viewport);
+              x = center.x;
+              y = center.y;
+            }
+
+            // Determine parent if inside a group (nested navigation)
+            const parentId = path.length > 0 ? path[path.length - 1] : undefined;
+
+            // Create the node
+            const node = addNode({
+              type: typeKey,
+              displayName,
+              position: { x, y },
+              parentId,
+            });
+
+            if (node) {
+              // Select and enter rename mode
+              selectNode(node.id);
+              openRightPanel('properties');
+              setPendingRenameNodeId(node.id);
+              console.log(`[HotkeyCreate] Created ${typeKey} node: ${node.displayName} at (${x}, ${y})`);
+            }
+          }
+          break;
       }
     },
     [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
@@ -255,4 +320,32 @@ export function useKeyboardShortcuts() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+}
+
+// ─── Helper functions for hotkey node creation ──────────────────
+
+/**
+ * Calculate viewport center in graph coordinates.
+ */
+function _viewportCenter(viewport: { x: number; y: number; zoom: number }): { x: number; y: number } {
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  return {
+    x: Math.round((-viewport.x + windowWidth / 2) / viewport.zoom),
+    y: Math.round((-viewport.y + windowHeight / 2) / viewport.zoom),
+  };
+}
+
+/**
+ * Find a node by ID, recursively searching children.
+ */
+function _findNodeById(nodes: import('@/types/graph').ArchNode[], id: string): import('@/types/graph').ArchNode | undefined {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children.length > 0) {
+      const found = _findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }

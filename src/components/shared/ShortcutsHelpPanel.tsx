@@ -19,8 +19,10 @@ import {
 const CATEGORY_STYLES: Record<ShortcutCategory, { color: string; bg: string }> = {
   File: { color: 'text-blue-700', bg: 'bg-blue-50' },
   Edit: { color: 'text-amber-700', bg: 'bg-amber-50' },
+  View: { color: 'text-sky-700', bg: 'bg-sky-50' },
   Canvas: { color: 'text-emerald-700', bg: 'bg-emerald-50' },
   Navigation: { color: 'text-purple-700', bg: 'bg-purple-50' },
+  'Quick Create': { color: 'text-rose-700', bg: 'bg-rose-50' },
 };
 
 export function ShortcutsHelpPanel() {
