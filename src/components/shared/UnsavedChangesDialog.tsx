@@ -6,12 +6,14 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function UnsavedChangesDialog() {
   const open = useUIStore((s) => s.unsavedChangesDialogOpen);
   const info = useUIStore((s) => s.unsavedChangesDialogInfo);
   const closeDialog = useUIStore((s) => s.closeUnsavedChangesDialog);
   const discardRef = useRef<HTMLButtonElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   // Focus the Discard button when dialog opens
   useEffect(() => {
@@ -70,7 +72,7 @@ export function UnsavedChangesDialog() {
       aria-modal="true"
       aria-labelledby="unsaved-dialog-title"
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="unsaved-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="unsaved-dialog-content">
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">

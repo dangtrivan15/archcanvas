@@ -9,6 +9,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function DeleteConfirmationDialog() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
@@ -17,6 +18,7 @@ export function DeleteConfirmationDialog() {
   const removeNode = useCoreStore((s) => s.removeNode);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>(deleteDialogOpen);
 
   // Focus the Confirm button when dialog opens
   useEffect(() => {
@@ -79,7 +81,7 @@ export function DeleteConfirmationDialog() {
       aria-modal="true"
       aria-labelledby="delete-dialog-title"
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="delete-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="delete-dialog-content">
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">

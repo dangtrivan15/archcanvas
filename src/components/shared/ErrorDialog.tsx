@@ -6,12 +6,14 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { XCircle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function ErrorDialog() {
   const open = useUIStore((s) => s.errorDialogOpen);
   const info = useUIStore((s) => s.errorDialogInfo);
   const closeDialog = useUIStore((s) => s.closeErrorDialog);
   const okRef = useRef<HTMLButtonElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   // Focus the OK button when dialog opens
   useEffect(() => {
@@ -61,7 +63,7 @@ export function ErrorDialog() {
       aria-labelledby="error-dialog-title"
       aria-describedby="error-dialog-message"
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="error-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="error-dialog-content">
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
