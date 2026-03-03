@@ -13,10 +13,12 @@ import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
 import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
+import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -37,6 +39,7 @@ export function App() {
   const setLeftPanelWidth = useUIStore((s) => s.setLeftPanelWidth);
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
+  const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
 
   const handleLeftResize = useCallback((delta: number) => {
     const newWidth = leftPanelWidth + delta;
@@ -59,6 +62,9 @@ export function App() {
 
   // Responsive layout: auto-close panels when window is narrow
   useResponsiveLayout();
+
+  // Autosave when browser tab/window loses focus
+  useAutoSaveOnBlur();
 
   // Auto-open right panel when a node or edge is selected
   useEffect(() => {
@@ -159,6 +165,9 @@ export function App() {
       {/* Integrity Warning Dialog (overlay) */}
       <IntegrityWarningDialog />
 
+      {/* Keyboard Shortcuts Help Panel (overlay) */}
+      <ShortcutsHelpPanel />
+
       {/* Loading Overlay (file operations) */}
       <LoadingOverlay />
 
@@ -169,6 +178,12 @@ export function App() {
         <span data-testid="edge-count">Edges: {edgeCount}</span>
         <span className="mx-2">|</span>
         <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+        {autosaveStatusMessage && (
+          <>
+            <span className="mx-2">|</span>
+            <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
+          </>
+        )}
         <span className="mx-2">|</span>
         <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
       </footer>

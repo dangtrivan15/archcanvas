@@ -87,9 +87,16 @@ export interface UIStoreState {
   placementMode: boolean;
   placementInfo: PlacementModeInfo | null;
 
+  // Keyboard shortcuts help dialog
+  shortcutsHelpOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
+
+  // Autosave on focus change
+  autosaveOnBlur: boolean;
+  autosaveStatusMessage: string | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -126,9 +133,18 @@ export interface UIStoreState {
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
 
+  // Keyboard shortcuts help dialog actions
+  openShortcutsHelp: () => void;
+  closeShortcutsHelp: () => void;
+  toggleShortcutsHelp: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
+
+  // Autosave actions
+  setAutosaveOnBlur: (enabled: boolean) => void;
+  setAutosaveStatusMessage: (message: string | null) => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -156,8 +172,13 @@ export const useUIStore = create<UIStoreState>((set) => ({
   placementMode: false,
   placementInfo: null,
 
+  shortcutsHelpOpen: false,
+
   fileOperationLoading: false,
   fileOperationMessage: null,
+
+  autosaveOnBlur: true,
+  autosaveStatusMessage: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -216,9 +237,24 @@ export const useUIStore = create<UIStoreState>((set) => ({
   setRightPanelWidth: (width) =>
     set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)) }),
 
+  openShortcutsHelp: () =>
+    set({ shortcutsHelpOpen: true }),
+
+  closeShortcutsHelp: () =>
+    set({ shortcutsHelpOpen: false }),
+
+  toggleShortcutsHelp: () =>
+    set((s) => ({ shortcutsHelpOpen: !s.shortcutsHelpOpen })),
+
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
 
   clearFileOperationLoading: () =>
     set({ fileOperationLoading: false, fileOperationMessage: null }),
+
+  setAutosaveOnBlur: (enabled) =>
+    set({ autosaveOnBlur: enabled }),
+
+  setAutosaveStatusMessage: (message) =>
+    set({ autosaveStatusMessage: message }),
 }));

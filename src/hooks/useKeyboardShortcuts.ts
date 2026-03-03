@@ -1,7 +1,8 @@
 /**
  * Global keyboard shortcuts hook.
- * Handles file operations (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O)
- * and undo/redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y).
+ * Handles file operations (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O),
+ * undo/redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y),
+ * and help (? to toggle shortcuts panel).
  */
 
 import { useEffect, useCallback } from 'react';
@@ -17,10 +18,28 @@ export function useKeyboardShortcuts() {
   const undo = useCoreStore((s) => s.undo);
   const redo = useCoreStore((s) => s.redo);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
+  const toggleShortcutsHelp = useUIStore((s) => s.toggleShortcutsHelp);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // '?' key (Shift + /) toggles shortcuts help panel
+      // Must check before the mod guard since '?' doesn't require Ctrl/Cmd
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Don't trigger when typing in an input/textarea
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+        e.preventDefault();
+        toggleShortcutsHelp();
+        return;
+      }
+
       // Use metaKey for Mac (Cmd), ctrlKey for Windows/Linux
       const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
@@ -82,7 +101,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, zoomToRoot],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, zoomToRoot],
   );
 
   useEffect(() => {
