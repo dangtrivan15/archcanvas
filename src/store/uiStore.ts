@@ -100,6 +100,9 @@ export interface UIStoreState {
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
 
+  // Pending rename (auto-focus display name input for newly created node)
+  pendingRenameNodeId: string | null;
+
   // Autosave on focus change
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
@@ -157,6 +160,10 @@ export interface UIStoreState {
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
 
+  // Rename mode actions
+  setPendingRenameNodeId: (nodeId: string | null) => void;
+  clearPendingRename: () => void;
+
   // Autosave actions
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
@@ -195,6 +202,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   fileOperationLoading: false,
   fileOperationMessage: null,
+
+  pendingRenameNodeId: null,
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
@@ -285,6 +294,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   clearFileOperationLoading: () =>
     set({ fileOperationLoading: false, fileOperationMessage: null }),
+
+  setPendingRenameNodeId: (nodeId) =>
+    set({ pendingRenameNodeId: nodeId }),
+
+  clearPendingRename: () =>
+    set({ pendingRenameNodeId: null }),
 
   setAutosaveOnBlur: (enabled) =>
     set({ autosaveOnBlur: enabled }),

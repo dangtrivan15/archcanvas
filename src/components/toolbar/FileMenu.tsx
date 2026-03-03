@@ -7,6 +7,7 @@ import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileIma
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
 export function FileMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,6 +25,7 @@ export function FileMenu() {
   const autosaveOnBlur = useUIStore((s) => s.autosaveOnBlur);
   const setAutosaveOnBlur = useUIStore((s) => s.setAutosaveOnBlur);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
+  const { formatBinding } = usePlatformModifier();
 
   // Close on click outside
   useEffect(() => {
@@ -107,7 +109,7 @@ export function FileMenu() {
           >
             <FilePlus className="w-4 h-4" />
             <span>New</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+N</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+n')}</span>
           </button>
           <button
             onClick={handleOpen}
@@ -116,7 +118,7 @@ export function FileMenu() {
           >
             <FolderOpen className="w-4 h-4" />
             <span>Open...</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+O</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+o')}</span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <button
@@ -136,7 +138,7 @@ export function FileMenu() {
               <Save className="w-4 h-4" />
             )}
             <span>{isSaving ? 'Saving...' : 'Save'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+S</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+s')}</span>
           </button>
           <button
             onClick={handleSaveAs}
@@ -155,7 +157,7 @@ export function FileMenu() {
               <Save className="w-4 h-4" />
             )}
             <span>{isSaving ? 'Saving...' : 'Save As...'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+Shift+S</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+shift+s')}</span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <div

@@ -259,22 +259,21 @@ describe('Keyboard trigger (? key)', () => {
     expect(source).toContain('toggleShortcutsHelp');
   });
 
-  it('? key handler skips input/textarea elements', async () => {
+  it('? key handler skips input/textarea elements via centralized FocusZone detection', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    // Verify input guard is present before the ? handler
-    expect(source).toContain("target.tagName === 'INPUT'");
-    expect(source).toContain("target.tagName === 'TEXTAREA'");
-    expect(source).toContain('target.isContentEditable');
+    // Verify input guard uses centralized isActiveElementTextInput from FocusZone system
+    expect(source).toContain('isActiveElementTextInput');
+    expect(source).toContain("import { isActiveElementTextInput } from '@/core/input/focusZones'");
   });
 
-  it('? key handler checks input focus guard', async () => {
+  it('? key handler checks input focus guard via inInput variable', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
     // The shortcuts-help handler should check if user is in an input field
     expect(source).toContain('inInput');
-    expect(source).toContain("'INPUT'");
-    expect(source).toContain("'TEXTAREA'");
+    // Uses centralized detection instead of inline tagName checks
+    expect(source).toContain('isActiveElementTextInput()');
   });
 });
 

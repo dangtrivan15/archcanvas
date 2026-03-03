@@ -38,6 +38,7 @@ import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
+import { isActiveElementTextInput } from '@/core/input/focusZones';
 
 export function Canvas() {
   return (
@@ -270,13 +271,8 @@ function CanvasInner() {
   // Handle Delete/Backspace keys for node deletion and navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle when typing in an input/textarea
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      // Don't handle when typing in a text input (uses centralized FocusZone detection)
+      if (isActiveElementTextInput()) {
         return;
       }
 
