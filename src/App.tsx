@@ -1,7 +1,8 @@
 import { useEffect, useCallback } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useUIStore } from '@/store/uiStore';
+import { useUIStore, LEFT_PANEL_COLLAPSE_THRESHOLD } from '@/store/uiStore';
 import { Toolbar } from '@/components/toolbar';
 import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
@@ -30,6 +31,7 @@ export function App() {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
+  const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const leftPanelWidth = useUIStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useUIStore((s) => s.rightPanelWidth);
   const setLeftPanelWidth = useUIStore((s) => s.setLeftPanelWidth);
@@ -37,8 +39,16 @@ export function App() {
   const zoom = useCanvasStore((s) => s.viewport.zoom);
 
   const handleLeftResize = useCallback((delta: number) => {
-    setLeftPanelWidth(leftPanelWidth + delta);
-  }, [leftPanelWidth, setLeftPanelWidth]);
+    const newWidth = leftPanelWidth + delta;
+    // Snap-to-collapse: if dragged below collapse threshold, close the panel
+    if (newWidth < LEFT_PANEL_COLLAPSE_THRESHOLD) {
+      if (leftPanelOpen) {
+        toggleLeftPanel();
+      }
+      return;
+    }
+    setLeftPanelWidth(newWidth);
+  }, [leftPanelWidth, setLeftPanelWidth, leftPanelOpen, toggleLeftPanel]);
 
   const handleRightResize = useCallback((delta: number) => {
     setRightPanelWidth(rightPanelWidth + delta);
@@ -90,8 +100,8 @@ export function App() {
 
       {/* Main content area: left panel, canvas, right panel */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - NodeDef Browser (draggable width) */}
-        {leftPanelOpen && (
+        {/* Left Panel - NodeDef Browser (draggable width) or collapsed expand strip */}
+        {leftPanelOpen ? (
           <>
             <aside
               className="overflow-y-auto shrink-0 bg-white border-r"
@@ -102,6 +112,16 @@ export function App() {
             </aside>
             <ResizeHandle side="left" onResize={handleLeftResize} />
           </>
+        ) : (
+          <button
+            className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors"
+            onClick={toggleLeftPanel}
+            title="Expand node types panel"
+            data-testid="left-panel-expand"
+            aria-label="Expand node types panel"
+          >
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+          </button>
         )}
 
         {/* Center - Canvas (always gets minimum usable space) */}
