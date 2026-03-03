@@ -82,12 +82,18 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'nav:arrow-left', label: 'Navigate Left', category: 'Navigation', defaultBinding: 'arrowleft' },
   { id: 'nav:arrow-right', label: 'Navigate Right', category: 'Navigation', defaultBinding: 'arrowright' },
 
+  // Quick Search
+  { id: 'nav:search', label: 'Quick Search', category: 'Navigation', defaultBinding: '/' },
+
   // Node Quick Create (Normal mode only)
   { id: 'node:add-service', label: 'Quick Add Service', category: 'Node', defaultBinding: 's' },
   { id: 'node:add-database', label: 'Quick Add Database', category: 'Node', defaultBinding: 'd' },
   { id: 'node:add-queue', label: 'Quick Add Queue', category: 'Node', defaultBinding: 'q' },
   { id: 'node:add-gateway', label: 'Quick Add Gateway', category: 'Node', defaultBinding: 'g' },
   { id: 'node:add-cache', label: 'Quick Add Cache', category: 'Node', defaultBinding: 'a' },
+
+  // Edge Operations
+  { id: 'edge:cycle-type', label: 'Cycle Edge Type', category: 'Edge', defaultBinding: 't' },
 
   // Mode transitions (Vim-style)
   { id: 'normal:enter-connect', label: 'Enter Connect Mode', category: 'Mode', defaultBinding: 'c' },

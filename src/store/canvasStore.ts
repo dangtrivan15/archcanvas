@@ -44,6 +44,10 @@ export interface CanvasStoreState {
   // Layout spacing configuration
   layoutSpacing: LayoutSpacing;
 
+  // Center-on-node request (for QuickSearch jump)
+  centerOnNodeId: string | null;
+  centerOnNodeCounter: number;
+
   // Actions - single selection (replaces entire selection)
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
@@ -65,6 +69,7 @@ export interface CanvasStoreState {
   requestZoom100: () => void;
   setLayoutSpacing: (spacing: Partial<LayoutSpacing>) => void;
   resetLayoutSpacing: () => void;
+  requestCenterOnNode: (nodeId: string) => void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set) => ({
@@ -78,6 +83,8 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   zoomOutCounter: 0,
   zoom100Counter: 0,
   layoutSpacing: { ...DEFAULT_LAYOUT_SPACING },
+  centerOnNodeId: null,
+  centerOnNodeCounter: 0,
 
   // Single select: replaces entire selection
   selectNode: (nodeId) =>
@@ -197,4 +204,7 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
 
   resetLayoutSpacing: () =>
     set({ layoutSpacing: { ...DEFAULT_LAYOUT_SPACING } }),
+
+  requestCenterOnNode: (nodeId) =>
+    set((s) => ({ centerOnNodeId: nodeId, centerOnNodeCounter: s.centerOnNodeCounter + 1 })),
 }));

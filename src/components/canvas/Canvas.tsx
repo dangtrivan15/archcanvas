@@ -34,6 +34,7 @@ import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { ModeIndicator } from '@/components/canvas/ModeIndicator';
+import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { ShortcutHints } from '@/components/canvas/ShortcutHints';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
@@ -480,10 +481,61 @@ function CanvasInner() {
           uiState.closeRightPanel();
           return;
         }
+
+        // Escape with nothing selected and inside a group → navigate up (drill out)
+        if (navigationPath.length > 0) {
+          e.preventDefault();
+          console.log('[Canvas] Escape drill-out from:', navigationPath);
+          zoomOut();
+          return;
+        }
       }
 
       // Don't handle if delete dialog is already open
       if (deleteDialogOpen) return;
+
+      // Helper: delete selected edge(s) directly (no confirmation needed)
+      const deleteSelectedEdges = () => {
+        const canvasState = useCanvasStore.getState();
+        const edgeIds = canvasState.selectedEdgeIds.length > 0
+          ? canvasState.selectedEdgeIds
+          : canvasState.selectedEdgeId
+            ? [canvasState.selectedEdgeId]
+            : [];
+
+        if (edgeIds.length === 0) return false;
+
+        e.preventDefault();
+        if (edgeIds.length === 1) {
+          const edge = graph.edges.find((edge) => edge.id === edgeIds[0]);
+          const edgeLabel = edge?.label || 'edge';
+          removeEdge(edgeIds[0]!);
+          clearSelection();
+          useUIStore.getState().closeRightPanel();
+          showToast(`Deleted ${edgeLabel}. ${formatBindingDisplay('mod+z')} to undo`);
+        } else {
+          // Multi-edge deletion
+          const { textApi, undoManager } = useCoreStore.getState();
+          if (textApi && undoManager) {
+            for (const edgeId of edgeIds) {
+              textApi.removeEdge(edgeId);
+            }
+            const updatedGraph = textApi.getGraph();
+            undoManager.snapshot(`Delete ${edgeIds.length} edges`, updatedGraph);
+            useCoreStore.setState({
+              graph: updatedGraph,
+              isDirty: true,
+              edgeCount: updatedGraph.edges.length,
+              canUndo: undoManager.canUndo,
+              canRedo: undoManager.canRedo,
+            });
+          }
+          clearSelection();
+          useUIStore.getState().closeRightPanel();
+          showToast(`Deleted ${edgeIds.length} edges. ${formatBindingDisplay('mod+z')} to undo`);
+        }
+        return true;
+      };
 
       if (e.key === 'Delete') {
         // Delete key: node deletion (with confirmation) or edge deletion (direct)
@@ -499,15 +551,9 @@ function CanvasInner() {
               childCount: impact.childCount,
             });
           }
-        } else if (selectedEdgeId) {
+        } else if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
           // Edge deletion: direct (no confirmation needed)
-          e.preventDefault();
-          const edge = graph.edges.find((edge) => edge.id === selectedEdgeId);
-          const edgeLabel = edge?.label || 'edge';
-          removeEdge(selectedEdgeId);
-          clearSelection();
-          useUIStore.getState().closeRightPanel();
-          showToast(`Deleted ${edgeLabel}. ${formatBindingDisplay('mod+z')} to undo`);
+          deleteSelectedEdges();
         }
       } else if (e.key === 'Backspace') {
         if (navigationPath.length > 0) {
@@ -528,6 +574,9 @@ function CanvasInner() {
               childCount: impact.childCount,
             });
           }
+        } else if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
+          // Backspace at root level with selected edge(s) -> delete directly
+          deleteSelectedEdges();
         }
       }
     };
@@ -866,6 +915,9 @@ function CanvasInner() {
 
       {/* Contextual shortcut hints (bottom-right, above controls) */}
       <ShortcutHints />
+
+      {/* VS Code-style mode status bar (bottom of canvas) */}
+      <ModeStatusBar />
 
       {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (
