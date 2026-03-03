@@ -1,4 +1,60 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #213
+==================================================
+
+## What was accomplished:
+
+### Feature #213: Rapid delete clicks don't remove extra nodes (PASSING)
+- Verified existing idempotency protections in the deletion flow:
+  1. Canvas.tsx line 314: `if (deleteDialogOpen) return;` — blocks additional Delete keys while dialog open
+  2. DeleteConfirmationDialog.tsx: `clearSelection()` after confirm — clears selectedNodeId so subsequent Deletes have no target
+  3. graphEngine.ts removeNode: safe for non-existent IDs (filter returns unchanged array)
+- Created comprehensive test file: test/unit/ui/rapidDeleteIdempotency.test.ts (21 tests)
+
+## Test coverage (21 tests):
+1. Delete dialog guards against rapid Delete presses (4 tests)
+   - First press opens dialog, second press ignored, 5 rapid presses open once, 10 presses target same node
+2. After deletion, no node is selected for further deletes (3 tests)
+   - Confirming clears selection, Delete after confirm does nothing, rapid deletes don't affect other nodes
+3. removeNode is safe for already-removed or non-existent nodes (3 tests)
+   - Non-existent ID returns graph unchanged, double-remove is harmless, 5x remove leaves others intact
+4. Multiple rapid confirm clicks are harmless (2 tests)
+   - Double confirm only calls removeNode once, rapid confirms don't reopen dialog
+5. Backspace key has same idempotency protections (3 tests)
+   - Opens dialog once, rapid presses only open once, doesn't change target while dialog open
+6. Complete workflow: delete one node, verify others remain (2 tests)
+   - Create 3 nodes, select A, rapid Delete, confirm once → only A removed; further Deletes don't affect B/C
+7. Delete with no selection is a no-op (2 tests)
+   - No selection = no dialog, 10 presses with no selection = no dialog
+8. findNode returns undefined for deleted nodes (2 tests)
+   - findNode returns undefined for removed ID, Delete with stale selection doesn't open dialog
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) ✓
+2. Clicked Order Service node to select it (node marked [active]) ✓
+3. Pressed Delete once → confirmation dialog appeared for "Order Service" with "2 connected edges" ✓
+4. Status bar still "Nodes: 5 | Edges: 4" (no deletion yet) ✓
+5. Pressed Delete 5 more times rapidly while dialog open ✓
+6. Took snapshot → dialog still open, still targeting "Order Service" ✓
+7. Clicked "Delete" confirmation button ✓
+8. Order Service removed → "Nodes: 4 | Edges: 2" ✓
+9. Remaining nodes: API Gateway, User Service, Orders Database, Users Database ✓
+10. Pressed Delete 5 more times (no selection) → "Nodes: 4 | Edges: 2" unchanged ✓
+11. Console: 0 errors, 0 warnings ✓
+12. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Test results:
+- 21 new tests (all passing)
+- 1611 total tests across 108 files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: 214 of 235 (91.1%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: ce874de
+
+==================================================
 SESSION: 2026-03-03 - Feature #212
 ==================================================
 
