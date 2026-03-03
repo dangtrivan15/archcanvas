@@ -53,7 +53,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
     <div
       className={`
         border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
-        transition-shadow relative
+        transition-shadow relative overflow-hidden
         ${isRef ? 'bg-purple-50 border-dashed' : 'bg-white'}
         ${selected ? 'border-blue-500 shadow-md ring-2 ring-blue-200' : isRef ? 'border-purple-300 hover:border-purple-400' : 'border-gray-200 hover:border-gray-300'}
       `}

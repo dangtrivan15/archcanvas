@@ -47,6 +47,8 @@ export interface IntegrityWarningDialogInfo {
 export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 export const LEFT_PANEL_MIN_WIDTH = 180;
 export const LEFT_PANEL_MAX_WIDTH = 400;
+/** Drag below this threshold to snap-collapse the left panel */
+export const LEFT_PANEL_COLLAPSE_THRESHOLD = 120;
 export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
 export const RIGHT_PANEL_MIN_WIDTH = 220;
 export const RIGHT_PANEL_MAX_WIDTH = 500;
