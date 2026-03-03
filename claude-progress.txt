@@ -3755,3 +3755,74 @@ SESSION: 2026-03-03 - Feature #210
 - Zero console errors
 - No mock data patterns in production code
 - Committed: d37d9fc
+
+==================================================
+SESSION: 2026-03-03 - Feature #206
+==================================================
+
+## What was accomplished:
+
+### Feature #206: Proto message validation rejects malformed data (PASSING)
+- Verified that codec.ts already has ArchCanvasFile.verify() step after protobuf decode
+  (added by previous session during feature #205)
+- The verify step catches type mismatches in decoded messages with field-path error messages
+  (e.g., "Malformed protobuf data: header.formatVersion: integer expected")
+- Created comprehensive test file: test/unit/store/malformedProtoValidation.test.ts (28 tests)
+
+## Test coverage (28 tests):
+1. Wire-level corruption: invalid wire types (3 tests)
+   - Wire type 7 on unknown field → CodecError
+   - Wire type 6 on unknown field → CodecError
+   - Meaningful error message for invalid wire type
+2. Wire-level corruption: excessive field lengths (2 tests)
+   - Embedded message length exceeds buffer → CodecError
+   - String field length exceeds buffer → CodecError
+3. Field type mismatches: string where number expected (2 tests)
+   - FileHeader format_version as string → CodecError
+   - Architecture name as varint → CodecError
+4. Structural corruption: nested message issues (2 tests)
+   - Corrupted nested Node position → error or safe decode
+   - Edge with impossibly large enum value → handled safely
+5. Post-decode verify() catches type mismatches (6 tests)
+   - Non-integer format_version → "header.formatVersion: integer expected"
+   - Non-string architecture name → "name: string expected"
+   - Non-array nodes field → "nodes: array expected"
+   - Non-string Node.id → "id: string expected"
+   - Non-number Position.x → "number expected"
+   - Valid message → null (no error)
+6. Codec verify integration (2 tests)
+   - Valid file passes both decode and verify
+   - Protobuf decode errors wrapped as CodecError
+7. All malformation errors are proper Error instances (4 tests)
+   - Invalid wire type → Error subclass
+   - Excessive length → Error subclass
+   - Deeply nested corruption → Error subclass, no crash
+   - Multiple sequential variants → all proper errors
+8. Error messages identify the malformed area (3 tests)
+   - verify error includes field path (e.g., "header.formatVersion")
+   - Nested node field includes full path
+   - Codec decode error includes protobuf context
+9. User-visible error dialog integration (2 tests)
+   - Malformed data maps to "Invalid File Format" dialog
+   - Error dialog dismissible, app continues
+10. Round-trip validation (2 tests)
+    - Valid file passes both decode and verify
+    - Empty architecture passes verify
+
+## Browser verification steps completed:
+1. Loaded malformed-proto.archc via ?load=malformed-proto.archc URL param
+2. "Invalid File Format" error dialog appeared ✓
+3. Error message: "Failed to decode protobuf payload: invalid wire type 7 at offset 1" ✓
+4. Error identifies the malformed field/issue (wire type, offset) ✓
+5. Clicked OK to dismiss → dialog closed ✓
+6. App continued working normally after dismiss ✓
+7. Loaded ecommerce.archc successfully → 5 nodes, 4 edges ✓
+8. Console: 0 errors, 0 warnings on clean load ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 210 of 235 (89.4%)
+- All 1524 tests passing across 104 test files
+- Zero console errors
+- No mock data patterns in production code
+- Committed: b8f13c2
