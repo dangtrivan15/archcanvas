@@ -1,4 +1,85 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #236
+==================================================
+
+## What was accomplished:
+
+### Feature #236: Keyboard Shortcuts Help Panel (PASSING)
+- Created centralized keyboard shortcuts registry: src/config/keyboardShortcuts.ts
+  - 12 shortcuts across 4 categories: File, Edit, Canvas, Navigation
+  - Platform-aware key labels (Mac ⌘/⇧ symbols vs Windows Ctrl/Shift text)
+  - Helper functions: getShortcutsByCategory(), getShortcutKeys(), isMacPlatform()
+- Built ShortcutsHelpPanel modal dialog: src/components/shared/ShortcutsHelpPanel.tsx
+  - Grouped shortcuts by category with color-coded labels
+  - Keyboard icon header, close (X) button, scrollable content
+  - Focus trap, Escape key close, backdrop click close
+  - Footer hint: "Press ? to toggle this panel"
+  - Full ARIA support (role="dialog", aria-modal, aria-labelledby)
+- Added ? key trigger in useKeyboardShortcuts.ts
+  - Toggles shortcuts panel open/closed
+  - Skips when focus is in INPUT/TEXTAREA/contentEditable
+  - Does not require Ctrl/Cmd modifier
+- Added Keyboard icon help button in Toolbar.tsx (top right)
+  - Shows keyboard icon + "?" badge on wider screens
+  - Tooltip: "Keyboard shortcuts (?)"
+  - Focus-visible ring for tab navigation
+- Added shortcutsHelpOpen state + actions to uiStore.ts
+
+## Test file: test/unit/ui/shortcutsHelpPanel.test.ts (54 tests, all passing)
+1. Registry: contains all expected shortcuts (12)
+2. Registry: has unique IDs for all shortcuts
+3. Registry: all shortcuts have non-empty descriptions
+4. Registry: all shortcuts have both Mac and Windows keys
+5. Registry: all shortcuts belong to a valid category
+6. Registry: has at least one shortcut per category
+7. Platform: Mac keys use ⌘ symbol for modifier
+8. Platform: Windows keys use Ctrl for modifier
+9. Platform: getShortcutKeys returns valid string
+10. Platform: Save As shows Shift modifier
+11. Platform: Redo shows Shift+Z combo
+12. Platform: shortcuts-help shows ? key on both platforms
+13. Platform: isMacPlatform returns boolean
+14. Grouping: getShortcutsByCategory returns a Map
+15. Grouping: has all categories in display order
+16. Grouping: File category contains file operation shortcuts
+17. Grouping: Edit category contains undo/redo/delete shortcuts
+18. Grouping: Canvas category contains escape and help shortcuts
+19. Grouping: Navigation category contains drill-in/zoom-out
+20. Grouping: total shortcuts in all categories equals KEYBOARD_SHORTCUTS length
+21-26. UI Store: shortcutsHelpOpen default, open/close/toggle/idempotent
+27-29. Keyboard trigger: ? key handling, input guard, no Ctrl required
+30-32. Help button: exists in toolbar, accessible label, focus styles
+33-42. ShortcutsHelpPanel: App.tsx integration, ARIA, focus trap, Escape,
+       backdrop click, category sections, kbd elements, close button, footer, testids
+43-44. Category order: File/Edit/Canvas/Navigation, exactly 4 entries
+45-46. Escape handling: capture phase, stopPropagation
+47-54. Shortcut content accuracy: correct keys for all 8 key shortcuts
+
+## Browser verification steps completed:
+1. Page loaded, toolbar visible with keyboard icon help button (top right) ✓
+2. Clicked help button → Shortcuts help dialog opened ✓
+3. Dialog title: "Keyboard Shortcuts" ✓
+4. All 4 category sections visible (File, Edit, Canvas, Navigation) ✓
+5. 12 shortcut key labels displayed ✓
+6. Save shortcut shows "⌘ S" (Mac) ✓
+7. Undo shortcut shows "⌘ Z" (Mac) ✓
+8. Help shortcut shows "?" ✓
+9. Close button (X) found and working ✓
+10. Dialog closed via close button ✓
+11. Dialog opened via ? key ✓
+12. Dialog closed via Escape key ✓
+13. Dialog closed via backdrop click ✓
+14. Console errors: 0 ✓
+15. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 236 of 238 (99.2%)
+- 54 new tests (all passing)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 6c1fe40
+
+==================================================
 SESSION: 2026-03-03 - Features #224, #225
 ==================================================
 
