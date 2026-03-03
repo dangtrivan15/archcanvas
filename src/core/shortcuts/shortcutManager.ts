@@ -57,14 +57,32 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'edit:redo', label: 'Redo', category: 'Edit', defaultBinding: 'mod+shift+z' },
   { id: 'edit:redo-alt', label: 'Redo (Alt)', category: 'Edit', defaultBinding: 'mod+y' },
   { id: 'edit:delete', label: 'Delete Node', category: 'Edit', defaultBinding: 'delete' },
+  { id: 'node:rename', label: 'Quick Rename', category: 'Edit', defaultBinding: 'f2' },
 
   // Canvas
   { id: 'canvas:command-palette', label: 'Command Palette', category: 'Canvas', defaultBinding: 'mod+k' },
   { id: 'canvas:deselect', label: 'Deselect / Close', category: 'Canvas', defaultBinding: 'escape' },
   { id: 'canvas:shortcuts-help', label: 'Shortcuts Help', category: 'Canvas', defaultBinding: '?' },
 
+  // View / Zoom
+  { id: 'view:zoom-in', label: 'Zoom In', category: 'View', defaultBinding: '=' },
+  { id: 'view:zoom-out', label: 'Zoom Out', category: 'View', defaultBinding: '-' },
+  { id: 'view:fit-all', label: 'Fit View', category: 'View', defaultBinding: 'mod+0' },
+  { id: 'view:zoom-100', label: 'Zoom to 100%', category: 'View', defaultBinding: 'mod+1' },
+
   // Navigation
   { id: 'nav:zoom-out', label: 'Zoom Out to Parent', category: 'Navigation', defaultBinding: 'backspace' },
+  { id: 'nav:arrow-up', label: 'Navigate Up', category: 'Navigation', defaultBinding: 'arrowup' },
+  { id: 'nav:arrow-down', label: 'Navigate Down', category: 'Navigation', defaultBinding: 'arrowdown' },
+  { id: 'nav:arrow-left', label: 'Navigate Left', category: 'Navigation', defaultBinding: 'arrowleft' },
+  { id: 'nav:arrow-right', label: 'Navigate Right', category: 'Navigation', defaultBinding: 'arrowright' },
+
+  // Mode transitions (Vim-style)
+  { id: 'normal:enter-connect', label: 'Enter Connect Mode', category: 'Mode', defaultBinding: 'c' },
+  { id: 'normal:enter-edit', label: 'Enter Edit Mode', category: 'Mode', defaultBinding: 'i' },
+  { id: 'normal:enter-edit-alt', label: 'Enter Edit Mode (Alt)', category: 'Mode', defaultBinding: 'enter' },
+  { id: 'connect:exit', label: 'Exit Connect Mode', category: 'Mode', defaultBinding: 'escape' },
+  { id: 'edit:exit', label: 'Exit Edit Mode', category: 'Mode', defaultBinding: 'escape' },
 ];
 
 /**

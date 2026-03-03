@@ -18,7 +18,7 @@ export interface KeyboardShortcut {
   winKeys: string;
 }
 
-export type ShortcutCategory = 'File' | 'Edit' | 'Canvas' | 'Navigation';
+export type ShortcutCategory = 'File' | 'Edit' | 'View' | 'Canvas' | 'Navigation';
 
 /**
  * All registered keyboard shortcuts, grouped by category.
@@ -83,6 +83,43 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: 'Delete',
     winKeys: 'Delete',
   },
+  {
+    id: 'quick-rename',
+    category: 'Edit',
+    description: 'Quick rename selected node',
+    macKeys: 'F2',
+    winKeys: 'F2',
+  },
+
+  // === View / Zoom ===
+  {
+    id: 'view-zoom-in',
+    category: 'View',
+    description: 'Zoom in',
+    macKeys: '= / ⌘ =',
+    winKeys: '= / Ctrl+=',
+  },
+  {
+    id: 'view-zoom-out',
+    category: 'View',
+    description: 'Zoom out',
+    macKeys: '- / ⌘ -',
+    winKeys: '- / Ctrl+-',
+  },
+  {
+    id: 'view-fit-all',
+    category: 'View',
+    description: 'Fit view (show all)',
+    macKeys: '⌘ 0',
+    winKeys: 'Ctrl+0',
+  },
+  {
+    id: 'view-zoom-100',
+    category: 'View',
+    description: 'Zoom to 100%',
+    macKeys: '⌘ 1',
+    winKeys: 'Ctrl+1',
+  },
 
   // === Canvas ===
   {
@@ -122,6 +159,34 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: 'Backspace',
     winKeys: 'Backspace',
   },
+  {
+    id: 'nav-arrow-up',
+    category: 'Navigation',
+    description: 'Navigate to node above',
+    macKeys: '↑',
+    winKeys: '↑',
+  },
+  {
+    id: 'nav-arrow-down',
+    category: 'Navigation',
+    description: 'Navigate to node below',
+    macKeys: '↓',
+    winKeys: '↓',
+  },
+  {
+    id: 'nav-arrow-left',
+    category: 'Navigation',
+    description: 'Navigate to node left',
+    macKeys: '←',
+    winKeys: '←',
+  },
+  {
+    id: 'nav-arrow-right',
+    category: 'Navigation',
+    description: 'Navigate to node right',
+    macKeys: '→',
+    winKeys: '→',
+  },
 ];
 
 /**
@@ -130,6 +195,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
 export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   'File',
   'Edit',
+  'View',
   'Canvas',
   'Navigation',
 ];
@@ -155,10 +221,19 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'redo': 'edit:redo',
   'redo-alt': 'edit:redo-alt',
   'delete-node': 'edit:delete',
+  'quick-rename': 'node:rename',
   'command-palette': 'canvas:command-palette',
   'deselect': 'canvas:deselect',
   'shortcuts-help': 'canvas:shortcuts-help',
+  'view-zoom-in': 'view:zoom-in',
+  'view-zoom-out': 'view:zoom-out',
+  'view-fit-all': 'view:fit-all',
+  'view-zoom-100': 'view:zoom-100',
   'zoom-out': 'nav:zoom-out',
+  'nav-arrow-up': 'nav:arrow-up',
+  'nav-arrow-down': 'nav:arrow-down',
+  'nav-arrow-left': 'nav:arrow-left',
+  'nav-arrow-right': 'nav:arrow-right',
 };
 
 /**
