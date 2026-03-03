@@ -3696,3 +3696,62 @@ SESSION: 2026-03-03 - Feature #205
 - Zero console errors
 - All 14 format version tests passing
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-03 - Feature #210
+==================================================
+
+## What was accomplished:
+
+### Feature #210: Keyboard shortcut Ctrl+N creates new file (PASSING)
+- Verified existing implementation in useKeyboardShortcuts.ts (lines 40-55):
+  - Ctrl+N (without Shift) → creates new empty architecture
+  - Checks isDirty state → shows UnsavedChangesDialog if unsaved changes
+  - If clean → directly calls newFile() + zoomToRoot()
+  - preventDefault() stops browser's default new-window behavior
+- The newFile() method in coreStore.ts (lines 171-194):
+  - Creates empty graph via createEmptyGraph()
+  - Clears undo/redo history
+  - Clears AI conversations
+  - Sets fileName to "Untitled Architecture"
+  - Clears fileHandle, fileCreatedAtMs, isDirty, nodeCount, edgeCount
+
+## Test file: test/unit/ui/keyboardShortcutNewFile.test.ts (15 tests, all passing)
+1. newFile creates empty architecture with zero nodes and edges
+2. newFile sets fileName to "Untitled Architecture"
+3. newFile clears the file handle
+4. newFile clears dirty state
+5. newFile clears undo/redo history
+6. Ctrl+N preventDefault stops browser default new window
+7. Cmd+N (Mac) also triggers new file
+8. Ctrl+Shift+N does NOT trigger new file
+9. Non-modified N key does not trigger new file
+10. Ctrl+N on clean state creates new file directly
+11. Ctrl+N on dirty state opens unsaved changes dialog
+12. Confirming unsaved changes dialog creates new file
+13. Ctrl+N resets navigation path to root
+14. newFile clears architecture name and description
+15. newFile clears fileCreatedAtMs timestamp
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) via ?load= URL ✓
+2. Toolbar showed "ecommerce.archc", status bar: Nodes: 5 | Edges: 4 ✓
+3. Pressed Ctrl+N keyboard shortcut ✓
+4. Toolbar changed to "Untitled Architecture" ✓
+5. Status bar changed to "Nodes: 0 | Edges: 0" ✓
+6. Canvas is empty (no node groups visible) ✓
+7. Connect button disabled (no nodes to connect) ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Console log confirmed Ctrl+N detection: "[KeyboardShortcuts] key: n ctrl: true" ✓
+10. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Test results:
+- 15 new tests (all passing)
+- 1524 total tests across 104 files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: 211 of 235 (89.8%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: d37d9fc
