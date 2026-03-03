@@ -2,6 +2,8 @@
  * DeleteConfirmationDialog - modal overlay showing deletion impact.
  * Displays the node name, affected edges, and child nodes.
  * User can Cancel or Confirm the deletion.
+ * Fully keyboard accessible: Enter=confirm, Escape=cancel, Tab between buttons.
+ * Shows undo hint toast after successful deletion.
  */
 
 import { useEffect, useCallback, useRef } from 'react';
@@ -16,6 +18,7 @@ export function DeleteConfirmationDialog() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
   const deleteDialogInfo = useUIStore((s) => s.deleteDialogInfo);
   const closeDeleteDialog = useUIStore((s) => s.closeDeleteDialog);
+  const showToast = useUIStore((s) => s.showToast);
   const removeNode = useCoreStore((s) => s.removeNode);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -29,6 +32,16 @@ export function DeleteConfirmationDialog() {
     }
   }, [deleteDialogOpen]);
 
+  const handleConfirm = useCallback(() => {
+    if (!deleteDialogInfo) return;
+    const deletedName = deleteDialogInfo.nodeName;
+    removeNode(deleteDialogInfo.nodeId);
+    clearSelection();
+    closeDeleteDialog();
+    // Show undo hint toast
+    showToast(`Deleted ${deletedName}. ${formatBinding('mod+z')} to undo`);
+  }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog, showToast, formatBinding]);
+
   // Handle keyboard: Escape to cancel, Enter to confirm
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -38,22 +51,19 @@ export function DeleteConfirmationDialog() {
         e.preventDefault();
         e.stopPropagation();
         closeDeleteDialog();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleConfirm();
       }
     },
-    [deleteDialogOpen, closeDeleteDialog],
+    [deleteDialogOpen, closeDeleteDialog, handleConfirm],
   );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
-
-  const handleConfirm = useCallback(() => {
-    if (!deleteDialogInfo) return;
-    removeNode(deleteDialogInfo.nodeId);
-    clearSelection();
-    closeDeleteDialog();
-  }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog]);
 
   const handleCancel = useCallback(() => {
     closeDeleteDialog();

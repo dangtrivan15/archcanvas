@@ -19,6 +19,18 @@ import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
 import { CanvasMode } from '@/core/input/canvasMode';
 
+/**
+ * Map from node:add-* action IDs to NodeDef type keys.
+ * Used by hotkey node creation shortcuts (Normal mode only).
+ */
+export const HOTKEY_NODE_TYPE_MAP: Record<string, string> = {
+  'node:add-service': 'compute/service',
+  'node:add-database': 'data/database',
+  'node:add-queue': 'messaging/message-queue',
+  'node:add-gateway': 'compute/api-gateway',
+  'node:add-cache': 'data/cache',
+};
+
 export function useKeyboardShortcuts() {
   const saveFile = useCoreStore((s) => s.saveFile);
   const saveFileAs = useCoreStore((s) => s.saveFileAs);
@@ -111,10 +123,14 @@ export function useKeyboardShortcuts() {
       if (!actionId) return;
 
       // Filter mode-prefixed actions by current mode
-      // (normal:*, connect:*, edit:* actions are only active in their respective mode)
+      // Only actual mode-transition actions are mode-gated:
+      // - normal:* actions (enter-connect, enter-edit) are only in Normal mode
+      // - connect:* actions (exit) are only in Connect mode
+      // - edit:exit is only in Edit mode
+      // Category-based actions (edit:undo, edit:redo, edit:delete) work in ALL modes.
       if (actionId.startsWith('normal:') && currentMode !== CanvasMode.Normal) return;
       if (actionId.startsWith('connect:') && currentMode !== CanvasMode.Connect) return;
-      if (actionId.startsWith('edit:') && currentMode !== CanvasMode.Edit) return;
+      if (actionId === 'edit:exit' && currentMode !== CanvasMode.Edit) return;
 
       switch (actionId) {
         case 'canvas:shortcuts-help':
