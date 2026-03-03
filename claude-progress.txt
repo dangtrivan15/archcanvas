@@ -1,4 +1,65 @@
 ==================================================
+SESSION: 2026-03-04 - Feature #259
+==================================================
+
+## What was accomplished:
+
+### Feature #259: Inline Property Quick-Edit (PASSING)
+- Implemented inline editing of display name directly on canvas node cards
+- F2 activates an editable text input overlay on the selected node
+- No need to open the right panel for quick renames
+
+## Changes made:
+1. **uiStore.ts**: Added `inlineEditNodeId` state with `setInlineEditNodeId`/`clearInlineEdit` actions
+2. **GenericNode.tsx**: Added inline edit overlay with:
+   - `useUIStore` subscription for `inlineEditNodeId`
+   - Text input with auto-focus and select-all on activation
+   - Enter/Tab confirms, Escape reverts, Blur confirms
+   - `e.stopPropagation()` prevents canvas shortcuts during editing
+   - `nodrag` class prevents canvas dragging while editing
+   - Applies changes via `coreStore.updateNode()` with undo snapshot
+3. **useKeyboardShortcuts.ts**: F2 (`node:rename`) now calls `setInlineEditNodeId` instead of `openRightPanel`
+4. **commandRegistry.ts**: "Rename Node" command now uses `setInlineEditNodeId` for inline edit
+5. **quickRenameF2.test.ts**: Updated existing test to match new inline edit behavior
+
+## Test file: test/unit/ui/inlinePropertyQuickEdit.test.ts (44 tests, all passing)
+- Inline Edit State Management (5 tests): initial null, set/clear, switch nodes
+- F2 Shortcut Activation (5 tests): registration, activation, no-selection guard, binding parse
+- Command Palette Integration (4 tests): command exists, searchable, executes inline edit
+- Inline Edit Confirmation/Reversion (4 tests): confirm clears, revert preserves, independence
+- FocusZone TextInput Suppression (3 tests): INPUT detection, no-input fallback, inline input detected
+- Source Code Verification (16 tests): all implementation patterns verified
+- coreStore.updateNode Integration (2 tests): rename with undo, same-value handling
+- Edge Cases (5 tests): empty input, whitespace, sequential edits, state independence
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) via ?load= URL ✓
+2. Clicked API Gateway node to select it ✓
+3. Pressed F2 → inline edit input appeared on the node card with blue border ✓
+4. Input was active and pre-filled with "API Gateway" ✓
+5. Filled "My Custom Gateway" → pressed Enter ✓
+6. Name changed to "My Custom Gateway" in canvas, right panel header, and properties ✓
+7. Inline edit input closed after Enter ✓
+8. Clicked Order Service → F2 → inline edit appeared with "Order Service" ✓
+9. Filled "SHOULD BE REVERTED" → pressed Escape ✓
+10. Name reverted to "Order Service" ✓
+11. Undo (Cmd+Z) → API Gateway name restored from "My Custom Gateway" ✓
+12. Console: 0 errors, 0 warnings throughout entire session ✓
+13. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+14. Screenshot verified: inline edit shows blue-bordered input on node card ✓
+
+## Test results:
+- 44 new tests (all passing)
+- 3062 total tests across 152 files (all passing)
+- Zero regressions
+
+## Current completion status:
+- Features passing: 255 of 263 (97.0%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 3c53936
+
+==================================================
 SESSION: 2026-03-03 - Features #248, #244, #246
 ==================================================
 
@@ -4836,3 +4897,75 @@ SESSION: 2026-03-03 - Features #249, #254, #261
 - Zero console errors across all browser testing
 - No mock data patterns in production code
 - All 101 new tests passing across 3 test files
+
+==================================================
+SESSION: 2026-03-03 - Feature #250
+==================================================
+
+## What was accomplished:
+
+### Feature #250: Vim-style Connect Mode (PASSING)
+- Implemented full Vim-style edge creation workflow:
+  1. Press C with node selected → enters Connect mode, source = selected node
+  2. Press C without selection → enters Connect mode, must pick source first
+  3. Arrow keys in Connect mode → spatial navigation to pick target node
+  4. Enter → confirms target → shows type picker
+  5. 1/2/3 keys → picks edge type (1=Sync, 2=Async, 3=Data Flow)
+  6. Edge created, undo snapshot taken, returns to Normal mode, new edge selected
+  7. Escape at any step → cancels, clears state, returns to Normal
+
+- Added to uiStore:
+  - connectSource, connectTarget, connectStep state
+  - startConnect(), setConnectTarget(), setConnectStep(), clearConnectState() actions
+  - exitToNormal() now also clears connect state
+
+- Modified Canvas.tsx:
+  - Connect mode keyboard handler (arrow keys, Enter, 1/2/3) in capture phase
+  - Normal arrow handler skips when in Connect mode
+  - Preview dashed edge (animated, blue, strokeDasharray) from source to target
+  - Source node green glow CSS class (connect-source-glow)
+  - Connect mode overlay banner showing step-specific instructions
+
+- Modified useKeyboardShortcuts.ts:
+  - C key now calls startConnect(selectedNodeId) when entering Connect mode
+
+- Added to index.css:
+  - .react-flow__node.connect-source-glow: green box-shadow + border-radius
+
+## Test file: test/unit/ui/vimConnectMode.test.ts (49 tests, all passing)
+1-7. Connect state management (initial null, startConnect, setTarget, setStep, clearState, exitToNormal)
+8-11. Mode entry (C with selection, C without, valid transitions Normal↔Connect)
+12-17. Spatial navigation (right, down, left, up, top-left default, self-loop prevention)
+18-21. Step transitions (select-source→select-target, select-target→pick-type, guard conditions)
+22-25. Edge type keys (1→sync, 2→async, 3→data-flow, 4→invalid)
+26-28. Escape handling (from all steps)
+29-31. Preview edge behavior (show/hide conditions)
+32-41. Source code verification (10 tests checking implementations)
+42-49. Full flow simulations (complete flow, no-selection flow, escape at various steps, visual indicators)
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) ✓
+2. Arrow key selected API Gateway node ✓
+3. Pressed C → Connect mode activated ✓
+4. "-- CONNECT --" mode indicator appeared (blue, bottom-left) ✓
+5. Banner: "CONNECT: Select target (↑↓←→) then Enter | Esc to cancel" ✓
+6. Source node (API Gateway) showed green glow ✓
+7. Shortcut hints updated to Connect mode hints ✓
+8. ArrowRight → navigated to Order Service, preview dashed edge appeared ✓
+9. Enter → banner changed to "CONNECT: Pick type — 1 Sync 2 Async 3 Data Flow | Esc to cancel" ✓
+10. Pressed 2 → Async edge created (Edges: 4→5) ✓
+11. Returned to Normal mode, new edge selected in right panel ✓
+12. Edge details: API Gateway → Order Service, type: async ✓
+13. File marked modified (asterisk in title) ✓
+14. Green glow removed, preview edge gone ✓
+15. Tested Escape cancellation: C → ArrowDown → Escape → no edge created, Normal mode ✓
+16. Undo (Cmd+Z) → edge removed (Edges: 5→4) ✓
+17. Console: 0 errors, 0 warnings ✓
+18. Mock data grep: no hits in production code ✓
+
+## Current completion status:
+- Features passing: 254 of 263 (96.6%)
+- 49 new tests (all passing)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: a2b6c69
