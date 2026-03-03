@@ -18,7 +18,7 @@ export interface KeyboardShortcut {
   winKeys: string;
 }
 
-export type ShortcutCategory = 'File' | 'Edit' | 'View' | 'Canvas' | 'Navigation';
+export type ShortcutCategory = 'File' | 'Edit' | 'View' | 'Canvas' | 'Navigation' | 'Quick Create';
 
 /**
  * All registered keyboard shortcuts, grouped by category.
@@ -201,6 +201,43 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: '→',
     winKeys: '→',
   },
+
+  // === Quick Create (Normal mode only) ===
+  {
+    id: 'quick-add-service',
+    category: 'Quick Create',
+    description: 'Quick add Service node',
+    macKeys: 'S',
+    winKeys: 'S',
+  },
+  {
+    id: 'quick-add-database',
+    category: 'Quick Create',
+    description: 'Quick add Database node',
+    macKeys: 'D',
+    winKeys: 'D',
+  },
+  {
+    id: 'quick-add-queue',
+    category: 'Quick Create',
+    description: 'Quick add Queue node',
+    macKeys: 'Q',
+    winKeys: 'Q',
+  },
+  {
+    id: 'quick-add-gateway',
+    category: 'Quick Create',
+    description: 'Quick add Gateway node',
+    macKeys: 'G',
+    winKeys: 'G',
+  },
+  {
+    id: 'quick-add-cache',
+    category: 'Quick Create',
+    description: 'Quick add Cache node',
+    macKeys: 'A',
+    winKeys: 'A',
+  },
 ];
 
 /**
@@ -212,6 +249,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   'View',
   'Canvas',
   'Navigation',
+  'Quick Create',
 ];
 
 /**
@@ -250,6 +288,11 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'nav-arrow-down': 'nav:arrow-down',
   'nav-arrow-left': 'nav:arrow-left',
   'nav-arrow-right': 'nav:arrow-right',
+  'quick-add-service': 'node:add-service',
+  'quick-add-database': 'node:add-database',
+  'quick-add-queue': 'node:add-queue',
+  'quick-add-gateway': 'node:add-gateway',
+  'quick-add-cache': 'node:add-cache',
 };
 
 /**

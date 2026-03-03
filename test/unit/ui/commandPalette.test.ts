@@ -8,6 +8,7 @@ import {
   getStaticCommands,
   getNodeCommands,
   getNodeCreationCommands,
+  getBulkOperationCommands,
   getAllCommands,
   searchCommands,
   type Command,
@@ -141,15 +142,16 @@ describe('Command Registry', () => {
   });
 
   describe('getAllCommands', () => {
-    it('combines static, node creation, and node navigation commands', () => {
+    it('combines static, bulk, node creation, and node navigation commands', () => {
       const textApi = useCoreStore.getState().textApi!;
       textApi.addNode({ type: 'compute/service', displayName: 'Node1' });
 
       const all = getAllCommands();
       const staticCount = getStaticCommands().length;
+      const bulkCount = getBulkOperationCommands().length;
       const creationCount = getNodeCreationCommands().length;
       const nodeCount = getNodeCommands().length;
-      expect(all.length).toBe(staticCount + creationCount + nodeCount);
+      expect(all.length).toBe(staticCount + bulkCount + creationCount + nodeCount);
     });
   });
 });
