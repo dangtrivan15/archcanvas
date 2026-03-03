@@ -4278,3 +4278,44 @@ SESSION: 2026-03-03 - Features #216, #217, #218
 - Zero console errors
 - No mock data patterns in production code
 - All my tests (61 new across 3 files) passing
+
+==================================================
+SESSION: 2026-03-03 - Features #221, #222, #223
+==================================================
+
+## What was accomplished:
+
+### Feature #221: Tab navigation through toolbar items (PASSING)
+- Added focus-visible:ring-2, focus-visible:outline-none, focus-visible:ring-offset-1 to all 4 toolbar buttons
+- FileMenu, AddNodeButton, ConnectNodesButton, LayoutMenu all have visible focus rings via Tailwind
+- 24 unit tests: ARIA structure, focusable buttons, focus ring CSS classes, DOM order, accessibility attributes
+- Browser verified: Tab moves through File → Add Node → Connect → Layout with visible focus rings
+
+### Feature #222: Focus rings visible on interactive elements (PASSING)
+- Added global CSS rule in index.css for button, input, select, textarea, [role="tab"], [role="menuitem"], a
+- Uses outline: 2px solid hsl(var(--ring)) with outline-offset: 1px
+- Covers ALL interactive elements app-wide without modifying individual component files
+- Toolbar buttons with explicit Tailwind focus-visible classes override the global rule (higher specificity)
+- 11 unit tests: toolbar buttons, search input, NodeDef browser elements, dialog buttons, menu items
+- Browser verified: focus rings visible on toolbar buttons, search input, tab items, select dropdowns, text inputs
+
+### Feature #223: ARIA labels on canvas controls (PASSING)
+- Added aria-label="Canvas controls" and data-testid="canvas-controls" to Controls component
+- Added aria-label="Mini map" and data-testid="canvas-minimap" to MiniMap component
+- React Flow v12 already provides built-in ARIA labels: Zoom In, Zoom Out, Fit View, Toggle Interactivity
+- 15 unit tests: ARIA attributes in source, Controls configuration, MiniMap configuration, imports
+- Browser verified: all 6 canvas control elements have descriptive ARIA labels
+
+## Verification summary:
+- All features verified with browser automation (playwright-cli)
+- Zero console errors across all tests
+- Zero warnings
+- No mock data patterns in production code (only legitimate globalThis.crypto in codec.ts)
+- All unit tests passing
+
+## Current completion status:
+- Features passing: 226 of 235 (96.2%)
+- All new tests passing (50 new tests across 3 test files)
+- Zero console errors
+- No mock data patterns in production code
+- Commits: 8ca19b9, 37fb9af, bf72705
