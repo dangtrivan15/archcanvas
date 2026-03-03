@@ -1,0 +1,100 @@
+/**
+ * Default color mappings for node types.
+ * Each node type namespace gets a distinct default color to make
+ * different node types visually distinguishable at a glance.
+ *
+ * Colors can be overridden per-node via position.color (persisted in .archc file).
+ */
+
+/** Predefined color palette for the color picker UI */
+export const NODE_COLOR_PALETTE = [
+  { name: 'Blue', value: '#3B82F6' },
+  { name: 'Green', value: '#10B981' },
+  { name: 'Orange', value: '#F59E0B' },
+  { name: 'Purple', value: '#8B5CF6' },
+  { name: 'Cyan', value: '#06B6D4' },
+  { name: 'Red', value: '#EF4444' },
+  { name: 'Pink', value: '#EC4899' },
+  { name: 'Indigo', value: '#6366F1' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Amber', value: '#D97706' },
+  { name: 'Lime', value: '#84CC16' },
+  { name: 'Rose', value: '#F43F5E' },
+] as const;
+
+/** Default colors per specific node type (most specific match) */
+const NODE_TYPE_COLOR_MAP: Record<string, string> = {
+  'compute/service': '#3B82F6',       // Blue
+  'compute/function': '#6366F1',      // Indigo
+  'compute/worker': '#8B5CF6',        // Purple
+  'compute/api-gateway': '#06B6D4',   // Cyan
+  'data/database': '#10B981',         // Green
+  'data/cache': '#14B8A6',            // Teal
+  'data/object-storage': '#84CC16',   // Lime
+  'data/repository': '#059669',       // Emerald
+  'messaging/message-queue': '#F59E0B', // Amber/Orange
+  'messaging/event-bus': '#D97706',   // Darker amber
+  'messaging/stream-processor': '#EA580C', // Deep orange
+  'network/load-balancer': '#8B5CF6', // Purple
+  'network/cdn': '#A855F7',           // Light purple
+  'network/dns': '#7C3AED',           // Violet
+  'observability/logging': '#06B6D4', // Cyan
+  'observability/monitoring': '#0891B2', // Darker cyan
+};
+
+/** Fallback colors per namespace (when no specific type match) */
+const NAMESPACE_COLOR_FALLBACK: Record<string, string> = {
+  compute: '#3B82F6',     // Blue
+  data: '#10B981',        // Green
+  messaging: '#F59E0B',   // Orange
+  network: '#8B5CF6',     // Purple
+  observability: '#06B6D4', // Cyan
+};
+
+/** Default color when no type or namespace match */
+const DEFAULT_NODE_COLOR = '#6B7280'; // Gray
+
+/**
+ * Get the default color for a node type.
+ * Priority: exact type match > namespace match > global default.
+ */
+export function getDefaultNodeColor(nodeType: string): string {
+  // Exact type match
+  if (NODE_TYPE_COLOR_MAP[nodeType]) {
+    return NODE_TYPE_COLOR_MAP[nodeType];
+  }
+
+  // Namespace fallback
+  const namespace = nodeType.split('/')[0] ?? '';
+  if (namespace && NAMESPACE_COLOR_FALLBACK[namespace]) {
+    return NAMESPACE_COLOR_FALLBACK[namespace];
+  }
+
+  return DEFAULT_NODE_COLOR;
+}
+
+/**
+ * Get the effective color for a node.
+ * Uses custom color (position.color) if set, otherwise falls back to type default.
+ */
+export function getEffectiveNodeColor(customColor: string | undefined, nodeType: string): string {
+  if (customColor && customColor.trim()) {
+    return customColor;
+  }
+  return getDefaultNodeColor(nodeType);
+}
+
+/**
+ * Convert a hex color to a lighter background variant (with alpha).
+ * Used for node header backgrounds.
+ */
+export function colorToBackground(hexColor: string, alpha: number = 0.12): string {
+  return `${hexColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Convert a hex color to a border variant (with alpha).
+ */
+export function colorToBorder(hexColor: string, alpha: number = 0.5): string {
+  return `${hexColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+}

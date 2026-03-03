@@ -234,6 +234,40 @@ function updateNodeInList(
 }
 
 /**
+ * Update a node's position color (recursive search).
+ * Pass undefined to clear the custom color.
+ */
+export function updateNodeColor(
+  graph: ArchGraph,
+  nodeId: string,
+  color: string | undefined,
+): ArchGraph {
+  return {
+    ...graph,
+    nodes: updateNodeColorInList(graph.nodes, nodeId, color),
+  };
+}
+
+function updateNodeColorInList(
+  nodes: ArchNode[],
+  nodeId: string,
+  color: string | undefined,
+): ArchNode[] {
+  return nodes.map((node) => {
+    if (node.id === nodeId) {
+      return { ...node, position: { ...node.position, color } };
+    }
+    if (node.children.length > 0) {
+      return {
+        ...node,
+        children: updateNodeColorInList(node.children, nodeId, color),
+      };
+    }
+    return node;
+  });
+}
+
+/**
  * Move a node to a new position (recursive search).
  */
 export function moveNode(

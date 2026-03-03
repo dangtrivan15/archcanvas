@@ -34,6 +34,7 @@ import {
   removeNode as engineRemoveNode,
   removeEdge as engineRemoveEdge,
   updateNode as engineUpdateNode,
+  updateNodeColor as engineUpdateNodeColor,
   addNoteToNode,
   addNoteToEdge,
   updateNoteStatus,
@@ -310,6 +311,14 @@ export class TextApi {
    */
   updateNode(nodeId: string, params: UpdateNodeParams): void {
     this.graph = engineUpdateNode(this.graph, nodeId, params);
+  }
+
+  /**
+   * Update a node's color (stored in position.color).
+   * Pass undefined to clear the custom color (reverts to type default).
+   */
+  updateNodeColor(nodeId: string, color: string | undefined): void {
+    this.graph = engineUpdateNodeColor(this.graph, nodeId, color);
   }
 
   /**

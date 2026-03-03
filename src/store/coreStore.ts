@@ -69,6 +69,7 @@ export interface CoreStoreState {
   addCodeRef: (params: AddCodeRefParams) => void;
   suggest: (params: SuggestParams) => Note | undefined;
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
+  updateNodeColor: (nodeId: string, color: string | undefined) => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
 
   // Layout
@@ -813,6 +814,26 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     textApi.resolveSuggestion(nodeId, noteId, action);
     const updatedGraph = textApi.getGraph();
     undoManager.snapshot(`${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`, updatedGraph);
+
+    set({
+      graph: updatedGraph,
+      isDirty: true,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
+    });
+  },
+
+  /**
+   * Update a node's custom color (stored in position.color).
+   * Pass undefined to clear the custom color (reverts to type default).
+   */
+  updateNodeColor: (nodeId, color) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return;
+
+    textApi.updateNodeColor(nodeId, color);
+    const updatedGraph = textApi.getGraph();
+    undoManager.snapshot('Update node color', updatedGraph);
 
     set({
       graph: updatedGraph,
