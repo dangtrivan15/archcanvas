@@ -74,8 +74,9 @@ export function ConnectNodesButton() {
 
           {/* Source node selector */}
           <div>
-            <label className="text-xs text-gray-500">From Node</label>
+            <label htmlFor="edge-source-select" className="text-xs text-gray-500">From Node</label>
             <select
+              id="edge-source-select"
               value={sourceIdx}
               onChange={(e) => setSourceIdx(Number(e.target.value))}
               className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"
@@ -91,8 +92,9 @@ export function ConnectNodesButton() {
 
           {/* Target node selector */}
           <div>
-            <label className="text-xs text-gray-500">To Node</label>
+            <label htmlFor="edge-target-select" className="text-xs text-gray-500">To Node</label>
             <select
+              id="edge-target-select"
               value={targetIdx}
               onChange={(e) => setTargetIdx(Number(e.target.value))}
               className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"
@@ -108,8 +110,9 @@ export function ConnectNodesButton() {
 
           {/* Edge type selector */}
           <div>
-            <label className="text-xs text-gray-500">Edge Type</label>
+            <label htmlFor="edge-type-select" className="text-xs text-gray-500">Edge Type</label>
             <select
+              id="edge-type-select"
               value={edgeType}
               onChange={(e) => setEdgeType(e.target.value as 'sync' | 'async' | 'data-flow')}
               className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"

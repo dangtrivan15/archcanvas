@@ -94,6 +94,7 @@ export function AddNodeButton() {
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
               placeholder="Custom name (optional)"
+              aria-label="Custom node name"
               className="w-full text-sm border rounded px-2 py-1.5"
               data-testid="custom-node-name-input"
               autoFocus
