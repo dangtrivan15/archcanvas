@@ -26,19 +26,22 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useCoreStore } from '@/store/coreStore';
-import { useCanvasStore } from '@/store/canvasStore';
+import { useCanvasStore, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
 import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
+import { ModeIndicator } from '@/components/canvas/ModeIndicator';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
+import { findNearestNode, findTopLeftNode, extractPositions, type Direction } from '@/core/input/spatialNavigation';
+import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 
 export function Canvas() {
   return (
@@ -49,7 +52,7 @@ export function Canvas() {
 }
 
 function CanvasInner() {
-  const { fitView, screenToFlowPosition } = useReactFlow();
+  const { fitView, screenToFlowPosition, setCenter, getViewport, setViewport: rfSetViewport } = useReactFlow();
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
   const addNode = useCoreStore((s) => s.addNode);
@@ -68,8 +71,15 @@ function CanvasInner() {
   const placementMode = useUIStore((s) => s.placementMode);
   const placementInfo = useUIStore((s) => s.placementInfo);
   const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
+  const canvasMode = useUIStore((s) => s.canvasMode);
   const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
+  const zoomInCounter = useCanvasStore((s) => s.zoomInCounter);
+  const zoomOutCounter = useCanvasStore((s) => s.zoomOutCounter);
+  const zoom100Counter = useCanvasStore((s) => s.zoom100Counter);
   const prevFitViewCounterRef = useRef(fitViewCounter);
+  const prevZoomInCounterRef = useRef(zoomInCounter);
+  const prevZoomOutCounterRef = useRef(zoomOutCounter);
+  const prevZoom100CounterRef = useRef(zoom100Counter);
 
   // Context menu state (canvas background)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -88,6 +98,35 @@ function CanvasInner() {
       }, 50);
     }
   }, [fitViewCounter, fitView]);
+
+  // Watch for zoom-in requests (keyboard shortcut or command palette)
+  useEffect(() => {
+    if (zoomInCounter !== prevZoomInCounterRef.current) {
+      prevZoomInCounterRef.current = zoomInCounter;
+      const vp = getViewport();
+      const newZoom = Math.min(ZOOM_MAX, vp.zoom + ZOOM_STEP);
+      rfSetViewport({ x: vp.x, y: vp.y, zoom: newZoom }, { duration: ZOOM_DURATION });
+    }
+  }, [zoomInCounter, getViewport, rfSetViewport]);
+
+  // Watch for zoom-out requests
+  useEffect(() => {
+    if (zoomOutCounter !== prevZoomOutCounterRef.current) {
+      prevZoomOutCounterRef.current = zoomOutCounter;
+      const vp = getViewport();
+      const newZoom = Math.max(ZOOM_MIN, vp.zoom - ZOOM_STEP);
+      rfSetViewport({ x: vp.x, y: vp.y, zoom: newZoom }, { duration: ZOOM_DURATION });
+    }
+  }, [zoomOutCounter, getViewport, rfSetViewport]);
+
+  // Watch for zoom-to-100% requests
+  useEffect(() => {
+    if (zoom100Counter !== prevZoom100CounterRef.current) {
+      prevZoom100CounterRef.current = zoom100Counter;
+      const vp = getViewport();
+      rfSetViewport({ x: vp.x, y: vp.y, zoom: 1.0 }, { duration: ZOOM_DURATION });
+    }
+  }, [zoom100Counter, getViewport, rfSetViewport]);
 
   // Render the graph through RenderApi
   const rendered = useMemo(() => {
@@ -276,6 +315,17 @@ function CanvasInner() {
         return;
       }
 
+      // Escape exits Connect/Edit mode first (highest priority)
+      if (e.key === 'Escape') {
+        const uiState = useUIStore.getState();
+        const currentMode = uiState.canvasMode;
+        if (currentMode !== CanvasMode.Normal) {
+          e.preventDefault();
+          uiState.exitToNormal();
+          return;
+        }
+      }
+
       // Escape exits placement mode
       if (e.key === 'Escape' && placementMode) {
         e.preventDefault();
@@ -352,6 +402,79 @@ function CanvasInner() {
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode]);
 
+  // Arrow key spatial navigation between nodes
+  useEffect(() => {
+    const ARROW_KEY_MAP: Record<string, Direction> = {
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+    };
+
+    const handleArrowNav = (e: KeyboardEvent) => {
+      // Don't handle when typing in text inputs
+      if (isActiveElementTextInput()) return;
+
+      // Don't handle when any dialog is open
+      const uiState = useUIStore.getState();
+      if (
+        uiState.deleteDialogOpen ||
+        uiState.connectionDialogOpen ||
+        uiState.unsavedChangesDialogOpen ||
+        uiState.errorDialogOpen ||
+        uiState.integrityWarningDialogOpen ||
+        uiState.shortcutsHelpOpen ||
+        uiState.commandPaletteOpen
+      ) {
+        return;
+      }
+
+      // Don't handle if placement mode is active
+      if (placementMode) return;
+
+      // Don't handle with modifier keys (let browser handle Ctrl+Arrow etc.)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const direction = ARROW_KEY_MAP[e.key];
+      if (!direction) return;
+
+      e.preventDefault();
+
+      const positions = extractPositions(rfNodes);
+      if (positions.length === 0) return;
+
+      const canvasState = useCanvasStore.getState();
+      const currentSelectedId = canvasState.selectedNodeId;
+
+      let targetId: string | null = null;
+
+      if (currentSelectedId) {
+        // Navigate from currently selected node
+        targetId = findNearestNode(currentSelectedId, direction, positions);
+      } else {
+        // No selection: select top-left-most node
+        targetId = findTopLeftNode(positions);
+      }
+
+      if (targetId && targetId !== currentSelectedId) {
+        selectNode(targetId);
+
+        // Pan viewport to keep the selected node visible
+        const targetPos = positions.find((p) => p.id === targetId);
+        if (targetPos) {
+          const currentViewport = getViewport();
+          setCenter(targetPos.x, targetPos.y, {
+            zoom: currentViewport.zoom,
+            duration: 200,
+          });
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleArrowNav);
+    return () => document.removeEventListener('keydown', handleArrowNav);
+  }, [rfNodes, selectNode, setCenter, getViewport, placementMode]);
+
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
@@ -360,8 +483,11 @@ function CanvasInner() {
     [setViewport],
   );
 
+  // Get mode-specific visual tint class
+  const modeTint = MODE_DISPLAY[canvasMode].canvasTint;
+
   return (
-    <div className="w-full h-full relative" data-testid="canvas" onContextMenu={(e) => e.preventDefault()}>
+    <div className={`w-full h-full relative ${modeTint}`} data-testid="canvas" data-canvas-mode={canvasMode} onContextMenu={(e) => e.preventDefault()}>
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
@@ -431,6 +557,9 @@ function CanvasInner() {
           data-testid="canvas-minimap"
         />
       </ReactFlow>
+
+      {/* Vim-style mode indicator (bottom-left, above minimap) */}
+      <ModeIndicator />
 
       {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (
