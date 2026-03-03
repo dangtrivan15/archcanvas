@@ -3870,3 +3870,73 @@ SESSION: 2026-03-03 - Feature #206
 - Zero console errors
 - No mock data patterns in production code
 - Committed: b8f13c2
+
+==================================================
+SESSION: 2026-03-03 - Feature #211
+==================================================
+
+## What was accomplished:
+
+### Feature #211: Keyboard shortcut Escape deselects and closes panels (PASSING)
+- Verified all Escape key handling was already implemented in Canvas.tsx:
+  - Priority 1: Escape in placement mode → exitPlacementMode() (lines 284-288)
+  - Priority 2: Escape with dialog open → skipped (each dialog handles its own Escape)
+  - Priority 3: Escape with node/edge selected → clearSelection() + closeRightPanel() (lines 291-311)
+  - Input guard: ignores Escape when focus is in INPUT, TEXTAREA, or contentEditable elements
+
+## Test file: test/unit/ui/keyboardShortcutEscape.test.ts (26 tests, all passing)
+
+### Node deselection (6 tests):
+1. Escape deselects a selected node
+2. Escape deselects a selected edge
+3. Escape closes right panel when deselecting a node
+4. Escape closes right panel when deselecting an edge
+5. Escape preventDefault is called when a node is selected
+6. Escape does nothing when nothing is selected
+
+### Modal dialog closing (8 tests):
+7. Escape closes the delete confirmation dialog
+8. Escape closes the connection type dialog
+9. Escape closes the unsaved changes dialog
+10. Escape closes the error dialog
+11. Escape closes the integrity warning dialog
+12. Dialog Escape handler calls stopPropagation
+13. Canvas Escape does NOT deselect when a dialog is open
+14. Canvas Escape skips deselection for all 5 dialog types
+
+### Placement mode exit (4 tests):
+15. Escape exits placement mode
+16. Escape in placement mode calls preventDefault
+17. Escape in placement mode does NOT deselect nodes (placement has priority)
+18. Second Escape after placement mode exit deselects the node
+
+### Input field passthrough (3 tests):
+19. Escape is ignored when focus is in an INPUT element
+20. Escape is ignored when focus is in a TEXTAREA element
+21. Escape is ignored when focus is in a contentEditable element
+
+### Store action correctness (5 tests):
+22. clearSelection clears both selectedNodeId and selectedEdgeId
+23. closeRightPanel sets rightPanelOpen to false
+24. exitPlacementMode clears both placementMode and placementInfo
+25. Selecting a node auto-clears edge selection
+26. Selecting an edge auto-clears node selection
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) via ?load= URL ✓
+2. Clicked Order Service node → selected (blue border, right panel opened with details) ✓
+3. Pressed Escape → node deselected, right panel closed, back to initial state ✓
+4. Clicked Order Service → selected, pressed Delete → Delete Node dialog appeared ✓
+5. Pressed Escape → dialog dismissed, node still selected, NOT deleted (5 nodes, 4 edges) ✓
+6. Pressed Escape again → node deselected, right panel closed ✓
+7. Clicked Database nodedef → placement mode activated: "Click on canvas to place Database | Esc to cancel" ✓
+8. Pressed Escape → placement mode exited, banner gone, no node created (5 nodes, 4 edges) ✓
+9. Console: 0 errors, 0 warnings ✓
+10. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 212 of 235 (90.2%)
+- All 1571 tests passing across 106 test files
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 5434cf0
