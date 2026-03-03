@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Zap, Database } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 type EdgeType = 'sync' | 'async' | 'data-flow';
 
@@ -50,6 +51,7 @@ export function ConnectionTypeDialog() {
   const [selectedType, setSelectedType] = useState<EdgeType>('sync');
   const [label, setLabel] = useState('');
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>(connectionDialogOpen);
 
   // Focus confirm button when dialog opens
   useEffect(() => {
@@ -123,7 +125,7 @@ export function ConnectionTypeDialog() {
       aria-modal="true"
       aria-labelledby="connection-dialog-title"
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5" data-testid="connection-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5" data-testid="connection-dialog-content">
         {/* Header */}
         <h2 id="connection-dialog-title" className="text-lg font-semibold text-gray-900 mb-1">
           Create Connection

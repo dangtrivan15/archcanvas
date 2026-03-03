@@ -7,12 +7,14 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function IntegrityWarningDialog() {
   const open = useUIStore((s) => s.integrityWarningDialogOpen);
   const info = useUIStore((s) => s.integrityWarningDialogInfo);
   const closeDialog = useUIStore((s) => s.closeIntegrityWarningDialog);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   // Focus the Cancel button when dialog opens (safer default)
   useEffect(() => {
@@ -72,7 +74,7 @@ export function IntegrityWarningDialog() {
       aria-labelledby="integrity-warning-title"
       aria-describedby="integrity-warning-message"
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="integrity-warning-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="integrity-warning-content">
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
