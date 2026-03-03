@@ -73,7 +73,7 @@ export function AddNodeButton() {
           }
           setIsOpen(!isOpen);
         }}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors"
+        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
         data-testid="add-node-button"
         title="Add Node"
       >
