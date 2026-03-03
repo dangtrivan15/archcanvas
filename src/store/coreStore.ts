@@ -38,6 +38,9 @@ export interface CoreStoreState {
   nodeCount: number;
   edgeCount: number;
 
+  // Save guard (prevents concurrent saves from double-click or rapid Ctrl+S)
+  isSaving: boolean;
+
   // Initialization
   initialize: () => void;
 
@@ -114,6 +117,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   // Computed
   nodeCount: 0,
   edgeCount: 0,
+
+  // Save guard
+  isSaving: false,
 
   // Undo/redo state
   canUndo: false,
@@ -355,6 +361,12 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFile: async () => {
+    // Guard against concurrent saves (double-click, rapid Ctrl+S)
+    if (get().isSaving) {
+      console.log('[CoreStore] Save already in progress, ignoring duplicate request');
+      return false;
+    }
+
     const { graph, fileHandle, fileCreatedAtMs, fileName, exportApi } = get();
 
     // If no file handle, fall back to Save As
@@ -362,6 +374,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return get().saveFileAs();
     }
 
+    set({ isSaving: true });
     const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
     setFileOperationLoading('Saving file...');
 
@@ -388,10 +401,12 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       }
 
       clearFileOperationLoading();
+      set({ isSaving: false });
       console.log('[CoreStore] File saved successfully');
       return true;
     } catch (err) {
       clearFileOperationLoading();
+      set({ isSaving: false });
       console.error('[CoreStore] Failed to save file:', err);
       const { openErrorDialog } = useUIStore.getState();
       openErrorDialog({
@@ -410,7 +425,15 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Includes canvas state (viewport, panel layout) in the saved file.
    */
   saveFileAs: async () => {
+    // Guard against concurrent saves (double-click, rapid Ctrl+S)
+    if (get().isSaving) {
+      console.log('[CoreStore] Save already in progress, ignoring duplicate request');
+      return false;
+    }
+
     const { graph, fileName, fileCreatedAtMs, exportApi } = get();
+
+    set({ isSaving: true });
 
     try {
       const canvasState = _getCanvasStateForSave();
@@ -418,6 +441,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const result = await saveArchcFileAs(graph, fileName, canvasState, aiState, fileCreatedAtMs ?? undefined);
       if (!result) {
         // User cancelled the picker
+        set({ isSaving: false });
         return false;
       }
 
@@ -446,9 +470,11 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       }
 
       clearFileOperationLoading();
+      set({ isSaving: false });
       console.log(`[CoreStore] File saved as: ${result.fileName}`);
       return true;
     } catch (err) {
+      set({ isSaving: false });
       useUIStore.getState().clearFileOperationLoading();
       console.error('[CoreStore] Failed to save file as:', err);
       const { openErrorDialog } = useUIStore.getState();
