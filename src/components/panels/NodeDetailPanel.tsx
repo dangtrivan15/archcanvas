@@ -283,6 +283,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
                         onChange={(e) => handleArgChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
+                        aria-label={argDef.name}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
                       >
@@ -299,6 +300,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         onChange={(e) => handleNumberInputChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
                         placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        aria-label={argDef.name}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
                       />
@@ -311,6 +313,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                               type="button"
                               role="switch"
                               aria-checked={isChecked}
+                              aria-label={argDef.name}
                               onClick={() => handleArgChange(argDef.name, !isChecked)}
                               onBlur={() => handleArgBlur(argDef.name)}
                               className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${isChecked ? 'bg-blue-600' : 'bg-gray-300'}`}
@@ -333,6 +336,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         onChange={(e) => handleArgChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
                         placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        aria-label={argDef.name}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
                       />
@@ -511,8 +515,9 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
       {isAdding && (
         <div className="mt-2 border rounded-lg p-2 bg-blue-50/50 border-blue-200 space-y-2" data-testid="add-property-form">
           <div>
-            <label className="text-xs text-gray-500">Key</label>
+            <label htmlFor="new-property-key" className="text-xs text-gray-500">Key</label>
             <input
+              id="new-property-key"
               type="text"
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
@@ -524,8 +529,9 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500">Value</label>
+            <label htmlFor="new-property-value" className="text-xs text-gray-500">Value</label>
             <input
+              id="new-property-value"
               type="text"
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
@@ -580,6 +586,7 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, handleSaveEdit)}
                 onBlur={handleSaveEdit}
+                aria-label={`Edit value for property ${key}`}
                 className="flex-1 min-w-0 text-xs border rounded px-1.5 py-0.5 bg-white border-blue-300 focus:outline-none"
                 autoFocus
                 data-testid="property-value-edit"
@@ -769,8 +776,9 @@ function NotesTab({
         <div className="space-y-2 border rounded-lg p-3 bg-gray-50" data-testid="note-editor">
           <div className="text-xs font-medium text-gray-500 uppercase">New Note</div>
           <div>
-            <label className="text-xs text-gray-500">Author</label>
+            <label htmlFor="note-author" className="text-xs text-gray-500">Author</label>
             <input
+              id="note-author"
               type="text"
               value={noteAuthor}
               onChange={(e) => onNoteAuthorChange(e.target.value)}
@@ -780,11 +788,12 @@ function NotesTab({
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500">Content</label>
+            <label htmlFor="note-content" className="text-xs text-gray-500">Content</label>
             <textarea
               value={noteContent}
               onChange={(e) => { onNoteContentChange(e.target.value); if (contentError) setContentError(''); }}
               onKeyDown={handleKeyDown}
+              id="note-content"
               className={`w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white resize-none focus:outline-none ${contentError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`}
               rows={3}
               placeholder="Write your note (markdown supported)..."
@@ -824,6 +833,7 @@ function NotesTab({
                 onKeyDown={handleTagKeyDown}
                 onBlur={handleAddTag}
                 placeholder={tags.length === 0 ? "Type tag and press Enter..." : ""}
+                aria-label="Add tag"
                 className="flex-1 min-w-[80px] text-xs border-none outline-none bg-transparent px-1 py-0.5"
                 data-testid="note-tags-input"
               />
@@ -915,6 +925,7 @@ function NotesTab({
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
+                    aria-label="Edit note content"
                     className="w-full text-sm border rounded px-2 py-1.5 bg-white border-gray-200 focus:border-blue-400 focus:outline-none resize-none"
                     rows={3}
                     data-testid="note-edit-input"
@@ -1137,8 +1148,9 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
         <div className="border rounded-lg p-3 bg-gray-50 space-y-2" data-testid="add-coderef-form">
           <div className="text-xs font-medium text-gray-500 uppercase">Add Code Reference</div>
           <div>
-            <label className="text-xs text-gray-500">File Path</label>
+            <label htmlFor="coderef-path" className="text-xs text-gray-500">File Path</label>
             <input
+              id="coderef-path"
               type="text"
               value={path}
               onChange={(e) => { setPath(e.target.value); if (pathError) setPathError(''); }}
@@ -1153,8 +1165,9 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
             )}
           </div>
           <div>
-            <label className="text-xs text-gray-500">Role</label>
+            <label htmlFor="coderef-role" className="text-xs text-gray-500">Role</label>
             <select
+              id="coderef-role"
               value={role}
               onChange={(e) => setRole(e.target.value as typeof role)}
               className="w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white border-gray-200 focus:border-blue-400 focus:outline-none"

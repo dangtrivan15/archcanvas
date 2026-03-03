@@ -368,6 +368,8 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     }
 
     const { graph, fileHandle, fileCreatedAtMs, fileName, exportApi } = get();
+    // Capture graph reference to detect concurrent modifications (e.g., undo during save)
+    const graphAtSaveStart = graph;
 
     // If no file handle, fall back to Save As
     if (!fileHandle) {
@@ -382,11 +384,15 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
       await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
-      // After first save, store createdAtMs if not already set
+
+      // Only clear isDirty if the graph hasn't been modified during the async save
+      // (e.g., by undo/redo or other mutations). If the graph changed, keep isDirty true
+      // so the user knows in-memory state differs from the saved file.
+      const graphChangedDuringSave = get().graph !== graphAtSaveStart;
       if (!fileCreatedAtMs) {
-        set({ isDirty: false, fileCreatedAtMs: Date.now() });
+        set({ isDirty: graphChangedDuringSave, fileCreatedAtMs: Date.now() });
       } else {
-        set({ isDirty: false });
+        set({ isDirty: graphChangedDuringSave });
       }
 
       // Auto-generate .summary.md sidecar file
@@ -432,6 +438,8 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     }
 
     const { graph, fileName, fileCreatedAtMs, exportApi } = get();
+    // Capture graph reference to detect concurrent modifications (e.g., undo during save)
+    const graphAtSaveStart = graph;
 
     set({ isSaving: true });
 
@@ -449,10 +457,12 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
       setFileOperationLoading('Saving file...');
 
-      // After first save, store createdAtMs if not already set
+      // Only clear isDirty if the graph hasn't been modified during the async save
+      // (e.g., by undo/redo or other mutations). If the graph changed, keep isDirty true.
+      const graphChangedDuringSave = get().graph !== graphAtSaveStart;
       const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
       set({
-        isDirty: false,
+        isDirty: graphChangedDuringSave,
         fileName: result.fileName,
         fileHandle: result.fileHandle ?? null,
         fileCreatedAtMs: newCreatedAtMs,

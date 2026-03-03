@@ -125,6 +125,7 @@ export function NodeDefBrowser() {
             placeholder="Search node types..."
             value={searchQuery}
             onChange={handleSearchChange}
+            aria-label="Search node types"
             className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded bg-white
                        focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400
                        placeholder:text-gray-400"
