@@ -42,3 +42,10 @@ a:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 1px;
 }
+
+/* Connect mode: green glow on source node */
+.react-flow__node.connect-source-glow {
+  box-shadow: 0 0 0 3px #22c55e, 0 0 12px 4px rgba(34, 197, 94, 0.4);
+  border-radius: 8px;
+  z-index: 10;
+}

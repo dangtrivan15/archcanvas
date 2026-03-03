@@ -94,6 +94,9 @@ export interface UIStoreState {
   // Command palette
   commandPaletteOpen: boolean;
 
+  // Quick search overlay (Vim '/' search)
+  quickSearchOpen: boolean;
+
   // Shortcut settings dialog
   shortcutSettingsOpen: boolean;
 
@@ -115,6 +118,11 @@ export interface UIStoreState {
   // Vim-style canvas mode (Normal / Connect / Edit)
   canvasMode: CanvasMode;
   previousCanvasMode: CanvasMode;
+
+  // Connect mode state (for Vim-style edge creation)
+  connectSource: string | null;      // source node ID
+  connectTarget: string | null;      // currently focused target node ID
+  connectStep: 'select-source' | 'select-target' | 'pick-type' | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -161,6 +169,11 @@ export interface UIStoreState {
   closeCommandPalette: () => void;
   toggleCommandPalette: () => void;
 
+  // Quick search actions
+  openQuickSearch: () => void;
+  closeQuickSearch: () => void;
+  toggleQuickSearch: () => void;
+
   // Shortcut settings actions
   openShortcutSettings: () => void;
   closeShortcutSettings: () => void;
@@ -185,6 +198,12 @@ export interface UIStoreState {
   enterMode: (mode: CanvasMode) => void;
   exitToNormal: () => void;
   getCanvasMode: () => CanvasMode;
+
+  // Connect mode actions
+  startConnect: (sourceId: string | null) => void;
+  setConnectTarget: (targetId: string | null) => void;
+  setConnectStep: (step: 'select-source' | 'select-target' | 'pick-type' | null) => void;
+  clearConnectState: () => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -216,6 +235,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   commandPaletteOpen: false,
 
+  quickSearchOpen: false,
+
   shortcutSettingsOpen: false,
 
   fileOperationLoading: false,
@@ -231,6 +252,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   canvasMode: CanvasMode.Normal,
   previousCanvasMode: CanvasMode.Normal,
+
+  connectSource: null,
+  connectTarget: null,
+  connectStep: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -307,6 +332,15 @@ export const useUIStore = create<UIStoreState>((set) => ({
   toggleCommandPalette: () =>
     set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
 
+  openQuickSearch: () =>
+    set({ quickSearchOpen: true }),
+
+  closeQuickSearch: () =>
+    set({ quickSearchOpen: false }),
+
+  toggleQuickSearch: () =>
+    set((s) => ({ quickSearchOpen: !s.quickSearchOpen })),
+
   openShortcutSettings: () =>
     set({ shortcutSettingsOpen: true }),
 
@@ -344,9 +378,34 @@ export const useUIStore = create<UIStoreState>((set) => ({
     set((s) => ({
       canvasMode: CanvasMode.Normal,
       previousCanvasMode: s.canvasMode,
+      // Also clear connect state when exiting to Normal
+      connectSource: null,
+      connectTarget: null,
+      connectStep: null,
     })),
 
   getCanvasMode: () => useUIStore.getState().canvasMode,
+
+  // Connect mode actions
+  startConnect: (sourceId) =>
+    set({
+      connectSource: sourceId,
+      connectTarget: null,
+      connectStep: sourceId ? 'select-target' : 'select-source',
+    }),
+
+  setConnectTarget: (targetId) =>
+    set({ connectTarget: targetId }),
+
+  setConnectStep: (step) =>
+    set({ connectStep: step }),
+
+  clearConnectState: () =>
+    set({
+      connectSource: null,
+      connectTarget: null,
+      connectStep: null,
+    }),
 
   showToast: (message, durationMs = 4000) =>
     set((s) => {

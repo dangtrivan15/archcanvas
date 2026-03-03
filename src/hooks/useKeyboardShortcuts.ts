@@ -18,6 +18,7 @@ import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
 import { CanvasMode } from '@/core/input/canvasMode';
+import { quickSearchNext, quickSearchPrev } from '@/components/shared/QuickSearchOverlay';
 
 /**
  * Map from node:add-* action IDs to NodeDef type keys.
@@ -49,6 +50,7 @@ export function useKeyboardShortcuts() {
   const requestZoom100 = useCanvasStore((s) => s.requestZoom100);
   const selectNodes = useCanvasStore((s) => s.selectNodes);
   const selectEdges = useCanvasStore((s) => s.selectEdges);
+  const toggleQuickSearch = useUIStore((s) => s.toggleQuickSearch);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -86,10 +88,12 @@ export function useKeyboardShortcuts() {
       if (!inInput && currentMode === CanvasMode.Normal) {
         const noModifiers = !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
 
-        // 'C' → Enter Connect mode
+        // 'C' → Enter Connect mode (with source = selected node, or pick source first)
         if (noModifiers && key.toLowerCase() === 'c') {
           e.preventDefault();
+          const selectedNodeId = useCanvasStore.getState().selectedNodeId;
           enterMode(CanvasMode.Connect);
+          useUIStore.getState().startConnect(selectedNodeId);
           return;
         }
 
@@ -102,6 +106,20 @@ export function useKeyboardShortcuts() {
             useUIStore.getState().openRightPanel('properties');
             return;
           }
+        }
+
+        // 'n' → Next search match (Vim-style)
+        if (noModifiers && key.toLowerCase() === 'n' && !e.shiftKey) {
+          e.preventDefault();
+          quickSearchNext();
+          return;
+        }
+
+        // 'N' (Shift+n) → Previous search match (Vim-style)
+        if (key === 'N' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          quickSearchPrev();
+          return;
         }
 
         // Enter → Enter Edit mode (requires selected node)
@@ -272,6 +290,13 @@ export function useKeyboardShortcuts() {
           }
           break;
 
+        // Quick Search (Vim '/' search)
+        case 'nav:search':
+          if (inInput) return;
+          e.preventDefault();
+          toggleQuickSearch();
+          break;
+
         // Node Quick Create hotkeys (Normal mode only, not in text input)
         case 'node:add-service':
         case 'node:add-database':
@@ -338,7 +363,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, toggleQuickSearch, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
   );
 
   useEffect(() => {
