@@ -1,4 +1,63 @@
 ==================================================
+SESSION: 2026-03-03 - Feature #212
+==================================================
+
+## What was accomplished:
+
+### Feature #212: Double-click save doesn't corrupt file (PASSING)
+- Added `isSaving` boolean guard flag to coreStore state
+- Guard prevents concurrent saves from double-click or rapid Ctrl+S:
+  - saveFile() checks `if (get().isSaving) return false` at entry
+  - saveFileAs() checks the same guard at entry
+  - Both methods set `isSaving: true` before starting, reset to `false` on success/error/cancel
+  - Cross-method protection: saveFile blocks saveFileAs and vice versa
+- Console logs "[CoreStore] Save already in progress, ignoring duplicate request" when rejecting duplicate save
+
+## Test file: test/unit/store/doubleClickSave.test.ts (19 tests, all passing)
+1. isSaving starts as false
+2. isSaving becomes true while save is in progress
+3. Second saveFile() call returns false while first is in progress
+4. saveArchcFile is called only once when save is triggered twice rapidly
+5. isSaving resets to false after successful save
+6. isSaving resets to false after failed save
+7. Can save again after first save completes
+8. Can save again after first save fails
+9. Second saveFileAs() call returns false while first is in progress
+10. saveArchcFileAs is called only once for rapid double-click
+11. isSaving resets to false after saveFileAs user cancels
+12. isSaving resets to false after saveFileAs error
+13. saveFileAs blocked while saveFile is in progress
+14. saveFile blocked while saveFileAs is in progress
+15. isDirty is correctly cleared after single save succeeds
+16. isDirty remains true when second save is rejected
+17. Graph state remains consistent after rapid save attempts
+18. Three rapid saves only execute one save operation
+19. Console logs message when duplicate save is rejected
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc: 5 nodes, 4 edges, ✓ Saved ✓
+2. Created new file (Ctrl+N) ✓
+3. Added Service node → Nodes: 1, ● Modified ✓
+4. Pressed Ctrl+S twice rapidly → no crashes, no errors ✓
+5. Console: 0 errors, 0 warnings ✓
+6. Reloaded ecommerce.archc → all 5 nodes, 4 edges intact ✓
+7. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Implementation approach:
+- Store-level `isSaving` flag is the simplest and most reliable approach
+- Checked at the very start of saveFile() and saveFileAs() (before any async work)
+- Uses synchronous Zustand state updates for immediate lock acquisition
+- Properly cleared in all code paths (try/catch/finally equivalent)
+- No debouncing needed — just a boolean guard that blocks concurrent saves
+
+## Current completion status:
+- Features passing: 213 of 235 (90.6%)
+- All 1590 tests passing across 107+ test files
+- Zero console errors
+- No mock data patterns in production code
+- Committed: c21e53e
+
+==================================================
 SESSION: 2026-03-03 - Feature #209
 ==================================================
 
