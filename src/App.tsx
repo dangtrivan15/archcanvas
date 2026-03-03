@@ -21,6 +21,7 @@ import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
+import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -102,99 +103,105 @@ export function App() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-      {/* Toolbar - sticky at top */}
-      <Toolbar />
+    <FocusZoneProvider>
+      <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+        {/* Toolbar - sticky at top */}
+        <Toolbar />
 
-      {/* Main content area: left panel, canvas, right panel */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - NodeDef Browser (draggable width) or collapsed expand strip */}
-        {leftPanelOpen ? (
-          <>
-            <aside
-              className="overflow-y-auto shrink-0 bg-white border-r"
-              style={{ width: leftPanelWidth }}
-              data-testid="left-panel"
+        {/* Main content area: left panel, canvas, right panel */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Panel - NodeDef Browser (draggable width) or collapsed expand strip */}
+          {leftPanelOpen ? (
+            <>
+              <FocusZoneRegion zone={FocusZone.LeftPanel}>
+                <aside
+                  className="overflow-y-auto shrink-0 bg-white border-r h-full"
+                  style={{ width: leftPanelWidth }}
+                  data-testid="left-panel"
+                >
+                  <NodeDefBrowser />
+                </aside>
+              </FocusZoneRegion>
+              <ResizeHandle side="left" onResize={handleLeftResize} />
+            </>
+          ) : (
+            <button
+              className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors"
+              onClick={toggleLeftPanel}
+              title="Expand node types panel"
+              data-testid="left-panel-expand"
+              aria-label="Expand node types panel"
             >
-              <NodeDefBrowser />
-            </aside>
-            <ResizeHandle side="left" onResize={handleLeftResize} />
-          </>
-        ) : (
-          <button
-            className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors"
-            onClick={toggleLeftPanel}
-            title="Expand node types panel"
-            data-testid="left-panel-expand"
-            aria-label="Expand node types panel"
-          >
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-          </button>
-        )}
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+            </button>
+          )}
 
-        {/* Center - Canvas (always gets minimum usable space) */}
-        <main className="flex-1 min-w-[200px] relative">
-          <Canvas />
-        </main>
+          {/* Center - Canvas (always gets minimum usable space) */}
+          <FocusZoneRegion zone={FocusZone.Canvas} className="flex-1 min-w-[200px] relative">
+            <Canvas />
+          </FocusZoneRegion>
 
-        {/* Right Panel - Node/Edge Detail (draggable width) */}
-        {rightPanelOpen && (
-          <>
-            <ResizeHandle side="right" onResize={handleRightResize} />
-            <aside
-              className="overflow-y-auto shrink-0 bg-white border-l"
-              style={{ width: rightPanelWidth }}
-              data-testid="right-panel"
-            >
-              {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
-            </aside>
-          </>
-        )}
+          {/* Right Panel - Node/Edge Detail (draggable width) */}
+          {rightPanelOpen && (
+            <>
+              <ResizeHandle side="right" onResize={handleRightResize} />
+              <FocusZoneRegion zone={FocusZone.RightPanel}>
+                <aside
+                  className="overflow-y-auto shrink-0 bg-white border-l h-full"
+                  style={{ width: rightPanelWidth }}
+                  data-testid="right-panel"
+                >
+                  {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
+                </aside>
+              </FocusZoneRegion>
+            </>
+          )}
+        </div>
+
+        {/* Delete Confirmation Dialog (overlay) */}
+        <DeleteConfirmationDialog />
+
+        {/* Connection Type Dialog (overlay) */}
+        <ConnectionTypeDialog />
+
+        {/* Unsaved Changes Dialog (overlay) */}
+        <UnsavedChangesDialog />
+
+        {/* Error Dialog (overlay) */}
+        <ErrorDialog />
+
+        {/* Integrity Warning Dialog (overlay) */}
+        <IntegrityWarningDialog />
+
+        {/* Keyboard Shortcuts Help Panel (overlay) */}
+        <ShortcutsHelpPanel />
+
+        {/* Keyboard Shortcut Settings Panel (overlay) */}
+        <ShortcutSettingsPanel />
+
+        {/* Command Palette (Cmd+K) */}
+        <CommandPalette />
+
+        {/* Loading Overlay (file operations) */}
+        <LoadingOverlay />
+
+        {/* Status Bar */}
+        <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">
+          <span data-testid="node-count">Nodes: {nodeCount}</span>
+          <span className="mx-2">|</span>
+          <span data-testid="edge-count">Edges: {edgeCount}</span>
+          <span className="mx-2">|</span>
+          <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+          {autosaveStatusMessage && (
+            <>
+              <span className="mx-2">|</span>
+              <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
+            </>
+          )}
+          <span className="mx-2">|</span>
+          <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
+        </footer>
       </div>
-
-      {/* Delete Confirmation Dialog (overlay) */}
-      <DeleteConfirmationDialog />
-
-      {/* Connection Type Dialog (overlay) */}
-      <ConnectionTypeDialog />
-
-      {/* Unsaved Changes Dialog (overlay) */}
-      <UnsavedChangesDialog />
-
-      {/* Error Dialog (overlay) */}
-      <ErrorDialog />
-
-      {/* Integrity Warning Dialog (overlay) */}
-      <IntegrityWarningDialog />
-
-      {/* Keyboard Shortcuts Help Panel (overlay) */}
-      <ShortcutsHelpPanel />
-
-      {/* Keyboard Shortcut Settings Panel (overlay) */}
-      <ShortcutSettingsPanel />
-
-      {/* Command Palette (Cmd+K) */}
-      <CommandPalette />
-
-      {/* Loading Overlay (file operations) */}
-      <LoadingOverlay />
-
-      {/* Status Bar */}
-      <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">
-        <span data-testid="node-count">Nodes: {nodeCount}</span>
-        <span className="mx-2">|</span>
-        <span data-testid="edge-count">Edges: {edgeCount}</span>
-        <span className="mx-2">|</span>
-        <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
-        {autosaveStatusMessage && (
-          <>
-            <span className="mx-2">|</span>
-            <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
-          </>
-        )}
-        <span className="mx-2">|</span>
-        <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
-      </footer>
-    </div>
+    </FocusZoneProvider>
   );
 }

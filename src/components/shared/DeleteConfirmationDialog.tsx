@@ -10,6 +10,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
 export function DeleteConfirmationDialog() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
@@ -19,6 +20,7 @@ export function DeleteConfirmationDialog() {
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(deleteDialogOpen);
+  const { formatBinding } = usePlatformModifier();
 
   // Focus the Confirm button when dialog opens
   useEffect(() => {
@@ -120,7 +122,7 @@ export function DeleteConfirmationDialog() {
 
         {/* Action text */}
         <p className="text-sm text-gray-500 mb-4">
-          This action can be undone with Ctrl+Z.
+          This action can be undone with {formatBinding('mod+z')}.
         </p>
 
         {/* Buttons */}

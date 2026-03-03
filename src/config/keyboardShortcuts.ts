@@ -3,6 +3,8 @@
  * All keyboard shortcuts in the app are listed here for the help panel.
  */
 
+import { getCurrentPlatform, isCmdPlatform } from '@/core/input';
+
 export interface KeyboardShortcut {
   /** Unique identifier */
   id: string;
@@ -133,11 +135,11 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
 ];
 
 /**
- * Returns true if the current platform is macOS.
+ * Returns true if the current platform is macOS (or iPad).
+ * Delegates to centralized platform detection.
  */
 export function isMacPlatform(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  return isCmdPlatform(getCurrentPlatform());
 }
 
 /**

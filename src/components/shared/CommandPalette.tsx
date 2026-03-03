@@ -5,10 +5,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Box } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getAllCommands, searchCommands, type Command, type CommandCategory } from '@/config/commandRegistry';
+import { iconMap } from '@/components/nodes/GenericNode';
 
 /** Category badge colors */
 const CATEGORY_COLORS: Record<CommandCategory, string> = {
@@ -235,6 +236,16 @@ export function CommandPalette() {
                     >
                       {cmd.category}
                     </span>
+                    {/* Node type icon (for creation commands) */}
+                    {cmd.iconName && (() => {
+                      const IconComponent = iconMap[cmd.iconName!] ?? Box;
+                      return (
+                        <IconComponent
+                          className="w-4 h-4 shrink-0 text-gray-500"
+                          data-testid={`command-icon-${cmd.id}`}
+                        />
+                      );
+                    })()}
                     {/* Command label */}
                     <span className="text-sm truncate">{cmd.label}</span>
                   </div>

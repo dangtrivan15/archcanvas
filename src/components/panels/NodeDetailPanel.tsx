@@ -42,6 +42,7 @@ export function NodeDetailPanel() {
   const registry = useCoreStore((s) => s.registry);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
+  const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
 
   const [activeTab, setActiveTab] = useState<Tab>('properties');
   const [noteContent, setNoteContent] = useState('');
@@ -67,6 +68,13 @@ export function NodeDetailPanel() {
     });
     setNoteContent('');
   }, [selectedNodeId, noteContent, noteAuthor, addNote]);
+
+  // Auto-switch to properties tab when rename mode is triggered
+  useEffect(() => {
+    if (pendingRenameNodeId && selectedNodeId && pendingRenameNodeId === selectedNodeId) {
+      setActiveTab('properties');
+    }
+  }, [pendingRenameNodeId, selectedNodeId]);
 
   if (!node) {
     return (
@@ -154,9 +162,55 @@ export function NodeDetailPanel() {
 function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof findNode>>; nodeDef?: NodeDef }) {
   const updateNode = useCoreStore((s) => s.updateNode);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+  const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
+  const clearPendingRename = useUIStore((s) => s.clearPendingRename);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   // Track raw text input for number fields so we can validate non-numeric text
   const [numberInputValues, setNumberInputValues] = useState<Record<string, string>>({});
+  // Rename mode state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingNameValue, setEditingNameValue] = useState('');
+  const displayNameInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle rename save
+  const handleRenameSave = useCallback(() => {
+    if (!selectedNodeId || !editingNameValue.trim()) {
+      setIsEditingName(false);
+      return;
+    }
+    updateNode(selectedNodeId, { displayName: editingNameValue.trim() });
+    setIsEditingName(false);
+  }, [selectedNodeId, editingNameValue, updateNode]);
+
+  // Handle rename cancel
+  const handleRenameCancel = useCallback(() => {
+    setIsEditingName(false);
+    setEditingNameValue('');
+  }, []);
+
+  // Auto-trigger rename mode when pendingRenameNodeId matches current node
+  useEffect(() => {
+    if (pendingRenameNodeId && selectedNodeId && pendingRenameNodeId === selectedNodeId) {
+      setIsEditingName(true);
+      setEditingNameValue(node.displayName);
+      clearPendingRename();
+      // Focus the input after render
+      requestAnimationFrame(() => {
+        displayNameInputRef.current?.focus();
+        displayNameInputRef.current?.select();
+      });
+    }
+  }, [pendingRenameNodeId, selectedNodeId, node.displayName, clearPendingRename]);
+
+  // Focus the input when editing starts
+  useEffect(() => {
+    if (isEditingName) {
+      requestAnimationFrame(() => {
+        displayNameInputRef.current?.focus();
+        displayNameInputRef.current?.select();
+      });
+    }
+  }, [isEditingName]);
 
   const handleArgChange = useCallback((argName: string, value: string | number | boolean) => {
     if (!selectedNodeId) return;
@@ -221,12 +275,60 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
         </div>
       </div>
 
-      {/* Display Name */}
+      {/* Display Name (editable) */}
       <div>
-        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
-        <div className="mt-1 text-sm" data-testid="detail-display-name">
-          {node.displayName}
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
+          {!isEditingName && (
+            <button
+              onClick={() => {
+                setIsEditingName(true);
+                setEditingNameValue(node.displayName);
+              }}
+              className="p-0.5 rounded hover:bg-gray-200 text-gray-400"
+              title="Rename node"
+              data-testid="rename-node-button"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
         </div>
+        {isEditingName ? (
+          <div className="mt-1 flex items-center gap-1">
+            <input
+              ref={displayNameInputRef}
+              type="text"
+              value={editingNameValue}
+              onChange={(e) => setEditingNameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleRenameSave();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleRenameCancel();
+                }
+              }}
+              onBlur={handleRenameSave}
+              className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              data-testid="detail-display-name-input"
+              aria-label="Node display name"
+            />
+          </div>
+        ) : (
+          <div
+            className="mt-1 text-sm cursor-pointer hover:text-blue-600"
+            data-testid="detail-display-name"
+            onClick={() => {
+              setIsEditingName(true);
+              setEditingNameValue(node.displayName);
+            }}
+            title="Click to rename"
+          >
+            {node.displayName}
+          </div>
+        )}
       </div>
 
       {/* Type */}

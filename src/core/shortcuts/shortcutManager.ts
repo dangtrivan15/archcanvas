@@ -12,6 +12,8 @@
  * - Regular keys: "s", "k", "n", etc.
  */
 
+import { getCurrentPlatform, isCmdPlatform, formatBindingDisplay } from '@/core/input';
+
 const STORAGE_KEY = 'archcanvas:keyboard-shortcuts';
 
 export interface KeyBinding {
@@ -109,50 +111,17 @@ export function parseBinding(raw: string): KeyBinding {
 
 /**
  * Format a binding to a display string for the current platform.
+ * Delegates to the centralized formatBindingDisplay from input/modifierMap.
  */
 export function formatBindingForDisplay(raw: string): string {
-  const binding = parseBinding(raw);
-  const isMac = typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
-
-  const parts: string[] = [];
-
-  if (binding.mod) {
-    parts.push(isMac ? '⌘' : 'Ctrl');
-  }
-  if (binding.ctrl) {
-    parts.push('Ctrl');
-  }
-  if (binding.meta) {
-    parts.push(isMac ? '⌘' : 'Meta');
-  }
-  if (binding.shift) {
-    parts.push(isMac ? '⇧' : 'Shift');
-  }
-  if (binding.alt) {
-    parts.push(isMac ? '⌥' : 'Alt');
-  }
-
-  // Format the key
-  const keyDisplay = binding.key.charAt(0).toUpperCase() + binding.key.slice(1);
-  switch (binding.key) {
-    case 'escape': parts.push('Esc'); break;
-    case 'delete': parts.push('Del'); break;
-    case 'backspace': parts.push(isMac ? '⌫' : 'Backspace'); break;
-    case 'enter': parts.push(isMac ? '↵' : 'Enter'); break;
-    case '?': parts.push('?'); break;
-    default: parts.push(keyDisplay);
-  }
-
-  return isMac ? parts.join(' ') : parts.join('+');
+  return formatBindingDisplay(raw);
 }
 
 /**
  * Check if a keyboard event matches a binding.
  */
 export function eventMatchesBinding(event: KeyboardEvent, binding: KeyBinding): boolean {
-  const isMac = typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  const isMac = isCmdPlatform(getCurrentPlatform());
 
   // Check modifier keys
   if (binding.mod) {
@@ -206,8 +175,7 @@ export function eventToBindingString(event: KeyboardEvent): string | null {
   }
 
   const parts: string[] = [];
-  const isMac = typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
+  const isMac = isCmdPlatform(getCurrentPlatform());
 
   // Use "mod" for the platform modifier (Cmd on Mac, Ctrl on Windows)
   if ((isMac && event.metaKey) || (!isMac && event.ctrlKey)) {

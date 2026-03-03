@@ -1,6 +1,8 @@
 /**
  * Global keyboard shortcuts hook.
  * Uses the configurable ShortcutManager to resolve key events to actions.
+ * Uses the FocusZone system (isActiveElementTextInput) to suppress shortcuts
+ * that conflict with text editing.
  * Handles file operations (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O),
  * undo/redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y),
  * command palette (Ctrl+K), and help (? to toggle shortcuts panel).
@@ -11,6 +13,7 @@ import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
+import { isActiveElementTextInput } from '@/core/input/focusZones';
 
 export function useKeyboardShortcuts() {
   const saveFile = useCoreStore((s) => s.saveFile);
@@ -31,12 +34,8 @@ export function useKeyboardShortcuts() {
 
       if (!actionId) return;
 
-      // For shortcuts without mod key (like '?'), check input focus
-      const target = e.target as HTMLElement;
-      const inInput =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+      // Use centralized FocusZone input detection instead of inline tagName checks
+      const inInput = isActiveElementTextInput();
 
       switch (actionId) {
         case 'canvas:shortcuts-help':

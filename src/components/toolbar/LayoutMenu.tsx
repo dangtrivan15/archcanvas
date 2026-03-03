@@ -7,6 +7,7 @@ import { LayoutGrid, ChevronDown, ArrowRightFromLine, ArrowDownFromLine, Maximiz
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore, DEFAULT_LAYOUT_SPACING } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
 export function LayoutMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,6 +19,7 @@ export function LayoutMenu() {
   const setLayoutSpacing = useCanvasStore((s) => s.setLayoutSpacing);
   const resetLayoutSpacing = useCanvasStore((s) => s.resetLayoutSpacing);
   const navigationPath = useNavigationStore((s) => s.path);
+  const { formatBinding } = usePlatformModifier();
 
   // Close on click outside
   useEffect(() => {
@@ -241,7 +243,7 @@ export function LayoutMenu() {
           >
             <Maximize className="w-4 h-4" />
             <span>Fit View</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">Ctrl+Shift+L</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+shift+l')}</span>
           </button>
         </div>
       )}
