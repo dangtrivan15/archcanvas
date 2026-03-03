@@ -4969,3 +4969,75 @@ SESSION: 2026-03-03 - Feature #250
 - Zero console errors
 - No mock data patterns in production code
 - Committed: a2b6c69
+
+==================================================
+SESSION: 2026-03-04 - Feature #262
+==================================================
+
+## What was accomplished:
+
+### Feature #262: Mode Status Bar (PASSING)
+- Created src/components/canvas/ModeStatusBar.tsx:
+  - VS Code-style persistent status bar at bottom of canvas
+  - 30px height, semi-transparent (bg-gray-900/75), backdrop-blur
+  - pointer-events-none on container, pointer-events-auto on interactive breadcrumb elements
+  
+- Left section: Mode badge + Context hint
+  - Mode badge: NORMAL (gray), CONNECT (blue), EDIT (green)
+  - Animated mode transitions (transition-all 300ms ease-in-out)
+  - Connect step sub-label: "pick source" / "pick target" / "1/2/3 type"
+  - Context hint: one relevant shortcut for current state
+    - Normal/nothing: "⌘K commands"
+    - Normal/node: "C connect"
+    - Normal/edge: "T change type"
+    - Normal/multi: "⌘K bulk actions"
+    - Connect: "Esc cancel"
+    - Edit: "Esc done editing"
+  
+- Center section: Breadcrumb path
+  - Clickable navigation for fractal zoom (Root > Parent > Child)
+  - zoomToRoot/zoomToLevel on click
+  - Only visible when navigation path is non-empty
+  - ChevronRight separators, truncated segment names (max 120px)
+  
+- Right section: Zoom + Selection count
+  - Selection: "1 node", "5 nodes", "1 edge", "2 nodes, 1 edge"
+  - Zoom: percentage (e.g., "96%")
+  - Blue color for selection count
+  
+- Added import and render in Canvas.tsx
+
+## Test file: test/unit/ui/modeStatusBar.test.ts (99 tests, all passing)
+- Source structure verification (11 tests)
+- Mode badge (12 tests)
+- Animated mode transitions (4 tests)
+- Context hint (9 tests)
+- Connect step sub-label (5 tests)
+- Breadcrumb path (10 tests)
+- Zoom level (3 tests)
+- Selection count (7 tests)
+- Layout and positioning (9 tests)
+- Store state integration (7 tests)
+- Selection text logic (5 tests)
+- Context hint logic (6 tests)
+- Integration with Canvas.tsx (3 tests)
+- Path resolution (3 tests)
+- Mode badge styles (5 tests)
+
+## Browser verification steps completed:
+1. Loaded ecommerce.archc (5 nodes, 4 edges) ✓
+2. Status bar visible at bottom of canvas with NORMAL badge (gray) + "⌘K commands" ✓
+3. Clicked API Gateway → "C connect" hint, "1 node" selection, "96%" zoom ✓
+4. Pressed C → CONNECT badge (blue\!) + "pick target" sub-label + "Esc cancel" hint ✓
+5. Pressed Escape → back to NORMAL ✓
+6. Pressed i (Edit mode) → EDIT badge (GREEN\!) + "Esc done editing" hint ✓
+7. Cmd+A (select all) → "5 nodes" selection count + "⌘K bulk actions" hint ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 258 of 263 (98.1%)
+- 99 new tests (all passing)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: b3a5cfc
