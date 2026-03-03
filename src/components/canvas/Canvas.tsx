@@ -61,6 +61,8 @@ function CanvasInner() {
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
+  const addNodeToSelection = useCanvasStore((s) => s.addNodeToSelection);
+  const toggleNodeInSelection = useCanvasStore((s) => s.toggleNodeInSelection);
   const setViewport = useCanvasStore((s) => s.setViewport);
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomIn = useNavigationStore((s) => s.zoomIn);
@@ -403,6 +405,7 @@ function CanvasInner() {
   }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode]);
 
   // Arrow key spatial navigation between nodes
+  // Supports: plain arrow (single select), Shift+Arrow (extend selection), Mod+Arrow (toggle)
   useEffect(() => {
     const ARROW_KEY_MAP: Record<string, Direction> = {
       ArrowUp: 'up',
@@ -432,11 +435,19 @@ function CanvasInner() {
       // Don't handle if placement mode is active
       if (placementMode) return;
 
-      // Don't handle with modifier keys (let browser handle Ctrl+Arrow etc.)
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Don't handle with Alt key
+      if (e.altKey) return;
 
       const direction = ARROW_KEY_MAP[e.key];
       if (!direction) return;
+
+      // Determine modifier mode
+      const isShift = e.shiftKey && !e.ctrlKey && !e.metaKey;
+      const isMod = (e.ctrlKey || e.metaKey) && !e.shiftKey;
+      const isPlain = !e.shiftKey && !e.ctrlKey && !e.metaKey;
+
+      // Only handle plain, shift, or mod (not combinations)
+      if (!isPlain && !isShift && !isMod) return;
 
       e.preventDefault();
 
@@ -456,10 +467,21 @@ function CanvasInner() {
         targetId = findTopLeftNode(positions);
       }
 
-      if (targetId && targetId !== currentSelectedId) {
-        selectNode(targetId);
+      if (targetId) {
+        if (isShift) {
+          // Shift+Arrow: ADD target to selection (extend)
+          addNodeToSelection(targetId);
+        } else if (isMod) {
+          // Mod+Arrow: TOGGLE target in selection
+          toggleNodeInSelection(targetId);
+        } else {
+          // Plain arrow: REPLACE selection
+          if (targetId !== currentSelectedId) {
+            selectNode(targetId);
+          }
+        }
 
-        // Pan viewport to keep the selected node visible
+        // Pan viewport to keep the target node visible
         const targetPos = positions.find((p) => p.id === targetId);
         if (targetPos) {
           const currentViewport = getViewport();
@@ -473,7 +495,7 @@ function CanvasInner() {
 
     document.addEventListener('keydown', handleArrowNav);
     return () => document.removeEventListener('keydown', handleArrowNav);
-  }, [rfNodes, selectNode, setCenter, getViewport, placementMode]);
+  }, [rfNodes, selectNode, addNodeToSelection, toggleNodeInSelection, setCenter, getViewport, placementMode]);
 
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(

@@ -22,6 +22,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
+import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -43,6 +44,7 @@ export function App() {
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
+  const canvasMode = useUIStore((s) => s.canvasMode);
 
   const handleLeftResize = useCallback((delta: number) => {
     const newWidth = leftPanelWidth + delta;
@@ -200,6 +202,17 @@ export function App() {
           )}
           <span className="mx-2">|</span>
           <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
+          {canvasMode !== CanvasMode.Normal && (
+            <>
+              <span className="mx-2">|</span>
+              <span
+                data-testid="mode-status"
+                className={`font-mono font-bold ${MODE_DISPLAY[canvasMode].color}`}
+              >
+                {MODE_DISPLAY[canvasMode].shortLabel}
+              </span>
+            </>
+          )}
         </footer>
       </div>
     </FocusZoneProvider>
