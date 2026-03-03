@@ -119,6 +119,23 @@ export function getStaticCommands(): Command[] {
       isEnabled: () => useCoreStore.getState().canRedo,
     },
 
+    {
+      id: 'node:rename',
+      label: 'Rename Node',
+      category: 'Edit',
+      shortcut: shortcut('f2'),
+      keywords: ['rename', 'name', 'edit', 'f2', 'display name'],
+      iconName: 'Pencil',
+      execute: () => {
+        const { selectedNodeId } = useCanvasStore.getState();
+        if (selectedNodeId) {
+          useUIStore.getState().setPendingRenameNodeId(selectedNodeId);
+          useUIStore.getState().openRightPanel('properties');
+        }
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeId !== null,
+    },
+
     // === View ===
     {
       id: 'view:toggle-left-panel',
@@ -158,10 +175,52 @@ export function getStaticCommands(): Command[] {
       },
     },
 
+    // === View / Zoom ===
+    {
+      id: 'view:zoom-in',
+      label: 'Zoom In',
+      category: 'View',
+      shortcut: shortcut('='),
+      keywords: ['magnify', 'enlarge', 'bigger', 'plus'],
+      execute: () => {
+        useCanvasStore.getState().requestZoomIn();
+      },
+    },
+    {
+      id: 'view:zoom-out',
+      label: 'Zoom Out',
+      category: 'View',
+      shortcut: shortcut('-'),
+      keywords: ['shrink', 'smaller', 'minus'],
+      execute: () => {
+        useCanvasStore.getState().requestZoomOut();
+      },
+    },
+    {
+      id: 'view:fit-all',
+      label: 'Fit View',
+      category: 'View',
+      shortcut: shortcut('mod+0'),
+      keywords: ['zoom', 'fit', 'center', 'reset view', 'all'],
+      execute: () => {
+        useCanvasStore.getState().requestFitView();
+      },
+    },
+    {
+      id: 'view:zoom-100',
+      label: 'Zoom to 100%',
+      category: 'View',
+      shortcut: shortcut('mod+1'),
+      keywords: ['actual', 'real', 'reset zoom', 'original'],
+      execute: () => {
+        useCanvasStore.getState().requestZoom100();
+      },
+    },
+
     // === Canvas ===
     {
       id: 'canvas:fit-view',
-      label: 'Fit View',
+      label: 'Fit View (Canvas)',
       category: 'Canvas',
       keywords: ['zoom', 'fit', 'center', 'reset view'],
       execute: () => {
