@@ -434,10 +434,389 @@ function _findNodeById(nodes: import('@/types/graph').ArchNode[], id: string): i
 }
 
 /**
- * Get all available commands (static + dynamic node navigation + node creation).
+ * Get bulk operation commands — selection-aware commands for multi-node actions.
+ * These commands are enabled only when appropriate selection exists.
+ */
+export function getBulkOperationCommands(): Command[] {
+  return [
+    // === Delete Selected ===
+    {
+      id: 'bulk:delete-selected',
+      label: _bulkLabel('Delete', 'Selected Nodes'),
+      category: 'Edit',
+      keywords: ['delete', 'remove', 'bulk', 'selected', 'multi'],
+      iconName: 'Trash2',
+      execute: () => {
+        const { textApi, undoManager } = useCoreStore.getState();
+        const { selectedNodeIds, clearSelection } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length === 0) return;
+
+        // Batch delete: remove all selected nodes, single undo snapshot
+        for (const nodeId of selectedNodeIds) {
+          textApi.removeNode(nodeId);
+        }
+        const updatedGraph = textApi.getGraph();
+        undoManager.snapshot(`Delete ${selectedNodeIds.length} nodes`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          nodeCount: _countAllNodes(updatedGraph),
+          edgeCount: updatedGraph.edges.length,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+
+        clearSelection();
+        useUIStore.getState().closeRightPanel();
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
+    },
+
+    // === Duplicate Selected ===
+    {
+      id: 'bulk:duplicate-selected',
+      label: _bulkLabel('Duplicate', 'Selected Nodes'),
+      category: 'Edit',
+      keywords: ['duplicate', 'copy', 'clone', 'bulk', 'selected', 'multi'],
+      iconName: 'Copy',
+      execute: () => {
+        const coreState = useCoreStore.getState();
+        const { textApi, undoManager, graph } = coreState;
+        const { selectedNodeIds, selectNodes } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length === 0) return;
+
+        // Calculate center of selected nodes for offset
+        const OFFSET = 50; // pixels offset for duplicated nodes
+        const newNodeIds: string[] = [];
+
+        for (const nodeId of selectedNodeIds) {
+          const node = _findNodeById(graph.nodes, nodeId);
+          if (!node) continue;
+
+          const newNode = textApi.addNode({
+            type: node.type,
+            displayName: `${node.displayName} (copy)`,
+            position: {
+              x: node.position.x + OFFSET,
+              y: node.position.y + OFFSET,
+            },
+            args: { ...node.args },
+          });
+          if (newNode) {
+            newNodeIds.push(newNode.id);
+          }
+        }
+
+        const updatedGraph = textApi.getGraph();
+        undoManager.snapshot(`Duplicate ${selectedNodeIds.length} nodes`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          nodeCount: _countAllNodes(updatedGraph),
+          edgeCount: updatedGraph.edges.length,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+
+        // Select the new duplicated nodes
+        if (newNodeIds.length > 0) {
+          selectNodes(newNodeIds);
+        }
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
+    },
+
+    // === Align Horizontally (same Y) ===
+    {
+      id: 'bulk:align-horizontal',
+      label: 'Align Horizontally',
+      category: 'Canvas',
+      keywords: ['align', 'horizontal', 'same', 'row', 'y', 'line up'],
+      iconName: 'AlignVerticalJustifyCenter',
+      execute: () => {
+        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { selectedNodeIds } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
+
+        // Calculate average Y position
+        const nodes = selectedNodeIds
+          .map((id) => _findNodeById(graph.nodes, id))
+          .filter((n): n is import('@/types/graph').ArchNode => n !== undefined);
+
+        if (nodes.length < 2) return;
+
+        const avgY = nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
+
+        // Move all selected nodes to average Y
+        let updatedGraph = graph;
+        for (const node of nodes) {
+          updatedGraph = _moveNodeInGraph(updatedGraph, node.id, node.position.x, Math.round(avgY));
+        }
+
+        textApi.setGraph(updatedGraph);
+        undoManager.snapshot(`Align ${nodes.length} nodes horizontally`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
+    },
+
+    // === Align Vertically (same X) ===
+    {
+      id: 'bulk:align-vertical',
+      label: 'Align Vertically',
+      category: 'Canvas',
+      keywords: ['align', 'vertical', 'same', 'column', 'x', 'line up'],
+      iconName: 'AlignHorizontalJustifyCenter',
+      execute: () => {
+        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { selectedNodeIds } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
+
+        const nodes = selectedNodeIds
+          .map((id) => _findNodeById(graph.nodes, id))
+          .filter((n): n is import('@/types/graph').ArchNode => n !== undefined);
+
+        if (nodes.length < 2) return;
+
+        const avgX = nodes.reduce((sum, n) => sum + n.position.x, 0) / nodes.length;
+
+        let updatedGraph = graph;
+        for (const node of nodes) {
+          updatedGraph = _moveNodeInGraph(updatedGraph, node.id, Math.round(avgX), node.position.y);
+        }
+
+        textApi.setGraph(updatedGraph);
+        undoManager.snapshot(`Align ${nodes.length} nodes vertically`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
+    },
+
+    // === Distribute Evenly Horizontally ===
+    {
+      id: 'bulk:distribute-horizontal',
+      label: 'Distribute Evenly Horizontally',
+      category: 'Canvas',
+      keywords: ['distribute', 'horizontal', 'even', 'space', 'spread'],
+      iconName: 'MoveHorizontal',
+      execute: () => {
+        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { selectedNodeIds } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length < 3) return;
+
+        const nodes = selectedNodeIds
+          .map((id) => _findNodeById(graph.nodes, id))
+          .filter((n): n is import('@/types/graph').ArchNode => n !== undefined);
+
+        if (nodes.length < 3) return;
+
+        // Sort by X position
+        const sorted = [...nodes].sort((a, b) => a.position.x - b.position.x);
+        const minX = sorted[0]!.position.x;
+        const maxX = sorted[sorted.length - 1]!.position.x;
+        const step = (maxX - minX) / (sorted.length - 1);
+
+        let updatedGraph = graph;
+        for (let i = 0; i < sorted.length; i++) {
+          const node = sorted[i]!;
+          const newX = Math.round(minX + step * i);
+          updatedGraph = _moveNodeInGraph(updatedGraph, node.id, newX, node.position.y);
+        }
+
+        textApi.setGraph(updatedGraph);
+        undoManager.snapshot(`Distribute ${nodes.length} nodes horizontally`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 3,
+    },
+
+    // === Distribute Evenly Vertically ===
+    {
+      id: 'bulk:distribute-vertical',
+      label: 'Distribute Evenly Vertically',
+      category: 'Canvas',
+      keywords: ['distribute', 'vertical', 'even', 'space', 'spread'],
+      iconName: 'MoveVertical',
+      execute: () => {
+        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { selectedNodeIds } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length < 3) return;
+
+        const nodes = selectedNodeIds
+          .map((id) => _findNodeById(graph.nodes, id))
+          .filter((n): n is import('@/types/graph').ArchNode => n !== undefined);
+
+        if (nodes.length < 3) return;
+
+        // Sort by Y position
+        const sorted = [...nodes].sort((a, b) => a.position.y - b.position.y);
+        const minY = sorted[0]!.position.y;
+        const maxY = sorted[sorted.length - 1]!.position.y;
+        const step = (maxY - minY) / (sorted.length - 1);
+
+        let updatedGraph = graph;
+        for (let i = 0; i < sorted.length; i++) {
+          const node = sorted[i]!;
+          const newY = Math.round(minY + step * i);
+          updatedGraph = _moveNodeInGraph(updatedGraph, node.id, node.position.x, newY);
+        }
+
+        textApi.setGraph(updatedGraph);
+        undoManager.snapshot(`Distribute ${nodes.length} nodes vertically`, updatedGraph);
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 3,
+    },
+
+    // === Group Selected ===
+    {
+      id: 'bulk:group-selected',
+      label: _bulkLabel('Group', 'Selected Nodes'),
+      category: 'Edit',
+      keywords: ['group', 'nest', 'parent', 'container', 'wrap', 'combine'],
+      iconName: 'Group',
+      execute: () => {
+        const { textApi, undoManager, graph } = useCoreStore.getState();
+        const { selectedNodeIds, selectNode } = useCanvasStore.getState();
+        if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
+
+        const nodes = selectedNodeIds
+          .map((id) => _findNodeById(graph.nodes, id))
+          .filter((n): n is import('@/types/graph').ArchNode => n !== undefined);
+
+        if (nodes.length < 2) return;
+
+        // Calculate bounding box for group placement
+        const minX = Math.min(...nodes.map((n) => n.position.x));
+        const minY = Math.min(...nodes.map((n) => n.position.y));
+        const maxX = Math.max(...nodes.map((n) => n.position.x + (n.position.width || 200)));
+        const maxY = Math.max(...nodes.map((n) => n.position.y + (n.position.height || 100)));
+
+        // Create a container node centered above the group
+        const groupNode = textApi.addNode({
+          type: 'compute/service',
+          displayName: `Group (${nodes.length} nodes)`,
+          position: {
+            x: Math.round((minX + maxX) / 2 - 100),
+            y: Math.round(minY - 80),
+          },
+        });
+
+        if (groupNode) {
+          // Add children to the group node by creating copies inside it
+          for (const node of nodes) {
+            textApi.addNode({
+              type: node.type,
+              displayName: node.displayName,
+              position: { x: node.position.x - minX, y: node.position.y - minY },
+              args: { ...node.args },
+              parentId: groupNode.id,
+            });
+          }
+
+          // Remove original nodes
+          for (const node of nodes) {
+            textApi.removeNode(node.id);
+          }
+
+          const updatedGraph = textApi.getGraph();
+          undoManager.snapshot(`Group ${nodes.length} nodes`, updatedGraph);
+
+          useCoreStore.setState({
+            graph: updatedGraph,
+            isDirty: true,
+            nodeCount: _countAllNodes(updatedGraph),
+            edgeCount: updatedGraph.edges.length,
+            canUndo: undoManager.canUndo,
+            canRedo: undoManager.canRedo,
+          });
+
+          selectNode(groupNode.id);
+        }
+      },
+      isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
+    },
+  ];
+}
+
+/**
+ * Generate a dynamic label with selection count.
+ */
+function _bulkLabel(action: string, suffix: string): string {
+  const count = useCanvasStore.getState().selectedNodeIds.length;
+  return count > 0 ? `${action} ${count} ${suffix}` : `${action} ${suffix}`;
+}
+
+/**
+ * Count all nodes recursively (including children).
+ */
+function _countAllNodes(graph: import('@/types/graph').ArchGraph): number {
+  let count = 0;
+  function walk(nodes: import('@/types/graph').ArchNode[]) {
+    for (const node of nodes) {
+      count++;
+      if (node.children.length > 0) walk(node.children);
+    }
+  }
+  walk(graph.nodes);
+  return count;
+}
+
+/**
+ * Move a node in the graph (pure function, returns new graph).
+ * Replicates moveNode from graphEngine for bulk operations.
+ */
+function _moveNodeInGraph(
+  graph: import('@/types/graph').ArchGraph,
+  nodeId: string,
+  x: number,
+  y: number,
+): import('@/types/graph').ArchGraph {
+  function updateNodes(nodes: import('@/types/graph').ArchNode[]): import('@/types/graph').ArchNode[] {
+    return nodes.map((node) => {
+      if (node.id === nodeId) {
+        return { ...node, position: { ...node.position, x, y } };
+      }
+      if (node.children.length > 0) {
+        return { ...node, children: updateNodes(node.children) };
+      }
+      return node;
+    });
+  }
+  return { ...graph, nodes: updateNodes(graph.nodes) };
+}
+
+/**
+ * Get all available commands (static + dynamic node navigation + node creation + bulk ops).
  */
 export function getAllCommands(): Command[] {
-  return [...getStaticCommands(), ...getNodeCreationCommands(), ...getNodeCommands()];
+  return [...getStaticCommands(), ...getBulkOperationCommands(), ...getNodeCreationCommands(), ...getNodeCommands()];
 }
 
 /**
