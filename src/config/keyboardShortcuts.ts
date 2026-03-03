@@ -90,6 +90,20 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: 'F2',
     winKeys: 'F2',
   },
+  {
+    id: 'select-all',
+    category: 'Edit',
+    description: 'Select all nodes',
+    macKeys: '⌘ A',
+    winKeys: 'Ctrl+A',
+  },
+  {
+    id: 'select-all-edges',
+    category: 'Edit',
+    description: 'Select all edges',
+    macKeys: '⌘ ⇧ A',
+    winKeys: 'Ctrl+Shift+A',
+  },
 
   // === View / Zoom ===
   {
@@ -222,6 +236,8 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'redo-alt': 'edit:redo-alt',
   'delete-node': 'edit:delete',
   'quick-rename': 'node:rename',
+  'select-all': 'select:all',
+  'select-all-edges': 'select:all-edges',
   'command-palette': 'canvas:command-palette',
   'deselect': 'canvas:deselect',
   'shortcuts-help': 'canvas:shortcuts-help',

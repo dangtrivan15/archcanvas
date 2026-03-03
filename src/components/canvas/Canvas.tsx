@@ -153,6 +153,31 @@ function CanvasInner() {
     setRfEdges(rendered.edges);
   }, [rendered]);
 
+  // Sync multi-selection state from store to React Flow
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
+  useEffect(() => {
+    const nodeIdSet = new Set(selectedNodeIds);
+    setRfNodes((prevNodes) =>
+      prevNodes.map((n) => {
+        const shouldBeSelected = nodeIdSet.has(n.id);
+        if (n.selected === shouldBeSelected) return n;
+        return { ...n, selected: shouldBeSelected };
+      }),
+    );
+  }, [selectedNodeIds]);
+
+  useEffect(() => {
+    const edgeIdSet = new Set(selectedEdgeIds);
+    setRfEdges((prevEdges) =>
+      prevEdges.map((e) => {
+        const shouldBeSelected = edgeIdSet.has(e.id);
+        if (e.selected === shouldBeSelected) return e;
+        return { ...e, selected: shouldBeSelected };
+      }),
+    );
+  }, [selectedEdgeIds]);
+
   // Handle React Flow node changes (drag, select, etc.)
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     setRfNodes((nds) => applyNodeChanges(changes, nds) as CanvasNode[]);
@@ -163,18 +188,26 @@ function CanvasInner() {
     setRfEdges((eds) => applyEdgeChanges(changes, eds) as CanvasEdge[]);
   }, []);
 
-  // Handle selection changes
+  // Handle selection changes from React Flow (click, Shift+Click, drag-select)
+  const selectNodes = useCanvasStore((s) => s.selectNodes);
+  const selectEdges = useCanvasStore((s) => s.selectEdges);
   const onSelectionChange: OnSelectionChangeFunc = useCallback(
     ({ nodes: selectedNodes, edges: selectedEdges }) => {
-      if (selectedNodes && selectedNodes.length > 0 && selectedNodes[0]) {
+      if (selectedNodes && selectedNodes.length > 1) {
+        // Multi-node selection from React Flow (drag-box or Shift+Click)
+        selectNodes(selectedNodes.map((n) => n.id));
+      } else if (selectedNodes && selectedNodes.length === 1 && selectedNodes[0]) {
         selectNode(selectedNodes[0].id);
-      } else if (selectedEdges && selectedEdges.length > 0 && selectedEdges[0]) {
+      } else if (selectedEdges && selectedEdges.length > 1) {
+        // Multi-edge selection
+        selectEdges(selectedEdges.map((e) => e.id));
+      } else if (selectedEdges && selectedEdges.length === 1 && selectedEdges[0]) {
         selectEdge(selectedEdges[0].id);
       } else {
         clearSelection();
       }
     },
-    [selectNode, selectEdge, clearSelection],
+    [selectNode, selectNodes, selectEdge, selectEdges, clearSelection],
   );
 
   // Handle edge connections via drag - show connection type dialog
