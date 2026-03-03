@@ -1,4 +1,61 @@
 ==================================================
+SESSION: 2026-03-03 - Features #224, #225
+==================================================
+
+## What was accomplished:
+
+### Feature #224: Form fields have associated labels (PASSING)
+- Audited all 31+ form inputs across the entire codebase
+- All inputs already had proper accessibility labels:
+  - <label htmlFor> with matching id for standard form fields
+  - aria-label for inline/contextual inputs
+  - aria-checked for toggle switches
+- Created comprehensive test file: test/unit/ui/formFieldLabels.test.ts (29 tests)
+  - Properties panel inputs (enum, number, boolean, string args)
+  - Note editor inputs (author, content textarea, tags)
+  - Code reference inputs (path, role select)
+  - Search inputs (NodeDef browser)
+  - AI chat textarea
+  - Toolbar inputs (custom name, edge selects)
+  - Layout menu inputs (spacing sliders)
+  - Dialog inputs (edge label)
+  - Label-input ID correspondence checks
+  - Comprehensive coverage for all form components
+- Browser verified: accessibility tree shows proper labels for all inputs
+- Zero console errors
+
+### Feature #225: Confirm dialog accessible via keyboard (PASSING)
+- Created useFocusTrap hook (src/hooks/useFocusTrap.ts):
+  - Tab/Shift+Tab wraps focus within dialog container
+  - Standard focusable element selector (buttons, inputs, selects, textareas, links, tabindex)
+  - Prevents default on boundary wrap to block focus escape
+  - Activates/deactivates based on boolean parameter
+  - Cleans up event listener on deactivation
+- Added focus trapping to all 5 dialogs:
+  - DeleteConfirmationDialog: Cancel and Delete buttons
+  - UnsavedChangesDialog: Cancel and Discard Changes buttons
+  - ConnectionTypeDialog: edge type buttons, label input, Cancel and Create buttons
+  - ErrorDialog: OK button
+  - IntegrityWarningDialog: Cancel and Open Anyway buttons
+- All dialogs already had: role="dialog"/"alertdialog", aria-modal="true", Escape key handling, auto-focus on primary action, backdrop click to close
+- Created test file: test/unit/ui/dialogKeyboardAccessibility.test.ts (68 tests)
+- Browser verified complete keyboard workflow:
+  1. Loaded ecommerce.archc, selected node
+  2. Pressed Delete → dialog opened with Delete button focused ✓
+  3. Tab → focus moved to Cancel button ✓
+  4. Tab → focus wrapped back to Delete button (focus trap works) ✓
+  5. Escape → dialog closed, node NOT deleted (5 nodes, 4 edges) ✓
+  6. Re-opened dialog → Delete button auto-focused ✓
+  7. Enter → node deleted (4 nodes, 2 edges), dialog closed ✓
+  8. Zero console errors ✓
+
+## Current completion status:
+- Features passing: 228+ of 235 (97%+)
+- All 1997 tests passing across 124 test files
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-03 - Feature #227
 ==================================================
 
