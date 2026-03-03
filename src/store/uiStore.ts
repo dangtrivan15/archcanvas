@@ -107,6 +107,9 @@ export interface UIStoreState {
   // Pending rename (auto-focus display name input for newly created node)
   pendingRenameNodeId: string | null;
 
+  // Inline editing on canvas node (F2 quick-edit without opening right panel)
+  inlineEditNodeId: string | null;
+
   // Autosave on focus change
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
@@ -186,6 +189,10 @@ export interface UIStoreState {
   setPendingRenameNodeId: (nodeId: string | null) => void;
   clearPendingRename: () => void;
 
+  // Inline edit actions
+  setInlineEditNodeId: (nodeId: string | null) => void;
+  clearInlineEdit: () => void;
+
   // Autosave actions
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
@@ -243,6 +250,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   fileOperationMessage: null,
 
   pendingRenameNodeId: null,
+
+  inlineEditNodeId: null,
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
@@ -358,6 +367,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   clearPendingRename: () =>
     set({ pendingRenameNodeId: null }),
+
+  setInlineEditNodeId: (nodeId) =>
+    set({ inlineEditNodeId: nodeId }),
+
+  clearInlineEdit: () =>
+    set({ inlineEditNodeId: null }),
 
   setAutosaveOnBlur: (enabled) =>
     set({ autosaveOnBlur: enabled }),

@@ -29,7 +29,7 @@ export interface Command {
   isEnabled?: () => boolean;
 }
 
-export type CommandCategory = 'File' | 'Edit' | 'View' | 'Canvas' | 'Navigation' | 'Node';
+export type CommandCategory = 'File' | 'Edit' | 'View' | 'Canvas' | 'Navigation' | 'Node' | 'Edge';
 
 /**
  * Platform-aware shortcut display string.
@@ -124,13 +124,13 @@ export function getStaticCommands(): Command[] {
       label: 'Rename Node',
       category: 'Edit',
       shortcut: shortcut('f2'),
-      keywords: ['rename', 'name', 'edit', 'f2', 'display name'],
+      keywords: ['rename', 'name', 'edit', 'f2', 'display name', 'inline'],
       iconName: 'Pencil',
       execute: () => {
         const { selectedNodeId } = useCanvasStore.getState();
         if (selectedNodeId) {
-          useUIStore.getState().setPendingRenameNodeId(selectedNodeId);
-          useUIStore.getState().openRightPanel('properties');
+          // Activate inline edit directly on the canvas node
+          useUIStore.getState().setInlineEditNodeId(selectedNodeId);
         }
       },
       isEnabled: () => useCanvasStore.getState().selectedNodeId !== null,
@@ -250,6 +250,18 @@ export function getStaticCommands(): Command[] {
       },
     },
 
+    // === Navigation / Search ===
+    {
+      id: 'nav:quick-search',
+      label: 'Quick Search Nodes',
+      category: 'Navigation',
+      shortcut: '/',
+      keywords: ['search', 'find', 'jump', 'go to', 'navigate', 'node'],
+      execute: () => {
+        useUIStore.getState().openQuickSearch();
+      },
+    },
+
     // === Canvas ===
     {
       id: 'canvas:fit-view',
@@ -310,6 +322,88 @@ export function getStaticCommands(): Command[] {
         useNavigationStore.getState().zoomOut();
       },
       isEnabled: () => useNavigationStore.getState().path.length > 0,
+    },
+
+    // === Edge Operations ===
+    {
+      id: 'connect:wizard',
+      label: 'Connect Nodes...',
+      category: 'Edge',
+      keywords: ['connect', 'edge', 'link', 'wire', 'join', 'relation'],
+      iconName: 'ArrowRight',
+      execute: () => {
+        // Handled by CommandPalette wizard mode — no-op here
+      },
+      isEnabled: () => useCoreStore.getState().graph.nodes.length >= 2,
+    },
+
+    // === Edge Type Operations ===
+    {
+      id: 'edge:cycle-type',
+      label: 'Cycle Edge Type',
+      category: 'Edge',
+      shortcut: shortcut('t'),
+      keywords: ['cycle', 'type', 'edge', 'toggle', 'change'],
+      execute: () => {
+        const { graph, updateEdge } = useCoreStore.getState();
+        const { selectedEdgeId } = useCanvasStore.getState();
+        const { showToast } = useUIStore.getState();
+        if (!selectedEdgeId) return;
+        const edge = graph.edges.find((e) => e.id === selectedEdgeId);
+        if (!edge) return;
+        const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
+        const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+        const currentIdx = types.indexOf(edge.type);
+        const nextType = types[(currentIdx + 1) % types.length]!;
+        updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+        showToast(`Changed to ${typeLabels[nextType]}`);
+      },
+      isEnabled: () => useCanvasStore.getState().selectedEdgeId !== null,
+    },
+    {
+      id: 'edge:set-sync',
+      label: 'Set Edge Type: Sync',
+      category: 'Edge',
+      keywords: ['sync', 'type', 'edge', 'set', 'request', 'response'],
+      execute: () => {
+        const { updateEdge } = useCoreStore.getState();
+        const { selectedEdgeId } = useCanvasStore.getState();
+        const { showToast } = useUIStore.getState();
+        if (!selectedEdgeId) return;
+        updateEdge(selectedEdgeId, { type: 'sync' }, 'Change edge type to Sync');
+        showToast('Changed to Sync');
+      },
+      isEnabled: () => useCanvasStore.getState().selectedEdgeId !== null,
+    },
+    {
+      id: 'edge:set-async',
+      label: 'Set Edge Type: Async',
+      category: 'Edge',
+      keywords: ['async', 'type', 'edge', 'set', 'event', 'message'],
+      execute: () => {
+        const { updateEdge } = useCoreStore.getState();
+        const { selectedEdgeId } = useCanvasStore.getState();
+        const { showToast } = useUIStore.getState();
+        if (!selectedEdgeId) return;
+        updateEdge(selectedEdgeId, { type: 'async' }, 'Change edge type to Async');
+        showToast('Changed to Async');
+      },
+      isEnabled: () => useCanvasStore.getState().selectedEdgeId !== null,
+    },
+    {
+      id: 'edge:set-data-flow',
+      label: 'Set Edge Type: Data Flow',
+      category: 'Edge',
+      keywords: ['data', 'flow', 'type', 'edge', 'set', 'pipeline', 'etl'],
+      execute: () => {
+        const { updateEdge } = useCoreStore.getState();
+        const { selectedEdgeId } = useCanvasStore.getState();
+        const { showToast } = useUIStore.getState();
+        if (!selectedEdgeId) return;
+        updateEdge(selectedEdgeId, { type: 'data-flow' }, 'Change edge type to Data Flow');
+        showToast('Changed to Data Flow');
+      },
+      isEnabled: () => useCanvasStore.getState().selectedEdgeId !== null,
     },
   ];
 }

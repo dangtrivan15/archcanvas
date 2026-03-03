@@ -15,10 +15,12 @@
  * - Color is applied as a left accent bar and tinted header background
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
 import { getEffectiveNodeColor, colorToBackground } from '@/utils/nodeColors';
+import { useUIStore } from '@/store/uiStore';
+import { useCoreStore } from '@/store/coreStore';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
@@ -54,6 +56,58 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   const outboundPorts = nodeData.ports?.outbound ?? [];
   const hasDefinedInboundPorts = inboundPorts.length > 0;
   const hasDefinedOutboundPorts = outboundPorts.length > 0;
+
+  // ── Inline edit state ──────────────────────────────────────────────
+  const inlineEditNodeId = useUIStore((s) => s.inlineEditNodeId);
+  const isInlineEditing = inlineEditNodeId === nodeData.archNodeId;
+  const [editValue, setEditValue] = useState(nodeData.displayName);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // When inline edit activates for this node, focus the input and select all text
+  useEffect(() => {
+    if (isInlineEditing) {
+      setEditValue(nodeData.displayName);
+      // Use requestAnimationFrame to ensure the input is rendered before focusing
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      });
+    }
+  }, [isInlineEditing, nodeData.displayName]);
+
+  /** Confirm inline edit: apply new display name via coreStore.updateNode() */
+  const confirmEdit = useCallback(() => {
+    const trimmedValue = editValue.trim();
+    if (trimmedValue && trimmedValue !== nodeData.displayName) {
+      useCoreStore.getState().updateNode(nodeData.archNodeId, {
+        displayName: trimmedValue,
+      });
+    }
+    useUIStore.getState().clearInlineEdit();
+  }, [editValue, nodeData.displayName, nodeData.archNodeId]);
+
+  /** Revert inline edit: discard changes */
+  const revertEdit = useCallback(() => {
+    setEditValue(nodeData.displayName);
+    useUIStore.getState().clearInlineEdit();
+  }, [nodeData.displayName]);
+
+  /** Handle keyboard events on the inline edit input */
+  const handleInlineKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation(); // Prevent canvas shortcuts from firing
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      confirmEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      revertEdit();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      confirmEdit();
+    }
+  }, [confirmEdit, revertEdit]);
 
   // Compute effective color (custom or type-default)
   const effectiveColor = useMemo(
@@ -148,9 +202,25 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
           data-testid="node-icon"
         />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-gray-900 truncate" data-testid="node-display-name">
-            {nodeData.displayName}
-          </div>
+          {isInlineEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              className="text-sm font-medium text-gray-900 w-full bg-white border border-blue-400 rounded px-1 py-0 outline-none ring-2 ring-blue-200 nodrag"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={handleInlineKeyDown}
+              onBlur={confirmEdit}
+              data-testid="inline-edit-input"
+              aria-label="Edit node name"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          ) : (
+            <div className="text-sm font-medium text-gray-900 truncate" data-testid="node-display-name">
+              {nodeData.displayName}
+            </div>
+          )}
           <div className="text-xs text-gray-400 truncate" data-testid="node-type-label">
             {nodeData.nodedefType}
           </div>
