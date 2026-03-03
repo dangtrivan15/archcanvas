@@ -79,6 +79,9 @@ function CanvasInner() {
   const placementInfo = useUIStore((s) => s.placementInfo);
   const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
   const canvasMode = useUIStore((s) => s.canvasMode);
+  const connectSource = useUIStore((s) => s.connectSource);
+  const connectTarget = useUIStore((s) => s.connectTarget);
+  const connectStep = useUIStore((s) => s.connectStep);
   const fitViewCounter = useCanvasStore((s) => s.fitViewCounter);
   const zoomInCounter = useCanvasStore((s) => s.zoomInCounter);
   const zoomOutCounter = useCanvasStore((s) => s.zoomOutCounter);
@@ -87,6 +90,9 @@ function CanvasInner() {
   const prevZoomInCounterRef = useRef(zoomInCounter);
   const prevZoomOutCounterRef = useRef(zoomOutCounter);
   const prevZoom100CounterRef = useRef(zoom100Counter);
+  const centerOnNodeId = useCanvasStore((s) => s.centerOnNodeId);
+  const centerOnNodeCounter = useCanvasStore((s) => s.centerOnNodeCounter);
+  const prevCenterOnNodeCounterRef = useRef(centerOnNodeCounter);
 
   // Context menu state (canvas background)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -182,6 +188,86 @@ function CanvasInner() {
       }),
     );
   }, [selectedEdgeIds]);
+
+  // Watch for center-on-node requests (from QuickSearch jump)
+  useEffect(() => {
+    if (centerOnNodeCounter !== prevCenterOnNodeCounterRef.current) {
+      prevCenterOnNodeCounterRef.current = centerOnNodeCounter;
+      if (centerOnNodeId) {
+        // Find the node position in rfNodes
+        const targetNode = rfNodes.find((n) => n.id === centerOnNodeId);
+        if (targetNode) {
+          const vp = getViewport();
+          setCenter(targetNode.position.x, targetNode.position.y, {
+            zoom: vp.zoom,
+            duration: 200,
+          });
+        }
+      }
+    }
+  }, [centerOnNodeCounter, centerOnNodeId, rfNodes, getViewport, setCenter]);
+
+  // Connect mode: add preview dashed edge from source to target
+  useEffect(() => {
+    const PREVIEW_EDGE_ID = '__connect-preview__';
+    if (canvasMode === CanvasMode.Connect && connectSource && connectTarget) {
+      setRfEdges((prevEdges) => {
+        // Remove any existing preview edge
+        const filtered = prevEdges.filter((e) => e.id !== PREVIEW_EDGE_ID);
+        // Add the preview edge
+        const previewEdge: CanvasEdge = {
+          id: PREVIEW_EDGE_ID,
+          source: connectSource,
+          target: connectTarget,
+          type: 'sync',
+          animated: true,
+          style: { strokeDasharray: '8 4', stroke: '#3b82f6', strokeWidth: 2 },
+          data: {} as CanvasEdge['data'],
+        };
+        return [...filtered, previewEdge];
+      });
+    } else {
+      // Remove preview edge when not in connect mode or missing source/target
+      setRfEdges((prevEdges) => prevEdges.filter((e) => e.id !== PREVIEW_EDGE_ID));
+    }
+  }, [canvasMode, connectSource, connectTarget]);
+
+  // Connect mode: highlight source node with green glow
+  useEffect(() => {
+    if (canvasMode === CanvasMode.Connect && connectSource) {
+      setRfNodes((prevNodes) =>
+        prevNodes.map((n) => {
+          if (n.id === connectSource) {
+            return {
+              ...n,
+              className: `${n.className || ''} connect-source-glow`.trim(),
+            };
+          }
+          // Remove glow from non-source nodes
+          if (n.className?.includes('connect-source-glow')) {
+            return {
+              ...n,
+              className: (n.className || '').replace('connect-source-glow', '').trim(),
+            };
+          }
+          return n;
+        }),
+      );
+    } else {
+      // Clean up glow when leaving connect mode
+      setRfNodes((prevNodes) =>
+        prevNodes.map((n) => {
+          if (n.className?.includes('connect-source-glow')) {
+            return {
+              ...n,
+              className: (n.className || '').replace('connect-source-glow', '').trim(),
+            };
+          }
+          return n;
+        }),
+      );
+    }
+  }, [canvasMode, connectSource]);
 
   // Handle React Flow node changes (drag, select, etc.)
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -474,13 +560,17 @@ function CanvasInner() {
         uiState.errorDialogOpen ||
         uiState.integrityWarningDialogOpen ||
         uiState.shortcutsHelpOpen ||
-        uiState.commandPaletteOpen
+        uiState.commandPaletteOpen ||
+        uiState.quickSearchOpen
       ) {
         return;
       }
 
       // Don't handle if placement mode is active
       if (placementMode) return;
+
+      // Don't handle in Connect mode (Connect mode has its own arrow handler)
+      if (uiState.canvasMode === CanvasMode.Connect) return;
 
       // Don't handle with Alt key
       if (e.altKey) return;
@@ -544,6 +634,130 @@ function CanvasInner() {
     return () => document.removeEventListener('keydown', handleArrowNav);
   }, [rfNodes, selectNode, addNodeToSelection, toggleNodeInSelection, setCenter, getViewport, placementMode]);
 
+  // Connect mode keyboard handler:
+  // - Arrow keys: navigate between nodes to pick target (or source if no source yet)
+  // - Enter: confirm target → enter pick-type step
+  // - 1/2/3: pick edge type → create edge → return to Normal
+  const addEdge = useCoreStore((s) => s.addEdge);
+  useEffect(() => {
+    const handleConnectKeys = (e: KeyboardEvent) => {
+      const uiState = useUIStore.getState();
+      if (uiState.canvasMode !== CanvasMode.Connect) return;
+      if (isActiveElementTextInput()) return;
+
+      const { connectSource, connectTarget, connectStep } = uiState;
+
+      // Arrow keys in Connect mode: navigate target candidates (or source if step is select-source)
+      const ARROW_KEY_MAP: Record<string, Direction> = {
+        ArrowUp: 'up',
+        ArrowDown: 'down',
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+      };
+
+      const direction = ARROW_KEY_MAP[e.key];
+      if (direction) {
+        e.preventDefault();
+        e.stopPropagation(); // prevent the normal arrow handler from firing
+
+        const positions = extractPositions(rfNodes);
+        if (positions.length === 0) return;
+
+        if (connectStep === 'select-source') {
+          // Navigating to pick a source node
+          const currentId = connectSource;
+          let targetId: string | null = null;
+          if (currentId) {
+            targetId = findNearestNode(currentId, direction, positions);
+          } else {
+            targetId = findTopLeftNode(positions);
+          }
+          if (targetId) {
+            uiState.startConnect(null); // keep step as select-source
+            // Manually set source for navigation
+            useUIStore.setState({ connectSource: targetId, connectStep: 'select-source' });
+            selectNode(targetId);
+            // Pan viewport
+            const targetPos = positions.find((p) => p.id === targetId);
+            if (targetPos) {
+              const vp = getViewport();
+              setCenter(targetPos.x, targetPos.y, { zoom: vp.zoom, duration: 200 });
+            }
+          }
+        } else if (connectStep === 'select-target') {
+          // Navigating to pick a target node
+          const currentId = connectTarget || connectSource;
+          let targetId: string | null = null;
+          if (currentId) {
+            targetId = findNearestNode(currentId, direction, positions);
+          } else {
+            targetId = findTopLeftNode(positions);
+          }
+          // Don't allow selecting the source as target
+          if (targetId && targetId !== connectSource) {
+            uiState.setConnectTarget(targetId);
+            selectNode(targetId);
+            // Pan viewport
+            const targetPos = positions.find((p) => p.id === targetId);
+            if (targetPos) {
+              const vp = getViewport();
+              setCenter(targetPos.x, targetPos.y, { zoom: vp.zoom, duration: 200 });
+            }
+          }
+        }
+        return;
+      }
+
+      // Enter key: confirm target or source selection
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (connectStep === 'select-source' && connectSource) {
+          // Source confirmed → move to select-target
+          uiState.setConnectStep('select-target');
+          return;
+        }
+        if (connectStep === 'select-target' && connectTarget && connectSource) {
+          // Target confirmed → move to pick-type
+          uiState.setConnectStep('pick-type');
+          return;
+        }
+        return;
+      }
+
+      // Number keys 1/2/3: pick edge type in pick-type step
+      if (connectStep === 'pick-type' && connectSource && connectTarget) {
+        const typeMap: Record<string, 'sync' | 'async' | 'data-flow'> = {
+          '1': 'sync',
+          '2': 'async',
+          '3': 'data-flow',
+        };
+        const edgeType = typeMap[e.key];
+        if (edgeType) {
+          e.preventDefault();
+          // Create the edge
+          const newEdge = addEdge({
+            fromNode: connectSource,
+            toNode: connectTarget,
+            type: edgeType,
+          });
+          // Return to Normal mode
+          uiState.exitToNormal();
+          // Select the new edge
+          if (newEdge) {
+            selectEdge(newEdge.id);
+            const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+            showToast(`Created ${typeLabels[edgeType]} edge`);
+          }
+          return;
+        }
+      }
+    };
+
+    // Use capture phase so this runs BEFORE the normal arrow handler
+    document.addEventListener('keydown', handleConnectKeys, true);
+    return () => document.removeEventListener('keydown', handleConnectKeys, true);
+  }, [rfNodes, addEdge, selectNode, selectEdge, setCenter, getViewport, showToast]);
+
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
@@ -576,6 +790,26 @@ function CanvasInner() {
           >
             Esc to cancel
           </button>
+        </div>
+      )}
+
+      {/* Connect mode overlay banner */}
+      {canvasMode === CanvasMode.Connect && (
+        <div
+          className="absolute top-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2
+                     bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium"
+          data-testid="connect-mode-indicator"
+        >
+          <span className="inline-block w-2 h-2 bg-blue-300 rounded-full animate-pulse" />
+          {connectStep === 'select-source' && (
+            <span>CONNECT: Select source (<strong>↑↓←→</strong>) then <strong>Enter</strong> | <kbd className="px-1 bg-blue-500 rounded text-xs">Esc</kbd> to cancel</span>
+          )}
+          {connectStep === 'select-target' && (
+            <span>CONNECT: Select target (<strong>↑↓←→</strong>) then <strong>Enter</strong> | <kbd className="px-1 bg-blue-500 rounded text-xs">Esc</kbd> to cancel</span>
+          )}
+          {connectStep === 'pick-type' && (
+            <span>CONNECT: Pick type — <kbd className="px-1 bg-blue-500 rounded text-xs">1</kbd> Sync  <kbd className="px-1 bg-blue-500 rounded text-xs">2</kbd> Async  <kbd className="px-1 bg-blue-500 rounded text-xs">3</kbd> Data Flow | <kbd className="px-1 bg-blue-500 rounded text-xs">Esc</kbd> to cancel</span>
+          )}
         </div>
       )}
 
