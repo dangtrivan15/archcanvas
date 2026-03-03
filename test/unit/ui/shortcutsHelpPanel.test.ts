@@ -251,11 +251,11 @@ describe('UI Store - Shortcuts Help Dialog', () => {
 // ================================================================
 
 describe('Keyboard trigger (? key)', () => {
-  it('useKeyboardShortcuts source code handles ? key', async () => {
-    // Read the source to verify the ? key handler exists
+  it('useKeyboardShortcuts source code handles shortcuts-help action', async () => {
+    // Read the source to verify the shortcuts help handler exists (now via ShortcutManager)
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain("e.key === '?'");
+    expect(source).toContain("'canvas:shortcuts-help'");
     expect(source).toContain('toggleShortcutsHelp');
   });
 
@@ -268,12 +268,13 @@ describe('Keyboard trigger (? key)', () => {
     expect(source).toContain('target.isContentEditable');
   });
 
-  it('? key handler does not require Ctrl/Cmd', async () => {
+  it('? key handler checks input focus guard', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    // The ? handler should check that ctrl/meta are NOT pressed
-    expect(source).toContain('!e.ctrlKey');
-    expect(source).toContain('!e.metaKey');
+    // The shortcuts-help handler should check if user is in an input field
+    expect(source).toContain('inInput');
+    expect(source).toContain("'INPUT'");
+    expect(source).toContain("'TEXTAREA'");
   });
 });
 

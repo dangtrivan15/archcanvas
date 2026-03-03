@@ -141,9 +141,43 @@ export function isMacPlatform(): boolean {
 }
 
 /**
+ * Map from help panel shortcut IDs to ShortcutManager action IDs.
+ * Allows the help panel to show customized bindings.
+ */
+const HELP_TO_ACTION_MAP: Record<string, string> = {
+  'new-file': 'file:new',
+  'open-file': 'file:open',
+  'save': 'file:save',
+  'save-as': 'file:save-as',
+  'undo': 'edit:undo',
+  'redo': 'edit:redo',
+  'redo-alt': 'edit:redo-alt',
+  'delete-node': 'edit:delete',
+  'command-palette': 'canvas:command-palette',
+  'deselect': 'canvas:deselect',
+  'shortcuts-help': 'canvas:shortcuts-help',
+  'zoom-out': 'nav:zoom-out',
+};
+
+/**
  * Get the platform-appropriate key label for a shortcut.
+ * If the ShortcutManager is available and the binding has been customized,
+ * returns the customized display string instead of the default.
  */
 export function getShortcutKeys(shortcut: KeyboardShortcut): string {
+  // Try to use the ShortcutManager for customized bindings
+  try {
+    const actionId = HELP_TO_ACTION_MAP[shortcut.id];
+    if (actionId) {
+      const { getShortcutManager } = require('@/core/shortcuts/shortcutManager');
+      const manager = getShortcutManager();
+      if (manager.isCustomized(actionId)) {
+        return manager.getDisplayBinding(actionId);
+      }
+    }
+  } catch {
+    // Fall through to defaults if manager isn't available
+  }
   return isMacPlatform() ? shortcut.macKeys : shortcut.winKeys;
 }
 
