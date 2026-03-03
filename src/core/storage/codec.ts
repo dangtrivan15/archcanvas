@@ -175,7 +175,8 @@ export async function decode(
   const version = (data[versionOffset]! << 8) | data[versionOffset + 1]!;
   if (version > FORMAT_VERSION) {
     throw new CodecError(
-      `Unsupported format version: ${version}. Maximum supported: ${FORMAT_VERSION}`
+      `Unsupported format version: ${version}. This file was created with a newer version of ArchCanvas. ` +
+      `Please update ArchCanvas to the latest version to open this file. (Current max supported version: ${FORMAT_VERSION})`
     );
   }
 
@@ -212,6 +213,16 @@ export async function decode(
   } catch (err) {
     throw new CodecError(
       `Failed to decode protobuf payload: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+
+  // Step 6b: Verify decoded message has valid field types
+  const verifyError = ArchCanvasFile.verify(
+    decoded as unknown as Record<string, unknown>
+  );
+  if (verifyError) {
+    throw new CodecError(
+      `Malformed protobuf data: ${verifyError}`
     );
   }
 

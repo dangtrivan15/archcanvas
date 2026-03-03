@@ -287,6 +287,29 @@ function CanvasInner() {
         return;
       }
 
+      // Escape deselects selected node/edge and closes right panel
+      if (e.key === 'Escape') {
+        // Don't deselect if any modal dialog is open (they handle their own Escape)
+        const uiState = useUIStore.getState();
+        if (
+          uiState.deleteDialogOpen ||
+          uiState.connectionDialogOpen ||
+          uiState.unsavedChangesDialogOpen ||
+          uiState.errorDialogOpen ||
+          uiState.integrityWarningDialogOpen
+        ) {
+          return;
+        }
+
+        const canvasState = useCanvasStore.getState();
+        if (canvasState.selectedNodeId || canvasState.selectedEdgeId) {
+          e.preventDefault();
+          canvasState.clearSelection();
+          uiState.closeRightPanel();
+          return;
+        }
+      }
+
       // Don't handle if delete dialog is already open
       if (deleteDialogOpen) return;
 

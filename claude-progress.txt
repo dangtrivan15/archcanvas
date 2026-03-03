@@ -3650,3 +3650,49 @@ Tests cover:
 - Zero console errors
 - All 1460 tests passing across 100 test files
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-03 - Feature #205
+==================================================
+
+## What was accomplished:
+
+### Feature #205: File format version validated on open (PASSING)
+- Verified all implementation was already in place:
+  - codec.ts: decode() checks format version (uint16 big-endian at offset 6-7)
+  - Rejects version > FORMAT_VERSION with CodecError
+  - Error message: "Unsupported format version: {X}. This file was created with a newer version of ArchCanvas. Please update ArchCanvas to the latest version to open this file. (Current max supported version: {FORMAT_VERSION})"
+  - Version check happens BEFORE checksum verification (even with skipChecksumVerification)
+  - readFormatVersion() utility to inspect version without full decode
+- Test fixture: public/future-version.archc (version 9999, ARCHC\0 magic bytes)
+- Test file: test/unit/store/formatVersionValidation.test.ts (14 tests, all passing)
+  1. Rejects version 9999
+  2. Error includes version number "9999"
+  3. Error mentions "update"
+  4. Error mentions "newer version"
+  5. Error includes max supported version
+  6. Rejects FORMAT_VERSION + 1
+  7. Rejects 65535 (max uint16)
+  8. Rejects 256
+  9. Does NOT reject current FORMAT_VERSION
+  10. Does NOT reject version 0
+  11. readFormatVersion reads future version correctly
+  12. readFormatVersion reads current version correctly
+  13. Thrown error is CodecError instance
+  14. Version check before checksum verification
+
+## Browser verification steps completed:
+1. Loaded future-version.archc via ?load=future-version.archc
+2. ErrorDialog appeared: "Invalid File Format" title ✓
+3. Error message: "Unsupported format version: 9999. This file was created with a newer version of ArchCanvas. Please update ArchCanvas to the latest version to open this file. (Current max supported version: 1)" ✓
+4. Message suggests updating the application ✓
+5. Clicked OK to dismiss dialog → app returned to usable state ✓
+6. Loaded ecommerce.archc → 5 nodes, 4 edges displayed correctly ✓
+7. Console after valid file load: 0 errors, 0 warnings ✓
+8. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+
+## Current completion status:
+- Features passing: 210 of 235 (89.4%)
+- Zero console errors
+- All 14 format version tests passing
+- No mock data patterns in production code
