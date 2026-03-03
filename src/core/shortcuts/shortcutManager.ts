@@ -59,6 +59,10 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'edit:delete', label: 'Delete Node', category: 'Edit', defaultBinding: 'delete' },
   { id: 'node:rename', label: 'Quick Rename', category: 'Edit', defaultBinding: 'f2' },
 
+  // Selection
+  { id: 'select:all', label: 'Select All Nodes', category: 'Edit', defaultBinding: 'mod+a' },
+  { id: 'select:all-edges', label: 'Select All Edges', category: 'Edit', defaultBinding: 'mod+shift+a' },
+
   // Canvas
   { id: 'canvas:command-palette', label: 'Command Palette', category: 'Canvas', defaultBinding: 'mod+k' },
   { id: 'canvas:deselect', label: 'Deselect / Close', category: 'Canvas', defaultBinding: 'escape' },

@@ -35,6 +35,8 @@ export function useKeyboardShortcuts() {
   const requestZoomOut = useCanvasStore((s) => s.requestZoomOut);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const requestZoom100 = useCanvasStore((s) => s.requestZoom100);
+  const selectNodes = useCanvasStore((s) => s.selectNodes);
+  const selectEdges = useCanvasStore((s) => s.selectEdges);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -202,9 +204,35 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           requestZoom100();
           break;
+
+        case 'select:all':
+          e.preventDefault();
+          {
+            // Select all nodes at the current navigation level
+            const coreState = useCoreStore.getState();
+            const navPath = useNavigationStore.getState().path;
+            if (coreState.renderApi && coreState.graph) {
+              const { nodes } = coreState.renderApi.render(coreState.graph, navPath);
+              selectNodes(nodes.map((n) => n.id));
+            }
+          }
+          break;
+
+        case 'select:all-edges':
+          e.preventDefault();
+          {
+            // Select all edges at the current navigation level
+            const coreState = useCoreStore.getState();
+            const navPath = useNavigationStore.getState().path;
+            if (coreState.renderApi && coreState.graph) {
+              const { edges } = coreState.renderApi.render(coreState.graph, navPath);
+              selectEdges(edges.map((e) => e.id));
+            }
+          }
+          break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
   );
 
   useEffect(() => {

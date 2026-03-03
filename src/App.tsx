@@ -34,6 +34,8 @@ export function App() {
 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
@@ -194,6 +196,14 @@ export function App() {
           <span data-testid="edge-count">Edges: {edgeCount}</span>
           <span className="mx-2">|</span>
           <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+          {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
+            <>
+              <span className="mx-2">|</span>
+              <span data-testid="selection-count" className="text-blue-500 font-medium">
+                Selected: {selectedNodeIds.length > 0 ? `${selectedNodeIds.length} node${selectedNodeIds.length !== 1 ? 's' : ''}` : `${selectedEdgeIds.length} edge${selectedEdgeIds.length !== 1 ? 's' : ''}`}
+              </span>
+            </>
+          )}
           {autosaveStatusMessage && (
             <>
               <span className="mx-2">|</span>
