@@ -420,13 +420,19 @@ function CanvasInner() {
           color="#cbd5e1"
           data-testid="canvas-background-grid"
         />
-        <Controls position="bottom-right" />
+        <Controls
+          position="bottom-right"
+          aria-label="Canvas controls"
+          data-testid="canvas-controls"
+        />
         <MiniMap
           position="bottom-left"
           nodeStrokeWidth={3}
           pannable
           zoomable
           className="!bg-white !border !border-gray-200"
+          aria-label="Mini map"
+          data-testid="canvas-minimap"
         />
       </ReactFlow>
 
