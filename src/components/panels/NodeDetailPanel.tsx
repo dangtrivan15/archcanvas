@@ -16,6 +16,8 @@ import { formatRelativeTime } from '@/utils/formatRelativeTime';
 import { marked } from 'marked';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { NODE_COLOR_PALETTE, getDefaultNodeColor, getEffectiveNodeColor } from '@/utils/nodeColors';
+import { usePropertyKeyboardNav } from '@/hooks/usePropertyKeyboardNav';
+import { CanvasMode } from '@/core/input/canvasMode';
 
 // Configure marked for inline rendering (no wrapping <p> tags for short content)
 const markedInline = new marked.Renderer();
@@ -164,6 +166,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
   const clearPendingRename = useUIStore((s) => s.clearPendingRename);
+  const canvasMode = useUIStore((s) => s.canvasMode);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   // Track raw text input for number fields so we can validate non-numeric text
   const [numberInputValues, setNumberInputValues] = useState<Record<string, string>>({});
@@ -171,6 +174,28 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingNameValue, setEditingNameValue] = useState('');
   const displayNameInputRef = useRef<HTMLInputElement>(null);
+  const propertiesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard navigation for Edit mode (Tab/Shift+Tab cycle, Enter→next, Escape→exit)
+  usePropertyKeyboardNav(propertiesContainerRef);
+
+  // Sync editingNameValue with node displayName when entering Edit mode
+  const prevModeRef = useRef(canvasMode);
+  useEffect(() => {
+    if (canvasMode === CanvasMode.Edit && prevModeRef.current !== CanvasMode.Edit) {
+      // Just entered Edit mode - set the editing value to current display name
+      setEditingNameValue(node.displayName);
+    }
+    if (canvasMode !== CanvasMode.Edit && prevModeRef.current === CanvasMode.Edit) {
+      // Just left Edit mode - save any pending name change and clear editing state
+      if (editingNameValue.trim() && selectedNodeId && editingNameValue.trim() !== node.displayName) {
+        updateNode(selectedNodeId, { displayName: editingNameValue.trim() });
+      }
+      setIsEditingName(false);
+      setEditingNameValue('');
+    }
+    prevModeRef.current = canvasMode;
+  }, [canvasMode, node.displayName, editingNameValue, selectedNodeId, updateNode]);
 
   // Handle rename save
   const handleRenameSave = useCallback(() => {
@@ -266,7 +291,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   }, [node.args, numberInputValues]);
 
   return (
-    <div className="space-y-4" data-testid="properties-tab">
+    <div className="space-y-4" data-testid="properties-tab" ref={propertiesContainerRef}>
       {/* Node ID */}
       <div>
         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">ID</label>
@@ -279,7 +304,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
       <div>
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
-          {!isEditingName && (
+          {!isEditingName && canvasMode !== CanvasMode.Edit && (
             <button
               onClick={() => {
                 setIsEditingName(true);
@@ -293,14 +318,16 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
             </button>
           )}
         </div>
-        {isEditingName ? (
+        {(isEditingName || canvasMode === CanvasMode.Edit) ? (
           <div className="mt-1 flex items-center gap-1">
             <input
               ref={displayNameInputRef}
               type="text"
-              value={editingNameValue}
+              value={editingNameValue || node.displayName}
               onChange={(e) => setEditingNameValue(e.target.value)}
               onKeyDown={(e) => {
+                // In Edit mode, let the usePropertyKeyboardNav hook handle Enter/Escape/Tab
+                if (canvasMode === CanvasMode.Edit) return;
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleRenameSave();
@@ -310,9 +337,19 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                   handleRenameCancel();
                 }
               }}
-              onBlur={handleRenameSave}
-              className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onBlur={() => {
+                // In Edit mode, save on blur but don't exit editing (keep input visible)
+                if (canvasMode === CanvasMode.Edit) {
+                  if (selectedNodeId && editingNameValue.trim()) {
+                    updateNode(selectedNodeId, { displayName: editingNameValue.trim() });
+                  }
+                  return;
+                }
+                handleRenameSave();
+              }}
+              className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
               data-testid="detail-display-name-input"
+              data-edit-field="display-name"
               aria-label="Node display name"
             />
           </div>
@@ -390,8 +427,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         onChange={(e) => handleArgChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
                         aria-label={argDef.name}
-                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
+                        data-edit-field={`arg-${argDef.name}`}
                       >
                         <option value="">— Select —</option>
                         {argDef.options.map((opt) => (
@@ -407,8 +445,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         onBlur={() => handleArgBlur(argDef.name)}
                         placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
                         aria-label={argDef.name}
-                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
+                        data-edit-field={`arg-${argDef.name}`}
                       />
                     ) : argDef.type === 'boolean' ? (
                       (() => {
@@ -424,6 +463,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                               onBlur={() => handleArgBlur(argDef.name)}
                               className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${isChecked ? 'bg-blue-600' : 'bg-gray-300'}`}
                               data-testid={`arg-input-${argDef.name}`}
+                              data-edit-field={`arg-${argDef.name}`}
                             >
                               <span
                                 className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${isChecked ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}
@@ -443,8 +483,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                         onBlur={() => handleArgBlur(argDef.name)}
                         placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
                         aria-label={argDef.name}
-                        className={`w-full text-xs border rounded px-2 py-1 bg-white ${showError ? 'border-red-400' : 'border-gray-200'}`}
+                        className={`w-full text-xs border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
+                        data-edit-field={`arg-${argDef.name}`}
                       />
                     )}
                   </div>

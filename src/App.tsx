@@ -17,6 +17,7 @@ import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
+import { Toast } from '@/components/shared/Toast';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
@@ -188,6 +189,9 @@ export function App() {
 
         {/* Loading Overlay (file operations) */}
         <LoadingOverlay />
+
+        {/* Toast notifications */}
+        <Toast />
 
         {/* Status Bar */}
         <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">

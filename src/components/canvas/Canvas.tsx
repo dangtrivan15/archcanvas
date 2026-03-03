@@ -42,6 +42,7 @@ import { findNode } from '@/core/graph/graphEngine';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { findNearestNode, findTopLeftNode, extractPositions, type Direction } from '@/core/input/spatialNavigation';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
+import { formatBindingDisplay } from '@/core/input';
 
 export function Canvas() {
   return (
@@ -67,8 +68,11 @@ function CanvasInner() {
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomIn = useNavigationStore((s) => s.zoomIn);
   const zoomOut = useNavigationStore((s) => s.zoomOut);
+  const removeEdge = useCoreStore((s) => s.removeEdge);
+  const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
+  const showToast = useUIStore((s) => s.showToast);
   const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
   const placementMode = useUIStore((s) => s.placementMode);
   const placementInfo = useUIStore((s) => s.placementInfo);
@@ -395,7 +399,7 @@ function CanvasInner() {
       if (deleteDialogOpen) return;
 
       if (e.key === 'Delete') {
-        // Delete key always triggers node deletion if a node is selected
+        // Delete key: node deletion (with confirmation) or edge deletion (direct)
         if (selectedNodeId) {
           e.preventDefault();
           const node = findNode(graph, selectedNodeId);
@@ -408,6 +412,15 @@ function CanvasInner() {
               childCount: impact.childCount,
             });
           }
+        } else if (selectedEdgeId) {
+          // Edge deletion: direct (no confirmation needed)
+          e.preventDefault();
+          const edge = graph.edges.find((edge) => edge.id === selectedEdgeId);
+          const edgeLabel = edge?.label || 'edge';
+          removeEdge(selectedEdgeId);
+          clearSelection();
+          useUIStore.getState().closeRightPanel();
+          showToast(`Deleted ${edgeLabel}. ${formatBindingDisplay('mod+z')} to undo`);
         }
       } else if (e.key === 'Backspace') {
         if (navigationPath.length > 0) {
@@ -435,7 +448,7 @@ function CanvasInner() {
     // Use capture phase to ensure we handle Delete/Backspace before React Flow
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [navigationPath, zoomOut, selectedNodeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode]);
+  }, [navigationPath, zoomOut, selectedNodeId, selectedEdgeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode, removeEdge, clearSelection, showToast]);
 
   // Arrow key spatial navigation between nodes
   // Supports: plain arrow (single select), Shift+Arrow (extend selection), Mod+Arrow (toggle)

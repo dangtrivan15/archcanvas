@@ -108,6 +108,10 @@ export interface UIStoreState {
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
 
+  // Toast notifications
+  toastMessage: string | null;
+  toastTimerId: ReturnType<typeof setTimeout> | null;
+
   // Vim-style canvas mode (Normal / Connect / Edit)
   canvasMode: CanvasMode;
   previousCanvasMode: CanvasMode;
@@ -173,6 +177,10 @@ export interface UIStoreState {
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
 
+  // Toast actions
+  showToast: (message: string, durationMs?: number) => void;
+  clearToast: () => void;
+
   // Canvas mode actions
   enterMode: (mode: CanvasMode) => void;
   exitToNormal: () => void;
@@ -217,6 +225,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
+
+  toastMessage: null,
+  toastTimerId: null,
 
   canvasMode: CanvasMode.Normal,
   previousCanvasMode: CanvasMode.Normal,
@@ -336,4 +347,25 @@ export const useUIStore = create<UIStoreState>((set) => ({
     })),
 
   getCanvasMode: () => useUIStore.getState().canvasMode,
+
+  showToast: (message, durationMs = 4000) =>
+    set((s) => {
+      // Clear any existing timer
+      if (s.toastTimerId) {
+        clearTimeout(s.toastTimerId);
+      }
+      // Set auto-dismiss timer
+      const timerId = setTimeout(() => {
+        useUIStore.getState().clearToast();
+      }, durationMs);
+      return { toastMessage: message, toastTimerId: timerId };
+    }),
+
+  clearToast: () =>
+    set((s) => {
+      if (s.toastTimerId) {
+        clearTimeout(s.toastTimerId);
+      }
+      return { toastMessage: null, toastTimerId: null };
+    }),
 }));
