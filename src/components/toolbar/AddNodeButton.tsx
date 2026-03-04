@@ -73,7 +73,7 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
           }
           setIsOpen(!isOpen);
         }}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         data-testid="add-node-button"
         title="Add Node"
       >
@@ -112,7 +112,7 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
                   <button
                     key={nodeType.type}
                     onClick={() => handleAddNode(nodeType.type, nodeType.label)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center justify-between"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center justify-between touch-target-row"
                     data-testid={`add-node-${nodeType.type.replace('/', '-')}`}
                   >
                     <span>{nodeType.label}</span>

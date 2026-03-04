@@ -52,7 +52,7 @@ export function EdgeDetailPanel() {
         </div>
         <button
           onClick={closeRightPanel}
-          className="p-1 rounded hover:bg-gray-200 text-gray-400"
+          className="p-1 rounded hover:bg-gray-200 text-gray-400 touch-target"
           title="Close panel"
         >
           <X className="w-4 h-4" />

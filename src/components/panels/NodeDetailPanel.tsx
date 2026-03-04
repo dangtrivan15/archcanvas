@@ -311,7 +311,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                 setIsEditingName(true);
                 setEditingNameValue(node.displayName);
               }}
-              className="p-0.5 rounded hover:bg-gray-200 text-gray-400"
+              className="p-0.5 rounded hover:bg-gray-200 text-gray-400 touch-target"
               title="Rename node"
               data-testid="rename-node-button"
             >
@@ -849,7 +849,7 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
             )}
             <button
               onClick={() => handleStartEdit(key)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-500 rounded transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-blue-500 rounded transition-opacity touch-target"
               title="Edit property"
               data-testid={`edit-property-${key}`}
             >
@@ -857,7 +857,7 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
             </button>
             <button
               onClick={() => handleRemoveProperty(key)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 rounded transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 rounded transition-opacity touch-target"
               title="Remove property"
               data-testid={`remove-property-${key}`}
             >
@@ -1012,7 +1012,7 @@ function NotesTab({
       {!isEditing ? (
         <button
           onClick={handleOpenEditor}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 touch-target"
           data-testid="add-note-button"
         >
           <Plus className="w-3 h-3" />
@@ -1089,7 +1089,7 @@ function NotesTab({
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 touch-target"
               data-testid="save-note-button"
             >
               <Check className="w-3 h-3" />
@@ -1097,7 +1097,7 @@ function NotesTab({
             </button>
             <button
               onClick={handleCancel}
-              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100 touch-target"
               data-testid="cancel-note-button"
             >
               Cancel
@@ -1219,7 +1219,7 @@ function NotesTab({
                   {editingNoteId !== note.id && (
                     <button
                       onClick={() => handleStartEdit(note)}
-                      className="p-1 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors"
+                      className="p-1 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors touch-target"
                       title="Edit note"
                       data-testid={`edit-note-${note.id}`}
                     >
@@ -1228,7 +1228,7 @@ function NotesTab({
                   )}
                   <button
                     onClick={() => removeNote(nodeId, note.id)}
-                    className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
+                    className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors touch-target"
                     title="Delete note"
                     data-testid={`delete-note-${note.id}`}
                   >
@@ -1257,7 +1257,7 @@ function NotesTab({
                 <div className="flex gap-2 mt-2" data-testid="suggestion-actions">
                   <button
                     onClick={() => resolveSuggestion(nodeId, note.id, 'accepted')}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 touch-target"
                     data-testid="accept-suggestion"
                   >
                     <Check className="w-3 h-3" />
@@ -1265,7 +1265,7 @@ function NotesTab({
                   </button>
                   <button
                     onClick={() => resolveSuggestion(nodeId, note.id, 'dismissed')}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 touch-target"
                     data-testid="dismiss-suggestion"
                   >
                     <XCircle className="w-3 h-3" />
@@ -1379,7 +1379,7 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
       {!isAdding ? (
         <button
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 touch-target"
           data-testid="add-coderef-button"
         >
           <Plus className="w-3 h-3" />
@@ -1422,7 +1422,7 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
           <div className="flex gap-2">
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 touch-target"
               data-testid="submit-coderef-button"
             >
               <Plus className="w-3 h-3" />
@@ -1430,7 +1430,7 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
             </button>
             <button
               onClick={() => { setIsAdding(false); setPath(''); setRole('source'); setPathError(''); }}
-              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100 touch-target"
               data-testid="cancel-coderef-button"
             >
               Cancel

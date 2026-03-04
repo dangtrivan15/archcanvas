@@ -101,7 +101,7 @@ export function EdgeContextMenu({ x, y, edgeId, onClose }: EdgeContextMenuProps)
           <button
             key={item.label}
             onClick={item.action}
-            className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors touch-target-row
               ${item.isDanger
                 ? 'text-gray-700 hover:bg-red-50 hover:text-red-600'
                 : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'

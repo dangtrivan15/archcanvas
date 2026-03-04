@@ -108,7 +108,7 @@ export function NodeDefBrowser() {
         <h2 className="text-sm font-semibold text-gray-700">Node Types</h2>
         <button
           onClick={toggleLeftPanel}
-          className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors touch-target"
           aria-label="Close node types panel"
           data-testid="nodedef-browser-close"
         >
@@ -150,7 +150,7 @@ export function NodeDefBrowser() {
                   onClick={() => toggleNamespace(namespace)}
                   className="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-medium
                              text-gray-500 uppercase tracking-wider hover:bg-gray-50
-                             cursor-pointer select-none"
+                             cursor-pointer select-none touch-target-row"
                   data-testid={`nodedef-group-toggle-${namespace}`}
                 >
                   {isCollapsed ? (
@@ -175,7 +175,7 @@ export function NodeDefBrowser() {
                         <div
                           key={typeKey}
                           className={`flex items-start gap-2 px-3 py-2 cursor-pointer
-                                     border-l-2 transition-colors
+                                     border-l-2 transition-colors touch-target-row
                                      ${isActive
                                        ? 'bg-blue-100 border-blue-500 ring-1 ring-blue-300'
                                        : 'border-transparent hover:bg-blue-50 hover:border-blue-400'

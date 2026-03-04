@@ -25,6 +25,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 import { useViewportSize } from '@/hooks/useViewportSize';
+import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -60,6 +61,9 @@ export function App() {
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
   const { isCompact } = useViewportSize();
+
+  // Virtual keyboard detection for on-screen keyboard handling
+  const { isKeyboardVisible, keyboardHeight } = useVirtualKeyboard();
 
   const handleLeftResize = useCallback((delta: number) => {
     const newWidth = leftPanelWidth + delta;
@@ -146,7 +150,7 @@ export function App() {
             </>
           ) : !isCompact ? (
             <button
-              className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors"
+              className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors touch-target"
               onClick={toggleLeftPanel}
               title="Expand node types panel"
               data-testid="left-panel-expand"
@@ -180,8 +184,12 @@ export function App() {
           {/* Bottom sheet overlay for right panel in compact mode */}
           {rightPanelOpen && isCompact && (
             <div
-              className="absolute bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg"
-              style={{ maxHeight: '50vh' }}
+              className="absolute left-0 right-0 z-50 bg-white border-t shadow-lg"
+              style={{
+                bottom: isKeyboardVisible ? `${keyboardHeight}px` : '0px',
+                maxHeight: isKeyboardVisible ? `calc(50vh - ${keyboardHeight}px)` : '50vh',
+                transition: 'bottom 0.2s ease-out, max-height 0.2s ease-out',
+              }}
               data-testid="right-panel-sheet"
             >
               {/* Sheet handle + close button */}
@@ -190,7 +198,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={closeRightPanel}
-                  className="absolute right-2 top-1.5 p-1 rounded hover:bg-gray-200 transition-colors"
+                  className="absolute right-2 top-1.5 p-1 rounded hover:bg-gray-200 transition-colors touch-target"
                   aria-label="Close detail panel"
                   data-testid="right-panel-sheet-close"
                 >
@@ -198,7 +206,14 @@ export function App() {
                 </button>
               </div>
               <FocusZoneRegion zone={FocusZone.RightPanel}>
-                <div className="overflow-y-auto" style={{ maxHeight: 'calc(50vh - 36px)' }}>
+                <div
+                  className="overflow-y-auto"
+                  style={{
+                    maxHeight: isKeyboardVisible
+                      ? `calc(50vh - ${keyboardHeight}px - 36px)`
+                      : 'calc(50vh - 36px)',
+                  }}
+                >
                   {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
                 </div>
               </FocusZoneRegion>

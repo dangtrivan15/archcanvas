@@ -91,3 +91,24 @@ a:focus-visible {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px);
 }
+
+/* ─── Touch-Friendly Tap Targets (Apple HIG: 44x44pt minimum) ─── */
+/* Only applies on coarse-pointer (touch) devices; desktop remains compact */
+
+@media (pointer: coarse) {
+  /* Generic touch target: ensures 44x44px minimum for buttons and interactive elements */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Touch target for full-width menu/list items: ensures 44px row height */
+  .touch-target-row {
+    min-height: 44px;
+  }
+
+  /* Toolbar: taller header on touch devices */
+  .touch-toolbar {
+    min-height: 48px;
+  }
+}
