@@ -166,32 +166,42 @@ describe('ShortcutHints', () => {
     });
   });
 
-  describe('Integration with Canvas', () => {
+  describe('Integration - hints merged into ModeStatusBar', () => {
+    const modeStatusBarSrc = readFileSync(
+      join(__dirname, '../../../src/components/canvas/ModeStatusBar.tsx'),
+      'utf-8',
+    );
+
     const canvasSrc = readFileSync(
       join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
       'utf-8',
     );
 
-    it('Canvas.tsx imports ShortcutHints', () => {
-      expect(canvasSrc).toContain("import { ShortcutHints }");
+    it('ModeStatusBar contains the full getHints logic', () => {
+      expect(modeStatusBarSrc).toContain('function getHints(');
+      expect(modeStatusBarSrc).toContain('data-testid="shortcut-hints"');
     });
 
-    it('Canvas.tsx renders <ShortcutHints /> inside a Panel', () => {
-      expect(canvasSrc).toContain('<ShortcutHints />');
-      expect(canvasSrc).toContain('<Panel position="bottom-right"');
+    it('ModeStatusBar has H-key toggle for hints visibility', () => {
+      expect(modeStatusBarSrc).toContain('HINTS_STORAGE_KEY');
+      expect(modeStatusBarSrc).toContain('hintsVisible');
+      expect(modeStatusBarSrc).toContain('toggleHints');
     });
 
-    it('Canvas.tsx imports Panel from @xyflow/react', () => {
-      expect(canvasSrc).toContain('Panel');
-      expect(canvasSrc).toContain("from '@xyflow/react'");
+    it('ShortcutHints Panel is no longer rendered in Canvas.tsx', () => {
+      // ShortcutHints was removed from Canvas.tsx (merged into ModeStatusBar)
+      expect(canvasSrc).not.toContain('<ShortcutHints');
+      expect(canvasSrc).not.toContain("import { ShortcutHints }");
     });
 
-    it('ShortcutHints is inside ReactFlow (not a sibling)', () => {
-      // Verify ShortcutHints appears before </ReactFlow>
-      const rfCloseIndex = canvasSrc.indexOf('</ReactFlow>');
-      const panelHintsIndex = canvasSrc.indexOf('<Panel position="bottom-right"');
-      expect(panelHintsIndex).toBeGreaterThan(-1);
-      expect(panelHintsIndex).toBeLessThan(rfCloseIndex);
+    it('ModeStatusBar renders hints in the right section', () => {
+      // The hints should appear in the right section before selection and zoom
+      const hintsIndex = modeStatusBarSrc.indexOf('data-testid="shortcut-hints"');
+      const selectionIndex = modeStatusBarSrc.indexOf('data-testid="statusbar-selection"');
+      const zoomIndex = modeStatusBarSrc.indexOf('data-testid="statusbar-zoom"');
+      expect(hintsIndex).toBeGreaterThan(-1);
+      expect(selectionIndex).toBeGreaterThan(hintsIndex);
+      expect(zoomIndex).toBeGreaterThan(hintsIndex);
     });
   });
 });
