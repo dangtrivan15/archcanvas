@@ -8743,3 +8743,43 @@ Date: 2026-03-05
 #### Commit: 6e58a4d
 #### Feature #380 marked passing
 
+## Session: Feature #366 - Node text remains readable across all color tints and themes
+Date: 2026-03-05
+
+### Feature #366: Node text readable across all color tints and themes - PASSING
+
+#### Analysis:
+Performed comprehensive text contrast analysis across all 12 accent colors (Blue, Green, Orange, Purple, Cyan, Red, Pink, Indigo, Teal, Amber, Lime, Rose) in both dark and light modes.
+
+Key findings:
+1. All icon badge contrast ratios >= 3.0:1 (WCAG AA for large text) via getContrastColor()
+2. All header wash text contrast ratios >= 12:1 (excellent) because tint opacity is only 18% max
+3. All text tokens (text-text, text-muted-foreground, text-subtle) are theme-aware and switch properly
+4. NodeBadges uses dark: Tailwind variants which needed proper wiring to the .dark class
+
+#### Bug found and resolved:
+Tailwind CSS 4 dark mode variant not wired to .dark class.
+NodeBadges.tsx uses dark:text-blue-400, dark:text-amber-400, dark:text-emerald-400.
+Tailwind CSS 4 defaults dark: to @media (prefers-color-scheme: dark), not class-based.
+The app uses .dark class on html (set by ThemeProvider).
+Without @custom-variant dark, badge text colors would follow system preference instead of app theme.
+Resolution: Added @custom-variant dark to src/index.css
+
+#### Visual Verification (5 themes tested):
+1. Dark theme: Service (blue), Object Storage (lime), Message Queue (orange) - all text readable
+2. Light theme: All 7 node types (blue, green, purple, orange, purple/cloud, lime, cyan) - all readable
+3. Rose Pine Dawn (light): 3 nodes tested - all text readable
+4. Nord (dark): 3 nodes tested - all text readable
+5. Catppuccin Mocha (dark): 3 nodes tested - all text readable
+
+#### Text elements verified:
+- Display names (text-text)
+- Type labels (text-muted-foreground on bg-highlight-med)
+- Argument keys (text-muted-foreground)
+- Argument values (text-subtle)
+- Icon badges (getContrastColor auto-contrast)
+- Badge colors (dark: variant now correctly wired)
+
+#### Build: Clean (no CSS or new TypeScript errors)
+#### Commit: 8ede9ee
+#### Feature #366 marked passing
