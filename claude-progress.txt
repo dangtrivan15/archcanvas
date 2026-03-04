@@ -8610,3 +8610,25 @@ Date: 2026-03-05
 All haptic feedback integration was already implemented by previous sessions.
 Verified: useHaptics hook, 8 integration points, settings toggle, no-op on web.
 Feature #375 marked passing.
+
+---
+
+## Session: Feature #376 - Universal Links and File Association
+Date: 2026-03-05
+
+### Feature #376: Universal Links and File Association - PASSING
+
+All implementation was already present. Verified completeness:
+
+1. capacitor.config.ts: Custom URL scheme archcanvas:// registered
+2. Info.plist: UTI com.archcanvas.archc, CFBundleDocumentTypes, CFBundleURLSchemes
+3. App.entitlements: applinks:archcanvas.app associated domain
+4. apple-app-site-association: Universal Link config for /open path
+5. useAppUrlOpen.ts: Full routing for custom scheme, Universal Links, file URLs
+   - Warm-start via App.addListener, cold-start via App.getLaunchUrl
+   - Web fallback checks browser URL for /open?file= params
+6. App.tsx integrates hook via useAppUrlOpen(initialized)
+
+Verification: Navigated to /open?file=.../ecommerce.archc - loaded 5 nodes, 4 edges.
+Console confirms full flow: web handoff -> fetch -> decode -> load.
+Commit: 441ac61. Feature #376 marked passing.
