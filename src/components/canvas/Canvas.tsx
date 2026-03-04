@@ -36,6 +36,7 @@ import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
+import { NodePalette } from '@/components/canvas/NodePalette';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
@@ -1152,6 +1153,9 @@ function CanvasInner() {
           onClose={closeEdgeContextMenu}
         />
       )}
+
+      {/* Node Palette - touch-friendly drag & drop palette for adding nodes */}
+      <NodePalette />
     </div>
   );
 }
