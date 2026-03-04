@@ -14,6 +14,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
 import { NodeIconBadge } from './NodeIconBadge';
+import { NodeArgsTable } from './NodeArgsTable';
 import { NodeShell } from './shapes/NodeShell';
 import { Box, ExternalLink } from 'lucide-react';
 import { getHandlePosition } from './shapes/handlePositions';
@@ -188,14 +189,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
 
           {/* Args */}
           {Object.keys(nodeData.args).length > 0 && (
-            <div className="text-xs text-subtle mt-1 w-full text-center">
-              {Object.entries(nodeData.args).slice(0, 3).map(([key, value]) => (
-                <div key={key} className="truncate">
-                  <span className="font-mono text-muted-foreground">{key}:</span>{' '}
-                  <span>{String(value)}</span>
-                </div>
-              ))}
-            </div>
+            <NodeArgsTable args={nodeData.args} maxRows={3} className="mt-1 w-full" centered />
           )}
 
           {/* Badges */}
