@@ -22,6 +22,7 @@ import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { Toast } from '@/components/shared/Toast';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useIPadExternalKeyboard } from '@/hooks/useIPadExternalKeyboard';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 import { useViewportSize } from '@/hooks/useViewportSize';
@@ -80,6 +81,10 @@ export function App() {
   const handleRightResize = useCallback((delta: number) => {
     setRightPanelWidth(rightPanelWidth + delta);
   }, [rightPanelWidth, setRightPanelWidth]);
+
+  // iPad external keyboard: capture-phase interception to suppress WKWebView defaults
+  // Must be registered before useKeyboardShortcuts so capture fires first
+  useIPadExternalKeyboard();
 
   // Global keyboard shortcuts (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O, Ctrl+Z, Ctrl+Shift+Z)
   useKeyboardShortcuts();
