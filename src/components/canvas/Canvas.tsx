@@ -11,6 +11,7 @@ import {
   Background,
   Controls,
   MiniMap,
+  Panel,
   useReactFlow,
   type OnSelectionChangeFunc,
   type OnConnect,
@@ -989,13 +990,14 @@ function CanvasInner() {
           aria-label="Mini map"
           data-testid="canvas-minimap"
         />
+        {/* Contextual shortcut hints (bottom-right, inside ReactFlow Panel) */}
+        <Panel position="bottom-right" className="!mb-12">
+          <ShortcutHints />
+        </Panel>
       </ReactFlow>
 
       {/* Vim-style mode indicator (bottom-left, above minimap) */}
       <ModeIndicator />
-
-      {/* Contextual shortcut hints (bottom-right, above controls) */}
-      <ShortcutHints />
 
       {/* VS Code-style mode status bar (bottom of canvas) */}
       <ModeStatusBar />

@@ -131,7 +131,7 @@ export function ShortcutHints() {
 
   return (
     <div
-      className="absolute bottom-20 right-3 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
+      className="z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md
         bg-black/50 backdrop-blur-sm text-white/90 text-[10px] font-mono
         select-none pointer-events-none"
       data-testid="shortcut-hints"

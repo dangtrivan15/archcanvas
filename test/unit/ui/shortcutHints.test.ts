@@ -141,13 +141,12 @@ describe('ShortcutHints', () => {
   });
 
   describe('Positioning and styling', () => {
-    it('is positioned at bottom-right', () => {
-      expect(COMPONENT_SRC).toContain('bottom-20');
-      expect(COMPONENT_SRC).toContain('right-3');
-    });
-
-    it('uses absolute positioning', () => {
-      expect(COMPONENT_SRC).toContain('absolute');
+    it('does not use absolute positioning (Panel handles placement)', () => {
+      // ShortcutHints is now wrapped in <Panel position="bottom-right"> in Canvas.tsx
+      // so it should NOT have absolute/bottom-20/right-3 classes
+      expect(COMPONENT_SRC).not.toContain('absolute');
+      expect(COMPONENT_SRC).not.toContain('bottom-20');
+      expect(COMPONENT_SRC).not.toContain('right-3');
     });
 
     it('uses z-40 (below mode indicator z-50)', () => {
@@ -177,8 +176,22 @@ describe('ShortcutHints', () => {
       expect(canvasSrc).toContain("import { ShortcutHints }");
     });
 
-    it('Canvas.tsx renders <ShortcutHints />', () => {
+    it('Canvas.tsx renders <ShortcutHints /> inside a Panel', () => {
       expect(canvasSrc).toContain('<ShortcutHints />');
+      expect(canvasSrc).toContain('<Panel position="bottom-right"');
+    });
+
+    it('Canvas.tsx imports Panel from @xyflow/react', () => {
+      expect(canvasSrc).toContain('Panel');
+      expect(canvasSrc).toContain("from '@xyflow/react'");
+    });
+
+    it('ShortcutHints is inside ReactFlow (not a sibling)', () => {
+      // Verify ShortcutHints appears before </ReactFlow>
+      const rfCloseIndex = canvasSrc.indexOf('</ReactFlow>');
+      const panelHintsIndex = canvasSrc.indexOf('<Panel position="bottom-right"');
+      expect(panelHintsIndex).toBeGreaterThan(-1);
+      expect(panelHintsIndex).toBeLessThan(rfCloseIndex);
     });
   });
 });
