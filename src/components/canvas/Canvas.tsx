@@ -45,6 +45,7 @@ import { findNearestNode, findTopLeftNode, extractPositions, type Direction } fr
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { formatBindingDisplay } from '@/core/input';
 import { useViewportSize } from '@/hooks/useViewportSize';
+import { useLongPress } from '@/hooks/useLongPress';
 
 export function Canvas() {
   return (
@@ -437,6 +438,60 @@ function CanvasInner() {
   const closeEdgeContextMenu = useCallback(() => {
     setEdgeContextMenu(null);
   }, []);
+
+  // ─── Long-press for touch devices (iPad) ────────────────────────
+  // Uses event delegation: on long-press, check if the target is a node,
+  // edge, or the canvas background, then trigger the appropriate context menu.
+  // Only fires for touch/pen pointers (mouse uses right-click).
+  const longPressTargetRef = useRef<EventTarget | null>(null);
+
+  const handleLongPress = useCallback(
+    (x: number, y: number) => {
+      const target = longPressTargetRef.current as HTMLElement | SVGElement | null;
+      if (!target) return;
+
+      // Check if long-press is on a node (walk up DOM to find data-node-id)
+      const nodeEl = (target as HTMLElement).closest?.('[data-node-id]');
+      if (nodeEl) {
+        const nodeId = nodeEl.getAttribute('data-node-id');
+        if (nodeId) {
+          setContextMenu(null);
+          setEdgeContextMenu(null);
+          setNodeContextMenu({ x, y, nodeId });
+          return;
+        }
+      }
+
+      // Check if long-press is on an edge (React Flow edge elements)
+      const edgeEl = (target as HTMLElement | SVGElement).closest?.('.react-flow__edge');
+      if (edgeEl) {
+        const edgeId = edgeEl.getAttribute('data-id');
+        if (edgeId) {
+          setContextMenu(null);
+          setNodeContextMenu(null);
+          setEdgeContextMenu({ x, y, edgeId });
+          return;
+        }
+      }
+
+      // Otherwise it's the canvas background
+      setNodeContextMenu(null);
+      setEdgeContextMenu(null);
+      setContextMenu({ x, y });
+    },
+    [],
+  );
+
+  const longPressHandlers = useLongPress(handleLongPress);
+
+  // Wrap onPointerDown to capture the target element for event delegation
+  const onLongPressPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      longPressTargetRef.current = e.target;
+      longPressHandlers.onPointerDown(e);
+    },
+    [longPressHandlers],
+  );
 
   // Handle Delete/Backspace keys for node deletion and navigation
   useEffect(() => {
@@ -903,7 +958,16 @@ function CanvasInner() {
   const modeTint = MODE_DISPLAY[canvasMode].canvasTint;
 
   return (
-    <div className={`w-full h-full relative ${modeTint}`} data-testid="canvas" data-canvas-mode={canvasMode} onContextMenu={(e) => e.preventDefault()}>
+    <div
+      className={`w-full h-full relative ${modeTint}`}
+      data-testid="canvas"
+      data-canvas-mode={canvasMode}
+      onContextMenu={(e) => e.preventDefault()}
+      onPointerDown={onLongPressPointerDown}
+      onPointerUp={longPressHandlers.onPointerUp}
+      onPointerMove={longPressHandlers.onPointerMove}
+      onPointerCancel={longPressHandlers.onPointerCancel}
+    >
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
