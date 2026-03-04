@@ -318,18 +318,18 @@ export function App() {
         {/* Toast notifications */}
         <Toast />
 
+        {/* Status Bar Resize Handle - positioned between content area and status bar */}
+        <div
+          data-testid="status-bar-resize-handle"
+          className={`w-full h-1 cursor-row-resize shrink-0 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
+          onMouseDown={handleStatusBarResizeStart}
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Resize status bar"
+        />
+
         {/* Status Bar */}
-        <footer className="border-t flex flex-col shrink-0 safe-area-bottom safe-area-left safe-area-right relative" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
-          {/* Resize Handle */}
-          <div
-            data-testid="status-bar-resize-handle"
-            className={`absolute left-0 right-0 h-2 cursor-row-resize z-10 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
-            style={{ top: '-4px' }}
-            onMouseDown={handleStatusBarResizeStart}
-            role="separator"
-            aria-orientation="horizontal"
-            aria-label="Resize status bar"
-          />
+        <footer className="border-t flex flex-col shrink-0 safe-area-bottom safe-area-left safe-area-right" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
           <div className="flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0">
           <span data-testid="node-count">Nodes: {nodeCount}</span>
           <span className="mx-2">|</span>
