@@ -1,0 +1,76 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: auth-provider
+  namespace: security
+  version: "1.0.0"
+  displayName: Auth Provider
+  description: An identity and authentication provider that handles user authentication, token issuance, and identity management.
+  icon: ShieldCheck
+  tags:
+    - security
+    - authentication
+    - identity
+  shape: hexagon
+spec:
+  args:
+    - name: provider
+      type: enum
+      required: true
+      description: Authentication provider platform
+      options:
+        - Auth0
+        - Cognito
+        - Keycloak
+        - Firebase Auth
+        - Custom
+      default: Auth0
+    - name: protocol
+      type: enum
+      required: true
+      description: Authentication protocol
+      options:
+        - OAuth2
+        - OIDC
+        - SAML
+      default: OIDC
+    - name: mfaEnabled
+      type: boolean
+      description: Whether multi-factor authentication is enabled
+      default: false
+  ports:
+    - name: auth-request
+      direction: inbound
+      protocol:
+        - HTTPS
+        - OAuth2
+      description: Incoming authentication requests
+    - name: token-response
+      direction: outbound
+      protocol:
+        - HTTPS
+        - JWT
+      description: Outgoing token responses and identity assertions
+  children: []
+  ai:
+    context: "This is an authentication provider. Consider OAuth2/OIDC flows, token management, MFA support, and integration with downstream services."
+    reviewHints:
+      - Verify MFA is enabled for production environments
+      - Check token expiry and refresh policies
+      - Ensure secure redirect URI configuration
+variants:
+  - name: Auth0
+    description: Auth0-based identity provider with OIDC
+    args:
+      provider: Auth0
+      protocol: OIDC
+  - name: AWS Cognito
+    description: AWS Cognito user pool
+    args:
+      provider: Cognito
+      protocol: OAuth2
+  - name: Keycloak
+    description: Self-hosted Keycloak identity server
+    args:
+      provider: Keycloak
+      protocol: OIDC
