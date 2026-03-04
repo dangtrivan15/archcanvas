@@ -1,4 +1,47 @@
 ==================================================
+SESSION: 2026-03-04 - Features #288, #291
+==================================================
+
+## What was accomplished:
+
+### Feature #288: Web app manifest and app icons for PWA (PASSING)
+- Verified all PWA assets already in place from previous sessions:
+  - public/manifest.json with name, short_name, icons, theme_color (#1a1a2e),
+    background_color, display: standalone, start_url, orientation, categories
+  - 4 icon entries: 192x192 + 512x512 (both regular and maskable)
+  - apple-touch-icon (180x180) linked in index.html
+  - manifest linked in index.html
+  - theme-color meta tag (#1a1a2e) in index.html
+- All icons verified as valid PNGs with ArchCanvas graph logo
+- All resources load correctly via dev server (200 OK)
+- Browser verified: app loads, zero console errors
+- No mock data patterns in production code
+- Marked passing immediately (already fully implemented)
+
+### Feature #291: App icon set and launch screen for iOS (PASSING)
+- Replaced default Capacitor "X" icon with ArchCanvas graph logo:
+  - Generated 13 icon sizes from SVG source using sharp library
+  - Sizes: 20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180, 1024
+  - Updated Contents.json with universal (1024) + per-device entries
+  - Removed old AppIcon-512@2x.png (Capacitor default)
+- Created new splash/launch screen images:
+  - Dark background (#1a1a2e) with centered ArchCanvas graph logo
+  - 2732x2732 PNG for all 3 scale variants (1x, 2x, 3x)
+  - Graph rendered without icon frame (nodes + edges only)
+- Updated LaunchScreen.storyboard:
+  - Changed background color from systemBackgroundColor (white) to #1a1a2e
+  - Custom sRGB color space for consistent rendering
+- Created scripts/generate-ios-icons.js for reproducible icon generation
+- Installed sharp as devDependency for image processing
+- Browser verified: web app unaffected, zero console errors
+- Committed: a78e9fc
+
+## Current completion status:
+- Features passing: 280 of 298 (93.9%)
+- Zero console errors
+- No mock data patterns in production code
+
+==================================================
 SESSION: 2026-03-04 - Feature #260
 ==================================================
 
