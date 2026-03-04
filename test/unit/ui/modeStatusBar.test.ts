@@ -584,4 +584,86 @@ describe('ModeStatusBar', () => {
       expect(matches!.length).toBe(3);
     });
   });
+
+  // ─── Overflow / Layout Accommodation (Feature #272) ───────────
+
+  describe('Status bar layout accommodates hints without overflow', () => {
+    it('status bar container has fixed height h-[30px]', () => {
+      expect(COMPONENT_SRC).toContain('h-[30px]');
+    });
+
+    it('status bar uses flex layout (no wrap)', () => {
+      // flex items-center but no flex-wrap means single-line layout
+      expect(COMPONENT_SRC).toContain('flex items-center');
+      expect(COMPONENT_SRC).not.toContain('flex-wrap');
+    });
+
+    it('left section (mode badge) is shrink-0 to prevent collapse', () => {
+      // Left section should never shrink
+      const leftSectionMatch = COMPONENT_SRC.match(
+        /Left Section.*?<div className="([^"]+)"/s,
+      );
+      expect(leftSectionMatch).not.toBeNull();
+      expect(leftSectionMatch![1]).toContain('shrink-0');
+    });
+
+    it('right section uses min-w-0 for flex child overflow', () => {
+      // min-w-0 allows flex children to shrink below their content size
+      const rightSectionMatch = COMPONENT_SRC.match(
+        /Right Section.*?<div className="([^"]+)"/s,
+      );
+      expect(rightSectionMatch).not.toBeNull();
+      expect(rightSectionMatch![1]).toContain('min-w-0');
+    });
+
+    it('hints container has overflow-hidden to prevent layout break', () => {
+      expect(COMPONENT_SRC).toContain('overflow-hidden');
+    });
+
+    it('hints container has whitespace-nowrap to prevent wrapping', () => {
+      expect(COMPONENT_SRC).toContain('whitespace-nowrap');
+    });
+
+    it('each hint item is shrink-0 to keep items intact until clipped', () => {
+      // Individual hint spans should not partially shrink
+      expect(COMPONENT_SRC).toContain('className="flex items-center gap-0.5 shrink-0"');
+    });
+
+    it('zoom percentage is shrink-0 to always remain visible', () => {
+      // The zoom span should have shrink-0
+      expect(COMPONENT_SRC).toContain('className="shrink-0 whitespace-nowrap" data-testid="statusbar-zoom"');
+    });
+
+    it('selection text is shrink-0 with whitespace-nowrap', () => {
+      expect(COMPONENT_SRC).toContain('shrink-0 whitespace-nowrap');
+    });
+
+    it('pipe separators between hints, selection, and zoom are shrink-0', () => {
+      // All separator pipes should be shrink-0
+      expect(COMPONENT_SRC).toContain('text-white/20 shrink-0');
+    });
+
+    it('center section (breadcrumb) has overflow-hidden', () => {
+      const centerMatch = COMPONENT_SRC.match(
+        /Center Section.*?<div className="([^"]+)"/s,
+      );
+      expect(centerMatch).not.toBeNull();
+      expect(centerMatch![1]).toContain('overflow-hidden');
+    });
+
+    it('center section is flex-1 to absorb extra space', () => {
+      const centerMatch = COMPONENT_SRC.match(
+        /Center Section.*?<div className="([^"]+)"/s,
+      );
+      expect(centerMatch).not.toBeNull();
+      expect(centerMatch![1]).toContain('flex-1');
+    });
+
+    it('hints container has min-w-0 for flex overflow', () => {
+      // The shortcut-hints container should allow shrinking
+      expect(COMPONENT_SRC).toContain(
+        'overflow-hidden whitespace-nowrap min-w-0',
+      );
+    });
+  });
 });

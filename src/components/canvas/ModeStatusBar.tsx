@@ -305,17 +305,17 @@ export function ModeStatusBar() {
       </div>
 
       {/* ─── Right Section: Shortcut Hints | Selection Count | Zoom ─── */}
-      <div className="flex items-center gap-2 pr-2 shrink-0 text-white/60">
-        {/* Contextual shortcut hints (merged from ShortcutHints) */}
+      <div className="flex items-center gap-2 pr-2 min-w-0 text-white/60">
+        {/* Contextual shortcut hints (merged from ShortcutHints) - overflow-hidden for narrow viewports */}
         {hintsVisible && (
           <div
-            className="flex items-center gap-1 text-[10px] font-mono"
+            className="flex items-center gap-1 text-[10px] font-mono overflow-hidden whitespace-nowrap min-w-0"
             data-testid="shortcut-hints"
             role="status"
             aria-label="Keyboard shortcut hints"
           >
             {hints.map((hint, i) => (
-              <span key={hint.label} className="flex items-center gap-0.5">
+              <span key={hint.label} className="flex items-center gap-0.5 shrink-0">
                 {i > 0 && <span className="text-white/30 mx-0.5">|</span>}
                 <kbd className="font-bold text-white">{hint.key}</kbd>
                 <span className="text-white/60">{hint.label}</span>
@@ -325,25 +325,25 @@ export function ModeStatusBar() {
         )}
 
         {/* Separator between hints and selection/zoom */}
-        {hintsVisible && (selectionText || true) && (
-          <span className="text-white/20">|</span>
+        {hintsVisible && (
+          <span className="text-white/20 shrink-0">|</span>
         )}
 
         {/* Selection count */}
         {selectionText && (
           <>
             <span
-              className="text-blue-300 font-medium"
+              className="text-blue-300 font-medium shrink-0 whitespace-nowrap"
               data-testid="statusbar-selection"
             >
               {selectionText}
             </span>
-            <span className="text-white/20">|</span>
+            <span className="text-white/20 shrink-0">|</span>
           </>
         )}
 
-        {/* Zoom level */}
-        <span data-testid="statusbar-zoom">
+        {/* Zoom level - always visible */}
+        <span className="shrink-0 whitespace-nowrap" data-testid="statusbar-zoom">
           {Math.round(zoom * 100)}%
         </span>
       </div>
