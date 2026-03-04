@@ -23,7 +23,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, ShieldCheck, ShieldAlert, LockKeyhole, Cpu, Layers,
-  Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive, Plug,
+  Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive, Plug, Webhook, Workflow,
   ExternalLink,
 } from 'lucide-react';
 import { NodeIconBadge } from './NodeIconBadge';
@@ -52,6 +52,8 @@ export const iconMap: Record<string, React.ElementType> = {
   Zap,
   Archive,
   Plug,
+  Webhook,
+  Workflow,
 };
 
 function GenericNodeComponent({ data, selected }: NodeProps) {

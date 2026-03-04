@@ -41,6 +41,11 @@ import wafYaml from './builtins/core/security/waf.yaml?raw';
 
 // Integration namespace
 import thirdPartyApiYaml from './builtins/core/integration/third-party-api.yaml?raw';
+import webhookYaml from './builtins/core/integration/webhook.yaml?raw';
+import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
+
+// Client namespace
+import webAppYaml from './builtins/core/client/web-app.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -57,7 +62,7 @@ export interface YamlNodeDefSource {
 }
 
 /**
- * All 19 built-in nodedef YAML sources, organized for loading.
+ * All 20 built-in nodedef YAML sources, organized for loading.
  */
 export const YAML_SOURCES: YamlNodeDefSource[] = [
   // Compute (4)
@@ -84,8 +89,12 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'security/auth-provider.yaml', rawYaml: authProviderYaml, namespace: 'security', name: 'auth-provider' },
   { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },
   { filePath: 'security/waf.yaml', rawYaml: wafYaml, namespace: 'security', name: 'waf' },
-  // Integration (1)
+  // Integration (3)
   { filePath: 'integration/third-party-api.yaml', rawYaml: thirdPartyApiYaml, namespace: 'integration', name: 'third-party-api' },
+  { filePath: 'integration/webhook.yaml', rawYaml: webhookYaml, namespace: 'integration', name: 'webhook' },
+  { filePath: 'integration/etl-pipeline.yaml', rawYaml: etlPipelineYaml, namespace: 'integration', name: 'etl-pipeline' },
+  // Client (1)
+  { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
 ];
 
 /**
@@ -97,7 +106,7 @@ export function parseNodeDefYaml(yamlContent: string): unknown {
 }
 
 /**
- * Load all 19 built-in nodedef YAML files and parse them into objects.
+ * Load all 20 built-in nodedef YAML files and parse them into objects.
  * Returns an array of parsed objects ready for validation.
  */
 export function loadAllBuiltinYaml(): NodeDef[] {
