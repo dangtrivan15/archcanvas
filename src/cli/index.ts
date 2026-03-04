@@ -15,6 +15,8 @@
 import { Command, Option } from 'commander';
 import { GraphContext } from '@/cli/context';
 import { registerInitCommand } from '@/cli/commands/init';
+import { registerInfoCommand } from '@/cli/commands/info';
+import { registerExportCommand } from '@/cli/commands/export';
 import { registerMutateCommands } from '@/cli/commands/mutate';
 
 // ─── Version ──────────────────────────────────────────────────
@@ -180,35 +182,7 @@ export function createProgram(): Command {
   registerInitCommand(program);
 
   // ─── info ──────────────────────────────────────────────────
-
-  program
-    .command('info')
-    .description('Show architecture file summary')
-    .action(
-      withErrorHandler(async () => {
-        const opts = program.opts<GlobalOptions>();
-        const ctx = await loadContext(opts);
-        const graph = ctx.getGraph();
-        const info = {
-          name: graph.name,
-          description: graph.description || '(none)',
-          owners: graph.owners.length > 0 ? graph.owners.join(', ') : '(none)',
-          nodes: graph.nodes.length,
-          edges: graph.edges.length,
-          file: ctx.getFilePath() ?? '(unsaved)',
-        };
-        printOutput(info, opts.format, () =>
-          [
-            `Architecture: ${info.name}`,
-            `Description:  ${info.description}`,
-            `Owners:       ${info.owners}`,
-            `Nodes:        ${info.nodes}`,
-            `Edges:        ${info.edges}`,
-            `File:         ${info.file}`,
-          ].join('\n'),
-        );
-      }),
-    );
+  registerInfoCommand(program);
 
   // ─── describe ──────────────────────────────────────────────
 
@@ -292,48 +266,7 @@ export function createProgram(): Command {
     );
 
   // ─── export ────────────────────────────────────────────────
-
-  program
-    .command('export')
-    .description('Export architecture to markdown or mermaid')
-    .addOption(
-      new Option('--type <type>', 'Export type')
-        .choices(['markdown', 'mermaid', 'summary'])
-        .default('summary'),
-    )
-    .option('-o, --output <path>', 'Output file path (stdout if omitted)')
-    .action(
-      withErrorHandler(async (cmdOpts: { type: string; output?: string }) => {
-        const opts = program.opts<GlobalOptions>();
-        const ctx = await loadContext(opts);
-        const graph = ctx.getGraph();
-
-        let content: string;
-        switch (cmdOpts.type) {
-          case 'markdown':
-            content = ctx.exportApi.generateMarkdownSummary(graph);
-            break;
-          case 'mermaid':
-            content = ctx.exportApi.generateMermaid(graph);
-            break;
-          case 'summary':
-          default:
-            content = ctx.exportApi.generateSummaryWithMermaid(graph);
-            break;
-        }
-
-        if (cmdOpts.output) {
-          const fs = await import('node:fs/promises');
-          const path = await import('node:path');
-          await fs.writeFile(path.resolve(cmdOpts.output), content, 'utf-8');
-          if (!opts.quiet) {
-            console.log(`Exported ${cmdOpts.type} to ${cmdOpts.output}`);
-          }
-        } else {
-          console.log(content);
-        }
-      }),
-    );
+  registerExportCommand(program);
 
   // ─── list-nodedefs ─────────────────────────────────────────
 
