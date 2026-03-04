@@ -18,7 +18,7 @@ export function Toolbar() {
 
   return (
     <header
-      className="h-12 border-b flex items-center px-3 gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50"
+      className="h-12 border-b flex items-center px-3 gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right"
       role="toolbar"
       aria-label="Main toolbar"
       data-testid="toolbar"

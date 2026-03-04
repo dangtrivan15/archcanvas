@@ -125,7 +125,7 @@ export function App() {
             <>
               <FocusZoneRegion zone={FocusZone.LeftPanel}>
                 <aside
-                  className="overflow-y-auto shrink-0 bg-white border-r h-full"
+                  className="overflow-y-auto shrink-0 bg-white border-r h-full safe-area-left"
                   style={{ width: leftPanelWidth }}
                   data-testid="left-panel"
                 >
@@ -157,7 +157,7 @@ export function App() {
               <ResizeHandle side="right" onResize={handleRightResize} />
               <FocusZoneRegion zone={FocusZone.RightPanel}>
                 <aside
-                  className="overflow-y-auto shrink-0 bg-white border-l h-full"
+                  className="overflow-y-auto shrink-0 bg-white border-l h-full safe-area-right"
                   style={{ width: rightPanelWidth }}
                   data-testid="right-panel"
                 >
@@ -202,7 +202,7 @@ export function App() {
         <Toast />
 
         {/* Status Bar */}
-        <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0" data-testid="status-bar">
+        <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0 safe-area-bottom safe-area-left safe-area-right" data-testid="status-bar">
           <span data-testid="node-count">Nodes: {nodeCount}</span>
           <span className="mx-2">|</span>
           <span data-testid="edge-count">Edges: {edgeCount}</span>
