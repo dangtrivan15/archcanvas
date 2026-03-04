@@ -8554,3 +8554,48 @@ Date: 2026-03-05
 
 #### Current completion status:
 - Feature #372 marked passing
+
+---
+
+## Session: Feature #365 - GenericNode (rectangle) visual styling matches shaped node quality
+Date: 2026-03-05
+
+### Feature #365: GenericNode visual styling matches shaped node quality - PASSING
+
+#### Implementation:
+Enhanced `src/components/nodes/GenericNode.tsx` to bring rectangular GenericNodes to the same visual quality as SVG shaped nodes (CylinderNode, CloudNode, etc.):
+
+1. **Replaced left accent bar with top accent strip**:
+   - Old: 4px wide vertical bar on left edge (`w-1`)
+   - New: 3px tall horizontal strip across top edge (`h-[3px]`) with gradient (solid → 60% opacity)
+   - Matches the modern header-wash design language of shaped nodes
+
+2. **Added 3D depth gradient (matches NodeShell)**:
+   - White-to-dark lighting gradient: `rgba(255,255,255,0.06)` top → `rgba(0,0,0,0.02)` bottom
+   - Creates subtle 3D convexity effect matching NodeShell's SVG gradient overlay
+
+3. **Enhanced accent-color gradient tint**:
+   - Old: flat tint at 6% opacity (`${effectiveColor}0F`)
+   - New: gradient tint stronger at top (10%) fading to lighter (4%): `${effectiveColor}18 → ${effectiveColor}0A`
+   - Matches NodeShell's accent tint gradient approach
+
+4. **Strengthened header wash gradient**:
+   - Increased top opacity from 12% to 18% for more visible color identity
+   - Bottom reduced to 5% for smoother gradient transition
+
+#### Visual improvements:
+- Service node: blue top accent strip, blue-tinted gradient body
+- Function node: indigo top strip, indigo-tinted gradient body
+- Worker node: purple top strip, purple-tinted gradient body
+- Generic fallback: gray top strip, gray-tinted gradient body
+- All GenericNode types now look equally polished as Database (cylinder), CDN (cloud), etc.
+
+#### Verification:
+- Service node (GenericNode): top accent strip visible, gradient background, color-tinted shadows
+- Worker node (GenericNode): purple top strip, purple gradient, polished appearance
+- Database node (CylinderNode): compared side-by-side, visual quality is consistent
+- Zero console errors (0 errors, 0 warnings confirmed)
+- Build compiles cleanly with no TypeScript errors in GenericNode.tsx
+
+#### Commit: af4ee23
+#### Feature #365 marked passing
