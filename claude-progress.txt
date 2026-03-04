@@ -9222,3 +9222,34 @@ Date: 2026-03-05
 #### Commit: b3de6ca
 #### Feature #394 marked passing
 #### Progress: 384/426 features passing (90.1%)
+
+---
+
+## Session: Feature #395 - Add data/search-index node type
+Date: 2026-03-05
+
+### Feature #395: Add `data/search-index` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/data/search-index.yaml`:
+  - namespace: data, name: search-index, displayName: Search Index
+  - shape: cylinder, icon: Search
+  - Args: engine (enum: Elasticsearch/OpenSearch/Meilisearch/Typesense/Algolia), indexName (string), replicas (number), analyzers (string)
+  - Ports: index-write (inbound), search-query (inbound), search-results (outbound)
+  - Variants: Elasticsearch, OpenSearch, Meilisearch, Typesense, Algolia
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Search icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows DATA category with 5 entries including Search Index: PASS
+- Node renders on canvas with cylinder shape: PASS
+- Search icon displayed: PASS
+- Args shown: engine=Elasticsearch, indexName=primary, replicas=1, +1 more: PASS
+- Inbound port handles (index-write, search-query) visible: PASS
+- Outbound port handle (search-results) visible: PASS
+- Console: 27 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: c054d3d
+#### Feature #395 marked passing
+#### Progress: 384/426 features passing (90.1%)
