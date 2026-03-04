@@ -8819,3 +8819,33 @@ Date: 2026-03-05
 #### Commit: b76e445
 #### Feature #381 marked passing
 #### Progress: 370/426 features passing (86.9%)
+
+---
+
+## Session: Feature #384 - Add security/auth-provider node type
+Date: 2026-03-05
+
+### Feature #384: Add `security/auth-provider` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/security/auth-provider.yaml`:
+  - namespace: security, name: auth-provider, displayName: Auth Provider
+  - shape: hexagon, icon: ShieldCheck
+  - Args: provider (enum: Auth0/Cognito/Keycloak/Firebase Auth/Custom), protocol (enum: OAuth2/OIDC/SAML), mfaEnabled (boolean)
+  - Ports: auth-request (inbound), token-response (outbound)
+  - Variants: Auth0, AWS Cognito, Keycloak
+- Registered in `src/core/registry/loader.ts` as 16th built-in nodedef
+- Added ShieldCheck icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows SECURITY category with Auth Provider: PASS
+- Node renders on canvas with hexagon shape: PASS
+- ShieldCheck icon displayed: PASS
+- Args shown: provider=Auth0, protocol=OIDC, mfaEnabled=false: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 16 built-in nodedefs loaded (was 15): PASS
+- No new console errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: d11a182
+#### Feature #384 marked passing
