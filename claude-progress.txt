@@ -7044,3 +7044,105 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 321 of 339 (94.7%)
+
+---
+
+## Session: Feature #302 - archcanvas init Command
+Date: 2026-03-04
+
+### Feature #302: archcanvas init Command - PASSING
+
+#### Implementation:
+- src/cli/commands/init.ts (new file):
+  - registerInitCommand() function registers init subcommand on Commander program
+  - --name option (default: 'Untitled Architecture')
+  - --output / -o option (default: './architecture.archc')
+  - --force flag to overwrite existing files
+  - File existence check (errors if file exists without --force)
+  - Uses GraphContext.createNew(name) to create empty graph
+  - Saves via ctx.saveAs() with proper magic bytes and protobuf encoding
+  - Generates .summary.md sidecar via ctx.saveSidecar() (best-effort)
+  - Prints confirmation with file path and size (bytes or KB)
+  - JSON output support (--format json)
+  - Respects --quiet flag
+
+- src/cli/index.ts:
+  - Replaced inline init command with registerInitCommand(program) call
+  - Added import for registerInitCommand
+
+- test/unit/cli/initCommand.test.ts: 16 tests
+  - Command registration (name, output, force options)
+  - File creation with magic bytes verification
+  - Default and custom name support
+  - Sidecar .summary.md generation
+  - Overwrite protection (error on existing file)
+  - --force overwrite behavior
+  - Output messages and --quiet suppression
+  - JSON output format
+
+#### Verification:
+- 16 new init command tests passing
+- 190 total CLI tests passing (57 entry + 37 query + 54 context + 26 mutate + 16 init)
+- No TypeScript errors in new files
+- No mock data patterns detected
+- Committed: fe3f314
+
+#### Current completion status:
+- Features passing: 325+ of 339
+
+---
+
+## Session: Feature #336 - Parallelogram Nodes (Message Queue, Stream Processor)
+Date: 2026-03-04
+
+### Feature #336: Parallelogram Nodes - PASSING
+
+#### Implementation:
+- src/components/nodes/ParallelogramNode.tsx (new file):
+  - Wraps NodeShell with shape='parallelogram' for slanted shape conveying "data in transit"
+  - Reuses GenericNode's inner content layout (icon, displayName, type, args, badges)
+  - Extra horizontal padding (px-6) to compensate for parallelogram slant
+  - Port handles positioned on left/right slanted edges
+  - Inline editing support (F2 to rename)
+  - Ref node support with purple color and ExternalLink indicator
+  - Performance: wrapped in React.memo
+
+- src/components/nodes/nodeTypeMap.ts:
+  - Changed 'queue' mapping from GenericNode to ParallelogramNode
+  - Added 'stream-processor' mapping to ParallelogramNode
+
+- src/api/renderApi.ts:
+  - Added 'stream-processor' case in messaging namespace returning 'stream-processor'
+
+#### Browser Verification:
+- Message Queue node renders as parallelogram with:
+  - Inbox icon, display name, type label
+  - Args: broker: RabbitMQ, durable: true, maxRetries: 3
+  - Port handles on slanted edges (publish-in, consume-out)
+  - Text readable despite slanted shape
+- Stream Processor node renders as parallelogram with:
+  - Activity icon, display name, type label
+  - Args: engine: Kafka Streams, windowType: tumbling, windowDuration: 5m
+  - Port handles on slanted edges (stream-in, stream-out)
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+
+#### Committed: 5912dfe
+
+#### Current completion status:
+- Features passing: 322+ of 339 (95%+)
+
+---
+
+## Session: Feature #303 - archcanvas info Command
+Date: 2026-03-04
+
+### Feature #303: archcanvas info Command - PASSING
+
+#### Implementation:
+- src/cli/commands/info.ts (new file): Full metadata display with format version, timestamps, nested node counts, file size, checksum verification
+- src/cli/index.ts: Replaced inline info with registerInfoCommand()
+- test/unit/cli/infoCommand.test.ts: 23 tests all passing
+
+#### Committed: c5cede5
+#### Features passing: 326+ of 339
