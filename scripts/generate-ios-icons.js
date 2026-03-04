@@ -1,63 +1,60 @@
 #!/usr/bin/env node
 /**
- * Generate iOS app icons and splash screen images from the ArchCanvas SVG sources.
- * Uses Node.js built-in capabilities + the existing PNG/SVG icon files.
+ * Generate iOS app icons and splash screen images from the ArchCanvas SVG/PNG sources.
+ * Uses sharp for image processing.
  */
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sharp from 'sharp';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const PUBLIC_ICONS = path.join(__dirname, '..', 'public', 'icons');
 const APP_ICON_DIR = path.join(__dirname, '..', 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset');
 const SPLASH_DIR = path.join(__dirname, '..', 'ios', 'App', 'App', 'Assets.xcassets', 'Splash.imageset');
 
-// Use sips (macOS built-in) for image resizing
-function resizeImage(src, dest, size) {
-  // Copy first, then resize in place
-  fs.copyFileSync(src, dest);
-  execSync(`sips -z ${size} ${size} "${dest}" --out "${dest}"`, { stdio: 'pipe' });
-}
+async function generateAppIcon() {
+  // Use the SVG source for best quality rendering at any size
+  const svgSrc = path.join(PUBLIC_ICONS, 'icon-512x512.svg');
+  const svgBuffer = fs.readFileSync(svgSrc);
 
-// Generate the 1024x1024 app icon from our 512x512 source
-// For iOS 16+ with modern Xcode, only 1024x1024 universal is needed
-function generateAppIcon() {
-  const src = path.join(PUBLIC_ICONS, 'icon-512x512.png');
-  const dest = path.join(APP_ICON_DIR, 'AppIcon-1024x1024.png');
+  // Generate 1024x1024 universal icon (primary, required for iOS 16+)
+  const sizes = [1024, 180, 167, 152, 120, 87, 80, 76, 60, 58, 40, 29, 20];
 
-  // Copy and resize to 1024x1024
-  fs.copyFileSync(src, dest);
-  execSync(`sips -z 1024 1024 "${dest}" --out "${dest}"`, { stdio: 'pipe' });
-
-  // Also generate legacy sizes for broader compatibility
-  const sizes = [20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180];
   for (const size of sizes) {
-    const sizeDest = path.join(APP_ICON_DIR, `AppIcon-${size}x${size}.png`);
-    fs.copyFileSync(src, sizeDest);
-    execSync(`sips -z ${size} ${size} "${sizeDest}" --out "${sizeDest}"`, { stdio: 'pipe' });
+    const dest = path.join(APP_ICON_DIR, `AppIcon-${size}x${size}.png`);
+    await sharp(svgBuffer, { density: Math.ceil(size * 72 / 512) * 2 })
+      .resize(size, size)
+      .png()
+      .toFile(dest);
+    console.error(`  Generated AppIcon-${size}x${size}.png`);
   }
 
   // Remove old Capacitor default icon
   const oldIcon = path.join(APP_ICON_DIR, 'AppIcon-512@2x.png');
   if (fs.existsSync(oldIcon)) {
     fs.unlinkSync(oldIcon);
+    console.error('  Removed old Capacitor AppIcon-512@2x.png');
   }
 
-  // Write updated Contents.json with all sizes
+  // Write updated Contents.json
   const contentsJson = {
     "images": [
       { "filename": "AppIcon-1024x1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024" },
       { "filename": "AppIcon-20x20.png", "idiom": "iphone", "scale": "2x", "size": "20x20" },
-      { "filename": "AppIcon-29x29.png", "idiom": "iphone", "scale": "2x", "size": "29x29" },
       { "filename": "AppIcon-40x40.png", "idiom": "iphone", "scale": "2x", "size": "40x40" },
+      { "filename": "AppIcon-58x58.png", "idiom": "iphone", "scale": "2x", "size": "29x29" },
       { "filename": "AppIcon-60x60.png", "idiom": "iphone", "scale": "2x", "size": "60x60" },
-      { "filename": "AppIcon-58x58.png", "idiom": "iphone", "scale": "3x", "size": "29x29" },
-      { "filename": "AppIcon-87x87.png", "idiom": "iphone", "scale": "3x", "size": "29x29" },
+      { "filename": "AppIcon-29x29.png", "idiom": "iphone", "scale": "3x", "size": "29x29" },
       { "filename": "AppIcon-80x80.png", "idiom": "iphone", "scale": "3x", "size": "40x40" },
+      { "filename": "AppIcon-87x87.png", "idiom": "iphone", "scale": "3x", "size": "29x29" },
       { "filename": "AppIcon-120x120.png", "idiom": "iphone", "scale": "3x", "size": "60x60" },
+      { "filename": "AppIcon-180x180.png", "idiom": "iphone", "scale": "3x", "size": "60x60" },
       { "filename": "AppIcon-76x76.png", "idiom": "ipad", "scale": "1x", "size": "76x76" },
       { "filename": "AppIcon-152x152.png", "idiom": "ipad", "scale": "2x", "size": "76x76" },
-      { "filename": "AppIcon-167x167.png", "idiom": "ipad", "scale": "2x", "size": "83.5x83.5" },
-      { "filename": "AppIcon-180x180.png", "idiom": "iphone", "scale": "3x", "size": "60x60" }
+      { "filename": "AppIcon-167x167.png", "idiom": "ipad", "scale": "2x", "size": "83.5x83.5" }
     ],
     "info": { "author": "xcode", "version": 1 }
   };
@@ -67,53 +64,88 @@ function generateAppIcon() {
     JSON.stringify(contentsJson, null, 2) + '\n'
   );
 
-  // Log results
   const files = fs.readdirSync(APP_ICON_DIR).filter(f => f.endsWith('.png'));
-  process.stderr.write(`Generated ${files.length} app icon files\n`);
+  console.error(`AppIcon: ${files.length} icon files generated`);
 }
 
-// Generate splash screen images with dark background and centered logo
-function generateSplashScreen() {
-  // We need to create splash images with dark background (#1a1a2e)
-  // and the ArchCanvas logo centered.
-  // Using sips + a generated SVG approach
+async function generateSplashScreen() {
+  // Create splash images: dark background (#1a1a2e) with centered ArchCanvas graph logo
+  // 2732x2732 is the largest iPad Pro size, used for all devices
+  const size = 2732;
 
-  const splashSizes = [2732]; // iPad Pro max size, works for all devices
-  const logoSrc = path.join(PUBLIC_ICONS, 'icon-512x512.png');
+  // Create a standalone graph SVG (nodes + edges only, no rounded rect frame)
+  // Scale factor: graph content in original SVG spans ~300px, we want it ~600px on splash
+  const graphSvg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="56 16 400 460">
+  <line x1="256" y1="96" x2="136" y2="296" stroke="rgba(148, 163, 184, 0.6)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="256" y1="96" x2="376" y2="296" stroke="rgba(148, 163, 184, 0.6)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="136" y1="296" x2="256" y2="396" stroke="rgba(148, 163, 184, 0.6)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="376" y1="296" x2="256" y2="396" stroke="rgba(148, 163, 184, 0.6)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="136" y1="296" x2="376" y2="296" stroke="rgba(148, 163, 184, 0.6)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="256" cy="96" r="32" fill="#60a5fa" opacity="0.3"/><circle cx="256" cy="96" r="28" fill="#60a5fa"/><circle cx="249" cy="89" r="9.8" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="136" cy="296" r="28" fill="#34d399" opacity="0.3"/><circle cx="136" cy="296" r="24" fill="#34d399"/><circle cx="130" cy="290" r="8.4" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="376" cy="296" r="28" fill="#34d399" opacity="0.3"/><circle cx="376" cy="296" r="24" fill="#34d399"/><circle cx="370" cy="290" r="8.4" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="256" cy="396" r="24" fill="#a78bfa" opacity="0.3"/><circle cx="256" cy="396" r="20" fill="#a78bfa"/><circle cx="251" cy="391" r="7" fill="rgba(255,255,255,0.25)"/>
+</svg>`);
 
-  // Create a dark background SVG, render to PNG, then composite
-  // Since we can't easily composite with sips alone, let's use a different approach:
-  // Create an SVG with embedded base64 PNG logo on dark background
+  const logoSize = 1000;
 
-  const logoData = fs.readFileSync(logoSrc);
-  const logoBase64 = logoData.toString('base64');
+  // Render the graph SVG
+  const logoBuffer = await sharp(graphSvg, { density: 144 })
+    .resize(logoSize, logoSize)
+    .png()
+    .toBuffer();
 
-  for (const size of splashSizes) {
-    const logoSize = Math.round(size * 0.15); // Logo is 15% of splash size
-    const logoX = Math.round((size - logoSize) / 2);
-    const logoY = Math.round((size - logoSize) / 2);
+  // Create the dark background with centered graph
+  const logoX = Math.round((size - logoSize) / 2);
+  const logoY = Math.round((size - logoSize) / 2);
 
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" fill="#1a1a2e"/>
-  <image x="${logoX}" y="${logoY}" width="${logoSize}" height="${logoSize}" href="data:image/png;base64,${logoBase64}"/>
-</svg>`;
+  const splashBuffer = await sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 26, g: 26, b: 46, alpha: 1 } // #1a1a2e
+    }
+  })
+    .composite([{
+      input: logoBuffer,
+      left: logoX,
+      top: logoY
+    }])
+    .png()
+    .toBuffer();
 
-    const svgPath = path.join(SPLASH_DIR, `splash-${size}x${size}.svg`);
-    fs.writeFileSync(svgPath, svg);
+  // Write all 3 scale variants (same image, iOS handles scaling)
+  const variants = [
+    'splash-2732x2732.png',
+    'splash-2732x2732-1.png',
+    'splash-2732x2732-2.png'
+  ];
 
-    // Try to convert SVG to PNG using built-in tools
-    // On macOS, we can use qlmanage or rsvg-convert, but let's try a simpler approach
-    // We'll use the SVG directly and let Xcode handle it, or use node canvas
-    process.stderr.write(`Created SVG splash at ${svgPath}\n`);
+  for (const variant of variants) {
+    const dest = path.join(SPLASH_DIR, variant);
+    fs.writeFileSync(dest, splashBuffer);
+    console.error(`  Generated ${variant}`);
   }
+
+  // Remove old SVG if we created one previously
+  const oldSvg = path.join(SPLASH_DIR, 'splash-2732x2732.svg');
+  if (fs.existsSync(oldSvg)) {
+    fs.unlinkSync(oldSvg);
+  }
+
+  console.error('Splash: 3 splash images generated with dark background (#1a1a2e)');
 }
 
 // Main
 try {
-  generateAppIcon();
-  generateSplashScreen();
-  process.stderr.write('Done generating iOS assets\n');
+  console.error('Generating iOS app icons...');
+  await generateAppIcon();
+  console.error('Generating splash screen images...');
+  await generateSplashScreen();
+  console.error('Done!');
 } catch (err) {
-  process.stderr.write('Error: ' + err.message + '\n');
+  console.error('Error:', err.message);
+  console.error(err.stack);
   process.exit(1);
 }
