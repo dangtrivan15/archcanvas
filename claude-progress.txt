@@ -9133,3 +9133,33 @@ Date: 2026-03-05
 #### Commit: 02267f9
 #### Feature #389 marked passing
 #### Progress: 379/426 features passing (88.9%)
+
+---
+
+## Session: Feature #393 - Add compute/cron-job node type
+Date: 2026-03-05
+
+### Feature #393: Add `compute/cron-job` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/compute/cron-job.yaml`:
+  - namespace: compute, name: cron-job, displayName: Cron Job
+  - shape: rectangle, icon: Clock
+  - Args: schedule (string, cron expression), timezone (string), timeout (string/duration), retryOnFailure (boolean), maxRetries (number)
+  - Ports: invocation (outbound)
+  - Variants: Daily Midnight, Hourly, Weekly Report, Every 5 Minutes
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Clock icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows COMPUTE category with 5 entries including Cron Job: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Clock icon displayed: PASS
+- Args shown: schedule=0 0 * * *, timezone=UTC, timeout=30m, +2 more: PASS
+- Outbound port handle visible: PASS
+- Console: 25 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: e585fb9
+#### Feature #393 marked passing
+#### Progress: 382/426 features passing (89.7%)
