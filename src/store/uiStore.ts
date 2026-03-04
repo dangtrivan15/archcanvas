@@ -66,6 +66,22 @@ export function computeDefaultLeftPanelWidth(viewportWidth?: number): number {
 export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 /** Drag below this threshold to snap-collapse the left panel */
 export const LEFT_PANEL_COLLAPSE_THRESHOLD = 120;
+/** Viewport-relative right panel default: 20% of viewport width, floor 260px, ceiling 480px */
+export const RIGHT_PANEL_VIEWPORT_RATIO = 0.20;
+export const RIGHT_PANEL_DEFAULT_FLOOR = 260;
+export const RIGHT_PANEL_DEFAULT_CEILING = 480;
+
+/**
+ * Compute the default right panel width based on viewport width.
+ * Returns 20% of viewportWidth, clamped between floor (260px) and ceiling (480px).
+ */
+export function computeDefaultRightPanelWidth(viewportWidth?: number): number {
+  const vw = viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1440);
+  const raw = Math.round(vw * RIGHT_PANEL_VIEWPORT_RATIO);
+  return Math.max(RIGHT_PANEL_DEFAULT_FLOOR, Math.min(RIGHT_PANEL_DEFAULT_CEILING, raw));
+}
+
+/** Legacy constant kept for backward compatibility */
 export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
 export const RIGHT_PANEL_MIN_WIDTH = 220;
 export const RIGHT_PANEL_MAX_WIDTH = 500;
@@ -120,7 +136,11 @@ export interface UIStoreState {
 
   // Panel widths (in pixels, for drag-resize)
   leftPanelWidth: number;
+  /** Whether the user has explicitly set a custom left panel width */
+  leftPanelWidthCustomized: boolean;
   rightPanelWidth: number;
+  /** Whether the user has explicitly set a custom right panel width */
+  rightPanelWidthCustomized: boolean;
 
   // Toolbar and status bar heights (in pixels, clamped to min/max)
   toolbarHeight: number;
@@ -221,6 +241,12 @@ export interface UIStoreState {
   // Panel width actions (for drag-resize)
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
+  /** Update left panel width from viewport resize (only if not customized) */
+  updateLeftPanelWidthFromViewport: (viewportWidth: number) => void;
+  /** Update right panel width from viewport resize (only if not customized) */
+  updateRightPanelWidthFromViewport: (viewportWidth: number) => void;
+  /** Reset all bar/panel sizes to viewport-relative defaults (clears custom values) */
+  resetBarSizes: () => void;
 
   // Toolbar and status bar height actions
   setToolbarHeight: (height: number) => void;
@@ -280,7 +306,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   rightPanelOpen: false,
   rightPanelTab: 'properties',
   leftPanelWidth: computeDefaultLeftPanelWidth(),
-  rightPanelWidth: RIGHT_PANEL_DEFAULT_WIDTH,
+  leftPanelWidthCustomized: false,
+  rightPanelWidth: computeDefaultRightPanelWidth(),
+  rightPanelWidthCustomized: false,
   toolbarHeight: computeDefaultToolbarHeight(),
   toolbarHeightCustomized: false,
   statusBarHeight: computeDefaultStatusBarHeight(),
@@ -379,10 +407,34 @@ export const useUIStore = create<UIStoreState>((set) => ({
     set({ placementMode: false, placementInfo: null }),
 
   setLeftPanelWidth: (width) =>
-    set({ leftPanelWidth: Math.max(LEFT_PANEL_MIN_WIDTH, Math.min(LEFT_PANEL_MAX_WIDTH, width)) }),
+    set({ leftPanelWidth: Math.max(LEFT_PANEL_MIN_WIDTH, Math.min(LEFT_PANEL_MAX_WIDTH, width)), leftPanelWidthCustomized: true }),
 
   setRightPanelWidth: (width) =>
-    set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)) }),
+    set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)), rightPanelWidthCustomized: true }),
+
+  updateLeftPanelWidthFromViewport: (viewportWidth) =>
+    set((s) => {
+      if (s.leftPanelWidthCustomized) return s;
+      return { leftPanelWidth: computeDefaultLeftPanelWidth(viewportWidth) };
+    }),
+
+  updateRightPanelWidthFromViewport: (viewportWidth) =>
+    set((s) => {
+      if (s.rightPanelWidthCustomized) return s;
+      return { rightPanelWidth: computeDefaultRightPanelWidth(viewportWidth) };
+    }),
+
+  resetBarSizes: () =>
+    set({
+      leftPanelWidth: computeDefaultLeftPanelWidth(),
+      leftPanelWidthCustomized: false,
+      rightPanelWidth: computeDefaultRightPanelWidth(),
+      rightPanelWidthCustomized: false,
+      toolbarHeight: computeDefaultToolbarHeight(),
+      toolbarHeightCustomized: false,
+      statusBarHeight: computeDefaultStatusBarHeight(),
+      statusBarHeightCustomized: false,
+    }),
 
   setToolbarHeight: (height) =>
     set({ toolbarHeight: Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height)), toolbarHeightCustomized: true }),
