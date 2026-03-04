@@ -26,7 +26,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/filesystem": "^8.1.2",
     "@capacitor/ios": "^8.1.0",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capawesome/capacitor-file-picker": "^8.0.2",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@xyflow/react": "^12.4.0",
     "elkjs": "^0.9.3",
