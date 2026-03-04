@@ -7394,3 +7394,87 @@ Date: 2026-03-04
 #### Current completion status:
 - Feature #314 marked passing
 - Features passing: 331+ of 339
+
+---
+
+## Session: Feature #315 - CLI, MCP, and HTTP Integration Tests
+Date: 2026-03-04
+
+### Feature #315: CLI, MCP, and HTTP Integration Tests - PASSING
+
+#### Implementation:
+Created comprehensive integration tests for all three interfaces:
+
+**test/integration/cli/cliRoundTrip.test.ts** (8 tests):
+- Full init → add-node → add-edge → describe → export round-trip
+- Mutation persistence: add → save → reload → verify
+- Error handling: missing file, invalid node ID, corrupt file
+- JSON output format validation (list-nodes, describe, search)
+- Multi-step mutation: add-node → add-edge → remove-edge → verify
+
+**test/integration/mcp/mcpFileBacked.test.ts** (10 tests):
+- File-backed mode: load file → mutate via tools → auto-save → verify
+- File-backed: add-node → add-edge → save → reload → verify persistence
+- Save tool returns file path info
+- file_info tool returns correct metadata
+- Backward compatibility: no --file starts empty graph (in-memory)
+- Backward compatibility: save returns error without file
+- Backward compatibility: file_info shows not file-backed
+- MUTATION_TOOLS set validation
+- Multiple mutations accumulate and persist correctly
+
+**test/integration/http/httpServer.test.ts** (29 tests, includes existing query endpoint tests):
+- Full CRUD: POST nodes/edges → GET → PATCH → DELETE → verify
+- Auto-save: mutation → close server → reload → verify persistence
+- Error responses: 404 for missing nodes, 400 for invalid input
+- Concurrent access: 5 parallel POSTs + mixed reads/writes
+- Query endpoint envelope { data, meta } consistency
+- Describe, search, nodedefs with filtering
+- Export endpoints (markdown, mermaid, summary)
+
+#### Verification:
+- 47 integration tests passing across 3 test files
+- 407 existing CLI/MCP unit tests still passing
+- No regressions in existing tests
+- Committed: 053b07e
+
+#### Current completion status:
+- Feature #315 marked passing
+- Features passing: 331+ of 339
+
+---
+
+## Session: Feature #313 - HTTP Export Endpoints
+Date: 2026-03-04
+
+### Feature #313: HTTP Export Endpoints - PASSING
+
+#### Implementation:
+- src/cli/server/routes/export.ts (new file):
+  - createExportRoutes(ctx) factory function returns RouteDefinition[]
+  - GET /api/export/markdown → generateMarkdownSummary(), Content-Type: text/markdown
+  - GET /api/export/mermaid → generateMermaid(), Content-Type: text/plain
+  - GET /api/export/markdown?withMermaid=true → generateSummaryWithMermaid()
+  - GET /api/export/summary → generateSummaryWithMermaid(), Content-Type: text/markdown
+  - Accept: application/json → wraps content in { content: '...' } JSON envelope
+  - Default (no Accept or text/*) → raw text with appropriate Content-Type
+
+- src/cli/server/httpServer.ts:
+  - Imported and registered export routes from routes/export.ts
+  - Removed inline export route handlers
+  - Removed unused sendText helper function
+
+- test/integration/http/httpExport.test.ts (new file): 14 tests
+  - Markdown endpoint with text/markdown Content-Type
+  - Mermaid endpoint with text/plain Content-Type
+  - ?withMermaid=true parameter support
+  - ?withMermaid=false returns same as no param
+  - Summary endpoint with text/markdown Content-Type
+  - Accept: application/json wrapping for all 4 export variants
+  - Accept: text/plain returns raw text (no JSON)
+  - Default (no Accept header) returns raw text
+  - Empty architecture export works
+
+#### Committed: 4691744
+#### Features passing: 334+ of 339
+
