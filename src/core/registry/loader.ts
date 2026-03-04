@@ -56,6 +56,9 @@ import cliYaml from './builtins/core/client/cli.yaml?raw';
 
 // AI namespace
 import llmProviderYaml from './builtins/core/ai/llm-provider.yaml?raw';
+import embeddingServiceYaml from './builtins/core/ai/embedding-service.yaml?raw';
+import vectorStoreYaml from './builtins/core/ai/vector-store.yaml?raw';
+import ragPipelineYaml from './builtins/core/ai/rag-pipeline.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -112,8 +115,11 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
   { filePath: 'client/mobile-app.yaml', rawYaml: mobileAppYaml, namespace: 'client', name: 'mobile-app' },
   { filePath: 'client/cli.yaml', rawYaml: cliYaml, namespace: 'client', name: 'cli' },
-  // AI (1)
+  // AI (4)
   { filePath: 'ai/llm-provider.yaml', rawYaml: llmProviderYaml, namespace: 'ai', name: 'llm-provider' },
+  { filePath: 'ai/embedding-service.yaml', rawYaml: embeddingServiceYaml, namespace: 'ai', name: 'embedding-service' },
+  { filePath: 'ai/vector-store.yaml', rawYaml: vectorStoreYaml, namespace: 'ai', name: 'vector-store' },
+  { filePath: 'ai/rag-pipeline.yaml', rawYaml: ragPipelineYaml, namespace: 'ai', name: 'rag-pipeline' },
 ];
 
 /**
