@@ -1,0 +1,90 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: cli
+  namespace: client
+  version: "1.0.0"
+  displayName: CLI
+  description: A command-line interface tool that interacts with the system. Represents terminal-based clients such as CLIs, shell scripts, and developer tooling that communicate with backend services.
+  icon: Terminal
+  tags:
+    - client
+    - cli
+    - terminal
+    - command-line
+    - devtools
+  shape: rectangle
+spec:
+  args:
+    - name: language
+      type: enum
+      required: true
+      description: Programming language the CLI tool is written in
+      options:
+        - TypeScript
+        - Python
+        - Go
+        - Rust
+        - Bash
+      default: TypeScript
+    - name: packageManager
+      type: string
+      description: Package manager used for distribution (e.g. npm, pip, cargo, brew)
+      default: "npm"
+    - name: authMethod
+      type: enum
+      required: true
+      description: Authentication method used to connect to backend services
+      options:
+        - API Key
+        - OAuth2
+        - Token
+        - None
+      default: API Key
+  ports:
+    - name: api-call
+      direction: outbound
+      protocol:
+        - HTTPS
+        - REST
+        - gRPC
+      description: Outbound API calls to backend services
+  children: []
+  ai:
+    context: "This is a command-line interface tool. Consider argument parsing, output formatting (JSON, table, plain text), authentication flows, configuration file management, and shell completion support."
+    reviewHints:
+      - Verify the authentication method is appropriate for CLI usage
+      - Check that error messages are user-friendly for terminal output
+      - Ensure the CLI supports standard exit codes
+      - Review configuration file handling and environment variable support
+variants:
+  - name: TypeScript CLI
+    description: Node.js CLI tool written in TypeScript
+    args:
+      language: TypeScript
+      packageManager: "npm"
+      authMethod: API Key
+  - name: Python CLI
+    description: Python CLI tool using Click or Typer
+    args:
+      language: Python
+      packageManager: "pip"
+      authMethod: Token
+  - name: Go CLI
+    description: Go CLI tool using Cobra
+    args:
+      language: Go
+      packageManager: "go install"
+      authMethod: API Key
+  - name: Rust CLI
+    description: Rust CLI tool using Clap
+    args:
+      language: Rust
+      packageManager: "cargo"
+      authMethod: Token
+  - name: Bash Script
+    description: Shell script for automation
+    args:
+      language: Bash
+      packageManager: ""
+      authMethod: None
