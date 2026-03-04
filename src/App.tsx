@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, X } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore, LEFT_PANEL_COLLAPSE_THRESHOLD } from '@/store/uiStore';
@@ -17,16 +17,19 @@ import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
 import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
+import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { Toast } from '@/components/shared/Toast';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
+import { useViewportSize } from '@/hooks/useViewportSize';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { useNavigationStore } from '@/store/navigationStore';
 import { findNode } from '@/core/graph/graphEngine';
+import { initializeApiKey } from '@/ai/config';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -53,6 +56,10 @@ export function App() {
   const canvasMode = useUIStore((s) => s.canvasMode);
   const navigationPath = useNavigationStore((s) => s.path);
   const graph = useCoreStore((s) => s.graph);
+  const closeRightPanel = useUIStore((s) => s.closeRightPanel);
+
+  // Viewport size for responsive layout (iPad Split View / Slide Over)
+  const { isCompact } = useViewportSize();
 
   const handleLeftResize = useCallback((delta: number) => {
     const newWidth = leftPanelWidth + delta;
@@ -87,7 +94,10 @@ export function App() {
   }, [selectedNodeId, selectedEdgeId, openRightPanel]);
 
   useEffect(() => {
-    initialize();
+    // Initialize API key from stored preferences before app is ready
+    initializeApiKey().then(() => {
+      initialize();
+    });
   }, [initialize]);
 
   // Auto-load file from URL parameter (for development/testing)
@@ -119,9 +129,9 @@ export function App() {
         <Toolbar />
 
         {/* Main content area: left panel, canvas, right panel */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - NodeDef Browser (draggable width) or collapsed expand strip */}
-          {leftPanelOpen ? (
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Left Panel - NodeDef Browser (hidden in compact mode, draggable width otherwise) */}
+          {!isCompact && leftPanelOpen ? (
             <>
               <FocusZoneRegion zone={FocusZone.LeftPanel}>
                 <aside
@@ -134,7 +144,7 @@ export function App() {
               </FocusZoneRegion>
               <ResizeHandle side="left" onResize={handleLeftResize} />
             </>
-          ) : (
+          ) : !isCompact ? (
             <button
               className="w-5 shrink-0 border-r bg-gray-50 hover:bg-gray-100 flex items-center justify-center cursor-pointer transition-colors"
               onClick={toggleLeftPanel}
@@ -144,15 +154,15 @@ export function App() {
             >
               <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
             </button>
-          )}
+          ) : null}
 
           {/* Center - Canvas (always gets minimum usable space) */}
           <FocusZoneRegion zone={FocusZone.Canvas} className="flex-1 min-w-[200px] relative">
             <Canvas />
           </FocusZoneRegion>
 
-          {/* Right Panel - Node/Edge Detail (draggable width) */}
-          {rightPanelOpen && (
+          {/* Right Panel - Side panel in regular/wide, bottom sheet overlay in compact */}
+          {rightPanelOpen && !isCompact && (
             <>
               <ResizeHandle side="right" onResize={handleRightResize} />
               <FocusZoneRegion zone={FocusZone.RightPanel}>
@@ -165,6 +175,34 @@ export function App() {
                 </aside>
               </FocusZoneRegion>
             </>
+          )}
+
+          {/* Bottom sheet overlay for right panel in compact mode */}
+          {rightPanelOpen && isCompact && (
+            <div
+              className="absolute bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg"
+              style={{ maxHeight: '50vh' }}
+              data-testid="right-panel-sheet"
+            >
+              {/* Sheet handle + close button */}
+              <div className="flex items-center justify-between px-3 py-1.5 border-b bg-gray-50">
+                <div className="w-8 h-1 rounded-full bg-gray-300 mx-auto" />
+                <button
+                  type="button"
+                  onClick={closeRightPanel}
+                  className="absolute right-2 top-1.5 p-1 rounded hover:bg-gray-200 transition-colors"
+                  aria-label="Close detail panel"
+                  data-testid="right-panel-sheet-close"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
+              <FocusZoneRegion zone={FocusZone.RightPanel}>
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(50vh - 36px)' }}>
+                  {selectedEdgeId ? <EdgeDetailPanel /> : <NodeDetailPanel />}
+                </div>
+              </FocusZoneRegion>
+            </div>
           )}
         </div>
 
@@ -188,6 +226,9 @@ export function App() {
 
         {/* Keyboard Shortcut Settings Panel (overlay) */}
         <ShortcutSettingsPanel />
+
+        {/* Settings Dialog (overlay) */}
+        <SettingsDialog />
 
         {/* Command Palette (Cmd+K) */}
         <CommandPalette />

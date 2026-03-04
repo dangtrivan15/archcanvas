@@ -21,7 +21,7 @@ const NODE_TYPES = [
   { type: 'network/cdn', label: 'CDN', group: 'Network' },
 ];
 
-export function AddNodeButton() {
+export function AddNodeButton({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [customName, setCustomName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -78,8 +78,8 @@ export function AddNodeButton() {
         title="Add Node"
       >
         <Plus className="w-4 h-4" />
-        <span>Add Node</span>
-        <ChevronDown className="w-3 h-3 ml-0.5" />
+        {!compact && <span>Add Node</span>}
+        {!compact && <ChevronDown className="w-3 h-3 ml-0.5" />}
       </button>
 
       {isOpen && (

@@ -20,6 +20,7 @@ import { useCoreStore } from '@/store/coreStore';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { formatBindingDisplay } from '@/core/input';
+import { useViewportSize } from '@/hooks/useViewportSize';
 import type { ArchNode } from '@/types/graph';
 
 const HINTS_STORAGE_KEY = 'archcanvas:hints-visible';
@@ -145,6 +146,9 @@ export function ModeStatusBar() {
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);
   const graph = useCoreStore((s) => s.graph);
+
+  // Viewport size for responsive behavior (iPad Split View / Slide Over)
+  const { isCompact } = useViewportSize();
 
   // Derived state
   const hasNodeSelected = !!selectedNodeId || selectedNodeIds.length > 0;
@@ -306,8 +310,8 @@ export function ModeStatusBar() {
 
       {/* ─── Right Section: Shortcut Hints | Selection Count | Zoom ─── */}
       <div className="flex items-center gap-2 pr-2 min-w-0 text-white/60">
-        {/* Contextual shortcut hints (merged from ShortcutHints) - overflow-hidden for narrow viewports */}
-        {hintsVisible && (
+        {/* Contextual shortcut hints - hidden in compact mode (iPad Slide Over / narrow Split View) */}
+        {hintsVisible && !isCompact && (
           <div
             className="flex items-center gap-1 text-[10px] font-mono overflow-hidden whitespace-nowrap min-w-0"
             data-testid="shortcut-hints"
@@ -325,7 +329,7 @@ export function ModeStatusBar() {
         )}
 
         {/* Separator between hints and selection/zoom */}
-        {hintsVisible && (
+        {hintsVisible && !isCompact && (
           <span className="text-white/20 shrink-0">|</span>
         )}
 

@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link2 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 
-export function ConnectNodesButton() {
+export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [edgeType, setEdgeType] = useState<'sync' | 'async' | 'data-flow'>('sync');
   const [sourceIdx, setSourceIdx] = useState(0);
@@ -62,7 +62,7 @@ export function ConnectNodesButton() {
         disabled={!hasEnoughNodes}
       >
         <Link2 className="w-4 h-4" />
-        <span>Connect</span>
+        {!compact && <span>Connect</span>}
       </button>
 
       {isOpen && hasEnoughNodes && (
