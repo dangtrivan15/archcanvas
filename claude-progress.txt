@@ -5529,3 +5529,56 @@ SESSION: 2026-03-04 - Features #275, #276
 - Features passing: 280 of 298
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Features #278, #279
+==================================================
+
+## What was accomplished:
+
+### Feature #278: FileSystemAdapter interface with web and native implementations (PASSING)
+- Created src/core/platform/fileSystemAdapter.ts:
+  - FileSystemAdapter interface with 4 methods: pickFile, saveFile, saveFileAs, shareFile
+  - PickFileResult, SaveFileResult, SaveFileAsResult type exports
+  - getFileSystemAdapter() async factory: returns WebFileSystemAdapter or NativeFileSystemAdapter based on isNative()
+  - Lazy dynamic imports for tree-shaking
+  - _resetFileSystemAdapter() for testing
+- Created src/core/platform/webFileSystemAdapter.ts:
+  - WebFileSystemAdapter implements FileSystemAdapter
+  - pickFile: showOpenFilePicker with hidden <input> fallback
+  - saveFile: FileSystemFileHandle.createWritable with blob download fallback
+  - saveFileAs: showSaveFilePicker with blob download fallback
+  - shareFile: Web Share API with blob download fallback
+  - AbortError handling for cancelled pickers
+  - All existing fileIO.ts behaviors preserved
+- Created src/core/platform/nativeFileSystemAdapter.ts (initially stub)
+- 72 unit tests all passing
+- Zero console errors, zero TypeScript errors
+- Committed: 1c4ef06
+
+### Feature #279: Native iOS FileSystemAdapter using Capacitor Filesystem plugin (PASSING)
+- Installed @capacitor/filesystem, @capacitor/share, @capawesome/capacitor-file-picker
+- Fully implemented NativeFileSystemAdapter:
+  - pickFile(): FilePicker.pickFiles() with .archc filter → Filesystem.readFile() for content
+  - saveFile(): Filesystem.writeFile() to existing path or default Documents/ArchCanvas/
+  - saveFileAs(): Filesystem.writeFile() to Documents + Share.share() for iOS export
+  - shareFile(): Write temp file to Cache dir + Filesystem.getUri() + Share.share()
+  - Base64 encoding/decoding helpers for binary data via Capacitor Filesystem
+  - Cancellation handling for both picker and share sheet
+  - Uses Directory.Documents for persistent storage, Directory.Cache for temp/share files
+- Ran npx cap sync ios: 4 plugins registered (filesystem, preferences, share, file-picker)
+- Updated fileSystemAdapter.test.ts: removed stub tests, added implementation structure tests
+- 45 new unit tests for NativeFileSystemAdapter (all passing)
+- Zero console errors, zero TypeScript errors in new files
+- Build succeeds, app loads correctly
+- Committed: 33e1fdb
+
+## Test files:
+- test/unit/core/fileSystemAdapter.test.ts: 66 tests (interface, web adapter, factory)
+- test/unit/core/nativeFileSystemAdapter.test.ts: 45 tests (native adapter with mocked Capacitor)
+
+## Current completion status:
+- Features passing: 280 of 298 (93.9%)
+- Zero console errors
+- No mock data patterns in production code
+- 111 new tests across 2 test files (all passing)
