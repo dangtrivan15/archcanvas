@@ -30,8 +30,10 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
+	<key>MinimumOSVersion</key>
+	<string>16.0</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -75,6 +77,23 @@
 			<string>Editor</string>
 		</dict>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- HTTPS enforced by default for all production connections.
+		     Only localhost is exempted for Capacitor dev server. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

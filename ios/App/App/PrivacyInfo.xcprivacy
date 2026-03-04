@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy — Apple Privacy Manifest for ArchCanvas
+  Required for App Store submission (Apple policy effective Spring 2024).
+  Declares all "Required Reason API" usage and tracking status.
+-->
+<plist version="1.0">
+<dict>
+	<!-- ═══ Tracking Declaration ═══ -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- ═══ Collected Data Types ═══ -->
+	<!-- ArchCanvas does not collect or transmit any user data to servers.
+	     All architecture files remain on-device or are explicitly exported by the user. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- ═══ Accessed API Types (Required Reason APIs) ═══ -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- 1. File Timestamp APIs (NSPrivacyAccessedAPICategoryFileTimestamp)
+		     Used to read file modification dates when opening/saving .archc files
+		     and generating sidecar .summary.md files. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- C617.1: Access file timestamps within the app's container
+				     or files the user explicitly granted access to -->
+				<string>C617.1</string>
+			</array>
+		</dict>
+
+		<!-- 2. User Defaults APIs (NSPrivacyAccessedAPICategoryUserDefaults)
+		     Capacitor and WKWebView use UserDefaults for configuration,
+		     plugin preferences, and app state persistence. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- CA92.1: Access UserDefaults to read/write data
+				     only accessible to the app itself -->
+				<string>CA92.1</string>
+			</array>
+		</dict>
+
+		<!-- 3. Disk Space APIs (NSPrivacyAccessedAPICategoryDiskSpace)
+		     Used to verify sufficient storage before saving .archc files
+		     (binary protobuf files can be several MB for large architectures). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- E174.1: Check available disk space to prevent
+				     write failures when saving architecture files -->
+				<string>E174.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
