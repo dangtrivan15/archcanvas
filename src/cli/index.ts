@@ -27,8 +27,31 @@ const DESCRIPTION =
 
 // ─── Output Formatting ───────────────────────────────────────
 
-/** Supported output formats. */
-export type OutputFormat = 'json' | 'table' | 'human';
+// Re-export from formatter module for backward compatibility
+export type { OutputFormat } from '@/cli/formatter';
+export {
+  formatAsJson,
+  formatAsTable,
+  formatAsHuman,
+  formatOutput,
+  formatNodeSummary,
+  formatNodeDetail,
+  formatEdgeSummary,
+  formatSearchResult,
+  writeOutput,
+  writeInfo,
+  writeError,
+} from '@/cli/formatter';
+
+import type { OutputFormat } from '@/cli/formatter';
+import {
+  formatOutput,
+  formatNodeSummary,
+  formatNodeDetail,
+  formatSearchResult,
+  writeOutput,
+  writeInfo,
+} from '@/cli/formatter';
 
 /** Global options shared across all commands. */
 export interface GlobalOptions {
@@ -86,54 +109,21 @@ export async function loadContext(opts: GlobalOptions): Promise<GraphContext> {
 
 /**
  * Print output in the requested format.
+ * Uses the shared formatter module for consistent output across all commands.
+ *
  * - json: JSON.stringify with 2-space indent
  * - table: tabular text (for arrays) or key-value (for objects)
  * - human: human-readable prose
+ *
+ * All data output goes to stdout via writeOutput() so piping works correctly.
  */
 export function printOutput(
   data: unknown,
   format: OutputFormat,
   humanFormatter?: (data: unknown) => string,
 ): void {
-  if (format === 'json') {
-    console.log(JSON.stringify(data, null, 2));
-    return;
-  }
-
-  if (format === 'human' && humanFormatter) {
-    console.log(humanFormatter(data));
-    return;
-  }
-
-  // Default: table format or plain JSON if no formatter
-  if (Array.isArray(data)) {
-    if (data.length === 0) {
-      console.log('(no results)');
-      return;
-    }
-    // Print simple table
-    const keys = Object.keys(data[0] as Record<string, unknown>);
-    const widths = keys.map((k) =>
-      Math.max(k.length, ...data.map((r) => String((r as Record<string, unknown>)[k] ?? '').length)),
-    );
-    // Header
-    console.log(keys.map((k, i) => k.padEnd(widths[i]!)).join('  '));
-    console.log(widths.map((w) => '─'.repeat(w)).join('  '));
-    // Rows
-    for (const row of data) {
-      console.log(
-        keys.map((k, i) => String((row as Record<string, unknown>)[k] ?? '').padEnd(widths[i]!)).join('  '),
-      );
-    }
-  } else if (typeof data === 'object' && data !== null) {
-    const entries = Object.entries(data as Record<string, unknown>);
-    const maxKeyLen = Math.max(...entries.map(([k]) => k.length));
-    for (const [key, value] of entries) {
-      console.log(`${key.padEnd(maxKeyLen)}  ${String(value)}`);
-    }
-  } else {
-    console.log(String(data));
-  }
+  const result = formatOutput(data, format, humanFormatter);
+  writeOutput(result);
 }
 
 /**
@@ -209,13 +199,8 @@ export function createProgram(): Command {
         const opts = program.opts<GlobalOptions>();
         const ctx = await loadContext(opts);
         const nodes = ctx.textApi.listNodes();
-        printOutput(nodes, opts.format, (data) => {
-          const items = data as Array<{ id: string; type: string; displayName: string }>;
-          if (items.length === 0) return '(no nodes)';
-          return items
-            .map((n) => `  ${n.displayName} [${n.type}] (${n.id})`)
-            .join('\n');
-        });
+        const output = formatNodeSummary(nodes, opts.format);
+        writeOutput(output);
       }),
     );
 
@@ -234,7 +219,8 @@ export function createProgram(): Command {
           console.error(`Error: Node "${id}" not found.`);
           process.exit(1);
         }
-        printOutput(node, opts.format, (d) => JSON.stringify(d, null, 2));
+        const output = formatNodeDetail(node, opts.format);
+        writeOutput(output);
       }),
     );
 
@@ -252,16 +238,8 @@ export function createProgram(): Command {
         const opts = program.opts<GlobalOptions>();
         const ctx = await loadContext(opts);
         const results = ctx.textApi.search(query);
-        printOutput(results, opts.format, (data) => {
-          const items = data as Array<{ type: string; id: string; displayName: string; matchContext: string; score: number }>;
-          if (items.length === 0) return `No results for "${query}"`;
-          return items
-            .map(
-              (r) =>
-                `  [${r.type}] ${r.displayName} — ${r.matchContext}`,
-            )
-            .join('\n');
-        });
+        const output = formatSearchResult(results, query, opts.format);
+        writeOutput(output);
       }),
     );
 

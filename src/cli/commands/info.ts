@@ -17,6 +17,7 @@ import {
   suppressDiagnosticLogs,
   printOutput,
 } from '@/cli/index';
+import { writeOutput, formatOutput } from '@/cli/formatter';
 import { decode, IntegrityError } from '@/core/storage/codec';
 import { protoToGraph } from '@/core/storage/fileIO';
 import { NodeFileSystemAdapter } from '@/core/platform/nodeFileSystemAdapter';
