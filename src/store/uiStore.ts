@@ -100,6 +100,9 @@ export interface UIStoreState {
   // Shortcut settings dialog
   shortcutSettingsOpen: boolean;
 
+  // Settings dialog (API key, preferences)
+  settingsDialogOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
@@ -181,6 +184,10 @@ export interface UIStoreState {
   openShortcutSettings: () => void;
   closeShortcutSettings: () => void;
 
+  // Settings dialog actions
+  openSettingsDialog: () => void;
+  closeSettingsDialog: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -245,6 +252,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   quickSearchOpen: false,
 
   shortcutSettingsOpen: false,
+
+  settingsDialogOpen: false,
 
   fileOperationLoading: false,
   fileOperationMessage: null,
@@ -355,6 +364,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeShortcutSettings: () =>
     set({ shortcutSettingsOpen: false }),
+
+  openSettingsDialog: () =>
+    set({ settingsDialogOpen: true }),
+
+  closeSettingsDialog: () =>
+    set({ settingsDialogOpen: false }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
