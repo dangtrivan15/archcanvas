@@ -1,16 +1,24 @@
 {
   "name": "archcanvas",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "description": "Visual architecture design tool with composable, code-bound graph nodes on an interactive canvas",
   "bin": {
     "archcanvas": "./dist/cli/index.js"
   },
+  "files": [
+    "dist/cli/**",
+    "dist/core/registry/builtins/**",
+    "proto/**",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "cli": "npx tsx src/cli/index.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:cli": "tsup --config tsup.cli.config.ts",
+    "prepublishOnly": "npm run build:cli",
     "preview": "vite preview",
     "lint": "eslint .",
     "test": "vitest run",
@@ -76,6 +84,7 @@
     "protobufjs-cli": "^2.0.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "~5.7.0",
     "typescript-eslint": "^8.18.0",
