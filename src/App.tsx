@@ -91,9 +91,9 @@ export function App() {
   const statusBarDragStartY = useRef(0);
   const statusBarDragStartHeight = useRef(0);
 
-  const handleStatusBarResizeStart = useCallback((e: React.MouseEvent) => {
+  const handleStatusBarResizeStart = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    console.log('[StatusBar] Resize started at Y:', e.clientY, 'current height:', statusBarHeight);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
     statusBarDragStartY.current = e.clientY;
     statusBarDragStartHeight.current = statusBarHeight;
     setIsStatusBarDragging(true);
@@ -102,24 +102,24 @@ export function App() {
   useEffect(() => {
     if (!isStatusBarDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       // Dragging up (negative deltaY) increases height
       const deltaY = statusBarDragStartY.current - e.clientY;
       setStatusBarHeight(statusBarDragStartHeight.current + deltaY);
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsStatusBarDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'row-resize';
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
       document.body.style.userSelect = '';
       document.body.style.cursor = '';
     };
@@ -322,8 +322,8 @@ export function App() {
         {/* Status Bar Resize Handle - positioned between content area and status bar */}
         <div
           data-testid="status-bar-resize-handle"
-          className={`w-full h-1 cursor-row-resize shrink-0 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
-          onMouseDown={handleStatusBarResizeStart}
+          className={`w-full h-2 cursor-row-resize shrink-0 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
+          onPointerDown={handleStatusBarResizeStart}
           role="separator"
           aria-orientation="horizontal"
           aria-label="Resize status bar"
