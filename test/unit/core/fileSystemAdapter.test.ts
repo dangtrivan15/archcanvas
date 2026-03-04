@@ -328,66 +328,29 @@ describe('Feature #278: WebFileSystemAdapter — shareFile', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// 6. NativeFileSystemAdapter — Stub behavior
+// 6. NativeFileSystemAdapter — Implementation structure
 // ═══════════════════════════════════════════════════════════════════
 
-describe('Feature #278: NativeFileSystemAdapter — Stub', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
-
-  beforeEach(async () => {
+describe('Feature #278: NativeFileSystemAdapter — Implementation', () => {
+  it('NativeFileSystemAdapter implements all four interface methods', async () => {
     const { NativeFileSystemAdapter } = await import('@/core/platform/nativeFileSystemAdapter');
-    adapter = new NativeFileSystemAdapter();
+    const adapter = new NativeFileSystemAdapter();
+    expect(typeof adapter.pickFile).toBe('function');
+    expect(typeof adapter.saveFile).toBe('function');
+    expect(typeof adapter.saveFileAs).toBe('function');
+    expect(typeof adapter.shareFile).toBe('function');
   });
 
-  it('pickFile throws not-yet-implemented error', async () => {
-    await expect(adapter.pickFile()).rejects.toThrow('not yet implemented');
-  });
-
-  it('saveFile throws not-yet-implemented error', async () => {
-    await expect(adapter.saveFile(new Uint8Array())).rejects.toThrow('not yet implemented');
-  });
-
-  it('saveFileAs throws not-yet-implemented error', async () => {
-    await expect(adapter.saveFileAs(new Uint8Array(), 'test.archc')).rejects.toThrow('not yet implemented');
-  });
-
-  it('shareFile throws not-yet-implemented error', async () => {
-    await expect(
-      adapter.shareFile(new Uint8Array(), 'test.archc', 'application/octet-stream'),
-    ).rejects.toThrow('not yet implemented');
-  });
-
-  it('stub error messages mention @capacitor/filesystem', async () => {
-    try {
-      await adapter.pickFile();
-    } catch (err: any) {
-      expect(err.message).toContain('@capacitor/filesystem');
-    }
-  });
-
-  it('stub error messages mention @capacitor/share for shareFile', async () => {
-    try {
-      await adapter.shareFile(new Uint8Array(), 'test.archc', 'application/octet-stream');
-    } catch (err: any) {
-      expect(err.message).toContain('@capacitor/share');
-    }
-  });
-
-  it('saveFile stub uses underscored parameters to indicate unused', () => {
+  it('imports Capacitor plugins', () => {
     const src = readSource(NATIVE_ADAPTER);
-    expect(src).toContain('_data: Uint8Array');
-    expect(src).toContain('_handle?: unknown');
+    expect(src).toContain("from '@capacitor/filesystem'");
+    expect(src).toContain("from '@capacitor/share'");
+    expect(src).toContain("from '@capawesome/capacitor-file-picker'");
   });
 
-  it('saveFileAs stub uses underscored parameters', () => {
+  it('implements FileSystemAdapter interface', () => {
     const src = readSource(NATIVE_ADAPTER);
-    expect(src).toContain('_suggestedName: string');
-  });
-
-  it('shareFile stub uses underscored parameters', () => {
-    const src = readSource(NATIVE_ADAPTER);
-    expect(src).toContain('_filename: string');
-    expect(src).toContain('_mimeType: string');
+    expect(src).toContain('implements FileSystemAdapter');
   });
 });
 
@@ -577,7 +540,7 @@ describe('Feature #278: Documentation quality', () => {
     const src = readSource(NATIVE_ADAPTER);
     expect(src).toContain('Capacitor');
     expect(src).toContain('@capacitor/filesystem');
-    expect(src).toContain('Stub');
+    expect(src).toContain('@capacitor/share');
   });
 
   it('interface methods have JSDoc comments', () => {
