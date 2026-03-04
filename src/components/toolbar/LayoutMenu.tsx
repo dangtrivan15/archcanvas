@@ -9,7 +9,7 @@ import { useCanvasStore, DEFAULT_LAYOUT_SPACING } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
-export function LayoutMenu() {
+export function LayoutMenu({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSpacing, setShowSpacing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -110,8 +110,8 @@ export function LayoutMenu() {
         data-testid="layout-menu-button"
       >
         <LayoutGrid className="w-4 h-4" />
-        <span>Layout</span>
-        <ChevronDown className="w-3 h-3" />
+        {!compact && <span>Layout</span>}
+        {!compact && <ChevronDown className="w-3 h-3" />}
       </button>
 
       {isOpen && (

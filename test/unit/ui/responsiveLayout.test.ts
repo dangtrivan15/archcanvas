@@ -34,8 +34,8 @@ describe('Responsive Layout', () => {
       expect(NARROW_BREAKPOINT).toBe(768);
     });
 
-    it('exports VERY_NARROW_BREAKPOINT at 640px', () => {
-      expect(VERY_NARROW_BREAKPOINT).toBe(640);
+    it('exports VERY_NARROW_BREAKPOINT at 600px (aligned with compact breakpoint)', () => {
+      expect(VERY_NARROW_BREAKPOINT).toBe(600);
     });
 
     it('VERY_NARROW_BREAKPOINT is less than NARROW_BREAKPOINT', () => {
@@ -76,7 +76,7 @@ describe('Responsive Layout', () => {
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
     });
 
-    it('closes both panels when window shrinks below VERY_NARROW_BREAKPOINT', () => {
+    it('closes left panel but keeps right panel when window shrinks below VERY_NARROW_BREAKPOINT (right panel becomes bottom sheet overlay)', () => {
       Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
       renderHook(() => useResponsiveLayout());
 
@@ -84,8 +84,10 @@ describe('Responsive Layout', () => {
         simulateResize(VERY_NARROW_BREAKPOINT - 1);
       });
 
+      // Left panel is hidden completely in compact mode
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
-      expect(useUIStore.getState().rightPanelOpen).toBe(false);
+      // Right panel remains open - it renders as a bottom sheet overlay in compact mode
+      expect(useUIStore.getState().rightPanelOpen).toBe(true);
     });
 
     it('keeps right panel open when only below narrow breakpoint', () => {
@@ -212,19 +214,20 @@ describe('Responsive Layout', () => {
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
     });
 
-    it('closes both panels on mount if window is already below VERY_NARROW_BREAKPOINT', () => {
+    it('closes left panel but keeps right panel on mount if window is already below VERY_NARROW_BREAKPOINT (right panel becomes bottom sheet)', () => {
       Object.defineProperty(window, 'innerWidth', { value: 500, writable: true, configurable: true });
       useUIStore.setState({ leftPanelOpen: true, rightPanelOpen: true });
 
       renderHook(() => useResponsiveLayout());
 
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
-      expect(useUIStore.getState().rightPanelOpen).toBe(false);
+      // Right panel stays open - renders as bottom sheet overlay in compact mode
+      expect(useUIStore.getState().rightPanelOpen).toBe(true);
     });
   });
 
   describe('Progressive collapse', () => {
-    it('collapses left panel first, then right panel as window narrows', () => {
+    it('collapses left panel as window narrows; right panel stays open (bottom sheet in compact)', () => {
       Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
       renderHook(() => useResponsiveLayout());
 
@@ -235,12 +238,13 @@ describe('Responsive Layout', () => {
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
       expect(useUIStore.getState().rightPanelOpen).toBe(true);
 
-      // Step 2: Resize further to 500px (below very narrow)
+      // Step 2: Resize further to 500px (below very narrow / compact)
       act(() => {
         simulateResize(500);
       });
       expect(useUIStore.getState().leftPanelOpen).toBe(false);
-      expect(useUIStore.getState().rightPanelOpen).toBe(false);
+      // Right panel is NOT auto-closed in compact mode - it becomes a bottom sheet overlay
+      expect(useUIStore.getState().rightPanelOpen).toBe(true);
     });
   });
 });

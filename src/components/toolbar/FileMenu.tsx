@@ -9,7 +9,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
-export function FileMenu() {
+export function FileMenu({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showExportSub, setShowExportSub] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -92,7 +92,7 @@ export function FileMenu() {
         data-testid="file-menu-button"
       >
         <File className="w-4 h-4" />
-        <span>File</span>
+        {!compact && <span>File</span>}
         <ChevronDown className="w-3 h-3" />
       </button>
 
