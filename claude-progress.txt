@@ -8287,3 +8287,41 @@ Created shared NodeBadges component and updated all 7 node components.
 - Zero JS console errors (only pre-existing PWA SSL cert errors)
 - Feature #362 marked passing
 - Commit: c82b280
+
+---
+
+## Session: Feature #358 - SVG shapes use gradient fill for visual depth
+Date: 2026-03-04
+
+### Feature #358: SVG shapes use gradient fill for visual depth - PASSING
+
+#### Implementation:
+Modified src/components/nodes/shapes/NodeShell.tsx:
+
+- Added `useId()` for unique SVG gradient IDs (avoids collisions with multiple nodes)
+- Added `<defs>` section with two `<linearGradient>` definitions:
+  1. **Lighting gradient**: top-to-bottom, white at 8% opacity → black at 4% opacity (creates subtle 3D lighting)
+  2. **Accent tint gradient**: node's accent color at 10% opacity (top) → 4% opacity (bottom)
+- Main shape path now has gradient overlay path on top of flat fill
+- Accent tint now uses gradient (stronger at top, lighter at bottom) instead of flat overlay
+- Cylinder lid also receives both gradients for consistent lighting
+- Replaces flat `tintColor` overlay with gradient-based `tintGradientId`
+
+#### Verification:
+- Tested with 5 different SVG shape types on canvas:
+  - Database (cylinder) - green tint gradient
+  - CDN (cloud) - purple tint gradient
+  - API Gateway (hexagon) - blue tint gradient
+  - Message Queue (parallelogram) - amber tint gradient
+  - Event Bus (stadium) - orange tint gradient
+- All shapes show subtle top-to-bottom gradient (lighter top, slightly darker bottom)
+- Gradients incorporate node accent color
+- Gradients are gentle and professional, not garish
+- Zero console errors from gradient implementation
+- Build succeeds cleanly
+
+#### Commits:
+- d028b20: feat: add gradient fill to SVG shapes for visual depth (feature #358)
+
+#### Current completion status:
+- Feature #358 marked passing
