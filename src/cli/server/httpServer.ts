@@ -29,6 +29,7 @@
 
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { GraphContext } from '@/cli/context';
+import { createQueryRoutes, type RouteDefinition } from './routes/query';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -135,6 +136,9 @@ function matchRoute(routes: Route[], method: string, pathname: string): RouteMat
 export function createHttpServer(ctx: GraphContext, options: HttpServerOptions): Server {
   const { cors } = options;
 
+  // ─── Import query routes from routes/query.ts ────────────
+  const queryRoutes: RouteDefinition[] = createQueryRoutes(ctx);
+
   // ─── Define Routes ───────────────────────────────────────
 
   const routes: Route[] = [
@@ -143,42 +147,8 @@ export function createHttpServer(ctx: GraphContext, options: HttpServerOptions):
       sendJson(res, 200, { status: 'ok', file: ctx.getFilePath() ?? '(unsaved)' });
     }),
 
-    // Architecture info
-    defineRoute('GET', '/api/info', async (_req, res) => {
-      const graph = ctx.getGraph();
-      sendJson(res, 200, {
-        name: graph.name,
-        description: graph.description || '',
-        owners: graph.owners,
-        nodeCount: graph.nodes.length,
-        edgeCount: graph.edges.length,
-        file: ctx.getFilePath() ?? '(unsaved)',
-      });
-    }),
-
-    // Describe architecture
-    defineRoute('GET', '/api/describe', async (req, res) => {
-      const { searchParams } = parseUrl(req.url!);
-      const style = (searchParams.get('style') ?? 'human') as 'structured' | 'human' | 'ai';
-      const result = ctx.textApi.describe({ format: style });
-      sendText(res, 200, result);
-    }),
-
-    // List nodes
-    defineRoute('GET', '/api/nodes', async (_req, res) => {
-      const nodes = ctx.textApi.listNodes();
-      sendJson(res, 200, nodes);
-    }),
-
-    // Get node detail
-    defineRoute('GET', '/api/nodes/:id', async (_req, res, params) => {
-      const node = ctx.textApi.getNode(params.id!);
-      if (!node) {
-        sendError(res, 404, `Node "${params.id}" not found`);
-        return;
-      }
-      sendJson(res, 200, node);
-    }),
+    // Register all query routes from routes/query.ts
+    ...queryRoutes.map((r) => defineRoute(r.method, r.path, r.handler)),
 
     // Add node
     defineRoute('POST', '/api/nodes', async (_req, res, _params, body) => {
@@ -250,12 +220,6 @@ export function createHttpServer(ctx: GraphContext, options: HttpServerOptions):
       }
     }),
 
-    // List edges
-    defineRoute('GET', '/api/edges', async (_req, res) => {
-      const edges = ctx.textApi.getEdges();
-      sendJson(res, 200, edges);
-    }),
-
     // Add edge
     defineRoute('POST', '/api/edges', async (_req, res, _params, body) => {
       const data = body as Record<string, unknown> | undefined;
@@ -298,18 +262,6 @@ export function createHttpServer(ctx: GraphContext, options: HttpServerOptions):
       } catch (err: unknown) {
         sendError(res, 404, err instanceof Error ? err.message : String(err));
       }
-    }),
-
-    // Search
-    defineRoute('GET', '/api/search', async (req, res) => {
-      const { searchParams } = parseUrl(req.url!);
-      const query = searchParams.get('q') ?? '';
-      if (!query) {
-        sendError(res, 400, 'Query parameter "q" is required');
-        return;
-      }
-      const results = ctx.textApi.search(query);
-      sendJson(res, 200, results);
     }),
 
     // Export markdown
@@ -420,6 +372,7 @@ export async function startHttpServer(
       process.stderr.write(`  GET  ${url}/api/edges\n`);
       process.stderr.write(`  POST ${url}/api/edges\n`);
       process.stderr.write(`  GET  ${url}/api/search?q=...\n`);
+      process.stderr.write(`  GET  ${url}/api/nodedefs?namespace=...\n`);
       process.stderr.write(`  GET  ${url}/api/export/markdown\n`);
       process.stderr.write(`  GET  ${url}/api/export/mermaid\n`);
       process.stderr.write(`  GET  ${url}/api/export/summary\n\n`);
