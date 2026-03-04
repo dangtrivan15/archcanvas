@@ -9370,3 +9370,63 @@ Date: 2026-03-05
 
 #### Commit: b3bfadc
 #### Feature #398 marked passing
+
+---
+
+## Session: Feature #399 - Add ai/embedding-service node type
+Date: 2026-03-05
+
+### Feature #399: Add `ai/embedding-service` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/embedding-service.yaml`:
+  - namespace: ai, name: embedding-service, displayName: Embedding Service
+  - shape: rectangle, icon: Binary
+  - Args: provider (enum: OpenAI/Cohere/Sentence Transformers/CLIP/Voyage AI/Custom), model (string), dimensions (number), batchSize (number)
+  - Ports: embed-request (inbound), vector-output (outbound)
+  - Variants: OpenAI Embeddings, Cohere Embed, Sentence Transformers, CLIP, Voyage AI
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Binary icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with Embedding Service: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Binary icon displayed: PASS
+- Args shown: provider=OpenAI, model=text-embedding-3-..., dimensions=1536, +1 more: PASS
+- Inbound port handle (embed-request) visible: PASS
+- Outbound port handle (vector-output) visible: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 5329dd4
+#### Feature #399 marked passing
+#### Progress: 389/426 features passing (91.3%)
+
+---
+
+## Session: Feature #400 - Add ai/vector-store node type
+Date: 2026-03-05
+
+### Feature #400: Add `ai/vector-store` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/vector-store.yaml`:
+  - namespace: ai, name: vector-store, displayName: Vector Store
+  - shape: cylinder, icon: Database
+  - Args: engine (enum: Pinecone/Weaviate/Qdrant/Chroma/pgvector/Milvus), dimensions (number, default 1536), distanceMetric (enum: cosine/euclidean/dot product), indexType (enum: HNSW/IVF/flat)
+  - Ports: upsert (inbound), query (inbound), results (outbound)
+  - 6 variants: Pinecone, Weaviate, Qdrant, Chroma, pgvector, Milvus
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 4 entries including Vector Store: PASS
+- Node renders on canvas with cylinder shape: PASS
+- Database icon displayed: PASS
+- Args shown: engine=Pinecone, dimensions=1536, distanceMetric=cosine, +1 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 33 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 58e8942
+#### Feature #400 marked passing
+#### Progress: 390/426 features passing (91.5%)
