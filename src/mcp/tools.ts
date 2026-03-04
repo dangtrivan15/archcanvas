@@ -101,6 +101,20 @@ export const TOOL_DEFINITIONS = {
       namespace: z.string().optional().describe('Filter by namespace (e.g., "compute", "data")'),
     },
   },
+
+  save: {
+    name: 'save',
+    description: 'Explicitly save the current architecture state to the .archc file. Only works when the server was started with --file.',
+    inputSchema: {
+      force: z.boolean().optional().describe('Force save even if no changes detected (default: false)'),
+    },
+  },
+
+  file_info: {
+    name: 'file_info',
+    description: 'Get metadata about the loaded .archc file (name, file path, timestamps, node/edge counts).',
+    inputSchema: {},
+  },
 } as const;
 
 /**

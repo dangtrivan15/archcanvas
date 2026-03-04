@@ -5,11 +5,38 @@
 
 import type { TextApi } from '@/api/textApi';
 import type { RegistryManager } from '@/core/registry/registryManager';
+import type { GraphContext } from '@/cli/context';
 import type { DescribeFormat } from '@/types/api';
 
 export interface ToolHandlerContext {
   textApi: TextApi;
   registry: RegistryManager;
+  /** Optional GraphContext for file-backed mode (auto-save, file_info). */
+  graphContext?: GraphContext;
+}
+
+/** Mutation tool names that trigger auto-save when file-backed. */
+export const MUTATION_TOOLS = new Set([
+  'add_node',
+  'add_edge',
+  'add_note',
+  'update_node',
+  'remove_node',
+  'remove_edge',
+]);
+
+/**
+ * Auto-save after a mutation tool call (if file-backed).
+ * Logs errors to stderr but does not throw (mutation already succeeded).
+ */
+export async function autoSave(ctx: ToolHandlerContext): Promise<void> {
+  if (!ctx.graphContext) return;
+  try {
+    await ctx.graphContext.save();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[MCP] Auto-save failed: ${msg}`);
+  }
 }
 
 /**
@@ -199,7 +226,59 @@ export function handleListNodedefs(
 }
 
 /**
- * Dispatch a tool call to the appropriate handler.
+ * Handle the 'save' tool call (async).
+ * Explicitly saves the current state to the .archc file.
+ */
+export async function handleSave(
+  ctx: ToolHandlerContext,
+  args: { force?: boolean },
+): Promise<string> {
+  if (!ctx.graphContext) {
+    return JSON.stringify({
+      success: false,
+      error: 'No file loaded. Start the MCP server with --file <path> to enable file persistence.',
+    });
+  }
+
+  try {
+    const wasModified = ctx.graphContext.isModified();
+    await ctx.graphContext.save(args.force ?? false);
+    const filePath = ctx.graphContext.getFilePath();
+    return JSON.stringify({
+      success: true,
+      filePath,
+      message: wasModified || args.force ? 'File saved successfully.' : 'No changes to save.',
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return JSON.stringify({ success: false, error: `Save failed: ${msg}` });
+  }
+}
+
+/**
+ * Handle the 'file_info' tool call.
+ * Returns metadata about the loaded .archc file.
+ */
+export function handleFileInfo(ctx: ToolHandlerContext): string {
+  const graph = ctx.textApi.getGraph();
+  const filePath = ctx.graphContext?.getFilePath();
+  const isFileBacked = !!ctx.graphContext;
+  const isModified = ctx.graphContext?.isModified() ?? false;
+
+  return JSON.stringify({
+    fileBacked: isFileBacked,
+    filePath: filePath ?? null,
+    architectureName: graph.name,
+    description: graph.description ?? null,
+    nodeCount: graph.nodes.length,
+    edgeCount: graph.edges.length,
+    isModified,
+  });
+}
+
+/**
+ * Dispatch a synchronous tool call to the appropriate handler.
+ * Does NOT handle 'save' or 'file_info' — those are handled separately in server.ts.
  */
 export function dispatchToolCall(
   ctx: ToolHandlerContext,

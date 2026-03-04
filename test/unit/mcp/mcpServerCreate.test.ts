@@ -38,7 +38,7 @@ describe('createMcpServer() - Feature #177', () => {
   });
 
   it('re-exports correct tool count', () => {
-    expect(getToolCount()).toBe(9);
+    expect(getToolCount()).toBe(11);
   });
 
   it('re-exports correct tool names', () => {
@@ -52,5 +52,7 @@ describe('createMcpServer() - Feature #177', () => {
     expect(names).toContain('remove_edge');
     expect(names).toContain('search');
     expect(names).toContain('list_nodedefs');
+    expect(names).toContain('save');
+    expect(names).toContain('file_info');
   });
 });
