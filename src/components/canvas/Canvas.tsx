@@ -104,6 +104,11 @@ function CanvasInner() {
   const centerOnNodeCounter = useCanvasStore((s) => s.centerOnNodeCounter);
   const prevCenterOnNodeCounterRef = useRef(centerOnNodeCounter);
 
+  // File drag & drop
+  const loadFromDroppedFile = useCoreStore((s) => s.loadFromDroppedFile);
+  const [isDragOverWithFiles, setIsDragOverWithFiles] = useState(false);
+  const dragOverCounterRef = useRef(0);
+
   // Context menu state (canvas background)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   // Node context menu state (right-click on a node)
@@ -306,31 +311,116 @@ function CanvasInner() {
     [placementMode, placementInfo, screenToFlowPosition, addNode, exitPlacementMode],
   );
 
-  // Handle drag and drop from NodeDefBrowser onto canvas
+  // Handle drag and drop from NodeDefBrowser onto canvas, and external file drops
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'copy';
+    // Check if files are being dragged
+    if (event.dataTransfer.types.includes('Files')) {
+      event.dataTransfer.dropEffect = 'copy';
+      setIsDragOverWithFiles(true);
+    } else {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }, []);
+
+  // Track drag enter/leave with counter to handle nested elements
+  const onCanvasDragEnter = useCallback((event: React.DragEvent) => {
+    if (event.dataTransfer.types.includes('Files')) {
+      dragOverCounterRef.current += 1;
+      if (dragOverCounterRef.current === 1) {
+        setIsDragOverWithFiles(true);
+      }
+    }
+  }, []);
+
+  const onCanvasDragLeave = useCallback((event: React.DragEvent) => {
+    if (event.dataTransfer.types.includes('Files')) {
+      dragOverCounterRef.current -= 1;
+      if (dragOverCounterRef.current <= 0) {
+        dragOverCounterRef.current = 0;
+        setIsDragOverWithFiles(false);
+      }
+    }
   }, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      const data = event.dataTransfer.getData('application/archcanvas-nodedef');
-      if (!data) return;
+      setIsDragOverWithFiles(false);
+      dragOverCounterRef.current = 0;
 
-      try {
-        const { nodeType, displayName } = JSON.parse(data);
-        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-        addNode({
-          type: nodeType,
-          displayName,
-          position: { x: position.x, y: position.y },
-        });
-      } catch {
-        console.warn('[Canvas] Invalid drop data');
+      // 1. Handle NodeDefBrowser drops (existing behavior)
+      const nodeDefData = event.dataTransfer.getData('application/archcanvas-nodedef');
+      if (nodeDefData) {
+        try {
+          const { nodeType, displayName } = JSON.parse(nodeDefData);
+          const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+          addNode({
+            type: nodeType,
+            displayName,
+            position: { x: position.x, y: position.y },
+          });
+        } catch {
+          console.warn('[Canvas] Invalid drop data');
+        }
+        return;
       }
+
+      // 2. Handle file drops (from Files app, desktop, etc.)
+      const files = event.dataTransfer.files;
+      if (files.length === 0) return;
+
+      // Check for multiple files
+      if (files.length > 1) {
+        // Filter for .archc files and images
+        const archcFiles: File[] = [];
+        const imageFiles: File[] = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i]!;
+          if (f.name.toLowerCase().endsWith('.archc')) {
+            archcFiles.push(f);
+          } else if (f.type.startsWith('image/')) {
+            imageFiles.push(f);
+          }
+        }
+
+        if (archcFiles.length > 1) {
+          showToast('Only one .archc file can be opened at a time. Please drop a single file.');
+          return;
+        }
+
+        if (archcFiles.length === 1) {
+          loadFromDroppedFile(archcFiles[0]!);
+          return;
+        }
+
+        if (imageFiles.length > 0) {
+          showToast(`${imageFiles.length} image(s) noted — image attachment to nodes is not yet available.`);
+          return;
+        }
+
+        // No supported files
+        showToast('Unsupported file type. Drop .archc files to open an architecture, or images to attach.');
+        return;
+      }
+
+      // Single file drop
+      const file = files[0]!;
+
+      if (file.name.toLowerCase().endsWith('.archc')) {
+        loadFromDroppedFile(file);
+        return;
+      }
+
+      if (file.type.startsWith('image/')) {
+        showToast('Image dropped — image attachment to nodes is not yet available.');
+        return;
+      }
+
+      // Unsupported file type
+      showToast(`Unsupported file type: "${file.name}". Only .archc files can be opened.`);
     },
-    [screenToFlowPosition, addNode],
+    [screenToFlowPosition, addNode, loadFromDroppedFile, showToast],
   );
 
   // Handle right-click on canvas background (via React Flow onPaneContextMenu)
@@ -883,7 +973,42 @@ function CanvasInner() {
       onPointerUp={longPressHandlers.onPointerUp}
       onPointerMove={longPressHandlers.onPointerMove}
       onPointerCancel={longPressHandlers.onPointerCancel}
+      onDragEnter={onCanvasDragEnter}
+      onDragLeave={onCanvasDragLeave}
     >
+      {/* Drop zone overlay - shown when dragging files over canvas */}
+      {isDragOverWithFiles && (
+        <div
+          className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center"
+          data-testid="drop-zone-overlay"
+          style={{
+            backgroundColor: 'hsla(var(--pine), 0.08)',
+            border: '3px dashed hsl(var(--pine))',
+            borderRadius: '12px',
+          }}
+        >
+          <div
+            className="flex flex-col items-center gap-2 px-6 py-4 rounded-xl"
+            style={{
+              backgroundColor: 'hsl(var(--surface))',
+              boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.2)',
+            }}
+          >
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--pine))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span className="text-sm font-medium" style={{ color: 'hsl(var(--text))' }}>
+              Drop .archc file to open
+            </span>
+            <span className="text-xs" style={{ color: 'hsl(var(--subtle))' }}>
+              or drop an image to attach
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
