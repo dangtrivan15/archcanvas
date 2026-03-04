@@ -1,14 +1,16 @@
 /**
- * CanvasContextMenu - right-click context menu for the canvas background.
- * Shows options: Add Node, Paste, Auto-Layout, Fit View.
+ * CanvasContextMenu - touch-optimized context menu for the canvas background.
+ * Uses TouchContextMenu for iOS-native styling with blur backdrop, spring animation,
+ * cascading submenu for "Add Node" with node type categories.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import { Plus, Clipboard, LayoutGrid, Maximize } from 'lucide-react';
+import { useCallback } from 'react';
+import { Plus, Clipboard, LayoutGrid, Maximize, Server, Database, Radio, Globe, Activity } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { TouchContextMenu, type ContextMenuItem } from './TouchContextMenu';
 
 interface CanvasContextMenuProps {
   x: number;
@@ -17,51 +19,27 @@ interface CanvasContextMenuProps {
 }
 
 export function CanvasContextMenu({ x, y, onClose }: CanvasContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const autoLayout = useCoreStore((s) => s.autoLayout);
+  const addNode = useCoreStore((s) => s.addNode);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const navigationPath = useNavigationStore((s) => s.path);
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    // Use timeout to avoid immediate dismissal from the same click
-    const id = setTimeout(() => {
-      document.addEventListener('mousedown', handleClick);
-    }, 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('mousedown', handleClick);
-    };
-  }, [onClose]);
+  const handleAddNodeType = useCallback(
+    (type: string, displayName: string) => {
+      addNode({ type, displayName });
+      onClose();
+    },
+    [addNode, onClose],
+  );
 
-  // Close on Escape
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  const handleAddNode = useCallback(() => {
-    // Open the NodeDef browser panel if not already open
-    if (!leftPanelOpen) {
-      toggleLeftPanel();
-    }
+  const handleBrowseAll = useCallback(() => {
+    if (!leftPanelOpen) toggleLeftPanel();
     onClose();
   }, [leftPanelOpen, toggleLeftPanel, onClose]);
 
   const handlePaste = useCallback(() => {
-    // Paste from clipboard (placeholder - reads clipboard if available)
     onClose();
   }, [onClose]);
 
@@ -76,36 +54,63 @@ export function CanvasContextMenu({ x, y, onClose }: CanvasContextMenuProps) {
     requestFitView();
   }, [requestFitView, onClose]);
 
-  const menuItems = [
-    { label: 'Add Node', icon: Plus, action: handleAddNode, testId: 'ctx-add-node' },
+  const addNodeSubmenu: ContextMenuItem[] = [
+    {
+      label: 'Service',
+      icon: Server,
+      action: () => handleAddNodeType('compute/service', 'New Service'),
+      testId: 'ctx-add-service',
+    },
+    {
+      label: 'Database',
+      icon: Database,
+      action: () => handleAddNodeType('data/database', 'New Database'),
+      testId: 'ctx-add-database',
+    },
+    {
+      label: 'Message Queue',
+      icon: Radio,
+      action: () => handleAddNodeType('messaging/message-queue', 'New Queue'),
+      testId: 'ctx-add-queue',
+    },
+    {
+      label: 'Load Balancer',
+      icon: Globe,
+      action: () => handleAddNodeType('network/load-balancer', 'New LB'),
+      testId: 'ctx-add-lb',
+    },
+    {
+      label: 'Monitoring',
+      icon: Activity,
+      action: () => handleAddNodeType('observability/monitoring', 'New Monitor'),
+      testId: 'ctx-add-monitoring',
+    },
+    {
+      label: 'Browse All\u2026',
+      icon: Plus,
+      action: handleBrowseAll,
+      testId: 'ctx-add-browse',
+    },
+  ];
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      label: 'Add Node',
+      icon: Plus,
+      testId: 'ctx-add-node',
+      submenu: addNodeSubmenu,
+    },
     { label: 'Paste', icon: Clipboard, action: handlePaste, testId: 'ctx-paste' },
     { label: 'Auto-Layout', icon: LayoutGrid, action: handleAutoLayout, testId: 'ctx-auto-layout' },
     { label: 'Fit View', icon: Maximize, action: handleFitView, testId: 'ctx-fit-view' },
   ];
 
   return (
-    <div
-      ref={menuRef}
-      className="fixed bg-white border border-gray-200 rounded-md shadow-lg py-1 z-[100] min-w-[180px]"
-      style={{ left: x, top: y }}
-      role="menu"
-      data-testid="canvas-context-menu"
-    >
-      {menuItems.map((item, index) => {
-        const Icon = item.icon;
-        return (
-          <button
-            key={item.label}
-            onClick={item.action}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors text-left touch-target-row"
-            role="menuitem"
-            data-testid={item.testId}
-          >
-            <Icon className="w-4 h-4" />
-            <span>{item.label}</span>
-          </button>
-        );
-      })}
-    </div>
+    <TouchContextMenu
+      x={x}
+      y={y}
+      onClose={onClose}
+      items={menuItems}
+    />
   );
 }
