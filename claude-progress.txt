@@ -7932,3 +7932,60 @@ Modified three files to add subtle accent color tints to node backgrounds:
 
 #### Current completion status:
 - Feature #353 marked passing
+
+---
+
+## Session: Feature #369 - Apple Pencil Pressure Detection
+Date: 2026-03-04
+
+### Feature #369 - PASSING
+
+New Store (src/store/pencilStore.ts): Zustand slice with isPencilActive, pressure (0-1), tiltX/tiltY, azimuthAngle, pencilDetected.
+New Hook (src/hooks/usePencilInput.ts): Global pointer event listeners filtering pointerType pen. Utility functions isPencilDrawEvent and isNavigationEvent.
+New Component (src/components/toolbar/PencilIndicator.tsx): Pen icon in toolbar when stylus detected.
+Integration: PencilIndicator in Toolbar, usePencilInput in Canvas.
+Tests: 27 passing (8 store + 19 hook).
+Verification: Build clean, zero console errors, no mock data.
+Commit: 8eea794
+Status: Feature #369 marked passing
+
+---
+
+## Session: Feature #350 - Node content has transparent background inside SVG shapes
+Date: 2026-03-04
+
+### Feature #350: Transparent Content Background in Shaped Nodes - PASSING
+
+#### Problem:
+Shaped nodes (Cylinder, Cloud, Hexagon, Parallelogram, Stadium, Document) had visible opaque rectangular content boxes inside their SVG shape outlines. The header area had a tinted background (`colorToBackground(effectiveColor, 0.15)` gradient), ref-source indicators had `bg-iris/10` backgrounds with borders, and badge sections had `border-t border-border/40` creating visible rectangular boundaries inside non-rectangular shapes.
+
+#### Fix Applied to All 6 Shaped Node Components:
+1. **Removed `headerBgStyle`** - Eliminated the `useMemo` that created a gradient background for the header area
+2. **Removed `colorToBackground` import** - No longer needed since header backgrounds are transparent
+3. **Removed `style={headerBgStyle}`** from header divs - Headers now have transparent backgrounds
+4. **Removed `bg-iris/10 rounded`** from ref-source-indicator - No more visible tinted box for ref indicators
+5. **Removed `border-t border-border/40`** from badges section - No inner horizontal line
+6. **Removed `border-b border-iris/20`** from ref-source-indicator (CylinderNode) - No inner borders
+
+#### Files Modified:
+- src/components/nodes/CylinderNode.tsx
+- src/components/nodes/CloudNode.tsx
+- src/components/nodes/HexagonNode.tsx
+- src/components/nodes/ParallelogramNode.tsx
+- src/components/nodes/StadiumNode.tsx
+- src/components/nodes/DocumentNode.tsx
+
+#### GenericNode (rectangle) NOT modified:
+- GenericNode keeps its own background/border styling since it's a rectangular node where box styling is appropriate
+
+#### Verification:
+- Added Database (cylinder), CDN (cloud), Message Queue (parallelogram), API Gateway (hexagon) nodes
+- All shaped nodes render content directly on shape fill with no inner rectangular boxes
+- Shape outline is the only visible boundary
+- Zero console errors (0 errors, 0 warnings)
+- Build succeeds cleanly
+- All related tests pass: NodeShell (26), handlePositions (47), customNodeColors (53)
+- Feature #350 marked passing
+
+#### Current completion status:
+- Features passing: 343+ of 366
