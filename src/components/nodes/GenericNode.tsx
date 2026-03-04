@@ -22,7 +22,7 @@ import { getEffectiveNodeColor, colorToBackground, colorTintedShadow, colorGlowS
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import {
-  Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
+  Box, Server, Database, HardDrive, Radio, Globe, Shield, ShieldCheck, Cpu, Layers,
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
   ExternalLink,
 } from 'lucide-react';
@@ -37,6 +37,7 @@ export const iconMap: Record<string, React.ElementType> = {
   Radio,
   Globe,
   Shield,
+  ShieldCheck,
   Cpu,
   Layers,
   Box,
