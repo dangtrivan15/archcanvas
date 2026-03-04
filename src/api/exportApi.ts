@@ -5,6 +5,8 @@
 import type { ArchGraph, ArchNode } from '@/types/graph';
 import { flattenNodes, countAllNodes } from '@/core/graph/graphQuery';
 import { toPng, toSvg } from 'html-to-image';
+import { isNative } from '@/core/platform/platformBridge';
+import { getFileSystemAdapter } from '@/core/platform/fileSystemAdapter';
 
 export class ExportApi {
   constructor() {
@@ -146,15 +148,28 @@ export class ExportApi {
         },
       });
 
-      // Trigger download
       const baseName = fileName.replace(/\.archc$/, '').replace(/\.png$/, '');
-      const link = document.createElement('a');
-      link.download = `${baseName}.png`;
-      link.href = dataUrl;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+
+      if (isNative()) {
+        // Native iOS: convert data URL to binary and share via native share sheet
+        const base64Data = dataUrl.split(',')[1] || '';
+        const binaryStr = atob(base64Data);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const adapter = await getFileSystemAdapter();
+        await adapter.shareFile(bytes, `${baseName}.png`, 'image/png');
+      } else {
+        // Web: trigger download via anchor element
+        const link = document.createElement('a');
+        link.download = `${baseName}.png`;
+        link.href = dataUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
 
       console.log(`[ExportApi] PNG exported: ${baseName}.png`);
       return true;
@@ -193,22 +208,28 @@ export class ExportApi {
         },
       });
 
-      // Convert data URL to SVG text for clean download
       const baseName = fileName.replace(/\.archc$/, '').replace(/\.svg$/, '');
 
       // Decode the data URL to get raw SVG content
       const svgContent = decodeURIComponent(dataUrl.split(',')[1] || '');
 
-      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.download = `${baseName}.svg`;
-      link.href = url;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      if (isNative()) {
+        // Native iOS: share SVG text via native share sheet
+        const adapter = await getFileSystemAdapter();
+        await adapter.shareFile(svgContent, `${baseName}.svg`, 'image/svg+xml');
+      } else {
+        // Web: trigger download via blob URL + anchor element
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `${baseName}.svg`;
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
 
       console.log(`[ExportApi] SVG exported: ${baseName}.svg`);
       return true;
