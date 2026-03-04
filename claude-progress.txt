@@ -6017,3 +6017,76 @@ SESSION: 2026-03-04 - Feature #292
 - 34 new tests (all passing)
 - Zero console errors in browser
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Features #299, #300
+==================================================
+
+## What was accomplished:
+
+### Feature #299: Node.js File System Adapter (PASSING)
+- Created src/core/platform/nodeFileSystemAdapter.ts:
+  - NodeFileSystemAdapter implements FileSystemAdapter interface
+  - Uses Node.js `fs` module for read/write operations (dynamic imports)
+  - pickFile(): reads from constructor path, returns PickFileResult
+  - readFile(path): reads from any path with error handling
+  - saveFile(data, handle?): writes to handle path or constructor path, creates parent dirs
+  - saveFileAs(data, suggestedName): writes to new path, creates parent dirs
+  - shareFile(data, filename): writes file to disk (no share sheet in CLI)
+  - fileExists(path): convenience method for checking file existence
+  - NodeFileSystemError class with code (ENOENT/EACCES/EISDIR/ENOSPC) and filePath
+  - Graceful error wrapping for all filesystem errors
+  - All paths resolved to absolute via path.resolve()
+- 42 unit tests covering:
+  - Constructor, pickFile, readFile, saveFile, saveFileAs, shareFile
+  - fileExists, NodeFileSystemError class
+  - .archc round-trip with SHA-256 checksum verification
+  - Corruption detection, binary integrity
+  - Edge cases: empty files, large files, unicode filenames, spaces in names
+  - FileSystemAdapter interface compliance
+- All tests passing
+- Committed: 62ab517
+
+### Feature #300: CLI Graph Context Manager (PASSING)
+- Created src/cli/context.ts with GraphContext class:
+  - Static factory methods:
+    - loadFromFile(filePath, options?): reads .archc, decodes protobuf, converts to ArchGraph
+    - createNew(name?): creates empty ArchGraph for init scenarios
+  - Exposes:
+    - textApi: TextApi instance for reading/mutating architecture
+    - exportApi: ExportApi instance for content generation
+    - registry: RegistryManager with built-in nodedefs
+  - Modification tracking:
+    - isModified(): reference comparison + explicit dirty flag
+    - markModified(): explicit dirty flag setter
+    - markClean(): called after save (private)
+  - Persistence:
+    - save(force?): encodes graph to .archc, writes to original path (skips if unmodified)
+    - saveAs(filePath): saves to new path, updates internal state
+    - saveSidecar(): generates .summary.md alongside .archc file
+  - Content generation:
+    - generateMarkdownSummary(): delegates to ExportApi
+    - generateMermaid(): delegates to ExportApi
+    - generateSummaryWithMermaid(): delegates to ExportApi
+  - LoadOptions: skipChecksumVerification for recovery
+  - Preserves original creation timestamp across re-saves
+- 54 unit tests covering:
+  - createNew, loadFromFile, modification tracking
+  - save, saveAs, saveSidecar
+  - Content generation (markdown, mermaid)
+  - Full load → mutate → save round-trip (multiple scenarios)
+  - TextApi integration (listNodes, describe, search, getNode, removeNode)
+  - ExportApi integration (markdown, mermaid with edges)
+  - Edge cases: empty graph, multiple saves, different paths
+- All tests passing
+- Committed: 9b310d4
+
+## Test files created:
+- test/unit/core/nodeFileSystemAdapter.test.ts: 42 tests
+- test/unit/cli/context.test.ts: 54 tests
+
+## Current completion status:
+- Features passing: 300 of 315 (95.2%)
+- 96 new tests across 2 test files (all passing)
+- Zero console errors in production code
+- No mock data patterns in production code
