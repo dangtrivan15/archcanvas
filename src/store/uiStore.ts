@@ -44,14 +44,73 @@ export interface IntegrityWarningDialogInfo {
 }
 
 /** Default and min/max panel widths in pixels */
-export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 export const LEFT_PANEL_MIN_WIDTH = 180;
 export const LEFT_PANEL_MAX_WIDTH = 400;
+
+/** Viewport-relative left panel default: 15% of viewport width, floor 180px, ceiling 360px */
+export const LEFT_PANEL_VIEWPORT_RATIO = 0.15;
+export const LEFT_PANEL_DEFAULT_FLOOR = 180;
+export const LEFT_PANEL_DEFAULT_CEILING = 360;
+
+/**
+ * Compute the default left panel width based on viewport width.
+ * Returns 15% of viewportWidth, clamped between floor (180px) and ceiling (360px).
+ */
+export function computeDefaultLeftPanelWidth(viewportWidth?: number): number {
+  const vw = viewportWidth ?? (typeof window !== 'undefined' ? window.innerWidth : 1440);
+  const raw = Math.round(vw * LEFT_PANEL_VIEWPORT_RATIO);
+  return Math.max(LEFT_PANEL_DEFAULT_FLOOR, Math.min(LEFT_PANEL_DEFAULT_CEILING, raw));
+}
+
+/** Legacy constant kept for backward compatibility */
+export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 /** Drag below this threshold to snap-collapse the left panel */
 export const LEFT_PANEL_COLLAPSE_THRESHOLD = 120;
 export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
 export const RIGHT_PANEL_MIN_WIDTH = 220;
 export const RIGHT_PANEL_MAX_WIDTH = 500;
+
+/** Min/max toolbar height in pixels */
+export const TOOLBAR_MIN_HEIGHT = 36;
+export const TOOLBAR_MAX_HEIGHT = 80;
+
+/** Viewport-relative toolbar default: 3.5% of viewport height, floor 40px, ceiling 64px */
+export const TOOLBAR_VIEWPORT_RATIO = 0.035;
+export const TOOLBAR_DEFAULT_FLOOR = 40;
+export const TOOLBAR_DEFAULT_CEILING = 64;
+
+/**
+ * Compute the default toolbar height based on viewport height.
+ * Returns 3.5% of viewportHeight, clamped between floor (40px) and ceiling (64px).
+ */
+export function computeDefaultToolbarHeight(viewportHeight?: number): number {
+  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
+  const raw = Math.round(vh * TOOLBAR_VIEWPORT_RATIO);
+  return Math.max(TOOLBAR_DEFAULT_FLOOR, Math.min(TOOLBAR_DEFAULT_CEILING, raw));
+}
+
+/** Legacy constant kept for backward compatibility */
+export const TOOLBAR_DEFAULT_HEIGHT = 48;
+
+/** Default and min/max status bar height in pixels */
+export const STATUS_BAR_DEFAULT_HEIGHT = 24;
+export const STATUS_BAR_MIN_HEIGHT = 20;
+export const STATUS_BAR_MAX_HEIGHT = 48;
+
+/** Viewport-relative status bar default: 2% of viewport height, floor 20px, ceiling 40px */
+export const STATUS_BAR_VIEWPORT_RATIO = 0.02;
+export const STATUS_BAR_DEFAULT_FLOOR = 20;
+export const STATUS_BAR_DEFAULT_CEILING = 40;
+
+/**
+ * Compute the default status bar height based on viewport height.
+ * Returns 2% of viewportHeight, clamped between floor (20px) and ceiling (40px).
+ */
+export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
+  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
+  const raw = Math.round(vh * STATUS_BAR_VIEWPORT_RATIO);
+  return Math.max(STATUS_BAR_DEFAULT_FLOOR, Math.min(STATUS_BAR_DEFAULT_CEILING, raw));
+}
 
 export interface UIStoreState {
   // Panel visibility
@@ -62,6 +121,14 @@ export interface UIStoreState {
   // Panel widths (in pixels, for drag-resize)
   leftPanelWidth: number;
   rightPanelWidth: number;
+
+  // Toolbar and status bar heights (in pixels, clamped to min/max)
+  toolbarHeight: number;
+  /** Whether the user has explicitly set a custom toolbar height */
+  toolbarHeightCustomized: boolean;
+  statusBarHeight: number;
+  /** Whether the user has explicitly set a custom status bar height */
+  statusBarHeightCustomized: boolean;
 
   // Delete confirmation dialog
   deleteDialogOpen: boolean;
@@ -155,6 +222,14 @@ export interface UIStoreState {
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
 
+  // Toolbar and status bar height actions
+  setToolbarHeight: (height: number) => void;
+  /** Update toolbar height from viewport resize (only if not customized) */
+  updateToolbarHeightFromViewport: (viewportHeight: number) => void;
+  setStatusBarHeight: (height: number) => void;
+  /** Update status bar height from viewport resize (only if not customized) */
+  updateStatusBarHeightFromViewport: (viewportHeight: number) => void;
+
   // Keyboard shortcuts help dialog actions
   openShortcutsHelp: () => void;
   closeShortcutsHelp: () => void;
@@ -204,8 +279,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
   leftPanelOpen: true,
   rightPanelOpen: false,
   rightPanelTab: 'properties',
-  leftPanelWidth: LEFT_PANEL_DEFAULT_WIDTH,
+  leftPanelWidth: computeDefaultLeftPanelWidth(),
   rightPanelWidth: RIGHT_PANEL_DEFAULT_WIDTH,
+  toolbarHeight: computeDefaultToolbarHeight(),
+  toolbarHeightCustomized: false,
+  statusBarHeight: computeDefaultStatusBarHeight(),
+  statusBarHeightCustomized: false,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -304,6 +383,24 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setRightPanelWidth: (width) =>
     set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)) }),
+
+  setToolbarHeight: (height) =>
+    set({ toolbarHeight: Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height)), toolbarHeightCustomized: true }),
+
+  updateToolbarHeightFromViewport: (viewportHeight) =>
+    set((s) => {
+      if (s.toolbarHeightCustomized) return s;
+      return { toolbarHeight: computeDefaultToolbarHeight(viewportHeight) };
+    }),
+
+  setStatusBarHeight: (height) =>
+    set({ statusBarHeight: Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height)), statusBarHeightCustomized: true }),
+
+  updateStatusBarHeightFromViewport: (viewportHeight) =>
+    set((s) => {
+      if (s.statusBarHeightCustomized) return s;
+      return { statusBarHeight: computeDefaultStatusBarHeight(viewportHeight) };
+    }),
 
   openShortcutsHelp: () =>
     set({ shortcutsHelpOpen: true }),
