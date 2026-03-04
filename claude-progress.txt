@@ -7738,3 +7738,69 @@ Created src/analyze/fileSelector.ts with intelligent file selection and content 
 #### Current completion status:
 - Feature #342 marked passing
 - Features passing: 342 of 349 (98.0%)
+
+---
+
+## Session: Feature #343 - AI Architecture Inference Engine
+Date: 2026-03-04
+
+### Feature #343: AI Architecture Inference Engine - PASSING
+
+#### Implementation:
+Created src/analyze/inferEngine.ts with comprehensive AI-powered architecture inference:
+
+- **inferArchitecture(sender, projectProfile, keyFiles, options)**: Main API function
+  - Takes an AIMessageSender (dependency injection for testability)
+  - Takes ProjectProfile from detector.ts and KeyFileSet from fileSelector.ts
+  - Returns InferenceResult with nodes, edges, architecture name/description
+
+- **Analysis Depth Modes**:
+  - 'quick': Single prompt, structure-only analysis (1 AI call)
+  - 'standard': Multi-step analysis (3 AI calls): identify components → relationships → map to types
+  - 'deep': Standard + refinement step (4 AI calls): adds detailed notes and suggestions
+
+- **Zod Validation**: inferenceResultSchema validates AI responses with recursive node schema
+  - InferredNode: id, type, displayName, description, codeRefs[], children[] (recursive)
+  - InferredEdge: from, to, type (SYNC/ASYNC/DATA_FLOW), label
+  - InferredCodeRef: path, role (SOURCE/API_SPEC/SCHEMA/DEPLOYMENT/CONFIG/TEST)
+  - Step-specific schemas for intermediate validation
+
+- **extractJson()**: Robust JSON extraction from AI text (handles markdown fences, surrounding text)
+- **batchFiles()**: Splits files into batches that fit within token limits
+- **mergeResults()**: Deduplicates and merges results from multiple inference batches
+- **sendWithRetry()**: Exponential backoff retry logic (configurable maxRetries, 30s max delay)
+- **Streaming**: onProgress callback for step-by-step progress, onChunk for text streaming
+- **Abort support**: AbortSignal propagation through all async operations
+
+- **AIMessageSender interface**: Dependency injection for the AI client
+  - Allows testing without real API calls
+  - Compatible with existing src/ai/client.ts sendMessage function
+
+- **Built-in Node Types**: All 15 node types included in prompts:
+  - Compute: service, function, worker, api-gateway
+  - Data: database, cache, object-storage, repository
+  - Messaging: message-queue, event-bus, stream-processor
+  - Network: load-balancer, cdn
+  - Observability: logging, monitoring
+
+#### Tests (test/unit/analyze/inferEngine.test.ts): 49 tests
+- extractJson: plain text, markdown fences, nested objects, surrounding text
+- batchFiles: single batch, multi-batch, oversized files, empty input
+- mergeResults: single result, dedup nodes/edges, architecture name from first
+- inferenceResultSchema: valid data, missing fields, empty nodes, invalid edge types, recursive children, code ref roles
+- inferArchitecture quick: valid result, single call, project profile in prompt, node types in prompt, file contents, markdown fences, progress events, streaming
+- inferArchitecture standard: 3 AI calls, progress events per step, partial results
+- inferArchitecture deep: 4 AI calls, step 4 refinement event
+- Error handling: invalid JSON, schema validation, raw response in errors, retry logic, max retries exceeded, abort signal
+- Token batching: multi-batch merge in quick mode
+- Profile formatting: infra signals, data stores, empty profile
+
+#### Verification:
+- 191 total analyze tests passing (49 new + 142 existing)
+- TypeScript compiles with no errors (tsc --noEmit)
+- No mock data patterns in production code
+- Committed: c2a6bdc
+
+#### Current completion status:
+- Feature #343 marked passing
+- Features passing: 343 of 349 (98.3%)
