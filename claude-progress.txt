@@ -9253,3 +9253,31 @@ Date: 2026-03-05
 #### Commit: c054d3d
 #### Feature #395 marked passing
 #### Progress: 384/426 features passing (90.1%)
+
+---
+
+## Session: Feature #391 - Add client/mobile-app node type
+Date: 2026-03-05
+
+### Feature #391: Add `client/mobile-app` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/client/mobile-app.yaml`:
+  - namespace: client, name: mobile-app, displayName: Mobile App
+  - shape: rectangle, icon: Smartphone
+  - Args: platform (enum: iOS/Android/React Native/Flutter/Kotlin Multiplatform), minOsVersion (string), pushNotifications (boolean)
+  - Ports: api-call (outbound), push-receive (outbound)
+  - Variants: iOS App, Android App, React Native App, Flutter App, Kotlin Multiplatform App
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Smartphone icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows CLIENT category with Mobile App: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Smartphone icon displayed: PASS
+- Args shown: platform=iOS, minOsVersion (empty), pushNotifications=false: PASS
+- Outbound port handles visible (api-call, push-receive): PASS
+- Console: 27 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Feature #391 marked passing
