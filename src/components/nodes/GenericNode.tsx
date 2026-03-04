@@ -26,6 +26,7 @@ import {
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive,
   ExternalLink,
 } from 'lucide-react';
+import { NodeIconBadge } from './NodeIconBadge';
 
 export const iconMap: Record<string, React.ElementType> = {
   Server,
@@ -128,7 +129,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
   const borderStyle = useMemo(
     () => ({
-      borderColor: selected ? 'hsl(var(--iris))' : `${effectiveColor}66`,
+      borderColor: selected ? 'hsl(var(--iris))' : `${effectiveColor}B3`,
     }),
     [effectiveColor, selected],
   );
@@ -217,11 +218,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         style={headerBgStyle}
         data-testid="node-header"
       >
-        <Icon
-          className="w-4 h-4 shrink-0"
-          style={{ color: effectiveColor }}
-          data-testid="node-icon"
-        />
+        <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
         <div className="min-w-0 flex-1">
           {isInlineEditing ? (
             <input
