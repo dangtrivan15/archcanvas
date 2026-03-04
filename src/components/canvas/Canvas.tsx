@@ -44,6 +44,7 @@ import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { findNearestNode, findTopLeftNode, extractPositions, type Direction } from '@/core/input/spatialNavigation';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { formatBindingDisplay } from '@/core/input';
+import { useViewportSize } from '@/hooks/useViewportSize';
 
 export function Canvas() {
   return (
@@ -75,6 +76,9 @@ function CanvasInner() {
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
   const showToast = useUIStore((s) => s.showToast);
+
+  // Viewport size for responsive behavior (hide minimap/controls in compact mode)
+  const { isCompact } = useViewportSize();
   const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
   const placementMode = useUIStore((s) => s.placementMode);
   const placementInfo = useUIStore((s) => s.placementInfo);
@@ -974,20 +978,26 @@ function CanvasInner() {
           color="#cbd5e1"
           data-testid="canvas-background-grid"
         />
-        <Controls
-          position="bottom-right"
-          aria-label="Canvas controls"
-          data-testid="canvas-controls"
-        />
-        <MiniMap
-          position="bottom-left"
-          nodeStrokeWidth={3}
-          pannable
-          zoomable
-          className="!bg-white !border !border-gray-200"
-          aria-label="Mini map"
-          data-testid="canvas-minimap"
-        />
+        {/* Controls - hidden in compact mode (toolbar provides zoom) */}
+        {!isCompact && (
+          <Controls
+            position="bottom-right"
+            aria-label="Canvas controls"
+            data-testid="canvas-controls"
+          />
+        )}
+        {/* MiniMap - hidden in compact mode (takes too much space in narrow viewports) */}
+        {!isCompact && (
+          <MiniMap
+            position="bottom-left"
+            nodeStrokeWidth={3}
+            pannable
+            zoomable
+            className="!bg-white !border !border-gray-200"
+            aria-label="Mini map"
+            data-testid="canvas-minimap"
+          />
+        )}
         {/* Shortcut hints are now merged into ModeStatusBar */}
       </ReactFlow>
 
