@@ -545,33 +545,82 @@ export function createProgram(): Command {
       }),
     );
 
-  // ─── serve (stub) ──────────────────────────────────────────
+  // ─── serve ──────────────────────────────────────────────────
 
   program
     .command('serve')
-    .description('Start an HTTP server for the architecture API')
-    .option('--port <port>', 'Server port', '3100')
+    .description('Start an HTTP REST API server for the architecture')
+    .option('--port <port>', 'Server port', '3001')
+    .option('--host <host>', 'Server host', 'localhost')
+    .option('--cors', 'Enable CORS headers for browser-based agents', false)
     .action(
-      withErrorHandler(async () => {
-        console.error(
-          'Error: The "serve" command is not yet implemented. It will start an HTTP API server.',
-        );
-        process.exit(1);
+      withErrorHandler(async (cmdOpts: { port: string; host: string; cors: boolean }) => {
+        const opts = program.opts<GlobalOptions>();
+        if (!opts.file) {
+          console.error('Error: --file <path> is required for the serve command.');
+          process.exit(1);
+        }
+        const ctx = await loadContext(opts);
+        const { startHttpServer } = await import('@/cli/server/httpServer');
+        await startHttpServer(ctx, {
+          port: parseInt(cmdOpts.port, 10),
+          host: cmdOpts.host,
+          cors: cmdOpts.cors,
+        });
       }),
     );
 
-  // ─── mcp (stub) ────────────────────────────────────────────
+  // ─── mcp ─────────────────────────────────────────────────────
 
   program
     .command('mcp')
     .description('Start an MCP (Model Context Protocol) server')
     .option('--transport <type>', 'Transport: stdio or sse', 'stdio')
+    .option('--file <path>', 'Load an .archc file for persistent file-backed mode')
+    .option('-f <path>', 'Alias for --file')
     .action(
-      withErrorHandler(async () => {
-        console.error(
-          'Error: The "mcp" command is not yet implemented. It will start an MCP server.',
-        );
-        process.exit(1);
+      withErrorHandler(async (_cmdOpts: Record<string, string>, cmd: Command) => {
+        const opts = cmd.optsWithGlobals() as GlobalOptions & { transport: string; file?: string; f?: string };
+        const filePath = opts.file ?? opts.f ?? (cmd.parent?.opts() as GlobalOptions)?.file;
+
+        const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
+        const { createMcpServer } = await import('@/mcp/server');
+        const { RegistryManager } = await import('@/core/registry/registryManager');
+        const { TextApi } = await import('@/api/textApi');
+        const { createEmptyGraph } = await import('@/core/graph/graphEngine');
+
+        let graphContext: GraphContext | undefined;
+        let textApi: InstanceType<typeof TextApi>;
+        const registry = new RegistryManager();
+        registry.initialize();
+
+        if (filePath) {
+          graphContext = await GraphContext.loadFromFile(filePath);
+          textApi = graphContext.textApi;
+          if (!opts.quiet) {
+            console.error(`[MCP] Loaded architecture from: ${filePath}`);
+          }
+        } else {
+          const graph = createEmptyGraph('Untitled Architecture');
+          textApi = new TextApi(graph, registry);
+          if (!opts.quiet) {
+            console.error('[MCP] Starting with empty graph (no --file specified)');
+          }
+        }
+
+        const mcpServer = createMcpServer(textApi, registry, graphContext);
+        const transport = new StdioServerTransport();
+        await mcpServer.connect(transport);
+
+        if (!opts.quiet) {
+          console.error('[MCP] ArchCanvas MCP server running on stdio');
+        }
+
+        // Keep process alive until transport closes
+        await new Promise<void>((resolve) => {
+          process.on('SIGINT', resolve);
+          process.on('SIGTERM', resolve);
+        });
       }),
     );
 
