@@ -39,6 +39,9 @@ import authProviderYaml from './builtins/core/security/auth-provider.yaml?raw';
 import vaultYaml from './builtins/core/security/vault.yaml?raw';
 import wafYaml from './builtins/core/security/waf.yaml?raw';
 
+// Integration namespace
+import thirdPartyApiYaml from './builtins/core/integration/third-party-api.yaml?raw';
+
 /**
  * Metadata about a YAML nodedef source file.
  */
@@ -54,7 +57,7 @@ export interface YamlNodeDefSource {
 }
 
 /**
- * All 18 built-in nodedef YAML sources, organized for loading.
+ * All 19 built-in nodedef YAML sources, organized for loading.
  */
 export const YAML_SOURCES: YamlNodeDefSource[] = [
   // Compute (4)
@@ -81,6 +84,8 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'security/auth-provider.yaml', rawYaml: authProviderYaml, namespace: 'security', name: 'auth-provider' },
   { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },
   { filePath: 'security/waf.yaml', rawYaml: wafYaml, namespace: 'security', name: 'waf' },
+  // Integration (1)
+  { filePath: 'integration/third-party-api.yaml', rawYaml: thirdPartyApiYaml, namespace: 'integration', name: 'third-party-api' },
 ];
 
 /**
@@ -92,7 +97,7 @@ export function parseNodeDefYaml(yamlContent: string): unknown {
 }
 
 /**
- * Load all 18 built-in nodedef YAML files and parse them into objects.
+ * Load all 19 built-in nodedef YAML files and parse them into objects.
  * Returns an array of parsed objects ready for validation.
  */
 export function loadAllBuiltinYaml(): NodeDef[] {
