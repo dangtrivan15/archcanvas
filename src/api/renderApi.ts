@@ -128,11 +128,26 @@ export class RenderApi {
         const name = type.split('/')[1];
         if (name === 'database') return 'database';
         if (name === 'cache') return 'cache';
+        if (name === 'object-storage') return 'object-storage';
+        if (name === 'repository') return 'repository';
         return 'generic';
       }
       case 'messaging': {
         const name = type.split('/')[1];
         if (name === 'message-queue') return 'queue';
+        if (name === 'stream-processor') return 'stream-processor';
+        if (name === 'event-bus') return 'event-bus';
+        return 'generic';
+      }
+      case 'network': {
+        const name = type.split('/')[1];
+        if (name === 'load-balancer') return 'gateway';
+        if (name === 'cdn') return 'cdn';
+        return 'generic';
+      }
+      case 'observability': {
+        const name = type.split('/')[1];
+        if (name === 'logging') return 'logging';
         return 'generic';
       }
       default:
