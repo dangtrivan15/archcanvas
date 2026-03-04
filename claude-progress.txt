@@ -8118,3 +8118,42 @@ Date: 2026-03-04
 - 34/34 Playwright checks passed at 320/507/678/800/1024/1200px
 - Zero console errors, no horizontal overflow
 - Feature #373 marked passing
+
+---
+
+## Session: Feature #357 - Node type label styled as subtle pill badge
+Date: 2026-03-04
+
+### Feature #357: Node type label pill badge - PASSING
+
+#### Implementation:
+Changed the node type label (e.g., 'compute/service', 'data/database') from plain text to a pill-shaped badge across all 7 node components.
+
+#### Changes Applied:
+- Changed `<div>` to `<span>` for inline pill display
+- Added `rounded-full` for pill shape
+- Added `bg-highlight-med` for visible but subtle background color
+- Changed from `text-xs` to `text-[10px]` for smaller badge text
+- Added `leading-4` for proper line height
+- Added `px-1.5 py-0` for horizontal padding
+- Added `mt-0.5` for slight spacing below the display name
+- Kept `truncate max-w-full` for overflow handling
+- Preserved `data-testid="node-type-label"` for testing
+
+#### Files Modified:
+- src/components/nodes/GenericNode.tsx
+- src/components/nodes/CylinderNode.tsx
+- src/components/nodes/CloudNode.tsx
+- src/components/nodes/HexagonNode.tsx
+- src/components/nodes/ParallelogramNode.tsx
+- src/components/nodes/StadiumNode.tsx
+- src/components/nodes/DocumentNode.tsx
+
+#### Verification:
+- Added Service (rectangle) and Database (cylinder) nodes to canvas
+- Both show pill badge with rounded background, clearly distinct from display name
+- Zero console errors (0 errors, 0 warnings)
+- Build succeeds cleanly
+- Feature #357 marked passing
+
+#### Commit: c91fdf8
