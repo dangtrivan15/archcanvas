@@ -6694,3 +6694,61 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Feature #262 marked passing
+
+---
+
+## Session: Feature #330 - Additional Theme Presets
+Date: 2026-03-04
+
+### Feature #330: Additional Theme Presets (Nord, Catppuccin) - PASSING
+
+#### Implementation:
+- Added Nord and Catppuccin Mocha themes to src/theme/themes.ts
+- Updated barrel exports in src/theme/index.ts
+- All 7 themes visible and working in Settings dialog
+- Theme persistence verified across reload
+- Zero console errors, no mock data
+- Committed: 544bc9d
+- Features passing: 314 of 332 (94.6%)
+
+---
+
+## Session: Feature #304 - CLI Query Commands
+Date: 2026-03-04
+
+### Feature #304: CLI Query Commands (describe, list-nodes, get-node, search, list-nodedefs) - PASSING
+
+#### What was already implemented:
+- src/cli/commands/query.ts: All 5 query commands with registerQueryCommands()
+- src/cli/index.ts: Same 5 commands inline (duplicate)
+- test/unit/cli/queryCommands.test.ts: 37 tests
+
+#### Issues found and fixed:
+1. **Diagnostic log pollution**: console.log from [TextApi], [RegistryManager], [ExportApi]
+   constructors was going to stdout, breaking JSON pipe output.
+   - Added suppressDiagnosticLogs() in src/cli/index.ts that redirects [bracketed] logs to stderr
+   - Applied in loadContext() and list-nodedefs command
+   - Applied same fix in src/cli/commands/query.ts
+
+2. **Protobuf ESM import**: src/proto/archcanvas.pb.js used `import * as $protobuf from "protobufjs/minimal"`
+   which doesn't work in Node.js ESM (tsx). Changed to `import $protobufDefault from "protobufjs/minimal"`
+   with CJS→ESM normalization.
+
+3. **Test fixture bug**: queryCommands.test.ts used `targetNodeId` instead of `nodeId` in addNote params.
+
+#### Verification:
+- All 37 query command tests passing
+- All 148 CLI tests passing (57 entry point + 37 query + 54 context)
+- All 5 commands verified via actual CLI:
+  - `archcanvas describe --file f.archc --format json` ✓
+  - `archcanvas list-nodes --file f.archc --format json/table/human` ✓
+  - `archcanvas get-node <id> --file f.archc --format json` ✓
+  - `archcanvas search <query> --file f.archc --format json` ✓
+  - `archcanvas list-nodedefs [--namespace ns] --format json` ✓
+- stdout clean for piping (no diagnostic messages)
+- App loads in browser with zero console errors
+- Committed: aafad0a
+
+#### Current completion status:
+- Features passing: 316+ of 332 (95.2%)
+
