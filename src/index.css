@@ -84,6 +84,41 @@ a:focus-visible {
   outline-offset: 1px;
 }
 
+/* ─── React Flow Theme Integration ─── */
+/* Controls panel respects active theme */
+.react-flow__controls {
+  background-color: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px hsl(var(--overlay) / 0.2);
+}
+
+.react-flow__controls button {
+  background-color: hsl(var(--surface));
+  border-bottom-color: hsl(var(--border));
+  color: hsl(var(--text));
+  fill: hsl(var(--text));
+}
+
+.react-flow__controls button:hover {
+  background-color: hsl(var(--highlight-low));
+}
+
+.react-flow__controls button svg {
+  fill: hsl(var(--text));
+}
+
+/* Edge labels follow theme */
+.react-flow__edge-textwrapper .react-flow__edge-text {
+  fill: hsl(var(--text));
+}
+
+/* Selection box follows theme accent */
+.react-flow__selection {
+  background: hsl(var(--iris) / 0.08);
+  border: 1px solid hsl(var(--iris) / 0.4);
+}
+
 /* Smooth transition for keyboard bulk node movement (Alt+Arrow) */
 .react-flow__node {
   transition: transform 150ms ease-out;
@@ -95,16 +130,16 @@ a:focus-visible {
 }
 
 /* ─── Connect Mode Visual Feedback ─── */
-/* Source node: green glow border */
+/* Source node: green glow border (uses theme pine) */
 .react-flow__node.connect-mode-source {
-  box-shadow: 0 0 0 3px #22c55e, 0 0 12px 4px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 0 3px hsl(var(--pine)), 0 0 12px 4px hsl(var(--pine) / 0.4);
   border-radius: 8px;
   z-index: 10;
 }
 
-/* Target candidate: subtle blue highlight */
+/* Target candidate: accent highlight (uses theme iris) */
 .react-flow__node.connect-mode-target {
-  box-shadow: 0 0 0 2px #3b82f6, 0 0 8px 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px hsl(var(--iris)), 0 0 8px 2px hsl(var(--iris) / 0.3);
   border-radius: 8px;
   z-index: 10;
 }

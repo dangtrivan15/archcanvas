@@ -6752,3 +6752,54 @@ Date: 2026-03-04
 #### Current completion status:
 - Features passing: 316+ of 332 (95.2%)
 
+
+
+---
+
+## Session: Feature #329 - Theme Presets: Rose Pine, Rose Pine Moon, Rose Pine Dawn
+Date: 2026-03-04
+
+### Feature #329: Theme Presets: Rose Pine, Rose Pine Moon, Rose Pine Dawn - PASSING
+
+#### Implementation:
+- src/themes/rose-pine.ts (new file):
+  - Exports rosePine, rosePineMoon, rosePineDawn Theme objects
+  - Exports THEME_PRESETS map keyed by theme id
+  - All color values computed directly from official Rose Pine hex palette
+  - HSL format without hsl() wrapper for CSS custom property injection
+  - Rose Pine: base=#191724, text=#e0def4, iris=#c4a7e7, love=#eb6f92, etc.
+  - Moon: base=#232136, pine=#3e8fb0 (adjusted from base variant)
+  - Dawn: base=#faf4ed, text=#575279, iris=#907aa9 (light variant)
+  - Fixed several color inaccuracies from previous implementation:
+    - Rose Pine subtle: corrected to #908caa (248 15% 61%)
+    - Rose Pine highlight-med: corrected to #403d52 (249 15% 28%)
+    - Rose Pine highlight-high: corrected to #524f67 (248 13% 36%)
+    - Moon overlay: corrected to #393552 (248 22% 27%)
+    - Moon pine: corrected to #3e8fb0 (197 48% 47%)
+    - Dawn surface: corrected to #fffaf3 (35 100% 98%)
+    - Dawn iris: corrected to #907aa9 (268 22% 57%)
+    - Dawn love: corrected to #b4637a (343 35% 55%)
+    - Dawn rose: corrected to #d7827e (3 53% 67%)
+
+- src/theme/themes.ts:
+  - Now imports Rose Pine themes from src/themes/rose-pine.ts
+  - Re-exports as rosePineTheme/rosePineMoonTheme/rosePineDawnTheme for backward compatibility
+  - Uses THEME_PRESETS spread in themes map
+
+- src/theme/index.ts:
+  - Added THEME_PRESETS to barrel exports
+
+#### Browser verification:
+- All three variants render correctly:
+  - Rose Pine: Dark with warm purple undertones
+  - Moon: Softer dark variant with lighter surfaces
+  - Dawn: Light variant with warm cream/beige tones
+- Theme selector shows all 7 themes (Light, Dark, Nord, Catppuccin, Rose Pine x3)
+- Canvas, sidebar, toolbar, status bar, settings dialog all apply themes
+- Zero JS console errors
+- No mock data patterns found
+- 176/178 test files passing (2 pre-existing failures in configurable shortcuts)
+
+#### Current completion status:
+- Features passing: 314+ of 332
+
