@@ -32,6 +32,7 @@ import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focu
 import { useNavigationStore } from '@/store/navigationStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { initializeApiKey } from '@/ai/config';
+import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -330,44 +331,49 @@ export function App() {
         />
 
         {/* Status Bar */}
-        <footer className="border-t flex flex-col shrink-0 safe-area-bottom safe-area-left safe-area-right" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
-          <div className="flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0">
-          <span data-testid="node-count">Nodes: {nodeCount}</span>
-          <span className="mx-2">|</span>
-          <span data-testid="edge-count">Edges: {edgeCount}</span>
-          <span className="mx-2">|</span>
-          <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
-          {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
-            <>
-              <span className="mx-2">|</span>
-              <span data-testid="selection-count" className="text-blue-500 font-medium">
-                Selected: {selectedNodeIds.length > 0 ? `${selectedNodeIds.length} node${selectedNodeIds.length !== 1 ? 's' : ''}` : `${selectedEdgeIds.length} edge${selectedEdgeIds.length !== 1 ? 's' : ''}`}
-              </span>
-            </>
-          )}
-          {autosaveStatusMessage && (
-            <>
-              <span className="mx-2">|</span>
-              <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
-            </>
-          )}
-          <span className="mx-2">|</span>
-          <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
-          {navigationPath.length > 0 && (
-            <>
-              <span className="mx-2">|</span>
-              <span data-testid="breadcrumb" className="text-blue-600 font-medium">
-                {(() => {
-                  const parts = ['Root'];
-                  for (const nodeId of navigationPath) {
-                    const node = findNode(graph, nodeId);
-                    parts.push(node ? node.displayName : nodeId);
-                  }
-                  return parts.join(' > ');
-                })()}
-              </span>
-            </>
-          )}
+        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
+          <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
+            {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) */}
+            <ModeStatusBar />
+            {/* Separator */}
+            <span className="mx-1 text-gray-300">|</span>
+            {/* Legacy info items */}
+            <span data-testid="node-count">Nodes: {nodeCount}</span>
+            <span className="mx-1 text-gray-300">|</span>
+            <span data-testid="edge-count">Edges: {edgeCount}</span>
+            <span className="mx-1 text-gray-300">|</span>
+            <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+            {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
+              <>
+                <span className="mx-1 text-gray-300">|</span>
+                <span data-testid="selection-count" className="text-blue-500 font-medium">
+                  Selected: {selectedNodeIds.length > 0 ? `${selectedNodeIds.length} node${selectedNodeIds.length !== 1 ? 's' : ''}` : `${selectedEdgeIds.length} edge${selectedEdgeIds.length !== 1 ? 's' : ''}`}
+                </span>
+              </>
+            )}
+            {autosaveStatusMessage && (
+              <>
+                <span className="mx-1 text-gray-300">|</span>
+                <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
+              </>
+            )}
+            <span className="mx-1 text-gray-300">|</span>
+            <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
+            {navigationPath.length > 0 && (
+              <>
+                <span className="mx-1 text-gray-300">|</span>
+                <span data-testid="breadcrumb" className="text-blue-600 font-medium">
+                  {(() => {
+                    const parts = ['Root'];
+                    for (const nodeId of navigationPath) {
+                      const node = findNode(graph, nodeId);
+                      parts.push(node ? node.displayName : nodeId);
+                    }
+                    return parts.join(' > ');
+                  })()}
+                </span>
+              </>
+            )}
           </div>
         </footer>
       </div>

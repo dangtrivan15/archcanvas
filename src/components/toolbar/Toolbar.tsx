@@ -61,7 +61,7 @@ export function Toolbar() {
 
   return (
     <header
-      className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar relative"
+      className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar relative overflow-hidden"
       style={{ height: `${toolbarHeight}px`, padding: isCompact ? '0 0.5rem' : '0 0.75rem' }}
       role="toolbar"
       aria-label="Main toolbar"
@@ -74,8 +74,8 @@ export function Toolbar() {
         </span>
       </div>
 
-      {/* Divider */}
-      <div className="w-px h-6 bg-[hsl(var(--border))] mx-1" />
+      {/* Divider - scales proportionally with toolbar height */}
+      <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />
 
       {/* Menu buttons - pass compact prop for icon-only mode */}
       <FileMenu compact={isCompact} />
@@ -83,8 +83,8 @@ export function Toolbar() {
       <ConnectNodesButton compact={isCompact} />
       <LayoutMenu compact={isCompact} />
 
-      {/* Divider */}
-      {!isCompact && <div className="w-px h-6 bg-[hsl(var(--border))] mx-1" />}
+      {/* Divider - scales proportionally with toolbar height */}
+      {!isCompact && <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />}
 
       {/* Filename display - hidden in compact mode */}
       {!isCompact && (
