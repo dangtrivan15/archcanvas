@@ -72,7 +72,7 @@ function getBaseUrl(): string {
 export async function sendMessage(options: SendMessageOptions): Promise<SendMessageResult> {
   const apiKey = getAnthropicApiKey();
   if (!apiKey) {
-    throw new AIClientError('Anthropic API key not configured. Set VITE_ANTHROPIC_API_KEY in .env');
+    throw new AIClientError('Anthropic API key not configured. Set your API key in Settings.');
   }
 
   const {

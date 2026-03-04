@@ -11,14 +11,24 @@ let package = Package(
             targets: ["CapApp-SPM"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.1.0")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.1.0"),
+        .package(name: "CapacitorClipboard", path: "../../../node_modules/@capacitor/clipboard"),
+        .package(name: "CapacitorFilesystem", path: "../../../node_modules/@capacitor/filesystem"),
+        .package(name: "CapacitorPreferences", path: "../../../node_modules/@capacitor/preferences"),
+        .package(name: "CapacitorShare", path: "../../../node_modules/@capacitor/share"),
+        .package(name: "CapawesomeCapacitorFilePicker", path: "../../../node_modules/@capawesome/capacitor-file-picker")
     ],
     targets: [
         .target(
             name: "CapApp-SPM",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm")
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "CapacitorClipboard", package: "CapacitorClipboard"),
+                .product(name: "CapacitorFilesystem", package: "CapacitorFilesystem"),
+                .product(name: "CapacitorPreferences", package: "CapacitorPreferences"),
+                .product(name: "CapacitorShare", package: "CapacitorShare"),
+                .product(name: "CapawesomeCapacitorFilePicker", package: "CapawesomeCapacitorFilePicker")
             ]
         )
     ]

@@ -12,6 +12,7 @@ import { Send, Bot, User, Info, Loader2, Sparkles, Check, AlertTriangle, Refresh
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useAIStore } from '@/store/aiStore';
+import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { sendMessage as sendAIMessage, AIClientError } from '@/ai/client';
 import { isAIConfigured } from '@/ai/config';
@@ -78,6 +79,8 @@ interface ChatMessage {
 export function AIChatTab() {
   const graph = useCoreStore((s) => s.graph);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
+
+  const openSettingsDialog = useUIStore((s) => s.openSettingsDialog);
 
   // Persisted messages from AI store (select raw conversations to avoid infinite re-render)
   const conversations = useAIStore((s) => s.conversations);
@@ -280,8 +283,8 @@ export function AIChatTab() {
 
       // Simulate streaming with character-by-character reveal
       const fullResponse = node
-        ? `I understand you're asking about "${node.displayName}". To enable real AI responses, set the VITE_ANTHROPIC_API_KEY environment variable in your .env file.`
-        : `To enable AI-powered architecture analysis, set the VITE_ANTHROPIC_API_KEY environment variable in your .env file.`;
+        ? `I understand you're asking about "${node.displayName}". To enable real AI responses, set your API key in Settings (gear icon in the toolbar).`
+        : `To enable AI-powered architecture analysis, set your API key in Settings (gear icon in the toolbar).`;
 
       let charIndex = 0;
       const interval = setInterval(() => {
@@ -403,13 +406,16 @@ export function AIChatTab() {
                 AI API key not configured
               </p>
               <p className="text-xs text-amber-700 mt-1" data-testid="ai-missing-key-instructions">
-                To enable AI-powered analysis, add your Anthropic API key:
+                Set your Anthropic API key in Settings to enable AI-powered analysis.
               </p>
-              <ol className="text-xs text-amber-700 mt-1 ml-4 list-decimal space-y-0.5">
-                <li>Create a <code className="bg-amber-100 px-1 rounded">.env</code> file in the project root</li>
-                <li>Add: <code className="bg-amber-100 px-1 rounded">VITE_ANTHROPIC_API_KEY=sk-ant-...</code></li>
-                <li>Restart the development server</li>
-              </ol>
+              <button
+                type="button"
+                onClick={openSettingsDialog}
+                className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                data-testid="ai-open-settings-button"
+              >
+                Open Settings
+              </button>
               <p className="text-xs text-amber-600 mt-1.5">
                 You can still use the app — AI chat will use placeholder responses.
               </p>
