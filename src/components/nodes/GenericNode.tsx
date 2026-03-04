@@ -18,7 +18,7 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
-import { getEffectiveNodeColor, colorToBackground, colorTintedShadow } from '@/utils/nodeColors';
+import { getEffectiveNodeColor, colorToBackground, colorTintedShadow, colorGlowShadow } from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import {
@@ -129,15 +129,17 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
   const borderStyle = useMemo(
     () => ({
-      borderColor: selected ? 'hsl(var(--iris))' : `${effectiveColor}B3`,
+      borderColor: selected ? effectiveColor : `${effectiveColor}B3`,
     }),
     [effectiveColor, selected],
   );
 
-  // Color-tinted drop shadow: subtle at rest, more prominent when selected/hovered
+  // Color-tinted drop shadow + accent glow halo when selected
   const shadowStyle = useMemo(
     () => ({
-      boxShadow: colorTintedShadow(effectiveColor, selected ? 'hover' : 'default'),
+      boxShadow: selected
+        ? `${colorTintedShadow(effectiveColor, 'hover')}, ${colorGlowShadow(effectiveColor)}`
+        : colorTintedShadow(effectiveColor, 'default'),
     }),
     [effectiveColor, selected],
   );
@@ -148,7 +150,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         border-2 rounded-lg min-w-[200px] max-w-[280px]
         transition-shadow relative overflow-hidden
         ${isRef ? 'border-dashed' : ''}
-        ${selected ? 'ring-2 ring-iris/30' : ''}
+        ${selected ? '' : ''}
       `}
       style={{
         ...borderStyle,
@@ -239,9 +241,9 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
               {nodeData.displayName}
             </div>
           )}
-          <div className="text-xs text-muted-foreground truncate" data-testid="node-type-label">
+          <span className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full" data-testid="node-type-label">
             {nodeData.nodedefType}
-          </div>
+          </span>
         </div>
         {isRef && (
           <span

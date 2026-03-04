@@ -19,6 +19,7 @@ import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
+import { NodeIconBadge } from './NodeIconBadge';
 import { Box, ExternalLink } from 'lucide-react';
 import { NodeShell } from './shapes/NodeShell';
 import { getHandlePosition } from './shapes/handlePositions';
@@ -138,11 +139,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
             className="flex items-center gap-2 px-2 py-1.5"
             data-testid="node-header"
           >
-            <Icon
-              className="w-4 h-4 shrink-0"
-              style={{ color: effectiveColor }}
-              data-testid="node-icon"
-            />
+            <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
             <div className="min-w-0 flex-1">
               {isInlineEditing ? (
                 <input
@@ -163,9 +160,9 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
                   {nodeData.displayName}
                 </div>
               )}
-              <div className="text-xs text-muted-foreground truncate" data-testid="node-type-label">
+              <span className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full" data-testid="node-type-label">
                 {nodeData.nodedefType}
-              </div>
+              </span>
             </div>
             {isRef && (
               <span className="shrink-0" data-testid="ref-indicator" title={`Reference to: ${nodeData.refSource}`}>
