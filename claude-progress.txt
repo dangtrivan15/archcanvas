@@ -8517,3 +8517,40 @@ Date: 2026-03-05
 #### Commits:
 - 54c5e0a: feat: implement inter-app drag & drop for files on canvas (feature #371)
 
+---
+
+## Session: Feature #372 - Drag and Drop Nodes from Palette
+Date: 2026-03-05
+
+### Feature #372: Drag and Drop Nodes from Palette - PASSING
+
+#### Implementation:
+
+**src/components/canvas/NodePalette.tsx (NEW):**
+- Touch-friendly node palette using pointer events (not HTML5 DnD) for iPad/touch compatibility
+- Uses setPointerCapture for reliable drag tracking across elements
+- Ghost preview div follows finger/pencil during drag
+- Drag threshold of 8px before activation to prevent accidental drags
+- On release: calls screenToFlowPosition + addNode to create node at correct canvas position
+- Search input filters nodedefs by name, description, and tags
+- Grouped by namespace (Compute, Data, Messaging, Network, Observability)
+- Two responsive modes: floating panel (regular/wide) and bottom sheet (compact)
+- FAB-style toggle button
+
+**src/components/canvas/Canvas.tsx:**
+- Imported and rendered NodePalette component inside canvas container
+
+#### Verification:
+1. Palette toggle: PASS - opens/closes via FAB button
+2. Service drag to canvas: PASS - node created at correct position (Nodes: 1)
+3. Database drag to canvas: PASS - second node created (Nodes: 2, correct cylinder shape)
+4. Search filter: PASS - typing data filters to Data namespace + related items
+5. Compact mode: PASS - bottom sheet renders correctly at 500px width
+6. Close button: PASS - palette closes on X click
+7. Console errors: PASS - 0 errors, 0 warnings
+
+#### Commits:
+- b952d81: feat: implement touch-friendly drag and drop node palette (feature #372)
+
+#### Current completion status:
+- Feature #372 marked passing
