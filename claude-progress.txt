@@ -9340,3 +9340,33 @@ Date: 2026-03-05
 #### Commit: 34df4dc
 #### Feature #397 marked passing
 #### Progress: 387/426 features passing (90.8%)
+
+---
+
+## Session: Feature #398 - Add ai/llm-provider node type
+Date: 2026-03-05
+
+### Feature #398: Add `ai/llm-provider` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/llm-provider.yaml`:
+  - namespace: ai, name: llm-provider, displayName: LLM Provider
+  - shape: rectangle, icon: Brain
+  - Args: provider (enum: OpenAI/Anthropic/Google Gemini/AWS Bedrock/Ollama/vLLM/Custom), model (string), maxTokens (number), temperature (number), streaming (boolean)
+  - Ports: prompt-request (inbound), completion-response (outbound)
+  - Variants: GPT-4o, Claude Sonnet, Gemini Pro
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Brain icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 1 entry (LLM Provider): PASS
+- Node renders on canvas with rectangle shape: PASS
+- Brain icon displayed: PASS
+- Args shown: provider=OpenAI, model=gpt-4o, maxTokens=4096, +2 more: PASS
+- Inbound port handle (prompt-request) visible: PASS
+- Outbound port handle (completion-response) visible: PASS
+- Console: 30 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: b3bfadc
+#### Feature #398 marked passing
