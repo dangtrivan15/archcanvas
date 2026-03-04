@@ -5653,3 +5653,85 @@ SESSION: 2026-03-04 - Features #286, #297
 - All 3476 tests passing across 161 test files
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Features #282, #294
+==================================================
+
+## What was accomplished:
+
+### Feature #282: Settings panel with API key input and persistence (PASSING)
+- Created src/core/platform/preferencesAdapter.ts:
+  - get(key) / set(key, value) / remove(key) abstraction
+  - Web: localStorage, Native: @capacitor/preferences (dynamic import)
+  - Namespaced keys with "archcanvas:" prefix
+- Created src/components/settings/SettingsDialog.tsx:
+  - Modal dialog following existing pattern (ErrorDialog, DeleteConfirmationDialog)
+  - API key input (password type) with show/hide toggle (Eye/EyeOff icons)
+  - Save button: persists key via preferencesAdapter, shows "Saved" confirmation
+  - Clear button: removes stored key
+  - Status indicator: "from Settings" / "from environment" / "none"
+  - Toast notifications on save/clear
+  - Focus trap, Escape to close, backdrop click to close
+- Updated src/ai/config.ts:
+  - Added initializeApiKey(): loads stored key from preferences on startup
+  - Added setStoredApiKey() / clearStoredApiKey() / getCachedApiKey()
+  - getAnthropicApiKey() priority: stored key > VITE_ANTHROPIC_API_KEY env var
+  - isAIConfigured() works with both sources
+- Updated src/store/uiStore.ts:
+  - Added settingsDialogOpen state, openSettingsDialog/closeSettingsDialog actions
+- Updated src/components/toolbar/Toolbar.tsx:
+  - Added Settings gear icon button (before help/? button)
+- Updated src/components/panels/AIChatTab.tsx:
+  - Missing key banner now says "Set your API key in Settings"
+  - Added "Open Settings" button that opens SettingsDialog
+  - Placeholder responses reference Settings instead of .env
+- Updated src/ai/client.ts: error message references Settings
+- Updated src/App.tsx:
+  - Added SettingsDialog to overlay section
+  - Calls initializeApiKey() before initialize() on startup
+- Installed @capacitor/preferences dependency
+
+## Browser verification (Feature #282):
+1. Settings gear icon visible in toolbar ✓
+2. Click gear → Settings dialog opens ✓
+3. Title "Settings" with gear icon, X close button ✓
+4. "AI Configuration" section with privacy description ✓
+5. API key input (password) with "sk-ant-api03-..." placeholder ✓
+6. Show/Hide toggle: Eye icon toggles input type ✓
+7. Enter key → Save → button shows "Saved" with checkmark ✓
+8. Status: "Using API key from Settings (stored locally)" ✓
+9. Clear button → key removed, Save disabled ✓
+10. Status: "No API key configured. AI features are disabled." ✓
+11. Toast: "API key saved successfully" / "API key cleared" ✓
+12. Escape closes dialog ✓
+13. Page reload → key persisted (localStorage) ✓
+14. AI Chat panel: "Set your API key in Settings" + "Open Settings" link ✓
+15. Console: 0 errors, 0 warnings ✓
+16. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+- All 3476 tests passing across 161 test files
+- Committed: 6919265
+
+### Feature #294: Anthropic API direct calls in native mode (PASSING)
+- Updated src/ai/client.ts getBaseUrl():
+  - Native (Capacitor iOS): https://api.anthropic.com directly (no CORS in WKWebView)
+  - Web development: /api/anthropic (Vite proxy, existing behavior)
+  - Web production: https://api.anthropic.com directly
+- Imported isNative() from platformBridge
+- Added ANTHROPIC_DIRECT_URL constant
+- API key already passed via x-api-key header from getAnthropicApiKey()
+  (which now checks stored preference first, then env var via Feature #282)
+
+## Browser verification (Feature #294):
+1. App loads correctly on localhost:5173 ✓
+2. Console: 0 errors, 0 warnings ✓
+3. In web dev mode, proxy URL /api/anthropic is used (isNative() = false, DEV = true) ✓
+4. No mock data patterns in production code ✓
+- All 3476 tests passing across 161 test files
+- Committed: 8968410
+
+## Current completion status:
+- Features passing: 288 of 298 (96.6%)
+- Zero console errors
+- No mock data patterns in production code
+- All 3476 tests passing across 161 test files
