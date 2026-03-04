@@ -95,7 +95,7 @@ function NodeShellComponent({
   const strokeColor = selected
     ? 'hsl(var(--iris))'
     : color
-      ? `${color}66`
+      ? `${color}B3`
       : 'hsl(var(--border))';
   const strokeWidth = selected ? 2.5 : 1.5;
 
