@@ -6652,3 +6652,45 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 310+ of 332
+
+---
+
+## Session: Feature #262 - Mode Status Bar
+Date: 2026-03-04
+
+### Feature #262: Mode Status Bar - PASSING
+
+#### Implementation:
+- src/components/canvas/ModeStatusBar.tsx (new file):
+  - Derives canvas mode from UI state: NORMAL (default), CONNECT (connectStep/connectSource set), EDIT (inlineEditNodeId/placementMode)
+  - Mode badge with color coding: Normal=gray, Connect=blue, Edit=green
+  - Animated mode transitions via CSS transition-all duration-200 ease-in-out
+  - Clickable breadcrumb navigation (Root > Parent > Child)
+  - Zoom percentage display (tabular-nums for consistent width)
+  - Selection count (nodes + edges combined)
+  - Context-sensitive shortcut hints per mode
+  - Exported deriveCanvasMode() for testability
+
+- src/App.tsx:
+  - Integrated ModeStatusBar into existing status bar footer
+  - Added semi-transparent background (bg-[hsl(var(--background)/0.85)]) with backdrop blur
+  - ModeStatusBar renders alongside existing legacy status items
+
+- test/unit/components/ModeStatusBar.test.ts: 6 tests (all passing)
+  - NORMAL mode when no mode active
+  - CONNECT mode when connectStep or connectSource set
+  - EDIT mode when inlineEditNodeId or placementMode active
+  - CONNECT takes priority over EDIT
+
+#### Browser verification:
+- NORMAL badge displayed (gray) on fresh load
+- Root breadcrumb visible and clickable
+- Context hints show: "C to connect · F2 to edit · / to search"
+- Zoom percentage accurate (100%)
+- Semi-transparent footer with backdrop blur
+- Zero JS console errors
+- No mock data patterns detected
+- Committed: bb9524e
+
+#### Current completion status:
+- Feature #262 marked passing
