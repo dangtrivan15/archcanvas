@@ -30,6 +30,8 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { GraphContext } from '@/cli/context';
 import { createQueryRoutes, type RouteDefinition } from './routes/query';
+import { createMutationRoutes } from './routes/mutation';
+import { createExportRoutes } from './routes/export';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -84,14 +86,6 @@ function sendError(res: ServerResponse, statusCode: number, message: string): vo
   sendJson(res, statusCode, { error: message });
 }
 
-function sendText(res: ServerResponse, statusCode: number, text: string): void {
-  res.writeHead(statusCode, {
-    'Content-Type': 'text/plain; charset=utf-8',
-    'Content-Length': Buffer.byteLength(text),
-  });
-  res.end(text);
-}
-
 // ─── Route Matching ──────────────────────────────────────────
 
 type RouteHandler = (req: IncomingMessage, res: ServerResponse, params: Record<string, string>, body?: unknown) => Promise<void>;
@@ -136,8 +130,10 @@ function matchRoute(routes: Route[], method: string, pathname: string): RouteMat
 export function createHttpServer(ctx: GraphContext, options: HttpServerOptions): Server {
   const { cors } = options;
 
-  // ─── Import query routes from routes/query.ts ────────────
+  // ─── Import routes from route modules ────────────────────
   const queryRoutes: RouteDefinition[] = createQueryRoutes(ctx);
+  const mutationRoutes: RouteDefinition[] = createMutationRoutes(ctx);
+  const exportRoutes: RouteDefinition[] = createExportRoutes(ctx);
 
   // ─── Define Routes ───────────────────────────────────────
 
@@ -150,140 +146,11 @@ export function createHttpServer(ctx: GraphContext, options: HttpServerOptions):
     // Register all query routes from routes/query.ts
     ...queryRoutes.map((r) => defineRoute(r.method, r.path, r.handler)),
 
-    // Add node
-    defineRoute('POST', '/api/nodes', async (_req, res, _params, body) => {
-      const data = body as Record<string, unknown> | undefined;
-      if (!data || !data.type || !data.displayName) {
-        sendError(res, 400, 'Request body must include "type" and "displayName"');
-        return;
-      }
-      const node = ctx.textApi.addNode({
-        type: data.type as string,
-        displayName: data.displayName as string,
-        parentId: data.parentId as string | undefined,
-      });
-      await ctx.save();
-      sendJson(res, 201, { id: node.id, type: node.type, displayName: node.displayName });
-    }),
+    // Register all mutation routes from routes/mutation.ts
+    ...mutationRoutes.map((r) => defineRoute(r.method, r.path, r.handler)),
 
-    // Update node
-    defineRoute('PATCH', '/api/nodes/:id', async (_req, res, params, body) => {
-      const data = body as Record<string, unknown> | undefined;
-      if (!data) {
-        sendError(res, 400, 'Request body required');
-        return;
-      }
-      try {
-        ctx.textApi.updateNode(params.id!, data);
-        await ctx.save();
-        sendJson(res, 200, { updated: params.id });
-      } catch (err: unknown) {
-        sendError(res, 404, err instanceof Error ? err.message : String(err));
-      }
-    }),
-
-    // Remove node
-    defineRoute('DELETE', '/api/nodes/:id', async (_req, res, params) => {
-      try {
-        ctx.textApi.removeNode(params.id!);
-        await ctx.save();
-        sendJson(res, 200, { removed: params.id });
-      } catch (err: unknown) {
-        sendError(res, 404, err instanceof Error ? err.message : String(err));
-      }
-    }),
-
-    // Add note to node
-    defineRoute('POST', '/api/nodes/:id/notes', async (_req, res, params, body) => {
-      const data = body as Record<string, unknown> | undefined;
-      if (!data || !data.content) {
-        sendError(res, 400, 'Request body must include "content"');
-        return;
-      }
-      const note = ctx.textApi.addNote({
-        nodeId: params.id!,
-        content: data.content as string,
-        author: (data.author as string) ?? 'http-api',
-      });
-      await ctx.save();
-      sendJson(res, 201, { id: note.id, nodeId: params.id, content: note.content });
-    }),
-
-    // Remove note from node
-    defineRoute('DELETE', '/api/nodes/:nid/notes/:noteId', async (_req, res, params) => {
-      try {
-        ctx.textApi.removeNote(params.nid!, params.noteId!);
-        await ctx.save();
-        sendJson(res, 200, { removed: params.noteId });
-      } catch (err: unknown) {
-        sendError(res, 404, err instanceof Error ? err.message : String(err));
-      }
-    }),
-
-    // Add edge
-    defineRoute('POST', '/api/edges', async (_req, res, _params, body) => {
-      const data = body as Record<string, unknown> | undefined;
-      if (!data || !data.fromNode || !data.toNode) {
-        sendError(res, 400, 'Request body must include "fromNode" and "toNode"');
-        return;
-      }
-      const edge = ctx.textApi.addEdge({
-        fromNode: data.fromNode as string,
-        toNode: data.toNode as string,
-        type: (data.type as 'sync' | 'async' | 'data-flow') ?? 'sync',
-        label: data.label as string | undefined,
-      });
-      await ctx.save();
-      sendJson(res, 201, { id: edge.id, from: edge.fromNode, to: edge.toNode, type: edge.type });
-    }),
-
-    // Update edge
-    defineRoute('PATCH', '/api/edges/:id', async (_req, res, params, body) => {
-      const data = body as Record<string, unknown> | undefined;
-      if (!data) {
-        sendError(res, 400, 'Request body required');
-        return;
-      }
-      try {
-        ctx.textApi.updateEdge(params.id!, data as Record<string, unknown>);
-        await ctx.save();
-        sendJson(res, 200, { updated: params.id });
-      } catch (err: unknown) {
-        sendError(res, 404, err instanceof Error ? err.message : String(err));
-      }
-    }),
-
-    // Remove edge
-    defineRoute('DELETE', '/api/edges/:id', async (_req, res, params) => {
-      try {
-        ctx.textApi.removeEdge(params.id!);
-        await ctx.save();
-        sendJson(res, 200, { removed: params.id });
-      } catch (err: unknown) {
-        sendError(res, 404, err instanceof Error ? err.message : String(err));
-      }
-    }),
-
-    // Export markdown
-    defineRoute('GET', '/api/export/markdown', async (_req, res) => {
-      const graph = ctx.getGraph();
-      const content = ctx.exportApi.generateMarkdownSummary(graph);
-      sendText(res, 200, content);
-    }),
-
-    // Export mermaid
-    defineRoute('GET', '/api/export/mermaid', async (_req, res) => {
-      const graph = ctx.getGraph();
-      const content = ctx.exportApi.generateMermaid(graph);
-      sendText(res, 200, content);
-    }),
-
-    // Export summary (markdown + mermaid)
-    defineRoute('GET', '/api/export/summary', async (_req, res) => {
-      const graph = ctx.getGraph();
-      const content = ctx.exportApi.generateSummaryWithMermaid(graph);
-      sendText(res, 200, content);
-    }),
+    // Register all export routes from routes/export.ts
+    ...exportRoutes.map((r) => defineRoute(r.method, r.path, r.handler)),
   ];
 
   // ─── Request Handler ─────────────────────────────────────
