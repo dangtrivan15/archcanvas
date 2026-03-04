@@ -117,7 +117,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
   // Compute style objects for color application
   const headerBgStyle = useMemo(
-    () => ({ backgroundColor: colorToBackground(effectiveColor, 0.1) }),
+    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
     [effectiveColor],
   );
 
@@ -143,7 +143,9 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       `}
       style={{
         ...borderStyle,
-        backgroundColor: isRef ? 'hsl(var(--iris) / 0.08)' : 'hsl(var(--surface))',
+        background: isRef
+          ? 'hsl(var(--iris) / 0.08)'
+          : `linear-gradient(${effectiveColor}0F, ${effectiveColor}0F), hsl(var(--surface))`,
       }}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -192,7 +194,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Node header with tinted background */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-border/40"
+        className="flex items-center gap-2 px-3 py-2"
         style={headerBgStyle}
         data-testid="node-header"
       >

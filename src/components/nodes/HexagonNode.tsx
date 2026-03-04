@@ -87,7 +87,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
   );
 
   const headerBgStyle = useMemo(
-    () => ({ backgroundColor: colorToBackground(effectiveColor, 0.1) }),
+    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
     [effectiveColor],
   );
 
@@ -142,7 +142,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
         <div className="flex flex-col items-center text-center px-4 py-2">
           {/* Header with icon and name */}
           <div
-            className="flex items-center gap-2 w-full justify-center py-1 rounded"
+            className="flex items-center gap-2 w-full justify-center py-1"
             style={headerBgStyle}
           >
             <Icon
