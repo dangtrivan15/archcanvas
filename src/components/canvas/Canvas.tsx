@@ -75,6 +75,16 @@ function CanvasInner() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
   const showToast = useUIStore((s) => s.showToast);
 
+  // Connect mode state
+  const connectSource = useUIStore((s) => s.connectSource);
+  const connectTarget = useUIStore((s) => s.connectTarget);
+  const connectStep = useUIStore((s) => s.connectStep);
+  const enterConnectMode = useUIStore((s) => s.enterConnectMode);
+  const setConnectTarget = useUIStore((s) => s.setConnectTarget);
+  const advanceToPickType = useUIStore((s) => s.advanceToPickType);
+  const exitConnectMode = useUIStore((s) => s.exitConnectMode);
+  const addEdge = useCoreStore((s) => s.addEdge);
+
   // Viewport size for responsive behavior (hide minimap/controls in compact mode)
   const { isCompact } = useViewportSize();
   const openConnectionDialog = useUIStore((s) => s.openConnectionDialog);
@@ -738,6 +748,120 @@ function CanvasInner() {
     return () => document.removeEventListener('keydown', handleBulkMove, true);
   }, [moveNodes, placementMode]);
 
+  // ─── Connect Mode keyboard handler ──────────────────────────────
+  // 'C' enters connect mode (source = selected node).
+  // Arrow keys navigate to target. Enter → type picker. 1/2/3 picks type. Escape cancels.
+  useEffect(() => {
+    const handleConnectMode = (e: KeyboardEvent) => {
+      if (isActiveElementTextInput()) return;
+
+      const uiState = useUIStore.getState();
+      const { connectSource: src, connectTarget: tgt, connectStep: step } = uiState;
+      const inConnectMode = step !== null;
+
+      // ── Enter Connect Mode with 'C' ──
+      if (!inConnectMode && e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        // Skip if any dialog/overlay is open
+        if (
+          uiState.deleteDialogOpen || uiState.connectionDialogOpen ||
+          uiState.unsavedChangesDialogOpen || uiState.errorDialogOpen ||
+          uiState.integrityWarningDialogOpen || uiState.commandPaletteOpen ||
+          uiState.quickSearchOpen || uiState.placementMode
+        ) return;
+
+        const canvasState = useCanvasStore.getState();
+        const currentSelected = canvasState.selectedNodeId;
+        if (!currentSelected) return; // Need a selected node as source
+
+        e.preventDefault();
+        enterConnectMode(currentSelected);
+
+        // Auto-select first target candidate via spatial navigation
+        const positions = extractPositions(rfNodes);
+        const firstTarget = findNearestNode(currentSelected, 'right', positions)
+          || findNearestNode(currentSelected, 'down', positions)
+          || findTopLeftNode(positions.filter(p => p.id !== currentSelected));
+        if (firstTarget) {
+          setConnectTarget(firstTarget);
+          // Pan to target
+          const targetPos = positions.find(p => p.id === firstTarget);
+          if (targetPos) {
+            const currentViewport = getViewport();
+            setCenter(targetPos.x, targetPos.y, { zoom: currentViewport.zoom, duration: 200 });
+          }
+        }
+        return;
+      }
+
+      if (!inConnectMode) return;
+
+      // ── Escape: cancel connect mode ──
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        exitConnectMode();
+        return;
+      }
+
+      // ── In 'select-target' step: arrow keys navigate, Enter advances ──
+      if (step === 'select-target') {
+        const ARROW_MAP: Record<string, Direction> = {
+          ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+        };
+        const direction = ARROW_MAP[e.key];
+        if (direction) {
+          e.preventDefault();
+          e.stopPropagation();
+          const positions = extractPositions(rfNodes);
+          const fromId = tgt || src;
+          if (!fromId) return;
+          const nextTarget = findNearestNode(fromId, direction, positions);
+          if (nextTarget && nextTarget !== src) {
+            setConnectTarget(nextTarget);
+            const targetPos = positions.find(p => p.id === nextTarget);
+            if (targetPos) {
+              const currentViewport = getViewport();
+              setCenter(targetPos.x, targetPos.y, { zoom: currentViewport.zoom, duration: 200 });
+            }
+          }
+          return;
+        }
+
+        if (e.key === 'Enter' && tgt && tgt !== src) {
+          e.preventDefault();
+          e.stopPropagation();
+          advanceToPickType();
+          return;
+        }
+      }
+
+      // ── In 'pick-type' step: 1/2/3 picks edge type ──
+      if (step === 'pick-type') {
+        const TYPE_MAP: Record<string, 'sync' | 'async' | 'data-flow'> = {
+          '1': 'sync', '2': 'async', '3': 'data-flow',
+        };
+        const edgeType = TYPE_MAP[e.key];
+        if (edgeType && src && tgt) {
+          e.preventDefault();
+          e.stopPropagation();
+          const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+          const newEdge = addEdge({ fromNode: src, toNode: tgt, type: edgeType });
+          exitConnectMode();
+          if (newEdge) {
+            // Select new edge
+            useCanvasStore.getState().selectEdge(newEdge.id);
+            useUIStore.getState().showToast(`Created ${typeLabels[edgeType]} edge`);
+          }
+          return;
+        }
+      }
+    };
+
+    // Use capture phase to intercept before normal handlers
+    document.addEventListener('keydown', handleConnectMode, true);
+    return () => document.removeEventListener('keydown', handleConnectMode, true);
+  }, [rfNodes, enterConnectMode, setConnectTarget, advanceToPickType, exitConnectMode, addEdge, setCenter, getViewport]);
+
   // Track viewport changes (pan/zoom) for saving
   const onMoveEnd: OnMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
@@ -759,6 +883,20 @@ function CanvasInner() {
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
 
+      {/* Connect mode indicator */}
+      {connectStep && (
+        <div
+          className="absolute top-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2
+                     bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium"
+          data-testid="connect-mode-indicator"
+        >
+          <span className="inline-block w-2 h-2 bg-white rounded-full animate-pulse" />
+          {connectStep === 'select-target'
+            ? 'CONNECT: Select target (↑↓←→) then Enter | Esc to cancel'
+            : 'CONNECT: Pick type — 1=Sync  2=Async  3=Data Flow | Esc to cancel'}
+        </div>
+      )}
+
       {/* Placement mode indicator */}
       {placementMode && placementInfo && (
         <div
@@ -779,8 +917,29 @@ function CanvasInner() {
       )}
 
       <ReactFlow
-        nodes={rfNodes}
-        edges={rfEdges}
+        nodes={connectStep ? rfNodes.map(n => {
+          if (n.id === connectSource) {
+            // Source node: green glow
+            return { ...n, className: `${n.className || ''} connect-mode-source`.trim() };
+          }
+          if (n.id === connectTarget && connectStep === 'select-target') {
+            // Target candidate: highlight
+            return { ...n, className: `${n.className || ''} connect-mode-target`.trim() };
+          }
+          return n;
+        }) : rfNodes}
+        edges={connectStep && connectSource && connectTarget ? [
+          ...rfEdges,
+          {
+            id: '__connect-preview__',
+            source: connectSource,
+            target: connectTarget,
+            type: 'default',
+            animated: true,
+            style: { strokeDasharray: '8 4', stroke: 'hsl(var(--pine))', strokeWidth: 2, opacity: 0.8 },
+            data: {},
+          } as CanvasEdge,
+        ] : rfEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -801,13 +960,15 @@ function CanvasInner() {
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{ type: 'sync' }}
         proOptions={{ hideAttribution: true }}
-        className={`bg-gray-50 ${placementMode ? 'cursor-crosshair' : ''}`}
+        className={`bg-background ${placementMode ? 'cursor-crosshair' : ''}`}
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1.5}
-          color="#cbd5e1"
+          className="!fill-subtle/30"
+          style={{ backgroundColor: 'hsl(var(--background))' }}
+          color="hsl(var(--subtle))"
           data-testid="canvas-background-grid"
         />
         {/* Controls - hidden in compact mode (toolbar provides zoom) */}
@@ -825,7 +986,9 @@ function CanvasInner() {
             nodeStrokeWidth={3}
             pannable
             zoomable
-            className="!bg-white !border !border-gray-200"
+            className="!bg-surface !border !border-border"
+            nodeColor="hsl(var(--highlight-high))"
+            maskColor="hsl(var(--overlay) / 0.6)"
             aria-label="Mini map"
             data-testid="canvas-minimap"
           />
