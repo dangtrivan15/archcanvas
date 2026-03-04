@@ -15,6 +15,18 @@ import { useState, useEffect, useCallback } from 'react';
 export const COMPACT_BREAKPOINT = 600;
 export const REGULAR_BREAKPOINT = 1024;
 
+/**
+ * iPad Split View specific breakpoints:
+ * - ICON_RAIL_BREAKPOINT: <768px - left sidebar becomes icon-only rail
+ *   (applies when left panel is visible, i.e., viewport >= 600px)
+ *   This covers the narrow-regular range (600-768px) where a full sidebar
+ *   would consume too much horizontal space.
+ * - Slide Over (1/3): ~320px width (compact mode, left panel hidden)
+ * - Split View 1/2: ~507px width (compact mode, left panel hidden)
+ * - Split View 2/3: ~678px width (icon rail if left panel open)
+ */
+export const ICON_RAIL_BREAKPOINT = 768;
+
 export type ViewportBreakpoint = 'compact' | 'regular' | 'wide';
 
 export interface ViewportSize {
@@ -55,7 +67,7 @@ export function useViewportSize(): ViewportSize {
   }, []);
 
   useEffect(() => {
-    // Also listen for visual viewport resize events (for iPad multitasking)
+    // Listen for window resize events (covers most cases)
     window.addEventListener('resize', handleResize);
 
     // Use visualViewport resize for more accurate iPad multitasking detection
@@ -63,11 +75,15 @@ export function useViewportSize(): ViewportSize {
       window.visualViewport.addEventListener('resize', handleResize);
     }
 
+    // Listen for orientation changes (portrait ↔ landscape) on iOS/iPad
+    window.addEventListener('orientationchange', handleResize);
+
     return () => {
       window.removeEventListener('resize', handleResize);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleResize);
       }
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, [handleResize]);
 

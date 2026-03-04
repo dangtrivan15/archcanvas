@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
+import { useViewportSize } from '@/hooks/useViewportSize';
+import { ICON_RAIL_BREAKPOINT } from '@/hooks/useViewportSize';
 import type { NodeDef } from '@/types/nodedef';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -34,6 +36,15 @@ const namespaceLabels: Record<string, string> = {
   observability: 'Observability',
 };
 
+/** Map namespace to an icon component for rail mode */
+const namespaceIcons: Record<string, React.ElementType> = {
+  compute: Server,
+  data: Database,
+  messaging: Radio,
+  network: Globe,
+  observability: Shield,
+};
+
 export function NodeDefBrowser() {
   const registry = useCoreStore((s) => s.registry);
   const placementMode = useUIStore((s) => s.placementMode);
@@ -41,6 +52,8 @@ export function NodeDefBrowser() {
   const enterPlacementMode = useUIStore((s) => s.enterPlacementMode);
   const exitPlacementMode = useUIStore((s) => s.exitPlacementMode);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
+  const { width: viewportWidth } = useViewportSize();
+  const isIconRail = viewportWidth < ICON_RAIL_BREAKPOINT;
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedNamespaces, setCollapsedNamespaces] = useState<Set<string>>(new Set());
 
@@ -100,6 +113,70 @@ export function NodeDefBrowser() {
     },
     [placementMode, placementInfo, enterPlacementMode, exitPlacementMode],
   );
+
+  // Icon-only rail mode for narrow viewports (<500px)
+  if (isIconRail) {
+    return (
+      <div className="h-full flex flex-col items-center py-2 gap-1" data-testid="nodedef-browser" data-mode="icon-rail">
+        {/* Close button */}
+        <button
+          onClick={toggleLeftPanel}
+          className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors touch-target mb-1"
+          aria-label="Close node types panel"
+          data-testid="nodedef-browser-close"
+          title="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        {/* Namespace icons as compact rail */}
+        {groupedNodeDefs.map(([namespace, defs]) => {
+          const NsIcon = namespaceIcons[namespace] ?? Box;
+          return (
+            <div key={namespace} className="flex flex-col items-center gap-0.5" data-testid={`nodedef-group-${namespace}`}>
+              <button
+                onClick={() => toggleNamespace(namespace)}
+                className="p-2 rounded hover:bg-gray-100 transition-colors touch-target group relative"
+                aria-label={namespaceLabels[namespace] || namespace}
+                title={`${namespaceLabels[namespace] || namespace} (${defs.length})`}
+                data-testid={`nodedef-group-toggle-${namespace}`}
+              >
+                <NsIcon className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+                {/* Tooltip */}
+                <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                  {namespaceLabels[namespace] || namespace}
+                </span>
+              </button>
+              {/* Show compact node icons when expanded */}
+              {!collapsedNamespaces.has(namespace) && defs.map((def) => {
+                const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
+                const Icon = iconMap[def.metadata.icon] ?? Box;
+                const isActive = placementMode && placementInfo?.nodeType === typeKey;
+                return (
+                  <button
+                    key={typeKey}
+                    className={`p-1.5 rounded transition-colors touch-target group relative
+                               ${isActive
+                                 ? 'bg-blue-100 ring-1 ring-blue-300'
+                                 : 'hover:bg-blue-50'
+                               }`}
+                    onClick={() => handleNodeDefClick(typeKey, def.metadata.displayName)}
+                    title={def.metadata.displayName}
+                    data-testid={`nodedef-entry-${typeKey}`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                    {/* Tooltip */}
+                    <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      {def.metadata.displayName}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col" data-testid="nodedef-browser">

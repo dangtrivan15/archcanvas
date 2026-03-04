@@ -154,7 +154,7 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-start justify-center pt-[15vh] bg-black/40"
+      className="fixed inset-0 z-[110] flex items-start justify-center pt-[15vh] bg-black/40 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="command-palette-overlay"
       role="dialog"
@@ -163,7 +163,7 @@ export function CommandPalette() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col overflow-hidden border border-gray-200"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 flex flex-col overflow-hidden border border-gray-200 compact-dialog-sheet"
         data-testid="command-palette"
         role="combobox"
         aria-expanded="true"

@@ -55,7 +55,7 @@ export function ErrorDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="error-dialog"
       role="alertdialog"
@@ -63,7 +63,7 @@ export function ErrorDialog() {
       aria-labelledby="error-dialog-title"
       aria-describedby="error-dialog-message"
     >
-      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6" data-testid="error-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet" data-testid="error-dialog-content">
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">

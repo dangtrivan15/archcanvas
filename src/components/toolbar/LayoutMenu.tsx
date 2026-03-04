@@ -107,6 +107,8 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
         className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
+        aria-label="Layout menu"
+        title={compact ? 'Layout' : undefined}
         data-testid="layout-menu-button"
       >
         <LayoutGrid className="w-4 h-4" />
