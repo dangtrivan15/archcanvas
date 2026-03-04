@@ -13,6 +13,7 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export function DeleteConfirmationDialog() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
@@ -24,6 +25,7 @@ export function DeleteConfirmationDialog() {
   const confirmRef = useRef<HTMLButtonElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(deleteDialogOpen);
   const { formatBinding } = usePlatformModifier();
+  const hapticActions = useHaptics();
 
   // Focus the Confirm button when dialog opens
   useEffect(() => {
@@ -38,9 +40,11 @@ export function DeleteConfirmationDialog() {
     removeNode(deleteDialogInfo.nodeId);
     clearSelection();
     closeDeleteDialog();
+    // Haptic warning feedback for destructive action
+    hapticActions.notification('Warning');
     // Show undo hint toast
     showToast(`Deleted ${deletedName}. ${formatBinding('mod+z')} to undo`);
-  }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog, showToast, formatBinding]);
+  }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog, showToast, formatBinding, hapticActions]);
 
   // Handle keyboard: Escape to cancel, Enter to confirm
   const handleKeyDown = useCallback(

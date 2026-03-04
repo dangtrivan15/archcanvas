@@ -15,6 +15,7 @@
  */
 
 import { useRef, useCallback } from 'react';
+import { haptics } from '@/hooks/useHaptics';
 
 /** Threshold in ms for long press detection */
 const LONG_PRESS_DURATION = 500;
@@ -62,6 +63,8 @@ export function useLongPress(
 
       timerRef.current = setTimeout(() => {
         if (activeRef.current && startPosRef.current) {
+          // Haptic feedback for context menu open
+          haptics.impact('Medium');
           // Prevent the default context menu and other interactions
           onLongPress(startPosRef.current.x, startPosRef.current.y);
           cancel();

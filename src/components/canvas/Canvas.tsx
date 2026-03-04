@@ -30,8 +30,12 @@ import { useCanvasStore, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } from '@/
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
 import { nodeTypes } from '@/components/nodes/nodeTypeMap';
+import { lodNodeTypes } from '@/components/nodes/lodNodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
+import { useCanvasPerformance, CANVAS_BOUNDS, NODE_COUNT_WARNING } from '@/hooks/useCanvasPerformance';
+import { CanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
+import { FpsCounter } from '@/components/canvas/FpsCounter';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
@@ -105,6 +109,11 @@ function CanvasInner() {
   const centerOnNodeCounter = useCanvasStore((s) => s.centerOnNodeCounter);
   const prevCenterOnNodeCounterRef = useRef(centerOnNodeCounter);
 
+  // Canvas performance optimization (LOD, reduced motion, FPS, node count)
+  const perf = useCanvasPerformance();
+  const viewportZoom = useCanvasStore((s) => s.viewport.zoom);
+  const nodeCountWarningShownRef = useRef(false);
+
   // File drag & drop
   const loadFromDroppedFile = useCoreStore((s) => s.loadFromDroppedFile);
   const [isDragOverWithFiles, setIsDragOverWithFiles] = useState(false);
@@ -166,6 +175,20 @@ function CanvasInner() {
   // Use local state for React Flow, synced from the store
   const [rfNodes, setRfNodes] = useState<CanvasNode[]>(rendered.nodes);
   const [rfEdges, setRfEdges] = useState<CanvasEdge[]>(rendered.edges);
+
+  // Monitor node count for performance warnings
+  useEffect(() => {
+    perf.setNodeCount(rendered.nodes.length);
+    if (rendered.nodes.length > NODE_COUNT_WARNING && !nodeCountWarningShownRef.current) {
+      nodeCountWarningShownRef.current = true;
+      showToast(
+        `${rendered.nodes.length} nodes visible — consider grouping nodes for better performance.`,
+        6000,
+      );
+    } else if (rendered.nodes.length <= NODE_COUNT_WARNING) {
+      nodeCountWarningShownRef.current = false;
+    }
+  }, [rendered.nodes.length, perf.setNodeCount, showToast]);
 
   // Sync from store -> React Flow whenever the rendered graph changes
   // Preserve selection state so that editing node properties doesn't deselect the node
@@ -957,12 +980,13 @@ function CanvasInner() {
     return () => document.removeEventListener('keydown', handleConnectMode, true);
   }, [rfNodes, enterConnectMode, setConnectTarget, advanceToPickType, exitConnectMode, addEdge, setCenter, getViewport]);
 
-  // Track viewport changes (pan/zoom) for saving
+  // Track viewport changes (pan/zoom) for saving + update performance LOD state
   const onMoveEnd: OnMoveEnd = useCallback(
     (_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
       setViewport({ x: viewport.x, y: viewport.y, zoom: viewport.zoom });
+      perf.updateZoom(viewport.zoom);
     },
-    [setViewport],
+    [setViewport, perf.updateZoom],
   );
 
   return (
@@ -1046,6 +1070,22 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* FPS counter overlay (dev mode, toggled via perf hook) */}
+      {perf.fpsEnabled && (
+        <FpsCounter
+          fps={perf.fps}
+          nodeCount={perf.nodeCount}
+          zoom={viewportZoom}
+          isLowDetailMode={perf.isLowDetailMode}
+          prefersReducedMotion={perf.prefersReducedMotion}
+        />
+      )}
+
+      <CanvasPerformanceContext.Provider value={{
+        isLowDetailMode: perf.isLowDetailMode,
+        isLowDetailEdges: perf.isLowDetailEdges,
+        prefersReducedMotion: perf.prefersReducedMotion,
+      }}>
       <ReactFlow
         nodes={connectStep ? rfNodes.map(n => {
           if (n.id === connectSource) {
@@ -1083,12 +1123,13 @@ function CanvasInner() {
         onPaneClick={onPaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        nodeTypes={nodeTypes}
+        nodeTypes={perf.isLowDetailMode ? lodNodeTypes : nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode={null}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{ type: 'sync' }}
+        translateExtent={CANVAS_BOUNDS}
         proOptions={{ hideAttribution: true }}
         className={`bg-background ${placementMode ? 'cursor-crosshair' : ''}`}
       >
@@ -1124,6 +1165,7 @@ function CanvasInner() {
           />
         )}
       </ReactFlow>
+      </CanvasPerformanceContext.Provider>
 
       {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (

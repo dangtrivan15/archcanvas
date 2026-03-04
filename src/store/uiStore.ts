@@ -10,11 +10,36 @@ import { preferences } from '@/core/platform/preferencesAdapter';
 export const TOOLBAR_HEIGHT_STORAGE_KEY = 'toolbar-height';
 export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
 export const THEME_STORAGE_KEY = 'theme';
+export const HAPTIC_FEEDBACK_STORAGE_KEY = 'haptic-feedback';
 
 /**
  * Synchronously read the persisted theme ID from localStorage.
  * Returns null if not found. Used at store initialization time.
  */
+/**
+ * Synchronously read the persisted haptic feedback preference from localStorage.
+ * Returns null if not found. Defaults to true (enabled).
+ */
+function readPersistedHapticFeedback(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = localStorage.getItem(`archcanvas:${HAPTIC_FEEDBACK_STORAGE_KEY}`);
+    if (raw === null) return true; // default enabled
+    return raw !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Persist haptic feedback preference via the cross-platform preferences adapter.
+ */
+function persistHapticFeedback(enabled: boolean): void {
+  preferences.set(HAPTIC_FEEDBACK_STORAGE_KEY, String(enabled)).catch(() => {
+    // Silently ignore write failures
+  });
+}
+
 function readPersistedTheme(): string | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -304,6 +329,9 @@ export interface UIStoreState {
   // Inline editing on canvas node (F2 quick-edit without opening right panel)
   inlineEditNodeId: string | null;
 
+  // Haptic feedback (iPad)
+  hapticFeedbackEnabled: boolean;
+
   // Autosave on focus change
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
@@ -406,6 +434,9 @@ export interface UIStoreState {
   setInlineEditNodeId: (nodeId: string | null) => void;
   clearInlineEdit: () => void;
 
+  // Haptic feedback actions
+  setHapticFeedbackEnabled: (enabled: boolean) => void;
+
   // Autosave actions
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
@@ -471,6 +502,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   pendingRenameNodeId: null,
 
   inlineEditNodeId: null,
+
+  hapticFeedbackEnabled: readPersistedHapticFeedback(),
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
@@ -662,6 +695,11 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   clearInlineEdit: () =>
     set({ inlineEditNodeId: null }),
+
+  setHapticFeedbackEnabled: (enabled) => {
+    persistHapticFeedback(enabled);
+    set({ hapticFeedbackEnabled: enabled });
+  },
 
   setAutosaveOnBlur: (enabled) =>
     set({ autosaveOnBlur: enabled }),

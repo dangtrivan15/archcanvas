@@ -36,6 +36,7 @@ import monitoringYaml from './builtins/core/observability/monitoring.yaml?raw';
 
 // Security namespace
 import authProviderYaml from './builtins/core/security/auth-provider.yaml?raw';
+import vaultYaml from './builtins/core/security/vault.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -52,7 +53,7 @@ export interface YamlNodeDefSource {
 }
 
 /**
- * All 15 built-in nodedef YAML sources, organized for loading.
+ * All 17 built-in nodedef YAML sources, organized for loading.
  */
 export const YAML_SOURCES: YamlNodeDefSource[] = [
   // Compute (4)
@@ -75,8 +76,9 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   // Observability (2)
   { filePath: 'observability/logging.yaml', rawYaml: loggingYaml, namespace: 'observability', name: 'logging' },
   { filePath: 'observability/monitoring.yaml', rawYaml: monitoringYaml, namespace: 'observability', name: 'monitoring' },
-  // Security (1)
+  // Security (2)
   { filePath: 'security/auth-provider.yaml', rawYaml: authProviderYaml, namespace: 'security', name: 'auth-provider' },
+  { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },
 ];
 
 /**
@@ -88,7 +90,7 @@ export function parseNodeDefYaml(yamlContent: string): unknown {
 }
 
 /**
- * Load all 15 built-in nodedef YAML files and parse them into objects.
+ * Load all 17 built-in nodedef YAML files and parse them into objects.
  * Returns an array of parsed objects ready for validation.
  */
 export function loadAllBuiltinYaml(): NodeDef[] {

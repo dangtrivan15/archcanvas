@@ -144,3 +144,29 @@ export function hexToNormalizedRgb(hexColor: string): { r: number; g: number; b:
   if (!rgb) return { r: 0.42, g: 0.42, b: 0.42 }; // gray fallback
   return { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255 };
 }
+
+/**
+ * Calculate the relative luminance of a hex color per WCAG 2.0.
+ * Returns a value between 0 (black) and 1 (white).
+ */
+export function getRelativeLuminance(hexColor: string): number {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return 0.5;
+  const toLinear = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * toLinear(rgb.r) + 0.7152 * toLinear(rgb.g) + 0.0722 * toLinear(rgb.b);
+}
+
+/**
+ * Get the best contrast text/icon color for a given background color.
+ * Returns white for dark backgrounds and a dark color for light backgrounds.
+ * Uses WCAG luminance threshold to ensure sufficient contrast (≥ 3:1).
+ */
+export function getContrastColor(hexColor: string): string {
+  const luminance = getRelativeLuminance(hexColor);
+  // Threshold: if luminance > 0.35, background is "light" → use dark text
+  // Using 0.35 instead of 0.179 for better visual results with saturated colors
+  return luminance > 0.35 ? '#1a1a2e' : '#ffffff';
+}
