@@ -5838,3 +5838,73 @@ SESSION: 2026-03-04 - Feature #284
 - No mock data patterns in production code
 - All 3525 tests passing across 164 test files
 - Committed in f8f17cd (combined with feature #287)
+
+==================================================
+SESSION: 2026-03-04 - Features #287, #293
+==================================================
+
+## What was accomplished:
+
+### Feature #287: On-screen keyboard handling for property editing (PASSING)
+- Created src/hooks/useVirtualKeyboard.ts:
+  - Uses VisualViewport API to detect on-screen keyboard
+  - Tracks keyboardHeight = window.innerHeight - visualViewport.height
+  - KEYBOARD_HEIGHT_THRESHOLD = 100px (ignores browser chrome changes)
+  - Auto-scrolls active input into view when keyboard appears in right panel
+  - Detects right panel elements via data-testid selectors
+  - Handles focusin events for inputs receiving focus while keyboard is open
+  - Gracefully handles missing VisualViewport API (no-op)
+  - External keyboard: keyboardHeight stays 0, no layout shifts
+- Updated src/App.tsx:
+  - Imported and used useVirtualKeyboard hook
+  - Compact bottom sheet overlay: adjusts bottom position and maxHeight by keyboardHeight
+  - Smooth transitions (0.2s ease-out) for keyboard open/close
+  - Side panel (non-compact): unchanged, scrollIntoView handles keyboard
+- 15 unit tests covering:
+  - Initial state, keyboard detection, threshold boundaries
+  - External keyboard (no adjustments), scroll into view behavior
+  - Right panel detection (both side panel and bottom sheet)
+  - Missing VisualViewport graceful handling
+  - Cleanup, state stability, negative height protection
+- Browser verified: zero console errors, right panel works correctly
+- Committed: f8f17cd
+
+### Feature #293: iOS code signing and archive build configuration (PASSING)
+- Added build:release npm script: "npm run build && npx cap sync ios"
+  - Runs TypeScript + Vite production build + syncs to iOS
+  - Does NOT set CAPACITOR_DEV (production mode)
+- Created scripts/build-release-ios.sh:
+  - Automated 6-step release build process
+  - Checks prerequisites (Node, npm, iOS platform)
+  - Builds web app in production mode
+  - Validates CAPACITOR_DEV is NOT set
+  - Validates generated capacitor.config.json has no server URL
+  - Syncs web assets to iOS project
+  - Validates Xcode project configuration
+  - --open flag to auto-launch Xcode after build
+- Created docs/ios-build-guide.md:
+  - Complete iOS build documentation
+  - Development workflow (live reload, production on device)
+  - Release build steps (build, sign, archive, distribute)
+  - TestFlight, Ad Hoc, and App Store distribution instructions
+  - NPM scripts reference table
+  - Troubleshooting guide
+  - Version management instructions
+- Verified Xcode project configuration:
+  - Automatic code signing (both Debug and Release targets)
+  - Release: Swift -O optimization, whole module, dSYM, VALIDATE_PRODUCT
+  - Debug: no optimization, debug symbols, testability
+  - iOS 16.0 deployment target, iPhone + iPad, Mac Designed for iPad
+  - defaultConfigurationName = Release
+- Verified production build:
+  - Vite build succeeds, assets synced to ios/App/App/public/
+  - Generated capacitor.config.json has no server URL
+  - 5 Capacitor plugins registered
+- 34 unit tests covering signing config, build scripts, docs, Release settings
+- Committed: daa425a
+
+## Current completion status:
+- Features passing: 290 of 298 (97.3%)
+- Zero console errors
+- No mock data patterns in production code
+- 49 new tests across 2 test files (all passing)
