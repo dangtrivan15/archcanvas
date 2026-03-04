@@ -6453,3 +6453,41 @@ Date: 2026-03-04
 #### Current completion status:
 - Features passing: 304+ of 327
 
+
+---
+
+## Session: Feature #322 - Reset Bar Sizes to Defaults in Settings Dialog
+Date: 2026-03-04
+
+### Feature #322: Settings dialog includes option to reset toolbar and status bar heights to defaults - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added resetBarSizesToFixedDefaults() action: resets toolbar to TOOLBAR_DEFAULT_HEIGHT (48px) and status bar to STATUS_BAR_DEFAULT_HEIGHT (24px)
+  - Clears persisted values from localStorage via clearPersistedHeight
+  - Clears toolbarHeightCustomized and statusBarHeightCustomized flags
+  - Does NOT affect panel widths (separate from resetBarSizes which resets everything)
+- src/components/settings/SettingsDialog.tsx:
+  - Added "Reset Bar Sizes" button (data-testid="settings-reset-bar-sizes") that calls resetBarSizesToFixedDefaults()
+  - Shows toast "Bar sizes reset to defaults" on click
+  - Existing "Reset Layout Sizes" button preserved (data-testid="settings-reset-layout-sizes")
+  - Both buttons in a flex row under Layout section
+
+#### Tests:
+- test/unit/store/resetBarSizesFixedDefaults.test.ts: 9 tests (all passing)
+  - Toolbar resets to 48px, status bar to 24px
+  - Customized flags cleared
+  - Persisted values cleared from localStorage
+  - Panel widths unaffected
+  - Feature verification steps 3 and 5 tested
+
+#### Browser verification:
+- Settings dialog opens via gear icon
+- "Reset Bar Sizes" button visible in Layout section
+- Clicking it shows toast "Bar sizes reset to defaults"
+- Zero JS console errors
+- All 388 store tests passing
+- Committed: 8c00f18
+
+#### Current completion status:
+- Features passing: 308/327 (94.2%)
