@@ -84,7 +84,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
   );
 
   const headerBgStyle = useMemo(
-    () => ({ backgroundColor: colorToBackground(effectiveColor, 0.1) }),
+    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
     [effectiveColor],
   );
 
@@ -140,7 +140,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
         <div className="flex flex-col" style={{ minWidth: 0 }}>
           {/* Header with icon + name */}
           <div
-            className="flex items-center gap-2 px-2 py-1.5 rounded-t"
+            className="flex items-center gap-2 px-2 py-1.5"
             style={headerBgStyle}
             data-testid="node-header"
           >

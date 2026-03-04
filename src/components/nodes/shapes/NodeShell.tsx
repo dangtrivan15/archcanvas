@@ -23,6 +23,7 @@ import {
   cylinderLid,
   type ShapeName,
 } from './shapeRegistry';
+import { getShapeInsets } from './shapeInsets';
 
 export interface NodeShellProps {
   /** The SVG shape to render as the node background */
@@ -41,7 +42,6 @@ export interface NodeShellProps {
 
 const DEFAULT_WIDTH = 220;
 const MIN_HEIGHT = 60;
-const PADDING = 8; // inner padding for foreignObject
 
 function NodeShellComponent({
   shape,
@@ -66,16 +66,21 @@ function NodeShellComponent({
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const h = Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + PADDING * 2);
+        // Use shape-aware vertical insets for height calculation
+        const insets = getShapeInsets(shape, width, Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + 40));
+        const h = Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + insets.top + insets.bottom);
         setMeasuredHeight(h);
       }
     });
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fixedHeight]);
+  }, [fixedHeight, shape, width]);
 
   const effectiveHeight = fixedHeight ?? measuredHeight;
+
+  // Shape-aware content insets (replaces uniform PADDING)
+  const insets = getShapeInsets(shape, width, effectiveHeight);
 
   // Generate shape path
   const pathGenerator = shapeRegistry[shape];
@@ -83,6 +88,8 @@ function NodeShellComponent({
 
   // CSS variable based colors
   const fillColor = 'hsl(var(--surface))';
+  // Subtle accent tint overlay (~6% opacity of accent color)
+  const tintColor = color ? `${color}0F` : undefined;
   const strokeColor = selected
     ? 'hsl(var(--iris))'
     : color
@@ -114,15 +121,34 @@ function NodeShellComponent({
           data-testid="node-shell-path"
         />
 
+        {/* Subtle accent color tint overlay */}
+        {tintColor && (
+          <path
+            d={shapePath}
+            fill={tintColor}
+            stroke="none"
+            data-testid="node-shell-tint"
+          />
+        )}
+
         {/* Extra lid for cylinder shape (visual depth) */}
         {shape === 'cylinder' && (
-          <path
-            d={cylinderLid(width, effectiveHeight)}
-            fill={fillColor}
-            stroke={strokeColor}
-            strokeWidth={strokeWidth}
-            data-testid="node-shell-cylinder-lid"
-          />
+          <>
+            <path
+              d={cylinderLid(width, effectiveHeight)}
+              fill={fillColor}
+              stroke={strokeColor}
+              strokeWidth={strokeWidth}
+              data-testid="node-shell-cylinder-lid"
+            />
+            {tintColor && (
+              <path
+                d={cylinderLid(width, effectiveHeight)}
+                fill={tintColor}
+                stroke="none"
+              />
+            )}
+          </>
         )}
 
         {/* Selection ring effect */}
@@ -138,19 +164,19 @@ function NodeShellComponent({
           />
         )}
 
-        {/* Inner content via foreignObject */}
+        {/* Inner content via foreignObject - shape-aware insets prevent clipping */}
         <foreignObject
-          x={PADDING}
-          y={PADDING}
-          width={width - PADDING * 2}
-          height={effectiveHeight - PADDING * 2}
+          x={insets.left}
+          y={insets.top}
+          width={width - insets.left - insets.right}
+          height={effectiveHeight - insets.top - insets.bottom}
           data-testid="node-shell-foreign-object"
         >
           <div
             ref={contentRef}
             /* xmlns required for foreignObject in SVG */
             {...({ xmlns: 'http://www.w3.org/1999/xhtml' } as any)}
-            style={{ width: '100%', minHeight: MIN_HEIGHT - PADDING * 2 }}
+            style={{ width: '100%', minHeight: Math.max(0, MIN_HEIGHT - insets.top - insets.bottom) }}
             data-testid="node-shell-content"
           >
             {children}

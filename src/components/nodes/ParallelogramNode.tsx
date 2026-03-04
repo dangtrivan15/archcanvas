@@ -90,7 +90,7 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
   );
 
   const headerBgStyle = useMemo(
-    () => ({ backgroundColor: colorToBackground(effectiveColor, 0.1) }),
+    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
     [effectiveColor],
   );
 
@@ -146,7 +146,7 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
         <div className="flex flex-col px-6 py-2" style={{ minWidth: 0 }}>
           {/* Header with icon + name */}
           <div
-            className="flex items-center gap-2 py-1 rounded"
+            className="flex items-center gap-2 py-1"
             style={headerBgStyle}
             data-testid="node-header"
           >
