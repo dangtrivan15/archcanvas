@@ -15,7 +15,7 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
-import { getEffectiveNodeColor, colorToBackground } from '@/utils/nodeColors';
+import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
@@ -89,11 +89,6 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
     [nodeData.color, nodeData.nodedefType, isRef],
   );
 
-  const headerBgStyle = useMemo(
-    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
-    [effectiveColor],
-  );
-
   return (
     <div
       ref={outerRef}
@@ -147,7 +142,6 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
           {/* Header with icon + name */}
           <div
             className="flex items-center gap-2 py-1"
-            style={headerBgStyle}
             data-testid="node-header"
           >
             <Icon
@@ -194,7 +188,7 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
           {/* Reference source indicator */}
           {isRef && (
             <div
-              className="flex items-center gap-1 px-2 py-0.5 text-xs text-iris bg-iris/10 rounded mt-1"
+              className="flex items-center gap-1 px-2 py-0.5 text-xs text-iris mt-1"
               data-testid="ref-source-indicator"
               title={`References: ${nodeData.refSource}`}
             >
@@ -217,7 +211,7 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
 
           {/* Badges */}
           {(nodeData.noteCount > 0 || nodeData.pendingSuggestionCount > 0 || nodeData.codeRefCount > 0) && (
-            <div className="flex items-center gap-2 pt-1 border-t border-border/40 text-xs" data-testid="node-badges">
+            <div className="flex items-center gap-2 pt-1 text-xs" data-testid="node-badges">
               {nodeData.noteCount > 0 && (
                 <span className="text-muted-foreground" title={`${nodeData.noteCount} notes`} data-testid="badge-notes">
                   📝 {nodeData.noteCount}

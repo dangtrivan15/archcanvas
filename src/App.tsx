@@ -33,6 +33,8 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { initializeApiKey } from '@/ai/config';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
+import { OfflineBanner } from '@/components/shared/OfflineBanner';
+import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -192,6 +194,9 @@ export function App() {
   return (
     <FocusZoneProvider>
       <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+        {/* Offline Status Banner */}
+        <OfflineBanner />
+
         {/* Toolbar - sticky at top */}
         <Toolbar />
 
@@ -359,6 +364,8 @@ export function App() {
             )}
             <span className="mx-1 text-gray-300">|</span>
             <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
+            <span className="mx-1 text-gray-300">|</span>
+            <CachedFilesIndicator />
             {navigationPath.length > 0 && (
               <>
                 <span className="mx-1 text-gray-300">|</span>

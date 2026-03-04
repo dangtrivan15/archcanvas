@@ -98,3 +98,38 @@ export function colorToBackground(hexColor: string, alpha: number = 0.12): strin
 export function colorToBorder(hexColor: string, alpha: number = 0.5): string {
   return `${hexColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
 }
+
+/**
+ * Parse a hex color string to RGB components.
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1]!, 16), g: parseInt(result[2]!, 16), b: parseInt(result[3]!, 16) }
+    : null;
+}
+
+/**
+ * Generate a color-tinted CSS box-shadow string for a node.
+ * Returns a soft drop shadow tinted with the node's accent color.
+ * @param hexColor - The accent color in hex (e.g., '#3B82F6')
+ * @param elevation - 'default' for subtle shadow, 'hover' for more prominent
+ */
+export function colorTintedShadow(hexColor: string, elevation: 'default' | 'hover' = 'default'): string {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return elevation === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.15)';
+  const { r, g, b } = rgb;
+  if (elevation === 'hover') {
+    return `0 4px 12px rgba(${r},${g},${b},0.25), 0 2px 4px rgba(${r},${g},${b},0.15)`;
+  }
+  return `0 2px 8px rgba(${r},${g},${b},0.18), 0 1px 3px rgba(${r},${g},${b},0.10)`;
+}
+
+/**
+ * Convert a hex color to normalized RGB values (0-1 range) for SVG filters.
+ */
+export function hexToNormalizedRgb(hexColor: string): { r: number; g: number; b: number } {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return { r: 0.42, g: 0.42, b: 0.42 }; // gray fallback
+  return { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255 };
+}

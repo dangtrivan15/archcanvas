@@ -18,7 +18,7 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
-import { getEffectiveNodeColor, colorToBackground } from '@/utils/nodeColors';
+import { getEffectiveNodeColor, colorToBackground, colorTintedShadow } from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import {
@@ -133,19 +133,38 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
     [effectiveColor, selected],
   );
 
+  // Color-tinted drop shadow: subtle at rest, more prominent when selected/hovered
+  const shadowStyle = useMemo(
+    () => ({
+      boxShadow: colorTintedShadow(effectiveColor, selected ? 'hover' : 'default'),
+    }),
+    [effectiveColor, selected],
+  );
+
   return (
     <div
       className={`
-        border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
+        border-2 rounded-lg min-w-[200px] max-w-[280px]
         transition-shadow relative overflow-hidden
         ${isRef ? 'border-dashed' : ''}
-        ${selected ? 'shadow-md ring-2 ring-iris/30' : 'hover:shadow-md'}
+        ${selected ? 'ring-2 ring-iris/30' : ''}
       `}
       style={{
         ...borderStyle,
+        ...shadowStyle,
         background: isRef
           ? 'hsl(var(--iris) / 0.08)'
           : `linear-gradient(${effectiveColor}0F, ${effectiveColor}0F), hsl(var(--surface))`,
+      }}
+      onMouseEnter={(e) => {
+        if (!selected) {
+          e.currentTarget.style.boxShadow = colorTintedShadow(effectiveColor, 'hover');
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!selected) {
+          e.currentTarget.style.boxShadow = colorTintedShadow(effectiveColor, 'default');
+        }
       }}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
