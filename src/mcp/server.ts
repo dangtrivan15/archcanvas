@@ -162,6 +162,62 @@ function registerTools(server: McpServer, ctx: ToolHandlerContext): void {
       return { content: [{ type: 'text' as const, text: result }] };
     },
   );
+
+  // 12. export_markdown
+  server.tool(
+    TOOL_DEFINITIONS.export_markdown.name,
+    TOOL_DEFINITIONS.export_markdown.description,
+    TOOL_DEFINITIONS.export_markdown.inputSchema,
+    createToolHandler(ctx, 'export_markdown'),
+  );
+
+  // 13. export_mermaid
+  server.tool(
+    TOOL_DEFINITIONS.export_mermaid.name,
+    TOOL_DEFINITIONS.export_mermaid.description,
+    TOOL_DEFINITIONS.export_mermaid.inputSchema,
+    createToolHandler(ctx, 'export_mermaid'),
+  );
+
+  // 14. update_edge
+  server.tool(
+    TOOL_DEFINITIONS.update_edge.name,
+    TOOL_DEFINITIONS.update_edge.description,
+    TOOL_DEFINITIONS.update_edge.inputSchema,
+    createToolHandler(ctx, 'update_edge'),
+  );
+
+  // 15. add_code_ref
+  server.tool(
+    TOOL_DEFINITIONS.add_code_ref.name,
+    TOOL_DEFINITIONS.add_code_ref.description,
+    TOOL_DEFINITIONS.add_code_ref.inputSchema,
+    createToolHandler(ctx, 'add_code_ref'),
+  );
+
+  // 16. remove_note
+  server.tool(
+    TOOL_DEFINITIONS.remove_note.name,
+    TOOL_DEFINITIONS.remove_note.description,
+    TOOL_DEFINITIONS.remove_note.inputSchema,
+    createToolHandler(ctx, 'remove_note'),
+  );
+
+  // 17. get_edges
+  server.tool(
+    TOOL_DEFINITIONS.get_edges.name,
+    TOOL_DEFINITIONS.get_edges.description,
+    TOOL_DEFINITIONS.get_edges.inputSchema,
+    createToolHandler(ctx, 'get_edges'),
+  );
+
+  // 18. init_architecture
+  server.tool(
+    TOOL_DEFINITIONS.init_architecture.name,
+    TOOL_DEFINITIONS.init_architecture.description,
+    TOOL_DEFINITIONS.init_architecture.inputSchema,
+    createToolHandler(ctx, 'init_architecture'),
+  );
 }
 
 /**
