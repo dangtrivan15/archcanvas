@@ -7693,3 +7693,48 @@ Created src/analyze/detector.ts with comprehensive project analysis capabilities
 #### Current completion status:
 - Feature #341 marked passing
 - Features passing: 340 of 349
+
+---
+
+## Session: Feature #342 - Key File Selector and Content Extractor
+Date: 2026-03-04
+
+### Feature #342: Key File Selector and Content Extractor - PASSING
+
+#### Implementation:
+Created src/analyze/fileSelector.ts with intelligent file selection and content extraction:
+
+- **selectKeyFiles(scanResult, projectProfile, options)**: Main API function
+  - 4-tier priority system for file selection:
+    - Tier 1 (always include): package.json, go.mod, Cargo.toml, Dockerfile, docker-compose.yml, README.md, tsconfig.json, etc.
+    - Tier 2 (high value): entry points (src/index.ts, main.go, etc.), route definitions (routes.ts, urls.py), schema files (.proto, .graphql, openapi.yaml, schema.prisma)
+    - Tier 3 (structural): module index files (index.ts, __init__.py, mod.rs)
+    - Tier 4 (representative): 1-2 sample source files per major directory
+  - Smart content truncation: reads up to maxLinesPerFile (default 500), adds truncation notice
+  - Token budget: caps total extracted content at totalTokenBudget (default 100K tokens)
+  - Deduplication: files classified in multiple tiers are only included once at highest priority
+  - Configurable via FileSelectionOptions: maxLinesPerFile, totalTokenBudget, rootDir, skipContentRead
+
+- **Types exported**: FileTier, SelectedFile, KeyFileSet, FileSelectionOptions
+
+#### Tests (test/unit/analyze/fileSelector.test.ts):
+- 44 tests all passing
+- Tier 1: package.json, go.mod, Cargo.toml, Dockerfile, docker-compose.yml, README.md, tsconfig.json, multiple Tier 1 files
+- Tier 2: entry points (src/index.ts, main.go, main.py), detected entry points from profile, route definitions (routes.ts, router.js, urls.py), schema files (.proto, .graphql, openapi.yaml, schema.prisma)
+- Tier 3: index.ts barrels, __init__.py, mod.rs, index.js
+- Tier 4: representative files, 2-per-dir limit, no duplication with higher tiers, source-only filtering
+- Token budget: respects limit, default 100K, provides totalTokenEstimate
+- Tier ordering: 1 before 2, 2 before 3, priority on tight budget
+- Return format: KeyFileSet structure, empty scan handling
+- Multi-project types: Node.js/TS, Go, Python, Rust
+- Deduplication and options tests
+
+#### Verification:
+- 142 total analyze tests passing (44 new + 72 detector + 26 scanner)
+- Build succeeds cleanly
+- No mock data patterns in production code
+- Committed: d8780e8
+
+#### Current completion status:
+- Feature #342 marked passing
+- Features passing: 342 of 349 (98.0%)
