@@ -120,12 +120,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
   // Compute style objects for color application
   const headerBgStyle = useMemo(
-    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
-    [effectiveColor],
-  );
-
-  const accentBarStyle = useMemo(
-    () => ({ backgroundColor: effectiveColor }),
+    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.18)}, ${colorToBackground(effectiveColor, 0.05)})` }),
     [effectiveColor],
   );
 
@@ -146,6 +141,29 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
     [effectiveColor, selected],
   );
 
+  // Top accent strip gradient (replaces the left accent bar)
+  const topAccentStyle = useMemo(
+    () => ({
+      background: `linear-gradient(to right, ${effectiveColor}, ${effectiveColor}99)`,
+    }),
+    [effectiveColor],
+  );
+
+  // Body background: gradient tint for 3D depth (matches NodeShell's gradient approach)
+  const bodyBackgroundStyle = useMemo(
+    () => {
+      if (isRef) {
+        return { background: 'hsl(var(--iris) / 0.08)' };
+      }
+      // Gradient: color tint at top (10%) fading to lighter (4%), layered over surface
+      // Plus a white-to-dark lighting gradient for 3D depth (matches NodeShell)
+      return {
+        background: `linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), linear-gradient(to bottom, ${effectiveColor}18, ${effectiveColor}0A), hsl(var(--surface))`,
+      };
+    },
+    [effectiveColor, isRef],
+  );
+
   return (
     <div
       className={`
@@ -157,9 +175,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       style={{
         ...borderStyle,
         ...shadowStyle,
-        background: isRef
-          ? 'hsl(var(--iris) / 0.08)'
-          : `linear-gradient(${effectiveColor}0F, ${effectiveColor}0F), hsl(var(--surface))`,
+        ...bodyBackgroundStyle,
         transition: 'box-shadow 180ms ease, transform 180ms ease',
       }}
       onMouseEnter={(e) => {
@@ -181,10 +197,10 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       data-node-color={effectiveColor}
       data-ref-source={nodeData.refSource || undefined}
     >
-      {/* Color accent bar (left edge) */}
+      {/* Color accent strip (top edge) — matches shaped-node header wash */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-1 rounded-l"
-        style={accentBarStyle}
+        className="absolute left-0 right-0 top-0 h-[3px] rounded-t-md"
+        style={topAccentStyle}
         data-testid="node-color-accent"
       />
 
