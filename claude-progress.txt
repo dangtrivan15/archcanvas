@@ -8849,3 +8849,41 @@ Date: 2026-03-05
 
 #### Commit: d11a182
 #### Feature #384 marked passing
+
+---
+
+## Session: Feature #382 - Pointer Cursor Adaptation for Trackpad/Mouse on iPad
+Date: 2026-03-05
+
+### Feature #382: Pointer Cursor Adaptation for Trackpad/Mouse on iPad - PASSING
+
+#### Implementation:
+
+**src/index.css - @media (pointer: fine) and (hover: hover) rules:**
+- Canvas pane: cursor: crosshair for precision placement
+- Nodes (.react-flow__node): cursor: grab (grabbing while dragging)
+- Edges (.react-flow__edge): cursor: pointer for clickable
+- Selection pane: cursor: crosshair
+- Controls buttons: cursor: pointer
+- Port handles: cursor: crosshair for connection drawing
+- MiniMap: cursor: move for panning
+- Node hover highlight: subtle iris glow (drop-shadow) on non-selected nodes
+- Edge hover: stroke-width thickens to 3.5 on hover
+- Edge interaction zone: widened to 20px for easier targeting
+- Pointer tooltips: .pointer-tooltip class visible only on hover devices
+- Touch-only fallback: @media (pointer: coarse) and (hover: none) hides .pointer-tooltip
+
+**Edge components (SyncEdge, AsyncEdge, DataFlowEdge):**
+- Added smooth transition: stroke-width 150ms ease, stroke 150ms ease
+- Respects prefers-reduced-motion via CanvasPerformanceContext
+
+#### Verification:
+- Vite build: PASS (no compilation errors)
+- CSS properly compiled in dist output with pointer:fine media query
+- Browser test: Nodes display hover effects (lift + shadow) on mouse hover
+- Console errors: 0 application errors (only pre-existing SSL/PWA dev errors)
+- Both GenericNode and shaped NodeShell nodes verified
+
+#### Commit: 59892fd
+#### Feature #382 marked passing
+#### Progress: 371/426 features passing (87.1%)
