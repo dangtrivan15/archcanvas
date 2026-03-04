@@ -33,8 +33,8 @@ describe('MCP Server Tool Registration - Feature #177', () => {
     expect(getToolCount()).toBeGreaterThanOrEqual(8);
   });
 
-  it('has exactly 9 tool definitions', () => {
-    expect(getToolCount()).toBe(9);
+  it('has exactly 11 tool definitions', () => {
+    expect(getToolCount()).toBe(11);
   });
 
   // Step 4: Verify 'describe' tool exists
