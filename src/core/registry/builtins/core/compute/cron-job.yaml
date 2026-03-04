@@ -1,0 +1,91 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: cron-job
+  namespace: compute
+  version: "1.0.0"
+  displayName: Cron Job
+  description: A scheduled/periodic task that runs on a cron schedule. Represents cron jobs, CloudWatch Events, Cloud Scheduler, or any time-based trigger.
+  icon: Clock
+  tags:
+    - compute
+    - cron
+    - scheduled
+    - periodic
+  shape: rectangle
+spec:
+  args:
+    - name: schedule
+      type: string
+      required: true
+      description: Cron expression defining the schedule (e.g. "0 */6 * * *" for every 6 hours)
+      default: "0 0 * * *"
+    - name: timezone
+      type: string
+      required: false
+      description: Timezone for the cron schedule (IANA format)
+      default: "UTC"
+    - name: timeout
+      type: string
+      required: false
+      description: Maximum duration for a single execution (e.g. "5m", "1h")
+      default: "30m"
+    - name: retryOnFailure
+      type: boolean
+      required: false
+      description: Whether to retry the job if it fails
+      default: true
+    - name: maxRetries
+      type: number
+      required: false
+      description: Maximum number of retry attempts on failure
+      default: 3
+  ports:
+    - name: invocation
+      direction: outbound
+      protocol:
+        - HTTP
+        - Event
+      description: Outbound invocation triggered on schedule
+  children: []
+  ai:
+    context: "This is a cron/scheduled job. Consider idempotency for repeated runs, timeout handling, overlap prevention (concurrency policy), timezone correctness, and alerting on missed schedules."
+    reviewHints:
+      - Verify cron expression is valid and matches intended schedule
+      - Check timeout is appropriate for the job's workload
+      - Consider concurrency policy (allow/forbid/replace) for overlapping runs
+      - Ensure retry logic includes backoff to avoid thundering herd
+      - Review timezone handling for daylight saving transitions
+variants:
+  - name: Daily Midnight
+    description: Runs once daily at midnight UTC
+    args:
+      schedule: "0 0 * * *"
+      timezone: "UTC"
+      timeout: "1h"
+      retryOnFailure: true
+      maxRetries: 3
+  - name: Hourly
+    description: Runs every hour on the hour
+    args:
+      schedule: "0 * * * *"
+      timezone: "UTC"
+      timeout: "30m"
+      retryOnFailure: true
+      maxRetries: 2
+  - name: Weekly Report
+    description: Runs every Monday at 9 AM
+    args:
+      schedule: "0 9 * * 1"
+      timezone: "America/New_York"
+      timeout: "2h"
+      retryOnFailure: true
+      maxRetries: 3
+  - name: Every 5 Minutes
+    description: High-frequency polling job
+    args:
+      schedule: "*/5 * * * *"
+      timezone: "UTC"
+      timeout: "4m"
+      retryOnFailure: false
+      maxRetries: 0

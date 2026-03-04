@@ -14,6 +14,7 @@ import serviceYaml from './builtins/core/compute/service.yaml?raw';
 import functionYaml from './builtins/core/compute/function.yaml?raw';
 import workerYaml from './builtins/core/compute/worker.yaml?raw';
 import apiGatewayYaml from './builtins/core/compute/api-gateway.yaml?raw';
+import cronJobYaml from './builtins/core/compute/cron-job.yaml?raw';
 
 // Data namespace
 import databaseYaml from './builtins/core/data/database.yaml?raw';
@@ -47,6 +48,7 @@ import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
 // Client namespace
 import webAppYaml from './builtins/core/client/web-app.yaml?raw';
 import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
+import cliYaml from './builtins/core/client/cli.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -71,6 +73,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'compute/function.yaml', rawYaml: functionYaml, namespace: 'compute', name: 'function' },
   { filePath: 'compute/worker.yaml', rawYaml: workerYaml, namespace: 'compute', name: 'worker' },
   { filePath: 'compute/api-gateway.yaml', rawYaml: apiGatewayYaml, namespace: 'compute', name: 'api-gateway' },
+  { filePath: 'compute/cron-job.yaml', rawYaml: cronJobYaml, namespace: 'compute', name: 'cron-job' },
   // Data (4)
   { filePath: 'data/database.yaml', rawYaml: databaseYaml, namespace: 'data', name: 'database' },
   { filePath: 'data/cache.yaml', rawYaml: cacheYaml, namespace: 'data', name: 'cache' },
@@ -94,8 +97,10 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'integration/third-party-api.yaml', rawYaml: thirdPartyApiYaml, namespace: 'integration', name: 'third-party-api' },
   { filePath: 'integration/webhook.yaml', rawYaml: webhookYaml, namespace: 'integration', name: 'webhook' },
   { filePath: 'integration/etl-pipeline.yaml', rawYaml: etlPipelineYaml, namespace: 'integration', name: 'etl-pipeline' },
-  // Client (1)
+  // Client (3)
   { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
+  { filePath: 'client/mobile-app.yaml', rawYaml: mobileAppYaml, namespace: 'client', name: 'mobile-app' },
+  { filePath: 'client/cli.yaml', rawYaml: cliYaml, namespace: 'client', name: 'cli' },
 ];
 
 /**
