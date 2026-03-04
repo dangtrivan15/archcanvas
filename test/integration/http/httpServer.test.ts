@@ -167,7 +167,7 @@ describe('HTTP API Integration', () => {
 
       // Delete edge
       const deleteEdge = await httpRequest(`${baseUrl}/api/edges/${edge.id}`, 'DELETE');
-      expect(deleteEdge.status).toBe(200);
+      expect(deleteEdge.status).toBe(204);
 
       // Verify edge deleted (envelope)
       const listEdgesAfter = await httpRequest(`${baseUrl}/api/edges`);
@@ -175,7 +175,7 @@ describe('HTTP API Integration', () => {
 
       // Delete node
       const deleteNode = await httpRequest(`${baseUrl}/api/nodes/${node2.id}`, 'DELETE');
-      expect(deleteNode.status).toBe(200);
+      expect(deleteNode.status).toBe(204);
 
       // Verify node deleted (envelope)
       const listNodesAfter = await httpRequest(`${baseUrl}/api/nodes`);
@@ -308,16 +308,16 @@ describe('HTTP API Integration', () => {
       expect(errData.error).toContain('nodeId');
     });
 
-    it('returns 200 for deleting non-existent node (no-op, filter-based removal)', async () => {
+    it('returns 204 for deleting non-existent node (no-op, filter-based removal)', async () => {
       // removeNode uses filter — non-existent IDs are silently ignored
       const result = await httpRequest(`${baseUrl}/api/nodes/fake-id`, 'DELETE');
-      expect(result.status).toBe(200);
+      expect(result.status).toBe(204);
     });
 
-    it('returns 200 for deleting non-existent edge (no-op, filter-based removal)', async () => {
+    it('returns 204 for deleting non-existent edge (no-op, filter-based removal)', async () => {
       // removeEdge uses filter — non-existent IDs are silently ignored
       const result = await httpRequest(`${baseUrl}/api/edges/fake-id`, 'DELETE');
-      expect(result.status).toBe(200);
+      expect(result.status).toBe(204);
     });
 
     it('returns 400 for PATCH node without body', async () => {
@@ -650,5 +650,544 @@ describe('HTTP API Integration', () => {
     } finally {
       await closeServer(server);
     }
+  });
+
+  // ─── Step 7: Mutation endpoints (Feature #312) ───
+
+  describe('Mutation endpoints (Feature #312)', () => {
+    let server: Server;
+    let baseUrl: string;
+
+    beforeEach(async () => {
+      const ctx = GraphContext.createNew('Mutation Test');
+      await ctx.saveAs(archcFile);
+      const reloaded = await GraphContext.loadFromFile(archcFile);
+      const s = await startServer(reloaded);
+      server = s.server;
+      baseUrl = s.baseUrl;
+    });
+
+    afterEach(async () => {
+      await closeServer(server);
+    });
+
+    // ── POST /api/nodes ──
+
+    it('POST /api/nodes creates a node with 201 and returns node data', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'MutationTestSvc',
+      });
+      expect(res.status).toBe(201);
+      const data = res.data as Record<string, unknown>;
+      expect(data.id).toBeDefined();
+      expect(data.type).toBe('compute/service');
+      expect(data.displayName).toBe('MutationTestSvc');
+    });
+
+    it('POST /api/nodes with position and args', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'data/database',
+        displayName: 'TestDB',
+        position: { x: 100, y: 200 },
+        args: { engine: 'PostgreSQL', version: '16' },
+      });
+      expect(res.status).toBe(201);
+      const data = res.data as Record<string, unknown>;
+      expect(data.displayName).toBe('TestDB');
+      expect(data.args).toEqual({ engine: 'PostgreSQL', version: '16' });
+    });
+
+    it('POST /api/nodes validates required fields (type)', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        displayName: 'NoType',
+      });
+      expect(res.status).toBe(400);
+      expect((res.data as Record<string, unknown>).error).toContain('type');
+    });
+
+    it('POST /api/nodes validates required fields (displayName)', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+      });
+      expect(res.status).toBe(400);
+      expect((res.data as Record<string, unknown>).error).toContain('displayName');
+    });
+
+    it('POST /api/nodes rejects empty body', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {});
+      expect(res.status).toBe(400);
+    });
+
+    // ── PUT /api/nodes/:id ──
+
+    it('PUT /api/nodes/:id updates displayName and returns 200', async () => {
+      // Create node first
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'OriginalName',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'PUT', {
+        displayName: 'UpdatedName',
+      });
+      expect(update.status).toBe(200);
+      expect((update.data as Record<string, unknown>).updated).toBe(nodeId);
+
+      // Verify via GET
+      const get = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      expect((get.data as { data: Record<string, unknown> }).data.displayName).toBe('UpdatedName');
+    });
+
+    it('PUT /api/nodes/:id updates args and properties', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'ArgTestNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'PUT', {
+        args: { runtime: 'Node.js', version: '20' },
+        properties: { scaling: 'horizontal' },
+      });
+      expect(update.status).toBe(200);
+    });
+
+    it('PUT /api/nodes/:id updates color via updateNodeColor', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'ColorNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'PUT', {
+        color: '#FF5733',
+      });
+      expect(update.status).toBe(200);
+    });
+
+    it('PUT /api/nodes/:id silently succeeds for non-existent node (no-op)', async () => {
+      // updateNode uses map — non-existent IDs are silently ignored
+      const update = await httpRequest(`${baseUrl}/api/nodes/nonexistent-xyz`, 'PUT', {
+        displayName: 'WontWork',
+      });
+      expect(update.status).toBe(200);
+    });
+
+    it('PUT /api/nodes/:id validates empty update body', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'EmptyUpdateNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'PUT', {});
+      expect(update.status).toBe(400);
+    });
+
+    it('PATCH /api/nodes/:id works as alias for PUT', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PatchTestNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'PATCH', {
+        displayName: 'PatchedName',
+      });
+      expect(update.status).toBe(200);
+
+      const get = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      expect((get.data as { data: Record<string, unknown> }).data.displayName).toBe('PatchedName');
+    });
+
+    // ── DELETE /api/nodes/:id ──
+
+    it('DELETE /api/nodes/:id removes node and returns 204', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DeleteMe',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const del = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`, 'DELETE');
+      expect(del.status).toBe(204);
+
+      // Verify deleted
+      const get = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      expect(get.status).toBe(404);
+    });
+
+    // ── POST /api/edges ──
+
+    it('POST /api/edges creates edge with 201 and returns edge data', async () => {
+      // Create two nodes
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'EdgeFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'data/database',
+        displayName: 'EdgeTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+        type: 'async',
+        label: 'events',
+      });
+      expect(res.status).toBe(201);
+      const data = res.data as Record<string, unknown>;
+      expect(data.id).toBeDefined();
+      expect(data.fromNode).toBe(fromId);
+      expect(data.toNode).toBe(toId);
+      expect(data.type).toBe('async');
+      expect(data.label).toBe('events');
+    });
+
+    it('POST /api/edges with fromPort and toPort', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PortFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PortTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+        type: 'data-flow',
+        fromPort: 'out-1',
+        toPort: 'in-1',
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it('POST /api/edges validates required fields', async () => {
+      const res = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: 'some-id',
+      });
+      expect(res.status).toBe(400);
+      expect((res.data as Record<string, unknown>).error).toContain('toNode');
+    });
+
+    it('POST /api/edges defaults type to sync', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DefaultFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DefaultTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+      });
+      expect(res.status).toBe(201);
+      expect((res.data as Record<string, unknown>).type).toBe('sync');
+    });
+
+    // ── PUT /api/edges/:id ──
+
+    it('PUT /api/edges/:id updates edge and returns 200', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'UpdateEdgeFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'UpdateEdgeTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const createEdge = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+        type: 'sync',
+        label: 'original',
+      });
+      const edgeId = (createEdge.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/edges/${edgeId}`, 'PUT', {
+        type: 'async',
+        label: 'updated-label',
+      });
+      expect(update.status).toBe(200);
+      expect((update.data as Record<string, unknown>).updated).toBe(edgeId);
+    });
+
+    it('PATCH /api/edges/:id works as alias for PUT', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PatchEdgeFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PatchEdgeTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const createEdge = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+      });
+      const edgeId = (createEdge.data as Record<string, unknown>).id as string;
+
+      const update = await httpRequest(`${baseUrl}/api/edges/${edgeId}`, 'PATCH', {
+        label: 'patched',
+      });
+      expect(update.status).toBe(200);
+    });
+
+    // ── DELETE /api/edges/:id ──
+
+    it('DELETE /api/edges/:id removes edge and returns 204', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DelEdgeFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DelEdgeTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      const createEdge = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+      });
+      const edgeId = (createEdge.data as Record<string, unknown>).id as string;
+
+      const del = await httpRequest(`${baseUrl}/api/edges/${edgeId}`, 'DELETE');
+      expect(del.status).toBe(204);
+
+      // Verify deleted
+      const list = await httpRequest(`${baseUrl}/api/edges`);
+      expect((list.data as { data: Array<unknown> }).data).toHaveLength(0);
+    });
+
+    // ── POST /api/nodes/:id/notes ──
+
+    it('POST /api/nodes/:id/notes creates note with 201', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'NoteNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/notes`, 'POST', {
+        content: 'This is a test note',
+        author: 'test-agent',
+        tags: ['review', 'performance'],
+      });
+      expect(res.status).toBe(201);
+      const data = res.data as Record<string, unknown>;
+      expect(data.id).toBeDefined();
+      expect(data.nodeId).toBe(nodeId);
+      expect(data.content).toBe('This is a test note');
+      expect(data.author).toBe('test-agent');
+      expect(data.tags).toEqual(['review', 'performance']);
+    });
+
+    it('POST /api/nodes/:id/notes defaults author to http-api', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DefaultAuthorNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/notes`, 'POST', {
+        content: 'Note with default author',
+      });
+      expect(res.status).toBe(201);
+      expect((res.data as Record<string, unknown>).author).toBe('http-api');
+    });
+
+    it('POST /api/nodes/:id/notes validates content is required', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'NoContentNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/notes`, 'POST', {});
+      expect(res.status).toBe(400);
+      expect((res.data as Record<string, unknown>).error).toContain('content');
+    });
+
+    // ── DELETE /api/nodes/:nid/notes/:noteId ──
+
+    it('DELETE /api/nodes/:nid/notes/:noteId removes note and returns 204', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'DelNoteNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const addNote = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/notes`, 'POST', {
+        content: 'Note to delete',
+      });
+      const noteId = (addNote.data as Record<string, unknown>).id as string;
+
+      const del = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/notes/${noteId}`, 'DELETE');
+      expect(del.status).toBe(204);
+
+      // Verify note is gone
+      const getNode = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      const nodeData = (getNode.data as { data: Record<string, unknown> }).data;
+      const notes = nodeData.notes as Array<unknown>;
+      expect(notes).toHaveLength(0);
+    });
+
+    // ── POST /api/nodes/:id/code-refs ──
+
+    it('POST /api/nodes/:id/code-refs adds code reference with 201', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'CodeRefNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
+        path: 'src/services/auth.ts',
+        role: 'source',
+      });
+      expect(res.status).toBe(201);
+      const data = res.data as Record<string, unknown>;
+      expect(data.nodeId).toBe(nodeId);
+      expect(data.path).toBe('src/services/auth.ts');
+      expect(data.role).toBe('source');
+
+      // Verify via GET
+      const getNode = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      const nodeData = (getNode.data as { data: Record<string, unknown> }).data;
+      const codeRefs = nodeData.codeRefs as Array<Record<string, unknown>>;
+      expect(codeRefs).toHaveLength(1);
+      expect(codeRefs[0].path).toBe('src/services/auth.ts');
+      expect(codeRefs[0].role).toBe('source');
+    });
+
+    it('POST /api/nodes/:id/code-refs with different roles', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'MultiRefNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      for (const role of ['source', 'api-spec', 'schema', 'deployment', 'config', 'test'] as const) {
+        const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
+          path: `src/${role}/file.ts`,
+          role,
+        });
+        expect(res.status).toBe(201);
+      }
+
+      // Verify all 6 code refs
+      const getNode = await httpRequest(`${baseUrl}/api/nodes/${nodeId}`);
+      const nodeData = (getNode.data as { data: Record<string, unknown> }).data;
+      const codeRefs = nodeData.codeRefs as Array<Record<string, unknown>>;
+      expect(codeRefs).toHaveLength(6);
+    });
+
+    it('POST /api/nodes/:id/code-refs validates required fields', async () => {
+      const create = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'ValidateRefNode',
+      });
+      const nodeId = (create.data as Record<string, unknown>).id as string;
+
+      // Missing role
+      const res1 = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
+        path: 'src/foo.ts',
+      });
+      expect(res1.status).toBe(400);
+
+      // Missing path
+      const res2 = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
+        role: 'source',
+      });
+      expect(res2.status).toBe(400);
+
+      // Invalid role
+      const res3 = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
+        path: 'src/foo.ts',
+        role: 'invalid-role',
+      });
+      expect(res3.status).toBe(400);
+    });
+
+    // ── Zod validation ──
+
+    it('Zod validation returns descriptive error messages', async () => {
+      const res = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 123, // should be string
+        displayName: 'TypeMismatch',
+      });
+      expect(res.status).toBe(400);
+      const errData = res.data as Record<string, unknown>;
+      expect(errData.error).toContain('Validation error');
+    });
+
+    it('Zod validates edge type enum', async () => {
+      const n1 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'EnumFrom',
+      });
+      const n2 = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'EnumTo',
+      });
+      const fromId = (n1.data as Record<string, unknown>).id as string;
+      const toId = (n2.data as Record<string, unknown>).id as string;
+
+      // Invalid edge type
+      const res = await httpRequest(`${baseUrl}/api/edges`, 'POST', {
+        fromNode: fromId,
+        toNode: toId,
+        type: 'invalid-type',
+      });
+      expect(res.status).toBe(400);
+      expect((res.data as Record<string, unknown>).error).toContain('Validation error');
+    });
+
+    // ── Auto-save and sidecar regeneration ──
+
+    it('mutations auto-save .archc file and data persists', async () => {
+      // Create node via server 1
+      const createRes = await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
+        type: 'compute/service',
+        displayName: 'PersistTestNode',
+      });
+      expect(createRes.status).toBe(201);
+
+      // Close current server
+      await closeServer(server);
+
+      // Reload and start new server
+      const ctx2 = await GraphContext.loadFromFile(archcFile);
+      const { server: server2, baseUrl: baseUrl2 } = await startServer(ctx2);
+      server = server2;
+      baseUrl = baseUrl2;
+
+      // Verify data persisted
+      const list = await httpRequest(`${baseUrl}/api/nodes`);
+      const nodes = (list.data as { data: Array<Record<string, unknown>> }).data;
+      expect(nodes.some((n) => n.displayName === 'PersistTestNode')).toBe(true);
+    });
   });
 });
