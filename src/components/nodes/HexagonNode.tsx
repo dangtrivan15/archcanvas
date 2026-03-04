@@ -18,6 +18,7 @@ import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeArgsTable } from './NodeArgsTable';
+import { NodeBadges } from './NodeBadges';
 import { NodeShell } from './shapes/NodeShell';
 import { Box, ExternalLink } from 'lucide-react';
 import { getHandlePosition } from './shapes/handlePositions';
@@ -196,25 +197,12 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
           )}
 
           {/* Badges */}
-          {(nodeData.noteCount > 0 || nodeData.pendingSuggestionCount > 0 || nodeData.codeRefCount > 0) && (
-            <div className="flex items-center gap-2 mt-1 text-xs justify-center" data-testid="node-badges">
-              {nodeData.noteCount > 0 && (
-                <span className="text-muted-foreground" title={`${nodeData.noteCount} notes`} data-testid="badge-notes">
-                  📝 {nodeData.noteCount}
-                </span>
-              )}
-              {nodeData.pendingSuggestionCount > 0 && (
-                <span className="text-amber-500" title={`${nodeData.pendingSuggestionCount} pending suggestions`} data-testid="badge-suggestions">
-                  💡 {nodeData.pendingSuggestionCount}
-                </span>
-              )}
-              {nodeData.codeRefCount > 0 && (
-                <span className="text-muted-foreground" title={`${nodeData.codeRefCount} code references`} data-testid="badge-coderefs">
-                  📎 {nodeData.codeRefCount}
-                </span>
-              )}
-            </div>
-          )}
+          <NodeBadges
+            noteCount={nodeData.noteCount}
+            pendingSuggestionCount={nodeData.pendingSuggestionCount}
+            codeRefCount={nodeData.codeRefCount}
+            className="mt-1 justify-center"
+          />
         </div>
       </NodeShell>
 
