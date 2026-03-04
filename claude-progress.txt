@@ -7478,3 +7478,187 @@ Date: 2026-03-04
 #### Committed: 4691744
 #### Features passing: 334+ of 339
 
+
+---
+
+## Session: Feature #312 - HTTP Mutation Endpoints
+Date: 2026-03-04
+
+### Feature #312: HTTP Mutation Endpoints - PASSING
+
+#### Implementation:
+- src/cli/server/routes/mutation.ts (new file):
+  - createMutationRoutes() factory returning RouteDefinition[]
+  - Zod schemas for all request bodies (AddNodeSchema, UpdateNodeSchema, AddEdgeSchema, UpdateEdgeSchema, AddNoteSchema, AddCodeRefSchema)
+  - POST /api/nodes → textApi.addNode() (201, supports position, args, parentId)
+  - PUT/PATCH /api/nodes/:id → textApi.updateNode() + updateNodeColor() (200)
+  - DELETE /api/nodes/:id → textApi.removeNode() (204)
+  - POST /api/edges → textApi.addEdge() (201, supports fromPort, toPort)
+  - PUT/PATCH /api/edges/:id → textApi.updateEdge() (200)
+  - DELETE /api/edges/:id → textApi.removeEdge() (204)
+  - POST /api/nodes/:id/notes → textApi.addNote() (201, supports tags)
+  - DELETE /api/nodes/:nid/notes/:noteId → textApi.removeNote() (204)
+  - POST /api/nodes/:id/code-refs → textApi.addCodeRef() (201)
+  - All mutations auto-save .archc and regenerate .summary.md sidecar
+  - validateBody() helper with descriptive Zod error messages
+
+- src/cli/server/httpServer.ts:
+  - Replaced inline mutation handlers with createMutationRoutes()
+  - Import from routes/mutation.ts
+
+- test/integration/http/httpServer.test.ts:
+  - Added 30+ mutation-specific tests covering all endpoints
+  - Updated existing delete tests to expect 204 (was 200)
+  - Total: 60 tests all passing
+
+#### Verification:
+- 60 HTTP integration tests passing
+- Build succeeds cleanly
+- No mock data patterns in production code
+- Committed: 2f26a8a
+
+#### Current completion status:
+- Features passing: 329+ of 339
+
+---
+
+## Session: Feature #307 - CLI Output Formatting (JSON, Table, Human-Readable)
+Date: 2026-03-04
+
+### Feature #307: CLI Output Formatting - PASSING
+
+#### Implementation:
+Created a shared output formatting module used by all CLI commands.
+
+- src/cli/formatter.ts (new file):
+  - formatAsJson(data): JSON.stringify with 2-space indent
+  - formatAsTable(headers, rows): ASCII table with column alignment, minWidth, right-align support
+  - formatAsHuman(template, data): template-based human-readable output with {key} placeholders
+  - formatNodeSummary(): formats node lists in json/table/human modes
+  - formatNodeDetail(): formats single node detail in all modes
+  - formatEdgeSummary(): formats edge lists with arrow notation in human mode
+  - formatSearchResult(): formats search results with type badges and scores
+  - formatOutput(): generic format dispatcher for any data
+  - writeOutput(): sends data to stdout (console.log)
+  - writeInfo(): sends info messages to stderr (console.error), respects --quiet
+  - writeError(): sends error messages to stderr with "Error:" prefix
+
+- src/cli/index.ts:
+  - Replaced inline printOutput implementation with formatter module delegation
+  - Re-exports all formatter functions for backward compatibility
+  - printOutput now calls formatOutput + writeOutput
+
+- src/cli/commands/mutate.ts:
+  - Replaced console.log info messages with writeInfo (goes to stderr)
+  - Replaced printOutput calls with formatAsJson + writeOutput
+  - All 6 mutation commands updated
+
+- src/cli/commands/query.ts:
+  - Updated list-nodes to use formatNodeSummary
+  - Updated get-node to use formatNodeDetail
+  - Updated search to use formatSearchResult
+
+- test/unit/cli/formatter.test.ts: 40 new tests covering all formatter functions
+- test/unit/cli/queryCommands.test.ts: Updated table header expectations (ID/Type/Name)
+
+#### Verification:
+- 275 CLI tests passing (40 new + 228 existing + 7 integration)
+- CLI build succeeds via tsup
+- End-to-end: init → add-node → list-nodes verified in all 3 formats
+- --quiet flag properly suppresses info messages
+- No mock data patterns in production code
+- Committed: 8d0b420
+
+#### Current completion status:
+- Feature #307 marked passing
+- Features passing: 336 of 339 (99.1%)
+
+---
+
+## Session: Feature #340 - Filesystem Scanner with Gitignore Support
+Date: 2026-03-04
+
+### Feature #340: Filesystem Scanner with Gitignore Support - PASSING
+
+#### Implementation:
+Created src/analyze/scanner.ts with a complete filesystem scanning module:
+
+- **parseGitignore(content)**: Parses .gitignore file content into structured rules
+  - Handles comments, empty lines, negation (!), directory-only patterns (trailing /)
+  - Converts gitignore glob patterns to RegExp (supports *, **, ?, [])
+  - Handles escaped characters and path-relative vs basename matching
+
+- **isIgnored(relativePath, isDirectory, rules)**: Tests if a path matches ignore rules
+  - Processes rules in order, last match wins (supports negation override)
+  - Respects directory-only patterns
+
+- **scanDirectory(rootPath, options)**: Main entry point
+  - Recursive directory walking using Node.js fs APIs
+  - Merges .gitignore rules at each directory level
+  - Built-in ignores: node_modules, .git, dist, build, __pycache__, target, vendor, etc.
+  - Configurable: maxDepth (default 10), maxFiles (default 10000), additionalIgnore patterns
+  - Returns ScanResult: { fileTree, totalFiles, totalDirs, languageBreakdown }
+  - FileTree has nested DirectoryEntry/FileEntry structure
+  - Each FileEntry has: name, relativePath, size, extension, lastModified
+  - Sorted entries for deterministic output
+
+#### Tests (test/unit/analyze/scanner.test.ts):
+- 26 tests all passing
+- parseGitignore: simple patterns, comments, negation, escaped chars
+- isIgnored: filenames, directory-only, negation, path separators, **, ?
+- scanDirectory: simple files, nested dirs, metadata, built-in ignores, .gitignore respect,
+  nested .gitignore, maxDepth, maxFiles, additionalIgnore, language breakdown,
+  relative paths, empty dirs, sorting, defaults, non-existent dir
+
+#### Committed: 9275b77
+#### Features passing: 332+ of 340+
+
+---
+
+## Session: Feature #338 - Shape-Aware Handle Positioning
+Date: 2026-03-04
+
+### Feature #338: Shape-Aware Handle Positioning - PASSING
+
+#### Implementation:
+- src/components/nodes/shapes/handlePositions.ts (new file):
+  - getHandlePosition(shape, side, index, total, width, height) function
+  - Shape-specific boundary math for 8 shapes:
+    - rectangle: evenly spaced along straight edges
+    - cylinder: handles on body avoiding top/bottom elliptical caps
+    - hexagon: handles on angled edges with x-offset following slope
+    - parallelogram: handles on slanted edges with skew-based offset
+    - cloud: handles at widest left/right cloud bumps (50% height)
+    - stadium: handles on straight sides with semicircle curve correction
+    - document: handles above wavy bottom curl
+    - badge: handles above pointed bottom
+
+- src/components/nodes/shapes/useNodeHeight.ts (new file):
+  - useNodeHeight() hook using ResizeObserver to measure rendered node height
+  - Enables dynamic handle position calculations based on actual dimensions
+
+- Updated 6 shaped node components to use getHandlePosition:
+  - CylinderNode.tsx
+  - HexagonNode.tsx
+  - ParallelogramNode.tsx
+  - CloudNode.tsx
+  - StadiumNode.tsx
+  - DocumentNode.tsx
+
+- test/unit/components/handlePositions.test.ts: 47 tests
+  - All 8 shapes x left/right x single/multi port
+  - Shape-specific geometry tests (cylinder caps, hex edges, parallelogram slant)
+  - Cloud bump positioning, stadium curve correction
+  - Document curl avoidance, badge point avoidance
+  - Rectangle even spacing
+
+#### Verification:
+- Build succeeds cleanly (npx vite build)
+- 73 total shape-related tests passing (26 NodeShell + 47 handlePositions)
+- Browser verification: 5 shaped nodes on canvas, handles visually correct
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns detected
+- Committed: 3e8072d
+
+#### Current completion status:
+- Features passing: 332 of 339 (97.9%)
