@@ -8365,3 +8365,37 @@ Replaced the iris-colored ring/border selection treatment with a soft, diffused 
 
 #### Current completion status:
 - Feature #359 marked passing
+
+---
+
+## Session: Feature #360 - Enhanced stroke styling for SVG shapes
+Date: 2026-03-05
+
+### Feature #360: Enhanced stroke styling for SVG shapes - PASSING
+
+#### Implementation:
+
+**src/components/nodes/shapes/NodeShell.tsx:**
+- Added `strokeLinejoin="round"` and `strokeLinecap="round"` to the main shape `<path>` element
+- Added `strokeLinejoin="round"` and `strokeLinecap="round"` to the cylinder lid `<path>` element
+- Changed stroke width from flat 1.5/2.5 to shape-specific values:
+  - Cloud shape: 1.8 base, 2.8 selected (slightly thicker for complex curves)
+  - All other shapes: 1.5 base, 2.5 selected (standard)
+
+#### Effect:
+- Hexagon vertices: rounded instead of sharp mitered points
+- Parallelogram corners: smooth rounded joins
+- Cloud curves: slightly thicker strokes for better visibility of complex curves
+- Cylinder caps: rounded line joins for cleaner elliptical rendering
+- All shapes: clean, vector-illustration quality strokes
+
+#### Verification:
+- Added 5 different node types to canvas: Service (rectangle), Database (cylinder), CDN (cloud), API Gateway (hexagon), Message Queue (parallelogram)
+- All shapes display smooth, rounded stroke joins
+- Cloud shape has slightly thicker strokes for visual clarity
+- Strokes look clean and polished like vector illustration
+- Zero console errors (0 errors, 0 warnings)
+- Feature #360 marked passing
+
+#### Commit: Changes committed as part of concurrent agent sessions
+
