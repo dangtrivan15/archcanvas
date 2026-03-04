@@ -9281,3 +9281,62 @@ Date: 2026-03-05
 - Console: 27 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
 
 #### Feature #391 marked passing
+
+---
+
+## Session: Feature #396 - Add messaging/notification node type
+Date: 2026-03-05
+
+### Feature #396: Add `messaging/notification` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/messaging/notification.yaml`:
+  - namespace: messaging, name: notification, displayName: Notification
+  - shape: stadium, icon: Bell
+  - Args: provider (enum: FCM/APNs/SNS/OneSignal/Custom), channels (enum multi: push/email/SMS/in-app), batching (boolean), priority (enum: high/normal/low)
+  - Ports: send-notification (inbound), delivery-status (outbound)
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Bell icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows MESSAGING category with 4 entries including Notification: PASS
+- Node renders on canvas with stadium shape: PASS
+- Bell icon displayed: PASS
+- Args shown: provider=FCM, channels=push, batching=false, +1 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 30 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: f90379d
+#### Feature #396 marked passing
+#### Progress: 387/426 features passing (90.8%)
+
+---
+
+## Session: Feature #397 - Add observability/tracing node type
+Date: 2026-03-05
+
+### Feature #397: Add `observability/tracing` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/observability/tracing.yaml`:
+  - namespace: observability, name: tracing, displayName: Tracing
+  - shape: document, icon: ScanSearch
+  - Args: platform (enum: Jaeger/Zipkin/OpenTelemetry Collector/AWS X-Ray/Tempo), samplingRate (number), exportFormat (enum: OTLP/Zipkin/Jaeger), retentionDays (number)
+  - Ports: spans (inbound)
+  - Variants: none (single type)
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added ScanSearch icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows OBSERVABILITY category with 3 entries (Logging, Monitoring, Tracing): PASS
+- Node renders on canvas with document shape: PASS
+- ScanSearch icon displayed: PASS
+- Args shown: platform=Jaeger, samplingRate=0.1, exportFormat=OTLP, +1 more: PASS
+- Inbound port handle (spans) visible: PASS
+- Console: 30 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 34df4dc
+#### Feature #397 marked passing
+#### Progress: 387/426 features passing (90.8%)
