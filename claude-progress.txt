@@ -7001,3 +7001,46 @@ Date: 2026-03-04
 #### Current completion status:
 - Feature #335 marked passing
 - Features passing: 321 of 339 (94.7%)
+
+---
+
+## Session: Feature #334 - Cylinder Nodes (Database, Cache, Object Storage, Repository)
+Date: 2026-03-04
+
+### Feature #334: Cylinder Nodes - PASSING
+
+#### Implementation:
+- src/components/nodes/CylinderNode.tsx:
+  - New component wrapping NodeShell with shape='cylinder'
+  - Reuses GenericNode's inner content layout (header with icon+name, args, badges)
+  - Port handles positioned on cylinder body (30-80% range) to avoid caps
+  - Supports inline editing, ref indicators, children markers
+  - Memoized with React.memo
+
+- src/components/nodes/nodeTypeMap.ts:
+  - Maps 'database', 'cache', 'object-storage', 'repository' to CylinderNode
+  - Also updated by another agent: 'gateway' maps to HexagonNode
+
+- src/api/renderApi.ts:
+  - Added 'object-storage' and 'repository' type mappings in data namespace
+  - Shape-based routing via SHAPE_TO_COMPONENT already maps cylinder → database
+
+- test/unit/api/renderApiNodeTypes.test.ts:
+  - Updated 15 test expectations to match new shape-based routing
+  - All cylinder shapes (database, cache, object-storage, repository) → 'database' component type
+  - All rectangle shapes → 'generic'
+  - Hexagon shapes → 'gateway'
+  - Parallelogram shapes → 'queue'
+
+#### Verification:
+- Browser: Database, Cache, Object Storage all render as cylinder shapes
+- Cylinder shape shows elliptical top/bottom caps with rectangular body
+- Port handles positioned on body (not on caps)
+- Args display correctly inside cylinder (0, 3, and 5+ tested)
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+- 15/15 renderApiNodeTypes tests passing
+- 26/26 NodeShell tests passing
+
+#### Current completion status:
+- Features passing: 321 of 339 (94.7%)
