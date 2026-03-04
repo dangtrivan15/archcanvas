@@ -8669,3 +8669,25 @@ Date: 2026-03-05
 
 Commit: 633e8c3
 Feature #377 marked passing
+
+---
+
+## Session: Feature #379 - iPad App Icon Set & App Store Assets
+Date: 2026-03-05
+
+### Feature #379: iPad App Icon Set & App Store Assets - PASSING
+
+#### Implementation:
+- Updated Contents.json with full iPad icon entries: 20x20@1x/2x, 29x29@1x/2x, 40x40@1x/2x, 76x76@1x/2x, 83.5x83.5@2x
+- All 13 icon PNG files verified present (shared between iPhone and iPad entries)
+- 1024x1024 App Store icon: present, no transparency, no rounded corners
+- Created generate-ipad-screenshots.mjs using sharp for programmatic screenshot generation
+- Generated 6 App Store screenshots:
+  - 12.9" iPad Pro (2048x2732): canvas view, node editing, AI chat
+  - 11" iPad Pro (1668x2388): canvas view, node editing, AI chat
+- Updated generate-ios-icons.js to include all iPad entries
+- Build verified: vite build passes cleanly
+
+#### Commit: 70311f3
+#### Feature #379 marked passing
+#### Progress: 369/426 features passing (86.6%)
