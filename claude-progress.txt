@@ -6267,3 +6267,103 @@ Date: 2026-03-04
 
 ## Current completion status:
 - Features passing: 300 of 327 (91.7%)
+
+---
+
+## Session: Feature #317 - Toolbar Draggable Resize Handle
+Date: 2026-03-04
+
+### Feature #317: Toolbar has a draggable resize handle at its bottom edge - PASSING
+
+#### Implementation:
+- Modified src/components/toolbar/Toolbar.tsx:
+  - Added resize handle div at bottom edge with data-testid="toolbar-resize-handle"
+  - Handle has cursor-row-resize, hover highlight (primary color at 15% opacity)
+  - Visual indicator: centered 32px-wide pill at bottom of handle
+  - Mouse drag support: mousedown captures start position, mousemove updates height, mouseup cleans up
+  - Height driven by toolbarHeight from uiStore (dynamic inline style)
+  - setToolbarHeight sets toolbarHeightCustomized=true to prevent viewport-based resets
+  - Proper ARIA: role=separator, aria-orientation=horizontal, aria-valuenow/min/max
+  - Body cursor set to row-resize during drag, userSelect=none to prevent text selection
+
+#### Verification:
+- Resize handle renders in accessibility tree as separator "Resize toolbar"
+- Hover shows cursor-row-resize (CSS class)  
+- Drag down increases toolbar height, drag up decreases
+- Height clamped between 36px (TOOLBAR_MIN_HEIGHT) and 80px (TOOLBAR_MAX_HEIGHT)
+- All 38 store height tests pass
+- All 24 toolbar tab navigation tests pass
+- No code-related console errors (only Vite HMR WebSocket errors)
+- Committed: 9c6a71a
+
+---
+
+## Session: Feature #327 - Viewport-relative defaults recalculate on window resize
+Date: 2026-03-04
+
+### Feature #327: Viewport-relative defaults recalculate on window resize when no custom value is set - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added leftPanelWidthCustomized and rightPanelWidthCustomized boolean flags
+  - setLeftPanelWidth/setRightPanelWidth now set customized=true (locks value)
+  - Added updateLeftPanelWidthFromViewport(vw) action (no-op if customized)
+  - Added updateRightPanelWidthFromViewport(vw) action (no-op if customized)
+  - Added resetBarSizes() action: clears all 4 customized flags and recalculates all sizes
+- src/App.tsx:
+  - Added useEffect for viewport width changes to call updateLeft/RightPanelWidthFromViewport
+- src/components/settings/SettingsDialog.tsx:
+  - Added "Layout" section with "Reset Layout Sizes" button
+  - Shows toast "Layout sizes reset to defaults" on click
+- test/unit/store/viewportRelativeDefaults.test.ts: 21 tests (all passing)
+  - Steps 1-5 of feature verified
+  - Left panel, right panel, toolbar, status bar all tested
+  - resetBarSizes resets all 4 dimensions simultaneously
+
+#### Browser verification:
+- App loads with zero console errors
+- Settings dialog shows Layout section with Reset Layout Sizes button
+- Clicking reset shows toast confirmation
+- All 357 store tests pass (including 21 new)
+
+#### Current completion status:
+- Features passing: 303 of 327 (92.7%)
+
+
+---
+
+## Session: Feature #321 - Toolbar and Status Bar Heights Persist Across Sessions
+Date: 2026-03-04
+
+### Feature #321: Toolbar and status bar heights persist across sessions - PASSING
+
+#### Implementation (already present from parallel agent in commit ef5d1c1):
+- src/store/uiStore.ts:
+  - TOOLBAR_HEIGHT_STORAGE_KEY ('toolbar-height') and STATUS_BAR_HEIGHT_STORAGE_KEY ('status-bar-height') constants
+  - readPersistedHeight(): synchronous localStorage read at store init time
+  - persistHeight(): async save via preferencesAdapter (web + native)
+  - clearPersistedHeight(): async removal via preferencesAdapter
+  - loadPersistedHeights(): async loader for Capacitor native (iOS/Mac)
+  - Store init reads from localStorage, falls back to computeDefault* functions
+  - setToolbarHeight/setStatusBarHeight persist to storage on every call
+  - resetBarSizes clears persisted values and resets to viewport-relative defaults
+
+#### Tests added:
+- test/unit/store/toolbarStatusBarPersistence.test.ts: 22 tests (all passing)
+  - Storage keys correctness
+  - setToolbarHeight/setStatusBarHeight persist to localStorage
+  - Clamped values persisted (not raw)
+  - resetBarSizes clears persisted values and resets to defaults
+  - loadPersistedHeights (async) loads from storage correctly
+  - No-op when no persisted values exist
+  - Ignores non-numeric/invalid storage values
+  - Feature verification steps 1-5 tested
+  - Edge cases: exact min/max, empty string handling
+
+#### Browser verification:
+- App loads with zero console errors
+- No mock data patterns in production code
+- Committed: fd23e41
+
+#### Current completion status:
+- Feature #321 marked passing
