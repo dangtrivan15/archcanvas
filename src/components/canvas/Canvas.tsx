@@ -43,6 +43,7 @@ import { findNearestNode, findTopLeftNode, extractPositions, type Direction } fr
 import { formatBindingDisplay } from '@/core/input';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { useLongPress } from '@/hooks/useLongPress';
+import { usePencilInput } from '@/hooks/usePencilInput';
 
 export function Canvas() {
   return (
@@ -424,6 +425,9 @@ function CanvasInner() {
   );
 
   const longPressHandlers = useLongPress(handleLongPress);
+
+  // Track Apple Pencil / stylus input for pressure, tilt, and input differentiation
+  usePencilInput();
 
   // Wrap onPointerDown to capture the target element for event delegation
   const onLongPressPointerDown = useCallback(

@@ -7888,3 +7888,47 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Feature #367 marked passing
+
+---
+
+## Session: Feature #353 - Node Shape Fill Color Tint
+Date: 2026-03-04
+
+### Feature #353: Node shape fill uses subtle color tint instead of plain white/surface - PASSING
+
+#### Implementation:
+Modified three files to add subtle accent color tints to node backgrounds:
+
+1. **src/components/nodes/shapes/NodeShell.tsx** (SVG shape nodes):
+   - Added `tintColor` variable: `color ? \`${color}0F\` : undefined` (~6% opacity)
+   - Added a second `<path>` overlay with the accent color tint on top of the surface fill
+   - Applied same tint to cylinder lid path
+   - Added shape-aware content insets via shapeInsets module
+
+2. **src/components/nodes/GenericNode.tsx** (rectangle nodes):
+   - Changed `backgroundColor` to `background` with CSS `linear-gradient` overlay
+   - Background: `linear-gradient(${effectiveColor}0F, ${effectiveColor}0F), hsl(var(--surface))`
+   - Added `colorTintedShadow` for color-tinted drop shadows on hover
+   - Enhanced header gradient with accent color
+
+3. **src/utils/nodeColors.ts**:
+   - Added `hexToRgb()` helper function
+   - Added `colorTintedShadow()` for color-tinted CSS box-shadows
+   - Added `hexToNormalizedRgb()` for SVG filter use
+
+4. **src/components/nodes/shapes/shapeInsets.ts** (new):
+   - Shape-aware content padding calculations for all 8 shapes
+   - Prevents content clipping against non-rectangular shape boundaries
+
+#### Verification:
+- 4 different node types on canvas: Service (blue), Database (green), Message Queue (orange), CDN (purple)
+- Each node has visually distinct background tint matching accent color
+- Tints are subtle (~6% opacity) - text remains easily readable
+- Verified in both Dark and Light themes
+- 26 NodeShell unit tests passing
+- Zero JS console errors (only HMR WebSocket reconnect during dev)
+- No mock data patterns detected
+- Feature #353 marked passing
+
+#### Current completion status:
+- Feature #353 marked passing
