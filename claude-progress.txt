@@ -9192,3 +9192,33 @@ Date: 2026-03-05
 
 #### Commit: e60259c
 #### Feature #392 marked passing
+
+---
+
+## Session: Feature #394 - Add compute/container node type
+Date: 2026-03-05
+
+### Feature #394: Add `compute/container` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/compute/container.yaml`:
+  - namespace: compute, name: container, displayName: Container
+  - shape: rectangle, icon: Container
+  - Args: runtime (enum: Docker/ECS/Kubernetes/Cloud Run/Fargate), image (string), cpu (string), memory (string), replicas (number), healthCheckPath (string)
+  - Ports: inbound (traffic), outbound (dependency)
+  - Variants: Docker Standalone, Kubernetes Pod, ECS Fargate Task, Cloud Run Service
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Container icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows COMPUTE category with 6 entries including Container: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Container icon displayed: PASS
+- Args shown: runtime=Docker, image=app:latest, cpu=256m, +3 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 27 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: b3de6ca
+#### Feature #394 marked passing
+#### Progress: 384/426 features passing (90.1%)

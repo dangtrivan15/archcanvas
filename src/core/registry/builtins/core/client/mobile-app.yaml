@@ -1,0 +1,83 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: mobile-app
+  namespace: client
+  version: "1.0.0"
+  displayName: Mobile App
+  description: A mobile application client targeting iOS, Android, or cross-platform frameworks like React Native, Flutter, and Kotlin Multiplatform.
+  icon: Smartphone
+  tags:
+    - client
+    - mobile
+    - app
+  shape: rectangle
+spec:
+  args:
+    - name: platform
+      type: enum
+      required: true
+      description: Target mobile platform or cross-platform framework
+      options:
+        - iOS
+        - Android
+        - React Native
+        - Flutter
+        - Kotlin Multiplatform
+      default: iOS
+    - name: minOsVersion
+      type: string
+      description: Minimum supported OS version (e.g. iOS 16, Android 12)
+      default: ""
+    - name: pushNotifications
+      type: boolean
+      description: Whether push notifications are enabled
+      default: false
+  ports:
+    - name: api-call
+      direction: outbound
+      protocol:
+        - HTTPS
+        - gRPC
+      description: Outgoing API calls to backend services
+    - name: push-receive
+      direction: outbound
+      protocol:
+        - HTTPS
+        - WebSocket
+      description: Receives push notifications from notification services
+  children: []
+  ai:
+    context: "This is a mobile application client. Consider platform-specific guidelines (HIG for iOS, Material Design for Android), app store requirements, offline capabilities, and push notification configuration."
+    reviewHints:
+      - Verify minimum OS version aligns with target user demographics
+      - Check push notification setup includes proper certificates/keys
+      - Consider offline-first architecture for unreliable network conditions
+variants:
+  - name: iOS App
+    description: Native iOS application
+    args:
+      platform: iOS
+      minOsVersion: "16.0"
+      pushNotifications: true
+  - name: Android App
+    description: Native Android application
+    args:
+      platform: Android
+      minOsVersion: "12"
+      pushNotifications: true
+  - name: React Native App
+    description: Cross-platform React Native application
+    args:
+      platform: React Native
+      pushNotifications: true
+  - name: Flutter App
+    description: Cross-platform Flutter application
+    args:
+      platform: Flutter
+      pushNotifications: false
+  - name: Kotlin Multiplatform App
+    description: Kotlin Multiplatform mobile application
+    args:
+      platform: Kotlin Multiplatform
+      pushNotifications: false
