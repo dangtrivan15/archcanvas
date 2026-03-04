@@ -1,4 +1,29 @@
 ==================================================
+SESSION: 2026-03-04 - Feature #339
+==================================================
+
+## What was accomplished:
+
+### Feature #339: NodeDef YAML shape Metadata Field - PASSING
+
+#### Implementation:
+- src/types/nodedef.ts: Added NodeDefShape type and optional shape field to NodeDefMetadata
+- src/core/registry/nodedefValidator.ts: Added nodeDefShapeSchema Zod enum with all 8 valid shapes
+- Updated all 15 built-in NodeDef YAML files with shape field
+- src/api/renderApi.ts: Added SHAPE_TO_COMPONENT map, shape-first lookup in getNodeComponentType()
+- src/components/nodes/nodeTypeMap.ts: Added cloud, stadium, document entries
+
+#### Verification:
+- 4 node types added via UI, all rendered with correct shapes
+- All shape-related unit tests passing, zero JS console errors
+- Committed: d8a1a92
+
+#### Current completion status:
+- Features passing: 324 of 339 (95.6%)
+
+---
+
+==================================================
 SESSION: 2026-03-04 - Features #288, #291
 ==================================================
 
@@ -7146,3 +7171,46 @@ Date: 2026-03-04
 
 #### Committed: c5cede5
 #### Features passing: 326+ of 339
+
+---
+
+## Session: Feature #306 - archcanvas export Command
+Date: 2026-03-04
+
+### Feature #306: archcanvas export Command - PASSING
+
+#### Implementation:
+- src/cli/commands/export.ts (new file):
+  - registerExportCommand() function registers export subcommand
+  - --type option: markdown (default), mermaid, png, svg
+  - --output / -o option to write to file (stdout if omitted)
+  - --with-mermaid flag for markdown format to include Mermaid diagram
+  - PNG/SVG: prints helpful error message (requires browser DOM)
+  - Uses ExportApi: generateMarkdownSummary(), generateMermaid(), generateSummaryWithMermaid()
+  - Note: --type used instead of --format to avoid conflict with global --format (json/table/human)
+
+- src/cli/index.ts:
+  - Replaced inline export command with registerExportCommand(program) call
+  - Added import for registerExportCommand
+
+- test/unit/cli/exportCommand.test.ts: 15 tests
+  - Command registration (type, output, with-mermaid options)
+  - Markdown export to stdout
+  - Default type is markdown
+  - Markdown with --with-mermaid includes Mermaid diagram
+  - Mermaid export to stdout (pure mermaid, no markdown)
+  - File output with --output
+  - Mermaid file output
+  - Confirmation message on file write
+  - --quiet suppresses confirmation
+  - PNG error message with helpful guidance
+  - SVG error message with helpful guidance
+
+#### Verification:
+- 15 new export command tests passing
+- 228 total CLI tests passing
+- No TypeScript errors
+- No mock data patterns
+
+#### Current completion status:
+- Feature #306 marked passing
