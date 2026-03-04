@@ -11,7 +11,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  Panel,
   useReactFlow,
   type OnSelectionChangeFunc,
   type OnConnect,
@@ -36,7 +35,6 @@ import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
 import { ModeIndicator } from '@/components/canvas/ModeIndicator';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
-import { ShortcutHints } from '@/components/canvas/ShortcutHints';
 import { CanvasContextMenu } from '@/components/canvas/CanvasContextMenu';
 import { NodeContextMenu } from '@/components/canvas/NodeContextMenu';
 import { EdgeContextMenu } from '@/components/canvas/EdgeContextMenu';
@@ -990,10 +988,7 @@ function CanvasInner() {
           aria-label="Mini map"
           data-testid="canvas-minimap"
         />
-        {/* Contextual shortcut hints (bottom-right, inside ReactFlow Panel) */}
-        <Panel position="bottom-right" className="!mb-12">
-          <ShortcutHints />
-        </Panel>
+        {/* Shortcut hints are now merged into ModeStatusBar */}
       </ReactFlow>
 
       {/* Vim-style mode indicator (bottom-left, above minimap) */}

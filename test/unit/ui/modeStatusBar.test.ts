@@ -168,19 +168,19 @@ describe('ModeStatusBar', () => {
     });
   });
 
-  // ─── Context Hint ──────────────────────────────────────────────
+  // ─── Shortcut Hints (merged from ShortcutHints panel) ──────────
 
-  describe('Context hint', () => {
-    it('has data-testid="context-hint"', () => {
-      expect(COMPONENT_SRC).toContain('data-testid="context-hint"');
+  describe('Shortcut hints (merged)', () => {
+    it('has data-testid="shortcut-hints" for the hints container', () => {
+      expect(COMPONENT_SRC).toContain('data-testid="shortcut-hints"');
     });
 
     it('shows "cancel" hint in Connect mode', () => {
       expect(COMPONENT_SRC).toContain("label: 'cancel'");
     });
 
-    it('shows "done editing" hint in Edit mode', () => {
-      expect(COMPONENT_SRC).toContain("label: 'done editing'");
+    it('shows "exit" hint in Edit mode', () => {
+      expect(COMPONENT_SRC).toContain("label: 'exit'");
     });
 
     it('shows "change type" hint when edge selected', () => {
@@ -195,8 +195,8 @@ describe('ModeStatusBar', () => {
       expect(COMPONENT_SRC).toContain("label: 'commands'");
     });
 
-    it('shows "bulk actions" hint when multi-select', () => {
-      expect(COMPONENT_SRC).toContain("label: 'bulk actions'");
+    it('shows "all shortcuts" hint when nothing selected', () => {
+      expect(COMPONENT_SRC).toContain("label: 'all shortcuts'");
     });
 
     it('uses kbd element for key display', () => {
@@ -205,6 +205,12 @@ describe('ModeStatusBar', () => {
 
     it('uses ShortcutManager for dynamic bindings', () => {
       expect(COMPONENT_SRC).toContain('sm.getBinding(actionId)');
+    });
+
+    it('hints are toggleable with H key (persisted in localStorage)', () => {
+      expect(COMPONENT_SRC).toContain('HINTS_STORAGE_KEY');
+      expect(COMPONENT_SRC).toContain('hintsVisible');
+      expect(COMPONENT_SRC).toContain('toggleHints');
     });
   });
 
@@ -475,39 +481,44 @@ describe('ModeStatusBar', () => {
     });
   });
 
-  // ─── Context Hint Logic ────────────────────────────────────────
+  // ─── getHints Logic (replaces old getContextHint) ──────────────
 
-  describe('Context hint logic', () => {
-    it('Connect mode returns cancel hint', () => {
-      // getContextHint checks mode first
+  describe('getHints logic', () => {
+    it('Connect mode returns navigate, confirm, type, cancel hints', () => {
       expect(COMPONENT_SRC).toContain("mode === CanvasMode.Connect");
-      expect(COMPONENT_SRC).toContain("key: 'Esc'");
+      expect(COMPONENT_SRC).toContain("label: 'navigate'");
+      expect(COMPONENT_SRC).toContain("label: 'confirm'");
+      expect(COMPONENT_SRC).toContain("label: 'type'");
     });
 
-    it('Edit mode returns done editing hint', () => {
+    it('Edit mode returns tab, prev field, confirm, exit hints', () => {
       expect(COMPONENT_SRC).toContain("mode === CanvasMode.Edit");
-      expect(COMPONENT_SRC).toContain("key: 'Esc'");
-      expect(COMPONENT_SRC).toContain("label: 'done editing'");
+      expect(COMPONENT_SRC).toContain("label: 'next field'");
+      expect(COMPONENT_SRC).toContain("label: 'prev field'");
+      expect(COMPONENT_SRC).toContain("label: 'exit'");
     });
 
-    it('multi-select returns bulk actions hint', () => {
-      expect(COMPONENT_SRC).toContain("multiSelectCount > 1");
-      expect(COMPONENT_SRC).toContain("label: 'bulk actions'");
-    });
-
-    it('edge selected returns change type hint', () => {
-      expect(COMPONENT_SRC).toContain("hasEdgeSelected");
+    it('edge selected returns change type, delete, deselect hints', () => {
+      expect(COMPONENT_SRC).toContain("hasEdge");
       expect(COMPONENT_SRC).toContain("key: 'T'");
+      expect(COMPONENT_SRC).toContain("label: 'deselect'");
     });
 
-    it('node selected returns connect hint', () => {
-      expect(COMPONENT_SRC).toContain("hasNodeSelected");
+    it('node selected returns connect, edit, delete, rename, commands hints', () => {
+      expect(COMPONENT_SRC).toContain("hasNode");
+      expect(COMPONENT_SRC).toContain("label: 'edit'");
+      expect(COMPONENT_SRC).toContain("label: 'rename'");
     });
 
-    it('uses useMemo for context hint computation', () => {
+    it('nothing selected returns commands, service, database, all shortcuts, hide hints', () => {
+      expect(COMPONENT_SRC).toContain("label: 'service'");
+      expect(COMPONENT_SRC).toContain("label: 'database'");
+      expect(COMPONENT_SRC).toContain("label: 'hide hints'");
+    });
+
+    it('uses useMemo for hints computation', () => {
       expect(COMPONENT_SRC).toContain("useMemo");
-      // Check it memoizes the context hint
-      expect(COMPONENT_SRC).toContain("getContextHint(canvasMode");
+      expect(COMPONENT_SRC).toContain("getHints(canvasMode");
     });
   });
 

@@ -2,15 +2,16 @@
  * ModeStatusBar - VS Code-style persistent status bar at the bottom of the canvas.
  *
  * Sections:
- * - Left: mode badge (Normal=gray, Connect=blue, Edit=green) + context hint
+ * - Left: mode badge (Normal=gray, Connect=blue, Edit=green) + connect step
  * - Center: breadcrumb path (clickable to navigate)
- * - Right: zoom level | selection count
+ * - Right: contextual shortcut hints | selection count | zoom level
  *
  * Design: 28-32px height, semi-transparent, pointer-events only on interactive elements.
  * Animated mode transitions via CSS.
+ * Shortcut hints are merged from the former ShortcutHints floating panel (toggleable with H key).
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -21,22 +22,22 @@ import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { formatBindingDisplay } from '@/core/input';
 import type { ArchNode } from '@/types/graph';
 
-// ─── Context Hint Logic ─────────────────────────────────────────
+const HINTS_STORAGE_KEY = 'archcanvas:hints-visible';
 
-interface ContextHint {
-  key: string;
-  label: string;
+// ─── Hint Item Interface ─────────────────────────────────────────
+
+interface HintItem {
+  key: string;       // display key (e.g., "C", "⌘K")
+  label: string;     // action label (e.g., "connect", "commands")
 }
 
+// ─── Full Contextual Hints Logic ─────────────────────────────────
+
 /**
- * Returns a single relevant shortcut hint for the current state.
+ * Build hint items for a given context, using the user's actual shortcut bindings.
+ * Replaces the single getContextHint with the full set from ShortcutHints.
  */
-function getContextHint(
-  mode: CanvasMode,
-  hasNodeSelected: boolean,
-  hasEdgeSelected: boolean,
-  multiSelectCount: number,
-): ContextHint | null {
+function getHints(mode: CanvasMode, hasNode: boolean, hasEdge: boolean): HintItem[] {
   const sm = getShortcutManager();
   const fmt = (actionId: string): string => {
     const raw = sm.getBinding(actionId);
@@ -44,28 +45,50 @@ function getContextHint(
   };
 
   if (mode === CanvasMode.Connect) {
-    return { key: 'Esc', label: 'cancel' };
+    return [
+      { key: '↑↓←→', label: 'navigate' },
+      { key: fmt('normal:enter-edit-alt') || 'Enter', label: 'confirm' },
+      { key: '1/2/3', label: 'type' },
+      { key: fmt('canvas:deselect') || 'Esc', label: 'cancel' },
+    ];
   }
 
   if (mode === CanvasMode.Edit) {
-    return { key: 'Esc', label: 'done editing' };
+    return [
+      { key: 'Tab', label: 'next field' },
+      { key: '⇧Tab', label: 'prev field' },
+      { key: 'Enter', label: 'confirm' },
+      { key: fmt('canvas:deselect') || 'Esc', label: 'exit' },
+    ];
   }
 
   // Normal mode
-  if (multiSelectCount > 1) {
-    return { key: fmt('canvas:command-palette') || '\u2318K', label: 'bulk actions' };
+  if (hasEdge) {
+    return [
+      { key: 'T', label: 'change type' },
+      { key: fmt('edit:delete') || 'Del', label: 'delete' },
+      { key: fmt('canvas:deselect') || 'Esc', label: 'deselect' },
+    ];
   }
 
-  if (hasEdgeSelected) {
-    return { key: 'T', label: 'change type' };
-  }
-
-  if (hasNodeSelected) {
-    return { key: fmt('normal:enter-connect') || 'C', label: 'connect' };
+  if (hasNode) {
+    return [
+      { key: fmt('normal:enter-connect') || 'C', label: 'connect' },
+      { key: fmt('normal:enter-edit') || 'i', label: 'edit' },
+      { key: fmt('edit:delete') || 'Del', label: 'delete' },
+      { key: fmt('node:rename') || 'F2', label: 'rename' },
+      { key: fmt('canvas:command-palette') || '⌘K', label: 'commands' },
+    ];
   }
 
   // Nothing selected
-  return { key: fmt('canvas:command-palette') || '\u2318K', label: 'commands' };
+  return [
+    { key: fmt('canvas:command-palette') || '⌘K', label: 'commands' },
+    { key: fmt('node:add-service') || 'S', label: 'service' },
+    { key: fmt('node:add-database') || 'D', label: 'database' },
+    { key: fmt('canvas:shortcuts-help') || '?', label: 'all shortcuts' },
+    { key: 'H', label: 'hide hints' },
+  ];
 }
 
 // ─── Breadcrumb Path Resolution ─────────────────────────────────
@@ -124,7 +147,6 @@ export function ModeStatusBar() {
   const graph = useCoreStore((s) => s.graph);
 
   // Derived state
-  const totalSelected = selectedNodeIds.length + selectedEdgeIds.length;
   const hasNodeSelected = !!selectedNodeId || selectedNodeIds.length > 0;
   const hasEdgeSelected = !!selectedEdgeId || selectedEdgeIds.length > 0;
 
@@ -134,11 +156,51 @@ export function ModeStatusBar() {
     [graph.nodes, navigationPath],
   );
 
-  // Context hint
-  const contextHint = useMemo(
-    () => getContextHint(canvasMode, hasNodeSelected, hasEdgeSelected, totalSelected),
-    [canvasMode, hasNodeSelected, hasEdgeSelected, totalSelected],
+  // Full contextual hints (replaces the single contextHint)
+  const hints = useMemo(
+    () => getHints(canvasMode, hasNodeSelected, hasEdgeSelected),
+    [canvasMode, hasNodeSelected, hasEdgeSelected],
   );
+
+  // Hints visibility (toggleable with H key, persisted in localStorage)
+  const [hintsVisible, setHintsVisible] = useState(() => {
+    try {
+      const stored = localStorage.getItem(HINTS_STORAGE_KEY);
+      return stored !== 'false'; // default visible
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleHints = useCallback(() => {
+    setHintsVisible((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(HINTS_STORAGE_KEY, String(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'h') return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if ((e.target as HTMLElement)?.isContentEditable) return;
+
+      const mode = useUIStore.getState().canvasMode;
+      if (mode !== CanvasMode.Normal) return;
+
+      e.preventDefault();
+      toggleHints();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [toggleHints]);
 
   // Mode badge style
   const badgeStyle = MODE_BADGE_STYLES[canvasMode];
@@ -173,7 +235,7 @@ export function ModeStatusBar() {
       role="status"
       aria-label="Canvas status bar"
     >
-      {/* ─── Left Section: Mode Badge + Context Hint ─── */}
+      {/* ─── Left Section: Mode Badge + Connect Step ─── */}
       <div className="flex items-center gap-2 pl-2 shrink-0 min-w-0">
         {/* Mode Badge */}
         <span
@@ -195,17 +257,6 @@ export function ModeStatusBar() {
             {connectStep === 'select-source' && 'pick source'}
             {connectStep === 'select-target' && 'pick target'}
             {connectStep === 'pick-type' && '1/2/3 type'}
-          </span>
-        )}
-
-        {/* Context Hint */}
-        {contextHint && (
-          <span
-            className="flex items-center gap-1 text-white/50 text-[10px]"
-            data-testid="context-hint"
-          >
-            <kbd className="font-mono font-bold text-white/70">{contextHint.key}</kbd>
-            <span>{contextHint.label}</span>
           </span>
         )}
       </div>
@@ -253,8 +304,31 @@ export function ModeStatusBar() {
         )}
       </div>
 
-      {/* ─── Right Section: Zoom + Selection Count ─── */}
+      {/* ─── Right Section: Shortcut Hints | Selection Count | Zoom ─── */}
       <div className="flex items-center gap-2 pr-2 shrink-0 text-white/60">
+        {/* Contextual shortcut hints (merged from ShortcutHints) */}
+        {hintsVisible && (
+          <div
+            className="flex items-center gap-1 text-[10px] font-mono"
+            data-testid="shortcut-hints"
+            role="status"
+            aria-label="Keyboard shortcut hints"
+          >
+            {hints.map((hint, i) => (
+              <span key={hint.label} className="flex items-center gap-0.5">
+                {i > 0 && <span className="text-white/30 mx-0.5">|</span>}
+                <kbd className="font-bold text-white">{hint.key}</kbd>
+                <span className="text-white/60">{hint.label}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Separator between hints and selection/zoom */}
+        {hintsVisible && (selectionText || true) && (
+          <span className="text-white/20">|</span>
+        )}
+
         {/* Selection count */}
         {selectionText && (
           <>
