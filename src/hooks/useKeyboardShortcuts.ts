@@ -5,8 +5,7 @@
  * that conflict with text editing.
  * Handles file operations (Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+O),
  * undo/redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y),
- * command palette (Ctrl+K), help (? to toggle shortcuts panel),
- * and Vim-style mode transitions (C → Connect, i/Enter → Edit, Escape → Normal).
+ * command palette (Ctrl+K), and help (? to toggle shortcuts panel).
  */
 
 import { useEffect, useCallback } from 'react';
@@ -17,13 +16,10 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
-import { CanvasMode } from '@/core/input/canvasMode';
-import { quickSearchNext, quickSearchPrev } from '@/components/shared/QuickSearchOverlay';
-import { findNode } from '@/core/graph/graphEngine';
 
 /**
  * Map from node:add-* action IDs to NodeDef type keys.
- * Used by hotkey node creation shortcuts (Normal mode only).
+ * Used by hotkey node creation shortcuts.
  */
 export const HOTKEY_NODE_TYPE_MAP: Record<string, string> = {
   'node:add-service': 'compute/service',
@@ -43,7 +39,6 @@ export function useKeyboardShortcuts() {
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const toggleShortcutsHelp = useUIStore((s) => s.toggleShortcutsHelp);
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
-  const enterMode = useUIStore((s) => s.enterMode);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
   const requestZoomIn = useCanvasStore((s) => s.requestZoomIn);
   const requestZoomOut = useCanvasStore((s) => s.requestZoomOut);
@@ -82,84 +77,12 @@ export function useKeyboardShortcuts() {
         }
       }
 
-      // ── Vim-style mode entry shortcuts (only in Normal mode, not in text input) ──
       const inInput = isActiveElementTextInput();
-      const currentMode = useUIStore.getState().canvasMode;
-
-      if (!inInput && currentMode === CanvasMode.Normal) {
-        const noModifiers = !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
-
-        // 'C' → Enter Connect mode (with source = selected node, or pick source first)
-        if (noModifiers && key.toLowerCase() === 'c') {
-          e.preventDefault();
-          const selectedNodeId = useCanvasStore.getState().selectedNodeId;
-          enterMode(CanvasMode.Connect);
-          useUIStore.getState().startConnect(selectedNodeId);
-          return;
-        }
-
-        // 'i' → Enter Edit mode (requires selected node)
-        if (noModifiers && key.toLowerCase() === 'i') {
-          const selectedNodeId = useCanvasStore.getState().selectedNodeId;
-          if (selectedNodeId) {
-            e.preventDefault();
-            enterMode(CanvasMode.Edit);
-            useUIStore.getState().openRightPanel('properties');
-            return;
-          }
-        }
-
-        // 'n' → Next search match (Vim-style)
-        if (noModifiers && key.toLowerCase() === 'n' && !e.shiftKey) {
-          e.preventDefault();
-          quickSearchNext();
-          return;
-        }
-
-        // 'N' (Shift+n) → Previous search match (Vim-style)
-        if (key === 'N' && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          e.preventDefault();
-          quickSearchPrev();
-          return;
-        }
-
-        // Enter → Drill into group node (fractal zoom) or Enter Edit mode (leaf node)
-        if (noModifiers && key === 'Enter') {
-          const selectedNodeId = useCanvasStore.getState().selectedNodeId;
-          if (selectedNodeId) {
-            e.preventDefault();
-            const { graph } = useCoreStore.getState();
-            const node = findNode(graph, selectedNodeId);
-            if (node && node.children.length > 0) {
-              // Group node: drill in (fractal zoom)
-              console.log('[KeyboardNav] Drill into group node:', node.displayName);
-              useNavigationStore.getState().zoomIn(selectedNodeId);
-              useCanvasStore.getState().clearSelection();
-              useCanvasStore.getState().requestFitView();
-            } else {
-              // Leaf node: enter Edit mode
-              enterMode(CanvasMode.Edit);
-              useUIStore.getState().openRightPanel('properties');
-            }
-            return;
-          }
-        }
-      }
 
       // ── Standard ShortcutManager matching ──
       const manager = getShortcutManager();
       const actionId = manager.matchEvent(e);
       if (!actionId) return;
-
-      // Filter mode-prefixed actions by current mode
-      // Only actual mode-transition actions are mode-gated:
-      // - normal:* actions (enter-connect, enter-edit) are only in Normal mode
-      // - connect:* actions (exit) are only in Connect mode
-      // - edit:exit is only in Edit mode
-      // Category-based actions (edit:undo, edit:redo, edit:delete) work in ALL modes.
-      if (actionId.startsWith('normal:') && currentMode !== CanvasMode.Normal) return;
-      if (actionId.startsWith('connect:') && currentMode !== CanvasMode.Connect) return;
-      if (actionId === 'edit:exit' && currentMode !== CanvasMode.Edit) return;
 
       switch (actionId) {
         case 'canvas:shortcuts-help':
@@ -301,16 +224,16 @@ export function useKeyboardShortcuts() {
           }
           break;
 
-        // Quick Search (Vim '/' search)
+        // Quick Search ('/' search)
         case 'nav:search':
           if (inInput) return;
           e.preventDefault();
           toggleQuickSearch();
           break;
 
-        // Edge Type Cycling (Normal mode only, not in text input)
+        // Edge Type Cycling (not in text input)
         case 'edge:cycle-type':
-          if (inInput || currentMode !== CanvasMode.Normal) return;
+          if (inInput) return;
           e.preventDefault();
           {
             const { graph, updateEdge } = useCoreStore.getState();
@@ -332,13 +255,13 @@ export function useKeyboardShortcuts() {
           }
           break;
 
-        // Node Quick Create hotkeys (Normal mode only, not in text input)
+        // Node Quick Create hotkeys (not in text input)
         case 'node:add-service':
         case 'node:add-database':
         case 'node:add-queue':
         case 'node:add-gateway':
         case 'node:add-cache':
-          if (inInput || currentMode !== CanvasMode.Normal) return;
+          if (inInput) return;
           e.preventDefault();
           {
             const typeKey = HOTKEY_NODE_TYPE_MAP[actionId];
@@ -398,7 +321,7 @@ export function useKeyboardShortcuts() {
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, toggleQuickSearch, enterMode, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
+    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, toggleQuickSearch, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
   );
 
   useEffect(() => {

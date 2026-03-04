@@ -53,13 +53,6 @@ a:focus-visible {
   transition: none;
 }
 
-/* Connect mode: green glow on source node */
-.react-flow__node.connect-source-glow {
-  box-shadow: 0 0 0 3px #22c55e, 0 0 12px 4px rgba(34, 197, 94, 0.4);
-  border-radius: 8px;
-  z-index: 10;
-}
-
 /* ─── Safe Area Insets for iPad notch, home indicator, and status bar ─── */
 /* Requires <meta name="viewport" content="viewport-fit=cover"> in index.html */
 /* On desktop browsers, env(safe-area-inset-*) resolves to 0px (no effect) */

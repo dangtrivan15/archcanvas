@@ -1,59 +1,14 @@
 /**
  * CommandPalette - searchable command overlay triggered by Cmd+K / Ctrl+K.
  * Provides quick access to all available actions, navigation, and node search.
- * Supports multi-step wizard mode (e.g., Connect Nodes flow).
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Search, Box } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
-import { useCanvasStore } from '@/store/canvasStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { getAllCommands, searchCommands, type Command, type CommandCategory } from '@/config/commandRegistry';
 import { iconMap } from '@/components/nodes/GenericNode';
-import type { ArchNode, EdgeType } from '@/types/graph';
-
-// === Wizard support for multi-step commands ===
-
-interface WizardOption {
-  id: string;
-  label: string;
-  subtitle?: string;
-}
-
-interface ConnectWizardState {
-  step: 'source' | 'target' | 'type';
-  sourceNodeId?: string;
-  sourceNodeName?: string;
-  targetNodeId?: string;
-  targetNodeName?: string;
-}
-
-const EDGE_TYPE_OPTIONS: WizardOption[] = [
-  { id: 'sync', label: 'Sync', subtitle: 'Direct request-response call' },
-  { id: 'async', label: 'Async', subtitle: 'Event-driven or message-based' },
-  { id: 'data-flow', label: 'Data Flow', subtitle: 'Data pipeline or ETL stream' },
-];
-
-/** Collect all nodes recursively into a flat array of WizardOptions. */
-function collectNodeOptions(nodes: ArchNode[], excludeId?: string): WizardOption[] {
-  const result: WizardOption[] = [];
-  function walk(list: ArchNode[]) {
-    for (const node of list) {
-      if (node.id !== excludeId) {
-        result.push({
-          id: node.id,
-          label: node.displayName,
-          subtitle: node.type,
-        });
-      }
-      if (node.children.length > 0) walk(node.children);
-    }
-  }
-  walk(nodes);
-  return result;
-}
 
 /** Category badge colors */
 const CATEGORY_COLORS: Record<CommandCategory, string> = {
@@ -69,15 +24,11 @@ const CATEGORY_COLORS: Record<CommandCategory, string> = {
 export function CommandPalette() {
   const open = useUIStore((s) => s.commandPaletteOpen);
   const closePalette = useUIStore((s) => s.closeCommandPalette);
-  const graph = useCoreStore((s) => s.graph);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
-
-  // Wizard state for multi-step commands (e.g., Connect Nodes)
-  const [wizard, setWizard] = useState<ConnectWizardState | null>(null);
 
   // Get all commands when the palette opens
   const allCommands = useMemo(() => {
@@ -85,65 +36,19 @@ export function CommandPalette() {
     return getAllCommands();
   }, [open]);
 
-  // Filter commands based on query (normal mode only)
+  // Filter commands based on query
   const filteredCommands = useMemo(() => {
-    if (wizard) return [];
     return searchCommands(allCommands, query);
-  }, [allCommands, query, wizard]);
+  }, [allCommands, query]);
 
-  // Wizard options based on current step
-  const wizardOptions = useMemo((): WizardOption[] => {
-    if (!wizard) return [];
-    if (wizard.step === 'source') {
-      return collectNodeOptions(graph.nodes);
-    }
-    if (wizard.step === 'target') {
-      return collectNodeOptions(graph.nodes, wizard.sourceNodeId);
-    }
-    return EDGE_TYPE_OPTIONS;
-  }, [wizard, graph.nodes]);
-
-  // Filter wizard options by query
-  const filteredWizardOptions = useMemo(() => {
-    if (!query.trim()) return wizardOptions;
-    const lower = query.toLowerCase();
-    return wizardOptions.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(lower) ||
-        (opt.subtitle && opt.subtitle.toLowerCase().includes(lower)),
-    );
-  }, [wizardOptions, query]);
-
-  // Wizard header text
-  const wizardHeader = useMemo(() => {
-    if (!wizard) return null;
-    switch (wizard.step) {
-      case 'source':
-        return 'Connect: Select source node';
-      case 'target':
-        return `Connect: Select target for ${wizard.sourceNodeName}`;
-      case 'type':
-        return 'Connect: Select type';
-    }
-  }, [wizard]);
-
-  const wizardStepNumber = wizard
-    ? wizard.step === 'source'
-      ? 1
-      : wizard.step === 'target'
-        ? 2
-        : 3
-    : 0;
-
-  // Unified item count for keyboard navigation bounds
-  const itemCount = wizard ? filteredWizardOptions.length : filteredCommands.length;
+  // Item count for keyboard navigation bounds
+  const itemCount = filteredCommands.length;
 
   // Reset state when opening
   useEffect(() => {
     if (open) {
       setQuery('');
       setSelectedIndex(0);
-      setWizard(null);
       // Focus the search input after a brief delay for the DOM to render
       requestAnimationFrame(() => {
         inputRef.current?.focus();
@@ -167,77 +72,16 @@ export function CommandPalette() {
     }
   }, [selectedIndex]);
 
-  // Enter wizard mode for Connect Nodes
-  const enterWizard = useCallback(() => {
-    setWizard({ step: 'source' });
-    setQuery('');
-    setSelectedIndex(0);
-  }, []);
-
-  // Handle wizard option selection
-  const selectWizardOption = useCallback(
-    (option: WizardOption) => {
-      if (!wizard) return;
-
-      if (wizard.step === 'source') {
-        setWizard({
-          step: 'target',
-          sourceNodeId: option.id,
-          sourceNodeName: option.label,
-        });
-        setQuery('');
-        setSelectedIndex(0);
-      } else if (wizard.step === 'target') {
-        setWizard({
-          ...wizard,
-          step: 'type',
-          targetNodeId: option.id,
-          targetNodeName: option.label,
-        });
-        setQuery('');
-        setSelectedIndex(0);
-      } else if (wizard.step === 'type') {
-        // Complete! Create the edge
-        const { addEdge } = useCoreStore.getState();
-        const { selectEdge } = useCanvasStore.getState();
-        const { showToast } = useUIStore.getState();
-
-        const edge = addEdge({
-          fromNode: wizard.sourceNodeId!,
-          toNode: wizard.targetNodeId!,
-          type: option.id as EdgeType,
-        });
-
-        if (edge) {
-          selectEdge(edge.id);
-          showToast(
-            `Connected ${wizard.sourceNodeName} → ${wizard.targetNodeName} (${option.label})`,
-          );
-        }
-
-        setWizard(null);
-        closePalette();
-      }
-    },
-    [wizard, closePalette],
-  );
-
-  // Execute the selected command (normal mode) or start wizard
+  // Execute the selected command
   const executeCommand = useCallback(
     (cmd: Command) => {
-      // Check if this is a wizard-starting command
-      if (cmd.id === 'connect:wizard') {
-        enterWizard();
-        return;
-      }
-
       closePalette();
       // Execute after closing to avoid state conflicts
       requestAnimationFrame(() => {
         cmd.execute();
       });
     },
-    [closePalette, enterWizard],
+    [closePalette],
   );
 
   // Keyboard navigation
@@ -256,42 +100,10 @@ export function CommandPalette() {
 
         case 'Enter':
           e.preventDefault();
-          if (wizard) {
-            // Wizard mode: select current option
-            const option = filteredWizardOptions[selectedIndex];
-            if (option) {
-              selectWizardOption(option);
-            }
-          } else {
-            // Normal mode: execute command
-            if (filteredCommands[selectedIndex]) {
-              const cmd = filteredCommands[selectedIndex];
-              if (!cmd.isEnabled || cmd.isEnabled()) {
-                executeCommand(cmd);
-              }
-            }
-          }
-          break;
-
-        case 'Backspace':
-          if (wizard && query === '') {
-            e.preventDefault();
-            if (wizard.step === 'target') {
-              // Go back to source selection
-              setWizard({ step: 'source' });
-              setSelectedIndex(0);
-            } else if (wizard.step === 'type') {
-              // Go back to target selection
-              setWizard({
-                step: 'target',
-                sourceNodeId: wizard.sourceNodeId,
-                sourceNodeName: wizard.sourceNodeName,
-              });
-              setSelectedIndex(0);
-            } else {
-              // Step 1: exit wizard, return to normal palette
-              setWizard(null);
-              setSelectedIndex(0);
+          if (filteredCommands[selectedIndex]) {
+            const cmd = filteredCommands[selectedIndex];
+            if (!cmd.isEnabled || cmd.isEnabled()) {
+              executeCommand(cmd);
             }
           }
           break;
@@ -299,20 +111,15 @@ export function CommandPalette() {
         case 'Escape':
           e.preventDefault();
           e.stopPropagation();
-          setWizard(null);
           closePalette();
           break;
       }
     },
     [
-      wizard,
-      query,
       itemCount,
-      filteredWizardOptions,
       filteredCommands,
       selectedIndex,
       executeCommand,
-      selectWizardOption,
       closePalette,
     ],
   );
@@ -325,7 +132,6 @@ export function CommandPalette() {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        setWizard(null);
         closePalette();
       }
     };
@@ -338,7 +144,6 @@ export function CommandPalette() {
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        setWizard(null);
         closePalette();
       }
     },
@@ -346,13 +151,6 @@ export function CommandPalette() {
   );
 
   if (!open) return null;
-
-  // Determine input placeholder based on mode
-  const placeholder = wizard
-    ? wizard.step === 'type'
-      ? 'Search edge types...'
-      : 'Search nodes...'
-    : 'Type a command or search...';
 
   return (
     <div
@@ -371,19 +169,6 @@ export function CommandPalette() {
         aria-expanded="true"
         aria-haspopup="listbox"
       >
-        {/* Wizard progress header */}
-        {wizard && (
-          <div
-            className="flex items-center justify-between px-4 py-2 bg-blue-50 border-b"
-            data-testid="wizard-header"
-          >
-            <span className="text-sm font-medium text-blue-700">{wizardHeader}</span>
-            <span className="text-xs text-blue-500">
-              Step {wizardStepNumber}/3
-            </span>
-          </div>
-        )}
-
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b">
           <Search className="w-5 h-5 text-gray-400 shrink-0" />
@@ -391,7 +176,7 @@ export function CommandPalette() {
             ref={inputRef}
             type="text"
             className="flex-1 text-sm bg-transparent outline-none placeholder:text-gray-400"
-            placeholder={placeholder}
+            placeholder="Type a command or search..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -403,13 +188,9 @@ export function CommandPalette() {
             aria-autocomplete="list"
             aria-controls="command-palette-list"
             aria-activedescendant={
-              wizard
-                ? filteredWizardOptions[selectedIndex]
-                  ? `wizard-item-${filteredWizardOptions[selectedIndex].id}`
-                  : undefined
-                : filteredCommands[selectedIndex]
-                  ? `command-item-${filteredCommands[selectedIndex].id}`
-                  : undefined
+              filteredCommands[selectedIndex]
+                ? `command-item-${filteredCommands[selectedIndex].id}`
+                : undefined
             }
           />
           <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-gray-400 bg-gray-100 border border-gray-200 rounded">
@@ -423,119 +204,76 @@ export function CommandPalette() {
           className="overflow-y-auto max-h-[300px] py-1"
           id="command-palette-list"
           role="listbox"
-          aria-label={wizard ? 'Options' : 'Commands'}
+          aria-label="Commands"
           data-testid="command-palette-list"
         >
-          {wizard ? (
-            /* === Wizard mode: show wizard options === */
-            filteredWizardOptions.length === 0 ? (
-              <div
-                className="px-4 py-8 text-center text-sm text-gray-400"
-                data-testid="wizard-empty"
-              >
-                No matching options
-              </div>
-            ) : (
-              filteredWizardOptions.map((opt, index) => {
-                const isSelected = index === selectedIndex;
-
-                return (
-                  <div
-                    key={opt.id}
-                    id={`wizard-item-${opt.id}`}
-                    data-index={index}
-                    role="option"
-                    aria-selected={isSelected}
-                    className={`
-                      flex items-center px-4 py-2 cursor-pointer transition-colors
-                      ${isSelected ? 'bg-blue-50 text-blue-900' : 'text-gray-700 hover:bg-gray-50'}
-                    `}
-                    onClick={() => selectWizardOption(opt)}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    data-testid={`wizard-option-${opt.id}`}
-                  >
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm truncate">{opt.label}</span>
-                      {opt.subtitle && (
-                        <span className="text-xs text-gray-400 truncate">
-                          {opt.subtitle}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )
+          {filteredCommands.length === 0 ? (
+            <div
+              className="px-4 py-8 text-center text-sm text-gray-400"
+              data-testid="command-palette-empty"
+            >
+              No commands found
+            </div>
           ) : (
-            /* === Normal mode: show commands === */
-            filteredCommands.length === 0 ? (
-              <div
-                className="px-4 py-8 text-center text-sm text-gray-400"
-                data-testid="command-palette-empty"
-              >
-                No commands found
-              </div>
-            ) : (
-              filteredCommands.map((cmd, index) => {
-                const isDisabled = cmd.isEnabled ? !cmd.isEnabled() : false;
-                const isSelected = index === selectedIndex;
+            filteredCommands.map((cmd, index) => {
+              const isDisabled = cmd.isEnabled ? !cmd.isEnabled() : false;
+              const isSelected = index === selectedIndex;
 
-                return (
-                  <div
-                    key={cmd.id}
-                    id={`command-item-${cmd.id}`}
-                    data-index={index}
-                    role="option"
-                    aria-selected={isSelected}
-                    aria-disabled={isDisabled}
-                    className={`
-                      flex items-center justify-between px-4 py-2 cursor-pointer transition-colors
-                      ${isSelected ? 'bg-blue-50 text-blue-900' : 'text-gray-700 hover:bg-gray-50'}
-                      ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
-                    `}
-                    onClick={() => {
-                      if (!isDisabled) {
-                        executeCommand(cmd);
-                      }
-                    }}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    data-testid={`command-item-${cmd.id}`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Category badge */}
-                      <span
-                        className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${CATEGORY_COLORS[cmd.category]}`}
-                      >
-                        {cmd.category}
-                      </span>
-                      {/* Node type icon (for creation commands) */}
-                      {cmd.iconName &&
-                        (() => {
-                          const IconComponent = iconMap[cmd.iconName!] ?? Box;
-                          return (
-                            <IconComponent
-                              className="w-4 h-4 shrink-0 text-gray-500"
-                              data-testid={`command-icon-${cmd.id}`}
-                            />
-                          );
-                        })()}
-                      {/* Command label */}
-                      <span className="text-sm truncate">{cmd.label}</span>
-                    </div>
-
-                    {/* Shortcut hint */}
-                    {cmd.shortcut && (
-                      <kbd
-                        className="ml-2 shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded"
-                        data-testid={`command-shortcut-${cmd.id}`}
-                      >
-                        {cmd.shortcut}
-                      </kbd>
-                    )}
+              return (
+                <div
+                  key={cmd.id}
+                  id={`command-item-${cmd.id}`}
+                  data-index={index}
+                  role="option"
+                  aria-selected={isSelected}
+                  aria-disabled={isDisabled}
+                  className={`
+                    flex items-center justify-between px-4 py-2 cursor-pointer transition-colors
+                    ${isSelected ? 'bg-blue-50 text-blue-900' : 'text-gray-700 hover:bg-gray-50'}
+                    ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                  onClick={() => {
+                    if (!isDisabled) {
+                      executeCommand(cmd);
+                    }
+                  }}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  data-testid={`command-item-${cmd.id}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Category badge */}
+                    <span
+                      className={`text-[10px] font-medium px-1.5 py-0.5 rounded shrink-0 ${CATEGORY_COLORS[cmd.category]}`}
+                    >
+                      {cmd.category}
+                    </span>
+                    {/* Node type icon (for creation commands) */}
+                    {cmd.iconName &&
+                      (() => {
+                        const IconComponent = iconMap[cmd.iconName!] ?? Box;
+                        return (
+                          <IconComponent
+                            className="w-4 h-4 shrink-0 text-gray-500"
+                            data-testid={`command-icon-${cmd.id}`}
+                          />
+                        );
+                      })()}
+                    {/* Command label */}
+                    <span className="text-sm truncate">{cmd.label}</span>
                   </div>
-                );
-              })
-            )
+
+                  {/* Shortcut hint */}
+                  {cmd.shortcut && (
+                    <kbd
+                      className="ml-2 shrink-0 inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded"
+                      data-testid={`command-shortcut-${cmd.id}`}
+                    >
+                      {cmd.shortcut}
+                    </kbd>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -551,21 +289,13 @@ export function CommandPalette() {
             <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
               ↵
             </kbd>
-            {wizard ? 'select' : 'execute'}
+            execute
           </span>
-          {wizard && (
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
-                ⌫
-              </kbd>
-              back
-            </span>
-          )}
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
               esc
             </kbd>
-            {wizard ? 'cancel' : 'close'}
+            close
           </span>
         </div>
       </div>

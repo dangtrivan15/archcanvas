@@ -4,7 +4,6 @@
 
 import { create } from 'zustand';
 import type { RightPanelTab } from '@/utils/constants';
-import { CanvasMode, isValidTransition } from '@/core/input/canvasMode';
 
 export interface DeleteDialogInfo {
   nodeId: string;
@@ -94,7 +93,7 @@ export interface UIStoreState {
   // Command palette
   commandPaletteOpen: boolean;
 
-  // Quick search overlay (Vim '/' search)
+  // Quick search overlay
   quickSearchOpen: boolean;
 
   // Shortcut settings dialog
@@ -120,15 +119,6 @@ export interface UIStoreState {
   // Toast notifications
   toastMessage: string | null;
   toastTimerId: ReturnType<typeof setTimeout> | null;
-
-  // Vim-style canvas mode (Normal / Connect / Edit)
-  canvasMode: CanvasMode;
-  previousCanvasMode: CanvasMode;
-
-  // Connect mode state (for Vim-style edge creation)
-  connectSource: string | null;      // source node ID
-  connectTarget: string | null;      // currently focused target node ID
-  connectStep: 'select-source' | 'select-target' | 'pick-type' | null;
 
   // Actions
   toggleLeftPanel: () => void;
@@ -208,16 +198,6 @@ export interface UIStoreState {
   showToast: (message: string, durationMs?: number) => void;
   clearToast: () => void;
 
-  // Canvas mode actions
-  enterMode: (mode: CanvasMode) => void;
-  exitToNormal: () => void;
-  getCanvasMode: () => CanvasMode;
-
-  // Connect mode actions
-  startConnect: (sourceId: string | null) => void;
-  setConnectTarget: (targetId: string | null) => void;
-  setConnectStep: (step: 'select-source' | 'select-target' | 'pick-type' | null) => void;
-  clearConnectState: () => void;
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -267,13 +247,6 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   toastMessage: null,
   toastTimerId: null,
-
-  canvasMode: CanvasMode.Normal,
-  previousCanvasMode: CanvasMode.Normal,
-
-  connectSource: null,
-  connectTarget: null,
-  connectStep: null,
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -394,48 +367,6 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setAutosaveStatusMessage: (message) =>
     set({ autosaveStatusMessage: message }),
-
-  enterMode: (mode) =>
-    set((s) => {
-      if (!isValidTransition(s.canvasMode, mode)) {
-        console.warn(`[CanvasMode] Invalid transition: ${s.canvasMode} → ${mode}`);
-        return {};
-      }
-      return { canvasMode: mode, previousCanvasMode: s.canvasMode };
-    }),
-
-  exitToNormal: () =>
-    set((s) => ({
-      canvasMode: CanvasMode.Normal,
-      previousCanvasMode: s.canvasMode,
-      // Also clear connect state when exiting to Normal
-      connectSource: null,
-      connectTarget: null,
-      connectStep: null,
-    })),
-
-  getCanvasMode: () => useUIStore.getState().canvasMode,
-
-  // Connect mode actions
-  startConnect: (sourceId) =>
-    set({
-      connectSource: sourceId,
-      connectTarget: null,
-      connectStep: sourceId ? 'select-target' : 'select-source',
-    }),
-
-  setConnectTarget: (targetId) =>
-    set({ connectTarget: targetId }),
-
-  setConnectStep: (step) =>
-    set({ connectStep: step }),
-
-  clearConnectState: () =>
-    set({
-      connectSource: null,
-      connectTarget: null,
-      connectStep: null,
-    }),
 
   showToast: (message, durationMs = 4000) =>
     set((s) => {

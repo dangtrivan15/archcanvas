@@ -29,7 +29,6 @@ import { useViewportSize } from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
-import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { useNavigationStore } from '@/store/navigationStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { initializeApiKey } from '@/ai/config';
@@ -56,7 +55,6 @@ export function App() {
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
-  const canvasMode = useUIStore((s) => s.canvasMode);
   const navigationPath = useNavigationStore((s) => s.path);
   const graph = useCoreStore((s) => s.graph);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
@@ -301,17 +299,6 @@ export function App() {
                   }
                   return parts.join(' > ');
                 })()}
-              </span>
-            </>
-          )}
-          {canvasMode !== CanvasMode.Normal && (
-            <>
-              <span className="mx-2">|</span>
-              <span
-                data-testid="mode-status"
-                className={`font-mono font-bold ${MODE_DISPLAY[canvasMode].color}`}
-              >
-                {MODE_DISPLAY[canvasMode].shortLabel}
               </span>
             </>
           )}

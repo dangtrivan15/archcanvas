@@ -94,13 +94,6 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
 
   // Edge Operations
   { id: 'edge:cycle-type', label: 'Cycle Edge Type', category: 'Edge', defaultBinding: 't' },
-
-  // Mode transitions (Vim-style)
-  { id: 'normal:enter-connect', label: 'Enter Connect Mode', category: 'Mode', defaultBinding: 'c' },
-  { id: 'normal:enter-edit', label: 'Enter Edit Mode', category: 'Mode', defaultBinding: 'i' },
-  { id: 'normal:enter-edit-alt', label: 'Enter Edit Mode (Alt)', category: 'Mode', defaultBinding: 'enter' },
-  { id: 'connect:exit', label: 'Exit Connect Mode', category: 'Mode', defaultBinding: 'escape' },
-  { id: 'edit:exit', label: 'Exit Edit Mode', category: 'Mode', defaultBinding: 'escape' },
 ];
 
 /**

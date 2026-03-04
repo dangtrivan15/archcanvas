@@ -394,7 +394,7 @@ describe('useIPadExternalKeyboard - capture phase handler', () => {
       expect(spy).not.toHaveBeenCalled();
     });
 
-    it('does NOT prevent default for plain letter keys (vim shortcuts)', () => {
+    it('does NOT prevent default for plain letter keys (single-key shortcuts)', () => {
       for (const key of ['s', 'd', 'c', 'i', 't', 'q', 'g', 'a', '/', '?']) {
         const e = makeKeyEvent({ key });
         const spy = vi.spyOn(e, 'preventDefault');
@@ -451,9 +451,9 @@ describe('iPad platform detection for keyboard shortcuts', () => {
   });
 });
 
-// ── Vim-style shortcuts on iPad (no modifier required) ───────────
+// ── Single-key shortcuts on iPad (no modifier required) ──────────
 
-describe('vim-style single-key shortcuts on iPad', () => {
+describe('single-key shortcuts on iPad', () => {
   afterEach(() => {
     _resetPlatformDetection();
   });
@@ -474,13 +474,13 @@ describe('vim-style single-key shortcuts on iPad', () => {
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
-  it('matches "c" for normal:enter-connect', () => {
+  it('matches plain "c" key binding', () => {
     const binding = parseBinding('c');
     const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'c' } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
-  it('matches "i" for normal:enter-edit', () => {
+  it('matches plain "i" key binding', () => {
     const binding = parseBinding('i');
     const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'i' } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);

@@ -27,7 +27,6 @@ function resetStores() {
     pendingRenameNodeId: null,
     inlineEditNodeId: null,
     commandPaletteOpen: false,
-    canvasMode: 'Normal' as any,
   });
   useCanvasStore.setState({
     selectedNodeId: null,

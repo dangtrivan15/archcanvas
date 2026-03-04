@@ -2,14 +2,14 @@
 /**
  * Tests for Hotkey Node Creation feature (#245).
  *
- * Single-key shortcuts for creating common node types in Normal mode:
+ * Single-key shortcuts for creating common node types:
  *   S = Service, D = Database, Q = Queue, G = Gateway, A = Cache
  *
  * Tests cover:
  * - ShortcutManager action registration (5 node:add-* actions)
  * - HOTKEY_NODE_TYPE_MAP mapping action IDs to NodeDef type keys
  * - Position calculation (offset from selected node or viewport center)
- * - Focus guard (only fires in Normal mode, not in text input)
+ * - Focus guard (suppressed when text input is focused)
  * - Help panel integration (Quick Create category)
  * - Configurable via ShortcutManager (customizable bindings)
  */
@@ -32,7 +32,6 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { CanvasMode } from '@/core/input/canvasMode';
 
 function resetStores() {
   useCoreStore.getState().initialize();
@@ -48,7 +47,6 @@ function resetStores() {
     rightPanelTab: 'properties',
     pendingRenameNodeId: null,
     commandPaletteOpen: false,
-    canvasMode: CanvasMode.Normal,
   });
   useNavigationStore.setState({
     path: [],
@@ -405,32 +403,19 @@ describe('Hotkey Node Creation - Auto-Rename', () => {
   });
 });
 
-// ─── Mode Guard ─────────────────────────────────────────────────
+// ─── Focus Guard ────────────────────────────────────────────────
 
-describe('Hotkey Node Creation - Mode Guard', () => {
-  beforeEach(resetStores);
-
-  it('Normal mode allows hotkey creation (mode check passes)', () => {
-    const currentMode = useUIStore.getState().canvasMode;
-    expect(currentMode).toBe(CanvasMode.Normal);
-    // In Normal mode, the guard: currentMode !== CanvasMode.Normal is false → action proceeds
-    expect(currentMode === CanvasMode.Normal).toBe(true);
-  });
-
-  it('Connect mode blocks hotkey creation (mode check blocks)', () => {
-    useUIStore.getState().enterMode(CanvasMode.Connect);
-    const currentMode = useUIStore.getState().canvasMode;
-    expect(currentMode).toBe(CanvasMode.Connect);
-    expect(currentMode === CanvasMode.Normal).toBe(false);
-  });
-
-  it('Edit mode blocks hotkey creation (mode check blocks)', () => {
-    // Enter Edit mode requires a selected node and valid transition
-    // For unit test, directly set mode
-    useUIStore.setState({ canvasMode: CanvasMode.Edit });
-    const currentMode = useUIStore.getState().canvasMode;
-    expect(currentMode).toBe(CanvasMode.Edit);
-    expect(currentMode === CanvasMode.Normal).toBe(false);
+describe('Hotkey Node Creation - Focus Guard', () => {
+  it('shortcuts are suppressed when text input is focused', async () => {
+    // The useKeyboardShortcuts handler uses isActiveElementTextInput()
+    // to guard hotkey node creation: `if (inInput) return;`
+    // Verify the guard concept exists in the source
+    const fs = await import('fs');
+    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
+    expect(source).toContain('isActiveElementTextInput');
+    // The node:add-* cases all check `if (inInput) return;`
+    expect(source).toContain("case 'node:add-service':");
+    expect(source).toContain('if (inInput) return;');
   });
 });
 

@@ -32,8 +32,6 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { CanvasMode } from '@/core/input/canvasMode';
-
 function resetStores() {
   useCoreStore.getState().initialize();
   useCanvasStore.setState({
@@ -48,7 +46,6 @@ function resetStores() {
     rightPanelTab: 'properties',
     pendingRenameNodeId: null,
     commandPaletteOpen: false,
-    canvasMode: CanvasMode.Normal,
   });
   useNavigationStore.setState({
     path: [],

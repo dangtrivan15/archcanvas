@@ -1,7 +1,7 @@
 /**
  * Tests for Keyboard Breadcrumb Navigation (feature #257).
  * Verifies Enter drills into group nodes, Escape/Backspace navigates up,
- * breadcrumb path in status bar, and leaf node Enter enters Edit mode.
+ * and breadcrumb path in status bar.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -9,7 +9,6 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { CanvasMode } from '@/core/input/canvasMode';
 import { findNode } from '@/core/graph/graphEngine';
 
 // Helper: create a graph with group nodes (parent-child hierarchy)
@@ -79,7 +78,6 @@ beforeEach(() => {
     viewport: { x: 0, y: 0, zoom: 1 },
   });
   useUIStore.setState({
-    canvasMode: CanvasMode.Normal,
     rightPanelOpen: false,
   });
   useNavigationStore.setState({ path: [] });
@@ -235,47 +233,7 @@ describe('Breadcrumb Path Building', () => {
   });
 });
 
-describe('Leaf Node Enter → Edit Mode', () => {
-  it('entering Edit mode sets canvasMode to EDIT', () => {
-    useUIStore.getState().enterMode(CanvasMode.Edit);
-    expect(useUIStore.getState().canvasMode).toBe(CanvasMode.Edit);
-  });
-
-  it('exitToNormal returns to Normal mode', () => {
-    useUIStore.getState().enterMode(CanvasMode.Edit);
-    useUIStore.getState().exitToNormal();
-    expect(useUIStore.getState().canvasMode).toBe(CanvasMode.Normal);
-  });
-});
-
 describe('Source Code Verification', () => {
-  it('useKeyboardShortcuts imports findNode for group detection', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain("import { findNode } from '@/core/graph/graphEngine'");
-  });
-
-  it('Enter handler checks children.length for group vs leaf', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain('node.children.length > 0');
-    expect(source).toContain('zoomIn(selectedNodeId)');
-  });
-
-  it('Enter handler calls clearSelection after drill-in', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain('clearSelection()');
-    expect(source).toContain('requestFitView()');
-  });
-
-  it('Enter handler falls through to Edit mode for leaf nodes', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain('// Leaf node: enter Edit mode');
-    expect(source).toContain('enterMode(CanvasMode.Edit)');
-  });
-
   it('Canvas.tsx handles Escape drill-out when nothing selected', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
@@ -316,11 +274,12 @@ describe('Source Code Verification', () => {
 });
 
 describe('FocusZone Awareness', () => {
-  it('Enter drill-in only works in Normal mode', async () => {
+  it('shortcuts are suppressed when text input is focused', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    // The Enter handler is inside the Normal mode block
-    expect(source).toContain('!inInput && currentMode === CanvasMode.Normal');
+    // Shortcuts use isActiveElementTextInput() to suppress when typing
+    expect(source).toContain('isActiveElementTextInput');
+    expect(source).toContain('const inInput = isActiveElementTextInput()');
   });
 
   it('Escape handler checks for dialog open state', async () => {
