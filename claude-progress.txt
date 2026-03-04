@@ -7835,3 +7835,56 @@ All components now use `linear-gradient(to bottom, colorToBackground(effectiveCo
 
 #### Current completion status:
 - Feature #352 marked passing
+
+---
+
+## Session: Feature #367 - Service Worker for Offline Support
+Date: 2026-03-04
+
+### Feature #367: Service Worker for Offline Support - PASSING
+
+#### Implementation:
+
+**vite-plugin-pwa Configuration (vite.config.ts):**
+- Installed vite-plugin-pwa and workbox-window
+- registerType: 'autoUpdate' for seamless SW updates
+- devOptions enabled for development testing
+- Precache manifest: all JS, CSS, HTML, fonts, icons, images (5MB max per file)
+- Runtime caching strategies:
+  - .archc files: CacheFirst, 50 entries max, 30-day expiry
+  - YAML nodedefs: CacheFirst, 100 entries max, 7-day expiry
+  - Proto files: CacheFirst, 20 entries max, 7-day expiry
+- skipWaiting + clientsClaim for immediate activation
+
+**New Components:**
+- src/components/shared/OfflineBanner.tsx: Amber banner when offline, green banner on reconnect
+- src/components/shared/CachedFilesIndicator.tsx: Status bar indicator showing cached .archc file count with expandable list
+
+**New Hooks:**
+- src/hooks/useOfflineStatus.ts: Tracks navigator.onLine + online/offline events
+- src/hooks/useCachedFiles.ts: Reads Cache API for cached .archc files, supports remove/clear
+
+**Integration:**
+- OfflineBanner added to App.tsx above toolbar
+- CachedFilesIndicator added to status bar
+- Service worker registered in main.tsx with hourly update checks
+- Type declarations for virtual:pwa-register in vite-env.d.ts
+- dev-dist/ added to .gitignore
+
+**Capacitor iOS Compatibility:**
+- Service worker works with WKWebView in production builds (dist/ served locally)
+- Dev mode uses capacitor dev server which bypasses SW (expected behavior)
+
+#### Tests (26 passing):
+- test/unit/hooks/useOfflineStatus.test.ts: 8 tests (event listeners, online/offline detection, cleanup)
+- test/unit/hooks/useCachedFiles.test.ts: 18 tests (cache API, file listing, removal, URL patterns, caching strategies, SW config)
+
+#### Verification:
+- Build succeeds cleanly (npx vite build) with SW generated (39 precache entries, 2756 KiB)
+- Browser verification: app loads, SW registers, logs "ready for offline use"
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns in production code
+- Committed: 3eb2c05
+
+#### Current completion status:
+- Feature #367 marked passing
