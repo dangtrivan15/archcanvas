@@ -36,6 +36,27 @@ export interface GlobalOptions {
 // ─── Helpers ─────────────────────────────────────────────────
 
 /**
+ * Suppress diagnostic console.log messages during CLI operations.
+ * Redirects console.log to stderr so that stdout remains clean for piping.
+ * Returns a restore function to undo the redirection.
+ */
+export function suppressDiagnosticLogs(): () => void {
+  const origLog = console.log;
+  console.log = (...args: unknown[]) => {
+    // Redirect diagnostic messages (e.g., [TextApi], [RegistryManager]) to stderr
+    const first = String(args[0] ?? '');
+    if (first.startsWith('[')) {
+      console.error(...args);
+      return;
+    }
+    origLog(...args);
+  };
+  return () => {
+    console.log = origLog;
+  };
+}
+
+/**
  * Load a GraphContext from the --file option.
  * Validates that --file is provided and the file exists.
  * Exits with code 1 if the file cannot be loaded.
@@ -46,6 +67,7 @@ export async function loadContext(opts: GlobalOptions): Promise<GraphContext> {
     process.exit(1);
   }
 
+  const restore = suppressDiagnosticLogs();
   try {
     const ctx = await GraphContext.loadFromFile(opts.file);
     return ctx;
@@ -53,6 +75,8 @@ export async function loadContext(opts: GlobalOptions): Promise<GraphContext> {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`Error: Failed to load "${opts.file}": ${message}`);
     process.exit(1);
+  } finally {
+    restore();
   }
 }
 
@@ -501,10 +525,12 @@ export function createProgram(): Command {
       withErrorHandler(async (cmdOpts: { namespace?: string }) => {
         const opts = program.opts<GlobalOptions>();
         // list-nodedefs doesn't need --file — load registry from disk
+        const restore = suppressDiagnosticLogs();
         const { RegistryManagerCore } = await import('@/core/registry/registryCore');
         const { loadBuiltinNodeDefs } = await import('@/cli/nodeLoader');
         const registry = new RegistryManagerCore();
         registry.initialize(await loadBuiltinNodeDefs());
+        restore();
 
         let types: Array<{ type: string; displayName: string; namespace: string }>;
         if (cmdOpts.namespace) {
