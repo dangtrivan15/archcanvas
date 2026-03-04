@@ -28,6 +28,7 @@ export function SettingsDialog() {
   const closeDialog = useUIStore((s) => s.closeSettingsDialog);
   const showToast = useUIStore((s) => s.showToast);
   const resetBarSizes = useUIStore((s) => s.resetBarSizes);
+  const resetBarSizesToFixedDefaults = useUIStore((s) => s.resetBarSizesToFixedDefaults);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   const [apiKey, setApiKey] = useState('');
@@ -262,18 +263,32 @@ export function SettingsDialog() {
               Reset all panel widths and bar heights to their viewport-relative defaults.
               Any custom sizes you've set by dragging will be cleared.
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                resetBarSizes();
-                showToast('Layout sizes reset to defaults');
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-              data-testid="settings-reset-bar-sizes"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset Layout Sizes
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  resetBarSizesToFixedDefaults();
+                  showToast('Bar sizes reset to defaults');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                data-testid="settings-reset-bar-sizes"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset Bar Sizes
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  resetBarSizes();
+                  showToast('Layout sizes reset to defaults');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                data-testid="settings-reset-layout-sizes"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset Layout Sizes
+              </button>
+            </div>
           </div>
         </div>
 

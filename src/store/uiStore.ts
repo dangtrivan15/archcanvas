@@ -6,9 +6,32 @@ import { create } from 'zustand';
 import type { RightPanelTab } from '@/utils/constants';
 import { preferences } from '@/core/platform/preferencesAdapter';
 
-/** localStorage / Capacitor Preferences keys for persisted heights */
+/** localStorage / Capacitor Preferences keys for persisted values */
 export const TOOLBAR_HEIGHT_STORAGE_KEY = 'toolbar-height';
 export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
+export const THEME_STORAGE_KEY = 'theme';
+
+/**
+ * Synchronously read the persisted theme ID from localStorage.
+ * Returns null if not found. Used at store initialization time.
+ */
+function readPersistedTheme(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(`archcanvas:${THEME_STORAGE_KEY}`);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist theme ID via the cross-platform preferences adapter.
+ */
+function persistTheme(themeId: string): void {
+  preferences.set(THEME_STORAGE_KEY, themeId).catch(() => {
+    // Silently ignore write failures
+  });
+}
 
 /**
  * Synchronously read a persisted height from localStorage.
@@ -196,6 +219,9 @@ export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
 }
 
 export interface UIStoreState {
+  // Theme
+  themeId: string;
+
   // Panel visibility
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
@@ -274,6 +300,9 @@ export interface UIStoreState {
   toastMessage: string | null;
   toastTimerId: ReturnType<typeof setTimeout> | null;
 
+  // Theme actions
+  setTheme: (themeId: string) => void;
+
   // Actions
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -314,6 +343,8 @@ export interface UIStoreState {
   updateRightPanelWidthFromViewport: (viewportWidth: number) => void;
   /** Reset all bar/panel sizes to viewport-relative defaults (clears custom values) */
   resetBarSizes: () => void;
+  /** Reset toolbar and status bar heights to fixed defaults (48px and 24px) */
+  resetBarSizesToFixedDefaults: () => void;
 
   // Toolbar and status bar height actions
   setToolbarHeight: (height: number) => void;
@@ -369,6 +400,8 @@ export interface UIStoreState {
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
+  themeId: readPersistedTheme() ?? 'dark',
+
   leftPanelOpen: true,
   rightPanelOpen: false,
   rightPanelTab: 'properties',
@@ -421,6 +454,11 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   toastMessage: null,
   toastTimerId: null,
+
+  setTheme: (themeId) => {
+    persistTheme(themeId);
+    set({ themeId });
+  },
 
   toggleLeftPanel: () =>
     set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
@@ -502,6 +540,17 @@ export const useUIStore = create<UIStoreState>((set) => ({
       toolbarHeight: computeDefaultToolbarHeight(),
       toolbarHeightCustomized: false,
       statusBarHeight: computeDefaultStatusBarHeight(),
+      statusBarHeightCustomized: false,
+    });
+  },
+
+  resetBarSizesToFixedDefaults: () => {
+    clearPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY);
+    clearPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY);
+    set({
+      toolbarHeight: TOOLBAR_DEFAULT_HEIGHT,
+      toolbarHeightCustomized: false,
+      statusBarHeight: STATUS_BAR_DEFAULT_HEIGHT,
       statusBarHeightCustomized: false,
     });
   },
