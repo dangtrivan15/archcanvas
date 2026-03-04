@@ -16,6 +16,7 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
+import { quickSearchNext, quickSearchPrev } from '@/components/shared/QuickSearchOverlay';
 
 /**
  * Map from node:add-* action IDs to NodeDef type keys.
@@ -78,6 +79,21 @@ export function useKeyboardShortcuts() {
       }
 
       const inInput = isActiveElementTextInput();
+      const noModifiers = !e.ctrlKey && !e.metaKey && !e.altKey;
+
+      // ── Vim-style 'n'/'N' for quick search next/prev (before shortcut matching) ──
+      if (!inInput && noModifiers) {
+        if (key.toLowerCase() === 'n' && !e.shiftKey) {
+          e.preventDefault();
+          quickSearchNext();
+          return;
+        }
+        if (key === 'N' && e.shiftKey) {
+          e.preventDefault();
+          quickSearchPrev();
+          return;
+        }
+      }
 
       // ── Standard ShortcutManager matching ──
       const manager = getShortcutManager();

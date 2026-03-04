@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Eye, EyeOff, Save, Trash2, X, Check } from 'lucide-react';
+import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
@@ -27,6 +27,7 @@ export function SettingsDialog() {
   const open = useUIStore((s) => s.settingsDialogOpen);
   const closeDialog = useUIStore((s) => s.closeSettingsDialog);
   const showToast = useUIStore((s) => s.showToast);
+  const resetBarSizes = useUIStore((s) => s.resetBarSizes);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   const [apiKey, setApiKey] = useState('');
@@ -252,6 +253,27 @@ export function SettingsDialog() {
                 </span>
               )}
             </div>
+          </div>
+
+          {/* Layout Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Layout</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Reset all panel widths and bar heights to their viewport-relative defaults.
+              Any custom sizes you've set by dragging will be cleared.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                resetBarSizes();
+                showToast('Layout sizes reset to defaults');
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+              data-testid="settings-reset-bar-sizes"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset Layout Sizes
+            </button>
           </div>
         </div>
 

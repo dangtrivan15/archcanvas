@@ -6228,3 +6228,42 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 303 of 327 (92.7%)
+
+---
+
+## Session: Feature #324 - Status Bar Viewport-Relative Height
+Date: 2026-03-04
+
+### Feature #324: Status bar default height scales relative to viewport height - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added STATUS_BAR_VIEWPORT_RATIO (0.02), STATUS_BAR_DEFAULT_FLOOR (20px), STATUS_BAR_DEFAULT_CEILING (40px)
+  - Added computeDefaultStatusBarHeight(viewportHeight?) function
+  - Added statusBarHeightCustomized flag to track user customization
+  - setStatusBarHeight now marks statusBarHeightCustomized = true
+  - Added updateStatusBarHeightFromViewport action (skips if customized)
+  - Initial statusBarHeight uses computeDefaultStatusBarHeight() instead of fixed 24px
+
+- src/App.tsx:
+  - Added updateStatusBarHeightFromViewport from UI store
+  - Extracts viewportHeight from useViewportSize()
+  - Added useEffect to update status bar height on viewport resize
+  - Restructured resize handle for cleaner layout
+
+- test/unit/store/uiStoreToolbarStatusBarHeight.test.ts:
+  - Updated to use computeDefaultStatusBarHeight for defaults
+  - Added computeDefaultStatusBarHeight tests (5 viewport sizes)
+  - Added updateStatusBarHeightFromViewport tests (4 scenarios)
+  - Added Feature #324 verification steps (5 steps matching spec)
+  - Added statusBarHeightCustomized flag tests
+  - All 56 tests passing
+
+#### Verification:
+- Browser tested at 800px and 1200px viewport heights
+- Status bar renders proportionally
+- Zero JS errors (only Vite HMR WebSocket warnings)
+- No mock data patterns detected
+
+## Current completion status:
+- Features passing: 300 of 327 (91.7%)
