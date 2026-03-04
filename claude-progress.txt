@@ -5964,3 +5964,56 @@ SESSION: 2026-03-04 - Features #295, #296
 - 24 new tests across 2 test files (all passing)
 - Zero console errors in browser
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Feature #292
+==================================================
+
+## What was accomplished:
+
+### Feature #292: Register .archc file type association on iOS (PASSING)
+- Updated ios/App/App/Info.plist with three new configurations:
+  1. UTExportedTypeDeclarations: Declares com.archcanvas.archc as a custom UTType
+     - Identifier: com.archcanvas.archc
+     - Conforms to: public.data
+     - File extension: archc
+     - Description: "ArchCanvas Architecture File"
+  2. CFBundleDocumentTypes: Registers app as handler for .archc files
+     - Type name: "ArchCanvas Architecture"
+     - UTI: com.archcanvas.archc
+     - Role: Editor
+     - Handler rank: Owner
+  3. LSSupportsOpeningDocumentsInPlace: true (in-place editing)
+
+- Created src/hooks/useAppUrlOpen.ts:
+  - Listens for Capacitor @capacitor/app 'appUrlOpen' events
+  - Handles cold-start (App.getLaunchUrl()) and warm-start (addListener) scenarios
+  - Reads file data via @capacitor/filesystem
+  - Decodes .archc protobuf binary via decodeArchcData
+  - Applies decoded data to core store via _applyDecodedFile
+  - Exports utility functions: extractFileName, isArchcFileUrl, handleFileUrl
+  - No-op on web (skips when isNative() returns false)
+
+- Updated src/App.tsx:
+  - Imported and called useAppUrlOpen(initialized) hook
+  - Placed after useAutoSaveOnBlur() in the hook chain
+
+- Installed @capacitor/app package for native app URL events
+
+- 34 unit tests in test/unit/hooks/useAppUrlOpen.test.ts:
+  - extractFileName: 7 tests (paths, file:// URLs, encoded chars, edge cases)
+  - isArchcFileUrl: 10 tests (extensions, case-insensitive, query/fragment stripping)
+  - handleFileUrl: 3 tests (success flow, file read failure, decode failure)
+  - Info.plist configuration: 11 tests (UTI, Document Type, LSSupportsOpeningDocumentsInPlace)
+  - Capacitor App plugin: 1 test (package installed/importable)
+  - Web behavior: 2 tests (isNative false on web, deeply nested iOS paths)
+
+- Browser verified: zero console errors, app loads cleanly
+- No mock data patterns in production code
+- Committed: e3b8520
+
+## Current completion status:
+- Features passing: 298 of 298 (100.0%)
+- 34 new tests (all passing)
+- Zero console errors in browser
+- No mock data patterns in production code
