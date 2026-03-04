@@ -1,10 +1,16 @@
 /**
  * AI client for communicating with the Anthropic Claude API.
- * Sends messages through a Vite proxy (/api/anthropic) to avoid CORS issues.
+ *
+ * URL routing:
+ *   - Native (Capacitor iOS): Direct to https://api.anthropic.com (no CORS in WKWebView)
+ *   - Web development: Vite proxy at /api/anthropic (avoids browser CORS)
+ *   - Web production: Direct to https://api.anthropic.com (requires CORS solution)
+ *
  * Supports both streaming and non-streaming responses.
  */
 
 import { getAnthropicApiKey, aiConfig } from './config';
+import { isNative } from '@/core/platform/platformBridge';
 
 /** A message in the conversation. */
 export interface ChatMessage {
@@ -52,17 +58,29 @@ export class AIClientError extends Error {
   }
 }
 
+/** Direct Anthropic API base URL (no proxy) */
+const ANTHROPIC_DIRECT_URL = 'https://api.anthropic.com';
+
 /**
  * Get the base URL for API requests.
- * Uses the Vite proxy in development, direct URL otherwise.
+ *
+ * - Native (Capacitor): always direct — WKWebView has no CORS restrictions.
+ * - Web development: Vite proxy at /api/anthropic to avoid browser CORS.
+ * - Web production: direct API URL (requires separate CORS solution).
  */
 function getBaseUrl(): string {
-  // In development, use the Vite proxy
+  // In native Capacitor context, CORS doesn't apply — call Anthropic directly
+  if (isNative()) {
+    return ANTHROPIC_DIRECT_URL;
+  }
+
+  // In web development, use the Vite proxy to bypass CORS
   if (import.meta.env.DEV) {
     return '/api/anthropic';
   }
-  // In production, use direct API URL (requires separate CORS solution)
-  return 'https://api.anthropic.com';
+
+  // In web production, use direct API URL
+  return ANTHROPIC_DIRECT_URL;
 }
 
 /**
