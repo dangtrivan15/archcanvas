@@ -14,6 +14,7 @@ import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
 import { ConnectNodesButton } from './ConnectNodesButton';
 import { LayoutMenu } from './LayoutMenu';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore, TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT } from '@/store/uiStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
@@ -109,6 +110,9 @@ export function Toolbar() {
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Theme switcher dropdown */}
+      <ThemeSwitcher compact={isCompact} />
 
       {/* Settings button */}
       <button
