@@ -376,10 +376,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
   leftPanelWidthCustomized: false,
   rightPanelWidth: computeDefaultRightPanelWidth(),
   rightPanelWidthCustomized: false,
-  toolbarHeight: computeDefaultToolbarHeight(),
-  toolbarHeightCustomized: false,
-  statusBarHeight: computeDefaultStatusBarHeight(),
-  statusBarHeightCustomized: false,
+  toolbarHeight: readPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY) ?? computeDefaultToolbarHeight(),
+  toolbarHeightCustomized: readPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY) !== null,
+  statusBarHeight: readPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY) ?? computeDefaultStatusBarHeight(),
+  statusBarHeightCustomized: readPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY) !== null,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -491,7 +491,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
       return { rightPanelWidth: computeDefaultRightPanelWidth(viewportWidth) };
     }),
 
-  resetBarSizes: () =>
+  resetBarSizes: () => {
+    clearPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY);
+    clearPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY);
     set({
       leftPanelWidth: computeDefaultLeftPanelWidth(),
       leftPanelWidthCustomized: false,
@@ -501,10 +503,14 @@ export const useUIStore = create<UIStoreState>((set) => ({
       toolbarHeightCustomized: false,
       statusBarHeight: computeDefaultStatusBarHeight(),
       statusBarHeightCustomized: false,
-    }),
+    });
+  },
 
-  setToolbarHeight: (height) =>
-    set({ toolbarHeight: Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height)), toolbarHeightCustomized: true }),
+  setToolbarHeight: (height) => {
+    const clamped = Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height));
+    persistHeight(TOOLBAR_HEIGHT_STORAGE_KEY, clamped);
+    set({ toolbarHeight: clamped, toolbarHeightCustomized: true });
+  },
 
   updateToolbarHeightFromViewport: (viewportHeight) =>
     set((s) => {
@@ -512,8 +518,11 @@ export const useUIStore = create<UIStoreState>((set) => ({
       return { toolbarHeight: computeDefaultToolbarHeight(viewportHeight) };
     }),
 
-  setStatusBarHeight: (height) =>
-    set({ statusBarHeight: Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height)), statusBarHeightCustomized: true }),
+  setStatusBarHeight: (height) => {
+    const clamped = Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height));
+    persistHeight(STATUS_BAR_HEIGHT_STORAGE_KEY, clamped);
+    set({ statusBarHeight: clamped, statusBarHeightCustomized: true });
+  },
 
   updateStatusBarHeightFromViewport: (viewportHeight) =>
     set((s) => {
