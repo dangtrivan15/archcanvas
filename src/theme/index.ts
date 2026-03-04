@@ -13,5 +13,8 @@ export {
   rosePineTheme,
   rosePineMoonTheme,
   rosePineDawnTheme,
+  THEME_PRESETS,
+  nordTheme,
+  catppuccinMochaTheme,
 } from './themes';
 export { ThemeProvider, useTheme } from './ThemeProvider';
