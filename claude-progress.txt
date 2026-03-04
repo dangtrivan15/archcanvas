@@ -8783,3 +8783,39 @@ Resolution: Added @custom-variant dark to src/index.css
 #### Build: Clean (no CSS or new TypeScript errors)
 #### Commit: 8ede9ee
 #### Feature #366 marked passing
+
+---
+
+## Session: Feature #381 - Keyboard Shortcuts Overlay for iPad
+Date: 2026-03-05
+
+### Feature #381: Keyboard Shortcuts Overlay for iPad - PASSING
+
+#### Implementation:
+- Created `src/hooks/useCmdKeyHold.ts`: Detects when Cmd (Meta) key is held for 1 second
+  without any other key press. Uses capture-phase event listeners. Returns boolean for overlay visibility.
+  Only activates on Mac/iPad platforms via `isCmdPlatform()` gate.
+- Created `src/components/shared/CmdKeyShortcutsOverlay.tsx`: iPadOS-style dark translucent overlay
+  with backdrop blur, grid layout of shortcuts grouped by 6 categories (File, Edit, View, Canvas,
+  Navigation, Quick Create). Uses existing `getShortcutsByCategory()` and `getShortcutKeys()` functions.
+  z-index 200 (above all other overlays), pointer-events-none so it doesn't block interaction.
+- Integrated into App.tsx alongside other overlay components.
+
+#### Behavior:
+- Hold Cmd key for 1 second → overlay appears with all shortcuts
+- Release Cmd key → overlay dismisses instantly
+- Press any other key while Cmd held → overlay dismissed, timer cancelled
+- Window blur (e.g., Cmd+Tab) → overlay dismissed
+- Only activates on Mac/iPad (not Windows/Linux) per spec
+
+#### Verification:
+- Vite build: PASS (no new TS errors)
+- App loads correctly in browser: PASS
+- Existing ShortcutsHelpPanel (? key) still works: PASS
+- No new console errors (only pre-existing PWA/SSL errors)
+- No mock data patterns found in new code
+- Platform gating verified: overlay correctly does NOT activate on Linux (headless Chromium)
+
+#### Commit: b76e445
+#### Feature #381 marked passing
+#### Progress: 370/426 features passing (86.9%)
