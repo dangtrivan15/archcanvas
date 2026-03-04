@@ -6125,3 +6125,23 @@ Date: 2026-03-04
 - Parallel agent removed wizard logic from CommandPalette.tsx (uncommitted changes)
 - Restored file from git HEAD to preserve the complete wizard implementation
 - All 34 tests pass after restoration
+
+---
+
+## Session: Feature #319 - UI Store Toolbar/Status Bar Heights
+Date: 2026-03-04
+
+### Feature #319: UI store manages toolbar and status bar heights with min/max constraints - PASSING
+
+#### Already implemented:
+- src/store/uiStore.ts: toolbarHeight (default 48) and statusBarHeight (default 24) state fields
+- setToolbarHeight/setStatusBarHeight actions with Math.max/Math.min clamping
+- Constants: TOOLBAR_MIN_HEIGHT=36, TOOLBAR_MAX_HEIGHT=80, STATUS_BAR_MIN_HEIGHT=20, STATUS_BAR_MAX_HEIGHT=48
+- test/unit/store/uiStoreToolbarStatusBarHeight.test.ts: 23 tests (all passing)
+
+#### Verification:
+- All 23 unit tests pass covering defaults, valid values, min/max clamping, edge cases
+- Feature steps 1-5 all verified through dedicated test cases
+
+#### Current completion status:
+- Features passing: 300 of 327 (91.7%)
