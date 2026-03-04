@@ -8691,3 +8691,55 @@ Date: 2026-03-05
 #### Commit: 70311f3
 #### Feature #379 marked passing
 #### Progress: 369/426 features passing (86.6%)
+
+---
+
+## Session: Feature #380 - Touch-Optimized Context Menus
+Date: 2026-03-05
+
+### Feature #380: Touch-Optimized Context Menus - PASSING
+
+#### Implementation:
+
+**src/components/canvas/TouchContextMenu.tsx (NEW):**
+- Shared base component for all three context menus (canvas, node, edge)
+- iOS-native styling: blur backdrop (40px blur + 180% saturation), rounded-xl corners
+- Spring animation on appear: cubic-bezier(0.34, 1.56, 0.64, 1) with scale 0.92→1
+- Edge-aware positioning: clampPosition() prevents menu from clipping at viewport edges
+- Swipe-to-dismiss: touch handlers track downward swipe, dismiss at 80px threshold
+- Cascading submenu support: items with `submenu` array show chevron + expand on hover/click
+- Submenu uses separate positioning logic, flips to left side if overflows right
+- Dark backdrop overlay (15% opacity) for visual context
+- Supports header, danger items (red), disabled items
+- Touch-target-row for proper 44px touch targets
+
+**src/components/canvas/CanvasContextMenu.tsx (UPDATED):**
+- Now uses TouchContextMenu as base
+- "Add Node" item has cascading submenu with: Service, Database, Message Queue, Load Balancer, Monitoring, Browse All...
+- Each submenu item adds the corresponding node type directly
+- "Browse All..." opens the full NodeDef browser panel
+
+**src/components/canvas/NodeContextMenu.tsx (UPDATED):**
+- Refactored to use TouchContextMenu
+- Shows node display name as uppercase header
+- Same items: Edit, Add Note, Add Child, Zoom In, Delete (red danger style)
+
+**src/components/canvas/EdgeContextMenu.tsx (UPDATED):**
+- Refactored to use TouchContextMenu
+- Shows edge label as header
+- Same items: Edit, Add Note, Delete (red danger style)
+
+#### Verification (Browser Automation):
+1. Canvas right-click → menu appears with blur backdrop, rounded corners: PASS
+2. Add Node hover → cascading submenu appears with 6 options: PASS
+3. Click Service in submenu → node created, menu dismissed: PASS
+4. Node right-click → node menu with header "NEW SERVICE": PASS
+5. Zoom In correctly disabled (no children): PASS
+6. Delete styled in red: PASS
+7. Escape key dismisses menu: PASS
+8. Fit View action works and menu dismisses: PASS
+9. Console errors: 0 related (only pre-existing SSL/WebSocket errors)
+
+#### Commit: 6e58a4d
+#### Feature #380 marked passing
+
