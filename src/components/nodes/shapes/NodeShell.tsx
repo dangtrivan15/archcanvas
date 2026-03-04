@@ -16,6 +16,7 @@ import {
   useRef,
   useState,
   useEffect,
+  useMemo,
   type ReactNode,
 } from 'react';
 import {
@@ -24,6 +25,7 @@ import {
   type ShapeName,
 } from './shapeRegistry';
 import { getShapeInsets } from './shapeInsets';
+import { hexToNormalizedRgb } from '@/utils/nodeColors';
 
 export interface NodeShellProps {
   /** The SVG shape to render as the node background */
@@ -97,10 +99,23 @@ function NodeShellComponent({
       : 'hsl(var(--border))';
   const strokeWidth = selected ? 2.5 : 1.5;
 
+  // Color-tinted drop shadow using CSS filter (conforms to SVG shape)
+  const shadowFilter = useMemo(() => {
+    const rgb = hexToNormalizedRgb(color ?? '#6B7280');
+    // Convert normalized RGB back to 0-255 for CSS rgba()
+    const r = Math.round(rgb.r * 255);
+    const g = Math.round(rgb.g * 255);
+    const b = Math.round(rgb.b * 255);
+    if (selected) {
+      return `drop-shadow(0px 3px 8px rgba(${r},${g},${b},0.3)) drop-shadow(0px 1px 3px rgba(${r},${g},${b},0.2))`;
+    }
+    return `drop-shadow(0px 2px 6px rgba(${r},${g},${b},0.2)) drop-shadow(0px 1px 2px rgba(${r},${g},${b},0.12))`;
+  }, [color, selected]);
+
   return (
     <div
-      className="relative"
-      style={{ width, height: effectiveHeight }}
+      className="relative transition-[filter]"
+      style={{ width, height: effectiveHeight, filter: shadowFilter }}
       data-testid="node-shell"
       data-shape={shape}
     >

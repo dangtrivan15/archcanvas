@@ -9,7 +9,7 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
-import { getEffectiveNodeColor, colorToBackground } from '@/utils/nodeColors';
+import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
@@ -83,11 +83,6 @@ function CloudNodeComponent({ data, selected }: NodeProps) {
     [nodeData.color, nodeData.nodedefType, isRef],
   );
 
-  const headerBgStyle = useMemo(
-    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.15)}, ${colorToBackground(effectiveColor, 0.03)})` }),
-    [effectiveColor],
-  );
-
   return (
     <div
       ref={outerRef}
@@ -140,7 +135,6 @@ function CloudNodeComponent({ data, selected }: NodeProps) {
           {/* Header with icon and name */}
           <div
             className="flex items-center gap-2 w-full justify-center py-1"
-            style={headerBgStyle}
           >
             <Icon
               className="w-4 h-4 shrink-0"
@@ -186,7 +180,7 @@ function CloudNodeComponent({ data, selected }: NodeProps) {
           {/* Reference source indicator */}
           {isRef && (
             <div
-              className="flex items-center gap-1 px-2 py-0.5 text-xs text-iris bg-iris/10 rounded mt-1 w-full justify-center"
+              className="flex items-center gap-1 px-2 py-0.5 text-xs text-iris mt-1 w-full justify-center"
               data-testid="ref-source-indicator"
               title={`References: ${nodeData.refSource}`}
             >
