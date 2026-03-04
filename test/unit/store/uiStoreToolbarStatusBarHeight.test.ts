@@ -4,7 +4,7 @@
  * Feature #323: Toolbar default height scales relative to viewport height.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useUIStore, TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT, STATUS_BAR_DEFAULT_HEIGHT, STATUS_BAR_MIN_HEIGHT, STATUS_BAR_MAX_HEIGHT, computeDefaultToolbarHeight, TOOLBAR_DEFAULT_FLOOR, TOOLBAR_DEFAULT_CEILING, TOOLBAR_VIEWPORT_RATIO } from '@/store/uiStore';
+import { useUIStore, TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT, STATUS_BAR_DEFAULT_HEIGHT, STATUS_BAR_MIN_HEIGHT, STATUS_BAR_MAX_HEIGHT, computeDefaultToolbarHeight, TOOLBAR_DEFAULT_FLOOR, TOOLBAR_DEFAULT_CEILING, TOOLBAR_VIEWPORT_RATIO, computeDefaultStatusBarHeight, STATUS_BAR_VIEWPORT_RATIO, STATUS_BAR_DEFAULT_FLOOR, STATUS_BAR_DEFAULT_CEILING } from '@/store/uiStore';
 
 describe('UI Store - Toolbar and Status Bar Height Management', () => {
   beforeEach(() => {
@@ -12,7 +12,8 @@ describe('UI Store - Toolbar and Status Bar Height Management', () => {
     useUIStore.setState({
       toolbarHeight: computeDefaultToolbarHeight(),
       toolbarHeightCustomized: false,
-      statusBarHeight: STATUS_BAR_DEFAULT_HEIGHT,
+      statusBarHeight: computeDefaultStatusBarHeight(),
+      statusBarHeightCustomized: false,
     });
   });
 
@@ -78,8 +79,13 @@ describe('UI Store - Toolbar and Status Bar Height Management', () => {
       expect(useUIStore.getState().toolbarHeightCustomized).toBe(false);
     });
 
-    it('statusBarHeight defaults to 24', () => {
-      expect(useUIStore.getState().statusBarHeight).toBe(24);
+    it('statusBarHeight defaults to viewport-relative value', () => {
+      const expected = computeDefaultStatusBarHeight();
+      expect(useUIStore.getState().statusBarHeight).toBe(expected);
+    });
+
+    it('statusBarHeightCustomized defaults to false', () => {
+      expect(useUIStore.getState().statusBarHeightCustomized).toBe(false);
     });
   });
 
@@ -182,6 +188,113 @@ describe('UI Store - Toolbar and Status Bar Height Management', () => {
     it('clamps zero to minimum', () => {
       useUIStore.getState().setStatusBarHeight(0);
       expect(useUIStore.getState().statusBarHeight).toBe(20);
+    });
+
+    it('marks statusBarHeightCustomized as true', () => {
+      useUIStore.getState().setStatusBarHeight(30);
+      expect(useUIStore.getState().statusBarHeightCustomized).toBe(true);
+    });
+  });
+
+  describe('computeDefaultStatusBarHeight', () => {
+    it('returns floor (20px) for small viewport (800px)', () => {
+      // 800 * 0.02 = 16, clamped to floor 20
+      expect(computeDefaultStatusBarHeight(800)).toBe(20);
+    });
+
+    it('returns ~24px for medium viewport (1200px)', () => {
+      // 1200 * 0.02 = 24
+      expect(computeDefaultStatusBarHeight(1200)).toBe(24);
+    });
+
+    it('returns ~32px for large viewport (1600px)', () => {
+      // 1600 * 0.02 = 32
+      expect(computeDefaultStatusBarHeight(1600)).toBe(32);
+    });
+
+    it('returns ceiling (40px) for very large viewport (2160px)', () => {
+      // 2160 * 0.02 = 43.2, clamped to ceiling 40
+      expect(computeDefaultStatusBarHeight(2160)).toBe(40);
+    });
+
+    it('returns floor for very small viewport (400px)', () => {
+      // 400 * 0.02 = 8, clamped to floor 20
+      expect(computeDefaultStatusBarHeight(400)).toBe(20);
+    });
+
+    it('uses floor constant of 20px', () => {
+      expect(STATUS_BAR_DEFAULT_FLOOR).toBe(20);
+    });
+
+    it('uses ceiling constant of 40px', () => {
+      expect(STATUS_BAR_DEFAULT_CEILING).toBe(40);
+    });
+
+    it('uses ratio of 0.02 (2%)', () => {
+      expect(STATUS_BAR_VIEWPORT_RATIO).toBe(0.02);
+    });
+  });
+
+  describe('updateStatusBarHeightFromViewport', () => {
+    it('updates status bar height when not customized', () => {
+      useUIStore.getState().updateStatusBarHeightFromViewport(1600);
+      expect(useUIStore.getState().statusBarHeight).toBe(32);
+    });
+
+    it('does NOT update status bar height when customized', () => {
+      useUIStore.getState().setStatusBarHeight(30); // marks as customized
+      useUIStore.getState().updateStatusBarHeightFromViewport(1600);
+      expect(useUIStore.getState().statusBarHeight).toBe(30); // stays at custom value
+    });
+
+    it('applies floor for small viewport', () => {
+      useUIStore.getState().updateStatusBarHeightFromViewport(800);
+      expect(useUIStore.getState().statusBarHeight).toBe(20);
+    });
+
+    it('applies ceiling for large viewport', () => {
+      useUIStore.getState().updateStatusBarHeightFromViewport(2160);
+      expect(useUIStore.getState().statusBarHeight).toBe(40);
+    });
+  });
+
+  describe('Feature #324 verification steps', () => {
+    it('Step 1: On a small window (800px tall), status bar defaults to the minimum floor of 20px', () => {
+      expect(computeDefaultStatusBarHeight(800)).toBe(20);
+      useUIStore.getState().updateStatusBarHeightFromViewport(800);
+      expect(useUIStore.getState().statusBarHeight).toBe(20);
+    });
+
+    it('Step 2: On a medium window (1200px tall), status bar defaults to ~24px (2% of 1200)', () => {
+      expect(computeDefaultStatusBarHeight(1200)).toBe(24);
+      useUIStore.getState().updateStatusBarHeightFromViewport(1200);
+      expect(useUIStore.getState().statusBarHeight).toBe(24);
+    });
+
+    it('Step 3: On a large display (1600px tall), status bar defaults to ~32px', () => {
+      expect(computeDefaultStatusBarHeight(1600)).toBe(32);
+      useUIStore.getState().updateStatusBarHeightFromViewport(1600);
+      expect(useUIStore.getState().statusBarHeight).toBe(32);
+    });
+
+    it('Step 4: On a very large display (2160px tall), status bar defaults to the ceiling of 40px', () => {
+      expect(computeDefaultStatusBarHeight(2160)).toBe(40);
+      useUIStore.getState().updateStatusBarHeightFromViewport(2160);
+      expect(useUIStore.getState().statusBarHeight).toBe(40);
+    });
+
+    it('Step 5: Persisted custom height takes priority over viewport-relative default', () => {
+      // Simulate user setting a custom height
+      useUIStore.getState().setStatusBarHeight(35);
+      expect(useUIStore.getState().statusBarHeightCustomized).toBe(true);
+      expect(useUIStore.getState().statusBarHeight).toBe(35);
+
+      // Viewport resize should NOT change the custom height
+      useUIStore.getState().updateStatusBarHeightFromViewport(800);
+      expect(useUIStore.getState().statusBarHeight).toBe(35);
+
+      useUIStore.getState().updateStatusBarHeightFromViewport(2160);
+      expect(useUIStore.getState().statusBarHeight).toBe(35);
     });
   });
 

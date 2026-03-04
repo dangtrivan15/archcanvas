@@ -6145,3 +6145,86 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 300 of 327 (91.7%)
+
+---
+
+## Session: Feature #325 - Left sidebar default width scales relative to viewport width
+Date: 2026-03-04
+
+### Feature #325: Left sidebar default width scales relative to viewport width - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added constants: LEFT_PANEL_VIEWPORT_RATIO (0.15), LEFT_PANEL_DEFAULT_FLOOR (180), LEFT_PANEL_DEFAULT_CEILING (360)
+  - Added computeDefaultLeftPanelWidth(viewportWidth?) function
+  - Store initial leftPanelWidth now uses computeDefaultLeftPanelWidth() instead of fixed 240px
+  - Kept LEFT_PANEL_DEFAULT_WIDTH = 240 as legacy constant for backward compat
+- test/unit/store/leftSidebarDefaultWidth.test.ts: 13 tests (all passing)
+  - Narrow viewport (1024px) → floor 180px
+  - Medium viewport (1440px) → 216px
+  - Wide viewport (1920px) → 288px
+  - Very wide viewport (2560px) → ceiling 360px
+  - Persisted custom width takes priority via setLeftPanelWidth
+  - Clamping to min/max bounds
+
+#### Verification:
+- All 13 unit tests passing
+- Browser automation: app loads, sidebar renders at correct width, zero console errors
+- Committed: 8373b55
+
+---
+
+## Session: Feature #323 - Toolbar Default Height Scales Relative to Viewport
+Date: 2026-03-04
+
+### Feature #323: Toolbar default height scales relative to viewport height - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added computeDefaultToolbarHeight(viewportHeight?) utility: 3.5% of vh, floor 40px, ceiling 64px
+  - Added TOOLBAR_VIEWPORT_RATIO (0.035), TOOLBAR_DEFAULT_FLOOR (40), TOOLBAR_DEFAULT_CEILING (64) constants
+  - Store initializes toolbarHeight with computeDefaultToolbarHeight() instead of fixed 48
+  - Added toolbarHeightCustomized boolean flag to track user overrides
+  - Added updateToolbarHeightFromViewport(vh) action that only updates when not customized
+  - setToolbarHeight() now sets toolbarHeightCustomized=true
+- src/components/toolbar/Toolbar.tsx:
+  - Added useEffect to call updateToolbarHeightFromViewport when viewport height changes
+  - Uses viewportHeight from useViewportSize hook
+- test/unit/store/uiStoreToolbarStatusBarHeight.test.ts: 37 tests (all passing)
+  - computeDefaultToolbarHeight unit tests for various viewport sizes
+  - updateToolbarHeightFromViewport respects customized flag
+  - All 5 feature verification steps verified
+
+#### Current completion status:
+- Features passing: 300/327 (91.4%)
+
+---
+
+## Session: Feature #326 - Right panel default width scales relative to viewport width
+Date: 2026-03-04
+
+### Feature #326: Right panel default width scales relative to viewport width - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added constants: RIGHT_PANEL_VIEWPORT_RATIO (0.20), RIGHT_PANEL_DEFAULT_FLOOR (260), RIGHT_PANEL_DEFAULT_CEILING (480)
+  - Added computeDefaultRightPanelWidth(viewportWidth?) function
+  - Store initial rightPanelWidth now uses computeDefaultRightPanelWidth() instead of fixed 320px
+  - Kept RIGHT_PANEL_DEFAULT_WIDTH = 320 as legacy constant for backward compat
+- test/unit/store/rightPanelDefaultWidth.test.ts: 12 tests (all passing)
+  - Narrow viewport (1024px) → floor 260px
+  - Medium viewport (1440px) → 288px
+  - Wide viewport (1920px) → 384px
+  - Very wide viewport (2560px) → ceiling 480px
+  - Persisted custom width takes priority via setRightPanelWidth
+  - Clamping to min/max bounds
+  - Boundary tests at exact floor/ceiling values
+
+#### Verification:
+- All 12 unit tests passing
+- Browser automation: app loads, zero console errors
+- No mock data patterns in production code
+- Committed: c63ed5a
+
+#### Current completion status:
+- Features passing: 303 of 327 (92.7%)

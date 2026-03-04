@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -55,12 +55,17 @@ export function App() {
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
+  const statusBarHeight = useUIStore((s) => s.statusBarHeight);
+  const setStatusBarHeight = useUIStore((s) => s.setStatusBarHeight);
+  const updateStatusBarHeightFromViewport = useUIStore((s) => s.updateStatusBarHeightFromViewport);
+  const updateLeftPanelWidthFromViewport = useUIStore((s) => s.updateLeftPanelWidthFromViewport);
+  const updateRightPanelWidthFromViewport = useUIStore((s) => s.updateRightPanelWidthFromViewport);
   const navigationPath = useNavigationStore((s) => s.path);
   const graph = useCoreStore((s) => s.graph);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
-  const { isCompact } = useViewportSize();
+  const { isCompact, width: viewportWidth, height: viewportHeight } = useViewportSize();
 
   // Virtual keyboard detection for on-screen keyboard handling
   const { isKeyboardVisible, keyboardHeight } = useVirtualKeyboard();
@@ -81,6 +86,44 @@ export function App() {
     setRightPanelWidth(rightPanelWidth + delta);
   }, [rightPanelWidth, setRightPanelWidth]);
 
+  // Status bar resize drag state
+  const [isStatusBarDragging, setIsStatusBarDragging] = useState(false);
+  const statusBarDragStartY = useRef(0);
+  const statusBarDragStartHeight = useRef(0);
+
+  const handleStatusBarResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    statusBarDragStartY.current = e.clientY;
+    statusBarDragStartHeight.current = statusBarHeight;
+    setIsStatusBarDragging(true);
+  }, [statusBarHeight]);
+
+  useEffect(() => {
+    if (!isStatusBarDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Dragging up (negative deltaY) increases height
+      const deltaY = statusBarDragStartY.current - e.clientY;
+      setStatusBarHeight(statusBarDragStartHeight.current + deltaY);
+    };
+
+    const handleMouseUp = () => {
+      setIsStatusBarDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'row-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isStatusBarDragging, setStatusBarHeight]);
+
   // iPad external keyboard: capture-phase interception to suppress WKWebView defaults
   // Must be registered before useKeyboardShortcuts so capture fires first
   useIPadExternalKeyboard();
@@ -90,6 +133,17 @@ export function App() {
 
   // Responsive layout: auto-close panels when window is narrow
   useResponsiveLayout();
+
+  // Update status bar height when viewport changes (only if user hasn't customized)
+  useEffect(() => {
+    updateStatusBarHeightFromViewport(viewportHeight);
+  }, [viewportHeight, updateStatusBarHeightFromViewport]);
+
+  // Update panel widths when viewport width changes (only if user hasn't customized)
+  useEffect(() => {
+    updateLeftPanelWidthFromViewport(viewportWidth);
+    updateRightPanelWidthFromViewport(viewportWidth);
+  }, [viewportWidth, updateLeftPanelWidthFromViewport, updateRightPanelWidthFromViewport]);
 
   // Autosave when browser tab/window loses focus
   useAutoSaveOnBlur();
@@ -265,7 +319,18 @@ export function App() {
         <Toast />
 
         {/* Status Bar */}
-        <footer className="h-6 border-t flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] shrink-0 safe-area-bottom safe-area-left safe-area-right" data-testid="status-bar">
+        <footer className="border-t flex flex-col shrink-0 safe-area-bottom safe-area-left safe-area-right relative" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
+          {/* Resize Handle */}
+          <div
+            data-testid="status-bar-resize-handle"
+            className={`absolute left-0 right-0 h-2 cursor-row-resize z-10 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
+            style={{ top: '-4px' }}
+            onMouseDown={handleStatusBarResizeStart}
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize status bar"
+          />
+          <div className="flex items-center px-4 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0">
           <span data-testid="node-count">Nodes: {nodeCount}</span>
           <span className="mx-2">|</span>
           <span data-testid="edge-count">Edges: {edgeCount}</span>
@@ -302,6 +367,7 @@ export function App() {
               </span>
             </>
           )}
+          </div>
         </footer>
       </div>
     </FocusZoneProvider>
