@@ -1,0 +1,77 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: vault
+  namespace: security
+  version: "1.0.0"
+  displayName: Vault
+  description: A secrets manager that securely stores, manages, and rotates sensitive credentials, API keys, certificates, and encryption keys.
+  icon: LockKeyhole
+  tags:
+    - security
+    - secrets
+    - vault
+  shape: rectangle
+spec:
+  args:
+    - name: provider
+      type: enum
+      required: true
+      description: Secrets management provider
+      options:
+        - HashiCorp Vault
+        - AWS Secrets Manager
+        - Azure Key Vault
+        - GCP Secret Manager
+      default: HashiCorp Vault
+    - name: rotationEnabled
+      type: boolean
+      description: Whether automatic secret rotation is enabled
+      default: false
+    - name: rotationInterval
+      type: string
+      description: Secret rotation interval (e.g. 30d, 90d, 365d)
+      default: "90d"
+  ports:
+    - name: secret-request
+      direction: inbound
+      protocol:
+        - HTTPS
+        - gRPC
+      description: Incoming secret retrieval or storage requests
+    - name: secret-response
+      direction: outbound
+      protocol:
+        - HTTPS
+        - gRPC
+      description: Outgoing secret values or acknowledgements
+  children: []
+  ai:
+    context: "This is a secrets manager / vault. Consider secret rotation policies, access control, audit logging, and encryption at rest."
+    reviewHints:
+      - Verify secret rotation is enabled for production environments
+      - Check access policies and least-privilege principle
+      - Ensure audit logging is enabled for all secret access
+variants:
+  - name: HashiCorp Vault
+    description: HashiCorp Vault secrets engine
+    args:
+      provider: HashiCorp Vault
+      rotationEnabled: true
+      rotationInterval: "30d"
+  - name: AWS Secrets Manager
+    description: AWS-managed secrets storage
+    args:
+      provider: AWS Secrets Manager
+      rotationEnabled: true
+      rotationInterval: "90d"
+  - name: Azure Key Vault
+    description: Azure Key Vault for secrets and certificates
+    args:
+      provider: Azure Key Vault
+      rotationEnabled: false
+  - name: GCP Secret Manager
+    description: Google Cloud Secret Manager
+    args:
+      provider: GCP Secret Manager
+      rotationEnabled: false

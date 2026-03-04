@@ -18,6 +18,7 @@ import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAIStore } from '@/store/aiStore';
+import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
 import { generateId } from '@/utils/idGenerator';
 
@@ -1155,6 +1156,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         canUndo: undoManager.canUndo,
         canRedo: undoManager.canRedo,
       });
+      haptics.impact('Light');
     }
   },
 
@@ -1176,6 +1178,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         canUndo: undoManager.canUndo,
         canRedo: undoManager.canRedo,
       });
+      haptics.impact('Light');
     }
   },
 

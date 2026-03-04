@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw, Palette } from 'lucide-react';
+import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw, Palette, Vibrate } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
@@ -32,6 +32,8 @@ export function SettingsDialog() {
   const resetBarSizesToFixedDefaults = useUIStore((s) => s.resetBarSizesToFixedDefaults);
   const themeId = useUIStore((s) => s.themeId);
   const setTheme = useUIStore((s) => s.setTheme);
+  const hapticFeedbackEnabled = useUIStore((s) => s.hapticFeedbackEnabled);
+  const setHapticFeedbackEnabled = useUIStore((s) => s.setHapticFeedbackEnabled);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   const [apiKey, setApiKey] = useState('');
@@ -299,6 +301,49 @@ export function SettingsDialog() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Haptic Feedback Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-[hsl(var(--text))] mb-1 flex items-center gap-1.5">
+              <Vibrate className="w-4 h-4" />
+              Haptic Feedback
+            </h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-3">
+              Tactile feedback for touch interactions on iPad. No effect on desktop browsers.
+            </p>
+            <label
+              className="inline-flex items-center gap-3 cursor-pointer select-none"
+              data-testid="haptic-feedback-toggle"
+            >
+              <button
+                type="button"
+                role="switch"
+                aria-checked={hapticFeedbackEnabled}
+                onClick={() => {
+                  const next = !hapticFeedbackEnabled;
+                  setHapticFeedbackEnabled(next);
+                  showToast(next ? 'Haptic feedback enabled' : 'Haptic feedback disabled');
+                }}
+                className={`
+                  relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent
+                  transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300
+                  ${hapticFeedbackEnabled ? 'bg-blue-600' : 'bg-gray-300'}
+                `}
+                data-testid="haptic-feedback-switch"
+              >
+                <span
+                  className={`
+                    pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm
+                    transform transition-transform duration-200 ease-in-out
+                    ${hapticFeedbackEnabled ? 'translate-x-5' : 'translate-x-0'}
+                  `}
+                />
+              </button>
+              <span className="text-sm text-[hsl(var(--text))]">
+                {hapticFeedbackEnabled ? 'On' : 'Off'}
+              </span>
+            </label>
           </div>
 
           {/* Layout Section */}

@@ -9,6 +9,7 @@ import { ArrowRight, Zap, Database } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useHaptics } from '@/hooks/useHaptics';
 
 type EdgeType = 'sync' | 'async' | 'data-flow';
 
@@ -47,6 +48,7 @@ export function ConnectionTypeDialog() {
   const connectionDialogInfo = useUIStore((s) => s.connectionDialogInfo);
   const closeConnectionDialog = useUIStore((s) => s.closeConnectionDialog);
   const addEdge = useCoreStore((s) => s.addEdge);
+  const hapticActions = useHaptics();
 
   const [selectedType, setSelectedType] = useState<EdgeType>('sync');
   const [label, setLabel] = useState('');
@@ -97,8 +99,10 @@ export function ConnectionTypeDialog() {
     });
 
     console.log('[ConnectionTypeDialog] Edge created:', selectedType, connectionDialogInfo.sourceNodeId, '->', connectionDialogInfo.targetNodeId);
+    // Haptic success feedback for edge connection
+    hapticActions.notification('Success');
     closeConnectionDialog();
-  }, [connectionDialogInfo, selectedType, label, addEdge, closeConnectionDialog]);
+  }, [connectionDialogInfo, selectedType, label, addEdge, closeConnectionDialog, hapticActions]);
 
   const handleCancel = useCallback(() => {
     closeConnectionDialog();

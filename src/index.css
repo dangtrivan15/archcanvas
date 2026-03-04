@@ -234,3 +234,86 @@ a:focus-visible {
     display: none !important;
   }
 }
+
+/* ─── Pointer Cursor Adaptation for Trackpad/Mouse (iPadOS 13.4+) ─── */
+/* When a fine pointer (trackpad/mouse) with hover capability is detected,
+   adapt cursor styles for proper desktop-like feedback on iPad. */
+@media (pointer: fine) and (hover: hover) {
+  /* Canvas pane: crosshair cursor for precision placement */
+  .react-flow__pane {
+    cursor: crosshair;
+  }
+
+  /* Nodes: grab cursor to indicate draggable */
+  .react-flow__node {
+    cursor: grab;
+  }
+
+  /* Nodes while dragging: grabbing cursor */
+  .react-flow__node.dragging {
+    cursor: grabbing;
+  }
+
+  /* Edges: pointer cursor to indicate clickable */
+  .react-flow__edge {
+    cursor: pointer;
+  }
+
+  /* Selection area: crosshair for precise selection */
+  .react-flow__selectionpane {
+    cursor: crosshair;
+  }
+
+  /* Controls buttons: pointer cursor */
+  .react-flow__controls button {
+    cursor: pointer;
+  }
+
+  /* Port handles: crosshair for connection drawing */
+  .react-flow__handle {
+    cursor: crosshair;
+  }
+
+  /* MiniMap: move cursor for panning */
+  .react-flow__minimap {
+    cursor: move;
+  }
+
+  /* Node hover highlight: subtle iris border glow on hover */
+  .react-flow__node:hover:not(.selected) {
+    filter: drop-shadow(0 0 6px hsl(var(--iris) / 0.25));
+  }
+
+  /* Edge hover: thicken stroke on hover via CSS class */
+  .react-flow__edge:hover .react-flow__edge-path {
+    stroke-width: 3.5;
+  }
+
+  /* Edge hover interaction zone: widen transparent hit area for easier targeting */
+  .react-flow__edge-interaction {
+    stroke-width: 20;
+  }
+
+  /* Tooltips: visible only on hover-capable devices */
+  .pointer-tooltip {
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 150ms ease, visibility 150ms ease;
+    pointer-events: none;
+  }
+
+  /* Show tooltip on parent hover */
+  *:hover > .pointer-tooltip,
+  .pointer-tooltip-trigger:hover .pointer-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+/* ─── Touch-only devices: hide pointer-specific tooltips ─── */
+@media (pointer: coarse) and (hover: none) {
+  .pointer-tooltip {
+    display: none !important;
+  }
+}

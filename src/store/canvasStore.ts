@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import type { CanvasViewport } from '@/types/graph';
+import { haptics } from '@/hooks/useHaptics';
 
 export interface LayoutSpacing {
   nodeSpacing: number;
@@ -87,13 +88,15 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   centerOnNodeCounter: 0,
 
   // Single select: replaces entire selection
-  selectNode: (nodeId) =>
+  selectNode: (nodeId) => {
+    if (nodeId) haptics.selectionChanged();
     set({
       selectedNodeId: nodeId,
       selectedEdgeId: null,
       selectedNodeIds: nodeId ? [nodeId] : [],
       selectedEdgeIds: [],
-    }),
+    });
+  },
 
   selectEdge: (edgeId) =>
     set({
