@@ -27,6 +27,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { NodeIconBadge } from './NodeIconBadge';
+import { NodeArgsTable } from './NodeArgsTable';
 
 export const iconMap: Record<string, React.ElementType> = {
   Server,
@@ -275,14 +276,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Node body - show key args */}
       {Object.keys(nodeData.args).length > 0 && (
-        <div className="px-3 py-1.5 text-xs text-subtle">
-          {Object.entries(nodeData.args).slice(0, 3).map(([key, value]) => (
-            <div key={key} className="truncate">
-              <span className="font-mono text-muted-foreground">{key}:</span>{' '}
-              <span>{String(value)}</span>
-            </div>
-          ))}
-        </div>
+        <NodeArgsTable args={nodeData.args} maxRows={3} className="px-3 py-1.5" />
       )}
 
       {/* Badges */}
