@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { ChevronRight, X } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -168,6 +169,16 @@ export function App() {
       initialize();
     });
   }, [initialize]);
+
+  // Hide the native splash screen once the app is fully initialized and interactive.
+  // launchAutoHide is false in capacitor.config.ts so we control the timing here.
+  useEffect(() => {
+    if (initialized) {
+      SplashScreen.hide({ fadeOutDuration: 300 }).catch(() => {
+        // Silently ignore — SplashScreen.hide() throws on web where there's no native splash
+      });
+    }
+  }, [initialized]);
 
   // Auto-load file from URL parameter (for development/testing)
   useEffect(() => {

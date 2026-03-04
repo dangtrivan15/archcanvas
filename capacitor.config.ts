@@ -30,6 +30,21 @@ const config: CapacitorConfig = {
       // archcanvas://open?file=<path> or archcanvas://file/<path>
       url: 'archcanvas',
     },
+
+    // @capacitor/splash-screen — polished launch experience
+    SplashScreen: {
+      // Use the native launch storyboard (LaunchScreen.storyboard) which references
+      // the Splash image set in Assets.xcassets (supports light/dark appearance).
+      launchShowDuration: 0, // Don't auto-hide on a fixed timer
+      launchAutoHide: false, // We manually hide after the app is interactive
+      launchFadeOutDuration: 300, // Smooth 300ms fade-out transition
+      backgroundColor: '#1a1a2e', // Dark theme background (matches splash image)
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false, // Clean launch — no spinner
+      splashFullScreen: true, // Cover the full screen including status bar
+      splashImmersive: true, // Immersive mode for a clean launch experience
+    },
   },
 
   server: {
