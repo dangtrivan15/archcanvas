@@ -331,7 +331,7 @@ export function App() {
         />
 
         {/* Status Bar */}
-        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
+        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
           <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
             {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) */}
             <ModeStatusBar />
