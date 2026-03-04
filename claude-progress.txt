@@ -6966,3 +6966,38 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 320+ of 339
+
+---
+
+## Session: Feature #335 - Hexagon Nodes (API Gateway, Load Balancer)
+Date: 2026-03-04
+
+### Feature #335: Hexagon Nodes (API Gateway, Load Balancer) - PASSING
+
+#### Implementation:
+- src/components/nodes/HexagonNode.tsx (new file):
+  - Wraps NodeShell with shape='hexagon' for SVG hexagonal background
+  - Reuses GenericNode's inner content layout: icon, displayName, type label, args, badges
+  - Port handles positioned on left/right flat edges of hexagon (center Y)
+  - Supports inline editing, ref indicators, children indicator
+  - Memoized with React.memo
+
+- src/components/nodes/nodeTypeMap.ts:
+  - Changed 'gateway' mapping from GenericNode to HexagonNode
+
+- src/api/renderApi.ts:
+  - Added 'network' namespace case in getNodeComponentType()
+  - Maps 'network/load-balancer' to 'gateway' (which renders as HexagonNode)
+
+#### Browser verification:
+- API Gateway (compute/api-gateway) renders as hexagon with correct shape
+- Load Balancer (network/load-balancer) also renders as hexagon
+- Port handles visible on flat edges (green dots)
+- Text content (name, type, args) fits within hexagon shape
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns detected
+- Committed: 77f3d8c
+
+#### Current completion status:
+- Feature #335 marked passing
+- Features passing: 321 of 339 (94.7%)
