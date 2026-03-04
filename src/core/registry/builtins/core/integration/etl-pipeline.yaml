@@ -1,0 +1,100 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: etl-pipeline
+  namespace: integration
+  version: "1.0.0"
+  displayName: ETL Pipeline
+  description: A data pipeline orchestrating extract, transform, and load workflows using engines such as Airflow, dbt, Fivetran, Step Functions, or Dagster.
+  icon: Workflow
+  tags:
+    - integration
+    - etl
+    - data-pipeline
+    - orchestration
+  shape: parallelogram
+spec:
+  args:
+    - name: engine
+      type: enum
+      required: true
+      description: Pipeline orchestration engine
+      options:
+        - Airflow
+        - dbt
+        - Fivetran
+        - Step Functions
+        - Dagster
+        - Custom
+      default: Airflow
+    - name: schedule
+      type: string
+      required: false
+      description: Cron expression or schedule descriptor (e.g. "@daily", "0 */2 * * *")
+      default: "@daily"
+    - name: source
+      type: string
+      required: false
+      description: Data source system or table
+      default: "source_db"
+    - name: destination
+      type: string
+      required: false
+      description: Data destination system or table
+      default: "data_warehouse"
+  ports:
+    - name: data-in
+      direction: inbound
+      protocol:
+        - DATA_FLOW
+      description: Inbound data feed into the pipeline
+    - name: data-out
+      direction: outbound
+      protocol:
+        - DATA_FLOW
+      description: Processed data output from the pipeline
+  children: []
+  ai:
+    context: "This is an ETL/ELT data pipeline node. Consider data quality checks, retry policies, idempotency, scheduling conflicts, and monitoring/alerting for failed runs."
+    reviewHints:
+      - Verify data quality validation steps exist
+      - Check retry and backoff configuration
+      - Ensure pipeline runs are idempotent
+      - Review monitoring and alerting for failures
+      - Validate source and destination connectivity
+variants:
+  - name: Airflow
+    description: Apache Airflow DAG-based pipeline
+    args:
+      engine: Airflow
+      schedule: "@daily"
+      source: "source_db"
+      destination: "data_warehouse"
+  - name: dbt
+    description: dbt transformation pipeline
+    args:
+      engine: dbt
+      schedule: "@hourly"
+      source: "raw_schema"
+      destination: "analytics_schema"
+  - name: Fivetran
+    description: Fivetran managed data connector
+    args:
+      engine: Fivetran
+      schedule: "every 6 hours"
+      source: "saas_api"
+      destination: "data_lake"
+  - name: Step Functions
+    description: AWS Step Functions state machine pipeline
+    args:
+      engine: Step Functions
+      schedule: "rate(1 hour)"
+      source: "s3_bucket"
+      destination: "redshift"
+  - name: Dagster
+    description: Dagster software-defined asset pipeline
+    args:
+      engine: Dagster
+      schedule: "@daily"
+      source: "source_system"
+      destination: "data_warehouse"
