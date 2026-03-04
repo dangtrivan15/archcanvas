@@ -7264,3 +7264,133 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 324 of 339 (95.6%)
+
+---
+
+## Session: Feature #309 - MCP Additional Tools
+Date: 2026-03-04
+
+### Feature #309: MCP Additional Tools (export, update-node, update-edge, init) - PASSING
+
+#### Implementation:
+Added 7 new tools to the MCP server for full Text API / Export API parity:
+
+- src/mcp/tools.ts: Added Zod schemas for 7 new tools:
+  - export_markdown: generates markdown summary (with optional Mermaid)
+  - export_mermaid: generates Mermaid diagram
+  - update_edge: updates edge type, label, properties
+  - add_code_ref: adds code reference to a node
+  - remove_note: removes a note from a node
+  - get_edges: lists all edges
+  - init_architecture: resets graph to empty architecture
+
+- src/mcp/handlers.ts:
+  - Added 7 handler functions (handleExportMarkdown, handleExportMermaid, handleUpdateEdge, handleAddCodeRef, handleRemoveNote, handleGetEdges, handleInitArchitecture)
+  - Added new mutation tools to MUTATION_TOOLS set (10 total, up from 6)
+  - Updated dispatchToolCall switch to route all new tools
+
+- src/mcp/server.ts: Registered all 7 new tools (18 total, up from 11)
+
+- test/unit/mcp/mcpAdditionalTools.test.ts: 33 new tests covering all 7 tools
+- Updated existing tests: mcpServerCreate, mcpServer, mcpFileBacked to reflect new counts
+
+#### Verification:
+- 179 MCP tests passing across 14 test files
+- No TypeScript errors in MCP files
+- No mock data patterns in production code
+- Committed: 42499fd
+
+#### Current completion status:
+- Features passing: 328+ of 339 (96.5%+)
+
+---
+
+## Session: Feature #311 - HTTP Query Endpoints
+Date: 2026-03-04
+
+### Feature #311: HTTP Query Endpoints - PASSING
+
+#### Implementation:
+- src/cli/server/routes/query.ts (new file):
+  - createQueryRoutes(ctx) factory function returns RouteDefinition[]
+  - GET /api/info → file metadata with {data, meta} envelope
+  - GET /api/describe → supports scope=full|node|nodes, nodeId, format=structured|human|ai params
+  - GET /api/nodes → textApi.listNodes() with count in meta
+  - GET /api/nodes/:id → textApi.getNode() with 404 on missing
+  - GET /api/edges → textApi.getEdges() with count in meta
+  - GET /api/search?q= → textApi.search() with query and count in meta
+  - GET /api/nodedefs?namespace= → registry.listAll()/listByNamespace() with summary objects
+  - All endpoints return consistent { data, meta: { timestamp, ... } } envelope
+  - Backward compatible: ?style= param still works for describe endpoint
+
+- src/cli/server/httpServer.ts:
+  - Imports and registers query routes from routes/query.ts
+  - Removed duplicate GET route handlers (info, describe, nodes, edges, search)
+  - Added /api/nodedefs to startup endpoint listing
+
+- test/integration/http/httpServer.test.ts:
+  - Updated existing tests for { data, meta } envelope format
+  - Added 19 new query-specific tests:
+    - Info endpoint envelope structure
+    - Describe with all format options (structured, human, ai)
+    - Describe with scope=node + nodeId
+    - Describe backward compat with ?style= param
+    - Describe 400 on scope=node without nodeId
+    - Nodes list with count in meta
+    - Node detail by ID
+    - Node 404 for non-existent
+    - Edges list with count
+    - Search results with query in meta
+    - Search 400 without q param
+    - Nodedefs listing (all)
+    - Nodedefs filtered by namespace (compute, data)
+    - Nodedefs empty for unknown namespace
+    - Consistent envelope across all query endpoints
+  - All 31 tests passing
+
+#### Committed: b067c58
+#### Features passing: 331+ of 339
+
+---
+
+## Session: Feature #314 - CLI npm Package & Build Configuration
+Date: 2026-03-04
+
+### Feature #314: CLI npm Package & Build Configuration - PASSING
+
+#### Implementation:
+- tsconfig.cli.json (new file):
+  - Node.js-specific TypeScript config (target: ES2022, no DOM types)
+  - Includes CLI, core, API, types, proto, and MCP source files
+  - Excludes React components, hooks, store, and test files
+
+- tsup.cli.config.ts (new file):
+  - Entry point: src/cli/index.ts
+  - Output: dist/cli/ (ESM format, Node 20 target)
+  - Custom yamlRawPlugin for Vite-style ?raw YAML imports
+  - Bundles protobufjs (CJS subpath exports don't resolve in ESM)
+  - Browser-only packages marked external (react, html-to-image, @xyflow, elkjs, capacitor, etc.)
+  - npm packages kept external (commander, yaml, zod, etc.)
+  - Post-build copies nodedef YAML files to dist/core/registry/builtins/
+  - Code splitting and tree shaking enabled
+
+- package.json updates:
+  - Removed "private": true to allow npm publishing
+  - Added "files" field: dist/cli/**, dist/core/registry/builtins/**, proto/**, README.md
+  - Added "build:cli" script: tsup --config tsup.cli.config.ts
+  - Added "prepublishOnly" script: npm run build:cli
+  - bin field already existed: { "archcanvas": "./dist/cli/index.js" }
+
+#### Verification:
+- Build succeeds in ~500ms via tsup/esbuild
+- CLI version, help, init, info, add-node, list-nodes, export all work from dist/cli/
+- npm link succeeds and creates global symlink
+- npm pack --dry-run shows 56 files, 217KB package size
+- All 15 nodedef YAML files included in npm package
+- No react, @xyflow, elkjs, or zustand imports in built CLI
+- Pre-existing test failures not caused by our changes (6 failures in render API, dirty state, shortcuts)
+- Committed: 5fee38e
+
+#### Current completion status:
+- Feature #314 marked passing
+- Features passing: 331+ of 339
