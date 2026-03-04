@@ -13,7 +13,7 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { openArchcFile, pickArchcFile, decodeArchcData, protoToGraphFull, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
+import { pickArchcFile, decodeArchcData, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
 import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -46,7 +46,8 @@ export interface CoreStoreState {
   initialize: () => void;
 
   // File handle (for save-in-place)
-  fileHandle: FileSystemFileHandle | null;
+  // On web: FileSystemFileHandle; on native iOS: string path
+  fileHandle: unknown;
 
   // File header timestamp (preserved across re-saves)
   fileCreatedAtMs: number | null;
@@ -92,7 +93,7 @@ export interface CoreStoreState {
   _applyDecodedFile: (
     graph: ArchGraph,
     fileName: string,
-    fileHandle: FileSystemFileHandle | null,
+    fileHandle: unknown,
     canvasState?: import('@/types/graph').SavedCanvasState,
     aiState?: import('@/core/storage/fileIO').AIStateData,
     createdAtMs?: number,
@@ -211,7 +212,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   _applyDecodedFile: (
     graph: import('@/types/graph').ArchGraph,
     fileName: string,
-    fileHandle: FileSystemFileHandle | null,
+    fileHandle: unknown,
     canvasState?: import('@/types/graph').SavedCanvasState,
     aiState?: import('@/core/storage/fileIO').AIStateData,
     createdAtMs?: number,
@@ -405,7 +406,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         try {
           const summaryContent = exportApi.generateSummaryWithMermaid(graph);
           const summaryFileName = deriveSummaryFileName(fileName);
-          saveSummaryMarkdown(summaryContent, summaryFileName);
+          await saveSummaryMarkdown(summaryContent, summaryFileName);
         } catch (summaryErr) {
           console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
         }
@@ -478,7 +479,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         try {
           const summaryContent = exportApi.generateSummaryWithMermaid(graph);
           const summaryFileName = deriveSummaryFileName(result.fileName);
-          saveSummaryMarkdown(summaryContent, summaryFileName);
+          await saveSummaryMarkdown(summaryContent, summaryFileName);
         } catch (summaryErr) {
           console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
         }

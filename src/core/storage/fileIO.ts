@@ -539,58 +539,43 @@ export async function decodeArchcData(
 export interface PickedFile {
   data: Uint8Array;
   fileName: string;
-  fileHandle?: FileSystemFileHandle;
+  /**
+   * Opaque file handle for save-in-place.
+   * On web: FileSystemFileHandle (from File System Access API)
+   * On native iOS: string path (from Capacitor Filesystem)
+   */
+  fileHandle?: unknown;
 }
 
 /**
- * Pick a .archc file from the user (File System Access API with fallback).
+ * Pick a .archc file from the user via the platform FileSystemAdapter.
  * Returns raw file data without decoding. Returns null if user cancels.
+ *
+ * On web: delegates to WebFileSystemAdapter (File System Access API + <input> fallback)
+ * On native iOS: delegates to NativeFileSystemAdapter (Capacitor file picker)
  */
 export async function pickArchcFile(): Promise<PickedFile | null> {
-  // Try File System Access API first (Chrome/Edge)
-  if ('showOpenFilePicker' in window) {
-    try {
-      const handles = await window.showOpenFilePicker({
-        types: [
-          {
-            description: 'ArchCanvas Files',
-            accept: { 'application/octet-stream': ['.archc'] },
-          },
-        ],
-        multiple: false,
-      });
-      const handle = handles[0];
-      if (!handle) return null;
-      const file = await handle.getFile();
-      const buffer = await file.arrayBuffer();
-      return {
-        data: new Uint8Array(buffer),
-        fileName: file.name,
-        fileHandle: handle,
-      };
-    } catch (err) {
-      // User cancelled the picker
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        return null;
-      }
-      throw err;
-    }
-  } else {
-    // Fallback: use hidden <input type="file">
-    const result = await openFileViaInput();
-    if (!result) return null;
-    return { data: result.data, fileName: result.name };
-  }
+  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+  const adapter = await getFileSystemAdapter();
+
+  const result = await adapter.pickFile();
+  if (!result) return null;
+
+  return {
+    data: result.data,
+    fileName: result.name,
+    fileHandle: result.handle,
+  };
 }
 
 /**
- * Open a .archc file using File System Access API (with fallback).
+ * Open a .archc file using the platform FileSystemAdapter.
  * Returns the decoded graph, filename, and canvas state.
  */
 export async function openArchcFile(decodeOptions?: import('./codec').DecodeOptions): Promise<{
   graph: ArchGraph;
   fileName: string;
-  fileHandle?: FileSystemFileHandle;
+  fileHandle?: unknown;
   canvasState?: SavedCanvasState;
   aiState?: AIStateData;
   createdAtMs?: number;
@@ -612,49 +597,20 @@ export async function openArchcFile(decodeOptions?: import('./codec').DecodeOpti
   };
 }
 
-/**
- * Fallback file open using a hidden <input type="file"> element.
- */
-function openFileViaInput(): Promise<{ data: Uint8Array; name: string } | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.archc';
-
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) {
-        resolve(null);
-        return;
-      }
-      const buffer = await file.arrayBuffer();
-      resolve({
-        data: new Uint8Array(buffer),
-        name: file.name,
-      });
-    };
-
-    // Handle cancel (no change event fires)
-    input.addEventListener('cancel', () => resolve(null));
-
-    input.click();
-  });
-}
-
 // ─── File Save Functions ────────────────────────────────────────
 
 /**
- * Save the current graph to the existing file handle (save in-place).
- * Uses File System Access API to write directly to the opened file.
+ * Save the current graph to the existing file location (save in-place).
+ * Delegates to the platform FileSystemAdapter.
  *
  * @param graph - The current architecture graph to save
- * @param fileHandle - The FileSystemFileHandle obtained when the file was opened
+ * @param fileHandle - Opaque handle from pickArchcFile or saveArchcFileAs (FileSystemFileHandle on web, path string on native)
  * @param canvasState - Optional canvas state (viewport, selection, panel layout)
  * @returns true if save succeeded
  */
 export async function saveArchcFile(
   graph: ArchGraph,
-  fileHandle: FileSystemFileHandle,
+  fileHandle: unknown,
   canvasState?: SavedCanvasState,
   aiState?: AIStateData,
   createdAtMs?: number,
@@ -665,17 +621,17 @@ export async function saveArchcFile(
   // Encode to binary .archc format (with magic bytes, version, checksum)
   const binaryData = await encode(protoFile);
 
-  // Write to file using File System Access API
-  const writable = await fileHandle.createWritable();
-  await writable.write(binaryData);
-  await writable.close();
+  // Write to file using the platform adapter
+  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+  const adapter = await getFileSystemAdapter();
+  await adapter.saveFile(binaryData, fileHandle);
 
   return true;
 }
 
 /**
  * Save the current graph to a new file (Save As).
- * Opens a file save picker and writes the .archc binary file.
+ * Opens a file save picker via the platform FileSystemAdapter.
  *
  * @param graph - The current architecture graph to save
  * @param suggestedName - Suggested filename (without extension)
@@ -689,7 +645,7 @@ export async function saveArchcFileAs(
   aiState?: AIStateData,
   createdAtMs?: number,
 ): Promise<{
-  fileHandle?: FileSystemFileHandle;
+  fileHandle?: unknown;
   fileName: string;
 } | null> {
   // Convert graph to proto format (including canvas state, AI state, and header timestamps)
@@ -701,51 +657,17 @@ export async function saveArchcFileAs(
   const baseName = (suggestedName ?? 'architecture').replace(/\.archc$/, '');
   const defaultName = baseName + '.archc';
 
-  // Try File System Access API first (Chrome/Edge)
-  if ('showSaveFilePicker' in window) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: defaultName,
-        types: [
-          {
-            description: 'ArchCanvas Files',
-            accept: { 'application/octet-stream': ['.archc'] },
-          },
-        ],
-      });
+  // Delegate to the platform adapter
+  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+  const adapter = await getFileSystemAdapter();
+  const result = await adapter.saveFileAs(binaryData, defaultName);
 
-      // Write to the new file
-      const writable = await handle.createWritable();
-      await writable.write(binaryData);
-      await writable.close();
+  if (!result) return null;
 
-      return {
-        fileHandle: handle,
-        fileName: handle.name,
-      };
-    } catch (err) {
-      // User cancelled the picker
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        return null;
-      }
-      throw err;
-    }
-  } else {
-    // Fallback: trigger a download using Blob
-    const blob = new Blob([binaryData], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = defaultName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    return {
-      fileName: defaultName,
-    };
-  }
+  return {
+    fileHandle: result.handle,
+    fileName: result.fileName,
+  };
 }
 
 // ─── Sidecar Summary File ────────────────────────────────────────
@@ -760,21 +682,15 @@ export function deriveSummaryFileName(archcFileName: string): string {
 
 /**
  * Save the .summary.md sidecar file alongside the .archc file.
- * Uses Blob download as the cross-browser mechanism.
+ * Delegates to the platform FileSystemAdapter's shareFile method.
+ * On web: triggers a Blob download. On native: uses Capacitor share/filesystem.
  *
  * @param content - The markdown summary content
  * @param summaryFileName - The filename for the .summary.md file
  */
-export function saveSummaryMarkdown(content: string, summaryFileName: string): void {
-  const blob = new Blob([content], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = summaryFileName;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export async function saveSummaryMarkdown(content: string, summaryFileName: string): Promise<void> {
+  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+  const adapter = await getFileSystemAdapter();
+  await adapter.shareFile(content, summaryFileName, 'text/markdown');
   console.log(`[FileIO] Summary sidecar saved: ${summaryFileName}`);
 }
