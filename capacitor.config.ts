@@ -23,6 +23,15 @@ const config: CapacitorConfig = {
     contentInset: 'never',
   },
 
+  plugins: {
+    // @capacitor/app — custom URL scheme for deep linking
+    App: {
+      // Register archcanvas:// URL scheme so other apps can open files via
+      // archcanvas://open?file=<path> or archcanvas://file/<path>
+      url: 'archcanvas',
+    },
+  },
+
   server: {
     // When CAPACITOR_DEV=true, load from the Vite dev server for live reload.
     // The --external flag on `cap run` resolves the machine's LAN IP automatically,

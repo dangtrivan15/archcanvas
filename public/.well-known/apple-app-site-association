@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.com.archcanvas.app"],
+        "components": [
+          {
+            "/": "/open",
+            "?": { "file": "?*" },
+            "comment": "Open .archc file via Universal Link"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAM_ID.com.archcanvas.app"]
+  }
+}
