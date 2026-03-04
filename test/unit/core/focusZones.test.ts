@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for the Focus Zone system (src/core/input/focusZones.ts).
  *

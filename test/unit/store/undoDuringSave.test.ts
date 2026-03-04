@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #228: Undo during save doesn't corrupt state.
  * Verifies that performing undo/redo while a save operation is in progress

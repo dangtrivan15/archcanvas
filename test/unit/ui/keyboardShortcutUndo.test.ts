@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #209: Keyboard shortcut Ctrl+Z triggers undo.
  * Verifies that pressing Ctrl+Z undoes the last action (node removal)

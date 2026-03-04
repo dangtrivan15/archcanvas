@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for the Keyboard Shortcuts Help Panel feature (#236).
  *

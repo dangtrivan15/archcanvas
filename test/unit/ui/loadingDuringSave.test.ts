@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #196: Loading indicator during save operations.
  * Verifies that saveFile and saveFileAs set and clear loading state.

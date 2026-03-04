@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Keyboard Node Duplication feature (#247).
  *

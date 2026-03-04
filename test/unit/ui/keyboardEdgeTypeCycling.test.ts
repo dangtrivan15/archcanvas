@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Keyboard Edge Type Cycling (Feature #252)
  * Selected edge + 'T' cycles type: Sync → Async → Data Flow → Sync.

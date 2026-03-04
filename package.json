@@ -46,6 +46,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
+    "happy-dom": "^20.8.3",
     "jsdom": "^26.0.0",
     "postcss": "^8.4.49",
     "protobufjs-cli": "^2.0.0",

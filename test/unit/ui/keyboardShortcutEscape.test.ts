@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #211: Keyboard shortcut Escape deselects and closes panels.
  * Verifies that pressing Escape:

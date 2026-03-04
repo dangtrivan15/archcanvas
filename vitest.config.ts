@@ -11,8 +11,17 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['test/**/*.test.ts', 'test/**/*.test.tsx'],
+    environmentMatchGlobs: [
+      ['test/**/*.test.tsx', 'happy-dom'],
+    ],
+    poolOptions: {
+      forks: {
+        maxForks: 3,
+        isolate: true,
+      },
+    },
   },
 });

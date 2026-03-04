@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #210: Keyboard shortcut Ctrl+N creates new file.
  * Verifies that pressing Ctrl+N creates a new empty architecture,

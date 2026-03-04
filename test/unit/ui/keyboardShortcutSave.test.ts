@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #208: Keyboard shortcut Ctrl+S triggers save.
  * Verifies that pressing Ctrl+S calls saveFile, clears dirty indicator,

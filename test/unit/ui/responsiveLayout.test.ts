@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for responsive three-panel layout behavior.
  * Feature #216: Three-panel layout responds to window resize

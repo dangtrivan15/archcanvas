@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Command Palette Node Creation feature.
  *

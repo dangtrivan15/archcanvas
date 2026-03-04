@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #193: File save failure shows error toast.
  * Verifies that when saving fails, user sees an error notification,

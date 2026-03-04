@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for sanitizeHtml utility - XSS prevention in rendered markdown notes.
  * Verifies that dangerous HTML elements and attributes are stripped/escaped.

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Command Palette Edge Creation (Feature #251)
  * Multi-step "Connect Nodes..." wizard in the command palette.

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for the Command Palette (Cmd+K / Ctrl+K).
  * Verifies command registry, fuzzy search, keyboard navigation, and execution.

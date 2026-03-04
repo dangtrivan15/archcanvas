@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Quick Search Overlay (/ key).
  * Verifies fuzzy search, keyboard navigation, jump-to-node,
