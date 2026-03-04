@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 /*
+ * Wire Tailwind CSS 4 dark: variant to the .dark class on <html>.
+ * The ThemeProvider sets/removes .dark based on the active theme,
+ * so this ensures dark:text-*, dark:bg-*, etc. all respond to theme switching.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * Theme CSS custom properties.
  * Initial values are the "dark" defaults — the ThemeProvider will override
  * these at runtime via inline styles on :root when a theme is applied.
