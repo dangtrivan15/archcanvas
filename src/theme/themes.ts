@@ -8,6 +8,18 @@
  */
 
 import type { Theme } from './types';
+import {
+  rosePine,
+  rosePineMoon,
+  rosePineDawn,
+  THEME_PRESETS,
+} from '../themes/rose-pine';
+
+/** Re-export Rosé Pine themes for backward compatibility */
+export const rosePineTheme = rosePine;
+export const rosePineMoonTheme = rosePineMoon;
+export const rosePineDawnTheme = rosePineDawn;
+export { THEME_PRESETS };
 
 /** Light theme — clean whites and grays */
 export const lightTheme: Theme = {
@@ -67,90 +79,82 @@ export const darkTheme: Theme = {
   },
 };
 
-/** Rosé Pine — main variant (dark with warm undertones) */
-export const rosePineTheme: Theme = {
-  id: 'rose-pine',
-  name: 'Rosé Pine',
+/**
+ * Nord — Arctic, north-bluish palette
+ * Based on https://www.nordtheme.com/docs/colors-and-palettes
+ *
+ * Polar Night: #2E3440 #3B4252 #434C5E #4C566A
+ * Snow Storm:  #D8DEE9 #E5E9F0 #ECEFF4
+ * Frost:       #8FBCBB #88C0D0 #81A1C1 #5E81AC
+ * Aurora:      #BF616A #D08770 #EBCB8B #A3BE8C #B48EAD
+ */
+export const nordTheme: Theme = {
+  id: 'nord',
+  name: 'Nord',
   colors: {
-    background: '249 22% 12%',
-    surface: '247 23% 15%',
-    text: '245 50% 91%',
-    subtle: '249 12% 47%',
-    muted: '249 15% 28%',
-    'muted-foreground': '249 12% 47%',
-    'highlight-low': '244 18% 15%',
-    'highlight-med': '249 15% 20%',
-    'highlight-high': '248 14% 25%',
-    primary: '267 57% 78%',
-    secondary: '249 15% 28%',
-    accent: '343 76% 68%',
-    border: '249 15% 28%',
-    overlay: '248 25% 18%',
-    ring: '267 57% 78%',
-    love: '343 76% 68%',
-    gold: '35 88% 72%',
-    rose: '2 55% 83%',
-    pine: '197 49% 38%',
-    foam: '189 43% 73%',
-    iris: '267 57% 78%',
+    background: '220 16% 22%',    // #2E3440 — Polar Night 0
+    surface: '222 16% 28%',       // #3B4252 — Polar Night 1
+    text: '219 28% 88%',          // #D8DEE9 — Snow Storm 0
+    subtle: '220 16% 36%',        // #4C566A — Polar Night 3
+    muted: '220 17% 32%',         // #434C5E — Polar Night 2
+    'muted-foreground': '219 14% 61%', // mid between Polar Night 3 and Snow Storm
+    'highlight-low': '220 16% 26%',
+    'highlight-med': '222 16% 30%',
+    'highlight-high': '220 17% 34%',
+    primary: '213 32% 52%',       // #5E81AC — Frost 3
+    secondary: '220 17% 32%',     // #434C5E
+    accent: '193 43% 67%',        // #88C0D0 — Frost 1
+    border: '220 17% 32%',        // #434C5E
+    overlay: '220 16% 18%',       // darker than background
+    ring: '213 32% 52%',          // #5E81AC — Frost 3
+    love: '354 42% 56%',          // #BF616A — Aurora red
+    gold: '40 71% 73%',           // #EBCB8B — Aurora yellow
+    rose: '14 51% 63%',           // #D08770 — Aurora orange
+    pine: '92 28% 65%',           // #A3BE8C — Aurora green
+    foam: '179 25% 65%',          // #8FBCBB — Frost 0
+    iris: '311 20% 63%',          // #B48EAD — Aurora purple
   },
 };
 
-/** Rosé Pine Moon — medium-dark variant */
-export const rosePineMoonTheme: Theme = {
-  id: 'rose-pine-moon',
-  name: 'Rosé Pine Moon',
+/**
+ * Catppuccin Mocha — soothing pastel dark theme
+ * Based on https://github.com/catppuccin/catppuccin
+ *
+ * Base:    #1E1E2E  Mantle: #181825  Crust: #11111B
+ * Surface: #313244 #45475A #585B70
+ * Overlay: #6C7086 #7F849C #9399B2
+ * Text:    #CDD6F4  Subtext: #BAC2DE #A6ADC8
+ * Rosewater: #F5E0DC  Flamingo: #F2CDCD
+ * Pink: #F5C2E7  Mauve: #CBA6F7  Red: #F38BA8
+ * Maroon: #EBA0AC  Peach: #FAB387  Yellow: #F9E2AF
+ * Green: #A6E3A1  Teal: #94E2D5  Sky: #89DCFE
+ * Sapphire: #74C7EC  Blue: #89B4FA  Lavender: #B4BEFE
+ */
+export const catppuccinMochaTheme: Theme = {
+  id: 'catppuccin-mocha',
+  name: 'Catppuccin Mocha',
   colors: {
-    background: '246 24% 17%',
-    surface: '248 22% 20%',
-    text: '245 50% 91%',
-    subtle: '249 12% 52%',
-    muted: '247 16% 30%',
-    'muted-foreground': '249 12% 52%',
-    'highlight-low': '244 19% 20%',
-    'highlight-med': '248 16% 24%',
-    'highlight-high': '247 15% 29%',
-    primary: '267 57% 78%',
-    secondary: '247 16% 30%',
-    accent: '343 76% 68%',
-    border: '247 16% 30%',
-    overlay: '248 25% 22%',
-    ring: '267 57% 78%',
-    love: '343 76% 68%',
-    gold: '35 88% 72%',
-    rose: '2 55% 83%',
-    pine: '197 49% 38%',
-    foam: '189 43% 73%',
-    iris: '267 57% 78%',
-  },
-};
-
-/** Rosé Pine Dawn — light variant with warm tones */
-export const rosePineDawnTheme: Theme = {
-  id: 'rose-pine-dawn',
-  name: 'Rosé Pine Dawn',
-  colors: {
-    background: '32 57% 95%',
-    surface: '35 52% 92%',
-    text: '248 19% 40%',
-    subtle: '249 12% 52%',
-    muted: '33 43% 88%',
-    'muted-foreground': '249 12% 52%',
-    'highlight-low': '25 35% 93%',
-    'highlight-med': '30 40% 88%',
-    'highlight-high': '28 36% 83%',
-    primary: '268 62% 60%',
-    secondary: '33 43% 88%',
-    accent: '343 63% 53%',
-    border: '33 43% 82%',
-    overlay: '33 48% 90%',
-    ring: '268 62% 60%',
-    love: '343 63% 53%',
-    gold: '35 81% 55%',
-    rose: '3 59% 67%',
-    pine: '197 53% 34%',
-    foam: '189 30% 48%',
-    iris: '268 62% 60%',
+    background: '240 21% 15%',    // #1E1E2E — Base
+    surface: '240 17% 23%',       // #313244 — Surface 0
+    text: '226 64% 88%',          // #CDD6F4 — Text
+    subtle: '228 24% 42%',        // #6C7086 — Overlay 0
+    muted: '233 12% 39%',         // #585B70 — Surface 2
+    'muted-foreground': '228 24% 50%', // between Overlay 0 and 1
+    'highlight-low': '240 17% 20%',
+    'highlight-med': '240 17% 25%',
+    'highlight-high': '233 12% 33%',
+    primary: '217 92% 76%',       // #89B4FA — Blue
+    secondary: '240 17% 23%',     // #313244 — Surface 0
+    accent: '267 84% 81%',        // #CBA6F7 — Mauve
+    border: '233 12% 39%',        // #585B70 — Surface 2
+    overlay: '240 23% 9%',        // #11111B — Crust
+    ring: '217 92% 76%',          // #89B4FA — Blue
+    love: '343 81% 75%',          // #F38BA8 — Red
+    gold: '41 86% 83%',           // #F9E2AF — Yellow
+    rose: '10 56% 91%',           // #F5E0DC — Rosewater
+    pine: '115 54% 76%',          // #A6E3A1 — Green
+    foam: '170 57% 73%',          // #94E2D5 — Teal
+    iris: '267 84% 81%',          // #CBA6F7 — Mauve
   },
 };
 
@@ -158,13 +162,21 @@ export const rosePineDawnTheme: Theme = {
 export const themes: Record<string, Theme> = {
   light: lightTheme,
   dark: darkTheme,
-  'rose-pine': rosePineTheme,
-  'rose-pine-moon': rosePineMoonTheme,
-  'rose-pine-dawn': rosePineDawnTheme,
+  ...THEME_PRESETS,
+  nord: nordTheme,
+  'catppuccin-mocha': catppuccinMochaTheme,
 };
 
 /** Ordered list of theme IDs for UI iteration */
-export const themeIds = ['light', 'dark', 'rose-pine', 'rose-pine-moon', 'rose-pine-dawn'] as const;
+export const themeIds = [
+  'light',
+  'dark',
+  'nord',
+  'catppuccin-mocha',
+  'rose-pine',
+  'rose-pine-moon',
+  'rose-pine-dawn',
+] as const;
 
 /** Default theme ID */
 export const DEFAULT_THEME_ID = 'dark';
