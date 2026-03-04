@@ -7662,3 +7662,34 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 332 of 339 (97.9%)
+
+---
+
+## Session: Feature #341 - Project Type and Framework Detector
+Date: 2026-03-04
+
+### Feature #341: Project Type and Framework Detector - PASSING
+
+#### Implementation:
+Created src/analyze/detector.ts with comprehensive project analysis capabilities:
+
+- **detectLanguages(scanResult)**: Detects languages from file extension distribution and config files (package.json→JS/TS, go.mod→Go, Cargo.toml→Rust, requirements.txt→Python, pom.xml→Java, etc.)
+- **detectFrameworks(scanResult)**: Detects frameworks from config files (Next.js, Vite, Angular, Django, Spring Boot, etc.) and file extensions (.tsx→React, .vue→Vue, .svelte→Svelte)
+- **detectProjectType(scanResult)**: Classifies as monorepo (lerna/turbo/nx/workspaces), microservices (multiple Dockerfiles), library, or single-app
+- **detectBuildSystems(scanResult)**: Identifies npm, yarn, pnpm, cargo, go modules, maven, gradle, make, etc.
+- **detectInfraSignals(scanResult)**: Detects Docker, Kubernetes, Terraform, CI/CD (GitHub Actions, GitLab, Jenkins, CircleCI, Travis), cloud platforms
+- **detectDataStores(scanResult)**: Finds Prisma, Drizzle, SQLite, TypeORM, Knex, Firebase, Protocol Buffers
+- **detectEntryPoints(scanResult)**: Identifies common entry points (src/index.ts, main.go, manage.py, etc.)
+- **detectProject(scanResult)**: Main API returning complete ProjectProfile
+
+#### Types exported:
+- ProjectProfile, DetectedLanguage, DetectedFramework, ProjectType, InfraSignal, DetectedDataStore
+
+#### Tests:
+- test/unit/analyze/detector.test.ts: 72 tests covering all detection functions
+- All 98 analyze tests passing (72 detector + 26 scanner)
+- Committed: d105b08
+
+#### Current completion status:
+- Feature #341 marked passing
+- Features passing: 340 of 349
