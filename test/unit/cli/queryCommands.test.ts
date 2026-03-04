@@ -63,7 +63,7 @@ beforeAll(async () => {
 
   // Add a note
   ctx.textApi.addNote({
-    targetNodeId: apiNode.id,
+    nodeId: apiNode.id,
     content: 'Handles authentication and routing',
     author: 'test',
   });

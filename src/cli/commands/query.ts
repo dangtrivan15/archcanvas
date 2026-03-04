@@ -14,7 +14,7 @@
 
 import type { Command } from 'commander';
 import type { GlobalOptions } from '@/cli/index';
-import { loadContext, printOutput, withErrorHandler } from '@/cli/index';
+import { loadContext, printOutput, withErrorHandler, suppressDiagnosticLogs } from '@/cli/index';
 
 // ─── describe ──────────────────────────────────────────────
 
@@ -118,10 +118,12 @@ export function registerListNodedefsCommand(program: Command): void {
       withErrorHandler(async (cmdOpts: { namespace?: string }) => {
         const opts = program.opts<GlobalOptions>();
         // list-nodedefs doesn't need --file — load registry from disk
+        const restore = suppressDiagnosticLogs();
         const { RegistryManagerCore } = await import('@/core/registry/registryCore');
         const { loadBuiltinNodeDefs } = await import('@/cli/nodeLoader');
         const registry = new RegistryManagerCore();
         registry.initialize(loadBuiltinNodeDefs());
+        restore();
 
         let types: Array<{ type: string; displayName: string; namespace: string }>;
         if (cmdOpts.namespace) {
