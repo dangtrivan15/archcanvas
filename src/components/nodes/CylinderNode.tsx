@@ -139,6 +139,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
           {/* Header with icon + name */}
           <div
             className="flex items-center gap-2 px-2 py-1.5"
+            style={{ borderBottom: `1px solid ${effectiveColor}20` }}
             data-testid="node-header"
           >
             <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
@@ -193,12 +194,13 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
             <NodeArgsTable args={nodeData.args} maxRows={3} className="px-2 py-1" />
           )}
 
-          {/* Badges */}
+          {/* Badges (footer) */}
           <NodeBadges
             noteCount={nodeData.noteCount}
             pendingSuggestionCount={nodeData.pendingSuggestionCount}
             codeRefCount={nodeData.codeRefCount}
             className="px-2 py-1"
+            dividerColor={`${effectiveColor}20`}
           />
         </div>
       </NodeShell>
