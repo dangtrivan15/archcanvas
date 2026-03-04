@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #198: File System Access API fallback for non-Chrome browsers.
  * Verifies that file open and save operations fall back gracefully when

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Inline Property Quick-Edit (Feature #259).
  *

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Keyboard Zoom Controls (feature #256).
  * Verifies +/= zoom in, - zoom out, Cmd+0 fit view, Cmd+1 zoom 100%.

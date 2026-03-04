@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Quick Rename (F2) feature.
  *

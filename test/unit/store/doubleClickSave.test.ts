@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #212: Double-click save doesn't corrupt file.
  * Verifies that rapidly clicking Save twice (or pressing Ctrl+S twice)

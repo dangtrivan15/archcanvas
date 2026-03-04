@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #261: Bulk Operations via Command Palette.
  *

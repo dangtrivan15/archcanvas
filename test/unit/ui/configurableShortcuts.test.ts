@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for configurable keyboard shortcuts (Feature #239).
  * Verifies ShortcutManager service: binding parsing, event matching,

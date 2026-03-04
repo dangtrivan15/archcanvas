@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #254: Keyboard Multi-Selection.
  *

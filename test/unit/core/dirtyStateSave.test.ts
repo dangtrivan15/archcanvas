@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #154: Dirty state clears after save.
  * Verifies that isDirty becomes true after mutations and false after save operations.
