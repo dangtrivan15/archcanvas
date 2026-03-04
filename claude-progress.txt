@@ -6367,3 +6367,89 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Feature #321 marked passing
+
+---
+
+## Session: Feature #318 - Status Bar Resize Handle
+Date: 2026-03-04
+
+### Feature #318: Status bar has a draggable resize handle at its top edge - PASSING
+
+#### Implementation:
+- Modified src/App.tsx to add a draggable resize handle above the status bar footer
+- Resize handle is a separate div element positioned between the main content area and the status bar
+- Uses pointer events (onPointerDown, pointermove, pointerup) for reliable drag behavior
+- Sets pointer capture during drag for consistent tracking
+- Status bar height controlled via zustand store (statusBarHeight, setStatusBarHeight)
+- Height clamped between 20px (STATUS_BAR_MIN_HEIGHT) and 48px (STATUS_BAR_MAX_HEIGHT)
+- Visual feedback: cursor changes to row-resize, blue highlight on hover/drag
+- Handle is h-2 (8px) tall, full width, transparent by default
+
+#### Browser verification:
+- Step 1: Hover shows blue highlight line above status bar, cursor changes to row-resize
+- Step 2: Drag upward increases status bar height in real-time
+- Step 3: Drag downward decreases status bar height
+- Step 4: Release mouse keeps status bar at new height
+- Step 5: Height properly clamped between min (20px) and max (48px)
+- Zero JS console errors (only Vite HMR WebSocket reconnection, not app-related)
+- No mock data patterns found
+
+#### Committed: 958d032
+
+---
+
+## Session: Feature #310 - HTTP REST API Server Setup (archcanvas serve)
+Date: 2026-03-04
+
+### Feature #310: HTTP REST API Server Setup (archcanvas serve) - PASSING
+
+#### Implementation:
+- src/cli/server/httpServer.ts (new file):
+  - Built on Node.js built-in `node:http` (no external dependency)
+  - Route matching with parameterized paths (e.g., /api/nodes/:id)
+  - JSON request/response middleware with proper Content-Type headers
+  - CORS support when --cors flag is enabled (Access-Control-Allow-Origin: *)
+  - Request logging to stderr (method, path, status, duration)
+  - Graceful shutdown on SIGINT/SIGTERM with auto-save if modified
+  - Startup message with URL, file info, CORS status, and endpoint list
+  - Endpoints:
+    - GET /health - Health check
+    - GET /api/info - Architecture summary
+    - GET /api/describe?style= - Describe architecture
+    - GET/POST/PATCH/DELETE /api/nodes - CRUD for nodes
+    - POST /api/nodes/:id/notes - Add notes to nodes
+    - DELETE /api/nodes/:nid/notes/:noteId - Remove notes
+    - GET/POST/PATCH/DELETE /api/edges - CRUD for edges
+    - GET /api/search?q= - Search across graph
+    - GET /api/export/markdown|mermaid|summary - Export endpoints
+
+- src/cli/index.ts:
+  - Replaced serve stub with full implementation
+  - Options: --port (default 3001), --host (default localhost), --cors
+  - Requires --file flag for .archc file path
+  - Loads GraphContext and passes to HTTP server
+
+- src/proto/archcanvas.pb.js:
+  - Re-applied ESM import fix for CLI compatibility
+
+#### Verification:
+- All endpoints tested via curl:
+  - Health check returns 200 with status and file path
+  - Info endpoint returns architecture metadata
+  - Node CRUD: create, list, get detail, update, delete all work
+  - Edge CRUD: create, list, update, delete all work
+  - Search returns matching nodes and edges
+  - Export endpoints return markdown, mermaid, and summary content
+  - Note creation on nodes works
+  - Error handling: 400 for invalid input, 404 for not found, 500 for server errors
+- CORS headers verified (Access-Control-Allow-Origin: * with --cors flag)
+- Custom host binding (--host 0.0.0.0) verified
+- Request logging to stderr confirmed (method path status duration)
+- Startup message with endpoint listing confirmed
+- No mock data patterns in production code
+- TypeScript compiles cleanly (no new errors)
+- Committed: 07c914c
+
+#### Current completion status:
+- Features passing: 304+ of 327
+
