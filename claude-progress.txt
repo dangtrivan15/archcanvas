@@ -5437,3 +5437,52 @@ SESSION: 2026-03-04 - Features #274, #290
 - Features passing: 276 of 298
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Features #275, #276
+==================================================
+
+## What was accomplished:
+
+### Feature #275: Vite build integration for Capacitor (PASSING)
+- Verified all required npm scripts exist:
+  - cap:sync → npx cap sync
+  - cap:open → npx cap open ios
+  - cap:open:ios → npx cap open ios
+  - cap:run → npx cap run ios
+  - build:ios → npx vite build && npx cap sync ios
+  - cap:build:ios → npx vite build && npx cap sync ios
+- Verified Vite proxy config (server.proxy for /api/anthropic) only applies in serve mode
+  - Proxy is under server: {} block which is dev-only in Vite
+  - No proxy references in production build output
+- Created tsconfig.build.json for src-only TypeScript checking (excludes test files)
+- Ran npm run build:ios and verified:
+  - dist/ built successfully (index.html, CSS, JS assets)
+  - Synced to ios/App/App/public/ (verified file listing)
+  - All example .archc files, icons, and manifest present
+- Verified web dev server works unchanged (200 OK, zero console errors)
+- Browser verification: App loads correctly, NORMAL mode, status bar, shortcuts
+- Committed: 0729731
+
+### Feature #276: Capacitor live reload dev workflow (PASSING)
+- Changed capacitor.config.ts from NODE_ENV-based to CAPACITOR_DEV env var:
+  - `const isCapacitorDev = process.env.CAPACITOR_DEV === 'true'`
+  - Only sets server.url and cleartext when CAPACITOR_DEV=true
+  - Production builds: server block only has allowNavigation (no url, no cleartext)
+  - Dev builds (CAPACITOR_DEV=true): server.url = localhost:5173, cleartext = true
+- Added dev:ios npm script:
+  - `CAPACITOR_DEV=true npx cap run ios --livereload --external`
+  - Sets env var, runs native app with live reload on LAN IP
+- Verified production build:
+  - capacitor.config.json has NO server.url field
+  - Build + sync works correctly
+- Verified dev build:
+  - With CAPACITOR_DEV=true, capacitor.config.json INCLUDES server.url
+- Browser verification: App loads correctly, zero console errors
+- Mock data grep: only legitimate globalThis.crypto in codec.ts
+- Committed: 5e565a4
+
+## Current completion status:
+- Features passing: 280 of 298
+- Zero console errors
+- No mock data patterns in production code
