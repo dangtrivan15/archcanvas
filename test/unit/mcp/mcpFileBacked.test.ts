@@ -118,14 +118,18 @@ describe('Feature #308: File-Backed MCP Server', () => {
   // ── Step 4: Auto-save after mutation tools ──
 
   describe('auto-save after mutations', () => {
-    it('MUTATION_TOOLS includes all 6 mutation tool names', () => {
+    it('MUTATION_TOOLS includes all 10 mutation tool names', () => {
       expect(MUTATION_TOOLS.has('add_node')).toBe(true);
       expect(MUTATION_TOOLS.has('add_edge')).toBe(true);
       expect(MUTATION_TOOLS.has('add_note')).toBe(true);
       expect(MUTATION_TOOLS.has('update_node')).toBe(true);
+      expect(MUTATION_TOOLS.has('update_edge')).toBe(true);
       expect(MUTATION_TOOLS.has('remove_node')).toBe(true);
       expect(MUTATION_TOOLS.has('remove_edge')).toBe(true);
-      expect(MUTATION_TOOLS.size).toBe(6);
+      expect(MUTATION_TOOLS.has('remove_note')).toBe(true);
+      expect(MUTATION_TOOLS.has('add_code_ref')).toBe(true);
+      expect(MUTATION_TOOLS.has('init_architecture')).toBe(true);
+      expect(MUTATION_TOOLS.size).toBe(10);
     });
 
     it('autoSave persists changes to disk', async () => {
@@ -491,8 +495,8 @@ describe('Feature #308: File-Backed MCP Server', () => {
   // ── Tool count verification ──
 
   describe('tool count includes save and file_info', () => {
-    it('has 11 total tools', () => {
-      expect(getToolCount()).toBe(11);
+    it('has 18 total tools', () => {
+      expect(getToolCount()).toBe(18);
     });
 
     it('tool names include save and file_info', () => {

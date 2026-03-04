@@ -1,6 +1,6 @@
 /**
  * MCP Tool definitions for ArchCanvas.
- * Defines the 9 tools that the MCP server exposes to AI agents.
+ * Defines all tools that the MCP server exposes to AI agents.
  */
 
 import { z } from 'zod';
@@ -114,6 +114,65 @@ export const TOOL_DEFINITIONS = {
     name: 'file_info',
     description: 'Get metadata about the loaded .archc file (name, file path, timestamps, node/edge counts).',
     inputSchema: {},
+  },
+
+  export_markdown: {
+    name: 'export_markdown',
+    description: 'Generate a markdown summary of the architecture (includes overview, components, connections).',
+    inputSchema: {
+      includeMermaid: z.boolean().optional().describe('Include a Mermaid diagram in the output (default: false)'),
+    },
+  },
+
+  export_mermaid: {
+    name: 'export_mermaid',
+    description: 'Generate a Mermaid diagram of the architecture graph.',
+    inputSchema: {},
+  },
+
+  update_edge: {
+    name: 'update_edge',
+    description: 'Update an edge\'s type, label, or properties.',
+    inputSchema: {
+      edgeId: z.string().describe('Edge ID to update'),
+      type: z.enum(['sync', 'async', 'data-flow']).optional().describe('New connection type'),
+      label: z.string().optional().describe('New edge label'),
+      properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional().describe('Updated properties'),
+    },
+  },
+
+  add_code_ref: {
+    name: 'add_code_ref',
+    description: 'Add a code reference to a node (links a file path to the node).',
+    inputSchema: {
+      nodeId: z.string().describe('Target node ID'),
+      path: z.string().describe('File path to reference'),
+      role: z.enum(['source', 'api-spec', 'schema', 'deployment', 'config', 'test']).describe('Role of the code reference'),
+    },
+  },
+
+  remove_note: {
+    name: 'remove_note',
+    description: 'Remove a note from a node.',
+    inputSchema: {
+      nodeId: z.string().describe('Node ID containing the note'),
+      noteId: z.string().describe('Note ID to remove'),
+    },
+  },
+
+  get_edges: {
+    name: 'get_edges',
+    description: 'List all edges (connections) in the architecture.',
+    inputSchema: {},
+  },
+
+  init_architecture: {
+    name: 'init_architecture',
+    description: 'Reset the architecture to a fresh empty graph with the given name.',
+    inputSchema: {
+      name: z.string().optional().describe('Architecture name (default: "Untitled Architecture")'),
+      description: z.string().optional().describe('Architecture description'),
+    },
   },
 } as const;
 

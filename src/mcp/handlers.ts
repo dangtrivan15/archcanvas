@@ -7,6 +7,8 @@ import type { TextApi } from '@/api/textApi';
 import type { RegistryManager } from '@/core/registry/registryManager';
 import type { GraphContext } from '@/cli/context';
 import type { DescribeFormat } from '@/types/api';
+import { ExportApi } from '@/api/exportApi';
+import { createEmptyGraph } from '@/core/graph/graphEngine';
 
 export interface ToolHandlerContext {
   textApi: TextApi;
@@ -21,8 +23,12 @@ export const MUTATION_TOOLS = new Set([
   'add_edge',
   'add_note',
   'update_node',
+  'update_edge',
   'remove_node',
   'remove_edge',
+  'remove_note',
+  'add_code_ref',
+  'init_architecture',
 ]);
 
 /**
@@ -277,6 +283,122 @@ export function handleFileInfo(ctx: ToolHandlerContext): string {
 }
 
 /**
+ * Handle the 'export_markdown' tool call.
+ * Generates a markdown summary, optionally with a Mermaid diagram.
+ */
+export function handleExportMarkdown(
+  ctx: ToolHandlerContext,
+  args: { includeMermaid?: boolean },
+): string {
+  const exportApi = new ExportApi();
+  const graph = ctx.textApi.getGraph();
+  if (args.includeMermaid) {
+    return exportApi.generateSummaryWithMermaid(graph);
+  }
+  return exportApi.generateMarkdownSummary(graph);
+}
+
+/**
+ * Handle the 'export_mermaid' tool call.
+ * Generates a Mermaid diagram of the architecture graph.
+ */
+export function handleExportMermaid(ctx: ToolHandlerContext): string {
+  const exportApi = new ExportApi();
+  const graph = ctx.textApi.getGraph();
+  return exportApi.generateMermaid(graph);
+}
+
+/**
+ * Handle the 'update_edge' tool call.
+ */
+export function handleUpdateEdge(
+  ctx: ToolHandlerContext,
+  args: {
+    edgeId: string;
+    type?: 'sync' | 'async' | 'data-flow';
+    label?: string;
+    properties?: Record<string, string | number | boolean>;
+  },
+): string {
+  try {
+    const updates: Record<string, unknown> = {};
+    if (args.type !== undefined) updates.type = args.type;
+    if (args.label !== undefined) updates.label = args.label;
+    if (args.properties !== undefined) updates.properties = args.properties;
+
+    ctx.textApi.updateEdge(args.edgeId, updates);
+    return JSON.stringify({ success: true, edgeId: args.edgeId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+/**
+ * Handle the 'add_code_ref' tool call.
+ */
+export function handleAddCodeRef(
+  ctx: ToolHandlerContext,
+  args: {
+    nodeId: string;
+    path: string;
+    role: 'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test';
+  },
+): string {
+  try {
+    ctx.textApi.addCodeRef({ nodeId: args.nodeId, path: args.path, role: args.role });
+    return JSON.stringify({ success: true, nodeId: args.nodeId, path: args.path });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+/**
+ * Handle the 'remove_note' tool call.
+ */
+export function handleRemoveNote(
+  ctx: ToolHandlerContext,
+  args: { nodeId: string; noteId: string },
+): string {
+  try {
+    ctx.textApi.removeNote(args.nodeId, args.noteId);
+    return JSON.stringify({ success: true, nodeId: args.nodeId, noteId: args.noteId });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return JSON.stringify({ success: false, error: message });
+  }
+}
+
+/**
+ * Handle the 'get_edges' tool call.
+ */
+export function handleGetEdges(ctx: ToolHandlerContext): string {
+  const edges = ctx.textApi.getEdges();
+  return JSON.stringify({ edges, count: edges.length });
+}
+
+/**
+ * Handle the 'init_architecture' tool call.
+ * Creates a fresh empty architecture, replacing the current graph.
+ */
+export function handleInitArchitecture(
+  ctx: ToolHandlerContext,
+  args: { name?: string; description?: string },
+): string {
+  const newGraph = createEmptyGraph(args.name ?? 'Untitled Architecture');
+  if (args.description) {
+    newGraph.description = args.description;
+  }
+  ctx.textApi.setGraph(newGraph);
+  return JSON.stringify({
+    success: true,
+    name: newGraph.name,
+    description: newGraph.description ?? null,
+  });
+}
+
+/**
  * Dispatch a synchronous tool call to the appropriate handler.
  * Does NOT handle 'save' or 'file_info' — those are handled separately in server.ts.
  */
@@ -296,10 +418,24 @@ export function dispatchToolCall(
       return handleAddNote(ctx, args as Parameters<typeof handleAddNote>[1]);
     case 'update_node':
       return handleUpdateNode(ctx, args as Parameters<typeof handleUpdateNode>[1]);
+    case 'update_edge':
+      return handleUpdateEdge(ctx, args as Parameters<typeof handleUpdateEdge>[1]);
     case 'remove_node':
       return handleRemoveNode(ctx, args as Parameters<typeof handleRemoveNode>[1]);
     case 'remove_edge':
       return handleRemoveEdge(ctx, args as Parameters<typeof handleRemoveEdge>[1]);
+    case 'remove_note':
+      return handleRemoveNote(ctx, args as Parameters<typeof handleRemoveNote>[1]);
+    case 'add_code_ref':
+      return handleAddCodeRef(ctx, args as Parameters<typeof handleAddCodeRef>[1]);
+    case 'get_edges':
+      return handleGetEdges(ctx);
+    case 'export_markdown':
+      return handleExportMarkdown(ctx, args as Parameters<typeof handleExportMarkdown>[1]);
+    case 'export_mermaid':
+      return handleExportMermaid(ctx);
+    case 'init_architecture':
+      return handleInitArchitecture(ctx, args as Parameters<typeof handleInitArchitecture>[1]);
     case 'search':
       return handleSearch(ctx, args as Parameters<typeof handleSearch>[1]);
     case 'list_nodedefs':

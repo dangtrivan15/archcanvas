@@ -38,7 +38,7 @@ describe('createMcpServer() - Feature #177', () => {
   });
 
   it('re-exports correct tool count', () => {
-    expect(getToolCount()).toBe(11);
+    expect(getToolCount()).toBe(18);
   });
 
   it('re-exports correct tool names', () => {
