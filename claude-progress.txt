@@ -5908,3 +5908,59 @@ SESSION: 2026-03-04 - Features #287, #293
 - Zero console errors
 - No mock data patterns in production code
 - 49 new tests across 2 test files (all passing)
+
+==================================================
+SESSION: 2026-03-04 - Features #295, #296
+==================================================
+
+## What was accomplished:
+
+### Feature #295: Export PNG/SVG via native share sheet on iOS (PASSING)
+- Updated src/api/exportApi.ts:
+  - Added isNative() and getFileSystemAdapter() imports
+  - exportToPng(): if isNative(), converts data URL to Uint8Array binary, calls adapter.shareFile()
+  - exportToSvg(): if isNative(), shares decoded SVG text via adapter.shareFile()
+  - Web: preserves existing anchor download (PNG) and blob URL download (SVG) behavior
+- 12 unit tests in test/unit/api/exportApiNativeShare.test.ts:
+  - Web: anchor download for PNG, blob download for SVG
+  - Native: adapter.shareFile with binary data for PNG, text for SVG
+  - Filename stripping (.archc, .png, .svg extensions)
+  - Error handling (shareFile rejection returns false)
+  - Platform branching logic
+- Browser verified: PNG exported as 112KB file, SVG exported as 64KB file
+- Zero console errors, all 3525 tests passing
+- Committed: 85bb69e
+
+### Feature #296: Mermaid and markdown export via share sheet on iOS (PASSING)
+- Added two new export methods to src/api/exportApi.ts:
+  - exportToMarkdown(graph, fileName): generates summary with mermaid, shares/downloads as .md
+  - exportToMermaid(graph, fileName): generates mermaid diagram, shares/downloads as .mmd
+  - Both methods: isNative() → adapter.shareFile(), else blob URL download
+- Updated src/components/toolbar/FileMenu.tsx:
+  - Added FileText, GitBranch icons from lucide-react
+  - Added graph selector from useCoreStore
+  - Added "Markdown" and "Mermaid" buttons to Export submenu (after SVG, with separator)
+  - Buttons call exportApi.exportToMarkdown(graph, fileName) / exportToMermaid(graph, fileName)
+- 12 unit tests in test/unit/api/exportApiNativeShareMarkdown.test.ts:
+  - Web: blob download for markdown (.md) and mermaid (.mmd)
+  - Native: adapter.shareFile with text content
+  - Content verification: markdown includes mermaid block, mermaid contains node definitions
+  - Filename stripping and error handling
+  - Platform branching logic
+- Browser verified:
+  - File > Export submenu shows all 4 options: PNG, SVG, Markdown, Mermaid
+  - Markdown export: downloads .md file with correct content (headers, overview table, mermaid block)
+  - Mermaid export: downloads .mmd file with graph LR content
+- Zero console errors, all 476 API tests passing (33 test files)
+- Note: 26 pre-existing test failures in useIPadExternalKeyboard.test.ts from parallel agent work
+- Committed: 6928726
+
+## Test files created:
+- test/unit/api/exportApiNativeShare.test.ts: 12 tests (Feature #295)
+- test/unit/api/exportApiNativeShareMarkdown.test.ts: 12 tests (Feature #296)
+
+## Current completion status:
+- Features passing: 292 of 298 (97.9%)
+- 24 new tests across 2 test files (all passing)
+- Zero console errors in browser
+- No mock data patterns in production code
