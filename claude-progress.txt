@@ -5203,3 +5203,47 @@ SESSION: 2026-03-04 - Feature #268
 - Zero console errors
 - No mock data patterns in production code
 - Committed: 308fb98
+
+==================================================
+SESSION: 2026-03-04 - Feature #267
+==================================================
+
+## What was accomplished:
+
+### Feature #267: Idempotent dev server launcher script (PASSING)
+
+Created scripts/ensure-dev-server.sh - an idempotent launcher that ensures exactly
+one Vite dev server is running on port 5173:
+
+**Script features:**
+- Health check: curl to localhost:5173, exits 0 immediately if server already running
+- Atomic lock: mkdir-based lock prevents concurrent launches (race-condition safe)
+- Double-check after lock: re-checks port after acquiring lock
+- Background startup: nohup npm run dev, polls until ready (max 30s, 0.5s intervals)
+- Process monitoring: detects if server process dies during startup
+- PID file tracking: stores PID for reliable stop
+- --stop flag: kills running server via PID file or lsof fallback
+- Cleanup: lock auto-removed via trap EXIT
+
+**Configuration changes:**
+1. vite.config.ts: Added `strictPort: true` - Vite now errors if port 5173 is taken
+   instead of silently using 5174+
+2. package.json: Added `dev:ensure` and `dev:stop` npm scripts
+3. playwright.config.ts: webServer.command changed from `npm run dev` to `npm run dev:ensure`
+
+**Testing completed:**
+- First run: starts server successfully (exit 0)
+- Idempotency: 5 sequential runs all exit 0 without spawning new processes
+- Stop/restart: `dev:stop` kills server, `dev:ensure` restarts it
+- strictPort: Second Vite on port 5173 fails with "Port 5173 is already in use"
+- Lock bypass: Script detects running server before checking lock (fast path)
+- Browser verification: App loads correctly at localhost:5173
+- Console: 0 errors, 0 warnings
+- All 3242 existing tests pass (155 test files)
+- No mock data patterns in production code
+
+## Current completion status:
+- Features passing: 267 of 268 (99.6%)
+- Zero console errors
+- No mock data patterns in production code
+- Changes committed in 56557dd
