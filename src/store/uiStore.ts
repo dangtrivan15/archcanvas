@@ -4,6 +4,73 @@
 
 import { create } from 'zustand';
 import type { RightPanelTab } from '@/utils/constants';
+import { preferences } from '@/core/platform/preferencesAdapter';
+
+/** localStorage / Capacitor Preferences keys for persisted heights */
+export const TOOLBAR_HEIGHT_STORAGE_KEY = 'toolbar-height';
+export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
+
+/**
+ * Synchronously read a persisted height from localStorage.
+ * Returns null if not found or not a valid number.
+ * Used at store initialization time (synchronous context).
+ */
+function readPersistedHeight(key: string): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`archcanvas:${key}`);
+    if (raw === null) return null;
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persist a height value via the cross-platform preferences adapter.
+ * Works on both web (localStorage) and native (Capacitor Preferences).
+ */
+function persistHeight(key: string, value: number): void {
+  preferences.set(key, String(value)).catch(() => {
+    // Silently ignore write failures (e.g. storage full)
+  });
+}
+
+/**
+ * Remove a persisted height value via the cross-platform preferences adapter.
+ */
+function clearPersistedHeight(key: string): void {
+  preferences.remove(key).catch(() => {
+    // Silently ignore removal failures
+  });
+}
+
+/**
+ * Load persisted heights from async storage (Capacitor Preferences) and
+ * update the store. Call this on app startup for native platforms.
+ * On web, values are already loaded synchronously at init time.
+ */
+export async function loadPersistedHeights(): Promise<void> {
+  const [toolbarRaw, statusBarRaw] = await Promise.all([
+    preferences.get(TOOLBAR_HEIGHT_STORAGE_KEY),
+    preferences.get(STATUS_BAR_HEIGHT_STORAGE_KEY),
+  ]);
+
+  const store = useUIStore.getState();
+  if (toolbarRaw !== null) {
+    const num = Number(toolbarRaw);
+    if (Number.isFinite(num)) {
+      store.setToolbarHeight(num);
+    }
+  }
+  if (statusBarRaw !== null) {
+    const num = Number(statusBarRaw);
+    if (Number.isFinite(num)) {
+      store.setStatusBarHeight(num);
+    }
+  }
+}
 
 export interface DeleteDialogInfo {
   nodeId: string;

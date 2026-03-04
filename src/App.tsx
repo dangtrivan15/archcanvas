@@ -93,6 +93,7 @@ export function App() {
 
   const handleStatusBarResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    console.log('[StatusBar] Resize started at Y:', e.clientY, 'current height:', statusBarHeight);
     statusBarDragStartY.current = e.clientY;
     statusBarDragStartHeight.current = statusBarHeight;
     setIsStatusBarDragging(true);
