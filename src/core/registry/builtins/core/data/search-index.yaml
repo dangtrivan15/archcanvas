@@ -1,0 +1,96 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: search-index
+  namespace: data
+  version: "1.0.0"
+  displayName: Search Index
+  description: A search engine for full-text search, filtering, and analytics over indexed data.
+  icon: Search
+  tags:
+    - data
+    - search
+    - indexing
+    - full-text
+  shape: cylinder
+spec:
+  args:
+    - name: engine
+      type: enum
+      description: Search engine
+      options:
+        - Elasticsearch
+        - OpenSearch
+        - Meilisearch
+        - Typesense
+        - Algolia
+      default: Elasticsearch
+    - name: indexName
+      type: string
+      description: Name of the search index
+      default: primary
+    - name: replicas
+      type: number
+      description: Number of index replicas
+      default: 1
+    - name: analyzers
+      type: string
+      description: Text analyzers (e.g., standard, language-specific)
+      default: standard
+  ports:
+    - name: index-write
+      direction: inbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Write/update documents to the index
+    - name: search-query
+      direction: inbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Submit search queries
+    - name: search-results
+      direction: outbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Return search results
+  variants:
+    - name: Elasticsearch
+      args:
+        engine: Elasticsearch
+        indexName: primary
+        replicas: 1
+        analyzers: standard
+    - name: OpenSearch
+      args:
+        engine: OpenSearch
+        indexName: primary
+        replicas: 1
+        analyzers: standard
+    - name: Meilisearch
+      args:
+        engine: Meilisearch
+        indexName: primary
+        replicas: 0
+        analyzers: default
+    - name: Typesense
+      args:
+        engine: Typesense
+        indexName: primary
+        replicas: 1
+        analyzers: default
+    - name: Algolia
+      args:
+        engine: Algolia
+        indexName: primary
+        replicas: 1
+        analyzers: default
+  ai:
+    context: "This is a search index node. Consider index mapping design, query optimization, relevance tuning, and reindexing strategies."
+    reviewHints:
+      - Verify index mapping matches document structure
+      - Check for proper analyzer configuration
+      - Consider search relevance tuning
+      - Plan for zero-downtime reindexing
