@@ -123,10 +123,26 @@ function NodeShellComponent({
 
   return (
     <div
-      className="relative transition-[filter]"
-      style={{ width, height: effectiveHeight, filter: shadowFilter }}
+      className="relative"
+      style={{ width, height: effectiveHeight, filter: shadowFilter, transition: 'filter 180ms ease, transform 180ms ease' }}
       data-testid="node-shell"
       data-shape={shape}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        if (!selected) {
+          const rgb = hexToNormalizedRgb(color ?? '#6B7280');
+          const r = Math.round(rgb.r * 255);
+          const g = Math.round(rgb.g * 255);
+          const b = Math.round(rgb.b * 255);
+          e.currentTarget.style.filter = `drop-shadow(0px 3px 8px rgba(${r},${g},${b},0.3)) drop-shadow(0px 1px 3px rgba(${r},${g},${b},0.2))`;
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        if (!selected) {
+          e.currentTarget.style.filter = shadowFilter;
+        }
+      }}
     >
       <svg
         width={width}
