@@ -8976,3 +8976,69 @@ Date: 2026-03-05
 
 #### Commit: f0e2775
 #### Feature #386 marked passing
+
+---
+
+## Session: Feature #383 - Canvas Performance Optimization for iPad
+Date: 2026-03-05
+
+### Feature #383: Canvas Performance Optimization for iPad - PASSING
+
+#### Implementation:
+
+**src/hooks/useCanvasPerformance.ts (NEW):**
+- LOD state based on zoom level (LOD_ZOOM_THRESHOLD = 0.4, LOD_EDGE_THRESHOLD = 0.35)
+- prefers-reduced-motion media query detection with change listener
+- FPS monitoring (requestAnimationFrame-based, toggle-able)
+- Node count tracking with warning threshold (NODE_COUNT_WARNING = 100)
+- Canvas bounds constant (CANVAS_BOUNDS: [-10000, -10000] to [10000, 10000])
+
+**src/components/nodes/SimplifiedNode.tsx (NEW):**
+- Low-detail node: simple colored rectangle with display name
+- Minimal handles (in/out only), no port details
+- No animations or transitions for maximum performance
+- Uses effective color from nodeColors utility
+
+**src/components/nodes/lodNodeTypeMap.ts (NEW):**
+- Maps all 16 node types to SimplifiedNode for LOD rendering
+
+**src/contexts/CanvasPerformanceContext.tsx (NEW):**
+- React Context providing isLowDetailMode, isLowDetailEdges, prefersReducedMotion
+- Used by edge components to avoid prop drilling
+
+**src/components/canvas/FpsCounter.tsx (NEW):**
+- Dev-mode overlay: FPS (color-coded), node count, zoom %, LOD status, reduced motion
+- Monospace font, dark translucent background with backdrop blur
+
+**src/components/canvas/Canvas.tsx (MODIFIED):**
+- Integrated useCanvasPerformance hook
+- LOD node type switching: lodNodeTypes when zoom < 0.4, regular nodeTypes otherwise
+- translateExtent={CANVAS_BOUNDS} prevents infinite panning
+- Node count monitoring effect: shows toast warning at > 100 nodes
+- Zoom tracking via onMoveEnd callback
+- FpsCounter overlay (when enabled)
+- CanvasPerformanceContext.Provider wraps ReactFlow
+
+**src/components/edges/SyncEdge.tsx (MODIFIED):**
+- LOD: renders thin line without labels when isLowDetailEdges
+- Respects prefersReducedMotion: disables transitions
+
+**src/components/edges/AsyncEdge.tsx (MODIFIED):**
+- LOD: renders simple dashed line without animation or labels
+- Respects prefersReducedMotion: disables flow animation and transitions
+
+**src/components/edges/DataFlowEdge.tsx (MODIFIED):**
+- LOD: renders thinner line without labels
+- Respects prefersReducedMotion: disables transitions
+
+#### Feature Steps Verification:
+1. ✅ Level-of-detail: at low zoom, SimplifiedNode renders colored rectangles
+2. ✅ translateExtent limits canvas bounds (prevents infinite panning)
+3. ✅ Node count monitoring: toast warning at > 100 visible nodes
+4. ✅ prefers-reduced-motion: animations and transitions disabled when enabled
+5. ✅ Edge simplification: straight thin lines at low zoom levels
+6. ✅ FPS counter in dev mode (toggle-able overlay)
+
+#### Build: Clean (npx vite build passes)
+#### Console: No errors from performance code (only pre-existing SSL/PWA)
+#### Feature #383 marked passing
