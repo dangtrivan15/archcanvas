@@ -27,6 +27,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
+import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
 import { CanvasMode, MODE_DISPLAY } from '@/core/input/canvasMode';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -94,6 +95,9 @@ export function App() {
 
   // Autosave when browser tab/window loses focus
   useAutoSaveOnBlur();
+
+  // Handle .archc file opens from iOS (Files app, AirDrop, etc.)
+  useAppUrlOpen(initialized);
 
   // Auto-open right panel when a node or edge is selected
   useEffect(() => {
