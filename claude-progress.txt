@@ -8157,3 +8157,102 @@ Changed the node type label (e.g., 'compute/service', 'data/database') from plai
 - Feature #357 marked passing
 
 #### Commit: c91fdf8
+
+---
+
+## Session: Feature #356 - Node icons displayed larger with colored circle background
+Date: 2026-03-04
+
+### Feature #356: Node icons in colored circle badges - PASSING
+
+#### Implementation:
+Created NodeIconBadge component and updated all 7 node components.
+
+1. **src/components/nodes/NodeIconBadge.tsx** (new):
+   - Renders node type icon inside a 24px (w-6 h-6) rounded-full colored circle
+   - Badge background uses the node's accent color
+   - Icon is white (#ffffff) for contrast, sized at 14px (w-3.5 h-3.5)
+   - Accepts icon component, color, and data-testid props
+
+2. **Updated 7 node components** to use NodeIconBadge:
+   - GenericNode.tsx (rectangle nodes)
+   - CylinderNode.tsx
+   - CloudNode.tsx
+   - HexagonNode.tsx
+   - ParallelogramNode.tsx
+   - StadiumNode.tsx
+   - DocumentNode.tsx
+
+   All replaced: `<Icon className="w-4 h-4 shrink-0" style={{ color: effectiveColor }} />`
+   With: `<NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />`
+
+#### Verification:
+- Added 4 different node types: Service (blue), Database (green), Message Queue (orange), CDN (purple)
+- Each node has colored circle badge matching accent color
+- White icon on colored background provides strong contrast
+- Icon badge is noticeably larger than text - serves as primary visual anchor
+- Verified at normal zoom and zoomed-out levels
+- Zero console errors (0 errors, 0 warnings)
+- No mock data patterns
+- Feature #356 marked passing
+- Commit: 36b03d9
+
+
+---
+
+## Session: Feature #361 - Node arguments displayed in clean aligned table layout
+Date: 2026-03-04
+
+### Feature #361: Node args table layout - PASSING
+
+#### Implementation:
+Created shared NodeArgsTable component and updated all 7 node components.
+
+1. **src/components/nodes/NodeArgsTable.tsx** (new):
+   - Two-column HTML table layout for key-value argument display
+   - Keys right-aligned in monospace font (text-muted-foreground)
+   - Values left-aligned with truncation (max-w-[120px])
+   - Configurable maxRows (default 3) with "+N more" indicator
+   - Supports centered mode for shape nodes (cloud, hexagon, etc.)
+
+2. **Updated 7 node components** to use NodeArgsTable:
+   - GenericNode.tsx, CylinderNode.tsx, CloudNode.tsx
+   - HexagonNode.tsx, ParallelogramNode.tsx, StadiumNode.tsx, DocumentNode.tsx
+
+#### Verification:
+- Added Database node with 4 args (engine, version, storageGB, replication)
+- Args displayed in clean two-column table layout
+- Keys right-aligned, values left-aligned
+- "+1 more" indicator shown for 4th arg
+- Zero console errors (0 errors, 0 warnings)
+- Feature #361 marked passing
+- Commit: 60ce375
+
+---
+
+## Session: Feature #355 - Node borders use stronger accent color contrast
+Date: 2026-03-05
+
+### Feature #355: Node borders use stronger accent color contrast - PASSING
+
+#### Implementation:
+Changed node border/stroke opacity from 40% (hex `66`) to 70% (hex `B3`) for better visual definition:
+
+1. **src/components/nodes/shapes/NodeShell.tsx** (SVG shaped nodes):
+   - Changed unselected stroke color from `${color}66` to `${color}B3`
+   - Affects all SVG shapes: cylinder, cloud, hexagon, parallelogram, stadium, document
+
+2. **src/components/nodes/GenericNode.tsx** (rectangle nodes):
+   - Changed unselected border color from `${effectiveColor}66` to `${effectiveColor}B3`
+
+#### Verification:
+- Build succeeds cleanly (npx vite build)
+- Browser verification: Added Service (rectangle), Database (cylinder), Event Bus (stadium) nodes
+- All node borders clearly visible with accent color at 70% opacity
+- Borders are well-defined and refined (not chunky or heavy) - still using 1.5px stroke width
+- Zero JS console errors in the app (only pre-existing PWA SSL cert warnings in dev)
+- No mock data patterns in production code
+- Committed: 65f40bb
+
+#### Current completion status:
+- Feature #355 marked passing
