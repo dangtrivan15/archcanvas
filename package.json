@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "dev:ensure": "bash scripts/ensure-dev-server.sh",
+    "dev:stop": "bash scripts/ensure-dev-server.sh --stop",
     "proto:generate": "npx pbjs -t static-module -w es6 -o src/proto/archcanvas.pb.js proto/archcanvas.proto && npx pbts -o src/proto/archcanvas.pb.d.ts src/proto/archcanvas.pb.js"
   },
   "dependencies": {

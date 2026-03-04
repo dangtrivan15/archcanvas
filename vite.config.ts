@@ -12,6 +12,7 @@ export default defineConfig({
   assetsInclude: ['**/*.yaml', '**/*.yml'],
   server: {
     port: 5173,
+    strictPort: true,
     open: false,
     proxy: {
       '/api/anthropic': {
