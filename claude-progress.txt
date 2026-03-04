@@ -8946,3 +8946,33 @@ Date: 2026-03-05
 #### Commit: aaad731
 #### Feature #387 marked passing
 #### Progress: 376/426 features passing (88.3%)
+
+---
+
+## Session: Feature #386 - Add security/waf node type
+Date: 2026-03-05
+
+### Feature #386: Add `security/waf` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/security/waf.yaml`:
+  - namespace: security, name: waf, displayName: WAF
+  - shape: hexagon, icon: ShieldAlert
+  - Args: provider (enum: AWS WAF/Cloudflare WAF/ModSecurity/Azure WAF), managedRules (boolean), rateLimiting (boolean), geoBlocking (boolean)
+  - Ports: traffic-in (inbound), traffic-out (outbound)
+  - Variants: AWS WAF, Cloudflare WAF, ModSecurity, Azure WAF
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added ShieldAlert icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows SECURITY category with 3 entries (Auth Provider, Vault, WAF): PASS
+- Node renders on canvas with hexagon shape: PASS
+- ShieldAlert icon displayed: PASS
+- Args shown: provider=AWS WAF, managedRules=true, rateLimiting=true, +1 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 19 built-in nodedefs loaded: PASS
+- No new console errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: f0e2775
+#### Feature #386 marked passing
