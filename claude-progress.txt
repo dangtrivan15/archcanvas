@@ -7989,3 +7989,55 @@ Shaped nodes (Cylinder, Cloud, Hexagon, Parallelogram, Stadium, Document) had vi
 
 #### Current completion status:
 - Features passing: 343+ of 366
+
+---
+
+## Session: Feature #351 - Shape-aware content padding prevents clipping
+Date: 2026-03-04
+
+### Feature #351: Shape-aware content padding - PASSING
+
+#### Implementation:
+Created src/components/nodes/shapes/shapeInsets.ts with getShapeInsets() function:
+
+- **getShapeInsets(shape, width, height)**: Returns {top, right, bottom, left} insets per shape
+  - Rectangle: uniform 8px base padding
+  - Cylinder: extra top/bottom for elliptical caps (ry + 4px)
+  - Hexagon: extra horizontal for angled sides (inset + 4px)
+  - Parallelogram: extra horizontal for slant (skew/2 + 4px)
+  - Cloud: generous all-around insets (20% horizontal, 22% vertical)
+  - Stadium: extra horizontal for rounded ends (r*0.5 + 4px)
+  - Document: extra bottom for wavy edge (wave + 4px)
+  - Badge: extra bottom for pointed bottom (pointH + 4px)
+
+Updated NodeShell.tsx to use shape-aware insets:
+- foreignObject x/y/width/height now computed from getShapeInsets()
+- ResizeObserver height calculation uses shape-aware vertical insets
+- Replaces uniform PADDING=8 with per-shape geometry-based insets
+
+#### Tests:
+- test/unit/components/shapeInsets.test.ts: 41 tests
+  - All 8 shapes return positive insets
+  - All shapes leave usable content area
+  - Cylinder: extra top/bottom, caps ry at 16, normal horizontal
+  - Hexagon: extra horizontal for angled sides, standard vertical
+  - Parallelogram: extra horizontal accommodates skew
+  - Cloud: generous insets, still usable content area
+  - Stadium: extra horizontal for rounded ends
+  - Document: extra bottom for wavy edge
+  - Badge: extra bottom for pointed bottom
+  - Scaling tests for cylinder/hexagon/stadium
+
+#### Browser Verification:
+- Cylinder (Cache): content properly below top cap, above bottom cap
+- Cloud (CDN): content well-inset within curved boundary
+- Parallelogram (Message Queue): content within slanted sides
+- Stadium (Event Bus): content within rounded ends
+- Zero JS console errors
+- Build succeeds cleanly
+
+#### Commits:
+- d349ec5: feat: implement shape-aware content padding (feature #351)
+
+#### Current completion status:
+- Feature #351 marked passing
