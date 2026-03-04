@@ -9430,3 +9430,33 @@ Date: 2026-03-05
 #### Commit: 58e8942
 #### Feature #400 marked passing
 #### Progress: 390/426 features passing (91.5%)
+
+---
+
+## Session: Feature #402 - Add ai/agent node type
+Date: 2026-03-05
+
+### Feature #402: Add `ai/agent` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/agent.yaml`:
+  - namespace: ai, name: agent, displayName: AI Agent
+  - shape: hexagon, icon: Bot
+  - Args: framework (enum: LangChain/CrewAI/AutoGen/Claude Agent SDK/Custom), maxIterations (number), toolsCount (number), memoryType (enum: buffer/summary/vector/none)
+  - Ports: task-request (inbound), tool-call (outbound), task-result (outbound)
+  - Variants: LangChain Agent, CrewAI Agent, Claude Agent
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Bot icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 6 entries including AI Agent: PASS
+- Node renders on canvas with hexagon shape: PASS
+- Bot icon displayed: PASS
+- Args shown: framework=LangChain, maxIterations=10, toolsCount=5, +1 more: PASS
+- Inbound port handle (task-request) visible: PASS
+- Outbound port handles (tool-call, task-result) visible: PASS
+- Console: 35 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 74ad69b
+#### Feature #402 marked passing
