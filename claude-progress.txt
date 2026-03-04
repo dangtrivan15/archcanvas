@@ -8473,3 +8473,47 @@ Added subtle divider lines between the three content zones (header, body, footer
 - Zero console errors (0 errors, 0 warnings)
 - Build succeeds cleanly
 - Feature #363 marked passing
+
+---
+
+## Session: Feature #371 - Inter-App Drag & Drop for Files
+Date: 2026-03-05
+
+### Feature #371: Inter-App Drag & Drop for Files - PASSING
+
+#### Implementation:
+
+**src/store/coreStore.ts:**
+- Added `loadFromDroppedFile(file: File)` method to CoreStoreState
+- Validates .archc file extension before processing
+- Reads file as ArrayBuffer, converts to Uint8Array, decodes via `decodeArchcData()`
+- Applies decoded file via `_applyDecodedFile()` (same path as openFile/loadFromUrl)
+- Full error handling: IntegrityError with warning dialog, CodecError for invalid format
+- Shows loading indicator during file processing
+- Shows error dialog for unsupported file types
+
+**src/components/canvas/Canvas.tsx:**
+- Extended `onDragOver` to detect file drags and set `isDragOverWithFiles` state
+- Added `onCanvasDragEnter`/`onCanvasDragLeave` with counter pattern for nested elements
+- Extended `onDrop` to handle three drop types:
+  1. NodeDef drops (existing behavior preserved)
+  2. .archc file drops → loads architecture via `loadFromDroppedFile`
+  3. Image drops → shows "not yet available" toast
+- Handles multiple file drops (only one .archc at a time)
+- Shows toast for unsupported file types
+- Added drop zone overlay with:
+  - Dashed green border + semi-transparent background
+  - Centered card with download icon, "Drop .archc file to open" text
+  - Pointer-events-none so it doesn't interfere with drop target
+  - z-50 to appear above canvas content
+
+#### Verification (E2E test):
+1. Drop zone overlay: PASS - appears on file drag, shows correct text
+2. File drop loads graph: PASS - ecommerce.archc loads 5 nodes, 4 edges
+3. Unsupported file toast: PASS - shows "Unsupported" message for .txt
+4. Image drop message: PASS - shows image-related toast for .png
+5. Console errors: PASS - zero errors
+
+#### Commits:
+- 54c5e0a: feat: implement inter-app drag & drop for files on canvas (feature #371)
+
