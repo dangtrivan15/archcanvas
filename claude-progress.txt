@@ -8256,3 +8256,34 @@ Changed node border/stroke opacity from 40% (hex `66`) to 70% (hex `B3`) for bet
 
 #### Current completion status:
 - Feature #355 marked passing
+
+---
+
+## Session: Feature #362 - Badge counts redesigned as compact pills with icons
+Date: 2026-03-05
+
+### Feature #362: Badge counts as compact pills with icons - PASSING
+
+#### Implementation:
+Created shared NodeBadges component and updated all 7 node components.
+
+1. **src/components/nodes/NodeBadges.tsx** (new):
+   - Replaces emoji-based badges (📝, 💡, 📎) with compact pill-shaped badges
+   - Notes badge: MessageSquare icon, blue color (bg-blue-500/15, text-blue-600)
+   - Suggestions badge: Lightbulb icon, amber color (bg-amber-500/15, text-amber-600)
+   - Code refs badge: FileCode icon, emerald color (bg-emerald-500/15, text-emerald-600)
+   - Renders nothing when all counts are 0
+   - Accepts className prop for layout customization per node type
+
+2. **Updated 7 node components** to use NodeBadges:
+   - GenericNode.tsx, CylinderNode.tsx, CloudNode.tsx
+   - HexagonNode.tsx, ParallelogramNode.tsx, StadiumNode.tsx, DocumentNode.tsx
+
+#### Verification:
+- Added Service node with 1 note and 1 code reference
+- Notes badge shows as blue pill with MessageSquare icon and count "1"
+- Code refs badge shows as green pill with FileCode icon and count "1"
+- Suggestions badge not visible (count is 0) - correct behavior
+- Zero JS console errors (only pre-existing PWA SSL cert errors)
+- Feature #362 marked passing
+- Commit: c82b280
