@@ -9163,3 +9163,32 @@ Date: 2026-03-05
 #### Commit: e585fb9
 #### Feature #393 marked passing
 #### Progress: 382/426 features passing (89.7%)
+
+---
+
+## Session: Feature #392 - Add client/cli node type
+Date: 2026-03-05
+
+### Feature #392: Add `client/cli` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/client/cli.yaml`:
+  - namespace: client, name: cli, displayName: CLI
+  - shape: rectangle, icon: Terminal
+  - Args: language (enum: TypeScript/Python/Go/Rust/Bash), packageManager (string), authMethod (enum: API Key/OAuth2/Token/None)
+  - Ports: api-call (outbound)
+  - Variants: TypeScript CLI, Python CLI, Go CLI, Rust CLI, Bash Script
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Terminal icon already added to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows CLIENT category with 3 entries (Web App, Mobile App, CLI): PASS
+- Node renders on canvas with rectangle shape: PASS
+- Terminal icon displayed: PASS
+- Args shown: language=TypeScript, packageManager=npm, authMethod=API Key: PASS
+- Outbound port handle visible: PASS
+- Console: 25 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: e60259c
+#### Feature #392 marked passing
