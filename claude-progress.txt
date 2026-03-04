@@ -8079,3 +8079,42 @@ Added color-tinted drop shadows to all node types on the canvas.
 
 #### Current completion status:
 - Feature #354 marked passing
+
+
+---
+
+## Session: Feature #373 - iPad Split View and Slide Over Polish
+Date: 2026-03-04
+
+### Feature #373: iPad Split View and Slide Over Polish - PASSING
+
+#### Implementation:
+
+**1. Icon-Only Sidebar Rail (NodeDefBrowser.tsx):**
+- Icon rail mode activates when viewport width < 768px (ICON_RAIL_BREAKPOINT)
+- Rail shows namespace icons with CSS hover tooltips
+- Node type icons shown under each namespace when expanded
+- Full sidebar with search input shown at >= 768px
+
+**2. Compact Dialog Sheets (index.css + 9 dialog components):**
+- CSS media query at max-width 599px for compact-dialog-sheet class
+- Dialogs become full-width bottom sheets on narrow viewports
+- Applied to all dialog components
+
+**3. Status Bar Compact Mode (App.tsx + index.css):**
+- status-bar-compact-hide CSS class hides non-essential items at < 600px
+- Essential items always visible: Mode badge, dirty indicator
+
+**4. Compact Toolbar Tooltips (FileMenu, LayoutMenu):**
+- Added title and aria-label attributes for compact mode
+
+**5. Orientation Change Handling (useViewportSize.ts):**
+- Added orientationchange event listener for iOS compatibility
+
+**6. Left Panel Icon Rail Width (App.tsx):**
+- Left panel uses 52px fixed width in icon rail mode
+
+#### Testing:
+- 34/34 Playwright checks passed at 320/507/678/800/1024/1200px
+- Zero console errors, no horizontal overflow
+- Feature #373 marked passing
