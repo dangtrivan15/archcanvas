@@ -9042,3 +9042,33 @@ Date: 2026-03-05
 #### Build: Clean (npx vite build passes)
 #### Console: No errors from performance code (only pre-existing SSL/PWA)
 #### Feature #383 marked passing
+
+---
+
+## Session: Feature #388 - Add integration/webhook node type
+Date: 2026-03-05
+
+### Feature #388: Add `integration/webhook` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/integration/webhook.yaml`:
+  - namespace: integration, name: webhook, displayName: Webhook
+  - shape: parallelogram, icon: Webhook
+  - Args: direction (enum: inbound/outbound), url (string), secretSigning (boolean), retryPolicy (enum: none/fixed/exponential), maxRetries (number)
+  - Ports: trigger (inbound), payload (outbound)
+  - Variants: Inbound Webhook, Outbound Webhook, GitHub Webhook, Stripe Webhook
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Webhook icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows INTEGRATION category with Webhook: PASS
+- Node renders on canvas with parallelogram shape: PASS
+- Webhook icon displayed: PASS
+- Args shown: direction=inbound, url=https://example.com/webhook, secretSigning=true, +2 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 22 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 30beb71
+#### Feature #388 marked passing
+#### Progress: 379/426 features passing (88.9%)
