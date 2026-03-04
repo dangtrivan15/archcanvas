@@ -11,6 +11,17 @@ export interface NodeDef {
   variants?: VariantDef[];
 }
 
+/** Valid shape names that can be specified in NodeDef metadata */
+export type NodeDefShape =
+  | 'rectangle'
+  | 'cylinder'
+  | 'hexagon'
+  | 'parallelogram'
+  | 'cloud'
+  | 'stadium'
+  | 'document'
+  | 'badge';
+
 export interface NodeDefMetadata {
   name: string;
   namespace: string;
@@ -20,6 +31,7 @@ export interface NodeDefMetadata {
   icon: string;
   tags: string[];
   author?: string;
+  shape?: NodeDefShape;
 }
 
 export interface NodeDefSpec {

@@ -11,6 +11,7 @@ metadata:
     - compute
     - backend
     - microservice
+  shape: rectangle
 spec:
   args:
     - name: language

@@ -11,6 +11,7 @@ metadata:
     - network
     - traffic
     - scaling
+  shape: hexagon
 spec:
   args:
     - name: type

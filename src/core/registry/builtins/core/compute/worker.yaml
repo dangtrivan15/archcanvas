@@ -11,6 +11,7 @@ metadata:
     - compute
     - background
     - async
+  shape: rectangle
 spec:
   args:
     - name: concurrency

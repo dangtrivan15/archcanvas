@@ -11,6 +11,7 @@ metadata:
     - compute
     - serverless
     - lambda
+  shape: rectangle
 spec:
   args:
     - name: runtime

@@ -11,6 +11,7 @@ metadata:
     - messaging
     - async
     - queue
+  shape: parallelogram
 spec:
   args:
     - name: broker

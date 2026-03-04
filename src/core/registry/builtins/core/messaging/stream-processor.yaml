@@ -11,6 +11,7 @@ metadata:
     - messaging
     - streaming
     - realtime
+  shape: parallelogram
 spec:
   args:
     - name: engine

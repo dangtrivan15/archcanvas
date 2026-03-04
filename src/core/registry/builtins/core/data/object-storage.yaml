@@ -12,6 +12,7 @@ metadata:
     - storage
     - blob
     - files
+  shape: cylinder
 spec:
   args:
     - name: provider

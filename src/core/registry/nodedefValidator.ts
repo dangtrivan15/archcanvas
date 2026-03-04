@@ -46,6 +46,17 @@ export const nodeDefSpecSchema = z.object({
     .optional(),
 });
 
+export const nodeDefShapeSchema = z.enum([
+  'rectangle',
+  'cylinder',
+  'hexagon',
+  'parallelogram',
+  'cloud',
+  'stadium',
+  'document',
+  'badge',
+]);
+
 export const nodeDefMetadataSchema = z.object({
   name: z.string().min(1),
   namespace: z.string().min(1),
@@ -55,6 +66,7 @@ export const nodeDefMetadataSchema = z.object({
   icon: z.string().min(1),
   tags: z.array(z.string()),
   author: z.string().optional(),
+  shape: nodeDefShapeSchema.optional(),
 });
 
 export const nodeDefSchema = z.object({

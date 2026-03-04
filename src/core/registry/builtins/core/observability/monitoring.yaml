@@ -12,6 +12,7 @@ metadata:
     - monitoring
     - metrics
     - alerting
+  shape: rectangle
 spec:
   args:
     - name: platform
