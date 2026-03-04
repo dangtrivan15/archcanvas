@@ -6622,3 +6622,33 @@ Date: 2026-03-04
 - Theme persists across page reload
 - Zero console errors, no mock data
 - Committed: 1e6d8bf
+
+---
+
+## Session: Feature #320 - Toolbar and Status Bar Content Scales Gracefully
+Date: 2026-03-04
+
+### Feature #320: Toolbar and status bar content scales gracefully within custom heights - PASSING
+
+#### Implementation:
+- src/components/toolbar/Toolbar.tsx:
+  - Changed toolbar dividers from fixed `h-6` to `height: 60%` for proportional scaling
+  - Added `overflow-hidden` class to toolbar header to prevent content overflow
+- src/App.tsx:
+  - Changed status bar footer from `flex-col` to `flex items-center` for proper vertical centering
+  - Added `overflow-hidden` to status bar footer
+  - Added `whitespace-nowrap` to status bar inner text container
+
+#### Browser Verification:
+- Step 1: Toolbar at 36px (min) - all buttons and text visible, vertically centered ✅
+- Step 2: Toolbar at 80px (max) - content centered with breathing room, no awkward gaps ✅
+- Step 3: Status bar at 20px (min) - NORMAL badge, Root, hints, Nodes, Edges, Saved, Zoom all visible ✅
+- Step 4: Status bar at 48px (max) - content stays centered with extra room ✅
+- Step 5: Toolbar dividers use height: 60% for proportional scaling ✅
+- Zero JS console errors (no app-related errors)
+- No mock data patterns detected
+
+#### Committed: ee8c8fd
+
+#### Current completion status:
+- Features passing: 310+ of 332
