@@ -58,6 +58,7 @@ export interface CoreStoreState {
   saveFile: () => Promise<boolean>;
   saveFileAs: () => Promise<boolean>;
   loadFromUrl: (url: string, fileName?: string) => Promise<boolean>;
+  loadFromDroppedFile: (file: File) => Promise<boolean>;
 
   // Graph mutations
   addNode: (params: AddNodeParams) => ArchNode | undefined;
@@ -598,6 +599,94 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         openErrorDialog({
           title: 'Failed to Open File',
           message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the file.',
+        });
+      }
+
+      return false;
+    }
+  },
+
+  /**
+   * Load a .archc file from a dropped File object (drag & drop from Files app or desktop).
+   * Validates file extension and decodes the binary data.
+   */
+  loadFromDroppedFile: async (file: File) => {
+    const { textApi, undoManager } = get();
+    if (!textApi || !undoManager) return false;
+
+    // Validate file extension
+    if (!file.name.toLowerCase().endsWith('.archc')) {
+      const { openErrorDialog } = useUIStore.getState();
+      openErrorDialog({
+        title: 'Unsupported File Type',
+        message: `"${file.name}" is not an ArchCanvas file. Only .archc files can be opened.`,
+      });
+      return false;
+    }
+
+    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
+    setFileOperationLoading('Opening dropped file...');
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const data = new Uint8Array(buffer);
+      const fileName = file.name.replace(/\.archc$/i, '');
+
+      try {
+        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
+        get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+        clearFileOperationLoading();
+        console.log(`[CoreStore] Loaded dropped file: ${fileName}`);
+        return true;
+      } catch (decodeErr) {
+        clearFileOperationLoading();
+        if (decodeErr instanceof IntegrityError) {
+          console.warn('[CoreStore] Dropped file integrity check failed:', decodeErr.message);
+          const { openIntegrityWarningDialog } = useUIStore.getState();
+          openIntegrityWarningDialog({
+            message:
+              'The dropped file\'s integrity checksum does not match its contents. ' +
+              'The file may have been corrupted or modified outside of ArchCanvas. ' +
+              'Opening it anyway may result in unexpected behavior.',
+            onProceed: async () => {
+              try {
+                setFileOperationLoading('Opening dropped file...');
+                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
+                  data,
+                  { skipChecksumVerification: true },
+                );
+                get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
+                clearFileOperationLoading();
+                console.log(`[CoreStore] Loaded dropped file with skipped checksum: ${fileName}`);
+              } catch (retryErr) {
+                clearFileOperationLoading();
+                console.error('[CoreStore] Failed to load dropped file even with skipped checksum:', retryErr);
+                const { openErrorDialog } = useUIStore.getState();
+                openErrorDialog({
+                  title: 'Failed to Open File',
+                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the dropped file.',
+                });
+              }
+            },
+          });
+          return false;
+        }
+        throw decodeErr;
+      }
+    } catch (err) {
+      clearFileOperationLoading();
+      console.error('[CoreStore] Failed to load dropped file:', err);
+
+      const { openErrorDialog } = useUIStore.getState();
+      if (err instanceof CodecError) {
+        openErrorDialog({
+          title: 'Invalid File Format',
+          message: err.message || 'The dropped file could not be opened because it is not a valid ArchCanvas file.',
+        });
+      } else {
+        openErrorDialog({
+          title: 'Failed to Open File',
+          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the dropped file.',
         });
       }
 
