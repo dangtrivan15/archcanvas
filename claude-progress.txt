@@ -8041,3 +8041,41 @@ Updated NodeShell.tsx to use shape-aware insets:
 
 #### Current completion status:
 - Feature #351 marked passing
+
+---
+
+## Session: Feature #354 - Color-tinted drop shadows
+Date: 2026-03-04
+
+### Feature #354: Nodes have color-tinted drop shadows for depth - PASSING
+
+#### Implementation:
+Added color-tinted drop shadows to all node types on the canvas.
+
+**src/utils/nodeColors.ts:**
+- Added `hexToRgb()` helper to parse hex colors to RGB
+- Added `colorTintedShadow()` for CSS box-shadow with color-tinted values (default/hover)
+- Added `hexToNormalizedRgb()` for SVG filter color values
+
+**src/components/nodes/GenericNode.tsx:**
+- Replaced Tailwind gray shadow classes (shadow-sm/shadow-md) with inline `boxShadow` using `colorTintedShadow()`
+- Added `onMouseEnter`/`onMouseLeave` handlers for hover elevation
+- Shadow is subtle at rest, more prominent on hover/selection
+- Blue node → blue shadow, green → green, etc.
+
+**src/components/nodes/shapes/NodeShell.tsx:**
+- Added CSS `filter: drop-shadow()` on the wrapper div
+- Shadow conforms to SVG shape (cylinder, hexagon, parallelogram, etc.)
+- Used `hexToNormalizedRgb()` for color calculation
+- Added `useMemo` for efficient filter string computation
+- Shadow is subtle at rest, more prominent when selected
+
+#### Verification:
+- Tested with 3 different node types: Service (blue, GenericNode), Database (green, CylinderNode), Message Queue (amber, ParallelogramNode)
+- All nodes show visible, color-tinted drop shadows
+- Shadows match each node's accent color identity
+- Zero console errors
+- Feature #354 marked passing
+
+#### Current completion status:
+- Feature #354 marked passing
