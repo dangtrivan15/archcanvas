@@ -128,7 +128,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
   const borderStyle = useMemo(
     () => ({
-      borderColor: selected ? '#3B82F6' : `${effectiveColor}66`,
+      borderColor: selected ? 'hsl(var(--iris))' : `${effectiveColor}66`,
     }),
     [effectiveColor, selected],
   );
@@ -139,11 +139,11 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         border-2 rounded-lg shadow-sm min-w-[200px] max-w-[280px]
         transition-shadow relative overflow-hidden
         ${isRef ? 'border-dashed' : ''}
-        ${selected ? 'shadow-md ring-2 ring-blue-200' : 'hover:shadow-md'}
+        ${selected ? 'shadow-md ring-2 ring-iris/30' : 'hover:shadow-md'}
       `}
       style={{
         ...borderStyle,
-        backgroundColor: isRef ? '#FAF5FF' : '#FFFFFF',
+        backgroundColor: isRef ? 'hsl(var(--iris) / 0.08)' : 'hsl(var(--surface))',
       }}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -168,7 +168,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             position={Position.Left}
             id={port.name}
             title={port.name}
-            className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white !rounded-full"
+            className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
             style={{
               top: `${((index + 1) / (inboundPorts.length + 1)) * 100}%`,
             }}
@@ -181,7 +181,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         <Handle
           type="target"
           position={Position.Left}
-          className="!w-3 !h-3 !bg-blue-400 !border-2 !border-white !rounded-full"
+          className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
           id="in"
           title="in"
           data-testid="port-in-default"
@@ -192,7 +192,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Node header with tinted background */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b border-gray-100"
+        className="flex items-center gap-2 px-3 py-2 border-b border-border/40"
         style={headerBgStyle}
         data-testid="node-header"
       >
@@ -206,7 +206,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             <input
               ref={inputRef}
               type="text"
-              className="text-sm font-medium text-gray-900 w-full bg-white border border-blue-400 rounded px-1 py-0 outline-none ring-2 ring-blue-200 nodrag"
+              className="text-sm font-medium text-text w-full bg-surface border border-iris rounded px-1 py-0 outline-none ring-2 ring-iris/30 nodrag"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleInlineKeyDown}
@@ -217,11 +217,11 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
               spellCheck={false}
             />
           ) : (
-            <div className="text-sm font-medium text-gray-900 truncate" data-testid="node-display-name">
+            <div className="text-sm font-medium text-text truncate" data-testid="node-display-name">
               {nodeData.displayName}
             </div>
           )}
-          <div className="text-xs text-gray-400 truncate" data-testid="node-type-label">
+          <div className="text-xs text-muted-foreground truncate" data-testid="node-type-label">
             {nodeData.nodedefType}
           </div>
         </div>
@@ -231,11 +231,11 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             data-testid="ref-indicator"
             title={`Reference to: ${nodeData.refSource}`}
           >
-            <ExternalLink className="w-3.5 h-3.5 text-purple-500" />
+            <ExternalLink className="w-3.5 h-3.5 text-iris" />
           </span>
         )}
         {nodeData.hasChildren && (
-          <div className="text-xs text-blue-500 cursor-pointer" title="Has children - double click to zoom in">
+          <div className="text-xs text-iris cursor-pointer" title="Has children - double click to zoom in">
             ▶
           </div>
         )}
@@ -244,7 +244,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       {/* Reference source indicator */}
       {isRef && (
         <div
-          className="flex items-center gap-1 px-3 py-1 text-xs text-purple-600 bg-purple-50 border-b border-purple-100"
+          className="flex items-center gap-1 px-3 py-1 text-xs text-iris bg-iris/10 border-b border-iris/20"
           data-testid="ref-source-indicator"
           title={`References: ${nodeData.refSource}`}
         >
@@ -255,10 +255,10 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Node body - show key args */}
       {Object.keys(nodeData.args).length > 0 && (
-        <div className="px-3 py-1.5 text-xs text-gray-500">
+        <div className="px-3 py-1.5 text-xs text-subtle">
           {Object.entries(nodeData.args).slice(0, 3).map(([key, value]) => (
             <div key={key} className="truncate">
-              <span className="font-mono text-gray-400">{key}:</span>{' '}
+              <span className="font-mono text-muted-foreground">{key}:</span>{' '}
               <span>{String(value)}</span>
             </div>
           ))}
@@ -267,9 +267,9 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
 
       {/* Badges */}
       {(nodeData.noteCount > 0 || nodeData.pendingSuggestionCount > 0 || nodeData.codeRefCount > 0) && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-gray-100 text-xs" data-testid="node-badges">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-border/40 text-xs" data-testid="node-badges">
           {nodeData.noteCount > 0 && (
-            <span className="text-gray-400" title={`${nodeData.noteCount} notes`} data-testid="badge-notes">
+            <span className="text-muted-foreground" title={`${nodeData.noteCount} notes`} data-testid="badge-notes">
               📝 {nodeData.noteCount}
             </span>
           )}
@@ -279,7 +279,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             </span>
           )}
           {nodeData.codeRefCount > 0 && (
-            <span className="text-gray-400" title={`${nodeData.codeRefCount} code references`} data-testid="badge-coderefs">
+            <span className="text-muted-foreground" title={`${nodeData.codeRefCount} code references`} data-testid="badge-coderefs">
               📎 {nodeData.codeRefCount}
             </span>
           )}
@@ -295,7 +295,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
             position={Position.Right}
             id={port.name}
             title={port.name}
-            className="!w-3 !h-3 !bg-green-400 !border-2 !border-white !rounded-full"
+            className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
             style={{
               top: `${((index + 1) / (outboundPorts.length + 1)) * 100}%`,
             }}
@@ -308,7 +308,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         <Handle
           type="source"
           position={Position.Right}
-          className="!w-3 !h-3 !bg-green-400 !border-2 !border-white !rounded-full"
+          className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
           id="out"
           title="out"
           data-testid="port-out-default"

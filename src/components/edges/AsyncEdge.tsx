@@ -1,6 +1,7 @@
 /**
  * AsyncEdge - dashed/animated line edge for asynchronous connections.
  * Uses CSS animation to create a flowing dash effect along the edge path.
+ * Uses theme CSS variables for stroke colors.
  */
 
 import { memo } from 'react';
@@ -31,7 +32,7 @@ function AsyncEdgeComponent({
       id={id}
       path={edgePath}
       style={{
-        stroke: selected ? '#3b82f6' : '#f59e0b',
+        stroke: selected ? 'hsl(var(--iris))' : 'hsl(var(--gold))',
         strokeWidth: selected ? 2.5 : 2,
         strokeDasharray: '8,4',
         animation: 'async-edge-flow 0.6s linear infinite',

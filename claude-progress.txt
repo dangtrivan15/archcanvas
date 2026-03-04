@@ -6880,3 +6880,40 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 317 of 339 (93.5%)
+
+---
+
+## Session: Feature #331 - Theme Switcher UI
+Date: 2026-03-04
+
+### Feature #331: Theme Switcher UI - PASSING
+
+#### Implementation:
+- src/components/toolbar/ThemeSwitcher.tsx (new file):
+  - Dropdown palette selector with Palette icon trigger button
+  - Lists all 7 registered theme presets (Light, Dark, Nord, Catppuccin Mocha, Rose Pine variants)
+  - 5 color circle swatches per theme (background, primary, accent, pine, love)
+  - Active theme highlighted with bg-highlight-med + Check icon
+  - Keyboard accessible: ArrowUp/Down navigate, Enter/Space select, Escape close, Home/End
+  - Outside click closes dropdown
+  - Focus management with ref tracking
+  - Compact mode support for narrow viewports
+
+- src/components/toolbar/Toolbar.tsx:
+  - Added ThemeSwitcher import and placement between spacer and Settings button
+
+#### Browser Verification:
+- ThemeSwitcher button visible in toolbar with palette icon and mini color swatches
+- Clicking opens dropdown with all 7 themes listed with color swatch previews
+- Dark theme shown as active with check mark (default)
+- Switched to Light theme - instant visual update, entire UI changed
+- Switched to Rose Pine - instant visual update with distinctive palette
+- Dropdown closes after selection
+- Button label updates to reflect current theme name
+- Zero JS console errors (0 errors, 0 warnings)
+- No mock data patterns
+
+#### Committed: d738389
+
+#### Current completion status:
+- Features passing: 320 of 339 (94.4%)
