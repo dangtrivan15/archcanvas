@@ -8632,3 +8632,15 @@ All implementation was already present. Verified completeness:
 Verification: Navigated to /open?file=.../ecommerce.archc - loaded 5 nodes, 4 edges.
 Console confirms full flow: web handoff -> fetch -> decode -> load.
 Commit: 441ac61. Feature #376 marked passing.
+
+---
+
+Session: Feature #378 - iOS Privacy Manifest and Store Compliance
+Date: 2026-03-05
+
+Feature #378 - PASSING
+Created PrivacyInfo.xcprivacy with File Timestamp, User Defaults, Disk Space API declarations.
+Updated Info.plist: arm64, MinimumOSVersion 16.0, ATS with localhost exception.
+Updated project.pbxproj to include PrivacyInfo.xcprivacy in build.
+Commit: 4fdc454
+Feature #378 marked passing
