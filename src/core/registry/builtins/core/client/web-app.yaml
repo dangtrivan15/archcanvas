@@ -1,0 +1,97 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: web-app
+  namespace: client
+  version: "1.0.0"
+  displayName: Web App
+  description: A browser-based frontend application built with frameworks like React, Next.js, Vue, Angular, or Svelte. Represents the client-side layer that users interact with directly.
+  icon: Globe
+  tags:
+    - client
+    - frontend
+    - web
+    - browser
+    - spa
+  shape: rectangle
+spec:
+  args:
+    - name: framework
+      type: enum
+      required: true
+      description: Frontend framework used to build the web application
+      options:
+        - React
+        - Next.js
+        - Vue
+        - Angular
+        - Svelte
+        - Other
+      default: React
+    - name: rendering
+      type: enum
+      required: true
+      description: Rendering strategy used by the application
+      options:
+        - SPA
+        - SSR
+        - SSG
+        - Hybrid
+      default: SPA
+    - name: hosting
+      type: string
+      description: Hosting platform or environment (e.g. Vercel, Netlify, S3+CloudFront)
+      default: "Vercel"
+  ports:
+    - name: api-call
+      direction: outbound
+      protocol:
+        - HTTPS
+        - REST
+        - GraphQL
+      description: Outbound API calls to backend services
+    - name: websocket
+      direction: outbound
+      protocol:
+        - WSS
+        - WebSocket
+      description: Outbound WebSocket connections for real-time communication
+  children: []
+  ai:
+    context: "This is a browser-based frontend application. Consider build optimization, code splitting, SSR/SSG trade-offs, caching strategies, CDN integration, and accessibility."
+    reviewHints:
+      - Verify the rendering strategy matches the application's performance needs
+      - Check that API calls use proper error handling and loading states
+      - Ensure the hosting platform supports the chosen rendering strategy
+      - Review bundle size and code splitting configuration
+variants:
+  - name: React SPA
+    description: Single-page React application
+    args:
+      framework: React
+      rendering: SPA
+      hosting: "Vercel"
+  - name: Next.js SSR
+    description: Server-side rendered Next.js application
+    args:
+      framework: Next.js
+      rendering: SSR
+      hosting: "Vercel"
+  - name: Vue SPA
+    description: Single-page Vue.js application
+    args:
+      framework: Vue
+      rendering: SPA
+      hosting: "Netlify"
+  - name: Angular SSR
+    description: Server-side rendered Angular application
+    args:
+      framework: Angular
+      rendering: SSR
+      hosting: "AWS"
+  - name: Svelte SSG
+    description: Static-site generated SvelteKit application
+    args:
+      framework: Svelte
+      rendering: SSG
+      hosting: "Cloudflare Pages"
