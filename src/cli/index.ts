@@ -14,6 +14,7 @@
 
 import { Command, Option } from 'commander';
 import { GraphContext } from '@/cli/context';
+import { registerInitCommand } from '@/cli/commands/init';
 import { registerMutateCommands } from '@/cli/commands/mutate';
 
 // ─── Version ──────────────────────────────────────────────────
@@ -176,22 +177,7 @@ export function createProgram(): Command {
     .option('-q, --quiet', 'Suppress non-essential output', false);
 
   // ─── init ──────────────────────────────────────────────────
-
-  program
-    .command('init')
-    .description('Create a new .archc architecture file')
-    .argument('[name]', 'Architecture name', 'Untitled Architecture')
-    .option('-o, --output <path>', 'Output file path', './architecture.archc')
-    .action(
-      withErrorHandler(async (name: string, cmdOpts: { output: string }) => {
-        const opts = program.opts<GlobalOptions>();
-        const ctx = GraphContext.createNew(name);
-        await ctx.saveAs(cmdOpts.output);
-        if (!opts.quiet) {
-          console.log(`Created new architecture "${name}" at ${cmdOpts.output}`);
-        }
-      }),
-    );
+  registerInitCommand(program);
 
   // ─── info ──────────────────────────────────────────────────
 
