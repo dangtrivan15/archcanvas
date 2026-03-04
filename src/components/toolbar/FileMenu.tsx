@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, Loader2, Check } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, FileText, GitBranch, Loader2, Check } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -18,6 +18,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
   const saveFile = useCoreStore((s) => s.saveFile);
   const saveFileAs = useCoreStore((s) => s.saveFileAs);
   const exportApi = useCoreStore((s) => s.exportApi);
+  const graph = useCoreStore((s) => s.graph);
   const fileName = useCoreStore((s) => s.fileName);
   const isDirty = useCoreStore((s) => s.isDirty);
   const isSaving = useCoreStore((s) => s.isSaving);
@@ -209,6 +210,37 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                 >
                   <FileImage className="w-4 h-4" />
                   <span>SVG</span>
+                </button>
+                <div className="h-px bg-[hsl(var(--border))] my-1" />
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    setShowExportSub(false);
+                    if (exportApi) {
+                      await exportApi.exportToMarkdown(graph, fileName);
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  role="menuitem"
+                  data-testid="export-markdown-button"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Markdown</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    setIsOpen(false);
+                    setShowExportSub(false);
+                    if (exportApi) {
+                      await exportApi.exportToMermaid(graph, fileName);
+                    }
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  role="menuitem"
+                  data-testid="export-mermaid-button"
+                >
+                  <GitBranch className="w-4 h-4" />
+                  <span>Mermaid</span>
                 </button>
               </div>
             )}

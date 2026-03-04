@@ -239,6 +239,84 @@ export class ExportApi {
     }
   }
 
+  /**
+   * Export the architecture as a markdown summary file and trigger a download
+   * (web) or present the native share sheet (iOS).
+   *
+   * @param graph - The architecture graph to export
+   * @param fileName - Base name for the exported file (without extension)
+   * @returns true if export succeeded
+   */
+  async exportToMarkdown(graph: ArchGraph, fileName: string = 'architecture'): Promise<boolean> {
+    try {
+      const content = this.generateSummaryWithMermaid(graph);
+      const baseName = fileName.replace(/\.archc$/, '').replace(/\.md$/, '');
+
+      if (isNative()) {
+        // Native iOS: share markdown via native share sheet
+        const adapter = await getFileSystemAdapter();
+        await adapter.shareFile(content, `${baseName}.md`, 'text/markdown');
+      } else {
+        // Web: trigger download via blob URL + anchor element
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `${baseName}.md`;
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      console.log(`[ExportApi] Markdown exported: ${baseName}.md`);
+      return true;
+    } catch (err) {
+      console.error('[ExportApi] Markdown export failed:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Export the architecture as a Mermaid diagram file (.mmd) and trigger a
+   * download (web) or present the native share sheet (iOS).
+   *
+   * @param graph - The architecture graph to export
+   * @param fileName - Base name for the exported file (without extension)
+   * @returns true if export succeeded
+   */
+  async exportToMermaid(graph: ArchGraph, fileName: string = 'architecture'): Promise<boolean> {
+    try {
+      const content = this.generateMermaid(graph);
+      const baseName = fileName.replace(/\.archc$/, '').replace(/\.mmd$/, '');
+
+      if (isNative()) {
+        // Native iOS: share Mermaid file via native share sheet
+        const adapter = await getFileSystemAdapter();
+        await adapter.shareFile(content, `${baseName}.mmd`, 'text/plain');
+      } else {
+        // Web: trigger download via blob URL + anchor element
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `${baseName}.mmd`;
+        link.href = url;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      console.log(`[ExportApi] Mermaid exported: ${baseName}.mmd`);
+      return true;
+    } catch (err) {
+      console.error('[ExportApi] Mermaid export failed:', err);
+      return false;
+    }
+  }
+
   // ============================================================
   // Private helpers
   // ============================================================
