@@ -11,6 +11,7 @@ metadata:
     - observability
     - logging
     - debugging
+  shape: document
 spec:
   args:
     - name: stack

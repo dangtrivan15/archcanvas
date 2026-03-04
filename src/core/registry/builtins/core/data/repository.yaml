@@ -11,6 +11,7 @@ metadata:
     - data
     - abstraction
     - DAL
+  shape: cylinder
 spec:
   args:
     - name: entity

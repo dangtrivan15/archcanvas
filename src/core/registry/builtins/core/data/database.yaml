@@ -11,6 +11,7 @@ metadata:
     - data
     - storage
     - persistence
+  shape: cylinder
 spec:
   args:
     - name: engine

@@ -12,6 +12,7 @@ metadata:
     - gateway
     - routing
     - auth
+  shape: hexagon
 spec:
   args:
     - name: provider

@@ -12,6 +12,7 @@ metadata:
     - cdn
     - caching
     - edge
+  shape: cloud
 spec:
   args:
     - name: provider
