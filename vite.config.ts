@@ -11,6 +11,7 @@ export default defineConfig({
   },
   assetsInclude: ['**/*.yaml', '**/*.yml'],
   server: {
+    host: process.env.VITE_DEV_HOST || 'localhost',
     port: 5173,
     strictPort: true,
     open: false,
