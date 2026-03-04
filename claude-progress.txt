@@ -6491,3 +6491,113 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 308/327 (94.2%)
+
+---
+
+## Session: Feature #308 - File-Backed MCP Server
+Date: 2026-03-04
+
+### Feature #308: File-Backed MCP Server - PASSING
+
+#### Implementation:
+- src/mcp/cli.ts:
+  - Added parseFileArg() to extract --file/-f from process.argv
+  - When --file provided: loads .archc via GraphContext.loadFromFile(), passes to createMcpServer
+  - When --file omitted: falls back to empty graph (backward compatible)
+  - Passes graphContext to createMcpServer for file-backed persistence
+
+- src/mcp/tools.ts:
+  - Added 'save' tool definition (explicit save with optional force flag)
+  - Added 'file_info' tool definition (returns file metadata)
+  - Total tools: 11 (was 9)
+
+- src/mcp/handlers.ts:
+  - Added ToolHandlerContext.graphContext optional field
+  - Added MUTATION_TOOLS set (add_node, add_edge, add_note, update_node, remove_node, remove_edge)
+  - Added autoSave() function - saves after mutations, logs errors without throwing
+  - Added handleSave() async handler - explicit save with force option
+  - Added handleFileInfo() handler - returns file metadata (path, name, counts, modified status)
+  - dispatchToolCall remains synchronous (no breaking changes to existing tests)
+
+- src/mcp/server.ts:
+  - createMcpServer() now accepts optional graphContext parameter
+  - createToolHandler() helper wraps synchronous dispatch + auto-save for mutations
+  - save and file_info tools registered with async handlers
+  - Logs file-backed mode status on startup
+
+- src/cli/index.ts:
+  - Replaced mcp stub with full implementation
+  - Added --file and -f options to mcp subcommand
+  - Dynamic imports for MCP server dependencies
+  - Keeps process alive until SIGINT/SIGTERM
+
+- test/unit/mcp/mcpFileBacked.test.ts: 23 tests (all passing)
+  - File loading, mutations, backward compatibility
+  - Auto-save persistence, error handling
+  - save tool (success, error, force, no-changes)
+  - file_info tool (file-backed and in-memory)
+  - Conflict detection (isModified)
+  - CLI subcommand --file option verification
+  - Full round-trip: load -> modify -> save -> reload
+
+- Updated existing tests:
+  - mcpServer.test.ts: tool count 9 -> 11
+  - mcpServerCreate.test.ts: tool count 9 -> 11, added save/file_info to name checks
+
+#### Verification:
+- All 150 MCP tests passing (127 existing + 23 new)
+- App loads in browser with zero console errors
+- No mock data patterns detected
+- Committed: bb78218
+
+#### Current completion status:
+- Features passing: 307 of 327 (93.9%)
+
+---
+
+## Session: Feature #255 - Quick Search and Jump (/)
+Date: 2026-03-04
+
+### Feature #255: Quick Search and Jump (/) - PASSING
+
+#### Already implemented (verified existing code):
+- src/components/shared/QuickSearchOverlay.tsx: Complete search overlay
+  - fuzzyMatch(): fuzzy search with exact match priority, consecutive bonus, gap penalty
+  - collectAllNodes(): recursive node collection with parent context
+  - HighlightedName: bold matching characters (font-bold text-blue-600)
+  - MAX_RESULTS = 8
+  - Keyboard navigation: ArrowUp/Down, Enter to jump, Escape to close
+  - jumpToNode(): selectNode + requestCenterOnNode + openRightPanel('properties')
+  - _lastSearchResults / _lastSelectedIndex for n/N navigation
+  - quickSearchNext() / quickSearchPrev() exported functions
+  - Data-testid attributes for all key elements
+  - ARIA accessibility (role=dialog, aria-modal, listbox, option)
+
+- src/hooks/useKeyboardShortcuts.ts:
+  - 'nav:search' case triggers toggleQuickSearch()
+  - 'n' key calls quickSearchNext()
+  - 'N' (Shift+n) calls quickSearchPrev()
+
+- src/core/shortcuts/shortcutManager.ts:
+  - nav:search action with '/' binding in Navigation category
+
+- src/store/uiStore.ts:
+  - quickSearchOpen state, openQuickSearch/closeQuickSearch/toggleQuickSearch actions
+
+- test/unit/ui/quickSearchOverlay.test.ts: 37 tests (all passing)
+
+#### Browser verification:
+- Added 2 nodes (Service, Database) to canvas
+- Pressed '/' → Quick Search overlay appeared at top-center
+- Showed both nodes with type icons and labels
+- Typed "Serv" → filtered to only "Service" with bold matching chars
+- Pressed Enter → overlay closed, Service node selected and centered, properties panel opened
+- Typed "zzzzz" → "No nodes found" empty state displayed
+- Pressed Escape → overlay closed cleanly
+- Footer shows keyboard hints: ↑↓ navigate, ↵ jump, esc close, n/N next/prev
+
+#### Console errors: Only Vite HMR WebSocket reconnection errors (not app errors)
+#### Mock data: None found in production code
+
+#### Current completion status:
+- Features passing: 306 of 327 (93.6%)
