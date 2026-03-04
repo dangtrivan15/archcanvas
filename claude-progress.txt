@@ -5247,3 +5247,45 @@ one Vite dev server is running on port 5173:
 - Zero console errors
 - No mock data patterns in production code
 - Changes committed in 56557dd
+
+==================================================
+SESSION: 2026-03-04 - Features #269, #272
+==================================================
+
+## What was accomplished:
+
+### Feature #269: Merge ShortcutHints into ModeStatusBar right section (PASSING)
+- Moved full getHints() logic from ShortcutHints.tsx into ModeStatusBar.tsx
+- Replaced single getContextHint (one hint) with full contextual hints array (3-5 hints)
+- Hints render in the right section of the status bar before selection count and zoom%
+- Style: kbd for keys, muted text for labels, pipe dividers between items
+- Preserved H-key toggle with localStorage persistence (HINTS_STORAGE_KEY)
+- Removed ShortcutHints Panel from Canvas.tsx (no longer a floating overlay)
+- Removed unused Panel import from @xyflow/react in Canvas.tsx
+- Updated modeStatusBar.test.ts: replaced old context-hint tests with merged hints tests
+- Updated shortcutHints.test.ts: integration tests now verify merge into ModeStatusBar
+- Browser verified: hints visible in status bar at bottom, update per mode/selection
+- Zero console errors, 132 tests passing across both test files
+- Committed: a5ee8b0
+
+### Feature #272: Status bar layout accommodates hints without overflow (PASSING)
+- Right section: changed from shrink-0 to min-w-0 for flex child overflow
+- Hints container: added overflow-hidden + whitespace-nowrap + min-w-0
+- Each hint item: shrink-0 to keep items intact until clipped
+- Selection text + zoom%: shrink-0 + whitespace-nowrap to always remain visible
+- Pipe separators: shrink-0 to prevent collapse
+- Left section (mode badge): shrink-0 preserved
+- Center section (breadcrumb): flex-1 + overflow-hidden already in place
+- Verified at 3 viewport sizes:
+  - 1280x720: all hints visible, clean layout
+  - 600x400: all hints still visible, single line
+  - 400x300: hints truncated gracefully, zoom% always visible
+- 13 new overflow/layout tests added to modeStatusBar.test.ts
+- Zero console errors, all 3256 tests passing
+- Committed: d0902bc
+
+## Current completion status:
+- Features passing: 270 of 272 (99.3%)
+- Zero console errors across all browser testing
+- No mock data patterns in production code
+- All 3256 tests passing across 155 test files
