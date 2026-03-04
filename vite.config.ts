@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Enable HTTPS with a self-signed cert in dev mode.
+    // Required for File System Access API and Web Crypto on non-localhost.
+    ...(process.env.NODE_ENV !== 'test' ? [basicSsl()] : []),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

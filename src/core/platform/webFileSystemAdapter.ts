@@ -45,7 +45,7 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
     }
 
     // No handle or no File System Access API — trigger a download
-    this.downloadBlob(data, 'architecture.archc', 'application/octet-stream');
+    await this.downloadBlob(data, 'architecture.archc', 'application/octet-stream');
     return {};
   }
 
@@ -56,7 +56,7 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
       return this.saveFileAsViaFSA(data, suggestedName);
     }
     // Fallback: Blob download
-    this.downloadBlob(data, suggestedName, 'application/octet-stream');
+    await this.downloadBlob(data, suggestedName, 'application/octet-stream');
     return { fileName: suggestedName };
   }
 
@@ -102,9 +102,10 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
         types: [
           {
             description: 'ArchCanvas Files',
-            accept: { 'application/octet-stream': ['.archc'] },
+            accept: { 'application/x-archcanvas': ['.archc'] },
           },
         ],
+        excludeAcceptAllOption: false,
         multiple: false,
       });
       const handle = handles[0];
@@ -164,9 +165,10 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
         types: [
           {
             description: 'ArchCanvas Files',
-            accept: { 'application/octet-stream': ['.archc'] },
+            accept: { 'application/x-archcanvas': ['.archc'] },
           },
         ],
+        excludeAcceptAllOption: false,
       });
 
       const writable = await handle.createWritable();
@@ -186,23 +188,33 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
     }
   }
 
-  /** Download data as a file via a hidden <a> element. */
+  /**
+   * Download data as a file via a hidden <a> element.
+   * Uses a small delay before revoking the object URL to avoid
+   * race conditions where the browser hasn't started the download yet.
+   */
   private downloadBlob(
     data: Uint8Array | Blob | string,
     filename: string,
     mimeType: string,
-  ): void {
-    const blob = data instanceof Blob
-      ? data
-      : new Blob([data], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      const blob = data instanceof Blob
+        ? data
+        : new Blob([data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      // Delay cleanup so the browser has time to initiate the download
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        resolve();
+      }, 150);
+    });
   }
 }
