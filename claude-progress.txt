@@ -6803,3 +6803,80 @@ Date: 2026-03-04
 #### Current completion status:
 - Features passing: 314+ of 332
 
+---
+
+## Session: Feature #250 - Vim-style Connect Mode
+Date: 2026-03-04
+
+### Feature #250: Vim-style Connect Mode - PASSING
+
+#### Implementation:
+- src/store/uiStore.ts:
+  - Added ConnectModeStep type and ConnectModeState interface
+  - Added connect mode state fields (connectSource, connectTarget, connectStep)
+  - Added actions: enterConnectMode, setConnectTarget, advanceToPickType, exitConnectMode
+
+- src/components/canvas/Canvas.tsx:
+  - C key handler: enters connect mode when node is selected
+  - Arrow keys in connect mode: navigate between target candidates via spatial navigation
+  - Enter on target: advances to inline type picker step
+  - Type picker: 1=Sync, 2=Async, 3=Data Flow keys create edge
+  - After edge creation: exits connect mode, selects new edge, shows toast
+  - Escape: cancels connect mode at any step
+  - Preview edge: animated dashed green edge from source to target
+  - Source node: green glow CSS class, Target node: iris highlight
+
+- src/index.css:
+  - Added .connect-mode-source and .connect-mode-target CSS classes
+
+#### Verification:
+- Browser automation confirmed full flow end-to-end
+- Select node, press C, navigate with arrows, Enter, pick type 1/2/3, edge created
+- Escape cancels at any step
+- Zero JS console errors
+- No mock data patterns in production code
+
+#### Current completion status:
+- Features passing: 312/332 (93.9%)
+
+
+---
+
+## Session: Feature #333 - NodeShell SVG Shape System
+Date: 2026-03-04
+
+### Feature #333: NodeShell SVG Shape System - PASSING
+
+#### Implementation:
+- src/components/nodes/shapes/shapeRegistry.ts:
+  - ShapeName type with 8 shapes: rectangle, cylinder, hexagon, parallelogram, cloud, stadium, document, badge
+  - ShapePathGenerator type: (width, height) => SVG path string
+  - shapeRegistry: Record<ShapeName, ShapePathGenerator> mapping shape name to generator
+  - cylinderLid() separate path for cylinder top ellipse visual depth
+  - shapeNames array export for iteration
+
+- src/components/nodes/shapes/NodeShell.tsx:
+  - NodeShellProps: shape, width, height, color, selected, children
+  - SVG-based rendering with <path> for shape background
+  - <foreignObject> for rendering React children inside SVG
+  - ResizeObserver for dynamic height measurement when no fixed height
+  - Theme CSS variables: fill=hsl(var(--surface)), stroke=hsl(var(--border))/color/iris
+  - Selection ring effect (dashed stroke overlay)
+  - Cylinder lid rendered as extra path element
+  - Memoized with React.memo
+
+- src/components/nodes/shapes/index.ts: barrel exports
+
+- test/unit/components/NodeShell.test.tsx: 26 tests (all passing)
+  - shapeRegistry: 8 shape names, path generation, scaling, format validation
+  - NodeShell component: shape attributes, SVG rendering, children, cylinder lid, selection ring, viewBox, all shapes
+
+#### Verification:
+- 26 unit tests passing
+- TypeScript compilation clean (no errors in shapes files)
+- App loads with zero console errors
+- No mock data patterns detected
+- Committed: d7ce54b
+
+#### Current completion status:
+- Features passing: 317 of 339 (93.5%)
