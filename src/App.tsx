@@ -20,6 +20,7 @@ import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
 import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
+import { CmdKeyShortcutsOverlay } from '@/components/shared/CmdKeyShortcutsOverlay';
 import { Toast } from '@/components/shared/Toast';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -335,6 +336,9 @@ export function App() {
 
         {/* Loading Overlay (file operations) */}
         <LoadingOverlay />
+
+        {/* Cmd Key Hold Shortcuts Overlay (iPadOS-style) */}
+        <CmdKeyShortcutsOverlay />
 
         {/* Toast notifications */}
         <Toast />
