@@ -1,5 +1,6 @@
 /**
  * SyncEdge - solid line edge for synchronous connections.
+ * Uses theme CSS variables for stroke colors.
  */
 
 import { memo } from 'react';
@@ -15,7 +16,7 @@ function SyncEdgeComponent({
       id={id}
       path={edgePath}
       style={{
-        stroke: selected ? '#3b82f6' : '#6b7280',
+        stroke: selected ? 'hsl(var(--iris))' : 'hsl(var(--muted-foreground))',
         strokeWidth: selected ? 2.5 : 2,
       }}
       label={label}

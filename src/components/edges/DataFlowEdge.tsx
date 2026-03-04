@@ -1,5 +1,6 @@
 /**
  * DataFlowEdge - thick line edge for data flow connections.
+ * Uses theme CSS variables for stroke colors.
  */
 
 import { memo } from 'react';
@@ -15,7 +16,7 @@ function DataFlowEdgeComponent({
       id={id}
       path={edgePath}
       style={{
-        stroke: selected ? '#3b82f6' : '#8b5cf6',
+        stroke: selected ? 'hsl(var(--iris))' : 'hsl(var(--foam))',
         strokeWidth: selected ? 4 : 3,
       }}
       label={label}
