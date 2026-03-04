@@ -6601,3 +6601,24 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Features passing: 306 of 327 (93.6%)
+
+---
+
+## Session: Feature #328 - Theme Engine
+Date: 2026-03-04
+
+### Feature #328: Theme Engine and CSS Variable System - PASSING
+
+#### Implementation:
+- src/theme/types.ts: ThemeColors interface with 21 semantic tokens
+- src/theme/themes.ts: 5 built-in themes (Light, Dark, Rose Pine, Rose Pine Moon, Rose Pine Dawn)
+- src/theme/ThemeProvider.tsx: React context, applies CSS vars to :root
+- src/store/uiStore.ts: themeId state + setTheme action with localStorage persistence
+- src/index.css: Tailwind 4 @theme block mapping CSS vars to utility classes
+- src/components/settings/SettingsDialog.tsx: Theme selector UI with color swatches
+
+#### Browser verification:
+- All 5 themes render correctly, instant switch without reload
+- Theme persists across page reload
+- Zero console errors, no mock data
+- Committed: 1e6d8bf
