@@ -8887,3 +8887,32 @@ Date: 2026-03-05
 #### Commit: 59892fd
 #### Feature #382 marked passing
 #### Progress: 371/426 features passing (87.1%)
+
+---
+
+## Session: Feature #385 - Add security/vault node type
+Date: 2026-03-05
+
+### Feature #385: Add `security/vault` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/security/vault.yaml`:
+  - namespace: security, name: vault, displayName: Vault
+  - shape: rectangle, icon: LockKeyhole
+  - Args: provider (enum: HashiCorp Vault/AWS Secrets Manager/Azure Key Vault/GCP Secret Manager), rotationEnabled (boolean), rotationInterval (string duration)
+  - Ports: secret-request (inbound), secret-response (outbound)
+  - Variants: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, GCP Secret Manager
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added LockKeyhole icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows SECURITY category with Vault: PASS
+- Node renders on canvas with rectangle shape: PASS
+- LockKeyhole icon displayed: PASS
+- Args shown: provider=HashiCorp Vault, rotationEnabled=false, rotationInterval=90d: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 18 built-in nodedefs loaded, 0 errors, 0 warnings: PASS
+
+#### Commit: 1a29b20
+#### Feature #385 marked passing
