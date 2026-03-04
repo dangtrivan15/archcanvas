@@ -55,10 +55,10 @@ export class RenderApi {
     // Note count excludes pending suggestions (they have their own badge)
     const regularNoteCount = node.notes.length - pendingSuggestionCount;
 
-    // Determine component type - ref nodes get 'ref' type, others based on namespace
+    // Determine component type - ref nodes get 'ref' type, others based on shape metadata or namespace
     const nodeType = node.refSource
       ? 'ref'
-      : this.getNodeComponentType(node.type);
+      : this.getNodeComponentType(node.type, nodeDef?.metadata.shape);
 
     const data: CanvasNodeData = {
       archNodeId: node.id,
@@ -113,9 +113,31 @@ export class RenderApi {
   }
 
   /**
-   * Map nodedef type to React Flow node component type.
+   * Map shape name from NodeDef metadata to React Flow node component type.
+   * This is a static mapping from shape → component type string.
    */
-  private getNodeComponentType(type: string): string {
+  private static readonly SHAPE_TO_COMPONENT: Record<string, string> = {
+    rectangle: 'generic',
+    cylinder: 'database',
+    hexagon: 'gateway',
+    parallelogram: 'queue',
+    cloud: 'cloud',
+    stadium: 'stadium',
+    document: 'document',
+    badge: 'generic',
+  };
+
+  /**
+   * Map nodedef type to React Flow node component type.
+   * Checks nodedef.metadata.shape first, then falls back to namespace-based switch.
+   */
+  private getNodeComponentType(type: string, shape?: string): string {
+    // If nodedef specifies a shape, use it to select the component
+    if (shape && shape in RenderApi.SHAPE_TO_COMPONENT) {
+      return RenderApi.SHAPE_TO_COMPONENT[shape];
+    }
+
+    // Fallback: namespace-based mapping for nodedefs without shape metadata
     const namespace = type.split('/')[0];
 
     switch (namespace) {
