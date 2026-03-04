@@ -6,6 +6,10 @@
  * back to disk. This is the bridge between file I/O and the API layer,
  * used by CLI commands, MCP server, and HTTP server.
  *
+ * Uses RegistryManagerCore (not RegistryManager) to avoid importing
+ * Vite-specific YAML ?raw loaders. Nodedefs are loaded from disk
+ * via the CLI nodeLoader module.
+ *
  * Usage:
  *   // Load an existing file
  *   const ctx = await GraphContext.loadFromFile('./project.archc');
@@ -13,19 +17,21 @@
  *   await ctx.save();
  *
  *   // Create a new project
- *   const ctx = GraphContext.createNew('My Architecture');
+ *   const ctx = await GraphContext.createNew('My Architecture');
  *   ctx.textApi.addNode({ type: 'compute/service', displayName: 'API' });
  *   await ctx.saveAs('./project.archc');
  */
 
 import type { ArchGraph } from '@/types/graph';
+import type { NodeDef } from '@/types/nodedef';
 import { TextApi } from '@/api/textApi';
 import { ExportApi } from '@/api/exportApi';
-import { RegistryManager } from '@/core/registry/registryManager';
+import { RegistryManagerCore } from '@/core/registry/registryCore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { encode, decode } from '@/core/storage/codec';
 import { graphToProto, protoToGraph, deriveSummaryFileName } from '@/core/storage/fileIO';
 import { NodeFileSystemAdapter } from '@/core/platform/nodeFileSystemAdapter';
+import { loadBuiltinNodeDefs } from '@/cli/nodeLoader';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -47,7 +53,7 @@ export class GraphContext {
   readonly exportApi: ExportApi;
 
   /** The registry of built-in node definitions. */
-  readonly registry: RegistryManager;
+  readonly registry: RegistryManagerCore;
 
   /** File path of the loaded .archc file (undefined for new unsaved files). */
   private filePath?: string;
@@ -68,7 +74,7 @@ export class GraphContext {
 
   private constructor(
     graph: ArchGraph,
-    registry: RegistryManager,
+    registry: RegistryManagerCore,
     filePath?: string,
     createdAtMs?: number,
   ) {
@@ -81,6 +87,19 @@ export class GraphContext {
     this.createdAtMs = createdAtMs;
   }
 
+  // ─── Registry Initialization ────────────────────────────────
+
+  /**
+   * Create and initialize a RegistryManagerCore with built-in nodedefs.
+   * Loads YAML files from disk (no Vite ?raw loader needed).
+   */
+  private static createRegistry(externalDefs?: NodeDef[]): RegistryManagerCore {
+    const defs = externalDefs ?? loadBuiltinNodeDefs();
+    const registry = new RegistryManagerCore();
+    registry.initialize(defs);
+    return registry;
+  }
+
   // ─── Factory Methods ────────────────────────────────────────
 
   /**
@@ -88,7 +107,7 @@ export class GraphContext {
    *
    * Reads the binary file, decodes the protobuf payload, verifies the
    * SHA-256 checksum, and converts the proto to an ArchGraph. Initializes
-   * the RegistryManager with built-in nodedefs.
+   * the RegistryManager with built-in nodedefs loaded from disk.
    *
    * @param filePath - Path to the .archc file
    * @param options - Optional load settings (e.g., skip checksum)
@@ -116,9 +135,8 @@ export class GraphContext {
       ? Number(decoded.header.createdAtMs)
       : undefined;
 
-    // Initialize registry with built-in nodedefs
-    const registry = new RegistryManager();
-    registry.initialize();
+    // Initialize registry with built-in nodedefs from disk
+    const registry = GraphContext.createRegistry();
 
     return new GraphContext(graph, registry, resolvedPath, createdAtMs);
   }
@@ -135,8 +153,7 @@ export class GraphContext {
    */
   static createNew(name?: string): GraphContext {
     const graph = createEmptyGraph(name);
-    const registry = new RegistryManager();
-    registry.initialize();
+    const registry = GraphContext.createRegistry();
     return new GraphContext(graph, registry);
   }
 
