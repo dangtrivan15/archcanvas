@@ -26,7 +26,7 @@ export function Toolbar() {
 
   return (
     <header
-      className={`border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right ${
+      className={`border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar ${
         isCompact ? 'h-10 px-2' : 'h-12 px-3'
       }`}
       role="toolbar"
@@ -80,7 +80,7 @@ export function Toolbar() {
       <button
         type="button"
         onClick={openSettingsDialog}
-        className={`inline-flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
           isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title="Settings"
@@ -94,7 +94,7 @@ export function Toolbar() {
       <button
         type="button"
         onClick={openShortcutsHelp}
-        className={`inline-flex items-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
           isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title="Keyboard shortcuts (?)"

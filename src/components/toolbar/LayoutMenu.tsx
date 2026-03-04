@@ -104,7 +104,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
         data-testid="layout-menu-button"
@@ -122,7 +122,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
         >
           <button
             onClick={handleAutoLayoutHorizontal}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="auto-layout-horizontal"
           >
@@ -131,7 +131,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           </button>
           <button
             onClick={handleAutoLayoutVertical}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="auto-layout-vertical"
           >
@@ -144,7 +144,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           {/* Spacing Configuration Toggle */}
           <button
             onClick={handleToggleSpacing}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="layout-spacing-toggle"
             aria-expanded={showSpacing}
@@ -237,7 +237,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <button
             onClick={handleFitView}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="fit-view-button"
           >

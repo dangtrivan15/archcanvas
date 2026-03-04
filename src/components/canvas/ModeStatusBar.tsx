@@ -275,7 +275,7 @@ export function ModeStatusBar() {
           >
             <button
               onClick={zoomToRoot}
-              className="text-white/60 hover:text-white hover:underline cursor-pointer transition-colors"
+              className="text-white/60 hover:text-white hover:underline cursor-pointer transition-colors touch-target"
               data-testid="statusbar-breadcrumb-root"
               type="button"
             >
@@ -295,7 +295,7 @@ export function ModeStatusBar() {
                   ) : (
                     <button
                       onClick={() => zoomToLevel(pathToHere)}
-                      className="text-white/60 hover:text-white hover:underline cursor-pointer truncate max-w-[120px] transition-colors"
+                      className="text-white/60 hover:text-white hover:underline cursor-pointer truncate max-w-[120px] transition-colors touch-target"
                       type="button"
                     >
                       {segment.displayName}

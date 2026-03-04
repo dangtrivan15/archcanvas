@@ -56,7 +56,7 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         data-testid="connect-nodes-button"
         title="Connect two nodes with an edge"
         disabled={!hasEnoughNodes}
@@ -126,7 +126,7 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           <button
             onClick={handleConnect}
-            className="w-full py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="w-full py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 touch-target-row"
             data-testid="create-edge-button"
           >
             Create Edge

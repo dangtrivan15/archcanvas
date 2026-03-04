@@ -86,7 +86,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
         data-testid="file-menu-button"
@@ -104,7 +104,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
         >
           <button
             onClick={handleNew}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
           >
             <FilePlus className="w-4 h-4" />
@@ -113,7 +113,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           </button>
           <button
             onClick={handleOpen}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitem"
           >
             <FolderOpen className="w-4 h-4" />
@@ -124,7 +124,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left ${
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
               isSaving
                 ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-[hsl(var(--muted))]'
@@ -143,7 +143,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           <button
             onClick={handleSaveAs}
             disabled={isSaving}
-            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left ${
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
               isSaving
                 ? 'opacity-50 cursor-not-allowed'
                 : 'hover:bg-[hsl(var(--muted))]'
@@ -166,7 +166,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
             onMouseLeave={() => setShowExportSub(false)}
           >
             <button
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
               role="menuitem"
               data-testid="export-menu-button"
             >
@@ -188,7 +188,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToPng(fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-png-button"
                 >
@@ -203,7 +203,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToSvg(fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-svg-button"
                 >
@@ -216,7 +216,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <button
             onClick={() => setAutosaveOnBlur(!autosaveOnBlur)}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
             role="menuitemcheckbox"
             aria-checked={autosaveOnBlur}
             data-testid="autosave-toggle"

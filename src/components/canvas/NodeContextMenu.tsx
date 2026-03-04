@@ -133,7 +133,7 @@ export function NodeContextMenu({ x, y, nodeId, onClose }: NodeContextMenuProps)
             key={item.label}
             onClick={item.disabled ? undefined : item.action}
             disabled={item.disabled}
-            className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors
+            className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors touch-target-row
               ${item.disabled
                 ? 'text-gray-300 cursor-not-allowed'
                 : item.label === 'Delete'
