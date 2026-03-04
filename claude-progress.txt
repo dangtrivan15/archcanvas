@@ -8916,3 +8916,33 @@ Date: 2026-03-05
 
 #### Commit: 1a29b20
 #### Feature #385 marked passing
+
+---
+
+## Session: Feature #387 - Add integration/third-party-api node type
+Date: 2026-03-05
+
+### Feature #387: Add `integration/third-party-api` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/integration/third-party-api.yaml`:
+  - namespace: integration, name: third-party-api, displayName: Third-Party API
+  - shape: rectangle, icon: Plug
+  - Args: serviceName (string), baseUrl (string), authMethod (enum: API Key/OAuth2/Bearer Token/None), rateLimit (number)
+  - Ports: api-call (inbound), api-response (outbound)
+  - Variants: Stripe, Twilio, SendGrid, Generic REST API
+- Registered in `src/core/registry/loader.ts` as 19th built-in nodedef
+- Added Plug icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows INTEGRATION category with Third-Party API: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Plug icon displayed: PASS
+- Args shown: serviceName=External API, baseUrl=https://api.example.com, authMethod=API Key, +1 more: PASS
+- Inbound/outbound port handles visible: PASS
+- Console: 19 built-in nodedefs loaded, 0 app errors: PASS
+
+#### Commit: aaad731
+#### Feature #387 marked passing
+#### Progress: 376/426 features passing (88.3%)
