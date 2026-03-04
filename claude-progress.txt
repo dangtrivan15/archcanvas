@@ -5289,3 +5289,40 @@ SESSION: 2026-03-04 - Features #269, #272
 - Zero console errors across all browser testing
 - No mock data patterns in production code
 - All 3256 tests passing across 155 test files
+
+==================================================
+SESSION: 2026-03-04 - Features #270, #271
+==================================================
+
+## What was accomplished:
+
+### Feature #270: Remove floating ShortcutHints Panel from Canvas (PASSING)
+- Verified that the floating ShortcutHints Panel was already removed from Canvas.tsx
+- No ShortcutHints import remains in Canvas.tsx
+- Line 991 has comment: "Shortcut hints are now merged into ModeStatusBar"
+- ShortcutHints.tsx file still exists but is not imported anywhere (kept for reference)
+- Browser verified: no floating hint bar in bottom-right corner
+- ModeStatusBar shows integrated hints correctly in the right section
+- Zero console errors
+
+### Feature #271: Preserve H key toggle for hints visibility in status bar (PASSING)
+- H key toggle logic already implemented in ModeStatusBar.tsx (lines 185-203)
+- localStorage persistence using archcanvas:hints-visible key
+- H key only works in Normal mode, skips when in text inputs
+- Browser verified:
+  1. Status bar shows hints by default (commands, service, database, all shortcuts, hide hints, zoom)
+  2. Press H - hints disappear, only NORMAL badge and 100% zoom shown
+  3. Press H again - hints reappear
+  4. With node selected - contextual hints: C connect, i edit, Del delete, F2 rename, commands
+  5. Page reload - hints visibility persists (hidden state maintained after reload)
+  6. Toggle back on - hints restored
+- Zero console errors
+- All 145 relevant unit tests passing (32 shortcutHints + 113 modeStatusBar)
+- All 3256 tests passing across 155 test files
+- No mock data patterns in production code
+
+## Current completion status:
+- Features passing: 271 of 272 (99.6%)
+- Zero console errors
+- No mock data patterns in production code
+- All 3256 tests passing across 155 test files
