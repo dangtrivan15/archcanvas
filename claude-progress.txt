@@ -5582,3 +5582,74 @@ SESSION: 2026-03-04 - Features #278, #279
 - Zero console errors
 - No mock data patterns in production code
 - 111 new tests across 2 test files (all passing)
+
+==================================================
+SESSION: 2026-03-04 - Features #286, #297
+==================================================
+
+## What was accomplished:
+
+### Feature #286: iPad Split View and Slide Over multitasking support (PASSING)
+- Created src/hooks/useViewportSize.ts:
+  - Tracks window.innerWidth/innerHeight with resize and visualViewport listeners
+  - Defines breakpoints: compact (<600px), regular (600-1024px), wide (>1024px)
+  - Exports: useViewportSize(), COMPACT_BREAKPOINT, REGULAR_BREAKPOINT
+  - Returns: width, height, breakpoint, isCompact, isRegular, isWide
+
+- Compact mode (<600px) adaptations:
+  - Toolbar: icon-only buttons, branding shortened to "AC", filename hidden
+  - Left panel: completely hidden (no NodeDef browser, no expand chevron)
+  - Right panel: renders as bottom sheet overlay with drag handle + X close button
+  - ModeStatusBar: hides shortcut hints, shows only mode badge + zoom%
+  - Bottom sheet: max 50vh height, scrollable content, proper z-indexing
+
+- Updated toolbar components:
+  - Toolbar.tsx: accepts isCompact, adjusts height/padding/branding
+  - FileMenu.tsx: accepts compact prop, hides "File" label in compact
+  - AddNodeButton.tsx: accepts compact prop, hides label + chevron in compact
+  - ConnectNodesButton.tsx: accepts compact prop, hides "Connect" label in compact
+  - LayoutMenu.tsx: accepts compact prop, hides label + chevron in compact
+
+- Updated useResponsiveLayout.ts:
+  - Aligned VERY_NARROW_BREAKPOINT with COMPACT_BREAKPOINT (600px)
+  - Right panel no longer force-closed in compact mode (it shows as bottom sheet)
+  - Only left panel auto-closes on narrow/compact transitions
+  - Fixed timing issue where openRightPanel was immediately overridden by handleResize
+
+- Updated responsiveLayout.test.ts:
+  - 4 tests updated to reflect new behavior (right panel stays open in compact)
+  - VERY_NARROW_BREAKPOINT constant test updated from 640 to 600
+  - All 20 tests passing
+
+## Browser verification:
+1. Wide (1280px): full toolbar with labels, left panel, MiniMap, Controls ✓
+2. Regular (800px): full toolbar, left panel toggleable, hints visible ✓
+3. Exact boundary (600px): regular mode, MiniMap + Controls visible ✓
+4. Compact (500px): icon-only toolbar "AC", no left panel, no hints ✓
+5. Compact + node selected: bottom sheet overlay with properties panel ✓
+6. Resize compact→wide: layout restores correctly ✓
+7. Console: 0 errors, 0 warnings ✓
+8. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+- Committed: 22fdb1d
+
+### Feature #297: Hide minimap and simplify controls on small viewports (PASSING)
+- Modified Canvas.tsx:
+  - Added useViewportSize import and hook call
+  - Conditionally render MiniMap: hidden when isCompact (<600px)
+  - Conditionally render Controls: hidden when isCompact (<600px)
+  - Both reappear immediately when viewport grows above 600px
+
+## Browser verification:
+1. Wide (1280px): MiniMap (bottom-left) + Controls (+/-/fit bottom-right) visible ✓
+2. Regular (600px): MiniMap + Controls still visible ✓
+3. Compact (599px): MiniMap hidden, Controls hidden, clean canvas ✓
+4. Compact (500px): clean layout, maximum canvas space ✓
+5. Resize compact→wide: MiniMap + Controls reappear ✓
+6. Console: 0 errors, 0 warnings ✓
+- Committed: b267b39
+
+## Current completion status:
+- Features passing: 285 of 298 (95.6%)
+- All 3476 tests passing across 161 test files
+- Zero console errors
+- No mock data patterns in production code
