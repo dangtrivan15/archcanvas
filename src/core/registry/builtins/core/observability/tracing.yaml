@@ -1,0 +1,56 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: tracing
+  namespace: observability
+  version: "1.0.0"
+  displayName: Tracing
+  description: A distributed tracing system for tracking requests across microservices and identifying performance bottlenecks.
+  icon: ScanSearch
+  tags:
+    - observability
+    - tracing
+    - distributed
+  shape: document
+spec:
+  args:
+    - name: platform
+      type: enum
+      description: Tracing platform
+      options:
+        - Jaeger
+        - Zipkin
+        - OpenTelemetry Collector
+        - AWS X-Ray
+        - Tempo
+      default: Jaeger
+    - name: samplingRate
+      type: number
+      description: Sampling rate (0.0 to 1.0)
+      default: 0.1
+    - name: exportFormat
+      type: enum
+      description: Trace export format
+      options:
+        - OTLP
+        - Zipkin
+        - Jaeger
+      default: OTLP
+    - name: retentionDays
+      type: number
+      description: Trace retention in days
+      default: 14
+  ports:
+    - name: spans
+      direction: inbound
+      protocol:
+        - OTLP
+        - gRPC
+        - HTTP
+      description: Span ingestion
+  ai:
+    context: "This is a distributed tracing system. Consider sampling strategies, trace propagation headers, span naming conventions, and storage backends."
+    reviewHints:
+      - Verify sampling rate is appropriate for traffic volume
+      - Check trace context propagation across service boundaries
+      - Consider tail-based sampling for error traces
