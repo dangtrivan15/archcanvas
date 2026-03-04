@@ -1,0 +1,79 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: waf
+  namespace: security
+  version: "1.0.0"
+  displayName: WAF
+  description: A web application firewall that filters, monitors, and blocks malicious HTTP traffic to protect web applications.
+  icon: ShieldAlert
+  tags:
+    - security
+    - firewall
+    - waf
+  shape: hexagon
+spec:
+  args:
+    - name: provider
+      type: enum
+      required: true
+      description: WAF provider platform
+      options:
+        - AWS WAF
+        - Cloudflare WAF
+        - ModSecurity
+        - Azure WAF
+      default: AWS WAF
+    - name: managedRules
+      type: boolean
+      description: Whether managed rule sets are enabled
+      default: true
+    - name: rateLimiting
+      type: boolean
+      description: Whether rate limiting is enabled
+      default: true
+    - name: geoBlocking
+      type: boolean
+      description: Whether geographic IP blocking is enabled
+      default: false
+  ports:
+    - name: traffic-in
+      direction: inbound
+      protocol:
+        - HTTPS
+        - HTTP
+      description: Incoming web traffic to be inspected
+    - name: traffic-out
+      direction: outbound
+      protocol:
+        - HTTPS
+        - HTTP
+      description: Filtered traffic forwarded to backend services
+  children: []
+  ai:
+    context: "This is a web application firewall. Consider rule sets, rate limiting, geo-blocking, bot detection, and integration with CDN/load balancer."
+    reviewHints:
+      - Verify managed rules are enabled for production
+      - Check rate limiting thresholds
+      - Ensure logging is enabled for security auditing
+variants:
+  - name: AWS WAF
+    description: AWS WAF with managed rule groups
+    args:
+      provider: AWS WAF
+      managedRules: true
+  - name: Cloudflare WAF
+    description: Cloudflare WAF with managed rulesets
+    args:
+      provider: Cloudflare WAF
+      managedRules: true
+  - name: ModSecurity
+    description: Open-source ModSecurity WAF engine
+    args:
+      provider: ModSecurity
+      managedRules: false
+  - name: Azure WAF
+    description: Azure Web Application Firewall
+    args:
+      provider: Azure WAF
+      managedRules: true
