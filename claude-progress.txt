@@ -8399,3 +8399,33 @@ Date: 2026-03-05
 
 #### Commit: Changes committed as part of concurrent agent sessions
 
+
+---
+
+## Session: Feature #364 - Smooth hover elevation transition on nodes
+Date: 2026-03-05
+
+### Feature #364: Smooth hover elevation transition - PASSING
+
+#### Implementation (already present from feature #359 session):
+The hover elevation effect was already implemented in the codebase:
+
+1. **src/components/nodes/GenericNode.tsx**:
+   - onMouseEnter: applies translateY(-2px) lift + enhanced box-shadow
+   - onMouseLeave: returns to translateY(0) + default box-shadow
+   - transition: box-shadow 180ms ease, transform 180ms ease
+
+2. **src/components/nodes/shapes/NodeShell.tsx**:
+   - onMouseEnter: applies translateY(-2px) lift + enhanced drop-shadow filter
+   - onMouseLeave: returns to translateY(0) + default filter
+   - transition: filter 180ms ease, transform 180ms ease
+
+#### Verification:
+- Added Service (rectangle/GenericNode) and Database (cylinder/NodeShell) nodes
+- Hovered over Service node: smooth lift + enhanced shadow visible
+- Hovered over Database node: smooth lift + enhanced shadow visible
+- Mouse leave: nodes smoothly return to default state
+- Transition is 180ms ease (smooth, not jarring)
+- Effect is subtle (2px lift) and professional
+- Zero JS console errors (0 errors, 0 warnings)
+- Feature #364 marked passing
