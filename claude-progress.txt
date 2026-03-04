@@ -5167,3 +5167,39 @@ SESSION: 2026-03-04 - Features #255, #256, #257
 - 110 new tests across 3 test files (all passing)
 - Zero console errors
 - No mock data patterns in production code
+
+==================================================
+SESSION: 2026-03-04 - Feature #268
+==================================================
+
+## What was accomplished:
+
+### Feature #268: Move ShortcutHints inside ReactFlow Panel (PASSING)
+- Moved ShortcutHints from outside ReactFlow to inside, wrapped in <Panel position="bottom-right">
+- Imported Panel from @xyflow/react in Canvas.tsx
+- Removed 'absolute bottom-20 right-3' positioning classes from ShortcutHints.tsx
+- Added \!mb-12 margin-bottom to Panel so hints sit above the Controls
+- Kept visual styling (bg-black/50, backdrop-blur, text styles, pointer-events-none, z-40)
+- Updated unit tests:
+  - Changed positioning test to verify absence of absolute/bottom-20/right-3
+  - Added test verifying Panel wrapping in Canvas.tsx
+  - Added test verifying Panel import from @xyflow/react
+  - Added test verifying ShortcutHints is inside ReactFlow (not sibling)
+
+## Browser verification steps completed:
+1. Empty canvas: hints at bottom-right corner showing ⌘K/S/D/?/H ✓
+2. With ecommerce.archc loaded (5 nodes, 4 edges): hints at bottom-right ✓
+3. Node selected (API Gateway): hints update to C/i/Del/F2/⌘K ✓
+4. No overlap with Controls (+/-/fit buttons at bottom-right) ✓
+5. No overlap with MiniMap (bottom-left) ✓
+6. Small viewport (800x600): hints wrap gracefully, stay at bottom-right ✓
+7. Large viewport (1920x1080): hints positioned correctly ✓
+8. Console: 0 errors, 0 warnings ✓
+9. Mock data grep: only legitimate globalThis.crypto in codec.ts ✓
+10. All 32 unit tests passing ✓
+
+## Current completion status:
+- Features passing: 267 of 268 (99.6%)
+- Zero console errors
+- No mock data patterns in production code
+- Committed: 308fb98
