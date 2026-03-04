@@ -8429,3 +8429,47 @@ The hover elevation effect was already implemented in the codebase:
 - Effect is subtle (2px lift) and professional
 - Zero JS console errors (0 errors, 0 warnings)
 - Feature #364 marked passing
+
+---
+
+## Session: Feature #363 - Clear visual separation between node header body and footer sections
+Date: 2026-03-05
+
+### Feature #363: Clear visual separation - PASSING
+
+#### Implementation:
+Added subtle divider lines between the three content zones (header, body, footer) in all 7 node types plus the NodeBadges component.
+
+**Changes (already committed in df8f55e as part of earlier feature work):**
+
+1. **src/components/nodes/NodeBadges.tsx**:
+   - Added `dividerColor` prop for accent-tinted top border
+   - Renders `borderTop: 1px solid ${dividerColor}` when dividerColor is provided
+
+2. **src/components/nodes/GenericNode.tsx** (rectangle):
+   - Header div: added `borderBottom: 1px solid ${effectiveColor}20`
+   - NodeBadges: passes `dividerColor={effectiveColor}20` (replaces hardcoded border-t)
+
+3. **src/components/nodes/CylinderNode.tsx** (cylinder):
+   - Header div: added `borderBottom: 1px solid ${effectiveColor}20`
+   - NodeBadges: added `dividerColor` prop
+
+4. **5 more SVG-shaped nodes** (Cloud, Hexagon, Parallelogram, Stadium, Document):
+   - Header div: added `borderBottom: 1px solid ${effectiveColor}20` + `pb-1.5` for spacing
+   - NodeBadges: added `dividerColor` prop + `pt-1` padding
+
+#### Design decisions:
+- Used accent color at 12% opacity (hex `20`) for subtle, color-harmonized dividers
+- Thin 1px borders for refinement (not chunky)
+- No additional backgrounds on sections - keeps one cohesive unit feel
+- Sections don't look like stacked boxes - just organized zones within one card
+
+#### Verification:
+- Added Service (rectangle), Database (cylinder), Event Bus (stadium) nodes
+- Added note to Service node to trigger badge footer display
+- All three zones (header, body, footer) are visually distinct
+- Divider lines are subtle but effective
+- Node feels cohesive, not like stacked boxes
+- Zero console errors (0 errors, 0 warnings)
+- Build succeeds cleanly
+- Feature #363 marked passing
