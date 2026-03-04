@@ -114,6 +114,18 @@ export interface PlacementModeInfo {
   displayName: string;     // e.g. 'Service'
 }
 
+/** Connect mode step: select-target → pick-type → done */
+export type ConnectModeStep = 'select-target' | 'pick-type';
+
+export interface ConnectModeState {
+  /** Source node ID (must be selected before entering connect mode) */
+  connectSource: string | null;
+  /** Target node ID currently navigated to */
+  connectTarget: string | null;
+  /** Current step in connect flow */
+  connectStep: ConnectModeStep | null;
+}
+
 export interface UnsavedChangesDialogInfo {
   /** The action to execute if the user confirms discarding changes */
   onConfirm: () => void;
@@ -296,6 +308,11 @@ export interface UIStoreState {
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
 
+  // Connect mode (Vim-style C key to create edges)
+  connectSource: string | null;
+  connectTarget: string | null;
+  connectStep: ConnectModeStep | null;
+
   // Toast notifications
   toastMessage: string | null;
   toastTimerId: ReturnType<typeof setTimeout> | null;
@@ -393,6 +410,12 @@ export interface UIStoreState {
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
 
+  // Connect mode actions
+  enterConnectMode: (sourceNodeId: string) => void;
+  setConnectTarget: (targetNodeId: string | null) => void;
+  advanceToPickType: () => void;
+  exitConnectMode: () => void;
+
   // Toast actions
   showToast: (message: string, durationMs?: number) => void;
   clearToast: () => void;
@@ -451,6 +474,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
+
+  connectSource: null,
+  connectTarget: null,
+  connectStep: null,
 
   toastMessage: null,
   toastTimerId: null,
@@ -641,6 +668,18 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setAutosaveStatusMessage: (message) =>
     set({ autosaveStatusMessage: message }),
+
+  enterConnectMode: (sourceNodeId) =>
+    set({ connectSource: sourceNodeId, connectTarget: null, connectStep: 'select-target' }),
+
+  setConnectTarget: (targetNodeId) =>
+    set({ connectTarget: targetNodeId }),
+
+  advanceToPickType: () =>
+    set({ connectStep: 'pick-type' }),
+
+  exitConnectMode: () =>
+    set({ connectSource: null, connectTarget: null, connectStep: null }),
 
   showToast: (message, durationMs = 4000) =>
     set((s) => {

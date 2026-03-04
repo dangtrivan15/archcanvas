@@ -1,22 +1,63 @@
 @import "tailwindcss";
 
+/*
+ * Theme CSS custom properties.
+ * Initial values are the "dark" defaults — the ThemeProvider will override
+ * these at runtime via inline styles on :root when a theme is applied.
+ */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --ring: 240 5.9% 10%;
+  --background: 240 10% 3.9%;
+  --surface: 240 6% 10%;
+  --text: 0 0% 98%;
+  --foreground: 0 0% 98%;
+  --subtle: 240 5% 65%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --highlight-low: 240 4% 16%;
+  --highlight-med: 240 4% 22%;
+  --highlight-high: 240 4% 28%;
+  --primary: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --accent: 240 3.7% 15.9%;
+  --border: 240 3.7% 15.9%;
+  --overlay: 240 10% 3.9%;
+  --ring: 240 4.9% 83.9%;
+  --love: 347 77% 50%;
+  --gold: 35 88% 55%;
+  --rose: 343 76% 68%;
+  --pine: 166 54% 46%;
+  --foam: 189 50% 55%;
+  --iris: 267 57% 63%;
   --radius: 0.5rem;
 }
 
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --border: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+/*
+ * Tailwind CSS 4 @theme — register CSS variables as Tailwind design tokens.
+ * This allows classes like bg-surface, text-muted, border-border, etc.
+ */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-surface: hsl(var(--surface));
+  --color-foreground: hsl(var(--foreground));
+  --color-text: hsl(var(--text));
+  --color-subtle: hsl(var(--subtle));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-highlight-low: hsl(var(--highlight-low));
+  --color-highlight-med: hsl(var(--highlight-med));
+  --color-highlight-high: hsl(var(--highlight-high));
+  --color-primary: hsl(var(--primary));
+  --color-secondary: hsl(var(--secondary));
+  --color-accent: hsl(var(--accent));
+  --color-border: hsl(var(--border));
+  --color-overlay: hsl(var(--overlay));
+  --color-ring: hsl(var(--ring));
+  --color-love: hsl(var(--love));
+  --color-gold: hsl(var(--gold));
+  --color-rose: hsl(var(--rose));
+  --color-pine: hsl(var(--pine));
+  --color-foam: hsl(var(--foam));
+  --color-iris: hsl(var(--iris));
 }
 
 * {
@@ -51,6 +92,21 @@ a:focus-visible {
 /* Disable transition during drag to avoid lag */
 .react-flow__node.dragging {
   transition: none;
+}
+
+/* ─── Connect Mode Visual Feedback ─── */
+/* Source node: green glow border */
+.react-flow__node.connect-mode-source {
+  box-shadow: 0 0 0 3px #22c55e, 0 0 12px 4px rgba(34, 197, 94, 0.4);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+/* Target candidate: subtle blue highlight */
+.react-flow__node.connect-mode-target {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 8px 2px rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  z-index: 10;
 }
 
 /* ─── Safe Area Insets for iPad notch, home indicator, and status bar ─── */

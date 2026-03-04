@@ -13,7 +13,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw } from 'lucide-react';
+import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw, Palette } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
@@ -22,6 +22,7 @@ import {
   clearStoredApiKey,
   getCachedApiKey,
 } from '@/ai/config';
+import { themes, themeIds } from '@/theme/themes';
 
 export function SettingsDialog() {
   const open = useUIStore((s) => s.settingsDialogOpen);
@@ -29,6 +30,8 @@ export function SettingsDialog() {
   const showToast = useUIStore((s) => s.showToast);
   const resetBarSizes = useUIStore((s) => s.resetBarSizes);
   const resetBarSizesToFixedDefaults = useUIStore((s) => s.resetBarSizesToFixedDefaults);
+  const themeId = useUIStore((s) => s.themeId);
+  const setTheme = useUIStore((s) => s.setTheme);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   const [apiKey, setApiKey] = useState('');
@@ -133,7 +136,7 @@ export function SettingsDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4"
+        className="bg-[hsl(var(--surface))] rounded-lg shadow-xl max-w-lg w-full mx-4"
         data-testid="settings-dialog-content"
       >
         {/* Header */}
@@ -253,6 +256,48 @@ export function SettingsDialog() {
                   No API key configured. AI features are disabled.
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* Theme Section */}
+          <div>
+            <h3 className="text-sm font-semibold text-[hsl(var(--text))] mb-1 flex items-center gap-1.5">
+              <Palette className="w-4 h-4" />
+              Theme
+            </h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mb-3">
+              Choose a color theme for the application.
+            </p>
+            <div className="flex gap-2 flex-wrap" data-testid="theme-selector">
+              {themeIds.map((id) => {
+                const t = themes[id]!;
+                const isActive = id === themeId;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setTheme(id);
+                      showToast(`Theme changed to ${t.name}`);
+                    }}
+                    className={`
+                      inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors
+                      ${isActive
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-300'
+                        : 'border-gray-300 text-[hsl(var(--text))] hover:bg-[hsl(var(--highlight-low))]'}
+                    `}
+                    data-testid={`theme-option-${id}`}
+                    aria-pressed={isActive}
+                  >
+                    {/* Color swatch preview */}
+                    <span
+                      className="w-4 h-4 rounded-full border border-gray-400"
+                      style={{ backgroundColor: `hsl(${t.colors.background})` }}
+                    />
+                    {t.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
