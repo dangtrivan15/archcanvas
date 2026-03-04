@@ -1,0 +1,103 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: embedding-service
+  namespace: ai
+  version: "1.0.0"
+  displayName: Embedding Service
+  description: A text/image embedding generator that converts inputs into dense vector representations. Supports providers like OpenAI Embeddings, Cohere Embed, Sentence Transformers, CLIP, and Voyage AI.
+  icon: Binary
+  tags:
+    - ai
+    - embeddings
+    - vector
+    - machine-learning
+  shape: rectangle
+spec:
+  args:
+    - name: provider
+      type: enum
+      required: true
+      description: The embedding provider or framework
+      default: "OpenAI"
+      options:
+        - "OpenAI"
+        - "Cohere"
+        - "Sentence Transformers"
+        - "CLIP"
+        - "Voyage AI"
+        - "Custom"
+    - name: model
+      type: string
+      required: true
+      description: The specific embedding model identifier (e.g. text-embedding-3-small, embed-v3, all-MiniLM-L6-v2)
+      default: "text-embedding-3-small"
+    - name: dimensions
+      type: number
+      required: false
+      description: The dimensionality of the output embedding vectors
+      default: 1536
+    - name: batchSize
+      type: number
+      required: false
+      description: Maximum number of inputs to process in a single batch request
+      default: 100
+  ports:
+    - name: embed-request
+      direction: inbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Inbound text or image embedding requests
+    - name: vector-output
+      direction: outbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Outbound dense vector embeddings
+  children: []
+  ai:
+    context: "This is an embedding service that generates vector representations from text or images. Consider input preprocessing, dimensionality vs accuracy tradeoffs, batch processing for throughput, caching of frequently embedded inputs, and vector normalization requirements."
+    reviewHints:
+      - Verify input length limits and truncation behavior
+      - Check batch processing and rate limiting
+      - Consider caching embeddings for repeated inputs
+      - Review vector dimensionality vs downstream requirements
+      - Ensure proper error handling for malformed inputs
+      - Consider cost optimization with smaller models where applicable
+variants:
+  - name: OpenAI Embeddings
+    description: OpenAI text-embedding-3-small endpoint
+    args:
+      provider: "OpenAI"
+      model: "text-embedding-3-small"
+      dimensions: 1536
+      batchSize: 100
+  - name: Cohere Embed
+    description: Cohere Embed v3 model
+    args:
+      provider: "Cohere"
+      model: "embed-v3"
+      dimensions: 1024
+      batchSize: 96
+  - name: Sentence Transformers
+    description: Local Sentence Transformers model (all-MiniLM-L6-v2)
+    args:
+      provider: "Sentence Transformers"
+      model: "all-MiniLM-L6-v2"
+      dimensions: 384
+      batchSize: 256
+  - name: CLIP
+    description: OpenAI CLIP model for multimodal text/image embeddings
+    args:
+      provider: "CLIP"
+      model: "ViT-B/32"
+      dimensions: 512
+      batchSize: 64
+  - name: Voyage AI
+    description: Voyage AI embedding model
+    args:
+      provider: "Voyage AI"
+      model: "voyage-2"
+      dimensions: 1024
+      batchSize: 128
