@@ -15,6 +15,12 @@
 import type { Command } from 'commander';
 import type { GlobalOptions } from '@/cli/index';
 import { loadContext, printOutput, withErrorHandler, suppressDiagnosticLogs } from '@/cli/index';
+import {
+  formatNodeSummary,
+  formatNodeDetail,
+  formatSearchResult,
+  writeOutput,
+} from '@/cli/formatter';
 
 // ─── describe ──────────────────────────────────────────────
 
@@ -44,13 +50,8 @@ export function registerListNodesCommand(program: Command): void {
         const opts = program.opts<GlobalOptions>();
         const ctx = await loadContext(opts);
         const nodes = ctx.textApi.listNodes();
-        printOutput(nodes, opts.format, (data) => {
-          const items = data as Array<{ id: string; type: string; displayName: string }>;
-          if (items.length === 0) return '(no nodes)';
-          return items
-            .map((n) => `  ${n.displayName} [${n.type}] (${n.id})`)
-            .join('\n');
-        });
+        const output = formatNodeSummary(nodes, opts.format);
+        writeOutput(output);
       }),
     );
 }
@@ -71,7 +72,8 @@ export function registerGetNodeCommand(program: Command): void {
           console.error(`Error: Node "${id}" not found.`);
           process.exit(1);
         }
-        printOutput(node, opts.format, (d) => JSON.stringify(d, null, 2));
+        const output = formatNodeDetail(node, opts.format);
+        writeOutput(output);
       }),
     );
 }
@@ -88,21 +90,8 @@ export function registerSearchCommand(program: Command): void {
         const opts = program.opts<GlobalOptions>();
         const ctx = await loadContext(opts);
         const results = ctx.textApi.search(query);
-        printOutput(results, opts.format, (data) => {
-          const items = data as Array<{
-            type: string;
-            id: string;
-            displayName: string;
-            matchContext: string;
-            score: number;
-          }>;
-          if (items.length === 0) return `No results for "${query}"`;
-          return items
-            .map(
-              (r) => `  [${r.type}] ${r.displayName} — ${r.matchContext}`,
-            )
-            .join('\n');
-        });
+        const output = formatSearchResult(results, query, opts.format);
+        writeOutput(output);
       }),
     );
 }

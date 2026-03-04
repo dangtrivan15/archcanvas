@@ -246,9 +246,9 @@ describe('list-nodes command', () => {
     ]);
     const output = stdout.join('\n');
     // Table format should have header row with column names
-    expect(output).toContain('id');
-    expect(output).toContain('type');
-    expect(output).toContain('displayName');
+    expect(output).toContain('ID');
+    expect(output).toContain('Type');
+    expect(output).toContain('Name');
     // And data rows
     expect(output).toContain('API Gateway');
   });

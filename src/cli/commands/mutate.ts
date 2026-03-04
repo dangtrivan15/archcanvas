@@ -14,7 +14,8 @@
 
 import type { Command } from 'commander';
 import type { GlobalOptions } from '@/cli/index';
-import { loadContext, printOutput, withErrorHandler } from '@/cli/index';
+import { loadContext, withErrorHandler } from '@/cli/index';
+import { formatAsJson, writeOutput, writeInfo } from '@/cli/formatter';
 import type { GraphContext } from '@/cli/context';
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -82,20 +83,15 @@ export function registerMutateCommands(program: Command): void {
 
           await saveAndRegenerateSidecar(ctx);
 
-          if (!opts.quiet) {
-            console.log(`Added node "${cmdOpts.name}" (${node.id})`);
-          }
+          writeInfo(`Added node "${cmdOpts.name}" (${node.id})`, opts.quiet);
           if (opts.format === 'json') {
-            printOutput(
-              {
-                id: node.id,
-                type: cmdOpts.type,
-                displayName: cmdOpts.name,
-                parentId: cmdOpts.parent ?? null,
-                args: args ?? {},
-              },
-              'json',
-            );
+            writeOutput(formatAsJson({
+              id: node.id,
+              type: cmdOpts.type,
+              displayName: cmdOpts.name,
+              parentId: cmdOpts.parent ?? null,
+              args: args ?? {},
+            }));
           }
         },
       ),
@@ -124,20 +120,15 @@ export function registerMutateCommands(program: Command): void {
 
           await saveAndRegenerateSidecar(ctx);
 
-          if (!opts.quiet) {
-            console.log(`Added edge ${cmdOpts.from} → ${cmdOpts.to} (${edge.id})`);
-          }
+          writeInfo(`Added edge ${cmdOpts.from} → ${cmdOpts.to} (${edge.id})`, opts.quiet);
           if (opts.format === 'json') {
-            printOutput(
-              {
-                id: edge.id,
-                from: cmdOpts.from,
-                to: cmdOpts.to,
-                type: cmdOpts.type,
-                label: cmdOpts.label ?? null,
-              },
-              'json',
-            );
+            writeOutput(formatAsJson({
+              id: edge.id,
+              from: cmdOpts.from,
+              to: cmdOpts.to,
+              type: cmdOpts.type,
+              label: cmdOpts.label ?? null,
+            }));
           }
         },
       ),
@@ -172,11 +163,9 @@ export function registerMutateCommands(program: Command): void {
         ctx.textApi.removeNode(id);
         await saveAndRegenerateSidecar(ctx);
 
-        if (!opts.quiet) {
-          console.log(`Removed node "${id}"`);
-        }
+        writeInfo(`Removed node "${id}"`, opts.quiet);
         if (opts.format === 'json') {
-          printOutput({ id, removed: true }, 'json');
+          writeOutput(formatAsJson({ id, removed: true }));
         }
       }),
     );
@@ -202,11 +191,9 @@ export function registerMutateCommands(program: Command): void {
         ctx.textApi.removeEdge(id);
         await saveAndRegenerateSidecar(ctx);
 
-        if (!opts.quiet) {
-          console.log(`Removed edge "${id}"`);
-        }
+        writeInfo(`Removed edge "${id}"`, opts.quiet);
         if (opts.format === 'json') {
-          printOutput({ id, removed: true }, 'json');
+          writeOutput(formatAsJson({ id, removed: true }));
         }
       }),
     );
@@ -239,20 +226,15 @@ export function registerMutateCommands(program: Command): void {
 
           await saveAndRegenerateSidecar(ctx);
 
-          if (!opts.quiet) {
-            console.log(`Added note to node "${cmdOpts.node}" (${note.id})`);
-          }
+          writeInfo(`Added note to node "${cmdOpts.node}" (${note.id})`, opts.quiet);
           if (opts.format === 'json') {
-            printOutput(
-              {
-                id: note.id,
-                nodeId: cmdOpts.node,
-                content: cmdOpts.content,
-                author: cmdOpts.author,
-                tags: tags ?? [],
-              },
-              'json',
-            );
+            writeOutput(formatAsJson({
+              id: note.id,
+              nodeId: cmdOpts.node,
+              content: cmdOpts.content,
+              author: cmdOpts.author,
+              tags: tags ?? [],
+            }));
           }
         },
       ),
@@ -306,21 +288,16 @@ export function registerMutateCommands(program: Command): void {
 
           await saveAndRegenerateSidecar(ctx);
 
-          if (!opts.quiet) {
-            console.log(`Updated node "${id}"`);
-          }
+          writeInfo(`Updated node "${id}"`, opts.quiet);
           if (opts.format === 'json') {
-            printOutput(
-              {
-                id,
-                updated: true,
-                displayName: cmdOpts.name ?? null,
-                args: cmdOpts.args ? parseKeyValuePairs(cmdOpts.args) : null,
-                properties: cmdOpts.setProp ? parseKeyValuePairs(cmdOpts.setProp) : null,
-                color: cmdOpts.color ?? null,
-              },
-              'json',
-            );
+            writeOutput(formatAsJson({
+              id,
+              updated: true,
+              displayName: cmdOpts.name ?? null,
+              args: cmdOpts.args ? parseKeyValuePairs(cmdOpts.args) : null,
+              properties: cmdOpts.setProp ? parseKeyValuePairs(cmdOpts.setProp) : null,
+              color: cmdOpts.color ?? null,
+            }));
           }
         },
       ),
