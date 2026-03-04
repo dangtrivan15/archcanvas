@@ -11,6 +11,7 @@
  * FileHeader.checksum_sha256 for metadata access.
  */
 
+import { sha256 } from 'js-sha256';
 import { ArchCanvasFile, FileHeader } from '@/proto/archcanvas';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { MAGIC_BYTES, FORMAT_VERSION } from '@/utils/constants';
@@ -43,23 +44,11 @@ const HEADER_SIZE = MAGIC_BYTES.length + 2 + SHA256_SIZE; // 6 + 2 + 32 = 40 byt
 
 /**
  * Compute SHA-256 hash of the given data.
- * Uses Web Crypto API (works in both browser and modern Node.js).
+ * Uses js-sha256 which works in all contexts (HTTP, HTTPS, Node.js, Capacitor).
+ * No dependency on crypto.subtle or secure contexts.
  */
-async function computeSha256(data: Uint8Array): Promise<Uint8Array> {
-  // Use Web Crypto API (available in browsers and Node 15+)
-  if (typeof globalThis.crypto?.subtle?.digest === 'function') {
-    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
-    return new Uint8Array(hashBuffer);
-  }
-
-  // Fallback for Node.js environments without Web Crypto
-  try {
-    const nodeCrypto = await import('node:crypto');
-    const hash = nodeCrypto.createHash('sha256').update(data).digest();
-    return new Uint8Array(hash);
-  } catch {
-    throw new CodecError('SHA-256 not available: no Web Crypto API or Node crypto module');
-  }
+function computeSha256(data: Uint8Array): Uint8Array {
+  return new Uint8Array(sha256.arrayBuffer(data));
 }
 
 // ─── Encode ─────────────────────────────────────────────────────

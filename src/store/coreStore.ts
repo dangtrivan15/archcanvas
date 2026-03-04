@@ -414,6 +414,14 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
       clearFileOperationLoading();
       set({ isSaving: false });
+
+      // Show toast — if no file handle, the file was downloaded via browser fallback
+      if (!get().fileHandle) {
+        useUIStore.getState().showToast('File downloaded to your browser\'s download folder');
+      } else {
+        useUIStore.getState().showToast('File saved');
+      }
+
       console.log('[CoreStore] File saved successfully');
       return true;
     } catch (err) {
@@ -487,6 +495,14 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
       clearFileOperationLoading();
       set({ isSaving: false });
+
+      // Show toast — if no file handle returned, it was a browser download fallback
+      if (!result.fileHandle) {
+        useUIStore.getState().showToast(`"${result.fileName}" downloaded to your browser\'s download folder`);
+      } else {
+        useUIStore.getState().showToast(`Saved as "${result.fileName}"`);
+      }
+
       console.log(`[CoreStore] File saved as: ${result.fileName}`);
       return true;
     } catch (err) {

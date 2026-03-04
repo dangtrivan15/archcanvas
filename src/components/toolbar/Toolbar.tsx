@@ -34,7 +34,7 @@ export function Toolbar() {
       data-testid="toolbar"
     >
       {/* App branding */}
-      <div className="flex items-center gap-2 mr-2">
+      <div className="flex items-center gap-2 ml-3 mr-2">
         <span className={`font-bold tracking-tight text-[hsl(var(--foreground))] ${isCompact ? 'text-xs' : 'text-sm'}`}>
           {isCompact ? 'AC' : 'ArchCanvas'}
         </span>
