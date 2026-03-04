@@ -5397,3 +5397,43 @@ SESSION: 2026-03-04 - Features #273, #277
 - Zero console errors across all browser testing
 - No mock data patterns in production code
 - All 3304 tests passing across 157 test files
+
+==================================================
+SESSION: 2026-03-04 - Features #274, #290
+==================================================
+
+## What was accomplished:
+
+### Feature #274: Configure capacitor.config.ts with app metadata (PASSING)
+- Updated capacitor.config.ts from minimal 3-field config to full iOS/server configuration:
+  - appId: 'com.archcanvas.app', appName: 'ArchCanvas', webDir: 'dist'
+  - iOS: scheme 'ArchCanvas', allowsLinkPreview false, scrollEnabled false
+  - iOS: preferredContentMode 'mobile', contentInset 'never'
+  - Server: conditional live reload URL (localhost:5173 in dev mode only)
+  - Server: cleartext true in dev, allowNavigation ['localhost']
+- TypeScript type-checked against @capacitor/cli CapacitorConfig type (zero errors)
+- npx cap sync ios: successful, generated correct capacitor.config.json
+- Browser verified: app loads at localhost:5173, zero console errors
+- Committed: c75d56f
+
+### Feature #290: Xcode project configuration and iOS app settings (PASSING)
+- Modified ios/App/App.xcodeproj/project.pbxproj:
+  - Changed IPHONEOS_DEPLOYMENT_TARGET from 15.0 to 16.0 in all 4 build configs
+    (Project Debug, Project Release, Target Debug, Target Release)
+  - Added SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES in both target configs
+    (Debug and Release) for "Mac (Designed for iPad)" support
+- Verified existing correct settings (no changes needed):
+  - Display Name: ArchCanvas (Info.plist CFBundleDisplayName)
+  - Bundle ID: com.archcanvas.app (PRODUCT_BUNDLE_IDENTIFIER)
+  - Orientations: All for iPad, Portrait+Landscape for iPhone (Info.plist)
+  - Version: 1.0 (MARKETING_VERSION), Build: 1 (CURRENT_PROJECT_VERSION)
+  - Signing: Automatic (CODE_SIGN_STYLE, ProvisioningStyle)
+  - Device Family: "1,2" (iPhone + iPad)
+- npx cap sync ios: successful after changes
+- Browser verified: app loads correctly, zero console errors
+- Committed: 048ae46
+
+## Current completion status:
+- Features passing: 276 of 298
+- Zero console errors
+- No mock data patterns in production code
