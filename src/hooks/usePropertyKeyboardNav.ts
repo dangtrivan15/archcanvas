@@ -1,18 +1,15 @@
 /**
- * usePropertyKeyboardNav - keyboard navigation for the Properties panel in Edit mode.
+ * usePropertyKeyboardNav - keyboard navigation for the Properties panel.
  *
- * When Edit mode is active:
- * - Focus first editable field automatically
+ * When the right panel is open:
  * - Tab/Shift+Tab cycles through editable fields (wrapping around)
- * - Enter confirms current value and moves to next field (last field → exit Edit mode)
- * - Escape exits Edit mode and returns focus to canvas
+ * - Enter confirms current value and moves to next field
  *
  * Fields are discovered via `[data-edit-field]` attribute in DOM order.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { CanvasMode } from '@/core/input/canvasMode';
 
 /**
  * Selector for all editable fields in the properties panel.
@@ -21,9 +18,7 @@ import { CanvasMode } from '@/core/input/canvasMode';
 const EDITABLE_FIELD_SELECTOR = '[data-edit-field]';
 
 export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement | null>) {
-  const canvasMode = useUIStore((s) => s.canvasMode);
-  const exitToNormal = useUIStore((s) => s.exitToNormal);
-  const previousMode = useRef<CanvasMode>(CanvasMode.Normal);
+  const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
 
   /**
    * Get all editable fields in DOM order within the container.
@@ -36,30 +31,10 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
   }, [containerRef]);
 
   /**
-   * Focus the first editable field when entering Edit mode.
+   * Handle keyboard events for field navigation within the properties panel.
    */
   useEffect(() => {
-    if (canvasMode === CanvasMode.Edit && previousMode.current !== CanvasMode.Edit) {
-      // Just entered Edit mode - focus first editable field after a frame
-      requestAnimationFrame(() => {
-        const fields = getEditableFields();
-        if (fields.length > 0) {
-          fields[0].focus();
-          // Select all text if it's an input or textarea
-          if (fields[0] instanceof HTMLInputElement || fields[0] instanceof HTMLTextAreaElement) {
-            fields[0].select();
-          }
-        }
-      });
-    }
-    previousMode.current = canvasMode;
-  }, [canvasMode, getEditableFields]);
-
-  /**
-   * Handle keyboard events for field navigation within Edit mode.
-   */
-  useEffect(() => {
-    if (canvasMode !== CanvasMode.Edit) return;
+    if (!rightPanelOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const container = containerRef.current;
@@ -88,14 +63,14 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
           nextIndex = currentIndex >= fields.length - 1 ? 0 : currentIndex + 1;
         }
 
-        fields[nextIndex].focus();
+        fields[nextIndex]!.focus();
         if (fields[nextIndex] instanceof HTMLInputElement || fields[nextIndex] instanceof HTMLTextAreaElement) {
           (fields[nextIndex] as HTMLInputElement).select();
         }
         return;
       }
 
-      // Enter: confirm value and move to next field (or exit if last)
+      // Enter: confirm value and move to next field
       if (e.key === 'Enter') {
         // Don't intercept Enter on select elements (they use Enter for their own UI)
         if (activeEl instanceof HTMLTextAreaElement) return;
@@ -107,12 +82,9 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
         // Blur current to trigger any onBlur handlers (confirm value)
         activeEl.blur();
 
-        if (currentIndex >= fields.length - 1) {
-          // Last field → exit Edit mode
-          exitToNormal();
-        } else {
+        if (currentIndex < fields.length - 1) {
           // Move to next field
-          const nextField = fields[currentIndex + 1];
+          const nextField = fields[currentIndex + 1]!;
           requestAnimationFrame(() => {
             nextField.focus();
             if (nextField instanceof HTMLInputElement || nextField instanceof HTMLTextAreaElement) {
@@ -120,15 +92,6 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
             }
           });
         }
-        return;
-      }
-
-      // Escape within an input: blur and exit Edit mode
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        activeEl.blur();
-        exitToNormal();
         return;
       }
 
@@ -142,5 +105,5 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
 
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [canvasMode, containerRef, getEditableFields, exitToNormal]);
+  }, [rightPanelOpen, containerRef, getEditableFields]);
 }

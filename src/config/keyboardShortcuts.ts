@@ -209,7 +209,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     winKeys: '→',
   },
 
-  // === Quick Create (Normal mode only) ===
+  // === Quick Create ===
   {
     id: 'quick-add-service',
     category: 'Quick Create',

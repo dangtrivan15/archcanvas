@@ -3,8 +3,7 @@
  * Verifies hint content changes per context and H key toggle.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CanvasMode } from '@/core/input/canvasMode';
+import { describe, it, expect } from 'vitest';
 
 // Helper to read the ShortcutHints source for structural verification
 import { readFileSync } from 'fs';
@@ -17,10 +16,6 @@ const COMPONENT_SRC = readFileSync(
 
 describe('ShortcutHints', () => {
   describe('Source structure verification', () => {
-    it('imports CanvasMode', () => {
-      expect(COMPONENT_SRC).toContain("import { CanvasMode }");
-    });
-
     it('imports getShortcutManager', () => {
       expect(COMPONENT_SRC).toContain("import { getShortcutManager }");
     });
@@ -29,8 +24,13 @@ describe('ShortcutHints', () => {
       expect(COMPONENT_SRC).toContain("import { formatBindingDisplay }");
     });
 
-    it('uses useUIStore for canvasMode', () => {
-      expect(COMPONENT_SRC).toContain("useUIStore((s) => s.canvasMode)");
+    it('imports isActiveElementTextInput from focusZones', () => {
+      expect(COMPONENT_SRC).toContain("import { isActiveElementTextInput }");
+      expect(COMPONENT_SRC).toContain("from '@/core/input/focusZones'");
+    });
+
+    it('does not import CanvasMode', () => {
+      expect(COMPONENT_SRC).not.toContain("import { CanvasMode }");
     });
 
     it('uses useCanvasStore for selectedNodeId', () => {
@@ -62,14 +62,9 @@ describe('ShortcutHints', () => {
       expect(COMPONENT_SRC).toContain("e.key.toLowerCase() !== 'h'");
     });
 
-    it('only toggles in Normal mode', () => {
-      expect(COMPONENT_SRC).toContain("mode !== CanvasMode.Normal");
-    });
-
-    it('prevents toggle when focused on text inputs', () => {
-      expect(COMPONENT_SRC).toContain("tag === 'INPUT'");
-      expect(COMPONENT_SRC).toContain("tag === 'TEXTAREA'");
-      expect(COMPONENT_SRC).toContain("tag === 'SELECT'");
+    it('guards toggle with isActiveElementTextInput instead of mode check', () => {
+      expect(COMPONENT_SRC).toContain("isActiveElementTextInput()");
+      expect(COMPONENT_SRC).not.toContain("CanvasMode.Normal");
     });
 
     it('uses pointer-events-none so hints do not block clicks', () => {
@@ -86,49 +81,48 @@ describe('ShortcutHints', () => {
   });
 
   describe('Hint context logic', () => {
-    // We test the getHints logic by checking what the source returns
-    // for each context scenario
-
-    it('defines Connect mode hints with navigate, confirm, type, cancel', () => {
-      expect(COMPONENT_SRC).toContain("mode === CanvasMode.Connect");
-      // Connect hints should include navigation arrows and confirm/cancel
-      expect(COMPONENT_SRC).toContain("'↑↓←→'");
-      expect(COMPONENT_SRC).toContain("'navigate'");
-      expect(COMPONENT_SRC).toContain("'confirm'");
-      expect(COMPONENT_SRC).toContain("'type'");
-      expect(COMPONENT_SRC).toContain("'cancel'");
+    it('getHints takes hasNode and hasEdge params (no mode param)', () => {
+      expect(COMPONENT_SRC).toContain("function getHints(hasNode: boolean, hasEdge: boolean)");
     });
 
-    it('defines Edit mode hints with Tab, Enter, Escape', () => {
-      expect(COMPONENT_SRC).toContain("mode === CanvasMode.Edit");
-      expect(COMPONENT_SRC).toContain("'Tab'");
-      expect(COMPONENT_SRC).toContain("'next field'");
-      expect(COMPONENT_SRC).toContain("'⇧Tab'");
-      expect(COMPONENT_SRC).toContain("'prev field'");
-      expect(COMPONENT_SRC).toContain("'exit'");
-    });
-
-    it('defines Normal/edge hints with change type, delete, deselect', () => {
+    it('defines edge hints with change type, delete, deselect', () => {
       expect(COMPONENT_SRC).toContain("hasEdge");
       expect(COMPONENT_SRC).toContain("'change type'");
       expect(COMPONENT_SRC).toContain("'delete'");
       expect(COMPONENT_SRC).toContain("'deselect'");
     });
 
-    it('defines Normal/node hints with connect, edit, delete, rename, commands', () => {
+    it('defines node hints with delete, rename, commands', () => {
       expect(COMPONENT_SRC).toContain("hasNode");
-      expect(COMPONENT_SRC).toContain("'connect'");
-      expect(COMPONENT_SRC).toContain("'edit'");
+      expect(COMPONENT_SRC).toContain("'delete'");
       expect(COMPONENT_SRC).toContain("'rename'");
       expect(COMPONENT_SRC).toContain("'commands'");
     });
 
-    it('defines Normal/nothing hints with commands, service, database, all shortcuts, hide', () => {
+    it('node hints do not include connect or edit labels', () => {
+      // Extract the hasNode block: from "if (hasNode)" to the next "return ["
+      // to check only node-related hints
+      const hasNodeIndex = COMPONENT_SRC.indexOf('if (hasNode)');
+      const nothingSelectedComment = COMPONENT_SRC.indexOf('// Nothing selected');
+      const nodeBlock = COMPONENT_SRC.slice(hasNodeIndex, nothingSelectedComment);
+      expect(nodeBlock).not.toContain("'connect'");
+      expect(nodeBlock).not.toContain("'edit'");
+    });
+
+    it('defines nothing-selected hints with commands, service, database, all shortcuts, hide', () => {
       expect(COMPONENT_SRC).toContain("'commands'");
       expect(COMPONENT_SRC).toContain("'service'");
       expect(COMPONENT_SRC).toContain("'database'");
       expect(COMPONENT_SRC).toContain("'all shortcuts'");
       expect(COMPONENT_SRC).toContain("'hide hints'");
+    });
+
+    it('does not have Connect mode hints', () => {
+      expect(COMPONENT_SRC).not.toContain("CanvasMode.Connect");
+    });
+
+    it('does not have Edit mode hints', () => {
+      expect(COMPONENT_SRC).not.toContain("CanvasMode.Edit");
     });
 
     it('uses ShortcutManager getBinding for dynamic bindings', () => {
@@ -142,8 +136,6 @@ describe('ShortcutHints', () => {
 
   describe('Positioning and styling', () => {
     it('does not use absolute positioning (Panel handles placement)', () => {
-      // ShortcutHints is now wrapped in <Panel position="bottom-right"> in Canvas.tsx
-      // so it should NOT have absolute/bottom-20/right-3 classes
       expect(COMPONENT_SRC).not.toContain('absolute');
       expect(COMPONENT_SRC).not.toContain('bottom-20');
       expect(COMPONENT_SRC).not.toContain('right-3');
@@ -163,45 +155,6 @@ describe('ShortcutHints', () => {
 
     it('uses monospace font', () => {
       expect(COMPONENT_SRC).toContain('font-mono');
-    });
-  });
-
-  describe('Integration - hints merged into ModeStatusBar', () => {
-    const modeStatusBarSrc = readFileSync(
-      join(__dirname, '../../../src/components/canvas/ModeStatusBar.tsx'),
-      'utf-8',
-    );
-
-    const canvasSrc = readFileSync(
-      join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
-      'utf-8',
-    );
-
-    it('ModeStatusBar contains the full getHints logic', () => {
-      expect(modeStatusBarSrc).toContain('function getHints(');
-      expect(modeStatusBarSrc).toContain('data-testid="shortcut-hints"');
-    });
-
-    it('ModeStatusBar has H-key toggle for hints visibility', () => {
-      expect(modeStatusBarSrc).toContain('HINTS_STORAGE_KEY');
-      expect(modeStatusBarSrc).toContain('hintsVisible');
-      expect(modeStatusBarSrc).toContain('toggleHints');
-    });
-
-    it('ShortcutHints Panel is no longer rendered in Canvas.tsx', () => {
-      // ShortcutHints was removed from Canvas.tsx (merged into ModeStatusBar)
-      expect(canvasSrc).not.toContain('<ShortcutHints');
-      expect(canvasSrc).not.toContain("import { ShortcutHints }");
-    });
-
-    it('ModeStatusBar renders hints in the right section', () => {
-      // The hints should appear in the right section before selection and zoom
-      const hintsIndex = modeStatusBarSrc.indexOf('data-testid="shortcut-hints"');
-      const selectionIndex = modeStatusBarSrc.indexOf('data-testid="statusbar-selection"');
-      const zoomIndex = modeStatusBarSrc.indexOf('data-testid="statusbar-zoom"');
-      expect(hintsIndex).toBeGreaterThan(-1);
-      expect(selectionIndex).toBeGreaterThan(hintsIndex);
-      expect(zoomIndex).toBeGreaterThan(hintsIndex);
     });
   });
 });

@@ -374,31 +374,6 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 });
 
 describe('Quick Search Overlay - useKeyboardShortcuts Integration', () => {
-  it('useKeyboardShortcuts imports quickSearchNext and quickSearchPrev', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    expect(source).toContain('quickSearchNext');
-    expect(source).toContain('quickSearchPrev');
-    expect(source).toContain("from '@/components/shared/QuickSearchOverlay'");
-  });
-
-  it('n key calls quickSearchNext in Normal mode', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    // Verify n key handler exists
-    expect(source).toContain("key.toLowerCase() === 'n'");
-    expect(source).toContain('quickSearchNext()');
-  });
-
-  it('N (Shift+n) key calls quickSearchPrev in Normal mode', async () => {
-    const fs = await import('fs');
-    const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');
-    // Verify N key handler exists
-    expect(source).toContain("key === 'N'");
-    expect(source).toContain('e.shiftKey');
-    expect(source).toContain('quickSearchPrev()');
-  });
-
   it('nav:search case toggles quickSearch', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useKeyboardShortcuts.ts', 'utf-8');

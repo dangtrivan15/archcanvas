@@ -324,19 +324,6 @@ export function getStaticCommands(): Command[] {
       isEnabled: () => useNavigationStore.getState().path.length > 0,
     },
 
-    // === Edge Operations ===
-    {
-      id: 'connect:wizard',
-      label: 'Connect Nodes...',
-      category: 'Edge',
-      keywords: ['connect', 'edge', 'link', 'wire', 'join', 'relation'],
-      iconName: 'ArrowRight',
-      execute: () => {
-        // Handled by CommandPalette wizard mode — no-op here
-      },
-      isEnabled: () => useCoreStore.getState().graph.nodes.length >= 2,
-    },
-
     // === Edge Type Operations ===
     {
       id: 'edge:cycle-type',

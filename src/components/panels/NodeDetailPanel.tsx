@@ -17,7 +17,6 @@ import { marked } from 'marked';
 import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { NODE_COLOR_PALETTE, getDefaultNodeColor, getEffectiveNodeColor } from '@/utils/nodeColors';
 import { usePropertyKeyboardNav } from '@/hooks/usePropertyKeyboardNav';
-import { CanvasMode } from '@/core/input/canvasMode';
 import { getClipboardAdapter } from '@/core/platform/clipboardAdapter';
 
 // Configure marked for inline rendering (no wrapping <p> tags for short content)
@@ -167,7 +166,6 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
   const clearPendingRename = useUIStore((s) => s.clearPendingRename);
-  const canvasMode = useUIStore((s) => s.canvasMode);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   // Track raw text input for number fields so we can validate non-numeric text
   const [numberInputValues, setNumberInputValues] = useState<Record<string, string>>({});
@@ -179,24 +177,6 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
 
   // Keyboard navigation for Edit mode (Tab/Shift+Tab cycle, Enter→next, Escape→exit)
   usePropertyKeyboardNav(propertiesContainerRef);
-
-  // Sync editingNameValue with node displayName when entering Edit mode
-  const prevModeRef = useRef(canvasMode);
-  useEffect(() => {
-    if (canvasMode === CanvasMode.Edit && prevModeRef.current !== CanvasMode.Edit) {
-      // Just entered Edit mode - set the editing value to current display name
-      setEditingNameValue(node.displayName);
-    }
-    if (canvasMode !== CanvasMode.Edit && prevModeRef.current === CanvasMode.Edit) {
-      // Just left Edit mode - save any pending name change and clear editing state
-      if (editingNameValue.trim() && selectedNodeId && editingNameValue.trim() !== node.displayName) {
-        updateNode(selectedNodeId, { displayName: editingNameValue.trim() });
-      }
-      setIsEditingName(false);
-      setEditingNameValue('');
-    }
-    prevModeRef.current = canvasMode;
-  }, [canvasMode, node.displayName, editingNameValue, selectedNodeId, updateNode]);
 
   // Handle rename save
   const handleRenameSave = useCallback(() => {
@@ -305,7 +285,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
       <div>
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
-          {!isEditingName && canvasMode !== CanvasMode.Edit && (
+          {!isEditingName && (
             <button
               onClick={() => {
                 setIsEditingName(true);
@@ -319,7 +299,7 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
             </button>
           )}
         </div>
-        {(isEditingName || canvasMode === CanvasMode.Edit) ? (
+        {isEditingName ? (
           <div className="mt-1 flex items-center gap-1">
             <input
               ref={displayNameInputRef}
@@ -327,8 +307,6 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
               value={editingNameValue || node.displayName}
               onChange={(e) => setEditingNameValue(e.target.value)}
               onKeyDown={(e) => {
-                // In Edit mode, let the usePropertyKeyboardNav hook handle Enter/Escape/Tab
-                if (canvasMode === CanvasMode.Edit) return;
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleRenameSave();
@@ -339,13 +317,6 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                 }
               }}
               onBlur={() => {
-                // In Edit mode, save on blur but don't exit editing (keep input visible)
-                if (canvasMode === CanvasMode.Edit) {
-                  if (selectedNodeId && editingNameValue.trim()) {
-                    updateNode(selectedNodeId, { displayName: editingNameValue.trim() });
-                  }
-                  return;
-                }
                 handleRenameSave();
               }}
               className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
