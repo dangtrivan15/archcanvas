@@ -21,7 +21,8 @@
     "cap:run": "npx cap run ios",
     "dev:ios": "CAPACITOR_DEV=true npx cap run ios --livereload --external",
     "cap:build:ios": "npx vite build && npx cap sync ios",
-    "build:ios": "npx vite build && npx cap sync ios"
+    "build:ios": "npx vite build && npx cap sync ios",
+    "build:release": "npm run build && npx cap sync ios"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
