@@ -46,6 +46,7 @@ import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
 
 // Client namespace
 import webAppYaml from './builtins/core/client/web-app.yaml?raw';
+import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
