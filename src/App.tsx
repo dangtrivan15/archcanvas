@@ -25,7 +25,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIPadExternalKeyboard } from '@/hooks/useIPadExternalKeyboard';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
-import { useViewportSize } from '@/hooks/useViewportSize';
+import { useViewportSize, ICON_RAIL_BREAKPOINT } from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
@@ -202,19 +202,22 @@ export function App() {
 
         {/* Main content area: left panel, canvas, right panel */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Left Panel - NodeDef Browser (hidden in compact mode, draggable width otherwise) */}
+          {/* Left Panel - NodeDef Browser (hidden in compact mode, icon-only rail <500px, draggable width otherwise) */}
           {!isCompact && leftPanelOpen ? (
             <>
               <FocusZoneRegion zone={FocusZone.LeftPanel}>
                 <aside
                   className="overflow-y-auto shrink-0 bg-white border-r h-full safe-area-left"
-                  style={{ width: leftPanelWidth }}
+                  style={{ width: viewportWidth < ICON_RAIL_BREAKPOINT ? 52 : leftPanelWidth }}
                   data-testid="left-panel"
                 >
                   <NodeDefBrowser />
                 </aside>
               </FocusZoneRegion>
-              <ResizeHandle side="left" onResize={handleLeftResize} />
+              {/* Hide resize handle in icon-rail mode */}
+              {viewportWidth >= ICON_RAIL_BREAKPOINT && (
+                <ResizeHandle side="left" onResize={handleLeftResize} />
+              )}
             </>
           ) : !isCompact ? (
             <button
@@ -338,16 +341,16 @@ export function App() {
         {/* Status Bar */}
         <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
           <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
-            {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) */}
+            {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) - always visible */}
             <ModeStatusBar />
-            {/* Separator */}
-            <span className="mx-1 text-gray-300">|</span>
-            {/* Legacy info items */}
-            <span data-testid="node-count">Nodes: {nodeCount}</span>
-            <span className="mx-1 text-gray-300">|</span>
-            <span data-testid="edge-count">Edges: {edgeCount}</span>
+            {/* Essential: dirty indicator - always visible */}
             <span className="mx-1 text-gray-300">|</span>
             <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
+            {/* Non-essential items: hidden in compact mode via CSS */}
+            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <span data-testid="node-count" className="status-bar-compact-hide">Nodes: {nodeCount}</span>
+            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <span data-testid="edge-count" className="status-bar-compact-hide">Edges: {edgeCount}</span>
             {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
               <>
                 <span className="mx-1 text-gray-300">|</span>
@@ -358,18 +361,18 @@ export function App() {
             )}
             {autosaveStatusMessage && (
               <>
-                <span className="mx-1 text-gray-300">|</span>
-                <span data-testid="autosave-status" className="text-green-600">{autosaveStatusMessage}</span>
+                <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+                <span data-testid="autosave-status" className="text-green-600 status-bar-compact-hide">{autosaveStatusMessage}</span>
               </>
             )}
-            <span className="mx-1 text-gray-300">|</span>
-            <span data-testid="zoom-level">Zoom: {Math.round(zoom * 100)}%</span>
-            <span className="mx-1 text-gray-300">|</span>
-            <CachedFilesIndicator />
+            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <span data-testid="zoom-level" className="status-bar-compact-hide">Zoom: {Math.round(zoom * 100)}%</span>
+            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <span className="status-bar-compact-hide"><CachedFilesIndicator /></span>
             {navigationPath.length > 0 && (
               <>
-                <span className="mx-1 text-gray-300">|</span>
-                <span data-testid="breadcrumb" className="text-blue-600 font-medium">
+                <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+                <span data-testid="breadcrumb" className="text-blue-600 font-medium status-bar-compact-hide">
                   {(() => {
                     const parts = ['Root'];
                     for (const nodeId of navigationPath) {

@@ -156,7 +156,7 @@ export function ShortcutSettingsPanel() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="shortcut-settings-dialog"
       role="dialog"
@@ -165,7 +165,7 @@ export function ShortcutSettingsPanel() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col"
+        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col compact-dialog-sheet"
         data-testid="shortcut-settings-content"
       >
         {/* Header */}

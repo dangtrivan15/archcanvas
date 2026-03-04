@@ -118,14 +118,14 @@ export function ConnectionTypeDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="connection-type-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="connection-dialog-title"
     >
-      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5" data-testid="connection-dialog-content">
+      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 compact-dialog-sheet" data-testid="connection-dialog-content">
         {/* Header */}
         <h2 id="connection-dialog-title" className="text-lg font-semibold text-gray-900 mb-1">
           Create Connection

@@ -73,7 +73,7 @@ export function ShortcutsHelpPanel() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="shortcuts-help-dialog"
       role="dialog"
@@ -82,7 +82,7 @@ export function ShortcutsHelpPanel() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col"
+        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col compact-dialog-sheet"
         data-testid="shortcuts-help-content"
       >
         {/* Header */}

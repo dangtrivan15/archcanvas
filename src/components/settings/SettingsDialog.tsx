@@ -127,7 +127,7 @@ export function SettingsDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 compact-dialog-overlay"
       onClick={handleBackdropClick}
       data-testid="settings-dialog"
       role="dialog"
@@ -136,7 +136,7 @@ export function SettingsDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-[hsl(var(--surface))] rounded-lg shadow-xl max-w-lg w-full mx-4"
+        className="bg-[hsl(var(--surface))] rounded-lg shadow-xl max-w-lg w-full mx-4 compact-dialog-sheet"
         data-testid="settings-dialog-content"
       >
         {/* Header */}

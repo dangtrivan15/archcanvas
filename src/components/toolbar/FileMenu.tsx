@@ -90,6 +90,8 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
         className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
+        aria-label="File menu"
+        title={compact ? 'File' : undefined}
         data-testid="file-menu-button"
       >
         <File className="w-4 h-4" />

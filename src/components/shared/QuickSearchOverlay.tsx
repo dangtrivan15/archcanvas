@@ -305,7 +305,7 @@ export function QuickSearchOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-start justify-center pt-4"
+      className="fixed inset-0 z-[110] flex items-start justify-center pt-4 compact-dialog-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           _lastSearchResults = results;
@@ -319,7 +319,7 @@ export function QuickSearchOverlay() {
       aria-label="Quick search"
     >
       <div
-        className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 flex flex-col overflow-hidden border border-gray-200"
+        className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 flex flex-col overflow-hidden border border-gray-200 compact-dialog-sheet"
         data-testid="quick-search"
       >
         {/* Search input */}
