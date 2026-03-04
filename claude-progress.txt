@@ -8325,3 +8325,43 @@ Modified src/components/nodes/shapes/NodeShell.tsx:
 
 #### Current completion status:
 - Feature #358 marked passing
+
+---
+
+## Session: Feature #359 - Selected nodes show accent-colored glow halo
+Date: 2026-03-05
+
+### Feature #359: Selected nodes show accent-colored glow halo - PASSING
+
+#### Implementation:
+Replaced the iris-colored ring/border selection treatment with a soft, diffused glow/halo that uses each node's own accent color.
+
+**src/utils/nodeColors.ts:**
+- Added `colorGlowShadow(hexColor)` utility function
+- Generates multi-layer box-shadow: 14px + 6px + 2px spread with graduated opacity
+- Falls back to gray glow for invalid colors
+
+**src/components/nodes/GenericNode.tsx:**
+- Removed `ring-2 ring-iris/30` CSS class from selected state
+- Selection border now uses `effectiveColor` instead of `hsl(var(--iris))`
+- Shadow combines `colorTintedShadow('hover')` + `colorGlowShadow()` when selected
+- Creates a premium, diffused glow that matches node's color identity
+
+**src/components/nodes/shapes/NodeShell.tsx (committed in prior session):**
+- Selection stroke color uses node's accent color instead of iris theme color
+- Added extra `drop-shadow()` glow layers when selected (12px + 4px spread)
+- Removed old dashed iris-colored selection ring SVG path
+- Glow conforms to SVG shape (cylinder, hexagon, cloud, etc.)
+
+#### Verification:
+- Service (blue) node: clear blue glow halo visible at 200% zoom
+- Database (green, cylinder): selected with green accent, visible in Properties panel
+- Zero console errors confirmed
+- Glow is soft and diffused, not a hard border or ring
+- Clearly distinguishes selected from unselected nodes
+
+#### Commits:
+- df8f55e: feat: add accent-colored glow halo for selected nodes (feature #359)
+
+#### Current completion status:
+- Feature #359 marked passing
