@@ -19,6 +19,7 @@
     "cap:open": "npx cap open ios",
     "cap:open:ios": "npx cap open ios",
     "cap:run": "npx cap run ios",
+    "dev:ios": "CAPACITOR_DEV=true npx cap run ios --livereload --external",
     "cap:build:ios": "npx vite build && npx cap sync ios",
     "build:ios": "npx vite build && npx cap sync ios"
   },

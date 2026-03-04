@@ -1,6 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const isDev = process.env.NODE_ENV !== 'production';
+// Use CAPACITOR_DEV=true to enable live reload from Vite dev server.
+// This is only for iOS simulator/device development — production builds
+// serve from the bundled dist/ directory with no server URL.
+const isCapacitorDev = process.env.CAPACITOR_DEV === 'true';
 
 const config: CapacitorConfig = {
   appId: 'com.archcanvas.app',
@@ -21,8 +24,10 @@ const config: CapacitorConfig = {
   },
 
   server: {
-    // During development, load from the Vite dev server for live reload
-    ...(isDev
+    // When CAPACITOR_DEV=true, load from the Vite dev server for live reload.
+    // The --external flag on `cap run` resolves the machine's LAN IP automatically,
+    // so we only need localhost here as a base — Capacitor CLI rewrites it.
+    ...(isCapacitorDev
       ? {
           url: 'http://localhost:5173',
           cleartext: true,
