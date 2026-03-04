@@ -7214,3 +7214,53 @@ Date: 2026-03-04
 
 #### Current completion status:
 - Feature #306 marked passing
+
+---
+
+## Session: Feature #337 - Cloud, Stadium, and Document Nodes
+Date: 2026-03-04
+
+### Feature #337: Cloud, Stadium, and Document Nodes (CDN, Event Bus, Logging) - PASSING
+
+#### Implementation:
+- src/components/nodes/CloudNode.tsx (new file):
+  - Cloud-shaped node for network/cdn nodes
+  - Uses NodeShell shape='cloud', width=260px
+  - Extra px-6 py-3 padding for cloud bumps
+  - Standard port handles on left/right at 50%
+
+- src/components/nodes/StadiumNode.tsx (new file):
+  - Stadium/pill-shaped node for messaging/event-bus nodes
+  - Uses NodeShell shape='stadium', width=240px
+  - Extra px-6 horizontal padding for rounded ends
+  - Standard port handles on left/right at 50%
+
+- src/components/nodes/DocumentNode.tsx (new file):
+  - Document-shaped node (curled bottom) for observability/logging nodes
+  - Uses NodeShell shape='document', width=220px
+  - Extra pb-4 bottom padding for curled edge
+  - Port handles positioned at 45% to avoid bottom curl
+
+- NodeDef YAML shape metadata updated:
+  - cdn.yaml: shape: cloud
+  - event-bus.yaml: shape: stadium
+  - logging.yaml: shape: document
+
+- nodeTypeMap.ts: Registered CloudNode, StadiumNode, DocumentNode
+  - Both namespace-based keys (cdn, event-bus, logging) and shape-based keys (cloud, stadium, document)
+
+- renderApi.ts: Updated getNodeComponentType()
+  - Added 'messaging/event-bus' -> 'event-bus'
+  - Added 'network/cdn' -> 'cdn'
+  - Added 'observability/logging' -> 'logging'
+  - SHAPE_TO_COMPONENT map includes cloud, stadium, document
+
+#### Verification:
+- Build succeeds cleanly (npx vite build)
+- 26 NodeShell unit tests passing (including cloud, stadium, document shapes)
+- All components follow established shaped node patterns (HexagonNode, CylinderNode, ParallelogramNode)
+- No mock data patterns detected
+- Committed: c518b89
+
+#### Current completion status:
+- Features passing: 324 of 339 (95.6%)
