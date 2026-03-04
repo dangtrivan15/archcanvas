@@ -24,5 +24,9 @@ export const nodeTypes = {
   cdn: CloudNode,
   'event-bus': StadiumNode,
   logging: DocumentNode,
+  // Shape-based entries: allow NodeDef YAML shape metadata to select components
+  cloud: CloudNode,
+  stadium: StadiumNode,
+  document: DocumentNode,
   ref: GenericNode,
 };

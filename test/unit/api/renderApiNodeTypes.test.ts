@@ -33,19 +33,20 @@ describe('RenderApi maps nodedef types to React components', () => {
     return result.nodes[0];
   }
 
-  // Step 1: Verify 'compute/service' maps to ServiceNode component
-  it("maps 'compute/service' to 'service' component type", () => {
+  // Step 1: Verify 'compute/service' maps via shape metadata
+  // Shape 'rectangle' maps to 'generic' via SHAPE_TO_COMPONENT
+  it("maps 'compute/service' to 'generic' via rectangle shape", () => {
     const canvasNode = renderSingleNode('compute/service', 'My Service');
-    expect(canvasNode.type).toBe('service');
+    expect(canvasNode.type).toBe('generic');
   });
 
-  // Step 2: Verify 'data/database' maps to DatabaseNode component
+  // Step 2: Verify 'data/database' maps to CylinderNode via shape
   it("maps 'data/database' to 'database' component type", () => {
     const canvasNode = renderSingleNode('data/database', 'My Database');
     expect(canvasNode.type).toBe('database');
   });
 
-  // Step 3: Verify 'messaging/message-queue' maps to QueueNode component
+  // Step 3: Verify 'messaging/message-queue' maps via parallelogram shape
   it("maps 'messaging/message-queue' to 'queue' component type", () => {
     const canvasNode = renderSingleNode(
       'messaging/message-queue',
@@ -54,13 +55,13 @@ describe('RenderApi maps nodedef types to React components', () => {
     expect(canvasNode.type).toBe('queue');
   });
 
-  // Step 4: Verify 'data/cache' maps to CacheNode component
-  it("maps 'data/cache' to 'cache' component type", () => {
+  // Step 4: Verify 'data/cache' maps to CylinderNode via shape
+  it("maps 'data/cache' to 'database' via cylinder shape", () => {
     const canvasNode = renderSingleNode('data/cache', 'My Cache');
-    expect(canvasNode.type).toBe('cache');
+    expect(canvasNode.type).toBe('database');
   });
 
-  // Step 5: Verify 'compute/api-gateway' maps to GatewayNode component
+  // Step 5: Verify 'compute/api-gateway' maps to HexagonNode via shape
   it("maps 'compute/api-gateway' to 'gateway' component type", () => {
     const canvasNode = renderSingleNode('compute/api-gateway', 'My Gateway');
     expect(canvasNode.type).toBe('gateway');
@@ -72,55 +73,55 @@ describe('RenderApi maps nodedef types to React components', () => {
     expect(canvasNode.type).toBe('generic');
   });
 
-  // Additional coverage: other compute types map to generic
-  it("maps 'compute/function' to 'generic' component type", () => {
+  // Additional coverage: other compute types with rectangle shape map to generic
+  it("maps 'compute/function' to 'generic' via rectangle shape", () => {
     const canvasNode = renderSingleNode('compute/function', 'My Function');
     expect(canvasNode.type).toBe('generic');
   });
 
-  it("maps 'compute/worker' to 'generic' component type", () => {
+  it("maps 'compute/worker' to 'generic' via rectangle shape", () => {
     const canvasNode = renderSingleNode('compute/worker', 'My Worker');
     expect(canvasNode.type).toBe('generic');
   });
 
-  // Additional coverage: other data types map to generic
-  it("maps 'data/object-storage' to 'generic' component type", () => {
+  // Data types with cylinder shape all map to 'database' (CylinderNode)
+  it("maps 'data/object-storage' to 'database' via cylinder shape", () => {
     const canvasNode = renderSingleNode(
       'data/object-storage',
       'My Storage',
     );
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('database');
   });
 
-  it("maps 'data/repository' to 'generic' component type", () => {
+  it("maps 'data/repository' to 'database' via cylinder shape", () => {
     const canvasNode = renderSingleNode('data/repository', 'My Repo');
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('database');
   });
 
-  // Additional coverage: messaging subtypes that aren't message-queue
-  it("maps 'messaging/event-bus' to 'generic' component type", () => {
+  // Messaging types
+  it("maps 'messaging/event-bus' to 'generic' via rectangle shape", () => {
     const canvasNode = renderSingleNode('messaging/event-bus', 'My Bus');
     expect(canvasNode.type).toBe('generic');
   });
 
-  it("maps 'messaging/stream-processor' to 'generic' component type", () => {
+  it("maps 'messaging/stream-processor' to 'queue' via parallelogram shape", () => {
     const canvasNode = renderSingleNode(
       'messaging/stream-processor',
       'My Stream',
     );
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('queue');
   });
 
-  // Additional coverage: network and observability namespaces
-  it("maps 'network/load-balancer' to 'generic' component type", () => {
+  // Network types: load-balancer has hexagon shape
+  it("maps 'network/load-balancer' to 'gateway' via hexagon shape", () => {
     const canvasNode = renderSingleNode(
       'network/load-balancer',
       'My LB',
     );
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('gateway');
   });
 
-  it("maps 'observability/logging' to 'generic' component type", () => {
+  it("maps 'observability/logging' to 'generic' via rectangle shape", () => {
     const canvasNode = renderSingleNode(
       'observability/logging',
       'My Logger',
@@ -145,10 +146,11 @@ describe('RenderApi maps nodedef types to React components', () => {
       result.nodes.map((n) => [n.data.displayName, n.type]),
     );
 
-    expect(typeMap.get('Svc')).toBe('service');
+    // Shape-based routing: rectangle→generic, cylinder→database, parallelogram→queue, hexagon→gateway
+    expect(typeMap.get('Svc')).toBe('generic');
     expect(typeMap.get('DB')).toBe('database');
     expect(typeMap.get('Q')).toBe('queue');
-    expect(typeMap.get('Cache')).toBe('cache');
+    expect(typeMap.get('Cache')).toBe('database');
     expect(typeMap.get('GW')).toBe('gateway');
   });
 });
