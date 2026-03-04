@@ -28,6 +28,7 @@ import searchIndexYaml from './builtins/core/data/search-index.yaml?raw';
 import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
 import eventBusYaml from './builtins/core/messaging/event-bus.yaml?raw';
 import streamProcessorYaml from './builtins/core/messaging/stream-processor.yaml?raw';
+import notificationYaml from './builtins/core/messaging/notification.yaml?raw';
 
 // Network namespace
 import loadBalancerYaml from './builtins/core/network/load-balancer.yaml?raw';
@@ -36,6 +37,7 @@ import cdnYaml from './builtins/core/network/cdn.yaml?raw';
 // Observability namespace
 import loggingYaml from './builtins/core/observability/logging.yaml?raw';
 import monitoringYaml from './builtins/core/observability/monitoring.yaml?raw';
+import tracingYaml from './builtins/core/observability/tracing.yaml?raw';
 
 // Security namespace
 import authProviderYaml from './builtins/core/security/auth-provider.yaml?raw';
@@ -51,6 +53,9 @@ import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
 import webAppYaml from './builtins/core/client/web-app.yaml?raw';
 import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
 import cliYaml from './builtins/core/client/cli.yaml?raw';
+
+// AI namespace
+import llmProviderYaml from './builtins/core/ai/llm-provider.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -87,12 +92,14 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'messaging/message-queue.yaml', rawYaml: messageQueueYaml, namespace: 'messaging', name: 'message-queue' },
   { filePath: 'messaging/event-bus.yaml', rawYaml: eventBusYaml, namespace: 'messaging', name: 'event-bus' },
   { filePath: 'messaging/stream-processor.yaml', rawYaml: streamProcessorYaml, namespace: 'messaging', name: 'stream-processor' },
+  { filePath: 'messaging/notification.yaml', rawYaml: notificationYaml, namespace: 'messaging', name: 'notification' },
   // Network (2)
   { filePath: 'network/load-balancer.yaml', rawYaml: loadBalancerYaml, namespace: 'network', name: 'load-balancer' },
   { filePath: 'network/cdn.yaml', rawYaml: cdnYaml, namespace: 'network', name: 'cdn' },
   // Observability (2)
   { filePath: 'observability/logging.yaml', rawYaml: loggingYaml, namespace: 'observability', name: 'logging' },
   { filePath: 'observability/monitoring.yaml', rawYaml: monitoringYaml, namespace: 'observability', name: 'monitoring' },
+  { filePath: 'observability/tracing.yaml', rawYaml: tracingYaml, namespace: 'observability', name: 'tracing' },
   // Security (3)
   { filePath: 'security/auth-provider.yaml', rawYaml: authProviderYaml, namespace: 'security', name: 'auth-provider' },
   { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },
@@ -105,6 +112,8 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
   { filePath: 'client/mobile-app.yaml', rawYaml: mobileAppYaml, namespace: 'client', name: 'mobile-app' },
   { filePath: 'client/cli.yaml', rawYaml: cliYaml, namespace: 'client', name: 'cli' },
+  // AI (1)
+  { filePath: 'ai/llm-provider.yaml', rawYaml: llmProviderYaml, namespace: 'ai', name: 'llm-provider' },
 ];
 
 /**
