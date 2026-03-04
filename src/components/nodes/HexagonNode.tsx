@@ -18,6 +18,8 @@ import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
 import { NodeShell } from './shapes/NodeShell';
 import { Box, ExternalLink } from 'lucide-react';
+import { getHandlePosition } from './shapes/handlePositions';
+import { useNodeHeight } from './shapes/useNodeHeight';
 
 const HEXAGON_WIDTH = 240;
 
@@ -25,6 +27,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
   const Icon = iconMap[nodeData.icon] ?? Box;
   const isRef = !!nodeData.refSource;
+  const [outerRef, nodeHeight] = useNodeHeight();
 
   const inboundPorts = nodeData.ports?.inbound ?? [];
   const outboundPorts = nodeData.ports?.outbound ?? [];
@@ -90,6 +93,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
+      ref={outerRef}
       className="relative"
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -98,7 +102,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
       data-node-color={effectiveColor}
       data-ref-source={nodeData.refSource || undefined}
     >
-      {/* Inbound port handles - positioned on the left flat edge of the hexagon */}
+      {/* Inbound port handles - positioned on the left angled edge of the hexagon */}
       {hasDefinedInboundPorts ? (
         inboundPorts.map((port, index) => (
           <Handle
@@ -108,13 +112,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-            style={{
-              top: '50%',
-              left: 0,
-              transform: inboundPorts.length === 1
-                ? 'translateY(-50%)'
-                : `translateY(${((index - (inboundPorts.length - 1) / 2) * 16)}px)`,
-            }}
+            style={getHandlePosition('hexagon', 'left', index, inboundPorts.length, HEXAGON_WIDTH, nodeHeight)}
             data-testid={`port-in-${port.name}`}
             data-port-name={port.name}
             data-port-direction="inbound"
@@ -127,7 +125,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
           id="in"
           title="in"
-          style={{ top: '50%', left: 0 }}
+          style={getHandlePosition('hexagon', 'left', 0, 1, HEXAGON_WIDTH, nodeHeight)}
           data-testid="port-in-default"
           data-port-name="in"
           data-port-direction="inbound"
@@ -235,7 +233,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
         </div>
       </NodeShell>
 
-      {/* Outbound port handles - positioned on the right flat edge of the hexagon */}
+      {/* Outbound port handles - positioned on the right angled edge of the hexagon */}
       {hasDefinedOutboundPorts ? (
         outboundPorts.map((port, index) => (
           <Handle
@@ -245,13 +243,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-            style={{
-              top: '50%',
-              right: 0,
-              transform: outboundPorts.length === 1
-                ? 'translateY(-50%)'
-                : `translateY(${((index - (outboundPorts.length - 1) / 2) * 16)}px)`,
-            }}
+            style={getHandlePosition('hexagon', 'right', index, outboundPorts.length, HEXAGON_WIDTH, nodeHeight)}
             data-testid={`port-out-${port.name}`}
             data-port-name={port.name}
             data-port-direction="outbound"
@@ -264,7 +256,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
           id="out"
           title="out"
-          style={{ top: '50%', right: 0 }}
+          style={getHandlePosition('hexagon', 'right', 0, 1, HEXAGON_WIDTH, nodeHeight)}
           data-testid="port-out-default"
           data-port-name="out"
           data-port-direction="outbound"
