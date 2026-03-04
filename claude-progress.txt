@@ -8644,3 +8644,28 @@ Updated Info.plist: arm64, MinimumOSVersion 16.0, ATS with localhost exception.
 Updated project.pbxproj to include PrivacyInfo.xcprivacy in build.
 Commit: 4fdc454
 Feature #378 marked passing
+
+---
+
+## Session: Feature #377 - iOS Splash Screen & Launch Storyboard
+Date: 2026-03-05
+
+### Feature #377: iOS Splash Screen & Launch Storyboard - PASSING
+
+#### Implementation:
+- Installed @capacitor/splash-screen plugin, configured in capacitor.config.ts
+- launchAutoHide: false, manual hide after app interactive, 300ms fade-out
+- Generated light-mode splash variants (scripts/generate-splash-light.ts)
+- Updated Splash.imageset Contents.json with light/dark appearance entries
+- Created SplashBackground adaptive color set (light=#f0f1f3, dark=#1a1a2e)
+- Updated LaunchScreen.storyboard to use named adaptive color
+- Added SplashScreen.hide() in App.tsx useEffect after initialized=true
+
+#### Verification:
+- Vite build: PASS
+- App loads in browser: PASS (SplashScreen.hide gracefully no-ops on web)
+- Dark splash: centered logo on #1a1a2e, Light splash: centered logo on #f0f1f3
+- All 6 splash images (3 dark + 3 light) at 2732x2732
+
+Commit: 633e8c3
+Feature #377 marked passing
