@@ -15,6 +15,8 @@ import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
 import { NodeShell } from './shapes/NodeShell';
 import { Box, ExternalLink } from 'lucide-react';
+import { getHandlePosition } from './shapes/handlePositions';
+import { useNodeHeight } from './shapes/useNodeHeight';
 
 const DOCUMENT_WIDTH = 220;
 
@@ -22,6 +24,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
   const Icon = iconMap[nodeData.icon] ?? Box;
   const isRef = !!nodeData.refSource;
+  const [outerRef, nodeHeight] = useNodeHeight();
 
   const inboundPorts = nodeData.ports?.inbound ?? [];
   const outboundPorts = nodeData.ports?.outbound ?? [];
@@ -87,6 +90,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
+      ref={outerRef}
       className="relative"
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -95,7 +99,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
       data-node-color={effectiveColor}
       data-ref-source={nodeData.refSource || undefined}
     >
-      {/* Inbound port handles */}
+      {/* Inbound port handles - above the wavy bottom curl */}
       {hasDefinedInboundPorts ? (
         inboundPorts.map((port, index) => (
           <Handle
@@ -105,13 +109,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-            style={{
-              top: '45%',
-              left: 0,
-              transform: inboundPorts.length === 1
-                ? 'translateY(-50%)'
-                : `translateY(${((index - (inboundPorts.length - 1) / 2) * 16)}px)`,
-            }}
+            style={getHandlePosition('document', 'left', index, inboundPorts.length, DOCUMENT_WIDTH, nodeHeight)}
             data-testid={`port-in-${port.name}`}
             data-port-name={port.name}
             data-port-direction="inbound"
@@ -124,7 +122,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
           id="in"
           title="in"
-          style={{ top: '45%', left: 0 }}
+          style={getHandlePosition('document', 'left', 0, 1, DOCUMENT_WIDTH, nodeHeight)}
           data-testid="port-in-default"
           data-port-name="in"
           data-port-direction="inbound"
@@ -232,7 +230,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
         </div>
       </NodeShell>
 
-      {/* Outbound port handles */}
+      {/* Outbound port handles - above the wavy bottom curl */}
       {hasDefinedOutboundPorts ? (
         outboundPorts.map((port, index) => (
           <Handle
@@ -242,13 +240,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-            style={{
-              top: '45%',
-              right: 0,
-              transform: outboundPorts.length === 1
-                ? 'translateY(-50%)'
-                : `translateY(${((index - (outboundPorts.length - 1) / 2) * 16)}px)`,
-            }}
+            style={getHandlePosition('document', 'right', index, outboundPorts.length, DOCUMENT_WIDTH, nodeHeight)}
             data-testid={`port-out-${port.name}`}
             data-port-name={port.name}
             data-port-direction="outbound"
@@ -261,7 +253,7 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
           id="out"
           title="out"
-          style={{ top: '45%', right: 0 }}
+          style={getHandlePosition('document', 'right', 0, 1, DOCUMENT_WIDTH, nodeHeight)}
           data-testid="port-out-default"
           data-port-name="out"
           data-port-direction="outbound"

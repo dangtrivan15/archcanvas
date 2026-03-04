@@ -21,6 +21,8 @@ import { useCoreStore } from '@/store/coreStore';
 import { iconMap } from './GenericNode';
 import { Box, ExternalLink } from 'lucide-react';
 import { NodeShell } from './shapes/NodeShell';
+import { getHandlePosition } from './shapes/handlePositions';
+import { useNodeHeight } from './shapes/useNodeHeight';
 
 const CYLINDER_WIDTH = 220;
 
@@ -28,6 +30,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
   const Icon = iconMap[nodeData.icon] ?? Box;
   const isRef = !!nodeData.refSource;
+  const [outerRef, nodeHeight] = useNodeHeight();
 
   const inboundPorts = nodeData.ports?.inbound ?? [];
   const outboundPorts = nodeData.ports?.outbound ?? [];
@@ -87,6 +90,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
+      ref={outerRef}
       className="relative"
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -106,9 +110,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-            style={{
-              top: `${30 + ((index + 1) / (inboundPorts.length + 1)) * 50}%`,
-            }}
+            style={getHandlePosition('cylinder', 'left', index, inboundPorts.length, CYLINDER_WIDTH, nodeHeight)}
             data-testid={`port-in-${port.name}`}
             data-port-name={port.name}
             data-port-direction="inbound"
@@ -121,7 +123,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
           id="in"
           title="in"
-          style={{ top: '50%' }}
+          style={getHandlePosition('cylinder', 'left', 0, 1, CYLINDER_WIDTH, nodeHeight)}
           data-testid="port-in-default"
           data-port-name="in"
           data-port-direction="inbound"
@@ -238,9 +240,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-            style={{
-              top: `${30 + ((index + 1) / (outboundPorts.length + 1)) * 50}%`,
-            }}
+            style={getHandlePosition('cylinder', 'right', index, outboundPorts.length, CYLINDER_WIDTH, nodeHeight)}
             data-testid={`port-out-${port.name}`}
             data-port-name={port.name}
             data-port-direction="outbound"
@@ -253,7 +253,7 @@ function CylinderNodeComponent({ data, selected }: NodeProps) {
           className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
           id="out"
           title="out"
-          style={{ top: '50%' }}
+          style={getHandlePosition('cylinder', 'right', 0, 1, CYLINDER_WIDTH, nodeHeight)}
           data-testid="port-out-default"
           data-port-name="out"
           data-port-direction="outbound"
