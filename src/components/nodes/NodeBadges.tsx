@@ -11,6 +11,8 @@ interface NodeBadgesProps {
   pendingSuggestionCount: number;
   codeRefCount: number;
   className?: string;
+  /** Optional color for the top divider line (hex with alpha, e.g. '#3B82F620') */
+  dividerColor?: string;
 }
 
 interface BadgeConfig {
@@ -22,7 +24,7 @@ interface BadgeConfig {
   textColor: string;
 }
 
-export function NodeBadges({ noteCount, pendingSuggestionCount, codeRefCount, className = '' }: NodeBadgesProps) {
+export function NodeBadges({ noteCount, pendingSuggestionCount, codeRefCount, className = '', dividerColor }: NodeBadgesProps) {
   const badges: BadgeConfig[] = [
     {
       count: noteCount,
@@ -54,7 +56,11 @@ export function NodeBadges({ noteCount, pendingSuggestionCount, codeRefCount, cl
   if (visibleBadges.length === 0) return null;
 
   return (
-    <div className={`flex items-center gap-1.5 ${className}`} data-testid="node-badges">
+    <div
+      className={`flex items-center gap-1.5 ${className}`}
+      style={dividerColor ? { borderTop: `1px solid ${dividerColor}` } : undefined}
+      data-testid="node-badges"
+    >
       {visibleBadges.map(({ count, icon: Icon, label, testId, bgColor, textColor }) => (
         <span
           key={testId}

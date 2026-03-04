@@ -128,6 +128,17 @@ export function colorTintedShadow(hexColor: string, elevation: 'default' | 'hove
 /**
  * Convert a hex color to normalized RGB values (0-1 range) for SVG filters.
  */
+/**
+ * Generate a soft glow/halo CSS box-shadow for selected nodes.
+ * Uses the node's accent color to create a diffused, premium selection indicator.
+ */
+export function colorGlowShadow(hexColor: string): string {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return '0 0 12px 4px rgba(107,114,128,0.35), 0 0 4px 1px rgba(107,114,128,0.25)';
+  const { r, g, b } = rgb;
+  return `0 0 14px 4px rgba(${r},${g},${b},0.35), 0 0 6px 2px rgba(${r},${g},${b},0.25), 0 0 2px 1px rgba(${r},${g},${b},0.18)`;
+}
+
 export function hexToNormalizedRgb(hexColor: string): { r: number; g: number; b: number } {
   const rgb = hexToRgb(hexColor);
   if (!rgb) return { r: 0.42, g: 0.42, b: 0.42 }; // gray fallback

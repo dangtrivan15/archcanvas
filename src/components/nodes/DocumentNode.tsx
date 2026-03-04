@@ -137,7 +137,8 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
         <div className="flex flex-col items-center text-center px-4 py-2 pb-4">
           {/* Header with icon and name */}
           <div
-            className="flex items-center gap-2 w-full justify-center py-1"
+            className="flex items-center gap-2 w-full justify-center py-1 pb-1.5"
+            style={{ borderBottom: `1px solid ${effectiveColor}20` }}
           >
             <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
             <div className="min-w-0 flex-1">
@@ -193,12 +194,13 @@ function DocumentNodeComponent({ data, selected }: NodeProps) {
             <NodeArgsTable args={nodeData.args} maxRows={3} className="mt-1 w-full" centered />
           )}
 
-          {/* Badges */}
+          {/* Badges (footer) */}
           <NodeBadges
             noteCount={nodeData.noteCount}
             pendingSuggestionCount={nodeData.pendingSuggestionCount}
             codeRefCount={nodeData.codeRefCount}
-            className="mt-1 justify-center"
+            className="mt-1 pt-1 justify-center"
+            dividerColor={`${effectiveColor}20`}
           />
         </div>
       </NodeShell>

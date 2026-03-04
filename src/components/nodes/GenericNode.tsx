@@ -150,7 +150,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
     <div
       className={`
         border-2 rounded-lg min-w-[200px] max-w-[280px]
-        transition-shadow relative overflow-hidden
+        relative overflow-hidden
         ${isRef ? 'border-dashed' : ''}
         ${selected ? '' : ''}
       `}
@@ -160,16 +160,19 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         background: isRef
           ? 'hsl(var(--iris) / 0.08)'
           : `linear-gradient(${effectiveColor}0F, ${effectiveColor}0F), hsl(var(--surface))`,
+        transition: 'box-shadow 180ms ease, transform 180ms ease',
       }}
       onMouseEnter={(e) => {
         if (!selected) {
           e.currentTarget.style.boxShadow = colorTintedShadow(effectiveColor, 'hover');
         }
+        e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
         if (!selected) {
           e.currentTarget.style.boxShadow = colorTintedShadow(effectiveColor, 'default');
         }
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
       data-testid={`node-${nodeData.archNodeId}`}
       data-node-id={nodeData.archNodeId}
@@ -219,7 +222,7 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       {/* Node header with tinted background */}
       <div
         className="flex items-center gap-2 px-3 py-2"
-        style={headerBgStyle}
+        style={{ ...headerBgStyle, borderBottom: `1px solid ${effectiveColor}20` }}
         data-testid="node-header"
       >
         <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
@@ -280,12 +283,13 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         <NodeArgsTable args={nodeData.args} maxRows={3} className="px-3 py-1.5" />
       )}
 
-      {/* Badges */}
+      {/* Badges (footer) */}
       <NodeBadges
         noteCount={nodeData.noteCount}
         pendingSuggestionCount={nodeData.pendingSuggestionCount}
         codeRefCount={nodeData.codeRefCount}
-        className="px-3 py-1.5 border-t border-border/40"
+        className="px-3 py-1.5"
+        dividerColor={`${effectiveColor}20`}
       />
 
       {/* Outbound port handles (right side) */}

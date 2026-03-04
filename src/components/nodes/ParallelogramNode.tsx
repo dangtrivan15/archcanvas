@@ -144,7 +144,8 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
         <div className="flex flex-col px-6 py-2" style={{ minWidth: 0 }}>
           {/* Header with icon + name */}
           <div
-            className="flex items-center gap-2 py-1"
+            className="flex items-center gap-2 py-1 pb-1.5"
+            style={{ borderBottom: `1px solid ${effectiveColor}20` }}
             data-testid="node-header"
           >
             <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
@@ -201,12 +202,13 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
             <NodeArgsTable args={nodeData.args} maxRows={3} className="px-1 py-1" />
           )}
 
-          {/* Badges */}
+          {/* Badges (footer) */}
           <NodeBadges
             noteCount={nodeData.noteCount}
             pendingSuggestionCount={nodeData.pendingSuggestionCount}
             codeRefCount={nodeData.codeRefCount}
             className="pt-1"
+            dividerColor={`${effectiveColor}20`}
           />
         </div>
       </NodeShell>
