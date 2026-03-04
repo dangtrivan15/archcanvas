@@ -15,12 +15,14 @@ import functionYaml from './builtins/core/compute/function.yaml?raw';
 import workerYaml from './builtins/core/compute/worker.yaml?raw';
 import apiGatewayYaml from './builtins/core/compute/api-gateway.yaml?raw';
 import cronJobYaml from './builtins/core/compute/cron-job.yaml?raw';
+import containerYaml from './builtins/core/compute/container.yaml?raw';
 
 // Data namespace
 import databaseYaml from './builtins/core/data/database.yaml?raw';
 import cacheYaml from './builtins/core/data/cache.yaml?raw';
 import objectStorageYaml from './builtins/core/data/object-storage.yaml?raw';
 import repositoryYaml from './builtins/core/data/repository.yaml?raw';
+import searchIndexYaml from './builtins/core/data/search-index.yaml?raw';
 
 // Messaging namespace
 import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
@@ -74,11 +76,13 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'compute/worker.yaml', rawYaml: workerYaml, namespace: 'compute', name: 'worker' },
   { filePath: 'compute/api-gateway.yaml', rawYaml: apiGatewayYaml, namespace: 'compute', name: 'api-gateway' },
   { filePath: 'compute/cron-job.yaml', rawYaml: cronJobYaml, namespace: 'compute', name: 'cron-job' },
+  { filePath: 'compute/container.yaml', rawYaml: containerYaml, namespace: 'compute', name: 'container' },
   // Data (4)
   { filePath: 'data/database.yaml', rawYaml: databaseYaml, namespace: 'data', name: 'database' },
   { filePath: 'data/cache.yaml', rawYaml: cacheYaml, namespace: 'data', name: 'cache' },
   { filePath: 'data/object-storage.yaml', rawYaml: objectStorageYaml, namespace: 'data', name: 'object-storage' },
   { filePath: 'data/repository.yaml', rawYaml: repositoryYaml, namespace: 'data', name: 'repository' },
+  { filePath: 'data/search-index.yaml', rawYaml: searchIndexYaml, namespace: 'data', name: 'search-index' },
   // Messaging (3)
   { filePath: 'messaging/message-queue.yaml', rawYaml: messageQueueYaml, namespace: 'messaging', name: 'message-queue' },
   { filePath: 'messaging/event-bus.yaml', rawYaml: eventBusYaml, namespace: 'messaging', name: 'event-bus' },
