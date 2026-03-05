@@ -10196,3 +10196,32 @@ Date: 2026-03-05
 
 #### Commit: 02b42a7
 #### Feature #370 marked passing
+
+---
+
+## Session: Feature #426 - Multi-node deletion via Delete key and all bulk operations
+Date: 2026-03-05
+
+### Feature #426: Multi-node deletion via Delete key - PASSING
+
+#### Implementation:
+- **uiStore.ts**: Extended `DeleteDialogInfo` with optional `nodeIds?: string[]` and `nodeCount?: number` fields for multi-node deletion
+- **Canvas.tsx**: Created `openDeleteForSelectedNodes()` helper that checks `selectedNodeIds` array first (multi), then falls back to `selectedNodeId` (single). Computes aggregate deletion impact across all selected nodes with deduplication of shared edges. Both Delete and Backspace keys use this helper.
+- **DeleteConfirmationDialog.tsx**: Updated to support multi-node deletion:
+  - Title: "Delete N Nodes" (multi) vs "Delete Node" (single)
+  - Message: "N selected nodes" (multi) vs node name (single)
+  - Impact: Aggregated edge count (deduplicated) and child count
+  - Confirm handler: Loops through all node IDs calling textApi.removeNode(), then creates single undo snapshot with "Delete N nodes" description
+  - Toast: "Deleted N nodes. Ctrl+Z to undo"
+
+#### Verification (Browser Automation on vite preview):
+- Vite build: PASS (no compilation errors)
+- Ctrl+A then Delete: Dialog shows "Delete 8 Nodes" with "8 selected nodes" and "7 connected edges": PASS
+- Confirm multi-delete: All 8 nodes deleted, status bar shows Nodes: 0, Edges: 0: PASS
+- Toast: "Deleted 8 nodes. Ctrl+Z to undo": PASS
+- Single node click then Delete: Dialog shows "Delete Node" with single node name (Stripe): PASS
+- Single node impact: "1 connected edge" shown correctly: PASS
+- Ctrl+A then Backspace: Dialog shows "Delete 8 Nodes" (same as Delete key): PASS
+- Console: Only pre-existing SSL/PWA errors, 0 app errors: PASS
+
+#### Feature #426 marked passing
