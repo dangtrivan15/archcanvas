@@ -61,22 +61,40 @@ import {
   formatValidationError,
 } from './validation';
 
+/**
+ * TextApi provides the primary interface for reading and mutating architecture data.
+ *
+ * It wraps the core graph engine with Zod validation and is used by both the
+ * interactive UI and external AI agents (via MCP). All mutations are immutable -
+ * they produce new graph state rather than modifying in place.
+ *
+ * @example
+ * ```ts
+ * const api = new TextApi(graph, registry);
+ * const node = api.addNode({ type: 'compute/service', displayName: 'Auth Service' });
+ * const edge = api.addEdge({ fromNode: node.id, toNode: dbId, type: 'sync' });
+ * const description = api.describe({ format: 'human' });
+ * ```
+ */
 export class TextApi {
   private graph: ArchGraph;
   private readonly registry: RegistryManagerCore;
 
+  /**
+   * @param graph - The initial architecture graph state
+   * @param registry - Node type registry for resolving NodeDef definitions
+   */
   constructor(graph: ArchGraph, registry: RegistryManagerCore) {
     this.graph = graph;
     this.registry = registry;
   }
 
-  /**
-   * Get/set the current graph state.
-   */
+  /** Returns the current architecture graph state. */
   getGraph(): ArchGraph {
     return this.graph;
   }
 
+  /** Replaces the current graph state (e.g., after loading a file). */
   setGraph(graph: ArchGraph): void {
     this.graph = graph;
   }
@@ -87,6 +105,17 @@ export class TextApi {
 
   /**
    * Describe the architecture in the requested format.
+   *
+   * @param options - Description options including format ('structured' | 'human' | 'ai')
+   * @returns Formatted string representation of the architecture
+   * @throws Error if options fail Zod validation
+   *
+   * @example
+   * ```ts
+   * const json = textApi.describe({ format: 'structured' });
+   * const markdown = textApi.describe({ format: 'human' });
+   * const xml = textApi.describe({ format: 'ai' }); // XML-like format optimized for LLMs
+   * ```
    */
   describe(options: DescribeOptions): string {
     const parsed = DescribeOptionsSchema.safeParse(options);
@@ -109,7 +138,9 @@ export class TextApi {
   }
 
   /**
-   * List all nodes as summaries.
+   * List all nodes (including nested children) as flat summaries.
+   *
+   * @returns Array of node summaries with id, type, displayName, and counts
    */
   listNodes(): NodeSummary[] {
     const allNodes = flattenNodes(this.graph.nodes);
@@ -117,7 +148,11 @@ export class TextApi {
   }
 
   /**
-   * Get detailed information about a specific node.
+   * Get detailed information about a specific node, including its edges,
+   * notes, code refs, children, and NodeDef AI context.
+   *
+   * @param nodeId - The unique ID of the node to retrieve
+   * @returns Full node detail with inbound/outbound edges, or undefined if not found
    */
   getNode(nodeId: string): NodeDetail | undefined {
     const node = findNode(this.graph, nodeId);
@@ -181,7 +216,12 @@ export class TextApi {
   }
 
   /**
-   * Get AI context for the selected node (with neighbors).
+   * Build AI context for a selected node, including its neighbors within N hops.
+   * Used to provide focused context to the Claude AI assistant.
+   *
+   * @param nodeId - Optional node to center the context on
+   * @param hops - Number of edge hops to include neighbors (default: 1)
+   * @returns AI-optimized context with architecture summary, selected node details, and neighbors
    */
   getAIContext(nodeId?: string, hops: number = 1): AIContext {
     const context: AIContext = {
@@ -240,7 +280,21 @@ export class TextApi {
 
   /**
    * Add a new node to the architecture.
-   * Validates input params and creates a node with a fresh ID.
+   * Validates input via Zod schema and creates a node with a fresh ULID.
+   *
+   * @param params - Node creation parameters (type, displayName, optional position/args/parentId)
+   * @returns The newly created ArchNode with generated ID
+   * @throws Error if params fail validation
+   *
+   * @example
+   * ```ts
+   * const node = textApi.addNode({
+   *   type: 'compute/service',
+   *   displayName: 'User Service',
+   *   position: { x: 100, y: 200 },
+   *   args: { language: 'TypeScript' },
+   * });
+   * ```
    */
   addNode(params: AddNodeParams): ArchNode {
     const parsed = AddNodeSchema.safeParse(params);
@@ -265,9 +319,22 @@ export class TextApi {
   }
 
   /**
-   * Add a new edge to the architecture.
-   * Validates input params and that both fromNode and toNode exist in the graph.
-   * Throws an error with a descriptive message if input is invalid or nodes don't exist.
+   * Add a new edge (connection) between two nodes.
+   * Validates input and verifies both endpoint nodes exist in the graph.
+   *
+   * @param params - Edge creation parameters (fromNode, toNode, type, optional label/ports)
+   * @returns The newly created ArchEdge with generated ID
+   * @throws Error if params fail validation or endpoint nodes don't exist
+   *
+   * @example
+   * ```ts
+   * const edge = textApi.addEdge({
+   *   fromNode: serviceId,
+   *   toNode: databaseId,
+   *   type: 'sync',
+   *   label: 'queries',
+   * });
+   * ```
    */
   addEdge(params: AddEdgeParams): ArchEdge {
     const parsed = AddEdgeSchema.safeParse(params);
@@ -305,8 +372,11 @@ export class TextApi {
   }
 
   /**
-   * Add a note to a node or edge.
-   * Requires exactly one of nodeId or edgeId to be set.
+   * Add a note (annotation/comment) to a node or edge.
+   *
+   * @param params - Note creation parameters. Exactly one of nodeId or edgeId must be set.
+   * @returns The newly created Note with generated ID and timestamp
+   * @throws Error if params fail validation or neither nodeId nor edgeId is provided
    */
   addNote(params: AddNoteParams): Note {
     const parsed = AddNoteSchema.safeParse(params);
@@ -330,7 +400,11 @@ export class TextApi {
   }
 
   /**
-   * Remove a note from a node.
+   * Remove a note from a node by ID.
+   *
+   * @param nodeId - The ID of the node containing the note
+   * @param noteId - The ID of the note to remove
+   * @throws Error if nodeId or noteId fail validation
    */
   removeNote(nodeId: string, noteId: string): void {
     const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
@@ -345,7 +419,10 @@ export class TextApi {
   }
 
   /**
-   * Add a code reference to a node.
+   * Add a code reference (file path + role) to a node.
+   *
+   * @param params - Code ref parameters (nodeId, path, role)
+   * @throws Error if params fail validation
    */
   addCodeRef(params: AddCodeRefParams): void {
     const parsed = AddCodeRefSchema.safeParse(params);
@@ -357,7 +434,11 @@ export class TextApi {
   }
 
   /**
-   * Update a node's properties.
+   * Update a node's displayName, args, or properties.
+   *
+   * @param nodeId - The ID of the node to update
+   * @param params - Fields to update (at least one required)
+   * @throws Error if nodeId or params fail validation
    */
   updateNode(nodeId: string, params: UpdateNodeParams): void {
     const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
@@ -384,7 +465,10 @@ export class TextApi {
   }
 
   /**
-   * Remove a node and its connected edges.
+   * Remove a node, its children, and all connected edges from the graph.
+   *
+   * @param nodeId - The ID of the node to remove
+   * @throws Error if nodeId fails validation
    */
   removeNode(nodeId: string): void {
     const parsed = NodeIdSchema.safeParse(nodeId);
@@ -420,7 +504,12 @@ export class TextApi {
   }
 
   /**
-   * Create an AI suggestion as a pending note.
+   * Create an AI suggestion attached as a pending note on a node.
+   * The suggestion can later be accepted or dismissed via {@link resolveSuggestion}.
+   *
+   * @param params - Suggestion parameters (nodeId, content, optional suggestionType)
+   * @returns The created Note with status 'pending' and author 'ai'
+   * @throws Error if params fail validation
    */
   suggest(params: SuggestParams): Note {
     const parsed = SuggestSchema.safeParse(params);
@@ -455,7 +544,12 @@ export class TextApi {
   }
 
   /**
-   * Accept or dismiss an AI suggestion.
+   * Accept or dismiss an AI suggestion (changes the note's status).
+   *
+   * @param nodeId - The node containing the suggestion note
+   * @param noteId - The suggestion note to resolve
+   * @param action - Whether to accept or dismiss the suggestion
+   * @throws Error if any parameter fails validation
    */
   resolveSuggestion(nodeId: string, noteId: string, action: 'accepted' | 'dismissed'): void {
     const nodeIdParsed = NodeIdSchema.safeParse(nodeId);

@@ -8,9 +8,22 @@ import type { CanvasNode, CanvasNodeData, CanvasEdge, CanvasEdgeData } from '@/t
 import type { RegistryManager } from '@/core/registry/registryManager';
 import { getNodesAtLevel, getEdgesAtLevel } from '@/core/graph/graphQuery';
 
+/**
+ * RenderApi transforms the internal ArchGraph into React Flow nodes and edges
+ * for canvas rendering. It handles fractal zoom navigation, node shape resolution
+ * via NodeDef metadata, and port mapping.
+ *
+ * @example
+ * ```ts
+ * const renderApi = new RenderApi(registry);
+ * const { nodes, edges } = renderApi.render(graph, navigationPath);
+ * // nodes/edges are ready for <ReactFlow nodes={nodes} edges={edges} />
+ * ```
+ */
 export class RenderApi {
   private readonly registry: RegistryManager;
 
+  /** @param registry - Node type registry for resolving shapes, icons, and ports */
   constructor(registry: RegistryManager) {
     this.registry = registry;
   }
@@ -18,6 +31,10 @@ export class RenderApi {
   /**
    * Transform the architecture graph into React Flow nodes and edges
    * for the given navigation path (fractal zoom level).
+   *
+   * @param graph - The architecture graph to render
+   * @param navigationPath - Fractal zoom path (empty = root level, ['nodeId'] = children of nodeId)
+   * @returns React Flow-compatible nodes and edges for the current navigation level
    */
   render(graph: ArchGraph, navigationPath: string[]): { nodes: CanvasNode[]; edges: CanvasEdge[] } {
     const archNodes = getNodesAtLevel(graph, navigationPath);

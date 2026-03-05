@@ -1,5 +1,11 @@
 /**
  * Export API - generates markdown summaries, Mermaid diagrams, PNG, and SVG exports.
+ *
+ * Generation methods (pure, no side-effects):
+ *   generateMarkdownSummary, generateSummaryWithMermaid, generateMermaid
+ *
+ * Export methods (trigger download or native share):
+ *   exportToPng, exportToSvg, exportToMarkdown, exportToMermaid
  */
 
 import type { ArchGraph, ArchNode } from '@/types/graph';
@@ -8,14 +14,106 @@ import { toPng, toSvg } from 'html-to-image';
 import { isNative } from '@/core/platform/platformBridge';
 import { getFileSystemAdapter } from '@/core/platform/fileSystemAdapter';
 
-export class ExportApi {
-  constructor() {
-    console.log('[ExportApi] Initialized');
+// ============================================================
+// Shared helpers
+// ============================================================
+
+/**
+ * Filter function for html-to-image: removes React Flow UI controls
+ * (minimap, controls panel) from exported images.
+ */
+function viewportExportFilter(node: HTMLElement): boolean {
+  const className = node.className;
+  if (typeof className === 'string') {
+    if (className.includes('react-flow__minimap')) return false;
+    if (className.includes('react-flow__controls')) return false;
+    if (className.includes('react-flow__panel')) return false;
   }
+  return true;
+}
+
+/**
+ * Download text or binary content as a file via the browser or native share sheet.
+ * Consolidates the duplicated download logic used by markdown, mermaid, and SVG exports.
+ */
+async function downloadOrShare(
+  content: string | Uint8Array,
+  fileName: string,
+  mimeType: string,
+): Promise<void> {
+  if (isNative()) {
+    const adapter = await getFileSystemAdapter();
+    await adapter.shareFile(content, fileName, mimeType);
+  } else {
+    const blob =
+      content instanceof Uint8Array
+        ? new Blob([content], { type: mimeType })
+        : new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Get the React Flow viewport element from the DOM.
+ * Returns null with a console error if not found.
+ */
+function getViewportElement(exportType: string): HTMLElement | null {
+  const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null;
+  if (!viewport) {
+    console.error(`[ExportApi] Cannot find React Flow viewport element for ${exportType} export`);
+  }
+  return viewport;
+}
+
+/**
+ * Strip known file extensions from a base name to avoid double extensions.
+ */
+function cleanBaseName(fileName: string, ...extensions: string[]): string {
+  let name = fileName;
+  for (const ext of extensions) {
+    name = name.replace(new RegExp(`\\.${ext.replace('.', '')}$`), '');
+  }
+  return name;
+}
+
+/**
+ * ExportApi handles exporting architectures to various formats.
+ *
+ * **Generation methods** (pure, no side-effects):
+ * - {@link ExportApi.generateMarkdownSummary} - Markdown overview
+ * - {@link ExportApi.generateSummaryWithMermaid} - Markdown + Mermaid diagram
+ * - {@link ExportApi.generateMermaid} - Standalone Mermaid diagram
+ *
+ * **Export methods** (trigger file download or native share):
+ * - {@link ExportApi.exportToPng} / {@link ExportApi.exportToSvg} - Image exports
+ * - {@link ExportApi.exportToMarkdown} / {@link ExportApi.exportToMermaid} - Text exports
+ *
+ * @example
+ * ```ts
+ * const exportApi = new ExportApi();
+ * const markdown = exportApi.generateMarkdownSummary(graph);
+ * await exportApi.exportToPng('my-architecture');
+ * ```
+ */
+export class ExportApi {
+  // ============================================================
+  // Generation Methods (pure, no side-effects)
+  // ============================================================
 
   /**
    * Generate a markdown summary of the architecture.
    * This is used as the auto-generated .summary.md sidecar file.
+   *
+   * @param graph - The architecture graph to summarize
+   * @returns Markdown string with overview table, owners, components, and connections
    */
   generateMarkdownSummary(graph: ArchGraph): string {
     const lines: string[] = [];
@@ -72,6 +170,9 @@ export class ExportApi {
   /**
    * Generate the full .summary.md sidecar content, combining
    * the markdown summary with a fenced Mermaid diagram block.
+   *
+   * @param graph - The architecture graph to export
+   * @returns Complete markdown string with summary + Mermaid diagram section
    */
   generateSummaryWithMermaid(graph: ArchGraph): string {
     const summary = this.generateMarkdownSummary(graph);
@@ -86,6 +187,10 @@ export class ExportApi {
 
   /**
    * Generate a Mermaid diagram representation of the architecture.
+   * Node shapes are mapped from node types (database=cylinder, queue=stadium, etc.).
+   *
+   * @param graph - The architecture graph to diagram
+   * @returns Mermaid `graph LR` diagram string
    */
   generateMermaid(graph: ArchGraph): string {
     const lines: string[] = [];
@@ -111,6 +216,10 @@ export class ExportApi {
     return lines.join('\n');
   }
 
+  // ============================================================
+  // Export Methods (trigger download or native share)
+  // ============================================================
+
   /**
    * Export the canvas to a PNG image and trigger a download.
    * Captures the React Flow viewport element from the DOM.
@@ -119,42 +228,28 @@ export class ExportApi {
    * @returns true if export succeeded
    */
   async exportToPng(fileName: string = 'architecture'): Promise<boolean> {
-    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null;
-    if (!viewport) {
-      console.error('[ExportApi] Cannot find React Flow viewport element for PNG export');
-      return false;
-    }
+    const viewport = getViewportElement('PNG');
+    if (!viewport) return false;
 
     try {
       const dataUrl = await toPng(viewport, {
-        backgroundColor: '#f9fafb', // gray-50 to match canvas background
-        pixelRatio: 2, // High-res export
-        filter: (node: HTMLElement) => {
-          // Filter out UI controls that shouldn't be in the export
-          const className = node.className;
-          if (typeof className === 'string') {
-            if (className.includes('react-flow__minimap')) return false;
-            if (className.includes('react-flow__controls')) return false;
-            if (className.includes('react-flow__panel')) return false;
-          }
-          return true;
-        },
+        backgroundColor: '#f9fafb',
+        pixelRatio: 2,
+        filter: viewportExportFilter,
       });
 
-      const baseName = fileName.replace(/\.archc$/, '').replace(/\.png$/, '');
+      const baseName = cleanBaseName(fileName, 'archc', 'png');
 
       if (isNative()) {
-        // Native iOS: convert data URL to binary and share via native share sheet
         const base64Data = dataUrl.split(',')[1] || '';
         const binaryStr = atob(base64Data);
         const bytes = new Uint8Array(binaryStr.length);
         for (let i = 0; i < binaryStr.length; i++) {
           bytes[i] = binaryStr.charCodeAt(i);
         }
-        const adapter = await getFileSystemAdapter();
-        await adapter.shareFile(bytes, `${baseName}.png`, 'image/png');
+        await downloadOrShare(bytes, `${baseName}.png`, 'image/png');
       } else {
-        // Web: trigger download via anchor element
+        // PNG uses data URL directly (no blob needed)
         const link = document.createElement('a');
         link.download = `${baseName}.png`;
         link.href = dataUrl;
@@ -164,7 +259,6 @@ export class ExportApi {
         document.body.removeChild(link);
       }
 
-      console.log(`[ExportApi] PNG exported: ${baseName}.png`);
       return true;
     } catch (err) {
       console.error('[ExportApi] PNG export failed:', err);
@@ -180,51 +274,19 @@ export class ExportApi {
    * @returns true if export succeeded
    */
   async exportToSvg(fileName: string = 'architecture'): Promise<boolean> {
-    const viewport = document.querySelector('.react-flow__viewport') as HTMLElement | null;
-    if (!viewport) {
-      console.error('[ExportApi] Cannot find React Flow viewport element for SVG export');
-      return false;
-    }
+    const viewport = getViewportElement('SVG');
+    if (!viewport) return false;
 
     try {
       const dataUrl = await toSvg(viewport, {
-        backgroundColor: '#f9fafb', // gray-50 to match canvas background
-        filter: (node: HTMLElement) => {
-          // Filter out UI controls that shouldn't be in the export
-          const className = node.className;
-          if (typeof className === 'string') {
-            if (className.includes('react-flow__minimap')) return false;
-            if (className.includes('react-flow__controls')) return false;
-            if (className.includes('react-flow__panel')) return false;
-          }
-          return true;
-        },
+        backgroundColor: '#f9fafb',
+        filter: viewportExportFilter,
       });
 
-      const baseName = fileName.replace(/\.archc$/, '').replace(/\.svg$/, '');
-
-      // Decode the data URL to get raw SVG content
+      const baseName = cleanBaseName(fileName, 'archc', 'svg');
       const svgContent = decodeURIComponent(dataUrl.split(',')[1] || '');
+      await downloadOrShare(svgContent, `${baseName}.svg`, 'image/svg+xml');
 
-      if (isNative()) {
-        // Native iOS: share SVG text via native share sheet
-        const adapter = await getFileSystemAdapter();
-        await adapter.shareFile(svgContent, `${baseName}.svg`, 'image/svg+xml');
-      } else {
-        // Web: trigger download via blob URL + anchor element
-        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `${baseName}.svg`;
-        link.href = url;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-
-      console.log(`[ExportApi] SVG exported: ${baseName}.svg`);
       return true;
     } catch (err) {
       console.error('[ExportApi] SVG export failed:', err);
@@ -243,27 +305,8 @@ export class ExportApi {
   async exportToMarkdown(graph: ArchGraph, fileName: string = 'architecture'): Promise<boolean> {
     try {
       const content = this.generateSummaryWithMermaid(graph);
-      const baseName = fileName.replace(/\.archc$/, '').replace(/\.md$/, '');
-
-      if (isNative()) {
-        // Native iOS: share markdown via native share sheet
-        const adapter = await getFileSystemAdapter();
-        await adapter.shareFile(content, `${baseName}.md`, 'text/markdown');
-      } else {
-        // Web: trigger download via blob URL + anchor element
-        const blob = new Blob([content], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `${baseName}.md`;
-        link.href = url;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-
-      console.log(`[ExportApi] Markdown exported: ${baseName}.md`);
+      const baseName = cleanBaseName(fileName, 'archc', 'md');
+      await downloadOrShare(content, `${baseName}.md`, 'text/markdown');
       return true;
     } catch (err) {
       console.error('[ExportApi] Markdown export failed:', err);
@@ -282,27 +325,8 @@ export class ExportApi {
   async exportToMermaid(graph: ArchGraph, fileName: string = 'architecture'): Promise<boolean> {
     try {
       const content = this.generateMermaid(graph);
-      const baseName = fileName.replace(/\.archc$/, '').replace(/\.mmd$/, '');
-
-      if (isNative()) {
-        // Native iOS: share Mermaid file via native share sheet
-        const adapter = await getFileSystemAdapter();
-        await adapter.shareFile(content, `${baseName}.mmd`, 'text/plain');
-      } else {
-        // Web: trigger download via blob URL + anchor element
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `${baseName}.mmd`;
-        link.href = url;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-
-      console.log(`[ExportApi] Mermaid exported: ${baseName}.mmd`);
+      const baseName = cleanBaseName(fileName, 'archc', 'mmd');
+      await downloadOrShare(content, `${baseName}.mmd`, 'text/plain');
       return true;
     } catch (err) {
       console.error('[ExportApi] Mermaid export failed:', err);
@@ -385,7 +409,6 @@ export class ExportApi {
   }
 
   private sanitizeMermaidId(id: string): string {
-    // Replace characters that are not valid in Mermaid node IDs
     return id.replace(/[^a-zA-Z0-9_]/g, '_');
   }
 }
