@@ -174,6 +174,19 @@ export const TOOL_DEFINITIONS = {
       description: z.string().optional().describe('Architecture description'),
     },
   },
+
+  analyze_codebase: {
+    name: 'analyze_codebase',
+    description: 'Analyze a codebase directory and generate an architecture graph (.archc file). Scans the directory, detects frameworks and infrastructure, optionally uses AI inference, and produces a visual architecture. Returns a summary of the detected architecture. Use merge=true to incrementally update an existing .archc file.',
+    inputSchema: {
+      directory: z.string().describe('Absolute path to the codebase directory to analyze'),
+      output_path: z.string().optional().describe('Output path for the .archc file (default: <directory>/architecture.archc)'),
+      depth: z.enum(['quick', 'standard', 'deep']).optional().describe('Analysis depth: quick (single AI prompt), standard (multi-step), deep (refinement). Default: standard'),
+      architecture_name: z.string().optional().describe('Name for the architecture (default: directory name)'),
+      merge: z.boolean().optional().describe('If true, merge into existing .archc file instead of generating from scratch. Preserves manual nodes and customizations.'),
+      strategy: z.enum(['ai-wins', 'manual-wins', 'prompt']).optional().describe('Conflict resolution strategy for merge mode: ai-wins (prefer new inference), manual-wins (preserve existing), prompt (flag conflicts). Default: manual-wins'),
+    },
+  },
 } as const;
 
 /**

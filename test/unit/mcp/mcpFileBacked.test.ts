@@ -495,8 +495,8 @@ describe('Feature #308: File-Backed MCP Server', () => {
   // ── Tool count verification ──
 
   describe('tool count includes save and file_info', () => {
-    it('has 18 total tools', () => {
-      expect(getToolCount()).toBe(18);
+    it('has 19 total tools', () => {
+      expect(getToolCount()).toBe(19);
     });
 
     it('tool names include save and file_info', () => {
