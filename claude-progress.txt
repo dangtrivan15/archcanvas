@@ -10266,3 +10266,38 @@ Date: 2026-03-05
 #### Commit: bbdb385
 #### Feature #344 marked passing
 #### Progress: 419/426 features passing (98.4%)
+
+---
+
+## Session: Feature #349 - Analysis Prompt Template System
+Date: 2026-03-05
+
+### Feature #349: Analysis Prompt Template System - PASSING
+
+#### Implementation:
+- Created `src/analyze/prompts/` directory with 7 files:
+  - `types.ts`: PromptTemplate interface with systemPrompt, analysisSteps[], responseSchema, postProcessing, fewShotExamples
+  - `shared.ts`: NODE_TYPE_REGISTRY_TEXT (all built-in node types), STANDARD_RESPONSE_SCHEMA, 3 few-shot examples (web app, microservices, data pipeline)
+  - `general.ts`: Language-agnostic default template, fallback for any project type
+  - `webApp.ts`: Specialized for frontend/backend web apps (React, Next.js, Django, Rails, etc.)
+  - `microservices.ts`: Specialized for distributed systems with Docker/K8s, service boundaries, event-driven patterns
+  - `dataPipeline.ts`: Specialized for ETL, data processing, analytics (Airflow, Spark, dbt)
+  - `index.ts`: Template registry with auto-selection (matcher scoring), manual override, custom template registration, config file loading
+
+#### Key design decisions:
+- Templates use {{placeholder}} tokens ({{projectProfile}}, {{fileContents}}) for runtime substitution
+- Auto-selection uses scorer functions returning 0-100, highest score wins (minimum threshold 20 to beat general)
+- Custom templates via registerCustomTemplate() with optional matcher, or loadCustomTemplatesFromConfig() for .archcanvas.yml
+- All templates include NODE_TYPE_REGISTRY_TEXT with full namespace/name listing of all built-in types
+- Few-shot examples are valid JSON that can be parsed and validated against inferenceResultSchema
+
+#### Verification:
+- Vite build: PASS
+- 32 unit tests passing: PASS
+- App loads without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 2b13044
+#### Feature #349 marked passing
+#### Progress: 421/426 features passing (98.8%)
