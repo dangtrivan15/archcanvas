@@ -13,7 +13,6 @@ export class RenderApi {
 
   constructor(registry: RegistryManager) {
     this.registry = registry;
-    console.log('[RenderApi] Initialized');
   }
 
   /**
@@ -24,7 +23,7 @@ export class RenderApi {
     const archNodes = getNodesAtLevel(graph, navigationPath);
     const archEdges = getEdgesAtLevel(graph, navigationPath);
 
-    const canvasNodes = archNodes.map((node) => this.toCanvasNode(node, graph));
+    const canvasNodes = archNodes.map((node) => this.toCanvasNode(node));
     const canvasEdges = archEdges.map((edge) => this.toCanvasEdge(edge));
 
     return { nodes: canvasNodes, edges: canvasEdges };
@@ -33,7 +32,7 @@ export class RenderApi {
   /**
    * Transform an ArchNode into a React Flow CanvasNode.
    */
-  private toCanvasNode(node: ArchNode, _graph: ArchGraph): CanvasNode {
+  private toCanvasNode(node: ArchNode): CanvasNode {
     const nodeDef = this.registry.resolve(node.type);
 
     // Build port info from nodedef
@@ -129,7 +128,7 @@ export class RenderApi {
   private getNodeComponentType(type: string, shape?: string): string {
     // If nodedef specifies a shape, use it to select the component
     if (shape && shape in RenderApi.SHAPE_TO_COMPONENT) {
-      return RenderApi.SHAPE_TO_COMPONENT[shape];
+      return RenderApi.SHAPE_TO_COMPONENT[shape] ?? 'generic';
     }
 
     // Fallback: namespace-based mapping for nodedefs without shape metadata

@@ -165,8 +165,8 @@ function sanitizeNode(node: Node): void {
     // Sanitize attributes
     const attrsToRemove: string[] = [];
     for (let i = 0; i < el.attributes.length; i++) {
-      const attr = el.attributes[i];
-      if (!isAllowedAttr(tagName, attr.name)) {
+      const attr = el.attributes.item(i);
+      if (attr && !isAllowedAttr(tagName, attr.name)) {
         attrsToRemove.push(attr.name);
       }
     }

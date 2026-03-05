@@ -438,7 +438,7 @@ export function extractJson(text: string): string {
   // Try to find JSON in markdown code fence
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (fenceMatch) {
-    return fenceMatch[1].trim();
+    return (fenceMatch[1] ?? '').trim();
   }
 
   // Try to find a JSON object directly
@@ -542,7 +542,7 @@ export function mergeResults(results: InferenceResult[]): InferenceResult {
   }
 
   if (results.length === 1) {
-    return results[0];
+    return results[0]!;
   }
 
   const nodeMap = new Map<string, InferredNode>();
@@ -565,8 +565,8 @@ export function mergeResults(results: InferenceResult[]): InferenceResult {
   }
 
   return {
-    architectureName: results[0].architectureName,
-    architectureDescription: results[0].architectureDescription,
+    architectureName: results[0]!.architectureName,
+    architectureDescription: results[0]!.architectureDescription,
     nodes: Array.from(nodeMap.values()),
     edges,
   };
@@ -698,7 +698,7 @@ async function inferQuick(
       description: `Analyzing batch ${i + 1}/${batches.length}...`,
     });
 
-    const fileContents = formatFileContents(batches[i]);
+    const fileContents = formatFileContents(batches[i] ?? []);
     const prompt = buildQuickPrompt(profile, fileContents);
 
     const response = await sendWithRetry(
@@ -733,7 +733,7 @@ async function inferStandard(
   const tokenLimit = options.tokenLimitPerCall ?? DEFAULT_TOKEN_LIMIT_PER_CALL;
 
   const batches = batchFiles(keyFiles.files, tokenLimit);
-  const fileContents = formatFileContents(batches.length === 1 ? keyFiles.files : batches[0]);
+  const fileContents = formatFileContents(batches.length === 1 ? keyFiles.files : batches[0] ?? []);
 
   // Step 1: Identify components
   options.onProgress?.({

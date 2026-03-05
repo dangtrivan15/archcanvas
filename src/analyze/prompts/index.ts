@@ -242,14 +242,15 @@ export function getTemplateById(id: string): PromptTemplate | undefined {
 export function selectTemplate(profile: ProjectProfile, minScore: number = 20): PromptTemplate {
   const all = [...BUILTIN_TEMPLATES, ...customTemplates];
 
-  let bestEntry = all[0]; // general is first
-  let bestScore = all[0].matcher(profile);
+  let bestEntry = all[0]!; // general is first
+  let bestScore = all[0]!.matcher(profile);
 
   for (let i = 1; i < all.length; i++) {
-    const score = all[i].matcher(profile);
+    const entry = all[i]!;
+    const score = entry.matcher(profile);
     if (score > bestScore && score >= minScore) {
       bestScore = score;
-      bestEntry = all[i];
+      bestEntry = entry;
     }
   }
 

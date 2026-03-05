@@ -9,7 +9,7 @@
 
 import { memo, useMemo } from 'react';
 import type { NodeProps } from '@xyflow/react';
-import type { CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useInlineEdit } from '@/hooks/useInlineEdit';
 import { iconMap, DefaultNodeIcon } from './iconMap';
@@ -20,8 +20,8 @@ import { useNodeHeight } from './shapes/useNodeHeight';
 
 const HEXAGON_WIDTH = 240;
 
-function HexagonNodeComponent({ data, selected }: NodeProps) {
-  const nodeData = data as unknown as CanvasNodeData;
+function HexagonNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+  const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
   const isRef = !!nodeData.refSource;
   const [outerRef, nodeHeight] = useNodeHeight();
@@ -44,6 +44,7 @@ function HexagonNodeComponent({ data, selected }: NodeProps) {
       data-node-type={nodeData.nodedefType}
       data-node-name={nodeData.displayName}
       data-node-color={effectiveColor}
+      data-node-shape="hexagon"
       data-ref-source={nodeData.refSource || undefined}
     >
       <ShapedPortHandles

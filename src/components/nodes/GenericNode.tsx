@@ -17,7 +17,7 @@
 
 import { memo, useMemo } from 'react';
 import type { NodeProps } from '@xyflow/react';
-import type { CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import {
   getEffectiveNodeColor,
   colorToBackground,
@@ -35,8 +35,8 @@ import { ExternalLink } from 'lucide-react';
 // Re-export iconMap for backward compatibility (used by CommandPalette, QuickSearch)
 export { iconMap } from './iconMap';
 
-function GenericNodeComponent({ data, selected }: NodeProps) {
-  const nodeData = data as unknown as CanvasNodeData;
+function GenericNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+  const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
   const isRef = !!nodeData.refSource;
 
@@ -100,7 +100,6 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         border-2 rounded-lg min-w-[200px] max-w-[280px]
         relative overflow-hidden
         ${isRef ? 'border-dashed' : ''}
-        ${selected ? '' : ''}
       `}
       style={{
         ...borderStyle,

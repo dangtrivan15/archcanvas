@@ -45,7 +45,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setThemeAction = useUIStore((s) => s.setTheme);
 
   const resolvedId = themeId && themes[themeId] ? themeId : DEFAULT_THEME_ID;
-  const theme = themes[resolvedId];
+  // DEFAULT_THEME_ID is always in themes, so this is always defined
+  const theme = themes[resolvedId] ?? themes[DEFAULT_THEME_ID]!;
 
   // Apply CSS variables whenever the theme changes
   useEffect(() => {

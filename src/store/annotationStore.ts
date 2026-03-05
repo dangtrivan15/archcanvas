@@ -127,7 +127,7 @@ export const useAnnotationStore = create<AnnotationStoreState>((set, get) => ({
   popUndo: () => {
     const { undoStack } = get();
     if (undoStack.length === 0) return null;
-    const lastId = undoStack[undoStack.length - 1];
+    const lastId = undoStack[undoStack.length - 1] ?? null;
     set({ undoStack: undoStack.slice(0, -1) });
     return lastId;
   },

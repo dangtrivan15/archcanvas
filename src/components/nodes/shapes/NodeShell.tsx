@@ -238,7 +238,7 @@ function NodeShellComponent({
           <div
             ref={contentRef}
             /* xmlns required for foreignObject in SVG */
-            {...({ xmlns: 'http://www.w3.org/1999/xhtml' } as any)}
+            {...({ xmlns: 'http://www.w3.org/1999/xhtml' } as React.HTMLAttributes<HTMLDivElement> & { xmlns: string })}
             style={{
               width: '100%',
               minHeight: Math.max(0, MIN_HEIGHT - insets.top - insets.bottom),

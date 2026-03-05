@@ -138,7 +138,7 @@ function getNodeTypeCounts(graph: ArchGraph): Array<{ type: string; count: numbe
 /** Extract a readable short name from a node type like "compute/service" → "Service". */
 function shortTypeName(type: string): string {
   const parts = type.split('/');
-  const name = parts[parts.length - 1];
+  const name = parts[parts.length - 1] ?? type;
   return name
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
