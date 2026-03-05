@@ -9810,3 +9810,310 @@ Date: 2026-03-05
 
 #### Commit: 552ff6a
 #### Feature #409 marked passing
+
+---
+
+## Session: Feature #417 - Add data/graph-database node type
+Date: 2026-03-05
+
+### Feature #417: Add `data/graph-database` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/data/graph-database.yaml`:
+  - namespace: data, name: graph-database, displayName: Graph Database
+  - shape: cylinder, icon: Network
+  - Args: engine (enum: Neo4j/Amazon Neptune/ArangoDB/Dgraph/TigerGraph), queryLanguage (enum: Cypher/Gremlin/GraphQL/GSQL/AQL), storageGB (number), replication (enum: none/primary-replica/multi-primary)
+  - Ports: graph-query (inbound), graph-write (inbound), graph-results (outbound)
+  - Variants: Neo4j (Cypher), Amazon Neptune (Gremlin)
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Network icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows DATA category with 7 entries including Graph Database: PASS
+- Node renders on canvas with cylinder shape: PASS
+- Network icon displayed: PASS
+- Args shown: engine=Neo4j, queryLanguage=Cypher, storageGB=50, +1 more: PASS
+- Inbound port handles (graph-query, graph-write) visible: PASS
+- Outbound port handle (graph-results) visible: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 041fb60
+#### Feature #417 marked passing
+#### Progress: 406/426 features passing (95.3%)
+
+---
+
+## Session: Feature #416 - Predefined Stack: Social Network
+Date: 2026-03-05
+
+### Feature #416: Predefined Stack: Social Network - PASSING
+
+#### Implementation:
+- Created src/stacks/social-network.yaml with 16 nodes and 20 edges
+- Nodes: Next.js Web App, React Native App, Cloudflare CDN, Envoy LB, Kong API Gateway, User Service (TypeScript/Express), Feed Service (TypeScript/Express), Auth0, PostgreSQL, Redis, S3 Media Storage, Elasticsearch, Kafka, FCM Push, Prometheus/Grafana, Loki/Grafana
+- 20 edges with SYNC/ASYNC types covering full request flow from clients through CDN/LB/gateway to services and data stores, plus async event/notification/observability flows
+- Tags: social, real-time, full-stack
+- Icon: MessageCircle
+- Registered in src/stacks/stackLoader.ts
+- Added MessageCircle and other missing icons (Brain, Smartphone, Zap, BarChart3, Network) to TemplatePicker ICON_MAP
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Social Network with 16 nodes, 20 edges: PASS
+- All 16 nodes render on canvas with correct args: PASS
+- All 20 edges connect correct nodes: PASS
+- Console: 41 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 82710eb
+#### Feature #416 marked passing
+#### Progress: 405/426 features passing (95.1%)
+
+---
+
+## Session: Feature #418 - Predefined Stack: E-Commerce Platform
+Date: 2026-03-05
+
+### Feature #418: Predefined Stack: E-Commerce Platform - PASSING
+
+#### Implementation:
+- Created `src/stacks/e-commerce-platform.yaml` with complete stack definition:
+  - 20 nodes: Next.js Storefront (client/web-app), Shopping App (client/mobile-app), Cloudflare CDN (network/cdn), ALB (network/load-balancer), Kong API Gateway (compute/api-gateway), Catalog Service (compute/service), Order Service (compute/service), Payment Service (compute/service), PostgreSQL (data/database), Redis Cache (data/cache), Elasticsearch (data/search-index), S3 Product Images (data/object-storage), Kafka Event Bus (messaging/event-bus), Push Notifications (messaging/notification), Stripe Payments (integration/third-party-api), Shippo Shipping (integration/third-party-api), Outbound Webhooks (integration/webhook), Auth0 Identity (security/auth-provider), Prometheus/Grafana (observability/monitoring), Loki/Grafana Logging (observability/logging)
+  - 23 edges: clients→cdn (SYNC), cdn→lb (SYNC), lb→api-gateway (SYNC), api-gateway→3 services (SYNC), catalog→database/cache/search/s3 (SYNC), order→database (SYNC), order→event-bus/shippo/webhook (ASYNC/SYNC), payment→stripe (SYNC), event-bus→notification (ASYNC), all services→logging (ASYNC), all services→monitoring (ASYNC)
+  - Tags: e-commerce, marketplace, enterprise
+  - Icon: ShoppingCart
+- Registered in `src/stacks/stackLoader.ts`
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows E-Commerce Platform with 20 nodes, 23 edges: PASS
+- All 20 nodes render on canvas with correct types and args: PASS
+- All 23 edges connect correct nodes: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 7e68f23
+#### Feature #418 marked passing
+#### Progress: 407/426 features passing (95.5%)
+
+---
+
+## Session: Feature #419 - Predefined Stack: FinTech / Payments
+Date: 2026-03-05
+
+### Feature #419: Predefined Stack: FinTech / Payments - PASSING
+
+#### Implementation:
+- Created `src/stacks/fintech-payments.yaml` with 20 nodes and 26 edges
+- Nodes: React Portal, Flutter Mobile, Kong API Gateway, Account Service (Java/Spring Boot), Transaction Service (Java/Spring Boot), Fraud Service (Java/Spring Boot), PostgreSQL OLTP, CockroachDB Ledger, Redis, Neo4j Fraud Graph, Kafka Event Bus, Flink Fraud Scoring, Keycloak MFA, HashiCorp Vault, AWS WAF, Plaid, SWIFT, Prometheus/Grafana, Jaeger, ELK Stack
+- Edges: clients→api-gateway (SYNC), waf→api-gateway (SYNC), api-gateway→services (SYNC), account→postgresql (SYNC), transaction→cockroachdb (SYNC), transaction→kafka (ASYNC), kafka→flink (DATA_FLOW), flink→fraud-service (SYNC), fraud→neo4j (SYNC), all services→vault (SYNC), account→plaid (SYNC), transaction→swift (SYNC), all services→jaeger/elk/prometheus (ASYNC)
+- Tags: fintech, banking, payments, PCI, enterprise
+- Registered in `src/stacks/stackLoader.ts`
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows FinTech / Payments with 20 nodes, 26 edges: PASS
+- All 20 nodes render on canvas with correct types and args: PASS
+- All 26 edges connect correct nodes: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 7a4eb8e
+#### Feature #419 marked passing
+
+---
+
+## Session: Feature #420 - Predefined Stack: Healthcare System
+Date: 2026-03-05
+
+### Feature #420: Predefined Stack: Healthcare System - PASSING
+
+#### Implementation:
+- Created `src/stacks/healthcare-system.yaml` with complete HIPAA-ready stack:
+  - 19 nodes: Patient Portal (React SPA), Telehealth App (React Native), FHIR API Gateway (Kong), Patient Service (TypeScript/Express), Scheduling Service (TypeScript/Express), Clinical Service (TypeScript/Express), PostgreSQL, Medical Imaging S3, Patient Search (Elasticsearch), Redis Cache, HL7/FHIR Event Bus (Kafka), Appointment Reminders (SNS), Twilio Telehealth, Epic FHIR Integration, Keycloak RBAC, HashiCorp Vault (PHI keys), AWS WAF (HIPAA perimeter), ELK Audit Trail, Prometheus/Grafana
+  - 26 edges: clients→gateway (SYNC), gateway→services (SYNC), services→database/storage/search (SYNC), services→event-bus (ASYNC), services→vault (SYNC), services→logging (ASYNC), services→monitoring (ASYNC), scheduling→notifications (ASYNC), scheduling→twilio (SYNC), clinical→epic-fhir (SYNC), waf→gateway (SYNC)
+  - Tags: healthcare, HIPAA, FHIR, enterprise
+  - Icon: HeartPulse
+- Registered in `src/stacks/stackLoader.ts`
+- Added HeartPulse icon to `src/components/shared/TemplatePicker.tsx` ICON_MAP
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Healthcare System with 19 nodes, 26 edges: PASS
+- All 19 nodes render on canvas with correct types and args: PASS
+- All 26 edges connect correct nodes: PASS
+- Status bar shows Nodes: 19, Edges: 26: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 9c4bb72
+#### Feature #420 marked passing
+
+---
+
+## Session: Feature #421 - Predefined Stack: Enterprise CRM
+Date: 2026-03-05
+
+### Feature #421: Predefined Stack: Enterprise CRM - PASSING
+
+#### Implementation:
+- Created src/stacks/enterprise-crm.yaml with 19 nodes and 28 edges
+- Nodes: React CRM Dashboard, Kong API Gateway, Contact/Pipeline/Activity Services, Cloud Scheduler, PostgreSQL, Redis, Elasticsearch, Kafka, SendGrid, Twilio, Inbound/Outbound Webhooks, Airflow ETL, Auth0 SSO, Anthropic Claude, Prometheus/Grafana, Loki/Grafana
+- 28 edges with SYNC/ASYNC types covering full CRM flow
+- Tags: CRM, enterprise, multi-tenant, AI
+- Registered in stackLoader.ts, added Users icon to TemplatePicker
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Enterprise CRM with 19 nodes, 28 edges: PASS
+- All 19 nodes render on canvas with correct types and args: PASS
+- All 28 edges connect correct nodes: PASS
+- Toast notification: Loaded Enterprise CRM template: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 9a1cb16
+#### Feature #421 marked passing
+#### Progress: 410/426 features passing (96.2%)
+
+---
+
+## Session: Feature #422 - Predefined Stack: Internal Developer Platform
+Date: 2026-03-05
+
+### Feature #422: Predefined Stack: Internal Developer Platform - PASSING
+
+#### Implementation:
+- Created `src/stacks/internal-developer-platform.yaml` with 18 nodes and 20 edges
+- Nodes: Developer Portal (React SPA), Developer CLI (Go/Homebrew), Envoy Service Mesh (mTLS), Platform API (Go/Gin/gRPC), Deploy Service (Go/Gin/gRPC), Kubernetes Runtime (v1.29), Cloud Scheduler (cleanup/rotation), PostgreSQL (v16), Redis Build Cache (2gb), S3 Artifacts, Kafka Deploy Events, GitHub Webhooks (inbound), MCP Server AI Ops (stdio), HashiCorp Vault (kv-v2), Keycloak SSO (OIDC), Prometheus/Grafana, Jaeger (OTLP), Loki/Grafana
+- Edges: clients→mesh (SYNC), mesh→services (SYNC), deploy→k8s (SYNC), deploy→kafka (ASYNC), platform-api→database/cache (SYNC), deploy→s3 (SYNC), webhook→deploy (ASYNC), mcp→platform-api (SYNC), services→vault (SYNC), cron→platform-api (SYNC), services→monitoring/tracing/logging (ASYNC)
+- Tags: devops, platform-engineering, GitOps, enterprise
+- Icon: Wrench
+- Registered in `src/stacks/stackLoader.ts`
+- Added Wrench, ShoppingCart, Landmark icons to TemplatePicker
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Internal Developer Platform with 18 nodes, 20 edges: PASS
+- All 18 nodes render on canvas with correct types and args: PASS
+- All 20 edges connect correct nodes: PASS
+- Toast: "Loaded Internal Developer Platform template": PASS
+- Console: 41 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: b562a89
+#### Feature #422 marked passing
+
+---
+
+## Session: Feature #424 - Revert toolbar and status bar resize — use harmonious fixed sizing
+Date: 2026-03-05
+
+### Feature #424: Revert toolbar and status bar resize — PASSING
+
+#### Implementation:
+- **Toolbar.tsx**: Removed resize handle div (data-testid=toolbar-resize-handle), drag event handlers (onResizeHandleMouseDown, onMouseMove, onMouseUp), and refs (dragStartY, dragStartHeight). Removed imports of TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT, toolbarHeight state, setToolbarHeight, updateToolbarHeightFromViewport. Replaced dynamic `height: ${toolbarHeight}px` with CSS `clamp(2.5rem, 3.5vh, 3.5rem)`. Removed `overflow-hidden` and `relative` classes that were needed for the resize handle.
+- **App.tsx**: Removed status bar resize handle div (data-testid=status-bar-resize-handle), drag state (isStatusBarDragging, statusBarDragStartY, statusBarDragStartHeight), resize handlers (handleStatusBarResizeStart, pointermove/pointerup listeners), and related imports (useState, useRef). Removed statusBarHeight/setStatusBarHeight/updateStatusBarHeightFromViewport store bindings. Replaced dynamic `height: ${statusBarHeight}px` with CSS `clamp(1.5rem, 2vh, 2.25rem)`. Removed viewport-based status bar height update effect.
+
+#### Key z-index fix:
+- The old toolbar resize handle was z-[51], causing dropdown menus at z-50 to appear behind it. By removing the resize handle entirely, dropdowns now render correctly above the canvas.
+
+#### Verification:
+- Vite build: PASS
+- No resize handle elements in DOM: PASS
+- File menu dropdown renders above canvas: PASS
+- Layout menu dropdown renders above canvas: PASS
+- Theme switcher dropdown renders above canvas: PASS
+- Toolbar and status bar look proportional: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: b86391a
+#### Feature #424 marked passing
+#### Progress: 413/426 features passing (96.9%)
+
+---
+
+## Session: Feature #423 - Predefined Stack: IoT Platform
+Date: 2026-03-05
+
+### Feature #423: Predefined Stack: IoT Platform - PASSING
+
+#### Implementation:
+- Created src/stacks/iot-platform.yaml with complete IoT stack:
+  - 17 nodes: Device Dashboard (React SPA), Field Technician App (Flutter), AWS API Gateway, Device Management (TypeScript/Express), Telemetry Service (TypeScript/Express), Event Processor (Lambda Node.js 20), Device Telemetry Stream (Kafka), Anomaly Detection (Flink), PostgreSQL (device registry), ClickHouse (time-series), Redis (device state cache), S3 Firmware and Logs, Device Alerts (SNS), Cognito Identity, AWS Secrets Manager, Prometheus/Grafana, Loki/Grafana
+  - 18 edges connecting full IoT data flow from clients through services to data stores and observability
+  - Tags: IoT, telemetry, real-time, enterprise
+  - Icon: Radio
+- Registered in src/stacks/stackLoader.ts
+- Added Radio icon to src/components/shared/TemplatePicker.tsx ICON_MAP
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows IoT Platform with 17 nodes, 18 edges: PASS
+- All 17 nodes render on canvas with correct types and args: PASS
+- All 18 edges connect correct nodes: PASS
+- Title bar shows IoT Platform: PASS
+- Status bar shows Nodes: 17, Edges: 18: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: c662e0c
+#### Feature #423 marked passing
+
+---
+
+## Session: Feature #425 - Revert toolbar/status bar resize — use rem-bounded clamp() sizing
+Date: 2026-03-05
+
+### Feature #425: Revert toolbar/status bar resize — use rem-bounded clamp() sizing - PASSING
+
+#### Implementation:
+- Changed toolbar height from `clamp(40px, 3.5vh, 56px)` to `clamp(2.5rem, 3.5vh, 3.5rem)` in Toolbar.tsx
+  - Uses rem for min/max — respects user font-size accessibility settings
+  - Uses vh for preferred value — scales proportionally with viewport
+- Changed status bar height from `clamp(24px, 2vh, 36px)` to `clamp(1.5rem, 2vh, 2.25rem)` in App.tsx
+- Removed 185 lines of dead code from uiStore.ts:
+  - Removed TOOLBAR_HEIGHT_STORAGE_KEY, STATUS_BAR_HEIGHT_STORAGE_KEY constants
+  - Removed readPersistedHeight, persistHeight, clearPersistedHeight functions
+  - Removed loadPersistedHeights async function
+  - Removed all TOOLBAR_* and STATUS_BAR_* height constants and compute functions
+  - Removed toolbarHeight, toolbarHeightCustomized, statusBarHeight, statusBarHeightCustomized state
+  - Removed setToolbarHeight, updateToolbarHeightFromViewport, setStatusBarHeight, updateStatusBarHeightFromViewport actions
+  - Removed resetBarSizesToFixedDefaults action
+  - Simplified resetBarSizes to only reset panel widths
+- Updated SettingsDialog.tsx:
+  - Removed "Reset Bar Sizes" button (no-op since toolbar/status bar use CSS)
+  - Updated description text to note CSS-based responsive sizing
+
+#### Verification:
+- Vite build: PASS
+- Toolbar visible and proportional: PASS
+- Status bar visible and proportional: PASS
+- File menu dropdown renders above canvas: PASS
+- Layout menu dropdown renders above canvas: PASS
+- Add Node dropdown renders above canvas: PASS
+- ThemeSwitcher dropdown renders above canvas: PASS
+- No resize handles present (grep confirmed): PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 094d93c
+#### Feature #425 marked passing
+
+---
+
+## Session: Feature #368 - Background Sync for Queued Operations
+Date: 2026-03-05
+
+### Feature #368: Background Sync for Queued Operations - PASSING
+
+#### Implementation:
+- IndexedDB-backed sync queue (src/core/sync/syncQueue.ts)
+- Sync manager with online/Capacitor lifecycle listeners (src/core/sync/syncManager.ts)
+- useBackgroundSync React hook (src/hooks/useBackgroundSync.ts)
+- SyncStatusIndicator component in status bar (pending/syncing/synced/error)
+- Offline save queuing in coreStore.saveFile
+- iOS fallback: Capacitor App appStateChange events
+
+#### Verification:
+- Vite build: PASS
+- App loads without errors: PASS
+- Sync indicator hidden when idle: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: eaadc4c
+#### Feature #368 marked passing
+#### Progress: 416/426 features passing (97.7%)
