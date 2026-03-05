@@ -9726,3 +9726,87 @@ Date: 2026-03-05
 #### Commit: c04eb1a
 #### Feature #413 marked passing
 #### Progress: 402/426 features passing (94.4%)
+
+---
+
+## Session: Feature #414 - Predefined Stack: ML Platform
+Date: 2026-03-05
+
+### Feature #414: Predefined Stack: ML Platform - PASSING
+
+#### Implementation:
+- Created src/stacks/ml-platform.yaml with 10 nodes and 8 edges
+- Nodes: Triton Model Serving (A100 GPU), Sentence Transformers, Qdrant Vector Store, Guardrails AI, Feast Feature Store, PostgreSQL, S3 Storage, Airflow ETL, Prometheus Monitoring, Cloud Scheduler
+- Edges: cron→etl (SYNC), etl→database (DATA_FLOW), etl→object-storage (DATA_FLOW), feature-store→database (SYNC), model-serving→feature-store (SYNC), model-serving→guardrails (SYNC), embedding-service→vector-store (DATA_FLOW), model-serving→monitoring (ASYNC)
+- Tags: ml, ai, platform, model-serving, mlops
+- Registered in src/stacks/stackLoader.ts
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows ML Platform with 10 nodes, 8 edges: PASS
+- All 10 nodes render on canvas with correct args: PASS
+- All 8 edges connect correct nodes: PASS
+- Console: 40 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: e0e251e
+#### Feature #414 marked passing
+#### Progress: 403/426 features passing (94.6%)
+
+---
+
+## Session: Feature #415 - Predefined Stack: Data Platform
+Date: 2026-03-05
+
+### Feature #415: Predefined Stack: Data Platform - PASSING
+
+#### Implementation:
+- Created `src/stacks/data-platform.yaml`:
+  - 10 nodes: PostgreSQL (OLTP source), ClickHouse (OLAP warehouse), dbt Transformations, Flink Stream Processor, Kafka Event Bus, S3 Data Lake, Elasticsearch, Redis Cache, Airflow Scheduler, Grafana Monitoring
+  - 12 edges: postgres→kafka (ASYNC, CDC), kafka→flink (DATA_FLOW), flink→clickhouse (DATA_FLOW), flink→s3 (DATA_FLOW), airflow→dbt (SYNC), dbt→clickhouse (DATA_FLOW), clickhouse→elasticsearch (DATA_FLOW), clickhouse→redis (DATA_FLOW), postgres→grafana (ASYNC), kafka→grafana (ASYNC), flink→grafana (ASYNC), clickhouse→grafana (ASYNC)
+  - Tags: data, analytics, data-engineering, kafka, flink
+- Registered in `src/stacks/stackLoader.ts`
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Data Platform with 10 nodes, 12 edges: PASS
+- All 10 nodes render on canvas with correct types and args: PASS
+- All 12 edges connect correct nodes: PASS
+- Console: 40 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 662f449
+#### Feature #415 marked passing
+#### Progress: 404/426 features passing (94.8%)
+
+---
+
+## Session: Feature #409 - Predefined Stack: SaaS Starter
+Date: 2026-03-05
+
+### Feature #409: Predefined Stack: SaaS Starter - PASSING
+
+#### Implementation:
+- Created `src/stacks/saas-starter.yaml` with complete stack definition:
+  - 8 nodes: Web App (Next.js SSR), API Gateway (Nginx), Backend Service (TypeScript/Express), PostgreSQL, Redis Cache, Auth0, Logging (Loki/Grafana), Stripe
+  - 7 edges: web-app→api-gateway (SYNC), api-gateway→service (SYNC), service→database (SYNC), service→cache (SYNC), service→auth-provider (SYNC), service→third-party-api (SYNC), service→logging (ASYNC)
+  - Pre-positioned nodes in left-to-right layout
+- Created `src/stacks/stackLoader.ts`: Parses YAML, generates ULIDs, builds ArchGraph
+- Created `src/components/shared/TemplatePicker.tsx`: Dialog with template cards, selection details, Create button
+- Added `templatePickerOpen` state to `src/store/uiStore.ts`
+- Added "New from Template..." to File menu in `src/components/toolbar/FileMenu.tsx`
+- Added TemplatePicker to `src/App.tsx`
+
+#### Verification:
+- Vite build: PASS
+- File menu shows "New from Template..." option: PASS
+- Template picker dialog opens with SaaS Starter card: PASS
+- Selecting SaaS Starter shows 8 nodes and 7 edges details: PASS
+- Click "Create from Template" instantiates all nodes on canvas: PASS
+- Title bar shows "SaaS Starter": PASS
+- Status bar shows Nodes: 8, Edges: 7: PASS
+- All 8 node names confirmed in DOM (Web App, API Gateway, Backend Service, PostgreSQL, Redis Cache, Auth0, Logging, Stripe): PASS
+- Toast notification "Loaded SaaS Starter template": PASS
+- Pre-filled args confirmed (engine=PostgreSQL, engine=Redis, provider=Auth0, provider=Stripe): PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 552ff6a
+#### Feature #409 marked passing
