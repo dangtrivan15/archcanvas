@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { COMPACT_BREAKPOINT } from '@/hooks/useViewportSize';
+import { COMPACT_BREAKPOINT, RESIZE_DEBOUNCE_MS } from '@/hooks/useViewportSize';
 
 /** Below this width, left panel auto-closes */
 export const NARROW_BREAKPOINT = 768;
@@ -56,11 +56,30 @@ export function useResponsiveLayout() {
     // Users can close it via the X button on the sheet.
   }, [leftPanelOpen]);
 
+  // Debounced resize handler to prevent layout thrashing during
+  // Stage Manager window dragging (iPadOS 16+)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debouncedHandleResize = useCallback(() => {
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      handleResize();
+    }, RESIZE_DEBOUNCE_MS);
+  }, [handleResize]);
+
   useEffect(() => {
-    // Check on mount (initial layout)
+    // Check on mount (initial layout) - no debounce needed
     handleResize();
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [handleResize]);
+    window.addEventListener('resize', debouncedHandleResize);
+    return () => {
+      window.removeEventListener('resize', debouncedHandleResize);
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [handleResize, debouncedHandleResize]);
 }

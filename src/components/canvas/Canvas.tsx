@@ -49,6 +49,9 @@ import { formatBindingDisplay } from '@/core/input';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { useLongPress } from '@/hooks/useLongPress';
 import { usePencilInput } from '@/hooks/usePencilInput';
+import { useStageManagerResize } from '@/hooks/useStageManagerResize';
+import { AnnotationOverlay } from '@/components/canvas/AnnotationOverlay';
+import { AnnotationToolbar } from '@/components/canvas/AnnotationToolbar';
 
 export function Canvas() {
   return (
@@ -543,6 +546,9 @@ function CanvasInner() {
   // Track Apple Pencil / stylus input for pressure, tilt, and input differentiation
   usePencilInput();
 
+  // Stage Manager (iPadOS 16+): maintain canvas center on free-form window resize
+  useStageManagerResize();
+
   // Wrap onPointerDown to capture the target element for event delegation
   const onLongPressPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -644,23 +650,75 @@ function CanvasInner() {
         return true;
       };
 
-      if (e.key === 'Delete') {
-        // Delete key: node deletion (with confirmation) or edge deletion (direct)
-        if (selectedNodeId) {
+      // Helper: open delete dialog for selected nodes (single or multi)
+      const openDeleteForSelectedNodes = () => {
+        const canvasState = useCanvasStore.getState();
+        const multiIds = canvasState.selectedNodeIds;
+
+        // Multi-node selection: aggregate impact
+        if (multiIds.length > 1) {
           e.preventDefault();
-          const node = findNode(graph, selectedNodeId);
+          // Collect all node IDs being deleted (including descendants) for edge deduplication
+          const allRemovedIds = new Set<string>();
+          let totalChildCount = 0;
+
+          for (const nid of multiIds) {
+            const node = findNode(graph, nid);
+            if (node) {
+              const impact = calculateDeletionImpact(graph, nid);
+              totalChildCount += impact.childCount;
+              // Collect node + descendant IDs
+              const collectIds = (n: typeof node) => {
+                allRemovedIds.add(n.id);
+                for (const child of n.children) collectIds(child);
+              };
+              collectIds(node);
+            }
+          }
+
+          // Deduplicate edge count: count edges connected to any removed node
+          const totalEdgeCount = graph.edges.filter(
+            (edge) => allRemovedIds.has(edge.fromNode) || allRemovedIds.has(edge.toNode),
+          ).length;
+
+          const firstName = findNode(graph, multiIds[0]!)?.displayName || 'node';
+          openDeleteDialog({
+            nodeId: multiIds[0]!,
+            nodeName: firstName,
+            edgeCount: totalEdgeCount,
+            childCount: totalChildCount,
+            nodeIds: multiIds,
+            nodeCount: multiIds.length,
+          });
+          return true;
+        }
+
+        // Single node selection (via selectedNodeId or single item in selectedNodeIds)
+        const singleId = selectedNodeId || (multiIds.length === 1 ? multiIds[0] : null);
+        if (singleId) {
+          e.preventDefault();
+          const node = findNode(graph, singleId);
           if (node) {
-            const impact = calculateDeletionImpact(graph, selectedNodeId);
+            const impact = calculateDeletionImpact(graph, singleId);
             openDeleteDialog({
-              nodeId: selectedNodeId,
+              nodeId: singleId,
               nodeName: node.displayName,
               edgeCount: impact.edgeCount,
               childCount: impact.childCount,
             });
           }
-        } else if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
-          // Edge deletion: direct (no confirmation needed)
-          deleteSelectedEdges();
+          return true;
+        }
+        return false;
+      };
+
+      if (e.key === 'Delete') {
+        // Delete key: node deletion (with confirmation) or edge deletion (direct)
+        if (!openDeleteForSelectedNodes()) {
+          if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
+            // Edge deletion: direct (no confirmation needed)
+            deleteSelectedEdges();
+          }
         }
       } else if (e.key === 'Backspace') {
         if (navigationPath.length > 0) {
@@ -668,22 +726,11 @@ function CanvasInner() {
           e.preventDefault();
           console.log('[Canvas] Backspace zoom out from:', navigationPath);
           zoomOut();
-        } else if (selectedNodeId) {
-          // Backspace at root level with selected node -> delete
-          e.preventDefault();
-          const node = findNode(graph, selectedNodeId);
-          if (node) {
-            const impact = calculateDeletionImpact(graph, selectedNodeId);
-            openDeleteDialog({
-              nodeId: selectedNodeId,
-              nodeName: node.displayName,
-              edgeCount: impact.edgeCount,
-              childCount: impact.childCount,
-            });
+        } else if (!openDeleteForSelectedNodes()) {
+          if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
+            // Backspace at root level with selected edge(s) -> delete directly
+            deleteSelectedEdges();
           }
-        } else if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {
-          // Backspace at root level with selected edge(s) -> delete directly
-          deleteSelectedEdges();
         }
       }
     };
@@ -1198,6 +1245,12 @@ function CanvasInner() {
 
       {/* Node Palette - touch-friendly drag & drop palette for adding nodes */}
       <NodePalette />
+
+      {/* Annotation overlay — renders saved annotations and handles live drawing */}
+      <AnnotationOverlay />
+
+      {/* Annotation toolbar — color picker, eraser, undo, clear (visible in drawing mode) */}
+      <AnnotationToolbar />
     </div>
   );
 }
