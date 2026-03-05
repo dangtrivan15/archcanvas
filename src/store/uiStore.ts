@@ -1,5 +1,10 @@
 /**
  * UI store - panel visibility, modals, toasts.
+ *
+ * Toolbar and status bar sizing is handled purely via CSS clamp() in the components:
+ * - Toolbar: clamp(2.5rem, 3.5vh, 3.5rem)
+ * - Status bar: clamp(1.5rem, 2vh, 2.25rem)
+ * No JS state or localStorage persistence is needed for those heights.
  */
 
 import { create } from 'zustand';
@@ -7,15 +12,9 @@ import type { RightPanelTab } from '@/utils/constants';
 import { preferences } from '@/core/platform/preferencesAdapter';
 
 /** localStorage / Capacitor Preferences keys for persisted values */
-export const TOOLBAR_HEIGHT_STORAGE_KEY = 'toolbar-height';
-export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
 export const THEME_STORAGE_KEY = 'theme';
 export const HAPTIC_FEEDBACK_STORAGE_KEY = 'haptic-feedback';
 
-/**
- * Synchronously read the persisted theme ID from localStorage.
- * Returns null if not found. Used at store initialization time.
- */
 /**
  * Synchronously read the persisted haptic feedback preference from localStorage.
  * Returns null if not found. Defaults to true (enabled).
@@ -58,73 +57,14 @@ function persistTheme(themeId: string): void {
   });
 }
 
-/**
- * Synchronously read a persisted height from localStorage.
- * Returns null if not found or not a valid number.
- * Used at store initialization time (synchronous context).
- */
-function readPersistedHeight(key: string): number | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(`archcanvas:${key}`);
-    if (raw === null) return null;
-    const num = Number(raw);
-    return Number.isFinite(num) ? num : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Persist a height value via the cross-platform preferences adapter.
- * Works on both web (localStorage) and native (Capacitor Preferences).
- */
-function persistHeight(key: string, value: number): void {
-  preferences.set(key, String(value)).catch(() => {
-    // Silently ignore write failures (e.g. storage full)
-  });
-}
-
-/**
- * Remove a persisted height value via the cross-platform preferences adapter.
- */
-function clearPersistedHeight(key: string): void {
-  preferences.remove(key).catch(() => {
-    // Silently ignore removal failures
-  });
-}
-
-/**
- * Load persisted heights from async storage (Capacitor Preferences) and
- * update the store. Call this on app startup for native platforms.
- * On web, values are already loaded synchronously at init time.
- */
-export async function loadPersistedHeights(): Promise<void> {
-  const [toolbarRaw, statusBarRaw] = await Promise.all([
-    preferences.get(TOOLBAR_HEIGHT_STORAGE_KEY),
-    preferences.get(STATUS_BAR_HEIGHT_STORAGE_KEY),
-  ]);
-
-  const store = useUIStore.getState();
-  if (toolbarRaw !== null) {
-    const num = Number(toolbarRaw);
-    if (Number.isFinite(num)) {
-      store.setToolbarHeight(num);
-    }
-  }
-  if (statusBarRaw !== null) {
-    const num = Number(statusBarRaw);
-    if (Number.isFinite(num)) {
-      store.setStatusBarHeight(num);
-    }
-  }
-}
-
 export interface DeleteDialogInfo {
   nodeId: string;
   nodeName: string;
   edgeCount: number;
   childCount: number;
+  /** For multi-node deletion */
+  nodeIds?: string[];
+  nodeCount?: number;
 }
 
 export interface ConnectionDialogInfo {
@@ -139,7 +79,7 @@ export interface PlacementModeInfo {
   displayName: string;     // e.g. 'Service'
 }
 
-/** Connect mode step: select-target → pick-type → done */
+/** Connect mode step: select-target -> pick-type -> done */
 export type ConnectModeStep = 'select-target' | 'pick-type';
 
 export interface ConnectModeState {
@@ -213,48 +153,6 @@ export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
 export const RIGHT_PANEL_MIN_WIDTH = 220;
 export const RIGHT_PANEL_MAX_WIDTH = 500;
 
-/** Min/max toolbar height in pixels */
-export const TOOLBAR_MIN_HEIGHT = 36;
-export const TOOLBAR_MAX_HEIGHT = 80;
-
-/** Viewport-relative toolbar default: 3.5% of viewport height, floor 40px, ceiling 64px */
-export const TOOLBAR_VIEWPORT_RATIO = 0.035;
-export const TOOLBAR_DEFAULT_FLOOR = 40;
-export const TOOLBAR_DEFAULT_CEILING = 64;
-
-/**
- * Compute the default toolbar height based on viewport height.
- * Returns 3.5% of viewportHeight, clamped between floor (40px) and ceiling (64px).
- */
-export function computeDefaultToolbarHeight(viewportHeight?: number): number {
-  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
-  const raw = Math.round(vh * TOOLBAR_VIEWPORT_RATIO);
-  return Math.max(TOOLBAR_DEFAULT_FLOOR, Math.min(TOOLBAR_DEFAULT_CEILING, raw));
-}
-
-/** Legacy constant kept for backward compatibility */
-export const TOOLBAR_DEFAULT_HEIGHT = 48;
-
-/** Default and min/max status bar height in pixels */
-export const STATUS_BAR_DEFAULT_HEIGHT = 24;
-export const STATUS_BAR_MIN_HEIGHT = 20;
-export const STATUS_BAR_MAX_HEIGHT = 48;
-
-/** Viewport-relative status bar default: 2% of viewport height, floor 20px, ceiling 40px */
-export const STATUS_BAR_VIEWPORT_RATIO = 0.02;
-export const STATUS_BAR_DEFAULT_FLOOR = 20;
-export const STATUS_BAR_DEFAULT_CEILING = 40;
-
-/**
- * Compute the default status bar height based on viewport height.
- * Returns 2% of viewportHeight, clamped between floor (20px) and ceiling (40px).
- */
-export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
-  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
-  const raw = Math.round(vh * STATUS_BAR_VIEWPORT_RATIO);
-  return Math.max(STATUS_BAR_DEFAULT_FLOOR, Math.min(STATUS_BAR_DEFAULT_CEILING, raw));
-}
-
 export interface UIStoreState {
   // Theme
   themeId: string;
@@ -271,14 +169,6 @@ export interface UIStoreState {
   rightPanelWidth: number;
   /** Whether the user has explicitly set a custom right panel width */
   rightPanelWidthCustomized: boolean;
-
-  // Toolbar and status bar heights (in pixels, clamped to min/max)
-  toolbarHeight: number;
-  /** Whether the user has explicitly set a custom toolbar height */
-  toolbarHeightCustomized: boolean;
-  statusBarHeight: number;
-  /** Whether the user has explicitly set a custom status bar height */
-  statusBarHeightCustomized: boolean;
 
   // Delete confirmation dialog
   deleteDialogOpen: boolean;
@@ -389,18 +279,8 @@ export interface UIStoreState {
   updateLeftPanelWidthFromViewport: (viewportWidth: number) => void;
   /** Update right panel width from viewport resize (only if not customized) */
   updateRightPanelWidthFromViewport: (viewportWidth: number) => void;
-  /** Reset all bar/panel sizes to viewport-relative defaults (clears custom values) */
+  /** Reset all panel sizes to viewport-relative defaults (clears custom values) */
   resetBarSizes: () => void;
-  /** Reset toolbar and status bar heights to fixed defaults (48px and 24px) */
-  resetBarSizesToFixedDefaults: () => void;
-
-  // Toolbar and status bar height actions
-  setToolbarHeight: (height: number) => void;
-  /** Update toolbar height from viewport resize (only if not customized) */
-  updateToolbarHeightFromViewport: (viewportHeight: number) => void;
-  setStatusBarHeight: (height: number) => void;
-  /** Update status bar height from viewport resize (only if not customized) */
-  updateStatusBarHeightFromViewport: (viewportHeight: number) => void;
 
   // Keyboard shortcuts help dialog actions
   openShortcutsHelp: () => void;
@@ -470,10 +350,6 @@ export const useUIStore = create<UIStoreState>((set) => ({
   leftPanelWidthCustomized: false,
   rightPanelWidth: computeDefaultRightPanelWidth(),
   rightPanelWidthCustomized: false,
-  toolbarHeight: readPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY) ?? computeDefaultToolbarHeight(),
-  toolbarHeightCustomized: readPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY) !== null,
-  statusBarHeight: readPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY) ?? computeDefaultStatusBarHeight(),
-  statusBarHeightCustomized: readPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY) !== null,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -599,54 +475,13 @@ export const useUIStore = create<UIStoreState>((set) => ({
     }),
 
   resetBarSizes: () => {
-    clearPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY);
-    clearPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY);
     set({
       leftPanelWidth: computeDefaultLeftPanelWidth(),
       leftPanelWidthCustomized: false,
       rightPanelWidth: computeDefaultRightPanelWidth(),
       rightPanelWidthCustomized: false,
-      toolbarHeight: computeDefaultToolbarHeight(),
-      toolbarHeightCustomized: false,
-      statusBarHeight: computeDefaultStatusBarHeight(),
-      statusBarHeightCustomized: false,
     });
   },
-
-  resetBarSizesToFixedDefaults: () => {
-    clearPersistedHeight(TOOLBAR_HEIGHT_STORAGE_KEY);
-    clearPersistedHeight(STATUS_BAR_HEIGHT_STORAGE_KEY);
-    set({
-      toolbarHeight: TOOLBAR_DEFAULT_HEIGHT,
-      toolbarHeightCustomized: false,
-      statusBarHeight: STATUS_BAR_DEFAULT_HEIGHT,
-      statusBarHeightCustomized: false,
-    });
-  },
-
-  setToolbarHeight: (height) => {
-    const clamped = Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height));
-    persistHeight(TOOLBAR_HEIGHT_STORAGE_KEY, clamped);
-    set({ toolbarHeight: clamped, toolbarHeightCustomized: true });
-  },
-
-  updateToolbarHeightFromViewport: (viewportHeight) =>
-    set((s) => {
-      if (s.toolbarHeightCustomized) return s;
-      return { toolbarHeight: computeDefaultToolbarHeight(viewportHeight) };
-    }),
-
-  setStatusBarHeight: (height) => {
-    const clamped = Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height));
-    persistHeight(STATUS_BAR_HEIGHT_STORAGE_KEY, clamped);
-    set({ statusBarHeight: clamped, statusBarHeightCustomized: true });
-  },
-
-  updateStatusBarHeightFromViewport: (viewportHeight) =>
-    set((s) => {
-      if (s.statusBarHeightCustomized) return s;
-      return { statusBarHeight: computeDefaultStatusBarHeight(viewportHeight) };
-    }),
 
   openShortcutsHelp: () =>
     set({ shortcutsHelpOpen: true }),
