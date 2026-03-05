@@ -1,0 +1,156 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: serverless-event-driven
+  displayName: Serverless Event-Driven
+  description: AWS-native serverless event-driven architecture with API Gateway, Lambda functions, EventBridge and SQS for messaging, DynamoDB and S3 for storage, AWS Secrets Manager, and X-Ray tracing.
+  icon: Zap
+  tags:
+    - serverless
+    - event-driven
+    - aws
+    - lambda
+
+nodes:
+  - id: api-gateway
+    type: compute/api-gateway
+    displayName: AWS API Gateway
+    args:
+      provider: AWS API Gateway
+      rateLimit: 10000
+      authMethod: IAM
+    position:
+      x: 50
+      y: 250
+      width: 200
+      height: 100
+
+  - id: lambda-function
+    type: compute/function
+    displayName: Lambda Function
+    args:
+      runtime: Node.js 20
+      memoryMB: 256
+      timeoutSec: 30
+      trigger: API Gateway
+    position:
+      x: 350
+      y: 250
+      width: 200
+      height: 100
+
+  - id: event-bus
+    type: messaging/event-bus
+    displayName: EventBridge
+    args:
+      provider: EventBridge
+      schema_registry: true
+      dlq: true
+    position:
+      x: 650
+      y: 100
+      width: 200
+      height: 100
+
+  - id: message-queue
+    type: messaging/message-queue
+    displayName: SQS Queue
+    args:
+      provider: SQS
+      dlqEnabled: true
+      visibilityTimeout: 30
+      maxRetries: 3
+    position:
+      x: 950
+      y: 100
+      width: 200
+      height: 100
+
+  - id: dynamodb
+    type: data/database
+    displayName: DynamoDB
+    args:
+      engine: DynamoDB
+      version: "latest"
+      maxConnections: 100
+    position:
+      x: 650
+      y: 400
+      width: 200
+      height: 100
+
+  - id: s3-storage
+    type: data/object-storage
+    displayName: S3 Bucket
+    args:
+      provider: AWS S3
+      versioning: true
+      encryption: AES-256
+    position:
+      x: 950
+      y: 400
+      width: 200
+      height: 100
+
+  - id: secrets-manager
+    type: security/vault
+    displayName: AWS Secrets Manager
+    args:
+      provider: AWS Secrets Manager
+      autoRotation: true
+      encryptionType: KMS
+    position:
+      x: 350
+      y: 50
+      width: 200
+      height: 100
+
+  - id: xray-tracing
+    type: observability/tracing
+    displayName: AWS X-Ray
+    args:
+      platform: AWS X-Ray
+      samplingRate: 0.05
+      exportFormat: OTLP
+      retentionDays: 30
+    position:
+      x: 350
+      y: 450
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: api-gateway
+    toNode: lambda-function
+    type: sync
+    label: HTTP Request
+
+  - fromNode: lambda-function
+    toNode: event-bus
+    type: async
+    label: Publish Events
+
+  - fromNode: event-bus
+    toNode: message-queue
+    type: async
+    label: Route Events
+
+  - fromNode: lambda-function
+    toNode: dynamodb
+    type: sync
+    label: Read/Write Data
+
+  - fromNode: lambda-function
+    toNode: s3-storage
+    type: sync
+    label: Store Objects
+
+  - fromNode: lambda-function
+    toNode: secrets-manager
+    type: sync
+    label: Fetch Secrets
+
+  - fromNode: lambda-function
+    toNode: xray-tracing
+    type: async
+    label: Send Traces
