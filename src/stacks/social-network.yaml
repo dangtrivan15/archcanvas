@@ -1,0 +1,321 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: social-network
+  displayName: Social Network
+  description: Real-time social platform with Next.js web app and React Native mobile app, Kong API Gateway, dual TypeScript services (user & feed), Auth0 identity, PostgreSQL, Redis caching, S3 media storage, Elasticsearch search, Kafka activity events, FCM push notifications, Cloudflare CDN, and Prometheus/Grafana + Loki observability.
+  icon: MessageCircle
+  tags:
+    - social
+    - real-time
+    - full-stack
+
+nodes:
+  - id: web-app
+    type: client/web-app
+    displayName: Next.js Web App
+    args:
+      framework: Next.js
+      ssr: true
+      authentication: OAuth2
+    position:
+      x: 50
+      y: 50
+      width: 200
+      height: 100
+
+  - id: mobile-app
+    type: client/mobile-app
+    displayName: React Native App
+    args:
+      platform: React Native
+      minOsVersion: "14.0"
+      pushNotifications: true
+    position:
+      x: 50
+      y: 200
+      width: 200
+      height: 100
+
+  - id: cdn
+    type: network/cdn
+    displayName: Cloudflare CDN
+    args:
+      provider: Cloudflare
+      caching: true
+      waf: true
+    position:
+      x: 350
+      y: 125
+      width: 200
+      height: 100
+
+  - id: load-balancer
+    type: network/load-balancer
+    displayName: Envoy LB
+    args:
+      type: Envoy
+      algorithm: round-robin
+      healthCheck: true
+    position:
+      x: 650
+      y: 125
+      width: 200
+      height: 100
+
+  - id: api-gateway
+    type: compute/api-gateway
+    displayName: Kong API Gateway
+    args:
+      provider: Kong
+      rateLimiting: true
+      authentication: OAuth2
+    position:
+      x: 950
+      y: 125
+      width: 200
+      height: 100
+
+  - id: user-service
+    type: compute/service
+    displayName: User Service
+    args:
+      language: TypeScript
+      framework: Express
+      replicas: 3
+    position:
+      x: 1250
+      y: 50
+      width: 200
+      height: 100
+
+  - id: feed-service
+    type: compute/service
+    displayName: Feed Service
+    args:
+      language: TypeScript
+      framework: Express
+      replicas: 3
+    position:
+      x: 1250
+      y: 200
+      width: 200
+      height: 100
+
+  - id: auth-provider
+    type: security/auth-provider
+    displayName: Auth0
+    args:
+      provider: Auth0
+      protocol: OAuth2
+      mfa: true
+    position:
+      x: 1550
+      y: 50
+      width: 200
+      height: 100
+
+  - id: database
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+      maxConnections: 200
+    position:
+      x: 1550
+      y: 175
+      width: 200
+      height: 100
+
+  - id: cache
+    type: data/cache
+    displayName: Redis
+    args:
+      engine: Redis
+      maxMemory: 4GB
+      evictionPolicy: allkeys-lru
+    position:
+      x: 1550
+      y: 300
+      width: 200
+      height: 100
+
+  - id: object-storage
+    type: data/object-storage
+    displayName: S3 Media Storage
+    args:
+      provider: AWS S3
+      versioning: false
+      encryption: AES-256
+    position:
+      x: 1550
+      y: 425
+      width: 200
+      height: 100
+
+  - id: search-index
+    type: data/search-index
+    displayName: Elasticsearch
+    args:
+      engine: Elasticsearch
+      indexName: social-feed
+      replicas: 2
+    position:
+      x: 1250
+      y: 350
+      width: 200
+      height: 100
+
+  - id: event-bus
+    type: messaging/event-bus
+    displayName: Kafka
+    args:
+      provider: Apache Kafka
+      partitions: 12
+      replicationFactor: 3
+    position:
+      x: 950
+      y: 350
+      width: 200
+      height: 100
+
+  - id: notification
+    type: messaging/notification
+    displayName: FCM Push
+    args:
+      provider: FCM
+      channels: push
+      batching: true
+      priority: high
+    position:
+      x: 650
+      y: 350
+      width: 200
+      height: 100
+
+  - id: monitoring
+    type: observability/monitoring
+    displayName: Prometheus/Grafana
+    args:
+      platform: Prometheus/Grafana
+      scrapeInterval: 15s
+      alertChannels: slack,pagerduty
+    position:
+      x: 650
+      y: 500
+      width: 200
+      height: 100
+
+  - id: logging
+    type: observability/logging
+    displayName: Loki/Grafana
+    args:
+      platform: Grafana Loki
+      retentionDays: 30
+    position:
+      x: 950
+      y: 500
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: web-app
+    toNode: cdn
+    type: sync
+    label: Static Assets
+
+  - fromNode: mobile-app
+    toNode: cdn
+    type: sync
+    label: API Requests
+
+  - fromNode: cdn
+    toNode: load-balancer
+    type: sync
+    label: Forward Requests
+
+  - fromNode: load-balancer
+    toNode: api-gateway
+    type: sync
+    label: Route Traffic
+
+  - fromNode: api-gateway
+    toNode: user-service
+    type: sync
+    label: User APIs
+
+  - fromNode: api-gateway
+    toNode: feed-service
+    type: sync
+    label: Feed APIs
+
+  - fromNode: user-service
+    toNode: auth-provider
+    type: sync
+    label: Verify Identity
+
+  - fromNode: user-service
+    toNode: database
+    type: sync
+    label: User Data
+
+  - fromNode: user-service
+    toNode: object-storage
+    type: sync
+    label: Upload Media
+
+  - fromNode: feed-service
+    toNode: database
+    type: sync
+    label: Post Data
+
+  - fromNode: feed-service
+    toNode: cache
+    type: sync
+    label: Feed Cache
+
+  - fromNode: feed-service
+    toNode: search-index
+    type: sync
+    label: Search Posts
+
+  - fromNode: user-service
+    toNode: event-bus
+    type: async
+    label: User Events
+
+  - fromNode: feed-service
+    toNode: event-bus
+    type: async
+    label: Feed Events
+
+  - fromNode: event-bus
+    toNode: notification
+    type: async
+    label: Push Events
+
+  - fromNode: notification
+    toNode: mobile-app
+    type: async
+    label: Push Notify
+
+  - fromNode: user-service
+    toNode: logging
+    type: async
+    label: User Logs
+
+  - fromNode: feed-service
+    toNode: logging
+    type: async
+    label: Feed Logs
+
+  - fromNode: user-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: feed-service
+    toNode: monitoring
+    type: async
+    label: Metrics
