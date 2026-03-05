@@ -1,0 +1,88 @@
+/**
+ * iconMap - Maps icon name strings to Lucide React icon components.
+ *
+ * Previously defined inside GenericNode.tsx, extracted to a shared module
+ * so all node components and other consumers (CommandPalette, QuickSearch)
+ * can import it without depending on the GenericNode component.
+ */
+
+import {
+  Box,
+  Server,
+  Database,
+  HardDrive,
+  Radio,
+  Globe,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  LockKeyhole,
+  Cpu,
+  Layers,
+  Inbox,
+  GitFork,
+  Activity,
+  BarChart3,
+  FileText,
+  Cog,
+  Zap,
+  Archive,
+  Plug,
+  Webhook,
+  Workflow,
+  Smartphone,
+  Terminal,
+  Clock,
+  Container,
+  Search,
+  Bell,
+  ScanSearch,
+  Brain,
+  Binary,
+  GitMerge,
+  Bot,
+  Puzzle,
+  Network,
+} from 'lucide-react';
+
+export const iconMap: Record<string, React.ElementType> = {
+  Server,
+  Database,
+  HardDrive,
+  Radio,
+  Globe,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  LockKeyhole,
+  Cpu,
+  Layers,
+  Box,
+  Inbox,
+  GitFork,
+  Activity,
+  BarChart3,
+  FileText,
+  Cog,
+  Zap,
+  Archive,
+  Plug,
+  Webhook,
+  Workflow,
+  Smartphone,
+  Terminal,
+  Clock,
+  Container,
+  Search,
+  Bell,
+  ScanSearch,
+  Brain,
+  Binary,
+  GitMerge,
+  Bot,
+  Puzzle,
+  Network,
+};
+
+/** Default icon used when no matching icon is found */
+export { Box as DefaultNodeIcon } from 'lucide-react';

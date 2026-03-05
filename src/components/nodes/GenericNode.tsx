@@ -15,8 +15,8 @@
  * - Color is applied as a left accent bar and tinted header background
  */
 
-import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { memo, useMemo } from 'react';
+import type { NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
 import {
   getEffectiveNodeColor,
@@ -24,154 +24,26 @@ import {
   colorTintedShadow,
   colorGlowShadow,
 } from '@/utils/nodeColors';
-import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
-import {
-  Box,
-  Server,
-  Database,
-  HardDrive,
-  Radio,
-  Globe,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  LockKeyhole,
-  Cpu,
-  Layers,
-  Inbox,
-  GitFork,
-  Activity,
-  BarChart3,
-  FileText,
-  Cog,
-  Zap,
-  Archive,
-  Plug,
-  Webhook,
-  Workflow,
-  Smartphone,
-  ExternalLink,
-  Terminal,
-  Clock,
-  Container,
-  Search,
-  Bell,
-  ScanSearch,
-  Brain,
-  Binary,
-  GitMerge,
-  Bot,
-  Puzzle,
-  Network,
-} from 'lucide-react';
+import { useInlineEdit } from '@/hooks/useInlineEdit';
+import { iconMap, DefaultNodeIcon } from './iconMap';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeArgsTable } from './NodeArgsTable';
 import { NodeBadges } from './NodeBadges';
+import { GenericPortHandles } from './NodePortHandles';
+import { ExternalLink } from 'lucide-react';
 
-export const iconMap: Record<string, React.ElementType> = {
-  Server,
-  Database,
-  HardDrive,
-  Radio,
-  Globe,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  LockKeyhole,
-  Cpu,
-  Layers,
-  Box,
-  Inbox,
-  GitFork,
-  Activity,
-  BarChart3,
-  FileText,
-  Cog,
-  Zap,
-  Archive,
-  Plug,
-  Webhook,
-  Workflow,
-  Smartphone,
-  Terminal,
-  Clock,
-  Container,
-  Search,
-  Bell,
-  ScanSearch,
-  Brain,
-  Binary,
-  GitMerge,
-  Bot,
-  Puzzle,
-  Network,
-};
+// Re-export iconMap for backward compatibility (used by CommandPalette, QuickSearch)
+export { iconMap } from './iconMap';
 
 function GenericNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CanvasNodeData;
-  const Icon = iconMap[nodeData.icon] ?? Box;
+  const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
   const isRef = !!nodeData.refSource;
 
   const inboundPorts = nodeData.ports?.inbound ?? [];
   const outboundPorts = nodeData.ports?.outbound ?? [];
-  const hasDefinedInboundPorts = inboundPorts.length > 0;
-  const hasDefinedOutboundPorts = outboundPorts.length > 0;
 
-  // ── Inline edit state ──────────────────────────────────────────────
-  const inlineEditNodeId = useUIStore((s) => s.inlineEditNodeId);
-  const isInlineEditing = inlineEditNodeId === nodeData.archNodeId;
-  const [editValue, setEditValue] = useState(nodeData.displayName);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // When inline edit activates for this node, focus the input and select all text
-  useEffect(() => {
-    if (isInlineEditing) {
-      setEditValue(nodeData.displayName);
-      // Use requestAnimationFrame to ensure the input is rendered before focusing
-      requestAnimationFrame(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-          inputRef.current.select();
-        }
-      });
-    }
-  }, [isInlineEditing, nodeData.displayName]);
-
-  /** Confirm inline edit: apply new display name via coreStore.updateNode() */
-  const confirmEdit = useCallback(() => {
-    const trimmedValue = editValue.trim();
-    if (trimmedValue && trimmedValue !== nodeData.displayName) {
-      useCoreStore.getState().updateNode(nodeData.archNodeId, {
-        displayName: trimmedValue,
-      });
-    }
-    useUIStore.getState().clearInlineEdit();
-  }, [editValue, nodeData.displayName, nodeData.archNodeId]);
-
-  /** Revert inline edit: discard changes */
-  const revertEdit = useCallback(() => {
-    setEditValue(nodeData.displayName);
-    useUIStore.getState().clearInlineEdit();
-  }, [nodeData.displayName]);
-
-  /** Handle keyboard events on the inline edit input */
-  const handleInlineKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      e.stopPropagation(); // Prevent canvas shortcuts from firing
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        confirmEdit();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        revertEdit();
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        confirmEdit();
-      }
-    },
-    [confirmEdit, revertEdit],
-  );
+  const inlineEdit = useInlineEdit(nodeData.archNodeId, nodeData.displayName);
 
   // Compute effective color (custom or type-default)
   const effectiveColor = useMemo(
@@ -217,8 +89,6 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
     if (isRef) {
       return { background: 'hsl(var(--iris) / 0.08)' };
     }
-    // Gradient: color tint at top (10%) fading to lighter (4%), layered over surface
-    // Plus a white-to-dark lighting gradient for 3D depth (matches NodeShell)
     return {
       background: `linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), linear-gradient(to bottom, ${effectiveColor}18, ${effectiveColor}0A), hsl(var(--surface))`,
     };
@@ -257,43 +127,15 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       data-node-color={effectiveColor}
       data-ref-source={nodeData.refSource || undefined}
     >
-      {/* Color accent strip (top edge) — matches shaped-node header wash */}
+      {/* Color accent strip (top edge) */}
       <div
         className="absolute left-0 right-0 top-0 h-[3px] rounded-t-md"
         style={topAccentStyle}
         data-testid="node-color-accent"
       />
 
-      {/* Inbound port handles (left side) */}
-      {hasDefinedInboundPorts ? (
-        inboundPorts.map((port, index) => (
-          <Handle
-            key={`in-${port.name}`}
-            type="target"
-            position={Position.Left}
-            id={port.name}
-            title={port.name}
-            className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-            style={{
-              top: `${((index + 1) / (inboundPorts.length + 1)) * 100}%`,
-            }}
-            data-testid={`port-in-${port.name}`}
-            data-port-name={port.name}
-            data-port-direction="inbound"
-          />
-        ))
-      ) : (
-        <Handle
-          type="target"
-          position={Position.Left}
-          className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-          id="in"
-          title="in"
-          data-testid="port-in-default"
-          data-port-name="in"
-          data-port-direction="inbound"
-        />
-      )}
+      {/* Port handles */}
+      <GenericPortHandles inboundPorts={inboundPorts} outboundPorts={outboundPorts} />
 
       {/* Node header with tinted background */}
       <div
@@ -303,15 +145,15 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
       >
         <NodeIconBadge icon={Icon} color={effectiveColor} data-testid="node-icon" />
         <div className="min-w-0 flex-1">
-          {isInlineEditing ? (
+          {inlineEdit.isInlineEditing ? (
             <input
-              ref={inputRef}
+              ref={inlineEdit.inputRef}
               type="text"
               className="text-sm font-medium text-text w-full bg-surface border border-iris rounded px-1 py-0 outline-none ring-2 ring-iris/30 nodrag"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleInlineKeyDown}
-              onBlur={confirmEdit}
+              value={inlineEdit.editValue}
+              onChange={(e) => inlineEdit.setEditValue(e.target.value)}
+              onKeyDown={inlineEdit.handleKeyDown}
+              onBlur={inlineEdit.confirmEdit}
               data-testid="inline-edit-input"
               aria-label="Edit node name"
               autoComplete="off"
@@ -373,37 +215,6 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
         className="px-3 py-1.5"
         dividerColor={`${effectiveColor}20`}
       />
-
-      {/* Outbound port handles (right side) */}
-      {hasDefinedOutboundPorts ? (
-        outboundPorts.map((port, index) => (
-          <Handle
-            key={`out-${port.name}`}
-            type="source"
-            position={Position.Right}
-            id={port.name}
-            title={port.name}
-            className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-            style={{
-              top: `${((index + 1) / (outboundPorts.length + 1)) * 100}%`,
-            }}
-            data-testid={`port-out-${port.name}`}
-            data-port-name={port.name}
-            data-port-direction="outbound"
-          />
-        ))
-      ) : (
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-          id="out"
-          title="out"
-          data-testid="port-out-default"
-          data-port-name="out"
-          data-port-direction="outbound"
-        />
-      )}
     </div>
   );
 }
