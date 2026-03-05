@@ -11151,3 +11151,67 @@ Date: 2026-03-05
 Status: PASSING
 Changes: Added Zod validation schemas, fixed return types, removed dead code, extracted shared helpers in ExportApi
 Commit: 2a49668
+
+---
+
+## Session: Feature #438 - Add and Improve Inline Code Documentation
+Date: 2026-03-05
+
+### Feature #438: Add and Improve Inline Code Documentation - PASSING
+
+#### Documentation Added:
+
+**Public API Classes (TextApi, RenderApi, ExportApi):**
+- Added class-level JSDoc with @example code blocks to all three API classes
+- Added @param, @returns, @throws, @example to all TextApi public methods (describe, listNodes, getNode, getEdges, getNodeDef, search, getAIContext, addNode, addEdge, addNote, removeNote, addCodeRef, updateNode, updateNodeColor, removeNode, updateEdge, removeEdge, suggest, updateNote, resolveSuggestion)
+- Added @param/@returns to RenderApi.render() and ExportApi generation/export methods
+- Added JSDoc to ExportApi generation methods (generateMarkdownSummary, generateSummaryWithMermaid, generateMermaid)
+
+**Graph Engine (graphEngine.ts):**
+- Enhanced createEmptyGraph, createNode, createEdge, createNote with full @param/@returns
+- Added @param/@returns to addNode, addChildNode, removeNode, updateNode, moveNode
+- Added @param/@returns to findNode, findEdge, findNodeParent, getNodePath
+
+**Graph Query (graphQuery.ts):**
+- Enhanced getNodesAtLevel, getEdgesAtLevel, getExternalEdges with @param/@returns
+- Added @param/@returns to getNeighbors (BFS neighbor discovery) and searchGraph
+- Enhanced flattenNodes and countAllNodes documentation
+
+**Zustand Stores:**
+- Added comprehensive JSDoc to CoreStoreState interface (all 20+ fields documented)
+- Enhanced canvasStore module-level JSDoc (selection, viewport, zoom, layout)
+- Enhanced navigationStore with fractal zoom path explanation and examples
+- uiStore already had good documentation (verified, no changes needed)
+- aiStore, annotationStore, pencilStore already well-documented (verified)
+- selectors.ts already well-documented (verified)
+
+**Validation Schemas (validation.ts):**
+- Added JSDoc to DescribeOptionsSchema, AddNodeSchema, AddEdgeSchema, AddNoteSchema, SuggestSchema
+
+**Hooks:**
+- Added file-level JSDoc to useOfflineStatus (tracks browser connectivity)
+- Added file-level JSDoc to useCachedFiles (service worker cache enumeration)
+- Verified all other hooks already have comprehensive JSDoc
+
+**ELK Layout:**
+- Enhanced applyElkLayout with @param/@returns documentation
+
+**Stale Comments:**
+- Searched for TODO, FIXME, HACK, XXX, deprecated, legacy patterns - none found
+- Codebase is clean of misleading comments
+
+#### Verification:
+- Vite build: PASS (no JSDoc syntax errors)
+- TypeScript check: pre-existing errors only (fileIO.ts PropertyMap, test files)
+- Full test suite: 4626/4697 pass (71 pre-existing failures, 0 new)
+- Browser: App loads correctly with all UI elements
+- Console: 0 app errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Note: Some changes were committed by concurrent agents (features #441, #444)
+that ran git add on all modified files. JSDoc changes are present in commits:
+- 0029b03 (graphEngine, coreStore, types)
+- 2a49668 (textApi, renderApi, exportApi)
+- Remaining changes (graphQuery, stores, hooks, validation) committed separately
+
+#### Feature #438 marked passing
