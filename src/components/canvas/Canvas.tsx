@@ -32,7 +32,7 @@ import { useUIStore } from '@/store/uiStore';
 import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { lodNodeTypes } from '@/components/nodes/lodNodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
-import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasEdge } from '@/types/canvas';
 import {
   useCanvasPerformance,
   CANVAS_BOUNDS,
@@ -329,9 +329,8 @@ function CanvasInner() {
   // Handle double-click on node - fractal zoom into children
   const onNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: CanvasNode) => {
-      const nodeData = node.data as unknown as CanvasNodeData;
+      const nodeData = node.data;
       if (nodeData.hasChildren) {
-        console.log('[Canvas] Fractal zoom into:', node.id, nodeData.displayName);
         zoomIn(node.id);
       }
     },
@@ -362,12 +361,9 @@ function CanvasInner() {
   // Handle drag and drop from NodeDefBrowser onto canvas, and external file drops
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    // Check if files are being dragged
+    event.dataTransfer.dropEffect = 'copy';
     if (event.dataTransfer.types.includes('Files')) {
-      event.dataTransfer.dropEffect = 'copy';
       setIsDragOverWithFiles(true);
-    } else {
-      event.dataTransfer.dropEffect = 'copy';
     }
   }, []);
 
@@ -611,7 +607,6 @@ function CanvasInner() {
         // Escape with nothing selected and inside a group → navigate up (drill out)
         if (navigationPath.length > 0) {
           e.preventDefault();
-          console.log('[Canvas] Escape drill-out from:', navigationPath);
           zoomOut();
           return;
         }
@@ -738,7 +733,6 @@ function CanvasInner() {
         if (navigationPath.length > 0) {
           // Backspace with navigation path -> zoom out
           e.preventDefault();
-          console.log('[Canvas] Backspace zoom out from:', navigationPath);
           zoomOut();
         } else if (!openDeleteForSelectedNodes()) {
           if (selectedEdgeId || useCanvasStore.getState().selectedEdgeIds.length > 0) {

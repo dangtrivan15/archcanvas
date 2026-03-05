@@ -128,7 +128,7 @@ function gitignorePatternToRegex(pattern: string): RegExp {
   let i = 0;
 
   while (i < pattern.length) {
-    const ch = pattern[i];
+    const ch = pattern[i]!;
 
     if (ch === '*') {
       if (pattern[i + 1] === '*') {

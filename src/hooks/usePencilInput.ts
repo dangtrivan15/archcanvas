@@ -64,7 +64,7 @@ export function usePencilInput(
           pressure: e.pressure,
           tiltX: e.tiltX,
           tiltY: e.tiltY,
-          azimuthAngle: (e as any).azimuthAngle ?? 0,
+          azimuthAngle: (e as PointerEventWithAzimuth).azimuthAngle ?? 0,
         });
       }
     },
@@ -80,7 +80,7 @@ export function usePencilInput(
           pressure: e.pressure,
           tiltX: e.tiltX,
           tiltY: e.tiltY,
-          azimuthAngle: (e as any).azimuthAngle ?? 0,
+          azimuthAngle: (e as PointerEventWithAzimuth).azimuthAngle ?? 0,
         });
       }
     },

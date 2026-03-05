@@ -9,11 +9,11 @@
 
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import { getEffectiveNodeColor } from '@/utils/nodeColors';
 
-function SimplifiedNodeComponent({ data, selected }: NodeProps) {
-  const nodeData = data as unknown as CanvasNodeData;
+function SimplifiedNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+  const nodeData: CanvasNodeData = data;
   const effectiveColor = getEffectiveNodeColor(nodeData.color, nodeData.nodedefType);
 
   return (

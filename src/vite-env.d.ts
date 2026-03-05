@@ -8,6 +8,23 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// ─── Extended PointerEvent with azimuthAngle (Safari/iPadOS) ───
+interface PointerEventWithAzimuth extends PointerEvent {
+  /** Azimuth angle in radians (Apple Pencil, available on Safari/iPadOS) */
+  readonly azimuthAngle?: number;
+}
+
+// ─── Navigator User-Agent Client Hints API (Chrome 90+) ───
+interface NavigatorUAData {
+  readonly platform: string;
+  readonly mobile: boolean;
+  readonly brands: ReadonlyArray<{ brand: string; version: string }>;
+}
+
+interface Navigator {
+  readonly userAgentData?: NavigatorUAData;
+}
+
 // File System Access API types (Chrome/Edge)
 interface FileSystemFileHandle {
   getFile(): Promise<File>;
@@ -27,6 +44,7 @@ interface OpenFilePickerOptions {
     accept: Record<string, string[]>;
   }>;
   multiple?: boolean;
+  excludeAcceptAllOption?: boolean;
 }
 
 interface SaveFilePickerOptions {
@@ -35,6 +53,7 @@ interface SaveFilePickerOptions {
     description?: string;
     accept: Record<string, string[]>;
   }>;
+  excludeAcceptAllOption?: boolean;
 }
 
 interface Window {

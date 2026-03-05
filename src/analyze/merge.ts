@@ -454,7 +454,9 @@ export function applyMerge(
     const nodeIndex = findNodeIndex(newNodes, match.existingNode.id);
     if (nodeIndex === -1) continue;
 
-    const node = deepCloneNode(newNodes[nodeIndex]);
+    const matchedNode = newNodes[nodeIndex];
+    if (!matchedNode) continue;
+    const node = deepCloneNode(matchedNode);
 
     // Update code refs: add new ones from inference
     const existingPaths = getCodeRefPaths(node);
@@ -500,7 +502,9 @@ export function applyMerge(
       const nodeIndex = findNodeIndex(newNodes, removed.id);
       if (nodeIndex === -1) continue;
 
-      const node = deepCloneNode(newNodes[nodeIndex]);
+      const removedNode = newNodes[nodeIndex];
+      if (!removedNode) continue;
+      const node = deepCloneNode(removedNode);
       const removalNote: Note = {
         id: `merge-note-removed-${now}-${removed.id}`,
         author: noteAuthor,
@@ -548,7 +552,9 @@ export function applyMerge(
       const edgeIndex = newEdges.findIndex((e) => e.id === flagged.id);
       if (edgeIndex === -1) continue;
 
-      const edge = { ...newEdges[edgeIndex] };
+      const existingEdge = newEdges[edgeIndex];
+      if (!existingEdge) continue;
+      const edge: ArchEdge = { ...existingEdge };
       const flagNote: Note = {
         id: `merge-note-edge-removed-${now}-${flagged.id}`,
         author: noteAuthor,
@@ -577,9 +583,10 @@ export function applyMerge(
  */
 function findNodeIndex(nodes: ArchNode[], nodeId: string): number {
   for (let i = 0; i < nodes.length; i++) {
-    if (nodes[i].id === nodeId) return i;
+    const node = nodes[i]!;
+    if (node.id === nodeId) return i;
     // Check children recursively
-    if (hasChildWithId(nodes[i], nodeId)) return i;
+    if (hasChildWithId(node, nodeId)) return i;
   }
   return -1;
 }

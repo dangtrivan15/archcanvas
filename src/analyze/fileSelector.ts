@@ -272,10 +272,13 @@ function selectRepresentativeFiles(
 
     const count = Math.min(maxPerDirectory, files.length);
     for (let i = 0; i < count; i++) {
-      result.push({
-        file: files[i],
-        reason: `Representative source file from ${dir}/`,
-      });
+      const file = files[i];
+      if (file) {
+        result.push({
+          file,
+          reason: `Representative source file from ${dir}/`,
+        });
+      }
     }
   }
 

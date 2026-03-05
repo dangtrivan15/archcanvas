@@ -8,7 +8,7 @@
 
 import { memo, useMemo } from 'react';
 import type { NodeProps } from '@xyflow/react';
-import type { CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useInlineEdit } from '@/hooks/useInlineEdit';
 import { iconMap, DefaultNodeIcon } from './iconMap';
@@ -19,8 +19,8 @@ import { useNodeHeight } from './shapes/useNodeHeight';
 
 const STADIUM_WIDTH = 240;
 
-function StadiumNodeComponent({ data, selected }: NodeProps) {
-  const nodeData = data as unknown as CanvasNodeData;
+function StadiumNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+  const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
   const isRef = !!nodeData.refSource;
   const [outerRef, nodeHeight] = useNodeHeight();
@@ -43,6 +43,7 @@ function StadiumNodeComponent({ data, selected }: NodeProps) {
       data-node-type={nodeData.nodedefType}
       data-node-name={nodeData.displayName}
       data-node-color={effectiveColor}
+      data-node-shape="stadium"
       data-ref-source={nodeData.refSource || undefined}
     >
       <ShapedPortHandles

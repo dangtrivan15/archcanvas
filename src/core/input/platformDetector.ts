@@ -17,7 +17,7 @@ export function detectPlatform(): Platform {
   if (typeof navigator === 'undefined') return 'unknown';
 
   // Modern User-Agent Client Hints API (Chrome 90+)
-  const uaData = (navigator as any).userAgentData;
+  const uaData = navigator.userAgentData;
   if (uaData?.platform) {
     const p = uaData.platform.toLowerCase();
     if (p === 'macos') return 'mac';

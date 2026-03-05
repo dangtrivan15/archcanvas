@@ -7,7 +7,7 @@
 
 import { memo, useMemo } from 'react';
 import type { NodeProps } from '@xyflow/react';
-import type { CanvasNodeData } from '@/types/canvas';
+import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import { getEffectiveNodeColor } from '@/utils/nodeColors';
 import { useInlineEdit } from '@/hooks/useInlineEdit';
 import { iconMap, DefaultNodeIcon } from './iconMap';
@@ -18,8 +18,8 @@ import { useNodeHeight } from './shapes/useNodeHeight';
 
 const CYLINDER_WIDTH = 220;
 
-function CylinderNodeComponent({ data, selected }: NodeProps) {
-  const nodeData = data as unknown as CanvasNodeData;
+function CylinderNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
+  const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
   const isRef = !!nodeData.refSource;
   const [outerRef, nodeHeight] = useNodeHeight();

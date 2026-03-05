@@ -57,7 +57,7 @@ const UpdateNodeSchema = z
 const AddEdgeSchema = z.object({
   fromNode: z.string().min(1, 'fromNode is required'),
   toNode: z.string().min(1, 'toNode is required'),
-  type: z.enum(['sync', 'async', 'data-flow']).optional().default('sync'),
+  type: z.enum(['sync', 'async', 'data-flow']).default('sync'),
   label: z.string().optional(),
   fromPort: z.string().optional(),
   toPort: z.string().optional(),
@@ -75,7 +75,7 @@ const UpdateEdgeSchema = z
 
 const AddNoteSchema = z.object({
   content: z.string().min(1, 'content is required'),
-  author: z.string().optional().default('http-api'),
+  author: z.string().default('http-api'),
   tags: z.array(z.string()).optional(),
 });
 
@@ -243,7 +243,7 @@ export function createMutationRoutes(ctx: GraphContext): RouteDefinition[] {
         const edge = ctx.textApi.addEdge({
           fromNode: data.fromNode,
           toNode: data.toNode,
-          type: data.type,
+          type: data.type ?? 'sync',
           label: data.label,
           fromPort: data.fromPort,
           toPort: data.toPort,
@@ -301,7 +301,7 @@ export function createMutationRoutes(ctx: GraphContext): RouteDefinition[] {
           const note = ctx.textApi.addNote({
             nodeId: params.id!,
             content: data.content,
-            author: data.author,
+            author: data.author ?? 'http-api',
             tags: data.tags,
           });
           await autoSave(ctx);

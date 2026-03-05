@@ -2,9 +2,10 @@
  * Text API - the primary interface for reading and mutating architecture data.
  * Used by both the UI and external AI agents (via MCP).
  *
- * Provides: describe, listNodes, getNode, getEdges, getNodeDef, search,
- * addNode, addEdge, addNote, updateNode, removeNode, removeEdge,
- * suggest, resolveSuggestion, getAIContext
+ * Query methods:  describe, listNodes, getNode, getEdges, getNodeDef, search, getAIContext
+ * Mutation methods: addNode, addEdge, addNote, removeNote, addCodeRef,
+ *                   updateNode, updateNodeColor, updateEdge, removeNode, removeEdge,
+ *                   suggest, updateNote, resolveSuggestion
  */
 
 import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
@@ -22,7 +23,8 @@ import type {
   SuggestParams,
 } from '@/types/api';
 import type { AIContext } from '@/types/ai';
-import type { RegistryManager } from '@/core/registry/registryManager';
+import type { NodeDef } from '@/types/nodedef';
+import type { RegistryManagerCore } from '@/core/registry/registryCore';
 import {
   createNode,
   createEdge,
@@ -44,15 +46,28 @@ import {
   removeNoteFromNode,
 } from '@/core/graph/graphEngine';
 import { searchGraph, getNeighbors, flattenNodes, countAllNodes } from '@/core/graph/graphQuery';
+import {
+  AddNodeSchema,
+  AddEdgeSchema,
+  AddNoteSchema,
+  AddCodeRefSchema,
+  UpdateNodeSchema,
+  SuggestSchema,
+  NodeIdSchema,
+  EdgeIdSchema,
+  NoteIdSchema,
+  DescribeOptionsSchema,
+  ResolveSuggestionActionSchema,
+  formatValidationError,
+} from './validation';
 
 export class TextApi {
   private graph: ArchGraph;
-  private readonly registry: RegistryManager;
+  private readonly registry: RegistryManagerCore;
 
-  constructor(graph: ArchGraph, registry: RegistryManager) {
+  constructor(graph: ArchGraph, registry: RegistryManagerCore) {
     this.graph = graph;
     this.registry = registry;
-    console.log('[TextApi] Initialized');
   }
 
   /**
@@ -74,17 +89,22 @@ export class TextApi {
    * Describe the architecture in the requested format.
    */
   describe(options: DescribeOptions): string {
+    const parsed = DescribeOptionsSchema.safeParse(options);
+    if (!parsed.success) {
+      throw new Error(`Invalid describe options: ${formatValidationError(parsed.error)}`);
+    }
+
     const { format } = options;
 
     switch (format) {
       case 'structured':
-        return JSON.stringify(this.buildStructuredDescription(options), null, 2);
+        return JSON.stringify(this.buildStructuredDescription(), null, 2);
       case 'human':
-        return this.buildHumanDescription(options);
+        return this.buildHumanDescription();
       case 'ai':
-        return this.buildAIDescription(options);
+        return this.buildAIDescription();
       default:
-        return JSON.stringify(this.buildStructuredDescription(options), null, 2);
+        return JSON.stringify(this.buildStructuredDescription(), null, 2);
     }
   }
 
@@ -143,15 +163,20 @@ export class TextApi {
 
   /**
    * Resolve a nodedef type definition.
+   * Returns the NodeDef if found, or undefined if the type is not registered.
    */
-  getNodeDef(type: string) {
+  getNodeDef(type: string): NodeDef | undefined {
     return this.registry.resolve(type);
   }
 
   /**
    * Full-text search across the architecture.
+   * @param query - Non-empty search string
    */
   search(query: string): SearchResult[] {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
     return searchGraph(this.graph, query);
   }
 
@@ -215,8 +240,14 @@ export class TextApi {
 
   /**
    * Add a new node to the architecture.
+   * Validates input params and creates a node with a fresh ID.
    */
   addNode(params: AddNodeParams): ArchNode {
+    const parsed = AddNodeSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid addNode params: ${formatValidationError(parsed.error)}`);
+    }
+
     const node = createNode({
       type: params.type,
       displayName: params.displayName,
@@ -235,10 +266,15 @@ export class TextApi {
 
   /**
    * Add a new edge to the architecture.
-   * Validates that both fromNode and toNode exist in the graph.
-   * Throws an error with a descriptive message if either node ID is invalid.
+   * Validates input params and that both fromNode and toNode exist in the graph.
+   * Throws an error with a descriptive message if input is invalid or nodes don't exist.
    */
   addEdge(params: AddEdgeParams): ArchEdge {
+    const parsed = AddEdgeSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid addEdge params: ${formatValidationError(parsed.error)}`);
+    }
+
     // Validate that fromNode exists
     const fromNodeObj = findNode(this.graph, params.fromNode);
     if (!fromNodeObj) {
@@ -270,8 +306,14 @@ export class TextApi {
 
   /**
    * Add a note to a node or edge.
+   * Requires exactly one of nodeId or edgeId to be set.
    */
   addNote(params: AddNoteParams): Note {
+    const parsed = AddNoteSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid addNote params: ${formatValidationError(parsed.error)}`);
+    }
+
     const note = createNote({
       author: params.author,
       content: params.content,
@@ -291,6 +333,14 @@ export class TextApi {
    * Remove a note from a node.
    */
   removeNote(nodeId: string, noteId: string): void {
+    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
+    if (!nodeIdParsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
+    }
+    const noteIdParsed = NoteIdSchema.safeParse(noteId);
+    if (!noteIdParsed.success) {
+      throw new Error(`Invalid noteId: ${formatValidationError(noteIdParsed.error)}`);
+    }
     this.graph = removeNoteFromNode(this.graph, nodeId, noteId);
   }
 
@@ -298,6 +348,10 @@ export class TextApi {
    * Add a code reference to a node.
    */
   addCodeRef(params: AddCodeRefParams): void {
+    const parsed = AddCodeRefSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid addCodeRef params: ${formatValidationError(parsed.error)}`);
+    }
     const codeRef = { path: params.path, role: params.role };
     this.graph = engineAddCodeRef(this.graph, params.nodeId, codeRef);
   }
@@ -306,6 +360,14 @@ export class TextApi {
    * Update a node's properties.
    */
   updateNode(nodeId: string, params: UpdateNodeParams): void {
+    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
+    if (!nodeIdParsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
+    }
+    const parsed = UpdateNodeSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid updateNode params: ${formatValidationError(parsed.error)}`);
+    }
     this.graph = engineUpdateNode(this.graph, nodeId, params);
   }
 
@@ -314,6 +376,10 @@ export class TextApi {
    * Pass undefined to clear the custom color (reverts to type default).
    */
   updateNodeColor(nodeId: string, color: string | undefined): void {
+    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
+    if (!nodeIdParsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
+    }
     this.graph = engineUpdateNodeColor(this.graph, nodeId, color);
   }
 
@@ -321,6 +387,10 @@ export class TextApi {
    * Remove a node and its connected edges.
    */
   removeNode(nodeId: string): void {
+    const parsed = NodeIdSchema.safeParse(nodeId);
+    if (!parsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(parsed.error)}`);
+    }
     this.graph = engineRemoveNode(this.graph, nodeId);
   }
 
@@ -331,6 +401,10 @@ export class TextApi {
     edgeId: string,
     updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>,
   ): void {
+    const parsed = EdgeIdSchema.safeParse(edgeId);
+    if (!parsed.success) {
+      throw new Error(`Invalid edgeId: ${formatValidationError(parsed.error)}`);
+    }
     this.graph = engineUpdateEdge(this.graph, edgeId, updates);
   }
 
@@ -338,6 +412,10 @@ export class TextApi {
    * Remove an edge.
    */
   removeEdge(edgeId: string): void {
+    const parsed = EdgeIdSchema.safeParse(edgeId);
+    if (!parsed.success) {
+      throw new Error(`Invalid edgeId: ${formatValidationError(parsed.error)}`);
+    }
     this.graph = engineRemoveEdge(this.graph, edgeId);
   }
 
@@ -345,6 +423,11 @@ export class TextApi {
    * Create an AI suggestion as a pending note.
    */
   suggest(params: SuggestParams): Note {
+    const parsed = SuggestSchema.safeParse(params);
+    if (!parsed.success) {
+      throw new Error(`Invalid suggest params: ${formatValidationError(parsed.error)}`);
+    }
+
     const note = createNote({
       author: 'ai',
       content: params.content,
@@ -360,6 +443,14 @@ export class TextApi {
    * Update a note's content.
    */
   updateNote(nodeId: string, noteId: string, content: string): void {
+    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
+    if (!nodeIdParsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
+    }
+    const noteIdParsed = NoteIdSchema.safeParse(noteId);
+    if (!noteIdParsed.success) {
+      throw new Error(`Invalid noteId: ${formatValidationError(noteIdParsed.error)}`);
+    }
     this.graph = updateNoteContent(this.graph, nodeId, noteId, content);
   }
 
@@ -367,6 +458,18 @@ export class TextApi {
    * Accept or dismiss an AI suggestion.
    */
   resolveSuggestion(nodeId: string, noteId: string, action: 'accepted' | 'dismissed'): void {
+    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
+    if (!nodeIdParsed.success) {
+      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
+    }
+    const noteIdParsed = NoteIdSchema.safeParse(noteId);
+    if (!noteIdParsed.success) {
+      throw new Error(`Invalid noteId: ${formatValidationError(noteIdParsed.error)}`);
+    }
+    const actionParsed = ResolveSuggestionActionSchema.safeParse(action);
+    if (!actionParsed.success) {
+      throw new Error(`Invalid action: ${formatValidationError(actionParsed.error)}`);
+    }
     this.graph = updateNoteStatus(this.graph, nodeId, noteId, action);
   }
 
@@ -400,7 +503,7 @@ export class TextApi {
     };
   }
 
-  private buildStructuredDescription(_options: DescribeOptions) {
+  private buildStructuredDescription() {
     return {
       name: this.graph.name,
       description: this.graph.description,
@@ -412,7 +515,7 @@ export class TextApi {
     };
   }
 
-  private buildHumanDescription(_options: DescribeOptions): string {
+  private buildHumanDescription(): string {
     const lines: string[] = [];
     lines.push(`# ${this.graph.name}`);
     if (this.graph.description) {
@@ -453,7 +556,7 @@ export class TextApi {
     return lines.join('\n');
   }
 
-  private buildAIDescription(_options: DescribeOptions): string {
+  private buildAIDescription(): string {
     const lines: string[] = [];
     lines.push(`<architecture name="${this.graph.name}">`);
     lines.push(
@@ -545,9 +648,10 @@ export function getNodeTypeEmoji(type: string): string {
   }
 
   // Namespace fallback
-  const namespace = type.split('/')[0];
-  if (NAMESPACE_EMOJI_FALLBACK[namespace]) {
-    return NAMESPACE_EMOJI_FALLBACK[namespace];
+  const namespace = type.split('/')[0] ?? '';
+  const nsEmoji = NAMESPACE_EMOJI_FALLBACK[namespace];
+  if (nsEmoji) {
+    return nsEmoji;
   }
 
   // Generic fallback

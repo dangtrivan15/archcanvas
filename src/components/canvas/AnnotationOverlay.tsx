@@ -30,10 +30,10 @@ function buildSvgPath(pathData: AnnotationPathData): string {
 
   // Use quadratic bezier for smoothing
   for (let i = 2; i < points.length - 2; i += 2) {
-    const cpX = points[i];
-    const cpY = points[i + 1];
-    const endX = (points[i] + points[i + 2]) / 2;
-    const endY = (points[i + 1] + points[i + 3]) / 2;
+    const cpX = points[i] ?? 0;
+    const cpY = points[i + 1] ?? 0;
+    const endX = ((points[i] ?? 0) + (points[i + 2] ?? 0)) / 2;
+    const endY = ((points[i + 1] ?? 0) + (points[i + 3] ?? 0)) / 2;
     d += ` Q ${cpX} ${cpY} ${endX} ${endY}`;
   }
 
@@ -74,7 +74,7 @@ function renderAnnotationPath(
   }
 
   // Variable width: render as series of short segments with varying stroke width
-  const segments: JSX.Element[] = [];
+  const segments: React.JSX.Element[] = [];
   for (let i = 0; i < points.length - 2; i += 2) {
     const idx = i / 2;
     const pressure = pressures[idx] ?? 0.5;

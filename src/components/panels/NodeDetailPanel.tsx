@@ -1000,7 +1000,7 @@ function getTagColor(tag: string) {
     hash = (hash << 5) - hash + tag.charCodeAt(i);
     hash = hash & hash; // Convert to 32-bit integer
   }
-  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+  return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length]!;
 }
 
 function NotesTab({

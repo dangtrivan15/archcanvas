@@ -238,7 +238,7 @@ function TemplateGalleryContent({ onClose }: { onClose: () => void }) {
       const nodeCount = countNodes(graph.nodes);
       const edgeCount = graph.edges.length;
 
-      const archProto = decoded.architecture;
+      const archProto = decoded.architecture ?? undefined;
       const archBytes = Architecture.encode(Architecture.create(archProto)).finish();
 
       const defaultName =

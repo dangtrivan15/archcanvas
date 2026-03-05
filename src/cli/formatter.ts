@@ -105,14 +105,15 @@ export function formatAsHuman(template: string, data: Record<string, unknown>): 
 
 // ─── Domain-Specific Formatters ──────────────────────────────
 
-interface NodeSummaryData {
+/** Structural type for node summary formatting. Compatible with NodeSummary from types/api. */
+type NodeSummaryData = {
   id: string;
   type: string;
   displayName: string;
-  [key: string]: unknown;
-}
+};
 
-interface NodeDetailData {
+/** Structural type for node detail formatting. Compatible with NodeDetail from types/api. */
+type NodeDetailData = {
   id: string;
   type: string;
   displayName: string;
@@ -121,10 +122,10 @@ interface NodeDetailData {
   notes?: Array<{ id: string; content: string; author: string }>;
   properties?: Record<string, unknown>;
   children?: unknown[];
-  [key: string]: unknown;
-}
+};
 
-interface EdgeSummaryData {
+/** Structural type for edge summary formatting. */
+type EdgeSummaryData = {
   id: string;
   from?: string;
   to?: string;
@@ -132,17 +133,16 @@ interface EdgeSummaryData {
   toNode?: string;
   type: string;
   label?: string;
-  [key: string]: unknown;
-}
+};
 
-interface SearchResultData {
+/** Structural type for search result formatting. Compatible with SearchResult from types/api. */
+type SearchResultData = {
   type: string;
   id: string;
   displayName: string;
   matchContext: string;
   score: number;
-  [key: string]: unknown;
-}
+};
 
 /**
  * Format a list of nodes as a summary.

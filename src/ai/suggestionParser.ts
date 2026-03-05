@@ -62,8 +62,8 @@ export function parseSuggestions(responseText: string): ParsedSuggestion[] {
 
   let match: RegExpExecArray | null;
   while ((match = SUGGESTION_REGEX.exec(responseText)) !== null) {
-    const attrString = match[1];
-    const content = match[2].trim();
+    const attrString = match[1] ?? '';
+    const content = (match[2] ?? '').trim();
 
     const targetNodeId = extractAttribute(attrString, 'target') ?? '';
     const suggestionType = extractAttribute(attrString, 'type') ?? 'architecture';

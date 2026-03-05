@@ -10,6 +10,14 @@ const DB_NAME = 'archcanvas-sync';
 const DB_VERSION = 1;
 const STORE_NAME = 'pending-saves';
 
+/**
+ * Type-safe helper to extract result from IDBRequest.
+ * IndexedDB returns untyped results; this provides a single assertion point.
+ */
+function getTypedResult<T>(request: IDBRequest): T {
+  return request.result as T;
+}
+
 /** Status of the sync queue */
 export type SyncStatus = 'idle' | 'pending' | 'syncing' | 'synced' | 'error';
 
@@ -75,7 +83,7 @@ export async function enqueueSave(fileName: string, data: Uint8Array): Promise<v
     const getRequest = index.getAll(fileName);
 
     getRequest.onsuccess = () => {
-      const existing = getRequest.result as QueuedSaveOperation[];
+      const existing = getTypedResult<QueuedSaveOperation[]>(getRequest);
       for (const entry of existing) {
         if (entry.id !== undefined) {
           store.delete(entry.id);
@@ -118,7 +126,7 @@ export async function getPendingSaves(): Promise<QueuedSaveOperation[]> {
 
     request.onsuccess = () => {
       db.close();
-      resolve(request.result as QueuedSaveOperation[]);
+      resolve(getTypedResult<QueuedSaveOperation[]>(request));
     };
     request.onerror = () => {
       db.close();
@@ -183,7 +191,7 @@ export async function incrementRetryCount(id: number): Promise<void> {
     const getReq = store.get(id);
 
     getReq.onsuccess = () => {
-      const op = getReq.result as QueuedSaveOperation | undefined;
+      const op = getTypedResult<QueuedSaveOperation | undefined>(getReq);
       if (op) {
         op.retryCount += 1;
         store.put(op);
