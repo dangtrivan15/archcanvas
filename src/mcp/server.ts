@@ -10,6 +10,7 @@ import {
   dispatchToolCall,
   handleSave,
   handleFileInfo,
+  handleAnalyzeCodebase,
   autoSave,
   MUTATION_TOOLS,
   type ToolHandlerContext,
@@ -217,6 +218,25 @@ function registerTools(server: McpServer, ctx: ToolHandlerContext): void {
     TOOL_DEFINITIONS.init_architecture.description,
     TOOL_DEFINITIONS.init_architecture.inputSchema,
     createToolHandler(ctx, 'init_architecture'),
+  );
+
+  // 19. analyze_codebase (async - runs analysis pipeline)
+  server.tool(
+    TOOL_DEFINITIONS.analyze_codebase.name,
+    TOOL_DEFINITIONS.analyze_codebase.description,
+    TOOL_DEFINITIONS.analyze_codebase.inputSchema,
+    async (args) => {
+      const result = await handleAnalyzeCodebase(
+        ctx,
+        args as {
+          directory: string;
+          output_path?: string;
+          depth?: 'quick' | 'standard' | 'deep';
+          architecture_name?: string;
+        },
+      );
+      return { content: [{ type: 'text' as const, text: result }] };
+    },
   );
 }
 

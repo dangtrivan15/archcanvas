@@ -9,6 +9,7 @@ import type { GraphContext } from '@/cli/context';
 import type { DescribeFormat } from '@/types/api';
 import { ExportApi } from '@/api/exportApi';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
+import type { AnalyzeProgress } from '@/analyze/pipeline';
 
 export interface ToolHandlerContext {
   textApi: TextApi;
@@ -399,8 +400,165 @@ export function handleInitArchitecture(
 }
 
 /**
+ * Handle the 'analyze_codebase' tool call (async).
+ * Runs the full analysis pipeline on a directory and returns a summary.
+ *
+ * @param onProgress - Optional callback for MCP progress notifications
+ */
+export async function handleAnalyzeCodebase(
+  _ctx: ToolHandlerContext,
+  args: {
+    directory: string;
+    output_path?: string;
+    depth?: 'quick' | 'standard' | 'deep';
+    architecture_name?: string;
+    merge?: boolean;
+    strategy?: 'ai-wins' | 'manual-wins' | 'prompt';
+  },
+  onProgress?: (event: AnalyzeProgress) => void,
+): Promise<string> {
+  // Validate directory exists
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+
+  const resolvedDir = path.resolve(args.directory);
+
+  try {
+    const stat = fs.statSync(resolvedDir);
+    if (!stat.isDirectory()) {
+      return JSON.stringify({
+        success: false,
+        error: `Path is not a directory: ${resolvedDir}`,
+      });
+    }
+  } catch {
+    return JSON.stringify({
+      success: false,
+      error: `Directory not accessible: ${resolvedDir}. Ensure the path exists and the MCP server has filesystem access.`,
+    });
+  }
+
+  try {
+    const { analyzeCodebase } = await import('@/analyze/pipeline');
+    const outputPath = args.output_path ?? path.join(resolvedDir, 'architecture.archc');
+
+    // ── Merge mode ───────────────────────────────────────────────
+    if (args.merge) {
+      // Run pipeline in dry-run mode to get inference result
+      const result = await analyzeCodebase(resolvedDir, {
+        outputPath,
+        analysisDepth: args.depth ?? 'standard',
+        architectureName: args.architecture_name,
+        dryRun: true,
+        includeNotes: true,
+        onProgress,
+      });
+
+      if (!result.inferenceResult) {
+        return JSON.stringify({
+          success: false,
+          error: 'Merge mode requires an inference result, but inference returned nothing.',
+        });
+      }
+
+      if (!fs.existsSync(outputPath)) {
+        return JSON.stringify({
+          success: false,
+          error: `Merge mode requires an existing .archc file at: ${outputPath}. Run without merge first.`,
+        });
+      }
+
+      const { GraphContext } = await import('@/cli/context');
+      const ctx = await GraphContext.loadFromFile(outputPath);
+      const existingGraph = ctx.getGraph();
+
+      const { mergeAnalysis, applyMerge } = await import('@/analyze/merge');
+      const strategy = args.strategy ?? 'manual-wins';
+      const mergeResult = mergeAnalysis(existingGraph, result.inferenceResult, {
+        conflictStrategy: strategy,
+        addChangeNotes: true,
+      });
+
+      const mergedGraph = applyMerge(existingGraph, mergeResult, {
+        conflictStrategy: strategy,
+        addChangeNotes: true,
+      });
+
+      ctx.textApi.setGraph(mergedGraph);
+      ctx.markModified();
+      await ctx.save(true);
+
+      try { await ctx.saveSidecar(); } catch { /* optional */ }
+
+      const { summary } = mergeResult;
+      return JSON.stringify({
+        success: true,
+        mode: 'merge',
+        output_path: outputPath,
+        strategy,
+        nodes_matched: summary.nodesMatched,
+        nodes_added: summary.nodesAdded,
+        nodes_flagged: summary.nodesFlagged,
+        edges_added: summary.edgesAdded,
+        edges_flagged: summary.edgesFlagged,
+        edges_preserved: summary.edgesPreserved,
+        type_changes: summary.typeChanges,
+        code_ref_updates: summary.codeRefUpdates,
+        warnings: [...result.warnings, ...mergeResult.warnings],
+        duration: result.duration,
+      });
+    }
+
+    // ── Normal (non-merge) mode ──────────────────────────────────
+    const result = await analyzeCodebase(resolvedDir, {
+      outputPath: args.output_path,
+      analysisDepth: args.depth ?? 'standard',
+      architectureName: args.architecture_name,
+      includeNotes: true,
+      onProgress,
+    });
+
+    // Build a text summary of the detected architecture
+    const profile = result.projectProfile;
+    const summaryParts: string[] = [];
+    summaryParts.push(`Architecture: ${result.inferenceResult?.architectureName ?? args.architecture_name ?? path.basename(resolvedDir)}`);
+    summaryParts.push(`Project type: ${profile.projectType}`);
+    if (profile.languages.length > 0) {
+      summaryParts.push(`Languages: ${profile.languages.map(l => l.name).join(', ')}`);
+    }
+    if (profile.frameworks.length > 0) {
+      summaryParts.push(`Frameworks: ${profile.frameworks.map(f => f.name).join(', ')}`);
+    }
+    if (profile.dataStores.length > 0) {
+      summaryParts.push(`Data stores: ${profile.dataStores.map(d => d.type).join(', ')}`);
+    }
+    summaryParts.push(`Created ${result.stats.nodes} nodes, ${result.stats.edges} edges, ${result.stats.codeRefs} code references`);
+    if (result.warnings.length > 0) {
+      summaryParts.push(`Warnings: ${result.warnings.join('; ')}`);
+    }
+    summaryParts.push(`Duration: ${result.duration}ms`);
+
+    return JSON.stringify({
+      success: true,
+      output_path: result.outputPath,
+      architecture_name: result.inferenceResult?.architectureName ?? args.architecture_name ?? path.basename(resolvedDir),
+      nodes_created: result.stats.nodes,
+      edges_created: result.stats.edges,
+      code_refs_linked: result.stats.codeRefs,
+      summary: summaryParts.join('\n'),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return JSON.stringify({
+      success: false,
+      error: `Analysis failed: ${message}`,
+    });
+  }
+}
+
+/**
  * Dispatch a synchronous tool call to the appropriate handler.
- * Does NOT handle 'save' or 'file_info' — those are handled separately in server.ts.
+ * Does NOT handle 'save', 'file_info', or 'analyze_codebase' — those are handled separately in server.ts.
  */
 export function dispatchToolCall(
   ctx: ToolHandlerContext,

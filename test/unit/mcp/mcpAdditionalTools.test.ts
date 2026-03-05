@@ -65,8 +65,8 @@ describe('MCP Additional Tools - Feature #309', () => {
 
   // ── Tool definitions ──
 
-  it('has all 18 tools registered', () => {
-    expect(getToolCount()).toBe(18);
+  it('has all 19 tools registered', () => {
+    expect(getToolCount()).toBe(19);
   });
 
   it('tool names include all new tools', () => {
