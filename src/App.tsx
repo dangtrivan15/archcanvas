@@ -38,6 +38,8 @@ import { initializeApiKey } from '@/ai/config';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
+import { SyncStatusIndicator } from '@/components/shared/SyncStatusIndicator';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -61,6 +63,7 @@ export function App() {
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
+  const { syncStatus, pendingCount } = useBackgroundSync();
   const updateLeftPanelWidthFromViewport = useUIStore((s) => s.updateLeftPanelWidthFromViewport);
   const updateRightPanelWidthFromViewport = useUIStore((s) => s.updateRightPanelWidthFromViewport);
   const navigationPath = useNavigationStore((s) => s.path);
@@ -327,6 +330,7 @@ export function App() {
                 <span data-testid="autosave-status" className="text-green-600 status-bar-compact-hide">{autosaveStatusMessage}</span>
               </>
             )}
+            <SyncStatusIndicator syncStatus={syncStatus} pendingCount={pendingCount} />
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
             <span data-testid="zoom-level" className="status-bar-compact-hide">Zoom: {Math.round(zoom * 100)}%</span>
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>

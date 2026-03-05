@@ -29,7 +29,6 @@ export function SettingsDialog() {
   const closeDialog = useUIStore((s) => s.closeSettingsDialog);
   const showToast = useUIStore((s) => s.showToast);
   const resetBarSizes = useUIStore((s) => s.resetBarSizes);
-  const resetBarSizesToFixedDefaults = useUIStore((s) => s.resetBarSizesToFixedDefaults);
   const themeId = useUIStore((s) => s.themeId);
   const setTheme = useUIStore((s) => s.setTheme);
   const hapticFeedbackEnabled = useUIStore((s) => s.hapticFeedbackEnabled);
@@ -350,22 +349,11 @@ export function SettingsDialog() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Layout</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Reset all panel widths and bar heights to their viewport-relative defaults.
+              Reset panel widths to their viewport-relative defaults.
               Any custom sizes you've set by dragging will be cleared.
+              Toolbar and status bar use responsive CSS sizing automatically.
             </p>
             <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => {
-                  resetBarSizesToFixedDefaults();
-                  showToast('Bar sizes reset to defaults');
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-                data-testid="settings-reset-bar-sizes"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Reset Bar Sizes
-              </button>
               <button
                 type="button"
                 onClick={() => {
