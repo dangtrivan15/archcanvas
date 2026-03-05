@@ -10,7 +10,7 @@
  * Uses fixed responsive sizing via CSS clamp() — no resize handles.
  */
 
-import { Keyboard, Settings, PenTool } from 'lucide-react';
+import { Keyboard, Settings, PenTool, LayoutGrid } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
 import { ConnectNodesButton } from './ConnectNodesButton';
@@ -27,6 +27,7 @@ export function Toolbar() {
   const isDirty = useCoreStore((s) => s.isDirty);
   const openShortcutsHelp = useUIStore((s) => s.openShortcutsHelp);
   const openSettingsDialog = useUIStore((s) => s.openSettingsDialog);
+  const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);
   const isDrawingMode = useAnnotationStore((s) => s.isDrawingMode);
   const enterDrawingMode = useAnnotationStore((s) => s.enterDrawingMode);
   const exitDrawingMode = useAnnotationStore((s) => s.exitDrawingMode);
@@ -71,6 +72,21 @@ export function Toolbar() {
       >
         <PenTool className="w-4 h-4" />
         {!isCompact && <span>{isDrawingMode ? 'Drawing' : 'Annotate'}</span>}
+      </button>
+
+      {/* Templates button - opens template gallery */}
+      <button
+        type="button"
+        onClick={openTemplateGallery}
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+          isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
+        }`}
+        title="Template Gallery"
+        aria-label="Templates"
+        data-testid="templates-button"
+      >
+        <LayoutGrid className="w-4 h-4" />
+        {!isCompact && <span>Templates</span>}
       </button>
 
       {/* Divider - scales proportionally with toolbar height */}
