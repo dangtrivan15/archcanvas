@@ -319,6 +319,9 @@ export interface UIStoreState {
   // Settings dialog (API key, preferences)
   settingsDialogOpen: boolean;
 
+  // Template picker dialog
+  templatePickerOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
@@ -422,6 +425,10 @@ export interface UIStoreState {
   openSettingsDialog: () => void;
   closeSettingsDialog: () => void;
 
+  // Template picker actions
+  openTemplatePicker: () => void;
+  closeTemplatePicker: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -495,6 +502,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
   shortcutSettingsOpen: false,
 
   settingsDialogOpen: false,
+
+  templatePickerOpen: false,
 
   fileOperationLoading: false,
   fileOperationMessage: null,
@@ -677,6 +686,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeSettingsDialog: () =>
     set({ settingsDialogOpen: false }),
+
+  openTemplatePicker: () =>
+    set({ templatePickerOpen: true }),
+
+  closeTemplatePicker: () =>
+    set({ templatePickerOpen: false }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
