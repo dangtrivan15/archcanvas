@@ -1,4 +1,19 @@
 ==================================================
+SESSION: 2026-03-05 - Feature #1
+==================================================
+
+## What was accomplished:
+- Verified Feature #1: Application builds and starts without errors
+- npm install succeeds, Vite dev server starts successfully
+- App renders full UI: toolbar, node types panel, canvas, status bar
+- 41 built-in nodedefs loaded, all 3 APIs initialized (Text, Render, Export)
+- Only console messages are PWA service worker SSL cert warnings (expected in dev)
+- Vite production build succeeds (12.7s, all assets generated)
+- Feature was already marked as passing
+
+## Progress: 429/431 features passing (99.5%)
+
+==================================================
 SESSION: 2026-03-05 - Feature #412
 ==================================================
 
@@ -10613,3 +10628,60 @@ Date: 2026-03-05
 #### Commit: 7dd3b4a
 #### Feature #430 marked passing
 #### Progress: 429/431 features passing (99.5%)
+
+---
+
+## Session: Feature #431 - Import .archc File as Template
+Date: 2026-03-05
+
+### Feature #431: Import .archc File as Template - PASSING
+
+#### Implementation:
+- **ImportTemplateDialog.tsx**: New modal component for editing template name/category before saving
+  - Pre-fills name from Architecture.name, category dropdown (General, AI/ML, Cloud-native, Enterprise, Consumer, Data)
+  - Shows node/edge counts, Cancel/Import buttons
+- **TemplateGallery.tsx**: Major updates for import functionality:
+  - Added "Import Template" button in gallery header (blue Upload button)
+  - File picker filtered to .archc files
+  - Full .archc validation pipeline: magic bytes check (isArchcFile), full decode with SHA-256 checksum verification
+  - Deserialization of ArchCanvasFile, extraction of Architecture proto bytes for storage
+  - Drag-and-drop support: dragOver/dragLeave/drop handlers with visual overlay
+  - Delete action for imported templates with confirmation dialog
+  - Reload templates after import/delete via reloadKey state trigger
+  - Escape key respects modal hierarchy (import dialog > delete dialog > use template > preview > gallery)
+- **TemplateCard.tsx**: Added onDelete prop with Trash2 icon button (visible on hover for imported templates)
+- **UseTemplateDialog.tsx**: Fixed "Imported template loading is not yet supported" - now decodes Architecture proto bytes and instantiates graph
+- **TemplatePreview.tsx**: Fixed imported template preview - decodes Architecture proto bytes for React Flow preview
+- **createTestArchc.test.ts**: Helper test that generates valid .archc files for testing
+
+#### Key technical decisions:
+- Imported templates store Architecture proto bytes (not full .archc binary) in IndexedDB via saveImportedTemplate
+- Template IDs use `imported-${ulid()}` format to avoid collisions
+- Metadata is auto-generated: description from node/edge counts, icon='FileBox', source='imported'
+- processArchcFile validates magic bytes AND full SHA-256 checksum before allowing import
+
+#### Verification (Browser Automation on vite preview):
+- Vite build: PASS (no compilation errors)
+- Import Template button visible in gallery header: PASS
+- File picker opens, accepts .archc file: PASS
+- Import dialog appears with pre-filled name "Test Import Architecture": PASS
+- Import dialog shows 2 nodes, 1 edges: PASS
+- Category dropdown works (General selected by default): PASS
+- Import confirms: template count goes from 14 to 15: PASS
+- Toast shows "Imported 'Test Import Architecture' as template": PASS
+- Imported template shows "Imported" badge and delete button: PASS
+- Delete confirmation dialog appears on delete click: PASS
+- Cancel on delete dismisses dialog: PASS
+- Confirm delete: template count goes from 15 back to 14: PASS
+- Toast shows "Template deleted": PASS
+- Re-import and "Use" button: Use Template dialog opens: PASS
+- Imported template instantiates on canvas: API Server + PostgreSQL nodes: PASS
+- Title bar shows "My Imported Architecture": PASS
+- Status bar shows Nodes: 2, Edges: 1: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- Existing 52 template tests: PASS
+- Existing 21 TemplateGallery tests: PASS
+- No mock data patterns: PASS
+
+#### Commit: 0adeaf9
+#### Feature #431 marked passing
