@@ -16,6 +16,7 @@ import microservicesPlatformYaml from './microservices-platform.yaml?raw';
 import mobileBackendYaml from './mobile-backend.yaml?raw';
 import mlPlatformYaml from './ml-platform.yaml?raw';
 import dataPlatformYaml from './data-platform.yaml?raw';
+import socialNetworkYaml from './social-network.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -54,6 +55,7 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'mobile-backend', rawYaml: mobileBackendYaml },
   { name: 'ml-platform', rawYaml: mlPlatformYaml },
   { name: 'data-platform', rawYaml: dataPlatformYaml },
+  { name: 'social-network', rawYaml: socialNetworkYaml },
 ];
 
 /**
