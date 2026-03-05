@@ -1,0 +1,407 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: enterprise-crm
+  displayName: Enterprise CRM
+  description: Enterprise CRM architecture with React dashboard, Kong API Gateway, TypeScript microservices (Contact, Pipeline, Activity), Cloud Scheduler cron jobs, PostgreSQL, Redis, Elasticsearch, Kafka activity stream, SendGrid & Twilio integrations, inbound & outbound webhooks, Airflow ETL, Auth0 SSO, Claude AI insights, and Prometheus/Loki observability.
+  icon: Users
+  tags:
+    - CRM
+    - enterprise
+    - multi-tenant
+    - AI
+
+nodes:
+  - id: crm-dashboard
+    type: client/web-app
+    displayName: React CRM Dashboard
+    args:
+      framework: React
+      rendering: SPA
+      hosting: Vercel
+    position:
+      x: 50
+      y: 200
+      width: 200
+      height: 100
+
+  - id: api-gateway
+    type: compute/api-gateway
+    displayName: Kong API Gateway
+    args:
+      provider: Kong
+      rateLimit: 5000
+      authMethod: JWT
+    position:
+      x: 350
+      y: 200
+      width: 200
+      height: 100
+
+  - id: contact-service
+    type: compute/service
+    displayName: Contact Service
+    args:
+      language: TypeScript
+      framework: Express
+      protocol: REST
+      domain: contacts
+    position:
+      x: 650
+      y: 50
+      width: 200
+      height: 100
+
+  - id: pipeline-service
+    type: compute/service
+    displayName: Pipeline Service
+    args:
+      language: TypeScript
+      framework: Express
+      protocol: REST
+      domain: pipeline
+    position:
+      x: 650
+      y: 200
+      width: 200
+      height: 100
+
+  - id: activity-service
+    type: compute/service
+    displayName: Activity Service
+    args:
+      language: TypeScript
+      framework: Express
+      protocol: REST
+      domain: activity
+    position:
+      x: 650
+      y: 350
+      width: 200
+      height: 100
+
+  - id: cron-job
+    type: compute/cron-job
+    displayName: Cloud Scheduler
+    args:
+      provider: Cloud Scheduler
+      schedule: "0 */6 * * *"
+      tasks: lead scoring, reports
+    position:
+      x: 650
+      y: 500
+      width: 200
+      height: 100
+
+  - id: database
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+      maxConnections: 200
+    position:
+      x: 950
+      y: 50
+      width: 200
+      height: 100
+
+  - id: cache
+    type: data/cache
+    displayName: Redis
+    args:
+      engine: Redis
+      maxMemory: 512mb
+      evictionPolicy: allkeys-lru
+      purpose: dashboard aggregates
+    position:
+      x: 950
+      y: 200
+      width: 200
+      height: 100
+
+  - id: search-index
+    type: data/search-index
+    displayName: Elasticsearch
+    args:
+      engine: Elasticsearch
+      version: "8"
+      purpose: global search
+    position:
+      x: 950
+      y: 350
+      width: 200
+      height: 100
+
+  - id: event-bus
+    type: messaging/event-bus
+    displayName: Kafka
+    args:
+      provider: Kafka
+      partitions: 12
+      replicationFactor: 3
+      purpose: activity stream
+    position:
+      x: 950
+      y: 500
+      width: 200
+      height: 100
+
+  - id: sendgrid-api
+    type: integration/third-party-api
+    displayName: SendGrid
+    args:
+      provider: SendGrid
+      protocol: REST
+      authMethod: API Key
+    position:
+      x: 1250
+      y: 50
+      width: 200
+      height: 100
+
+  - id: twilio-api
+    type: integration/third-party-api
+    displayName: Twilio
+    args:
+      provider: Twilio
+      protocol: REST
+      authMethod: API Key
+    position:
+      x: 1250
+      y: 200
+      width: 200
+      height: 100
+
+  - id: webhook-inbound
+    type: integration/webhook
+    displayName: Inbound Webhooks
+    args:
+      direction: inbound
+      validation: HMAC
+    position:
+      x: 150
+      y: 0
+      width: 200
+      height: 100
+
+  - id: webhook-outbound
+    type: integration/webhook
+    displayName: Outbound Webhooks
+    args:
+      direction: outbound
+      retryPolicy: exponential-backoff
+      maxRetries: 5
+    position:
+      x: 1250
+      y: 500
+      width: 200
+      height: 100
+
+  - id: etl-pipeline
+    type: integration/etl-pipeline
+    displayName: Airflow ETL
+    args:
+      platform: Airflow
+      purpose: data import/export
+      schedule: daily
+    position:
+      x: 950
+      y: 650
+      width: 200
+      height: 100
+
+  - id: auth-provider
+    type: security/auth-provider
+    displayName: Auth0 SSO
+    args:
+      provider: Auth0
+      protocol: OIDC
+      ssoEnabled: true
+      multiTenant: true
+    position:
+      x: 350
+      y: 0
+      width: 200
+      height: 100
+
+  - id: llm-provider
+    type: ai/llm-provider
+    displayName: Anthropic Claude
+    args:
+      provider: Anthropic
+      model: Claude
+      purpose: email drafting, deal insights
+    position:
+      x: 1250
+      y: 350
+      width: 200
+      height: 100
+
+  - id: monitoring
+    type: observability/monitoring
+    displayName: Prometheus/Grafana
+    args:
+      platform: Prometheus
+      dashboard: Grafana
+      retentionDays: 90
+    position:
+      x: 350
+      y: 500
+      width: 200
+      height: 100
+
+  - id: logging
+    type: observability/logging
+    displayName: Loki/Grafana
+    args:
+      platform: Loki
+      dashboard: Grafana
+      retentionDays: 30
+      structured: true
+    position:
+      x: 350
+      y: 650
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: crm-dashboard
+    toNode: api-gateway
+    type: sync
+    label: HTTPS
+
+  - fromNode: api-gateway
+    toNode: contact-service
+    type: sync
+    label: REST
+
+  - fromNode: api-gateway
+    toNode: pipeline-service
+    type: sync
+    label: REST
+
+  - fromNode: api-gateway
+    toNode: activity-service
+    type: sync
+    label: REST
+
+  - fromNode: contact-service
+    toNode: database
+    type: sync
+    label: SQL
+
+  - fromNode: pipeline-service
+    toNode: database
+    type: sync
+    label: SQL
+
+  - fromNode: activity-service
+    toNode: database
+    type: sync
+    label: SQL
+
+  - fromNode: contact-service
+    toNode: cache
+    type: sync
+    label: Redis Protocol
+
+  - fromNode: pipeline-service
+    toNode: cache
+    type: sync
+    label: Redis Protocol
+
+  - fromNode: activity-service
+    toNode: cache
+    type: sync
+    label: Redis Protocol
+
+  - fromNode: contact-service
+    toNode: search-index
+    type: sync
+    label: Elasticsearch API
+
+  - fromNode: pipeline-service
+    toNode: search-index
+    type: sync
+    label: Elasticsearch API
+
+  - fromNode: activity-service
+    toNode: search-index
+    type: sync
+    label: Elasticsearch API
+
+  - fromNode: contact-service
+    toNode: event-bus
+    type: async
+    label: Contact Events
+
+  - fromNode: pipeline-service
+    toNode: event-bus
+    type: async
+    label: Pipeline Events
+
+  - fromNode: activity-service
+    toNode: event-bus
+    type: async
+    label: Activity Events
+
+  - fromNode: contact-service
+    toNode: sendgrid-api
+    type: sync
+    label: Email API
+
+  - fromNode: contact-service
+    toNode: twilio-api
+    type: sync
+    label: SMS/Voice API
+
+  - fromNode: pipeline-service
+    toNode: llm-provider
+    type: sync
+    label: AI Insights API
+
+  - fromNode: cron-job
+    toNode: etl-pipeline
+    type: sync
+    label: Trigger ETL
+
+  - fromNode: webhook-inbound
+    toNode: api-gateway
+    type: sync
+    label: Webhook Events
+
+  - fromNode: event-bus
+    toNode: webhook-outbound
+    type: async
+    label: Event Notifications
+
+  - fromNode: contact-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: pipeline-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: activity-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: contact-service
+    toNode: logging
+    type: async
+    label: Log Events
+
+  - fromNode: pipeline-service
+    toNode: logging
+    type: async
+    label: Log Events
+
+  - fromNode: activity-service
+    toNode: logging
+    type: async
+    label: Log Events
