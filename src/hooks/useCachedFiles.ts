@@ -1,3 +1,11 @@
+/**
+ * useCachedFiles - provides information about .archc files stored in the
+ * service worker cache. Helps users understand which files are available offline.
+ *
+ * Uses the Cache API to enumerate files in the 'archc-files' cache bucket.
+ * Also supports removing individual cached files and refreshing the cache list.
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 
 export interface CachedFileEntry {

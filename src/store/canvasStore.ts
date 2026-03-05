@@ -1,5 +1,13 @@
 /**
- * Canvas store - React Flow viewport and selection state.
+ * Canvas store - manages React Flow viewport state and node/edge selection.
+ *
+ * Handles:
+ * - **Single selection**: Backward-compatible selectedNodeId/selectedEdgeId
+ * - **Multi-selection**: Arrays of selected node/edge IDs with add/remove/toggle
+ * - **Viewport**: Pan (x, y) and zoom level tracking
+ * - **Zoom requests**: Counter-based pattern for triggering React Flow zoom actions
+ * - **Layout spacing**: Configurable node/layer spacing for ELK auto-layout
+ * - **Center-on-node**: Jump-to-node request for QuickSearch navigation
  */
 
 import { create } from 'zustand';

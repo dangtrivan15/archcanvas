@@ -1,5 +1,13 @@
 /**
- * Navigation store - fractal zoom path, zoomIn, zoomOut, zoomToRoot.
+ * Navigation store - manages the fractal zoom navigation path.
+ *
+ * The path is an array of node IDs representing the current drill-down level:
+ * - `[]` = root level (top-level nodes visible)
+ * - `['nodeA']` = viewing children of nodeA
+ * - `['nodeA', 'nodeB']` = viewing children of nodeB (which is a child of nodeA)
+ *
+ * Used by the RenderApi to determine which nodes/edges to display,
+ * and by the breadcrumb navigation component.
  */
 
 import { create } from 'zustand';

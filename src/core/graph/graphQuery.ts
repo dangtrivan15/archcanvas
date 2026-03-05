@@ -7,10 +7,11 @@ import type { ArchGraph, ArchNode, ArchEdge } from '@/types/graph';
 import type { SearchResult } from '@/types/api';
 
 /**
- * Get nodes at a given navigation level.
- * - path = [] -> root-level nodes
- * - path = ["node-id"] -> children of node-id
- * - path = ["a", "b"] -> children of node "b" (which is child of "a")
+ * Get nodes at a given navigation level (fractal zoom).
+ *
+ * @param graph - The architecture graph
+ * @param path - Navigation path: `[]` = root, `['id']` = children of id, `['a','b']` = children of b under a
+ * @returns Array of nodes visible at the specified navigation level, or empty if path is invalid
  */
 export function getNodesAtLevel(graph: ArchGraph, path: string[]): ArchNode[] {
   if (path.length === 0) {
@@ -30,8 +31,12 @@ export function getNodesAtLevel(graph: ArchGraph, path: string[]): ArchNode[] {
 }
 
 /**
- * Get edges at a given navigation level.
- * Only returns edges whose both endpoints are visible at the current level.
+ * Get edges visible at a given navigation level.
+ * Only returns edges where both endpoints are in the current level's node set.
+ *
+ * @param graph - The architecture graph
+ * @param path - Navigation path (same as getNodesAtLevel)
+ * @returns Edges connecting nodes visible at this level
  */
 export function getEdgesAtLevel(graph: ArchGraph, path: string[]): ArchEdge[] {
   const visibleNodes = getNodesAtLevel(graph, path);
@@ -41,8 +46,12 @@ export function getEdgesAtLevel(graph: ArchGraph, path: string[]): ArchEdge[] {
 }
 
 /**
- * Get external (boundary) edges that cross navigation levels.
- * These connect nodes at the current level with nodes outside the current view.
+ * Get boundary edges that cross navigation levels - connecting visible nodes
+ * with nodes outside the current view.
+ *
+ * @param graph - The architecture graph
+ * @param path - Navigation path
+ * @returns Edges where exactly one endpoint is visible at this level
  */
 export function getExternalEdges(graph: ArchGraph, path: string[]): ArchEdge[] {
   const visibleNodes = getNodesAtLevel(graph, path);
@@ -56,7 +65,13 @@ export function getExternalEdges(graph: ArchGraph, path: string[]): ArchEdge[] {
 }
 
 /**
- * Get neighbors of a node within N hops.
+ * Get neighbor nodes and connecting edges within N hops of a given node.
+ * Uses BFS to expand outward from the source node.
+ *
+ * @param graph - The architecture graph
+ * @param nodeId - Starting node ID
+ * @param maxHops - Maximum number of edge hops to traverse (default: 1)
+ * @returns Object with `nodes` (neighbor nodes, excluding source) and `edges` (connecting edges)
  */
 export function getNeighbors(
   graph: ArchGraph,
@@ -106,7 +121,12 @@ export function getNeighbors(
 }
 
 /**
- * Full-text search across node names, properties, notes, and edge labels.
+ * Full-text search across node names, types, args, properties, notes, and edge labels.
+ * Results are scored by relevance (name matches score highest) and sorted descending.
+ *
+ * @param graph - The architecture graph to search
+ * @param query - Case-insensitive search string
+ * @returns Array of SearchResult objects sorted by relevance score
  */
 export function searchGraph(graph: ArchGraph, query: string): SearchResult[] {
   if (!query.trim()) return [];
@@ -226,7 +246,11 @@ function searchNodesRecursive(
 }
 
 /**
- * Flatten all nodes (including children) into a single array.
+ * Flatten a hierarchical node tree into a single flat array.
+ * Includes all nested children at every depth level.
+ *
+ * @param nodes - Root-level node array (may contain nested children)
+ * @returns Flat array of all nodes in depth-first order
  */
 export function flattenNodes(nodes: ArchNode[]): ArchNode[] {
   const result: ArchNode[] = [];
@@ -240,7 +264,10 @@ export function flattenNodes(nodes: ArchNode[]): ArchNode[] {
 }
 
 /**
- * Count all nodes recursively (including children).
+ * Count all nodes in the graph, including nested children at all depths.
+ *
+ * @param graph - The architecture graph
+ * @returns Total number of nodes (root + all descendants)
  */
 export function countAllNodes(graph: ArchGraph): number {
   return flattenNodes(graph.nodes).length;
