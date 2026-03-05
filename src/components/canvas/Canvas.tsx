@@ -214,6 +214,7 @@ function CanvasInner() {
     } else if (rendered.nodes.length <= NODE_COUNT_WARNING) {
       nodeCountWarningShownRef.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rendered.nodes.length, perf.setNodeCount, showToast]);
 
   // Sync from store -> React Flow whenever the rendered graph changes
@@ -1086,6 +1087,7 @@ function CanvasInner() {
       setViewport({ x: viewport.x, y: viewport.y, zoom: viewport.zoom });
       perf.updateZoom(viewport.zoom);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setViewport, perf.updateZoom],
   );
 

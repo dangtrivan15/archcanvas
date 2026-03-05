@@ -16,7 +16,7 @@
   "scripts": {
     "cli": "npx tsx src/cli/index.ts",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.build.json && vite build",
     "build:cli": "tsup --config tsup.cli.config.ts",
     "prepublishOnly": "npm run build:cli",
     "preview": "vite preview",

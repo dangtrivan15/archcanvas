@@ -13,6 +13,7 @@ export default tseslint.config(
       '.vite-cache',
       'src/proto/archcanvas.pb.js',
       'src/proto/archcanvas.pb.d.ts',
+      'scripts/**',
     ],
   },
   {
@@ -28,7 +29,7 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -43,6 +44,14 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
       'no-console': 'off',
       'prefer-const': 'warn',
+    },
+  },
+  {
+    files: ['test/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 );

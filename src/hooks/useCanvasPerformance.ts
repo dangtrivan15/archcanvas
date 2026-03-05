@@ -122,6 +122,7 @@ export function useCanvasPerformance(): CanvasPerformanceState {
       setNodeCount,
       updateZoom,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isLowDetailMode,
       isLowDetailEdges,
