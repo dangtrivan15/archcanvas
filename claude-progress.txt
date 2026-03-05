@@ -10452,3 +10452,55 @@ Date: 2026-03-05
 #### Commit: 027d2d8
 #### Feature #427 marked passing
 #### Progress: 427/431 features passing (99.1%)
+
+---
+
+## Session: Feature #428 - Template Gallery UI Panel
+Date: 2026-03-05
+
+### Feature #428: Template Gallery UI Panel - PASSING
+
+#### Implementation:
+- Created `src/components/shared/TemplateGallery.tsx`:
+  - Full-featured gallery dialog with responsive 2-column card grid
+  - Loads all templates (built-in + imported) via getAllTemplates() from registry
+  - Category filter tabs: All, General, AI/ML, Cloud-native, Enterprise, Consumer, Data
+  - Tag-to-category mapping for all 14 built-in templates
+  - Search bar filtering by name, description, and tags
+  - Category count badges on each tab
+  - Empty state with "No templates match" message and "Clear filters" button
+  - Escape key to close, click-outside to close
+  - Template instantiation on card click (reuses instantiateStack from stackLoader)
+  - Shows toast on template load
+- Created `src/components/shared/TemplateCard.tsx`:
+  - Card component showing icon, name, description snippet, domain badge, node count, edge count
+  - Visual distinction: "Built-in" (gray) vs "Imported" (amber) source badge
+  - Lucide icon mapping with Rocket fallback for unknown icons
+  - Hover effects and focus styles
+- Updated `src/components/toolbar/Toolbar.tsx`:
+  - Added "Templates" button with LayoutGrid icon between Annotate and filename
+- Updated `src/store/uiStore.ts`:
+  - Added templateGalleryOpen state, openTemplateGallery/closeTemplateGallery actions
+- Updated `src/App.tsx`:
+  - Added TemplateGallery overlay component
+- Created `test/unit/components/TemplateGallery.test.tsx` with 21 tests:
+  - TemplateCard: renders name, description, domain badge, node count, edge count, source badges, click handler, unknown icon fallback
+  - TemplateGallery: renders dialog, heading, count, search, all 7 category tabs, card grid, search filtering, category filtering, empty state, source distinction, close button
+
+#### Verification:
+- Vite build: PASS
+- 21/21 unit tests passing: PASS
+- Browser automation verification:
+  - Templates button visible in toolbar: PASS
+  - Gallery opens with all 14 built-in templates: PASS
+  - Search filtering works (tested "ai" -> 2 results): PASS
+  - Category filtering works (tested Enterprise -> 3 results): PASS
+  - Empty state shows correctly with "Clear filters": PASS
+  - Template instantiation works (AI Chat App -> 8 nodes, 7 edges): PASS
+  - Gallery closes after selection with toast: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 8721646
+#### Feature #428 marked passing
+#### Progress: 428/431 features passing (99.3%)
