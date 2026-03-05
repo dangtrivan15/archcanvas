@@ -10791,3 +10791,27 @@ Date: 2026-03-05
 
 #### Commit: 9e3439b
 #### Feature #434 marked passing
+
+---
+
+## Session: Feature #433 - Dead Code and Unused Imports Cleanup
+Date: 2026-03-05
+
+### Feature #433: Dead Code and Unused Imports Cleanup - PASSING
+
+#### Changes made (17 files in src/):
+- Cleaned up unused imports: decode/generateId from coreStore, AnnotationPathData from fileIO and annotationStore, useCallback from useNodeHeight and TemplatePreview, flushQueue from useBackgroundSync, ArchGraph from graphBuilder, writeOutput/formatOutput from cli/info, writeInfo from cli/index
+- Cleaned up unused variables: viewportHeight from App, maxY from commandRegistry, _setGraph from TemplatePicker, graph destructuring from coreStore methods that do not use it
+- Prefixed unused function params with underscore: height in handlePositions, userContent in AIChatTab, noteAuthor/addChangeNotes in merge
+- Cleaned up unused directives: ts-expect-error in protobuf-minimal, eslint-disable in cli/commands/info
+- Changed const _updateSW = registerSW() to just registerSW() in main.tsx (kept side-effect)
+
+#### Verification:
+- tsc --noEmit --noUnusedLocals --noUnusedParameters: 0 unused issues in src/
+- Vite build: PASS
+- vitest run: 195/212 test files pass (17 pre-existing failures, 0 new failures)
+- Browser automation: App loads correctly, all UI elements functional
+- Console: 0 app errors (only pre-existing SSL/PWA warnings)
+
+#### Feature #433 marked passing
+#### Progress: 433/446 features passing (97.1%)
