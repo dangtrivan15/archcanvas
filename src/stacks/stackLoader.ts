@@ -15,6 +15,7 @@ import serverlessEventDrivenYaml from './serverless-event-driven.yaml?raw';
 import microservicesPlatformYaml from './microservices-platform.yaml?raw';
 import mobileBackendYaml from './mobile-backend.yaml?raw';
 import mlPlatformYaml from './ml-platform.yaml?raw';
+import dataPlatformYaml from './data-platform.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -52,6 +53,7 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'microservices-platform', rawYaml: microservicesPlatformYaml },
   { name: 'mobile-backend', rawYaml: mobileBackendYaml },
   { name: 'ml-platform', rawYaml: mlPlatformYaml },
+  { name: 'data-platform', rawYaml: dataPlatformYaml },
 ];
 
 /**
