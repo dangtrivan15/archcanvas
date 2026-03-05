@@ -129,7 +129,10 @@ export function computeDefaultLeftPanelWidth(viewportWidth?: number): number {
   return Math.max(LEFT_PANEL_DEFAULT_FLOOR, Math.min(LEFT_PANEL_DEFAULT_CEILING, raw));
 }
 
-/** Legacy constant kept for backward compatibility */
+/**
+ * Static default width (used by tests that need a fixed reference value).
+ * At runtime, use computeDefaultLeftPanelWidth() for viewport-responsive defaults.
+ */
 export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 /** Drag below this threshold to snap-collapse the left panel */
 export const LEFT_PANEL_COLLAPSE_THRESHOLD = 120;
@@ -148,7 +151,10 @@ export function computeDefaultRightPanelWidth(viewportWidth?: number): number {
   return Math.max(RIGHT_PANEL_DEFAULT_FLOOR, Math.min(RIGHT_PANEL_DEFAULT_CEILING, raw));
 }
 
-/** Legacy constant kept for backward compatibility */
+/**
+ * Static default width (used by tests that need a fixed reference value).
+ * At runtime, use computeDefaultRightPanelWidth() for viewport-responsive defaults.
+ */
 export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
 export const RIGHT_PANEL_MIN_WIDTH = 220;
 export const RIGHT_PANEL_MAX_WIDTH = 500;

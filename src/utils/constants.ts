@@ -34,13 +34,8 @@ export const NODEDEF_NAMESPACES = [
 
 export type NodeDefNamespace = (typeof NODEDEF_NAMESPACES)[number];
 
-// Panel dimensions
-export const LEFT_PANEL_DEFAULT_WIDTH = 240;
-export const LEFT_PANEL_MIN_WIDTH = 180;
-export const RIGHT_PANEL_DEFAULT_WIDTH = 320;
-export const RIGHT_PANEL_MIN_WIDTH = 280;
-
 // Right panel tabs
+// Note: Panel dimension constants (widths, min/max) live in src/store/uiStore.ts
 export const RIGHT_PANEL_TABS = ['properties', 'notes', 'coderefs', 'aichat'] as const;
 export type RightPanelTab = (typeof RIGHT_PANEL_TABS)[number];
 

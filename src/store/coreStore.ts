@@ -1338,7 +1338,7 @@ function _getCanvasStateForSave() {
     panelLayout: {
       rightPanelOpen: uiStoreState.rightPanelOpen ?? false,
       rightPanelTab: (uiStoreState.rightPanelTab as string) ?? '',
-      rightPanelWidth: 320,
+      rightPanelWidth: uiStoreState.rightPanelWidth ?? 320,
     },
   };
 }
