@@ -151,7 +151,7 @@ export function DeleteConfirmationDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
+        className="bg-surface text-foreground rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
         data-testid="delete-dialog-content"
       >
         {/* Header */}
@@ -160,10 +160,10 @@ export function DeleteConfirmationDialog() {
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>
           <div>
-            <h2 id="delete-dialog-title" className="text-lg font-semibold text-gray-900">
+            <h2 id="delete-dialog-title" className="text-lg font-semibold text-foreground">
               {isMulti ? `Delete ${nodeCount} Nodes` : 'Delete Node'}
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {isMulti ? (
                 <>
                   Are you sure you want to delete{' '}
@@ -202,7 +202,7 @@ export function DeleteConfirmationDialog() {
         )}
 
         {/* Action text */}
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           This action can be undone with {formatBinding('mod+z')}.
         </p>
 
@@ -211,7 +211,7 @@ export function DeleteConfirmationDialog() {
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-md hover:bg-highlight-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             data-testid="delete-cancel-button"
           >
             Cancel
@@ -220,7 +220,7 @@ export function DeleteConfirmationDialog() {
             ref={confirmRef}
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-4 py-2 text-sm font-medium text-white bg-love border border-transparent rounded-md hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-love"
             data-testid="delete-confirm-button"
           >
             Delete

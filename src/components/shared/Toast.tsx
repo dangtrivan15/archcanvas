@@ -14,7 +14,7 @@ export function Toast() {
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 bg-overlay text-foreground text-sm px-4 py-2.5 rounded-lg shadow-lg border border-border animate-in fade-in slide-in-from-bottom-2 duration-200"
       role="status"
       aria-live="polite"
       data-testid="toast"
@@ -22,7 +22,7 @@ export function Toast() {
       <span data-testid="toast-message">{toastMessage}</span>
       <button
         onClick={clearToast}
-        className="ml-1 p-0.5 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+        className="ml-1 p-0.5 rounded hover:bg-highlight-low text-muted-foreground hover:text-foreground"
         aria-label="Dismiss"
         data-testid="toast-dismiss"
       >

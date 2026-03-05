@@ -74,7 +74,7 @@ export function UnsavedChangesDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
+        className="bg-surface text-foreground rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
         data-testid="unsaved-dialog-content"
       >
         {/* Header */}
@@ -83,10 +83,10 @@ export function UnsavedChangesDialog() {
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h2 id="unsaved-dialog-title" className="text-lg font-semibold text-gray-900">
+            <h2 id="unsaved-dialog-title" className="text-lg font-semibold text-foreground">
               Unsaved Changes
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               You have unsaved changes that will be lost. Do you want to continue?
             </p>
           </div>
@@ -97,7 +97,7 @@ export function UnsavedChangesDialog() {
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-md hover:bg-highlight-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             data-testid="unsaved-cancel-button"
           >
             Cancel
@@ -106,7 +106,7 @@ export function UnsavedChangesDialog() {
             ref={discardRef}
             type="button"
             onClick={handleDiscard}
-            className="px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-4 py-2 text-sm font-medium text-white bg-gold border border-transparent rounded-md hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             data-testid="unsaved-discard-button"
           >
             Discard Changes

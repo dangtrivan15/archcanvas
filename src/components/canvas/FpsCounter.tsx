@@ -23,30 +23,20 @@ function FpsCounterComponent({
   isLowDetailMode,
   prefersReducedMotion,
 }: FpsCounterProps) {
-  const fpsColor = fps >= 50 ? '#4ade80' : fps >= 30 ? '#facc15' : '#ef4444';
+  const fpsColor = fps >= 50 ? 'text-green-400' : fps >= 30 ? 'text-yellow-300' : 'text-red-500';
 
   return (
     <div
-      className="absolute top-2 right-2 z-50 pointer-events-none select-none"
+      className="absolute top-2 right-2 z-50 pointer-events-none select-none font-mono text-[11px] leading-snug px-2.5 py-1.5 rounded-md bg-black/75 text-neutral-200 backdrop-blur-sm"
       data-testid="fps-counter"
-      style={{
-        fontFamily: 'monospace',
-        fontSize: 11,
-        lineHeight: 1.4,
-        padding: '6px 10px',
-        borderRadius: 6,
-        backgroundColor: 'hsla(0, 0%, 0%, 0.75)',
-        color: '#e5e5e5',
-        backdropFilter: 'blur(4px)',
-      }}
     >
       <div>
-        FPS: <span style={{ color: fpsColor, fontWeight: 700 }}>{fps}</span>
+        FPS: <span className={`${fpsColor} font-bold`}>{fps}</span>
       </div>
       <div>Nodes: {nodeCount}</div>
       <div>Zoom: {(zoom * 100).toFixed(0)}%</div>
-      {isLowDetailMode && <div style={{ color: '#60a5fa' }}>LOD: ON</div>}
-      {prefersReducedMotion && <div style={{ color: '#c084fc' }}>Reduced Motion</div>}
+      {isLowDetailMode && <div className="text-foam">LOD: ON</div>}
+      {prefersReducedMotion && <div className="text-iris">Reduced Motion</div>}
     </div>
   );
 }

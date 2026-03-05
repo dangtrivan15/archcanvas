@@ -102,7 +102,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label="File menu"
@@ -116,18 +116,18 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-1 w-56 bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 z-50"
+          className="absolute top-full left-0 mt-1 w-56 bg-background border border-border rounded-md shadow-lg py-1 z-50"
           role="menu"
           data-testid="file-menu-dropdown"
         >
           <button
             onClick={handleNew}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
           >
             <FilePlus className="w-4 h-4" />
             <span>New</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+            <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+n')}
             </span>
           </button>
@@ -136,7 +136,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
               setIsOpen(false);
               openTemplatePicker();
             }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="new-from-template-button"
           >
@@ -145,28 +145,28 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           </button>
           <button
             onClick={handleOpen}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
           >
             <FolderOpen className="w-4 h-4" />
             <span>Open...</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+            <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+o')}
             </span>
           </button>
-          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <div className="h-px bg-border my-1" />
           <button
             onClick={handleSave}
             disabled={isSaving}
             className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
-              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[hsl(var(--muted))]'
+              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
             }`}
             role="menuitem"
             data-testid="save-button"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'Saving...' : 'Save'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+            <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+s')}
             </span>
           </button>
@@ -174,25 +174,25 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
             onClick={handleSaveAs}
             disabled={isSaving}
             className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
-              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[hsl(var(--muted))]'
+              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
             }`}
             role="menuitem"
             data-testid="save-as-button"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'Saving...' : 'Save As...'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+            <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+shift+s')}
             </span>
           </button>
-          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <div className="h-px bg-border my-1" />
           <div
             className="relative"
             onMouseEnter={() => setShowExportSub(true)}
             onMouseLeave={() => setShowExportSub(false)}
           >
             <button
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
               role="menuitem"
               data-testid="export-menu-button"
             >
@@ -202,7 +202,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
             </button>
             {showExportSub && (
               <div
-                className="absolute left-full top-0 ml-1 w-48 bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 z-50"
+                className="absolute left-full top-0 ml-1 w-48 bg-background border border-border rounded-md shadow-lg py-1 z-50"
                 role="menu"
                 data-testid="export-submenu"
               >
@@ -214,7 +214,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToPng(fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-png-button"
                 >
@@ -229,14 +229,14 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToSvg(fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-svg-button"
                 >
                   <FileImage className="w-4 h-4" />
                   <span>SVG</span>
                 </button>
-                <div className="h-px bg-[hsl(var(--border))] my-1" />
+                <div className="h-px bg-border my-1" />
                 <button
                   onClick={async () => {
                     setIsOpen(false);
@@ -245,7 +245,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToMarkdown(graph, fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-markdown-button"
                 >
@@ -260,7 +260,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
                       await exportApi.exportToMermaid(graph, fileName);
                     }
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
                   role="menuitem"
                   data-testid="export-mermaid-button"
                 >
@@ -270,10 +270,10 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
               </div>
             )}
           </div>
-          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <div className="h-px bg-border my-1" />
           <button
             onClick={() => setAutosaveOnBlur(!autosaveOnBlur)}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitemcheckbox"
             aria-checked={autosaveOnBlur}
             data-testid="autosave-toggle"

@@ -73,7 +73,7 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
           }
           setIsOpen(!isOpen);
         }}
-        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target"
         data-testid="add-node-button"
         title="Add Node"
       >
@@ -84,7 +84,7 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 overflow-hidden"
+          className="absolute top-full left-0 mt-1 w-72 bg-surface border border-border rounded-lg shadow-lg z-50 overflow-hidden"
           data-testid="add-node-dropdown"
         >
           {/* Custom name input */}
@@ -95,7 +95,7 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
               onChange={(e) => setCustomName(e.target.value)}
               placeholder="Custom name (optional)"
               aria-label="Custom node name"
-              className="w-full text-sm border rounded px-2 py-1.5"
+              className="w-full text-sm border border-border bg-background text-foreground rounded px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="custom-node-name-input"
               autoFocus
             />
@@ -105,18 +105,18 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
           <div className="max-h-64 overflow-y-auto">
             {['Compute', 'Data', 'Messaging', 'Network'].map((group) => (
               <div key={group}>
-                <div className="px-3 py-1 text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-50">
+                <div className="px-3 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-highlight-low">
                   {group}
                 </div>
                 {NODE_TYPES.filter((n) => n.group === group).map((nodeType) => (
                   <button
                     key={nodeType.type}
                     onClick={() => handleAddNode(nodeType.type, nodeType.label)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center justify-between touch-target-row"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-highlight-low flex items-center justify-between touch-target-row"
                     data-testid={`add-node-${nodeType.type.replace('/', '-')}`}
                   >
                     <span>{nodeType.label}</span>
-                    <span className="text-xs text-gray-400 font-mono">{nodeType.type}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{nodeType.type}</span>
                   </button>
                 ))}
               </div>

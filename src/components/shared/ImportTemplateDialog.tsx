@@ -50,23 +50,26 @@ export function ImportTemplateDialog({
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
       data-testid="import-template-dialog-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-template-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
     >
       <div
-        className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg shadow-xl w-[420px] max-w-[90vw]"
+        className="bg-background border border-border rounded-lg shadow-xl w-[420px] max-w-[90vw]"
         data-testid="import-template-dialog"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--border))]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <Upload className="w-4 h-4 text-blue-600" />
-            <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Import Template</h3>
+            <Upload className="w-4 h-4 text-iris" />
+            <h3 id="import-template-title" className="text-sm font-semibold text-foreground">Import Template</h3>
           </div>
           <button
             onClick={onCancel}
-            className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors"
+            className="p-1 rounded hover:bg-muted transition-colors"
             aria-label="Cancel import"
             data-testid="import-template-cancel-x"
           >
@@ -80,7 +83,7 @@ export function ImportTemplateDialog({
           <div>
             <label
               htmlFor="import-template-name"
-              className="block text-xs font-medium text-[hsl(var(--foreground))] mb-1"
+              className="block text-xs font-medium text-foreground mb-1"
             >
               Template Name
             </label>
@@ -89,7 +92,7 @@ export function ImportTemplateDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="import-template-name-input"
               autoFocus
               maxLength={100}
@@ -100,7 +103,7 @@ export function ImportTemplateDialog({
           <div>
             <label
               htmlFor="import-template-category"
-              className="block text-xs font-medium text-[hsl(var(--foreground))] mb-1"
+              className="block text-xs font-medium text-foreground mb-1"
             >
               Category
             </label>
@@ -108,7 +111,7 @@ export function ImportTemplateDialog({
               id="import-template-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="import-template-category-select"
             >
               {CATEGORIES.map((cat) => (
@@ -120,7 +123,7 @@ export function ImportTemplateDialog({
           </div>
 
           {/* Info */}
-          <div className="flex gap-3 text-xs text-[hsl(var(--muted-foreground))]">
+          <div className="flex gap-3 text-xs text-muted-foreground">
             <span className="px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
               {nodeCount} nodes
             </span>
@@ -134,7 +137,7 @@ export function ImportTemplateDialog({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 text-sm rounded-md border border-[hsl(var(--border))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors"
+              className="px-4 py-2 text-sm rounded-md border border-border text-foreground hover:bg-muted transition-colors"
               data-testid="import-template-cancel-btn"
             >
               Cancel
@@ -142,7 +145,7 @@ export function ImportTemplateDialog({
             <button
               type="submit"
               disabled={!name.trim()}
-              className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm rounded-md bg-iris text-white hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="import-template-confirm-btn"
             >
               Import

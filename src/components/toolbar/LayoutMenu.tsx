@@ -112,7 +112,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label="Layout menu"
@@ -126,13 +126,13 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-1 w-64 bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-md shadow-lg py-1 z-50"
+          className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-md shadow-lg py-1 z-50"
           role="menu"
           data-testid="layout-menu-dropdown"
         >
           <button
             onClick={handleAutoLayoutHorizontal}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="auto-layout-horizontal"
           >
@@ -141,7 +141,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           </button>
           <button
             onClick={handleAutoLayoutVertical}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="auto-layout-vertical"
           >
@@ -149,12 +149,12 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
             <span>Auto-Layout (Vertical)</span>
           </button>
 
-          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <div className="h-px bg-border my-1" />
 
           {/* Spacing Configuration Toggle */}
           <button
             onClick={handleToggleSpacing}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="layout-spacing-toggle"
             aria-expanded={showSpacing}
@@ -169,7 +169,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           {/* Spacing Configuration Panel */}
           {showSpacing && (
             <div
-              className="px-3 py-2 space-y-3 border-t border-[hsl(var(--border))]"
+              className="px-3 py-2 space-y-3 border-t border-border"
               data-testid="layout-spacing-panel"
             >
               {/* Node Spacing */}
@@ -177,12 +177,12 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-center justify-between mb-1">
                   <label
                     htmlFor="node-spacing"
-                    className="text-xs text-[hsl(var(--muted-foreground))]"
+                    className="text-xs text-muted-foreground"
                   >
                     Node Spacing
                   </label>
                   <span
-                    className="text-xs font-mono text-[hsl(var(--foreground))]"
+                    className="text-xs font-mono text-foreground"
                     data-testid="node-spacing-value"
                   >
                     {layoutSpacing.nodeSpacing}px
@@ -196,7 +196,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
                   step="10"
                   value={layoutSpacing.nodeSpacing}
                   onChange={handleNodeSpacingChange}
-                  className="w-full h-1.5 bg-[hsl(var(--muted))] rounded-full appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-blue-600"
                   data-testid="node-spacing-slider"
                 />
               </div>
@@ -206,12 +206,12 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
                 <div className="flex items-center justify-between mb-1">
                   <label
                     htmlFor="layer-spacing"
-                    className="text-xs text-[hsl(var(--muted-foreground))]"
+                    className="text-xs text-muted-foreground"
                   >
                     Layer Spacing
                   </label>
                   <span
-                    className="text-xs font-mono text-[hsl(var(--foreground))]"
+                    className="text-xs font-mono text-foreground"
                     data-testid="layer-spacing-value"
                   >
                     {layoutSpacing.layerSpacing}px
@@ -225,7 +225,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
                   step="10"
                   value={layoutSpacing.layerSpacing}
                   onChange={handleLayerSpacingChange}
-                  className="w-full h-1.5 bg-[hsl(var(--muted))] rounded-full appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-blue-600"
                   data-testid="layer-spacing-slider"
                 />
               </div>
@@ -244,16 +244,16 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
             </div>
           )}
 
-          <div className="h-px bg-[hsl(var(--border))] my-1" />
+          <div className="h-px bg-border my-1" />
           <button
             onClick={handleFitView}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
             role="menuitem"
             data-testid="fit-view-button"
           >
             <Maximize className="w-4 h-4" />
             <span>Fit View</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+            <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+shift+l')}
             </span>
           </button>
