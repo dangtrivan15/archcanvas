@@ -24,6 +24,7 @@ import objectStorageYaml from './builtins/core/data/object-storage.yaml?raw';
 import repositoryYaml from './builtins/core/data/repository.yaml?raw';
 import searchIndexYaml from './builtins/core/data/search-index.yaml?raw';
 import featureStoreYaml from './builtins/core/data/feature-store.yaml?raw';
+import graphDatabaseYaml from './builtins/core/data/graph-database.yaml?raw';
 
 // Messaging namespace
 import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
@@ -99,6 +100,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'data/repository.yaml', rawYaml: repositoryYaml, namespace: 'data', name: 'repository' },
   { filePath: 'data/search-index.yaml', rawYaml: searchIndexYaml, namespace: 'data', name: 'search-index' },
   { filePath: 'data/feature-store.yaml', rawYaml: featureStoreYaml, namespace: 'data', name: 'feature-store' },
+  { filePath: 'data/graph-database.yaml', rawYaml: graphDatabaseYaml, namespace: 'data', name: 'graph-database' },
   // Messaging (3)
   { filePath: 'messaging/message-queue.yaml', rawYaml: messageQueueYaml, namespace: 'messaging', name: 'message-queue' },
   { filePath: 'messaging/event-bus.yaml', rawYaml: eventBusYaml, namespace: 'messaging', name: 'event-bus' },

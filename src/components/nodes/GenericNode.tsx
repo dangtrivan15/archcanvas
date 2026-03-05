@@ -24,7 +24,7 @@ import { useCoreStore } from '@/store/coreStore';
 import {
   Box, Server, Database, HardDrive, Radio, Globe, Shield, ShieldCheck, ShieldAlert, LockKeyhole, Cpu, Layers,
   Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive, Plug, Webhook, Workflow,
-  Smartphone, ExternalLink, Terminal, Clock, Container, Search, Bell, ScanSearch, Brain, Binary, GitMerge, Bot, Puzzle,
+  Smartphone, ExternalLink, Terminal, Clock, Container, Search, Bell, ScanSearch, Brain, Binary, GitMerge, Bot, Puzzle, Network,
 } from 'lucide-react';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeArgsTable } from './NodeArgsTable';
@@ -66,6 +66,7 @@ export const iconMap: Record<string, React.ElementType> = {
   GitMerge,
   Bot,
   Puzzle,
+  Network,
 };
 
 function GenericNodeComponent({ data, selected }: NodeProps) {
