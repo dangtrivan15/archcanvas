@@ -5,7 +5,7 @@
  */
 
 import { parse as parseYaml } from 'yaml';
-import type { ArchGraph, ArchNode, ArchEdge, EdgeType } from '@/types/graph';
+import type { ArchGraph, ArchNode, ArchEdge, EdgeType, PropertyMap } from '@/types/graph';
 import { generateId } from '@/utils/idGenerator';
 
 // Import stack YAML files as raw strings via Vite's ?raw suffix
@@ -39,7 +39,7 @@ export interface StackTemplate {
     id: string; // local ID within the template
     type: string;
     displayName: string;
-    args?: Record<string, string | number | boolean>;
+    args?: PropertyMap;
     position: { x: number; y: number; width?: number; height?: number };
   }>;
   edges: Array<{

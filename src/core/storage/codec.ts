@@ -46,6 +46,10 @@ const HEADER_SIZE = MAGIC_BYTES.length + 2 + SHA256_SIZE; // 6 + 2 + 32 = 40 byt
  * Compute SHA-256 hash of the given data.
  * Uses js-sha256 which works in all contexts (HTTP, HTTPS, Node.js, Capacitor).
  * No dependency on crypto.subtle or secure contexts.
+ *
+ * Note: This function is synchronous (unlike the async Web Crypto API).
+ * The parent encode/decode functions remain async for API stability and
+ * to allow a future migration to crypto.subtle if needed.
  */
 function computeSha256(data: Uint8Array): Uint8Array {
   return new Uint8Array(sha256.arrayBuffer(data));
@@ -168,6 +172,10 @@ export async function decode(data: Uint8Array, options?: DecodeOptions): Promise
 
   // Step 4: Extract protobuf payload
   const payload = data.slice(HEADER_SIZE);
+
+  if (payload.length === 0) {
+    throw new CodecError('File contains no protobuf payload (empty after header)');
+  }
 
   // Step 5: Verify checksum (hash the payload bytes and compare)
   if (!options?.skipChecksumVerification) {

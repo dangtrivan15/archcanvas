@@ -4,12 +4,13 @@
  */
 
 import type { Node, Edge } from '@xyflow/react';
+import type { PropertyMap } from './graph';
 
 export interface CanvasNodeData extends Record<string, unknown> {
   archNodeId: string;
   displayName: string;
   nodedefType: string;
-  args: Record<string, string | number | boolean>;
+  args: PropertyMap;
   ports: {
     inbound: { name: string; protocol: string[] }[];
     outbound: { name: string; protocol: string[] }[];
@@ -18,7 +19,7 @@ export interface CanvasNodeData extends Record<string, unknown> {
   noteCount: number;
   pendingSuggestionCount: number;
   codeRefCount: number;
-  properties: Record<string, string | number | boolean>;
+  properties: PropertyMap;
   icon: string;
   color?: string;
   refSource?: string;

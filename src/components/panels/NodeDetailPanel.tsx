@@ -247,7 +247,7 @@ function PropertiesTab({
   }, [isEditingName]);
 
   const handleArgChange = useCallback(
-    (argName: string, value: string | number | boolean) => {
+    (argName: string, value: string | number | boolean | string[]) => {
       if (!selectedNodeId) return;
       const updatedArgs = { ...node.args, [argName]: value };
       // Remove empty string values (treated as "cleared")

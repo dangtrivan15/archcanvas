@@ -3,7 +3,15 @@
  * All functions are immutable - they return new state rather than mutating.
  */
 
-import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position } from '@/types/graph';
+import type {
+  ArchGraph,
+  ArchNode,
+  ArchEdge,
+  Note,
+  CodeRef,
+  Position,
+  PropertyMap,
+} from '@/types/graph';
 import { generateId } from '@/utils/idGenerator';
 import {
   DEFAULT_NODE_WIDTH,
@@ -16,7 +24,10 @@ import {
 // ============================================================
 
 /**
- * Create a new empty architecture graph.
+ * Create a new empty architecture graph with no nodes or edges.
+ *
+ * @param name - Optional architecture name (defaults to 'Untitled Architecture')
+ * @returns A fresh ArchGraph with empty nodes, edges, and annotations arrays
  */
 export function createEmptyGraph(name?: string): ArchGraph {
   return {
@@ -30,13 +41,20 @@ export function createEmptyGraph(name?: string): ArchGraph {
 }
 
 /**
- * Create a new node with default values.
+ * Create a new node with a generated ULID and default values.
+ *
+ * @param params - Node creation parameters
+ * @param params.type - NodeDef type key (e.g., 'compute/service')
+ * @param params.displayName - Human-readable display name
+ * @param params.position - Optional initial position (defaults to 0,0)
+ * @param params.args - Optional key-value arguments for the node
+ * @returns A new ArchNode with generated ID and defaults for empty arrays
  */
 export function createNode(params: {
   type: string;
   displayName: string;
   position?: Partial<Position>;
-  args?: Record<string, string | number | boolean>;
+  args?: PropertyMap;
 }): ArchNode {
   return {
     id: generateId(),
@@ -58,7 +76,16 @@ export function createNode(params: {
 }
 
 /**
- * Create a new edge.
+ * Create a new edge with a generated ULID.
+ *
+ * @param params - Edge creation parameters
+ * @param params.fromNode - Source node ID
+ * @param params.toNode - Target node ID
+ * @param params.type - Connection type ('sync' | 'async' | 'data-flow')
+ * @param params.fromPort - Optional source port name
+ * @param params.toPort - Optional target port name
+ * @param params.label - Optional edge label
+ * @returns A new ArchEdge with generated ID
  */
 export function createEdge(params: {
   fromNode: string;
@@ -82,7 +109,15 @@ export function createEdge(params: {
 }
 
 /**
- * Create a new note.
+ * Create a new note with a generated ULID and current timestamp.
+ *
+ * @param params - Note creation parameters
+ * @param params.author - Author name (e.g., 'user', 'ai')
+ * @param params.content - Markdown note content
+ * @param params.tags - Optional array of string tags
+ * @param params.status - Optional status ('none' | 'pending' | 'accepted' | 'dismissed')
+ * @param params.suggestionType - Optional AI suggestion type identifier
+ * @returns A new Note with generated ID and current timestamp
  */
 export function createNote(params: {
   author: string;
@@ -107,7 +142,11 @@ export function createNote(params: {
 // ============================================================
 
 /**
- * Add a node to the graph at root level.
+ * Add a node to the graph at root level (immutable).
+ *
+ * @param graph - Current graph state
+ * @param node - The node to add
+ * @returns New graph with the node appended to root-level nodes
  */
 export function addNode(graph: ArchGraph, node: ArchNode): ArchGraph {
   return {
@@ -117,7 +156,12 @@ export function addNode(graph: ArchGraph, node: ArchNode): ArchGraph {
 }
 
 /**
- * Add a child node to an existing parent node (recursive search).
+ * Add a child node to an existing parent node (searches recursively).
+ *
+ * @param graph - Current graph state
+ * @param parentId - ID of the parent node to add the child to
+ * @param child - The child node to add
+ * @returns New graph with the child appended to the parent's children
  */
 export function addChildNode(graph: ArchGraph, parentId: string, child: ArchNode): ArchGraph {
   return {
@@ -142,7 +186,12 @@ function addChildToNodes(nodes: ArchNode[], parentId: string, child: ArchNode): 
 }
 
 /**
- * Remove a node and its connected edges from the graph.
+ * Remove a node, all its children, and all connected edges from the graph.
+ * Recursively collects descendant IDs to ensure orphaned edges are also removed.
+ *
+ * @param graph - Current graph state
+ * @param nodeId - ID of the node to remove
+ * @returns New graph without the node, its descendants, or their connected edges
  */
 export function removeNode(graph: ArchGraph, nodeId: string): ArchGraph {
   // Collect all node IDs that will be removed (including children recursively)
@@ -187,7 +236,12 @@ function removeNodeFromList(nodes: ArchNode[], nodeId: string): ArchNode[] {
 }
 
 /**
- * Update a node's properties (recursive search).
+ * Update a node's displayName, args, or properties (searches recursively).
+ *
+ * @param graph - Current graph state
+ * @param nodeId - ID of the node to update
+ * @param updates - Partial update object with fields to change
+ * @returns New graph with the updated node
  */
 export function updateNode(
   graph: ArchGraph,
@@ -517,7 +571,11 @@ function addCodeRefToNodeList(nodes: ArchNode[], nodeId: string, codeRef: CodeRe
 // ============================================================
 
 /**
- * Find a node by ID, searching recursively through children.
+ * Find a node by ID, searching recursively through all children.
+ *
+ * @param graph - The graph to search
+ * @param nodeId - ID of the node to find
+ * @returns The matching node, or undefined if not found
  */
 export function findNode(graph: ArchGraph, nodeId: string): ArchNode | undefined {
   return findNodeInList(graph.nodes, nodeId);
@@ -536,14 +594,21 @@ function findNodeInList(nodes: ArchNode[], nodeId: string): ArchNode | undefined
 
 /**
  * Find an edge by ID.
+ *
+ * @param graph - The graph to search
+ * @param edgeId - ID of the edge to find
+ * @returns The matching edge, or undefined if not found
  */
 export function findEdge(graph: ArchGraph, edgeId: string): ArchEdge | undefined {
   return graph.edges.find((e) => e.id === edgeId);
 }
 
 /**
- * Find the parent of a node by searching recursively.
- * Returns undefined if the node is at root level.
+ * Find the parent node of a given node by searching recursively.
+ *
+ * @param graph - The graph to search
+ * @param nodeId - ID of the child node whose parent to find
+ * @returns The parent node, or undefined if the node is at root level or not found
  */
 export function findNodeParent(graph: ArchGraph, nodeId: string): ArchNode | undefined {
   return findParentInList(graph.nodes, nodeId);
@@ -563,8 +628,12 @@ function findParentInList(nodes: ArchNode[], nodeId: string): ArchNode | undefin
 }
 
 /**
- * Get the navigation path (breadcrumb) for a node.
- * Returns array of node IDs from root to the target node.
+ * Get the navigation path (breadcrumb) from root to a node.
+ * Used for fractal zoom breadcrumb display.
+ *
+ * @param graph - The graph to search
+ * @param nodeId - ID of the target node
+ * @returns Array of node IDs from root to target (inclusive), or empty if not found
  */
 export function getNodePath(graph: ArchGraph, nodeId: string): string[] {
   const path: string[] = [];
