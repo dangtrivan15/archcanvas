@@ -18,6 +18,7 @@ import mlPlatformYaml from './ml-platform.yaml?raw';
 import dataPlatformYaml from './data-platform.yaml?raw';
 import socialNetworkYaml from './social-network.yaml?raw';
 import eCommercePlatformYaml from './e-commerce-platform.yaml?raw';
+import fintechPaymentsYaml from './fintech-payments.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -58,6 +59,7 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'data-platform', rawYaml: dataPlatformYaml },
   { name: 'social-network', rawYaml: socialNetworkYaml },
   { name: 'e-commerce-platform', rawYaml: eCommercePlatformYaml },
+  { name: 'fintech-payments', rawYaml: fintechPaymentsYaml },
 ];
 
 /**
