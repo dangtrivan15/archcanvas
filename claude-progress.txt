@@ -10815,3 +10815,62 @@ Date: 2026-03-05
 
 #### Feature #433 marked passing
 #### Progress: 433/446 features passing (97.1%)
+
+---
+
+## Session: Feature #435 - Consolidate Duplicate Logic and Improve Reuse
+Date: 2026-03-05
+
+### Feature #435: Consolidate Duplicate Logic and Improve Reuse - PASSING
+
+#### Duplications Identified and Consolidated:
+
+1. **Inline Edit Logic (7 node components -> 1 hook)**
+   - All 7 node components (GenericNode, HexagonNode, CloudNode, CylinderNode, DocumentNode, ParallelogramNode, StadiumNode) had identical inline editing state management (~30 lines each)
+   - Extracted to `src/hooks/useInlineEdit.ts` custom hook
+   - Provides: isInlineEditing, editValue, setEditValue, inputRef, confirmEdit, revertEdit, handleKeyDown
+
+2. **Icon Map (embedded in GenericNode -> dedicated module)**
+   - `iconMap` was defined in GenericNode.tsx but imported by 6 shape nodes + CommandPalette + QuickSearch
+   - Extracted to `src/components/nodes/iconMap.ts`
+   - GenericNode re-exports for backward compatibility
+
+3. **Port Handle Rendering (7 components -> 2 shared components)**
+   - All shaped nodes had identical port handle rendering logic (~60 lines each)
+   - Created `src/components/nodes/NodePortHandles.tsx` with:
+     - `ShapedPortHandles`: For shape-aware positioning (hexagon, cloud, etc.)
+     - `GenericPortHandles`: For percentage-based positioning (GenericNode)
+
+4. **Node Inner Content (6 shaped nodes -> 1 shared component)**
+   - All shaped nodes had identical inner content (header, ref indicator, args, badges)
+   - Created `src/components/nodes/NodeContent.tsx`
+   - Customizable via className props for shape-specific padding/alignment
+
+5. **Edge Components (3 near-identical components -> 1 factory)**
+   - AsyncEdge, SyncEdge, DataFlowEdge shared identical structure
+   - Created `src/components/edges/createEdgeComponent.tsx` factory
+   - Each edge now just provides a config object (color, width, dash, animation)
+
+6. **Barrel Files Added:**
+   - `src/components/nodes/index.ts` (all node exports)
+   - `src/components/edges/index.ts` (all edge exports)
+   - `src/hooks/index.ts` (all hook exports)
+
+#### Impact:
+- 850 insertions, 1654 deletions = **net reduction of 804 lines**
+- 6 shaped nodes reduced from ~270 lines each to ~78 lines each
+- 3 edge components reduced from ~50 lines each to ~17 lines each
+- No circular dependencies introduced (verified with madge)
+
+#### Verification:
+- TypeScript: PASS (npx tsc --noEmit clean)
+- Vite build: PASS
+- Test suite: 4499/4645 pass (same as before - 146 pre-existing failures)
+- Browser: App loads, Template Gallery works, all node types render correctly
+- Console: 0 app errors (only pre-existing SSL/PWA)
+- No mock data patterns: PASS
+- Circular dependency check: No new cycles
+
+#### Commit: e87a286
+#### Feature #435 marked passing
+#### Progress: 436/446 features passing (97.8%)
