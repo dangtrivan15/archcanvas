@@ -19,6 +19,7 @@ import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
 import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
+import { TemplatePicker } from '@/components/shared/TemplatePicker';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { CmdKeyShortcutsOverlay } from '@/components/shared/CmdKeyShortcutsOverlay';
 import { Toast } from '@/components/shared/Toast';
@@ -327,6 +328,9 @@ export function App() {
 
         {/* Settings Dialog (overlay) */}
         <SettingsDialog />
+
+        {/* Template Picker Dialog (overlay) */}
+        <TemplatePicker />
 
         {/* Command Palette (Cmd+K) */}
         <CommandPalette />

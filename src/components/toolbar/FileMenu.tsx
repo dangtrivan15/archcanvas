@@ -3,7 +3,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, FileText, GitBranch, Loader2, Check } from 'lucide-react';
+import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, FileText, GitBranch, Loader2, Check, Rocket } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -23,6 +23,7 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
   const isDirty = useCoreStore((s) => s.isDirty);
   const isSaving = useCoreStore((s) => s.isSaving);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
+  const openTemplatePicker = useUIStore((s) => s.openTemplatePicker);
   const autosaveOnBlur = useUIStore((s) => s.autosaveOnBlur);
   const setAutosaveOnBlur = useUIStore((s) => s.setAutosaveOnBlur);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
@@ -113,6 +114,18 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
             <FilePlus className="w-4 h-4" />
             <span>New</span>
             <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+n')}</span>
+          </button>
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              openTemplatePicker();
+            }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[hsl(var(--muted))] transition-colors text-left touch-target-row"
+            role="menuitem"
+            data-testid="new-from-template-button"
+          >
+            <Rocket className="w-4 h-4" />
+            <span>New from Template...</span>
           </button>
           <button
             onClick={handleOpen}
