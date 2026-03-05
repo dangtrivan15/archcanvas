@@ -18,6 +18,7 @@ import { registerInitCommand } from '@/cli/commands/init';
 import { registerInfoCommand } from '@/cli/commands/info';
 import { registerExportCommand } from '@/cli/commands/export';
 import { registerMutateCommands } from '@/cli/commands/mutate';
+import { registerAnalyzeCommand } from '@/cli/commands/analyze';
 
 // ─── Version ──────────────────────────────────────────────────
 
@@ -245,6 +246,9 @@ export function createProgram(): Command {
 
   // ─── export ────────────────────────────────────────────────
   registerExportCommand(program);
+
+  // ─── analyze ──────────────────────────────────────────────
+  registerAnalyzeCommand(program);
 
   // ─── list-nodedefs ─────────────────────────────────────────
 
