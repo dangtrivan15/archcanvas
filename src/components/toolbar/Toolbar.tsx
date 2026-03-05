@@ -6,9 +6,10 @@
  * - Compact (<600px): icon-only buttons, filename hidden, branding shortened
  * - Regular (600-1024px): normal layout with labels
  * - Wide (>1024px): normal layout with labels and keyboard hint
+ *
+ * Uses fixed responsive sizing via CSS clamp() — no resize handles.
  */
 
-import { useRef, useCallback, useEffect } from 'react';
 import { Keyboard, Settings } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
@@ -17,7 +18,7 @@ import { LayoutMenu } from './LayoutMenu';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { PencilIndicator } from './PencilIndicator';
 import { useCoreStore } from '@/store/coreStore';
-import { useUIStore, TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT } from '@/store/uiStore';
+import { useUIStore } from '@/store/uiStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
 
 export function Toolbar() {
@@ -25,46 +26,12 @@ export function Toolbar() {
   const isDirty = useCoreStore((s) => s.isDirty);
   const openShortcutsHelp = useUIStore((s) => s.openShortcutsHelp);
   const openSettingsDialog = useUIStore((s) => s.openSettingsDialog);
-  const toolbarHeight = useUIStore((s) => s.toolbarHeight);
-  const setToolbarHeight = useUIStore((s) => s.setToolbarHeight);
-  const updateToolbarHeightFromViewport = useUIStore((s) => s.updateToolbarHeightFromViewport);
-  const { isCompact, height: viewportHeight } = useViewportSize();
-
-  // Update toolbar height when viewport changes (only if user hasn't customized)
-  useEffect(() => {
-    updateToolbarHeightFromViewport(viewportHeight);
-  }, [viewportHeight, updateToolbarHeightFromViewport]);
-
-  const dragStartY = useRef<number>(0);
-  const dragStartHeight = useRef<number>(0);
-
-  const onMouseMove = useCallback((e: MouseEvent) => {
-    const delta = e.clientY - dragStartY.current;
-    const newHeight = dragStartHeight.current + delta;
-    setToolbarHeight(Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, newHeight)));
-  }, [setToolbarHeight]);
-
-  const onMouseUp = useCallback(() => {
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  }, [onMouseMove]);
-
-  const onResizeHandleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragStartY.current = e.clientY;
-    dragStartHeight.current = toolbarHeight;
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [toolbarHeight, onMouseMove, onMouseUp]);
+  const { isCompact } = useViewportSize();
 
   return (
     <header
-      className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar relative overflow-hidden"
-      style={{ height: `${toolbarHeight}px`, padding: isCompact ? '0 0.5rem' : '0 0.75rem' }}
+      className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar"
+      style={{ height: 'clamp(2.5rem, 3.5vh, 3.5rem)', padding: isCompact ? '0 0.5rem' : '0 0.75rem' }}
       role="toolbar"
       aria-label="Main toolbar"
       data-testid="toolbar"
@@ -150,21 +117,6 @@ export function Toolbar() {
           </kbd>
         )}
       </button>
-
-      {/* Draggable resize handle at bottom edge */}
-      <div
-        data-testid="toolbar-resize-handle"
-        className="absolute bottom-0 left-0 right-0 h-1.5 cursor-row-resize group/resize z-[51] hover:bg-[hsl(var(--primary)/0.15)] transition-colors"
-        onMouseDown={onResizeHandleMouseDown}
-        role="separator"
-        aria-orientation="horizontal"
-        aria-label="Resize toolbar"
-        aria-valuenow={toolbarHeight}
-        aria-valuemin={TOOLBAR_MIN_HEIGHT}
-        aria-valuemax={TOOLBAR_MAX_HEIGHT}
-      >
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[hsl(var(--muted-foreground)/0.3)] group-hover/resize:bg-[hsl(var(--primary)/0.5)] transition-colors" />
-      </div>
     </header>
   );
 }
