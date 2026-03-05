@@ -1,4 +1,22 @@
 ==================================================
+SESSION: 2026-03-05 - Feature #410
+==================================================
+
+## What was accomplished:
+- Implemented Feature #410: Predefined Stack: AI Chat App
+- Created `src/stacks/ai-chat-app.yaml` with 8 nodes and 7 edges
+- Nodes: Chat Frontend (client/web-app), Chat API Service (compute/service), NeMo Guardrails (ai/guardrails), RAG Pipeline (ai/rag-pipeline), OpenAI Embeddings (ai/embedding-service), Pinecone (ai/vector-store), Anthropic Claude (ai/llm-provider), Langfuse (observability/llm-monitor)
+- Edges: web-app→service (SYNC), service→guardrails (SYNC), guardrails→rag-pipeline (DATA_FLOW), rag-pipeline→embedding-service (SYNC), rag-pipeline→vector-store (SYNC), rag-pipeline→llm-provider (SYNC), service→llm-monitor (ASYNC)
+- Added MessageSquare icon to TemplatePicker icon map
+- Registered ai-chat-app.yaml in stackLoader.ts
+- Verified via browser: template picker shows AI Chat App, selecting and creating instantiates 8 nodes + 7 edges correctly
+- Feature #410 marked passing
+
+## Current progress: 399/426 features passing (93.7%)
+
+---
+
+==================================================
 SESSION: 2026-03-04 - Feature #339
 ==================================================
 
@@ -9643,3 +9661,28 @@ Date: 2026-03-05
 
 #### Feature #401 marked passing
 #### Progress: 396/426 features passing (92.9%)
+
+---
+
+## Session: Feature #411 - Predefined Stack: Serverless Event-Driven
+Date: 2026-03-05
+
+### Feature #411: Predefined Stack: Serverless Event-Driven - PASSING
+
+#### Implementation:
+- Created `src/stacks/serverless-event-driven.yaml`:
+  - 8 nodes: AWS API Gateway, Lambda Function, EventBridge, SQS Queue, DynamoDB, S3 Bucket, AWS Secrets Manager, AWS X-Ray
+  - 7 edges: api-gateway→lambda (SYNC), lambda→event-bus (ASYNC), event-bus→message-queue (ASYNC), lambda→dynamodb (SYNC), lambda→s3 (SYNC), lambda→secrets-manager (SYNC), lambda→xray (ASYNC)
+  - Tags: serverless, event-driven, aws, lambda
+- Registered in `src/stacks/stackLoader.ts`
+
+#### Verification:
+- Vite build: PASS
+- Template picker shows Serverless Event-Driven with 8 nodes, 7 edges: PASS
+- All 8 nodes render on canvas with correct args: PASS
+- All 7 edges connect correct nodes: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 45b14a6
+#### Feature #411 marked passing
+#### Progress: 400/426 features passing (93.9%)
