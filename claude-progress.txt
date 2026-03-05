@@ -10721,3 +10721,40 @@ Date: 2026-03-05
 #### Commit: def562f
 #### Feature #432 marked passing
 #### Progress: 432/446 features passing (96.9%)
+
+---
+
+## Session: Feature #437 - Update and Consolidate README and Project Docs
+Date: 2026-03-05
+
+### Feature #437: Update and Consolidate README and Project Docs - PASSING
+
+#### Changes:
+- **README.md**: Complete rewrite with:
+  - Comprehensive Features section listing all major capabilities
+  - Accurate Technology Stack table
+  - Updated Project Structure reflecting all current directories (analyze/, cli/, templates/, stacks/, themes/, config/, contexts/, settings/)
+  - Complete Scripts table with all 15 npm scripts including CLI, iOS, and preview
+  - CLI section with usage examples
+  - Full Keyboard Shortcuts section organized by category (File, Edit, Canvas, Quick Add, Edge)
+  - File Format section with visual diagram
+  - Links to CONTRIBUTING.md and docs/ios-build-guide.md
+- **CONTRIBUTING.md**: New file with:
+  - Prerequisites and Getting Started
+  - Development Workflow (testing, linting, building)
+  - Project Architecture overview (Core, API, UI, AI, Analysis, CLI layers)
+  - Key Conventions (TypeScript, State Management, File Format, Node Types, Testing, Styling)
+  - Guide for adding new node types
+  - Commit message conventions
+- **CLAUDE.md**: Updated feature_count from 234 to 446
+
+#### Verification:
+- Vite build: PASS
+- App loads in browser: PASS (verified with playwright screenshot)
+- All internal links verified (docs/ios-build-guide.md, CONTRIBUTING.md): PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 6871bea
+#### Feature #437 marked passing
+#### Progress: 433/446 features passing (97.1%)
