@@ -5,40 +5,13 @@
  * Simplifies rendering at low zoom (LOD mode) and respects reduced motion.
  */
 
-import { memo } from 'react';
-import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react';
-import { useCanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
+import { createEdgeComponent } from './createEdgeComponent';
 
-function SyncEdgeComponent({ sourceX, sourceY, targetX, targetY, id, selected, label }: EdgeProps) {
-  const { prefersReducedMotion, isLowDetailEdges } = useCanvasPerformanceContext();
-  const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
-
-  // In low-detail mode, render a simple thin line without label
-  if (isLowDetailEdges) {
-    return (
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        style={{
-          stroke: 'hsl(var(--muted-foreground))',
-          strokeWidth: 1.5,
-        }}
-      />
-    );
-  }
-
-  return (
-    <BaseEdge
-      id={id}
-      path={edgePath}
-      style={{
-        stroke: selected ? 'hsl(var(--iris))' : 'hsl(var(--muted-foreground))',
-        strokeWidth: selected ? 2.5 : 2,
-        transition: prefersReducedMotion ? 'none' : 'stroke-width 150ms ease, stroke 150ms ease',
-      }}
-      label={label}
-    />
-  );
-}
-
-export const SyncEdge = memo(SyncEdgeComponent);
+export const SyncEdge = createEdgeComponent({
+  displayName: 'SyncEdge',
+  color: 'hsl(var(--muted-foreground))',
+  selectedColor: 'hsl(var(--iris))',
+  strokeWidth: 2,
+  selectedStrokeWidth: 2.5,
+  lodStrokeWidth: 1.5,
+});

@@ -6,9 +6,7 @@
  * Simplifies rendering at low zoom (LOD mode).
  */
 
-import { memo } from 'react';
-import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react';
-import { useCanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
+import { createEdgeComponent } from './createEdgeComponent';
 
 // Inject keyframe animation once
 const STYLE_ID = 'async-edge-animation';
@@ -25,47 +23,13 @@ if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
   document.head.appendChild(style);
 }
 
-function AsyncEdgeComponent({
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  id,
-  selected,
-  label,
-}: EdgeProps) {
-  const { prefersReducedMotion, isLowDetailEdges } = useCanvasPerformanceContext();
-  const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
-
-  // In low-detail mode, render a simple dashed line without animation or label
-  if (isLowDetailEdges) {
-    return (
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        style={{
-          stroke: 'hsl(var(--gold))',
-          strokeWidth: 1.5,
-          strokeDasharray: '6,3',
-        }}
-      />
-    );
-  }
-
-  return (
-    <BaseEdge
-      id={id}
-      path={edgePath}
-      style={{
-        stroke: selected ? 'hsl(var(--iris))' : 'hsl(var(--gold))',
-        strokeWidth: selected ? 2.5 : 2,
-        strokeDasharray: '8,4',
-        animation: prefersReducedMotion ? 'none' : 'async-edge-flow 0.6s linear infinite',
-        transition: prefersReducedMotion ? 'none' : 'stroke-width 150ms ease, stroke 150ms ease',
-      }}
-      label={label}
-    />
-  );
-}
-
-export const AsyncEdge = memo(AsyncEdgeComponent);
+export const AsyncEdge = createEdgeComponent({
+  displayName: 'AsyncEdge',
+  color: 'hsl(var(--gold))',
+  selectedColor: 'hsl(var(--iris))',
+  strokeWidth: 2,
+  selectedStrokeWidth: 2.5,
+  lodStrokeWidth: 1.5,
+  strokeDasharray: '8,4',
+  animation: 'async-edge-flow 0.6s linear infinite',
+});
