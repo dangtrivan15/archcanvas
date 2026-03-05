@@ -1,0 +1,129 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: model-serving
+  namespace: ai
+  version: "1.0.0"
+  displayName: Model Serving
+  description: Self-hosted ML model inference endpoint. Represents model serving infrastructure like TorchServe, Triton Inference Server, BentoML, SageMaker Endpoint, or TFServing for deploying and scaling ML models.
+  icon: Cpu
+  tags:
+    - ai
+    - ml
+    - inference
+    - model-serving
+  shape: rectangle
+spec:
+  args:
+    - name: framework
+      type: enum
+      required: true
+      description: The model serving framework or platform
+      default: "TorchServe"
+      options:
+        - "TorchServe"
+        - "Triton"
+        - "BentoML"
+        - "SageMaker Endpoint"
+        - "TFServing"
+        - "Custom"
+    - name: gpuType
+      type: enum
+      required: false
+      description: GPU type for inference acceleration
+      default: "none"
+      options:
+        - "none"
+        - "T4"
+        - "A10G"
+        - "A100"
+        - "H100"
+    - name: batchSize
+      type: number
+      required: false
+      description: Maximum batch size for inference requests
+      default: 1
+    - name: autoscaling
+      type: boolean
+      required: false
+      description: Whether autoscaling is enabled for the serving endpoint
+      default: true
+    - name: minReplicas
+      type: number
+      required: false
+      description: Minimum number of serving replicas
+      default: 1
+    - name: maxReplicas
+      type: number
+      required: false
+      description: Maximum number of serving replicas
+      default: 4
+  ports:
+    - name: inference-request
+      direction: inbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Inbound inference requests with model input data
+    - name: inference-response
+      direction: outbound
+      protocol:
+        - HTTP
+        - gRPC
+      description: Outbound inference results and predictions
+  children: []
+  ai:
+    context: "This is a model serving endpoint for ML inference. Consider model versioning, A/B testing, canary deployments, latency SLAs, GPU utilization monitoring, model warm-up strategies, and graceful model swapping."
+    reviewHints:
+      - Verify GPU resource allocation matches model requirements
+      - Check autoscaling thresholds and cooldown periods
+      - Consider model versioning and rollback strategy
+      - Review batching configuration for throughput vs latency tradeoffs
+      - Ensure health checks and readiness probes are configured
+      - Consider model caching and warm-up strategies
+variants:
+  - name: TorchServe
+    description: PyTorch model serving with TorchServe
+    args:
+      framework: "TorchServe"
+      gpuType: "T4"
+      batchSize: 8
+      autoscaling: true
+      minReplicas: 1
+      maxReplicas: 4
+  - name: Triton Inference Server
+    description: NVIDIA Triton for multi-framework model serving
+    args:
+      framework: "Triton"
+      gpuType: "A100"
+      batchSize: 16
+      autoscaling: true
+      minReplicas: 2
+      maxReplicas: 8
+  - name: BentoML
+    description: BentoML model serving with easy packaging
+    args:
+      framework: "BentoML"
+      gpuType: "T4"
+      batchSize: 4
+      autoscaling: true
+      minReplicas: 1
+      maxReplicas: 4
+  - name: SageMaker Endpoint
+    description: AWS SageMaker managed inference endpoint
+    args:
+      framework: "SageMaker Endpoint"
+      gpuType: "A10G"
+      batchSize: 1
+      autoscaling: true
+      minReplicas: 1
+      maxReplicas: 8
+  - name: TFServing
+    description: TensorFlow Serving for TF models
+    args:
+      framework: "TFServing"
+      gpuType: "T4"
+      batchSize: 8
+      autoscaling: true
+      minReplicas: 1
+      maxReplicas: 4

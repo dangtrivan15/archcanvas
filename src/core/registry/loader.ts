@@ -61,6 +61,7 @@ import vectorStoreYaml from './builtins/core/ai/vector-store.yaml?raw';
 import ragPipelineYaml from './builtins/core/ai/rag-pipeline.yaml?raw';
 import agentYaml from './builtins/core/ai/agent.yaml?raw';
 import promptRegistryYaml from './builtins/core/ai/prompt-registry.yaml?raw';
+import modelServingYaml from './builtins/core/ai/model-serving.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -124,6 +125,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'ai/rag-pipeline.yaml', rawYaml: ragPipelineYaml, namespace: 'ai', name: 'rag-pipeline' },
   { filePath: 'ai/agent.yaml', rawYaml: agentYaml, namespace: 'ai', name: 'agent' },
   { filePath: 'ai/prompt-registry.yaml', rawYaml: promptRegistryYaml, namespace: 'ai', name: 'prompt-registry' },
+  { filePath: 'ai/model-serving.yaml', rawYaml: modelServingYaml, namespace: 'ai', name: 'model-serving' },
 ];
 
 /**
