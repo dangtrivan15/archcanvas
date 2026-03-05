@@ -10301,3 +10301,47 @@ Date: 2026-03-05
 #### Commit: 2b13044
 #### Feature #349 marked passing
 #### Progress: 421/426 features passing (98.8%)
+
+---
+
+## Session: Feature #345 - Analysis Pipeline Orchestrator
+Date: 2026-03-05
+
+### Feature #345: Analysis Pipeline Orchestrator - PASSING
+
+#### Implementation:
+- Created `src/analyze/pipeline.ts` with `analyzeCodebase(rootPath, options)` function
+- Orchestrates full pipeline: scan → detect → select → infer → build → save
+- Pipeline phases with progress events: scanning, detecting, selecting, inferring, building, saving, complete
+- AnalyzeOptions: outputPath, analysisDepth (quick/standard/deep), maxFiles, maxTokenBudget, architectureName, includeNotes, dryRun, verbose, onProgress, aiSender, signal
+- AnalyzeResult: outputPath, stats (nodes/edges/codeRefs), projectProfile, warnings, duration, inferenceResult
+- Structural fallback when AI fails: builds nodes from detected frameworks, data stores, and infra signals
+- Dry-run mode returns inference result without writing files
+- Verbose mode logs each step's input/output
+- AbortSignal support for cancellation
+- Uses GraphContext.createNew() + buildGraph() + saveAs() + saveSidecar()
+
+#### Tests (test/unit/analyze/pipeline.test.ts):
+- 12 tests, all passing:
+  1. Full pipeline with mocked AI produces .archc file
+  2. Progress events emitted for all phases
+  3. Fallback to structural analysis when AI fails (30s timeout for retries)
+  4. Fallback when no AI sender provided
+  5. Dry-run mode
+  6. Verbose mode
+  7. Sidecar .summary.md generation
+  8. Default output path
+  9. Architecture name override
+  10. maxFiles option
+  11. AnalyzeResult shape validation
+  12. AbortSignal cancellation
+
+#### Verification:
+- Vite build: PASS (no compilation errors)
+- All 12 unit tests: PASS
+- No mock data patterns in production code: PASS
+- App loads correctly in browser: PASS
+
+#### Commit: 6332f12
+#### Feature #345 marked passing
+#### Progress: 422/426 features passing (99.1%)
