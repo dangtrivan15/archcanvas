@@ -104,7 +104,8 @@ describe('Left panel width - persisted custom width priority (Step 5)', () => {
   });
 
   it('setLeftPanelWidth clamps to min/max bounds', async () => {
-    const { useUIStore, LEFT_PANEL_MIN_WIDTH, LEFT_PANEL_MAX_WIDTH } = await import('@/store/uiStore');
+    const { useUIStore, LEFT_PANEL_MIN_WIDTH, LEFT_PANEL_MAX_WIDTH } =
+      await import('@/store/uiStore');
 
     useUIStore.getState().setLeftPanelWidth(100);
     expect(useUIStore.getState().leftPanelWidth).toBe(LEFT_PANEL_MIN_WIDTH);

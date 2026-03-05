@@ -33,31 +33,31 @@ import { isActiveElementTextInput } from '@/core/input/focusZones';
  * Only active when the platform modifier (Cmd) is held.
  */
 const INTERCEPTED_CMD_KEYS = new Set([
-  's',          // Save (WKWebView has no save, but prevent any default)
-  'z',          // Undo (WKWebView built-in undo)
-  'y',          // Redo alternate (some iOS contexts)
-  'n',          // New (WKWebView might open new window in some configs)
-  'o',          // Open (prevent any file dialog)
-  'k',          // Command palette
-  'd',          // Duplicate (prevent bookmark dialog)
-  'a',          // Select all (WKWebView native select-all)
-  'b',          // Bold (WKWebView rich text)
-  'i',          // Italic (WKWebView rich text)
-  'u',          // Underline (WKWebView rich text)
-  '0',          // Fit view / zoom reset
-  '1',          // Zoom 100%
-  '=',          // Zoom in
-  '+',          // Zoom in (shifted =)
-  '-',          // Zoom out
+  's', // Save (WKWebView has no save, but prevent any default)
+  'z', // Undo (WKWebView built-in undo)
+  'y', // Redo alternate (some iOS contexts)
+  'n', // New (WKWebView might open new window in some configs)
+  'o', // Open (prevent any file dialog)
+  'k', // Command palette
+  'd', // Duplicate (prevent bookmark dialog)
+  'a', // Select all (WKWebView native select-all)
+  'b', // Bold (WKWebView rich text)
+  'i', // Italic (WKWebView rich text)
+  'u', // Underline (WKWebView rich text)
+  '0', // Fit view / zoom reset
+  '1', // Zoom 100%
+  '=', // Zoom in
+  '+', // Zoom in (shifted =)
+  '-', // Zoom out
 ]);
 
 /**
  * Set of Cmd+Shift+key combinations to intercept.
  */
 const INTERCEPTED_CMD_SHIFT_KEYS = new Set([
-  'z',          // Redo (Cmd+Shift+Z)
-  's',          // Save As (Cmd+Shift+S)
-  'a',          // Select All Edges (Cmd+Shift+A)
+  'z', // Redo (Cmd+Shift+Z)
+  's', // Save As (Cmd+Shift+S)
+  'a', // Select All Edges (Cmd+Shift+A)
 ]);
 
 /**

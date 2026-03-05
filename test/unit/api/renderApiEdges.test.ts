@@ -181,8 +181,16 @@ describe('Feature #63: Render API edge type mapping', () => {
 
   it('should map data-flow edge type to "dataFlow" component type', () => {
     let g = createEmptyGraph('Test');
-    const node1 = createNode({ type: 'compute/service', displayName: 'A', position: { x: 0, y: 0 } });
-    const node2 = createNode({ type: 'data/database', displayName: 'B', position: { x: 100, y: 0 } });
+    const node1 = createNode({
+      type: 'compute/service',
+      displayName: 'A',
+      position: { x: 0, y: 0 },
+    });
+    const node2 = createNode({
+      type: 'data/database',
+      displayName: 'B',
+      position: { x: 100, y: 0 },
+    });
     g = addNode(g, node1);
     g = addNode(g, node2);
 
@@ -202,8 +210,16 @@ describe('Feature #63: Render API edge type mapping', () => {
 
   it('should handle edges with port handles', () => {
     let g = createEmptyGraph('Test');
-    const node1 = createNode({ type: 'compute/service', displayName: 'A', position: { x: 0, y: 0 } });
-    const node2 = createNode({ type: 'data/database', displayName: 'B', position: { x: 100, y: 0 } });
+    const node1 = createNode({
+      type: 'compute/service',
+      displayName: 'A',
+      position: { x: 0, y: 0 },
+    });
+    const node2 = createNode({
+      type: 'data/database',
+      displayName: 'B',
+      position: { x: 100, y: 0 },
+    });
     g = addNode(g, node1);
     g = addNode(g, node2);
 
@@ -223,8 +239,16 @@ describe('Feature #63: Render API edge type mapping', () => {
 
   it('should handle edge without label', () => {
     let g = createEmptyGraph('Test');
-    const node1 = createNode({ type: 'compute/service', displayName: 'A', position: { x: 0, y: 0 } });
-    const node2 = createNode({ type: 'data/database', displayName: 'B', position: { x: 100, y: 0 } });
+    const node1 = createNode({
+      type: 'compute/service',
+      displayName: 'A',
+      position: { x: 0, y: 0 },
+    });
+    const node2 = createNode({
+      type: 'data/database',
+      displayName: 'B',
+      position: { x: 100, y: 0 },
+    });
     g = addNode(g, node1);
     g = addNode(g, node2);
 
@@ -242,7 +266,11 @@ describe('Feature #63: Render API edge type mapping', () => {
 
   it('should return empty array for graph with no edges', () => {
     let g = createEmptyGraph('Test');
-    const node1 = createNode({ type: 'compute/service', displayName: 'A', position: { x: 0, y: 0 } });
+    const node1 = createNode({
+      type: 'compute/service',
+      displayName: 'A',
+      position: { x: 0, y: 0 },
+    });
     g = addNode(g, node1);
 
     const result = renderApi.render(g, []);

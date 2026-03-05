@@ -122,17 +122,23 @@ describe('Feature #278: FileSystemAdapter — Interface compliance', () => {
 
   it('interface declares saveFile method with data and optional handle', () => {
     const src = readSource(ADAPTER_INTERFACE);
-    expect(src).toMatch(/saveFile\(data:\s*Uint8Array,\s*handle\?:\s*unknown\):\s*Promise<SaveFileResult>/);
+    expect(src).toMatch(
+      /saveFile\(data:\s*Uint8Array,\s*handle\?:\s*unknown\):\s*Promise<SaveFileResult>/,
+    );
   });
 
   it('interface declares saveFileAs method with data and suggestedName', () => {
     const src = readSource(ADAPTER_INTERFACE);
-    expect(src).toMatch(/saveFileAs\(data:\s*Uint8Array,\s*suggestedName:\s*string\):\s*Promise<SaveFileAsResult\s*\|\s*null>/);
+    expect(src).toMatch(
+      /saveFileAs\(data:\s*Uint8Array,\s*suggestedName:\s*string\):\s*Promise<SaveFileAsResult\s*\|\s*null>/,
+    );
   });
 
   it('interface declares shareFile method with data, filename, and mimeType', () => {
     const src = readSource(ADAPTER_INTERFACE);
-    expect(src).toMatch(/shareFile\(data:\s*Uint8Array\s*\|\s*string,\s*filename:\s*string,\s*mimeType:\s*string\):\s*Promise<void>/);
+    expect(src).toMatch(
+      /shareFile\(data:\s*Uint8Array\s*\|\s*string,\s*filename:\s*string,\s*mimeType:\s*string\):\s*Promise<void>/,
+    );
   });
 
   it('PickFileResult has data: Uint8Array', () => {
@@ -408,7 +414,8 @@ describe('Feature #278: getFileSystemAdapter factory', () => {
   it('_resetFileSystemAdapter clears the cache', async () => {
     mockCapacitor.isNativePlatform.mockReturnValue(false);
 
-    const { getFileSystemAdapter, _resetFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+    const { getFileSystemAdapter, _resetFileSystemAdapter } =
+      await import('@/core/platform/fileSystemAdapter');
 
     const adapter1 = await getFileSystemAdapter();
     _resetFileSystemAdapter();
@@ -426,7 +433,9 @@ describe('Feature #278: getFileSystemAdapter factory', () => {
 
   it('factory function is async', () => {
     const src = readSource(ADAPTER_INTERFACE);
-    expect(src).toContain('export async function getFileSystemAdapter(): Promise<FileSystemAdapter>');
+    expect(src).toContain(
+      'export async function getFileSystemAdapter(): Promise<FileSystemAdapter>',
+    );
   });
 });
 

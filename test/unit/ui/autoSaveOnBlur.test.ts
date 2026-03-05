@@ -203,7 +203,7 @@ describe('Feature #238: Autosave on Focus Change', () => {
     const appSource = readSource('App.tsx');
 
     it('imports useAutoSaveOnBlur hook', () => {
-      expect(appSource).toContain("import { useAutoSaveOnBlur }");
+      expect(appSource).toContain('import { useAutoSaveOnBlur }');
     });
 
     it('calls useAutoSaveOnBlur() in App component', () => {
@@ -257,11 +257,11 @@ describe('Feature #238: Autosave on Focus Change', () => {
     });
 
     it('reads autosaveOnBlur from uiStore', () => {
-      expect(fileMenuSource).toContain("useUIStore((s) => s.autosaveOnBlur)");
+      expect(fileMenuSource).toContain('useUIStore((s) => s.autosaveOnBlur)');
     });
 
     it('reads setAutosaveOnBlur from uiStore', () => {
-      expect(fileMenuSource).toContain("useUIStore((s) => s.setAutosaveOnBlur)");
+      expect(fileMenuSource).toContain('useUIStore((s) => s.setAutosaveOnBlur)');
     });
   });
 

@@ -99,18 +99,18 @@ const CONFIG_TO_LANGUAGE: Record<string, string> = {
   'requirements.txt': 'Python',
   'pyproject.toml': 'Python',
   'setup.py': 'Python',
-  'Pipfile': 'Python',
+  Pipfile: 'Python',
   'poetry.lock': 'Python',
   'pom.xml': 'Java',
   'build.gradle': 'Java',
   'build.gradle.kts': 'Kotlin',
-  'Gemfile': 'Ruby',
+  Gemfile: 'Ruby',
   'composer.json': 'PHP',
   'mix.exs': 'Elixir',
   'Package.swift': 'Swift',
   'pubspec.yaml': 'Dart',
   'stack.yaml': 'Haskell',
-  'Makefile': 'C',
+  Makefile: 'C',
   'CMakeLists.txt': 'C++',
 };
 
@@ -133,8 +133,8 @@ export function detectLanguages(scanResult: ScanResult): DetectedLanguage[] {
 
   // Boost from config file presence
   const allFiles = collectAllFiles(scanResult);
-  const allFileNames = new Set(allFiles.map(f => f.name));
-  const rootFileNames = new Set(scanResult.fileTree.root.files.map(f => f.name));
+  const allFileNames = new Set(allFiles.map((f) => f.name));
+  const rootFileNames = new Set(scanResult.fileTree.root.files.map((f) => f.name));
 
   for (const [configFile, lang] of Object.entries(CONFIG_TO_LANGUAGE)) {
     if (rootFileNames.has(configFile) || allFileNames.has(configFile)) {
@@ -177,20 +177,44 @@ interface FrameworkRule {
 
 const FRAMEWORK_RULES: FrameworkRule[] = [
   // JavaScript/TypeScript frameworks
-  { name: 'Next.js', configFiles: ['next.config.js', 'next.config.mjs', 'next.config.ts'], confidence: 'high' },
+  {
+    name: 'Next.js',
+    configFiles: ['next.config.js', 'next.config.mjs', 'next.config.ts'],
+    confidence: 'high',
+  },
   { name: 'Nuxt', configFiles: ['nuxt.config.js', 'nuxt.config.ts'], confidence: 'high' },
   { name: 'SvelteKit', configFiles: ['svelte.config.js', 'svelte.config.ts'], confidence: 'high' },
   { name: 'Remix', configFiles: ['remix.config.js', 'remix.config.ts'], confidence: 'high' },
   { name: 'Astro', configFiles: ['astro.config.mjs', 'astro.config.ts'], confidence: 'high' },
   { name: 'Gatsby', configFiles: ['gatsby-config.js', 'gatsby-config.ts'], confidence: 'high' },
   { name: 'Angular', configFiles: ['angular.json', '.angular-cli.json'], confidence: 'high' },
-  { name: 'Vite', configFiles: ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'], confidence: 'medium' },
-  { name: 'Webpack', configFiles: ['webpack.config.js', 'webpack.config.ts'], confidence: 'medium' },
+  {
+    name: 'Vite',
+    configFiles: ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'],
+    confidence: 'medium',
+  },
+  {
+    name: 'Webpack',
+    configFiles: ['webpack.config.js', 'webpack.config.ts'],
+    confidence: 'medium',
+  },
   { name: 'Rollup', configFiles: ['rollup.config.js', 'rollup.config.mjs'], confidence: 'medium' },
-  { name: 'Electron', configFiles: ['electron-builder.yml', 'electron.config.js'], confidence: 'high' },
-  { name: 'Capacitor', configFiles: ['capacitor.config.ts', 'capacitor.config.json'], confidence: 'high' },
+  {
+    name: 'Electron',
+    configFiles: ['electron-builder.yml', 'electron.config.js'],
+    confidence: 'high',
+  },
+  {
+    name: 'Capacitor',
+    configFiles: ['capacitor.config.ts', 'capacitor.config.json'],
+    confidence: 'high',
+  },
   { name: 'Expo', configFiles: ['app.json', 'expo.json'], confidence: 'medium' },
-  { name: 'Tailwind CSS', configFiles: ['tailwind.config.js', 'tailwind.config.ts', 'tailwind.config.cjs'], confidence: 'high' },
+  {
+    name: 'Tailwind CSS',
+    configFiles: ['tailwind.config.js', 'tailwind.config.ts', 'tailwind.config.cjs'],
+    confidence: 'high',
+  },
 
   // Python frameworks
   { name: 'Django', anywhereFiles: ['manage.py'], confidence: 'high' },
@@ -201,16 +225,29 @@ const FRAMEWORK_RULES: FrameworkRule[] = [
   { name: 'Gin', configFiles: ['go.mod'], confidence: 'low' },
 
   // Ruby frameworks
-  { name: 'Rails', configFiles: ['Rakefile'], anywhereFiles: ['config/routes.rb'], confidence: 'high' },
+  {
+    name: 'Rails',
+    configFiles: ['Rakefile'],
+    anywhereFiles: ['config/routes.rb'],
+    confidence: 'high',
+  },
 
   // Java/JVM frameworks
-  { name: 'Spring Boot', anywhereFiles: ['application.properties', 'application.yml'], confidence: 'medium' },
+  {
+    name: 'Spring Boot',
+    anywhereFiles: ['application.properties', 'application.yml'],
+    confidence: 'medium',
+  },
 
   // Rust frameworks
   { name: 'Actix Web', configFiles: ['Cargo.toml'], confidence: 'low' },
 
   // Infrastructure / platforms
-  { name: 'Serverless Framework', configFiles: ['serverless.yml', 'serverless.ts'], confidence: 'high' },
+  {
+    name: 'Serverless Framework',
+    configFiles: ['serverless.yml', 'serverless.ts'],
+    confidence: 'high',
+  },
   { name: 'AWS CDK', configFiles: ['cdk.json'], confidence: 'high' },
   { name: 'Pulumi', configFiles: ['Pulumi.yaml'], confidence: 'high' },
 ];
@@ -220,9 +257,9 @@ const FRAMEWORK_RULES: FrameworkRule[] = [
  */
 export function detectFrameworks(scanResult: ScanResult): DetectedFramework[] {
   const allFiles = collectAllFiles(scanResult);
-  const allFileNames = new Set(allFiles.map(f => f.name));
-  const allRelativePaths = new Set(allFiles.map(f => f.relativePath));
-  const rootFileNames = new Set(scanResult.fileTree.root.files.map(f => f.name));
+  const allFileNames = new Set(allFiles.map((f) => f.name));
+  const allRelativePaths = new Set(allFiles.map((f) => f.relativePath));
+  const rootFileNames = new Set(scanResult.fileTree.root.files.map((f) => f.name));
 
   const detected: DetectedFramework[] = [];
 
@@ -263,10 +300,10 @@ export function detectFrameworks(scanResult: ScanResult): DetectedFramework[] {
   }
 
   // Special detection: React (check package.json dependency - we check for .tsx/.jsx files as proxy)
-  const hasReactFiles = Object.keys(scanResult.languageBreakdown).some(ext =>
-    ext === '.tsx' || ext === '.jsx'
+  const hasReactFiles = Object.keys(scanResult.languageBreakdown).some(
+    (ext) => ext === '.tsx' || ext === '.jsx',
   );
-  if (hasReactFiles && !detected.some(d => d.name === 'React')) {
+  if (hasReactFiles && !detected.some((d) => d.name === 'React')) {
     detected.push({
       name: 'React',
       confidence: 'medium',
@@ -275,7 +312,7 @@ export function detectFrameworks(scanResult: ScanResult): DetectedFramework[] {
   }
 
   // Vue detection from .vue files
-  if (scanResult.languageBreakdown['.vue'] && !detected.some(d => d.name === 'Vue')) {
+  if (scanResult.languageBreakdown['.vue'] && !detected.some((d) => d.name === 'Vue')) {
     detected.push({
       name: 'Vue',
       confidence: 'medium',
@@ -284,7 +321,7 @@ export function detectFrameworks(scanResult: ScanResult): DetectedFramework[] {
   }
 
   // Svelte detection from .svelte files
-  if (scanResult.languageBreakdown['.svelte'] && !detected.some(d => d.name === 'Svelte')) {
+  if (scanResult.languageBreakdown['.svelte'] && !detected.some((d) => d.name === 'Svelte')) {
     detected.push({
       name: 'Svelte',
       confidence: 'medium',
@@ -301,10 +338,10 @@ export function detectFrameworks(scanResult: ScanResult): DetectedFramework[] {
  * Detect project structure type: monorepo, microservices, single-app, library.
  */
 export function detectProjectType(scanResult: ScanResult): ProjectType {
-  const rootFiles = scanResult.fileTree.root.files.map(f => f.name);
-  const rootDirs = scanResult.fileTree.root.directories.map(d => d.name);
+  const rootFiles = scanResult.fileTree.root.files.map((f) => f.name);
+  const rootDirs = scanResult.fileTree.root.directories.map((d) => d.name);
   const allFiles = collectAllFiles(scanResult);
-  const allFileNames = allFiles.map(f => f.relativePath);
+  const allFileNames = allFiles.map((f) => f.relativePath);
 
   // Monorepo signals
   const hasLerna = rootFiles.includes('lerna.json');
@@ -326,11 +363,11 @@ export function detectProjectType(scanResult: ScanResult): ProjectType {
   }
 
   // Microservices signals: multiple Dockerfiles or docker-compose with multiple services
-  const dockerfileCount = allFileNames.filter(f =>
-    f.endsWith('Dockerfile') || f.match(/Dockerfile\.\w+$/)
+  const dockerfileCount = allFileNames.filter(
+    (f) => f.endsWith('Dockerfile') || f.match(/Dockerfile\.\w+$/),
   ).length;
-  const hasDockerCompose = allFileNames.some(f =>
-    f === 'docker-compose.yml' || f === 'docker-compose.yaml'
+  const hasDockerCompose = allFileNames.some(
+    (f) => f === 'docker-compose.yml' || f === 'docker-compose.yaml',
   );
 
   if (dockerfileCount >= 3 || (hasDockerCompose && dockerfileCount >= 2)) {
@@ -355,12 +392,14 @@ function checkIsLibrary(rootFiles: string[], allRelativePaths: string[]): boolea
   // Libraries typically have: no src/pages or src/app, index file as entry,
   // and files like tsconfig.build.json, rollup config, or "main"/"module" in package.json
   const hasTsconfigBuild = rootFiles.includes('tsconfig.build.json');
-  const hasRollupConfig = rootFiles.some(f => f.startsWith('rollup.config'));
-  const hasTsupConfig = rootFiles.some(f => f.startsWith('tsup.config'));
+  const hasRollupConfig = rootFiles.some((f) => f.startsWith('rollup.config'));
+  const hasTsupConfig = rootFiles.some((f) => f.startsWith('tsup.config'));
 
   // Absence of app-like structures
-  const hasPages = allRelativePaths.some(f => f.includes('/pages/') || f.includes('/app/'));
-  const hasPublicIndex = allRelativePaths.some(f => f === 'public/index.html' || f === 'index.html');
+  const hasPages = allRelativePaths.some((f) => f.includes('/pages/') || f.includes('/app/'));
+  const hasPublicIndex = allRelativePaths.some(
+    (f) => f === 'public/index.html' || f === 'index.html',
+  );
 
   if ((hasTsconfigBuild || hasRollupConfig || hasTsupConfig) && !hasPages && !hasPublicIndex) {
     return true;
@@ -377,7 +416,7 @@ const BUILD_SYSTEM_FILES: Record<string, string> = {
   'pnpm-lock.yaml': 'pnpm',
   'pnpm-workspace.yaml': 'pnpm',
   'bun.lockb': 'bun',
-  'Makefile': 'make',
+  Makefile: 'make',
   'CMakeLists.txt': 'cmake',
   'Cargo.toml': 'cargo',
   'go.mod': 'go modules',
@@ -385,18 +424,18 @@ const BUILD_SYSTEM_FILES: Record<string, string> = {
   'build.gradle.kts': 'gradle',
   'pom.xml': 'maven',
   'build.sbt': 'sbt',
-  'Rakefile': 'rake',
-  'Gemfile': 'bundler',
+  Rakefile: 'rake',
+  Gemfile: 'bundler',
   'composer.json': 'composer',
   'mix.exs': 'mix',
   'pubspec.yaml': 'pub',
   'setup.py': 'setuptools',
   'pyproject.toml': 'pyproject',
-  'Pipfile': 'pipenv',
+  Pipfile: 'pipenv',
   'poetry.lock': 'poetry',
-  'Bazel': 'bazel',
-  'BUILD': 'bazel',
-  'WORKSPACE': 'bazel',
+  Bazel: 'bazel',
+  BUILD: 'bazel',
+  WORKSPACE: 'bazel',
   'meson.build': 'meson',
 };
 
@@ -404,7 +443,7 @@ const BUILD_SYSTEM_FILES: Record<string, string> = {
  * Detect build systems from config file presence.
  */
 export function detectBuildSystems(scanResult: ScanResult): string[] {
-  const rootFileNames = new Set(scanResult.fileTree.root.files.map(f => f.name));
+  const rootFileNames = new Set(scanResult.fileTree.root.files.map((f) => f.name));
   const systems = new Set<string>();
 
   for (const [fileName, system] of Object.entries(BUILD_SYSTEM_FILES)) {
@@ -423,8 +462,8 @@ export function detectBuildSystems(scanResult: ScanResult): string[] {
  */
 export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
   const allFiles = collectAllFiles(scanResult);
-  const allNames = allFiles.map(f => f.name);
-  const allPaths = allFiles.map(f => f.relativePath);
+  const allNames = allFiles.map((f) => f.name);
+  const allPaths = allFiles.map((f) => f.relativePath);
   const signals: InfraSignal[] = [];
 
   // Docker
@@ -435,7 +474,7 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
     signals.push({ type: 'docker-compose', evidence: 'docker-compose.yml' });
   }
   if (allNames.includes('.dockerignore')) {
-    if (!signals.some(s => s.type === 'docker')) {
+    if (!signals.some((s) => s.type === 'docker')) {
       signals.push({ type: 'docker', evidence: '.dockerignore' });
     }
   }
@@ -443,18 +482,24 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
   // Kubernetes
   const k8sPatterns = ['k8s/', 'kubernetes/', 'deploy/'];
   for (const pattern of k8sPatterns) {
-    if (allPaths.some(p => p.startsWith(pattern))) {
+    if (allPaths.some((p) => p.startsWith(pattern))) {
       signals.push({ type: 'kubernetes', evidence: `${pattern} directory` });
       break;
     }
   }
   // Check for k8s-style YAML files
-  if (allNames.some(n => n.endsWith('.yaml') || n.endsWith('.yml'))) {
+  if (allNames.some((n) => n.endsWith('.yaml') || n.endsWith('.yml'))) {
     // Look for common k8s file names
-    const k8sFiles = ['deployment.yaml', 'service.yaml', 'ingress.yaml', 'configmap.yaml', 'statefulset.yaml'];
+    const k8sFiles = [
+      'deployment.yaml',
+      'service.yaml',
+      'ingress.yaml',
+      'configmap.yaml',
+      'statefulset.yaml',
+    ];
     for (const kf of k8sFiles) {
       if (allNames.includes(kf)) {
-        if (!signals.some(s => s.type === 'kubernetes')) {
+        if (!signals.some((s) => s.type === 'kubernetes')) {
           signals.push({ type: 'kubernetes', evidence: kf });
         }
         break;
@@ -463,12 +508,12 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
   }
 
   // Terraform
-  if (allPaths.some(p => p.endsWith('.tf'))) {
+  if (allPaths.some((p) => p.endsWith('.tf'))) {
     signals.push({ type: 'terraform', evidence: '*.tf files' });
   }
 
   // CI/CD - GitHub Actions
-  if (allPaths.some(p => p.startsWith('.github/workflows/'))) {
+  if (allPaths.some((p) => p.startsWith('.github/workflows/'))) {
     signals.push({ type: 'ci-github', evidence: '.github/workflows/' });
   }
 
@@ -483,7 +528,7 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
   }
 
   // CI/CD - CircleCI
-  if (allPaths.some(p => p === '.circleci/config.yml')) {
+  if (allPaths.some((p) => p === '.circleci/config.yml')) {
     signals.push({ type: 'ci-circleci', evidence: '.circleci/config.yml' });
   }
 
@@ -494,7 +539,10 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
 
   // AWS
   if (allNames.includes('cdk.json') || allNames.includes('samconfig.toml')) {
-    signals.push({ type: 'aws', evidence: allNames.includes('cdk.json') ? 'cdk.json' : 'samconfig.toml' });
+    signals.push({
+      type: 'aws',
+      evidence: allNames.includes('cdk.json') ? 'cdk.json' : 'samconfig.toml',
+    });
   }
 
   // Vercel
@@ -517,12 +565,12 @@ export function detectInfraSignals(scanResult: ScanResult): InfraSignal[] {
  */
 export function detectDataStores(scanResult: ScanResult): DetectedDataStore[] {
   const allFiles = collectAllFiles(scanResult);
-  const allNames = new Set(allFiles.map(f => f.name));
-  const allPaths = allFiles.map(f => f.relativePath);
+  const allNames = new Set(allFiles.map((f) => f.name));
+  const allPaths = allFiles.map((f) => f.relativePath);
   const stores: DetectedDataStore[] = [];
 
   // Prisma (implies SQL database)
-  if (allPaths.some(p => p.endsWith('schema.prisma') || p === 'prisma/schema.prisma')) {
+  if (allPaths.some((p) => p.endsWith('schema.prisma') || p === 'prisma/schema.prisma')) {
     stores.push({ type: 'prisma', evidence: 'schema.prisma' });
   }
 
@@ -532,12 +580,16 @@ export function detectDataStores(scanResult: ScanResult): DetectedDataStore[] {
   }
 
   // SQLite
-  if (allPaths.some(p => p.endsWith('.sqlite') || p.endsWith('.sqlite3') || p.endsWith('.db'))) {
+  if (allPaths.some((p) => p.endsWith('.sqlite') || p.endsWith('.sqlite3') || p.endsWith('.db'))) {
     stores.push({ type: 'sqlite', evidence: '*.sqlite file' });
   }
 
   // TypeORM
-  if (allNames.has('ormconfig.json') || allNames.has('ormconfig.ts') || allNames.has('ormconfig.js')) {
+  if (
+    allNames.has('ormconfig.json') ||
+    allNames.has('ormconfig.ts') ||
+    allNames.has('ormconfig.js')
+  ) {
     stores.push({ type: 'typeorm', evidence: 'ormconfig' });
   }
 
@@ -547,7 +599,11 @@ export function detectDataStores(scanResult: ScanResult): DetectedDataStore[] {
   }
 
   // MongoDB (Mongoose)
-  if (allPaths.some(p => p.includes('models/') && (p.endsWith('.model.ts') || p.endsWith('.model.js')))) {
+  if (
+    allPaths.some(
+      (p) => p.includes('models/') && (p.endsWith('.model.ts') || p.endsWith('.model.js')),
+    )
+  ) {
     // Weak signal, but combined with other hints...
   }
 
@@ -557,7 +613,7 @@ export function detectDataStores(scanResult: ScanResult): DetectedDataStore[] {
   }
 
   // Protocol Buffers (like this project)
-  if (allPaths.some(p => p.endsWith('.proto'))) {
+  if (allPaths.some((p) => p.endsWith('.proto'))) {
     stores.push({ type: 'protobuf', evidence: '*.proto files' });
   }
 
@@ -617,7 +673,7 @@ const ENTRY_POINT_PATTERNS = [
  */
 export function detectEntryPoints(scanResult: ScanResult): string[] {
   const allFiles = collectAllFiles(scanResult);
-  const allPathSet = new Set(allFiles.map(f => f.relativePath));
+  const allPathSet = new Set(allFiles.map((f) => f.relativePath));
 
   const entryPoints: string[] = [];
 

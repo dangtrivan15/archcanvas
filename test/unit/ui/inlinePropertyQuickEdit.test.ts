@@ -13,7 +13,13 @@ import { useUIStore } from '@/store/uiStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useCoreStore } from '@/store/coreStore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
-import { getShortcutManager, resetShortcutManager, SHORTCUT_ACTIONS, eventMatchesBinding, parseBinding } from '@/core/shortcuts/shortcutManager';
+import {
+  getShortcutManager,
+  resetShortcutManager,
+  SHORTCUT_ACTIONS,
+  eventMatchesBinding,
+  parseBinding,
+} from '@/core/shortcuts/shortcutManager';
 import { getStaticCommands, searchCommands } from '@/config/commandRegistry';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { TextApi } from '@/api/textApi';

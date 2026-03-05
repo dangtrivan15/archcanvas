@@ -221,10 +221,38 @@ function createGraphWithAllNoteStatuses(): ArchGraph {
         args: {},
         codeRefs: [],
         notes: [
-          { id: 'n1', author: 'a', timestampMs: 1000, content: 'None status', tags: [], status: 'none' },
-          { id: 'n2', author: 'b', timestampMs: 2000, content: 'Pending', tags: ['todo'], status: 'pending' },
-          { id: 'n3', author: 'c', timestampMs: 3000, content: 'Accepted', tags: [], status: 'accepted' },
-          { id: 'n4', author: 'd', timestampMs: 4000, content: 'Dismissed', tags: ['wontfix'], status: 'dismissed' },
+          {
+            id: 'n1',
+            author: 'a',
+            timestampMs: 1000,
+            content: 'None status',
+            tags: [],
+            status: 'none',
+          },
+          {
+            id: 'n2',
+            author: 'b',
+            timestampMs: 2000,
+            content: 'Pending',
+            tags: ['todo'],
+            status: 'pending',
+          },
+          {
+            id: 'n3',
+            author: 'c',
+            timestampMs: 3000,
+            content: 'Accepted',
+            tags: [],
+            status: 'accepted',
+          },
+          {
+            id: 'n4',
+            author: 'd',
+            timestampMs: 4000,
+            content: 'Dismissed',
+            tags: ['wontfix'],
+            status: 'dismissed',
+          },
         ],
         properties: {},
         position: { x: 0, y: 0, width: 240, height: 120 },
@@ -773,10 +801,18 @@ describe('File Save Pipeline', () => {
       expect(restored.edges[1].notes[0].status).toBe('accepted');
 
       // Step 7: Verify all code refs present
-      expect(restored.nodes[0].codeRefs).toEqual([{ path: 'src/gateway/index.ts', role: 'source' }]);
+      expect(restored.nodes[0].codeRefs).toEqual([
+        { path: 'src/gateway/index.ts', role: 'source' },
+      ]);
       expect(restored.nodes[1].codeRefs.length).toBe(2);
-      expect(restored.nodes[1].codeRefs[0]).toEqual({ path: 'src/orders/index.ts', role: 'source' });
-      expect(restored.nodes[1].codeRefs[1]).toEqual({ path: 'src/orders/api.yaml', role: 'api-spec' });
+      expect(restored.nodes[1].codeRefs[0]).toEqual({
+        path: 'src/orders/index.ts',
+        role: 'source',
+      });
+      expect(restored.nodes[1].codeRefs[1]).toEqual({
+        path: 'src/orders/api.yaml',
+        role: 'api-spec',
+      });
       expect(restored.nodes[2].codeRefs).toEqual([{ path: 'db/schema.sql', role: 'schema' }]);
 
       // Step 8: Verify all custom properties present
@@ -788,7 +824,13 @@ describe('File Save Pipeline', () => {
       expect(restored.edges[0].properties).toEqual({ protocol: 'HTTP/2' });
 
       // Step 10: Verify node positions match exactly
-      expect(restored.nodes[0].position).toEqual({ x: 100, y: 200, width: 240, height: 120, color: '#3b82f6' });
+      expect(restored.nodes[0].position).toEqual({
+        x: 100,
+        y: 200,
+        width: 240,
+        height: 120,
+        color: '#3b82f6',
+      });
       expect(restored.nodes[1].position).toEqual({ x: 400, y: 200, width: 240, height: 120 });
       expect(restored.nodes[2].position).toEqual({ x: 400, y: 400, width: 240, height: 120 });
     });

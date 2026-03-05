@@ -15,7 +15,10 @@ import { generalTemplate } from '../../../../src/analyze/prompts/general';
 import { webAppTemplate } from '../../../../src/analyze/prompts/webApp';
 import { microservicesTemplate } from '../../../../src/analyze/prompts/microservices';
 import { dataPipelineTemplate } from '../../../../src/analyze/prompts/dataPipeline';
-import { NODE_TYPE_REGISTRY_TEXT, STANDARD_RESPONSE_SCHEMA } from '../../../../src/analyze/prompts/shared';
+import {
+  NODE_TYPE_REGISTRY_TEXT,
+  STANDARD_RESPONSE_SCHEMA,
+} from '../../../../src/analyze/prompts/shared';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -91,7 +94,12 @@ describe('Prompt Template System', () => {
     });
 
     it('all templates include node type registry in analysis prompts', () => {
-      const templates = [generalTemplate, webAppTemplate, microservicesTemplate, dataPipelineTemplate];
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
       for (const t of templates) {
         const prompt = t.analysisSteps[0].userPrompt;
         expect(prompt).toContain('Available ArchCanvas Node Types');
@@ -107,7 +115,12 @@ describe('Prompt Template System', () => {
     });
 
     it('few-shot examples contain valid JSON output', () => {
-      const templates = [generalTemplate, webAppTemplate, microservicesTemplate, dataPipelineTemplate];
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
       for (const t of templates) {
         if (t.fewShotExamples) {
           for (const example of t.fewShotExamples) {
@@ -131,7 +144,12 @@ describe('Prompt Template System', () => {
     });
 
     it('few-shot examples are included in prompt text', () => {
-      const templates = [generalTemplate, webAppTemplate, microservicesTemplate, dataPipelineTemplate];
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
       for (const t of templates) {
         const prompt = t.analysisSteps[0].userPrompt;
         expect(prompt).toContain('Few-Shot Example');
@@ -158,7 +176,7 @@ describe('Prompt Template System', () => {
     it('returns all 4 built-in templates', () => {
       const templates = listTemplates();
       expect(templates.length).toBe(4);
-      const ids = templates.map(t => t.id);
+      const ids = templates.map((t) => t.id);
       expect(ids).toContain('general');
       expect(ids).toContain('web-app');
       expect(ids).toContain('microservices');
@@ -178,7 +196,7 @@ describe('Prompt Template System', () => {
       registerCustomTemplate(custom);
       const templates = listTemplates();
       expect(templates.length).toBe(5);
-      expect(templates.map(t => t.id)).toContain('custom-test');
+      expect(templates.map((t) => t.id)).toContain('custom-test');
     });
   });
 
@@ -290,7 +308,9 @@ describe('Prompt Template System', () => {
         description: 'Custom template',
         tags: ['custom'],
         systemPrompt: 'You are a custom analyzer.',
-        analysisSteps: [{ name: 'Analyze', systemPrompt: '', userPrompt: 'Analyze {{projectProfile}}' }],
+        analysisSteps: [
+          { name: 'Analyze', systemPrompt: '', userPrompt: 'Analyze {{projectProfile}}' },
+        ],
         responseSchema: STANDARD_RESPONSE_SCHEMA,
       };
       registerCustomTemplate(custom);
@@ -313,7 +333,7 @@ describe('Prompt Template System', () => {
       registerCustomTemplate(v1);
       registerCustomTemplate(v2);
 
-      const templates = listTemplates().filter(t => t.id === 'replaceable');
+      const templates = listTemplates().filter((t) => t.id === 'replaceable');
       expect(templates.length).toBe(1);
       expect(templates[0].name).toBe('V2');
     });
@@ -342,13 +362,21 @@ describe('Prompt Template System', () => {
 
     it('clearCustomTemplates removes all custom templates', () => {
       registerCustomTemplate({
-        id: 'c1', name: 'C1', description: '', tags: [],
-        systemPrompt: '', analysisSteps: [{ name: 'S', systemPrompt: '', userPrompt: '' }],
+        id: 'c1',
+        name: 'C1',
+        description: '',
+        tags: [],
+        systemPrompt: '',
+        analysisSteps: [{ name: 'S', systemPrompt: '', userPrompt: '' }],
         responseSchema: STANDARD_RESPONSE_SCHEMA,
       });
       registerCustomTemplate({
-        id: 'c2', name: 'C2', description: '', tags: [],
-        systemPrompt: '', analysisSteps: [{ name: 'S', systemPrompt: '', userPrompt: '' }],
+        id: 'c2',
+        name: 'C2',
+        description: '',
+        tags: [],
+        systemPrompt: '',
+        analysisSteps: [{ name: 'S', systemPrompt: '', userPrompt: '' }],
         responseSchema: STANDARD_RESPONSE_SCHEMA,
       });
 
@@ -364,12 +392,14 @@ describe('Prompt Template System', () => {
         description: 'For Rust embedded projects',
         tags: ['rust', 'embedded'],
         systemPrompt: 'You are an embedded systems architect.',
-        analysisSteps: [{ name: 'Analyze', systemPrompt: '', userPrompt: 'Analyze {{projectProfile}}' }],
+        analysisSteps: [
+          { name: 'Analyze', systemPrompt: '', userPrompt: 'Analyze {{projectProfile}}' },
+        ],
         responseSchema: STANDARD_RESPONSE_SCHEMA,
       };
 
       registerCustomTemplate(custom, (profile) =>
-        profile.languages.some(l => l.name === 'Rust' && l.percentage > 70) ? 80 : 0,
+        profile.languages.some((l) => l.name === 'Rust' && l.percentage > 70) ? 80 : 0,
       );
 
       const profile = makeProfile({
@@ -400,7 +430,12 @@ describe('Prompt Template System', () => {
 
   describe('Prompt output format', () => {
     it('templates produce prompts with {{placeholder}} tokens', () => {
-      const templates = [generalTemplate, webAppTemplate, microservicesTemplate, dataPipelineTemplate];
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
       for (const t of templates) {
         const step = t.analysisSteps[0];
         // All templates should have projectProfile placeholder
@@ -411,7 +446,12 @@ describe('Prompt Template System', () => {
     });
 
     it('templates include schema text in prompts', () => {
-      const templates = [generalTemplate, webAppTemplate, microservicesTemplate, dataPipelineTemplate];
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
       for (const t of templates) {
         const step = t.analysisSteps[0];
         // Should include the schema definition
@@ -425,7 +465,7 @@ describe('Prompt Template System', () => {
   describe('Template unique IDs', () => {
     it('all built-in templates have unique IDs', () => {
       const templates = listTemplates();
-      const ids = templates.map(t => t.id);
+      const ids = templates.map((t) => t.id);
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
     });

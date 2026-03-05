@@ -8,12 +8,7 @@
  */
 
 import type { Theme } from './types';
-import {
-  rosePine,
-  rosePineMoon,
-  rosePineDawn,
-  THEME_PRESETS,
-} from '../themes/rose-pine';
+import { rosePine, rosePineMoon, rosePineDawn, THEME_PRESETS } from '../themes/rose-pine';
 
 /** Re-export Rosé Pine themes for backward compatibility */
 export const rosePineTheme = rosePine;
@@ -92,27 +87,27 @@ export const nordTheme: Theme = {
   id: 'nord',
   name: 'Nord',
   colors: {
-    background: '220 16% 22%',    // #2E3440 — Polar Night 0
-    surface: '222 16% 28%',       // #3B4252 — Polar Night 1
-    text: '219 28% 88%',          // #D8DEE9 — Snow Storm 0
-    subtle: '220 16% 36%',        // #4C566A — Polar Night 3
-    muted: '220 17% 32%',         // #434C5E — Polar Night 2
+    background: '220 16% 22%', // #2E3440 — Polar Night 0
+    surface: '222 16% 28%', // #3B4252 — Polar Night 1
+    text: '219 28% 88%', // #D8DEE9 — Snow Storm 0
+    subtle: '220 16% 36%', // #4C566A — Polar Night 3
+    muted: '220 17% 32%', // #434C5E — Polar Night 2
     'muted-foreground': '219 14% 61%', // mid between Polar Night 3 and Snow Storm
     'highlight-low': '220 16% 26%',
     'highlight-med': '222 16% 30%',
     'highlight-high': '220 17% 34%',
-    primary: '213 32% 52%',       // #5E81AC — Frost 3
-    secondary: '220 17% 32%',     // #434C5E
-    accent: '193 43% 67%',        // #88C0D0 — Frost 1
-    border: '220 17% 32%',        // #434C5E
-    overlay: '220 16% 18%',       // darker than background
-    ring: '213 32% 52%',          // #5E81AC — Frost 3
-    love: '354 42% 56%',          // #BF616A — Aurora red
-    gold: '40 71% 73%',           // #EBCB8B — Aurora yellow
-    rose: '14 51% 63%',           // #D08770 — Aurora orange
-    pine: '92 28% 65%',           // #A3BE8C — Aurora green
-    foam: '179 25% 65%',          // #8FBCBB — Frost 0
-    iris: '311 20% 63%',          // #B48EAD — Aurora purple
+    primary: '213 32% 52%', // #5E81AC — Frost 3
+    secondary: '220 17% 32%', // #434C5E
+    accent: '193 43% 67%', // #88C0D0 — Frost 1
+    border: '220 17% 32%', // #434C5E
+    overlay: '220 16% 18%', // darker than background
+    ring: '213 32% 52%', // #5E81AC — Frost 3
+    love: '354 42% 56%', // #BF616A — Aurora red
+    gold: '40 71% 73%', // #EBCB8B — Aurora yellow
+    rose: '14 51% 63%', // #D08770 — Aurora orange
+    pine: '92 28% 65%', // #A3BE8C — Aurora green
+    foam: '179 25% 65%', // #8FBCBB — Frost 0
+    iris: '311 20% 63%', // #B48EAD — Aurora purple
   },
 };
 
@@ -134,27 +129,27 @@ export const catppuccinMochaTheme: Theme = {
   id: 'catppuccin-mocha',
   name: 'Catppuccin Mocha',
   colors: {
-    background: '240 21% 15%',    // #1E1E2E — Base
-    surface: '240 17% 23%',       // #313244 — Surface 0
-    text: '226 64% 88%',          // #CDD6F4 — Text
-    subtle: '228 24% 42%',        // #6C7086 — Overlay 0
-    muted: '233 12% 39%',         // #585B70 — Surface 2
+    background: '240 21% 15%', // #1E1E2E — Base
+    surface: '240 17% 23%', // #313244 — Surface 0
+    text: '226 64% 88%', // #CDD6F4 — Text
+    subtle: '228 24% 42%', // #6C7086 — Overlay 0
+    muted: '233 12% 39%', // #585B70 — Surface 2
     'muted-foreground': '228 24% 50%', // between Overlay 0 and 1
     'highlight-low': '240 17% 20%',
     'highlight-med': '240 17% 25%',
     'highlight-high': '233 12% 33%',
-    primary: '217 92% 76%',       // #89B4FA — Blue
-    secondary: '240 17% 23%',     // #313244 — Surface 0
-    accent: '267 84% 81%',        // #CBA6F7 — Mauve
-    border: '233 12% 39%',        // #585B70 — Surface 2
-    overlay: '240 23% 9%',        // #11111B — Crust
-    ring: '217 92% 76%',          // #89B4FA — Blue
-    love: '343 81% 75%',          // #F38BA8 — Red
-    gold: '41 86% 83%',           // #F9E2AF — Yellow
-    rose: '10 56% 91%',           // #F5E0DC — Rosewater
-    pine: '115 54% 76%',          // #A6E3A1 — Green
-    foam: '170 57% 73%',          // #94E2D5 — Teal
-    iris: '267 84% 81%',          // #CBA6F7 — Mauve
+    primary: '217 92% 76%', // #89B4FA — Blue
+    secondary: '240 17% 23%', // #313244 — Surface 0
+    accent: '267 84% 81%', // #CBA6F7 — Mauve
+    border: '233 12% 39%', // #585B70 — Surface 2
+    overlay: '240 23% 9%', // #11111B — Crust
+    ring: '217 92% 76%', // #89B4FA — Blue
+    love: '343 81% 75%', // #F38BA8 — Red
+    gold: '41 86% 83%', // #F9E2AF — Yellow
+    rose: '10 56% 91%', // #F5E0DC — Rosewater
+    pine: '115 54% 76%', // #A6E3A1 — Green
+    foam: '170 57% 73%', // #94E2D5 — Teal
+    iris: '267 84% 81%', // #CBA6F7 — Mauve
   },
 };
 

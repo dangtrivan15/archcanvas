@@ -79,7 +79,7 @@ export interface MergeResult {
  */
 function isManualNode(node: ArchNode): boolean {
   // Nodes with no notes or no 'ai-inferred' tagged notes are manual
-  const hasAiNote = node.notes.some(n => n.tags.includes('ai-inferred'));
+  const hasAiNote = node.notes.some((n) => n.tags.includes('ai-inferred'));
   return !hasAiNote;
 }
 
@@ -95,7 +95,7 @@ function isManualEdge(edge: ArchEdge): boolean {
  * Compute the code-ref path set for a node.
  */
 function getCodeRefPaths(node: ArchNode): Set<string> {
-  return new Set(node.codeRefs.map(cr => cr.path));
+  return new Set(node.codeRefs.map((cr) => cr.path));
 }
 
 /**
@@ -127,7 +127,7 @@ export function matchNodes(
     if (matchedInferredIds.has(inferred.id)) continue;
     if (inferred.codeRefs.length === 0) continue;
 
-    const inferredPaths = new Set(inferred.codeRefs.map(cr => cr.path));
+    const inferredPaths = new Set(inferred.codeRefs.map((cr) => cr.path));
 
     let bestMatch: ArchNode | undefined;
     let bestOverlap = 0;
@@ -210,8 +210,8 @@ export function matchNodes(
     }
   }
 
-  const unmatchedExisting = allExisting.filter(n => !matchedExistingIds.has(n.id));
-  const unmatchedInferred = inferredNodes.filter(n => !matchedInferredIds.has(n.id));
+  const unmatchedExisting = allExisting.filter((n) => !matchedExistingIds.has(n.id));
+  const unmatchedInferred = inferredNodes.filter((n) => !matchedInferredIds.has(n.id));
 
   return { matches, unmatchedExisting, unmatchedInferred };
 }
@@ -221,12 +221,14 @@ export function matchNodes(
  * Lowercases, removes common prefixes/suffixes, trims whitespace.
  */
 function normalizeDisplayName(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/\s*(service|server|api|app|client|db|database|cache|queue|store)\s*$/i, '')
-    .trim() || name.toLowerCase().trim();
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/\s*(service|server|api|app|client|db|database|cache|queue|store)\s*$/i, '')
+      .trim() || name.toLowerCase().trim()
+  );
 }
 
 // ── Edge Matching ────────────────────────────────────────────────────────────
@@ -260,7 +262,7 @@ function matchEdges(
 
     // Find matching existing edge
     const match = existingEdges.find(
-      e => e.fromNode === fromId && e.toNode === toId && !matchedExistingIds.has(e.id),
+      (e) => e.fromNode === fromId && e.toNode === toId && !matchedExistingIds.has(e.id),
     );
 
     if (match) {
@@ -271,13 +273,9 @@ function matchEdges(
   }
 
   // Edges in existing graph not matched by new inference
-  const removedEdges = existingEdges.filter(
-    e => !matchedExistingIds.has(e.id),
-  );
+  const removedEdges = existingEdges.filter((e) => !matchedExistingIds.has(e.id));
 
-  const preservedEdges = existingEdges.filter(
-    e => matchedExistingIds.has(e.id),
-  );
+  const preservedEdges = existingEdges.filter((e) => matchedExistingIds.has(e.id));
 
   return { newEdges, removedEdges, preservedEdges };
 }
@@ -310,8 +308,8 @@ export function mergeAnalysis(
 ): MergeResult {
   const {
     conflictStrategy = 'manual-wins',
-    noteAuthor = 'ai-merge',
-    addChangeNotes = true,
+    noteAuthor: _noteAuthor = 'ai-merge',
+    addChangeNotes: _addChangeNotes = true,
   } = options;
 
   const warnings: string[] = [];
@@ -329,7 +327,7 @@ export function mergeAnalysis(
 
     // Check for code ref changes (files moved/added/removed)
     const existingPaths = getCodeRefPaths(existingNode);
-    const inferredPaths = new Set(inferredNode.codeRefs.map(cr => cr.path));
+    const inferredPaths = new Set(inferredNode.codeRefs.map((cr) => cr.path));
 
     // Find new code refs
     for (const path of inferredPaths) {
@@ -344,14 +342,14 @@ export function mergeAnalysis(
         // AI wins: note the change, type will be updated by caller
         warnings.push(
           `Node '${existingNode.displayName}' type changed: ` +
-          `'${existingNode.type}' -> '${inferredNode.type}' (ai-wins strategy applied)`,
+            `'${existingNode.type}' -> '${inferredNode.type}' (ai-wins strategy applied)`,
         );
       } else {
         // manual-wins or prompt: keep existing type, just flag it
         warnings.push(
           `Node '${existingNode.displayName}' type may have changed: ` +
-          `existing='${existingNode.type}', inferred='${inferredNode.type}' ` +
-          `(${conflictStrategy} strategy: keeping existing)`,
+            `existing='${existingNode.type}', inferred='${inferredNode.type}' ` +
+            `(${conflictStrategy} strategy: keeping existing)`,
         );
       }
     }
@@ -393,7 +391,7 @@ export function mergeAnalysis(
   }
 
   // ── Build result ───────────────────────────────────────────────
-  const typeChanges = matches.filter(m => m.typeChanged).length;
+  const typeChanges = matches.filter((m) => m.typeChanged).length;
 
   const result: MergeResult = {
     matched: matches,
@@ -462,10 +460,7 @@ export function applyMerge(
     const existingPaths = getCodeRefPaths(node);
     for (const codeRef of match.inferredNode.codeRefs) {
       if (!existingPaths.has(codeRef.path)) {
-        node.codeRefs = [
-          ...node.codeRefs,
-          { path: codeRef.path, role: mapRole(codeRef.role) },
-        ];
+        node.codeRefs = [...node.codeRefs, { path: codeRef.path, role: mapRole(codeRef.role) }];
       }
     }
 
@@ -480,9 +475,10 @@ export function applyMerge(
         id: `merge-note-${now}-${match.existingNode.id}`,
         author: noteAuthor,
         timestampMs: now,
-        content: conflictStrategy === 'ai-wins'
-          ? `Type updated from '${match.existingNode.type}' to '${match.inferredNode.type}' during re-analysis.`
-          : `Re-analysis suggests type '${match.inferredNode.type}' (currently '${match.existingNode.type}'). Review and update if needed.`,
+        content:
+          conflictStrategy === 'ai-wins'
+            ? `Type updated from '${match.existingNode.type}' to '${match.inferredNode.type}' during re-analysis.`
+            : `Re-analysis suggests type '${match.inferredNode.type}' (currently '${match.existingNode.type}'). Review and update if needed.`,
         tags: ['merge-change', 'type-change'],
         status: 'pending',
       };
@@ -549,7 +545,7 @@ export function applyMerge(
   // ── Flag possibly removed edges ────────────────────────────────
   if (addChangeNotes) {
     for (const flagged of mergeResult.edgesFlagged) {
-      const edgeIndex = newEdges.findIndex(e => e.id === flagged.id);
+      const edgeIndex = newEdges.findIndex((e) => e.id === flagged.id);
       if (edgeIndex === -1) continue;
 
       const edge = { ...newEdges[edgeIndex] };
@@ -645,36 +641,43 @@ function inferredToArchNode(
     type: inferred.type,
     displayName: inferred.displayName,
     args: {},
-    codeRefs: inferred.codeRefs.map(cr => ({
+    codeRefs: inferred.codeRefs.map((cr) => ({
       path: cr.path,
       role: mapRole(cr.role),
     })),
     notes,
     properties: {},
     position: { x: 0, y: 0, width: 200, height: 100 },
-    children: inferred.children.map(child =>
-      inferredToArchNode(child, noteAuthor, timestampMs),
-    ),
+    children: inferred.children.map((child) => inferredToArchNode(child, noteAuthor, timestampMs)),
   };
 }
 
-function mapRole(aiRole: string): 'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test' {
-  const roleMap: Record<string, 'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'> = {
-    'SOURCE': 'source',
-    'API_SPEC': 'api-spec',
-    'SCHEMA': 'schema',
-    'DEPLOYMENT': 'deployment',
-    'CONFIG': 'config',
-    'TEST': 'test',
+function mapRole(
+  aiRole: string,
+): 'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test' {
+  const roleMap: Record<
+    string,
+    'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'
+  > = {
+    SOURCE: 'source',
+    API_SPEC: 'api-spec',
+    SCHEMA: 'schema',
+    DEPLOYMENT: 'deployment',
+    CONFIG: 'config',
+    TEST: 'test',
   };
   return roleMap[aiRole.toUpperCase()] ?? 'source';
 }
 
 function mapEdgeType(aiType: string): 'sync' | 'async' | 'data-flow' {
   switch (aiType.toUpperCase()) {
-    case 'SYNC': return 'sync';
-    case 'ASYNC': return 'async';
-    case 'DATA_FLOW': return 'data-flow';
-    default: return 'sync';
+    case 'SYNC':
+      return 'sync';
+    case 'ASYNC':
+      return 'async';
+    case 'DATA_FLOW':
+      return 'data-flow';
+    default:
+      return 'sync';
   }
 }

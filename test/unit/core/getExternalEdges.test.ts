@@ -24,14 +24,34 @@ describe('Feature #28: getExternalEdges() returns boundary-crossing edges', () =
     const child2 = createNode({ type: 'compute/function', displayName: 'Child2' });
 
     // Root-level edge (both endpoints at root)
-    const edgeR1R2 = createEdge({ fromNode: root1.id, toNode: root2.id, type: 'sync', label: 'root1-to-root2' });
-    const edgeR2R3 = createEdge({ fromNode: root2.id, toNode: root3.id, type: 'async', label: 'root2-to-root3' });
+    const edgeR1R2 = createEdge({
+      fromNode: root1.id,
+      toNode: root2.id,
+      type: 'sync',
+      label: 'root1-to-root2',
+    });
+    const edgeR2R3 = createEdge({
+      fromNode: root2.id,
+      toNode: root3.id,
+      type: 'async',
+      label: 'root2-to-root3',
+    });
 
     // Child-level edge (both endpoints are children of root1)
-    const edgeC1C2 = createEdge({ fromNode: child1.id, toNode: child2.id, type: 'data-flow', label: 'child1-to-child2' });
+    const edgeC1C2 = createEdge({
+      fromNode: child1.id,
+      toNode: child2.id,
+      type: 'data-flow',
+      label: 'child1-to-child2',
+    });
 
     // Cross-level edge (child1 connects to root2) - THIS is the boundary-crossing edge
-    const edgeCross = createEdge({ fromNode: child1.id, toNode: root2.id, type: 'sync', label: 'cross-level' });
+    const edgeCross = createEdge({
+      fromNode: child1.id,
+      toNode: root2.id,
+      type: 'sync',
+      label: 'cross-level',
+    });
 
     let graph = createEmptyGraph('Test Hierarchy');
     graph = addNode(graph, root1);
@@ -154,8 +174,18 @@ describe('Feature #28: getExternalEdges() returns boundary-crossing edges', () =
     const child2 = createNode({ type: 'compute/function', displayName: 'Child2' });
 
     // Two cross-level edges
-    const cross1 = createEdge({ fromNode: child1.id, toNode: root2.id, type: 'sync', label: 'cross1' });
-    const cross2 = createEdge({ fromNode: child2.id, toNode: root2.id, type: 'async', label: 'cross2' });
+    const cross1 = createEdge({
+      fromNode: child1.id,
+      toNode: root2.id,
+      type: 'sync',
+      label: 'cross1',
+    });
+    const cross2 = createEdge({
+      fromNode: child2.id,
+      toNode: root2.id,
+      type: 'async',
+      label: 'cross2',
+    });
 
     let graph = createEmptyGraph('Multi Cross');
     graph = addNode(graph, root1);
@@ -179,7 +209,12 @@ describe('Feature #28: getExternalEdges() returns boundary-crossing edges', () =
     const child1 = createNode({ type: 'compute/function', displayName: 'Child1' });
 
     // Edge from root2 to child1 (inbound to child level)
-    const crossInbound = createEdge({ fromNode: root2.id, toNode: child1.id, type: 'sync', label: 'inbound-cross' });
+    const crossInbound = createEdge({
+      fromNode: root2.id,
+      toNode: child1.id,
+      type: 'sync',
+      label: 'inbound-cross',
+    });
 
     let graph = createEmptyGraph('Inbound Cross');
     graph = addNode(graph, root1);

@@ -199,9 +199,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                 <span className="flex-1 text-left truncate">{t.name}</span>
 
                 {/* Active indicator */}
-                {isActive && (
-                  <Check className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />
-                )}
+                {isActive && <Check className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />}
               </button>
             );
           })}

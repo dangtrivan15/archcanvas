@@ -166,7 +166,9 @@ export async function flushQueue(): Promise<void> {
         } else {
           await incrementRetryCount(op.id!);
           if (op.retryCount + 1 >= MAX_RETRIES) {
-            console.warn(`[SyncManager] Operation for "${op.fileName}" exceeded max retries, removing`);
+            console.warn(
+              `[SyncManager] Operation for "${op.fileName}" exceeded max retries, removing`,
+            );
             await removeSyncedOperation(op.id!);
           }
           failCount++;
@@ -188,11 +190,13 @@ export async function flushQueue(): Promise<void> {
       // Auto-clear "synced" status after 5 seconds
       setTimeout(() => {
         if (callbacks) {
-          getPendingSaveCount().then((count) => {
-            if (count === 0) {
-              callbacks?.onStatusChange('idle', 0);
-            }
-          }).catch(() => {});
+          getPendingSaveCount()
+            .then((count) => {
+              if (count === 0) {
+                callbacks?.onStatusChange('idle', 0);
+              }
+            })
+            .catch(() => {});
         }
       }, 5000);
     } else {

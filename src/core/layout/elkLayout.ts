@@ -132,20 +132,13 @@ export async function applyElkLayout(
 
   // Get edges that connect nodes at this level
   const nodeIds = new Set(targetNodes.map((n) => n.id));
-  const relevantEdges = graph.edges.filter(
-    (e) => nodeIds.has(e.fromNode) && nodeIds.has(e.toNode),
-  );
+  const relevantEdges = graph.edges.filter((e) => nodeIds.has(e.fromNode) && nodeIds.has(e.toNode));
 
   // Compute layout with optional spacing configuration
   const result = await computeElkLayout(targetNodes, relevantEdges, direction, spacing);
 
   // Apply positions to the graph
-  const updatedNodes = applyPositionsToNodes(
-    graph.nodes,
-    result.positions,
-    navigationPath,
-    0,
-  );
+  const updatedNodes = applyPositionsToNodes(graph.nodes, result.positions, navigationPath, 0);
 
   return {
     ...graph,
@@ -169,12 +162,7 @@ function applyPositionsToNodes(
       if (node.id === targetId) {
         return {
           ...node,
-          children: applyPositionsToNodes(
-            node.children,
-            positions,
-            navigationPath,
-            pathIndex + 1,
-          ),
+          children: applyPositionsToNodes(node.children, positions, navigationPath, pathIndex + 1),
         };
       }
       return node;

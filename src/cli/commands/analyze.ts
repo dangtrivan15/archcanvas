@@ -11,11 +11,7 @@
  */
 
 import { Command } from 'commander';
-import {
-  type GlobalOptions,
-  withErrorHandler,
-  suppressDiagnosticLogs,
-} from '@/cli/index';
+import { type GlobalOptions, withErrorHandler, suppressDiagnosticLogs } from '@/cli/index';
 import type { AnalysisDepth } from '@/analyze/inferEngine';
 
 interface AnalyzeCommandOptions {
@@ -40,25 +36,10 @@ export function registerAnalyzeCommand(program: Command): void {
       '-o, --output <path>',
       'Output .archc file path (default: <directory>/architecture.archc)',
     )
-    .option(
-      '-n, --name <name>',
-      'Architecture name (default: directory name)',
-    )
-    .option(
-      '-d, --depth <depth>',
-      'Analysis depth: quick, standard, or deep',
-      'standard',
-    )
-    .option(
-      '--dry-run',
-      'Print inference result without saving to file',
-      false,
-    )
-    .option(
-      '--verbose',
-      'Show detailed logging for each pipeline phase',
-      false,
-    )
+    .option('-n, --name <name>', 'Architecture name (default: directory name)')
+    .option('-d, --depth <depth>', 'Analysis depth: quick, standard, or deep', 'standard')
+    .option('--dry-run', 'Print inference result without saving to file', false)
+    .option('--verbose', 'Show detailed logging for each pipeline phase', false)
     .option(
       '--merge',
       'Merge new analysis into an existing .archc file instead of generating from scratch',
@@ -95,14 +76,13 @@ export function registerAnalyzeCommand(program: Command): void {
         const analysisDepth = cmdOpts.depth as AnalysisDepth;
 
         // ─── Check for AI API key ─────────────────────────────────
-        const apiKey =
-          process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY;
+        const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY;
 
         if (!apiKey) {
           if (!opts.quiet) {
             console.error(
               'Warning: ANTHROPIC_API_KEY / VITE_ANTHROPIC_API_KEY not set. ' +
-              'AI inference will be skipped; using structural-only analysis.',
+                'AI inference will be skipped; using structural-only analysis.',
             );
           }
         }
@@ -135,9 +115,7 @@ export function registerAnalyzeCommand(program: Command): void {
                   messages: options.messages,
                 });
                 // Extract text from the response
-                const textBlock = response.content.find(
-                  (b) => b.type === 'text',
-                );
+                const textBlock = response.content.find((b) => b.type === 'text');
                 return {
                   content: textBlock ? textBlock.text : '',
                   stopReason: response.stop_reason,
@@ -158,9 +136,7 @@ export function registerAnalyzeCommand(program: Command): void {
         }
 
         // ─── Suppress diagnostic logs unless verbose ──────────────
-        const restore = cmdOpts.verbose
-          ? () => {}
-          : suppressDiagnosticLogs();
+        const restore = cmdOpts.verbose ? () => {} : suppressDiagnosticLogs();
 
         try {
           // ─── Import pipeline ───────────────────────────────────
@@ -223,7 +199,9 @@ export function registerAnalyzeCommand(program: Command): void {
             });
 
             if (!result.inferenceResult) {
-              throw new Error('Merge mode requires an inference result, but inference returned nothing.');
+              throw new Error(
+                'Merge mode requires an inference result, but inference returned nothing.',
+              );
             }
 
             // Validate strategy
@@ -238,7 +216,7 @@ export function registerAnalyzeCommand(program: Command): void {
             if (!fs.existsSync(outputPath)) {
               throw new Error(
                 `Merge mode requires an existing .archc file at: ${outputPath}\n` +
-                `Run without --merge first to create the initial architecture.`,
+                  `Run without --merge first to create the initial architecture.`,
               );
             }
 
@@ -248,24 +226,16 @@ export function registerAnalyzeCommand(program: Command): void {
 
             // Merge
             const { mergeAnalysis, applyMerge } = await import('@/analyze/merge');
-            const mergeResult = mergeAnalysis(
-              existingGraph,
-              result.inferenceResult,
-              {
-                conflictStrategy: cmdOpts.strategy as 'ai-wins' | 'manual-wins' | 'prompt',
-                addChangeNotes: true,
-              },
-            );
+            const mergeResult = mergeAnalysis(existingGraph, result.inferenceResult, {
+              conflictStrategy: cmdOpts.strategy as 'ai-wins' | 'manual-wins' | 'prompt',
+              addChangeNotes: true,
+            });
 
             // Apply merge to get the new graph
-            const mergedGraph = applyMerge(
-              existingGraph,
-              mergeResult,
-              {
-                conflictStrategy: cmdOpts.strategy as 'ai-wins' | 'manual-wins' | 'prompt',
-                addChangeNotes: true,
-              },
-            );
+            const mergedGraph = applyMerge(existingGraph, mergeResult, {
+              conflictStrategy: cmdOpts.strategy as 'ai-wins' | 'manual-wins' | 'prompt',
+              addChangeNotes: true,
+            });
 
             // Save the merged graph
             ctx.textApi.setGraph(mergedGraph);
@@ -283,13 +253,19 @@ export function registerAnalyzeCommand(program: Command): void {
             const { summary } = mergeResult;
 
             if (opts.format === 'json') {
-              console.log(JSON.stringify({
-                mode: 'merge',
-                outputPath,
-                summary,
-                warnings: [...result.warnings, ...mergeResult.warnings],
-                duration: result.duration,
-              }, null, 2));
+              console.log(
+                JSON.stringify(
+                  {
+                    mode: 'merge',
+                    outputPath,
+                    summary,
+                    warnings: [...result.warnings, ...mergeResult.warnings],
+                    duration: result.duration,
+                  },
+                  null,
+                  2,
+                ),
+              );
             } else if (!opts.quiet) {
               console.error('');
               console.error('=== Merge Complete ===');
@@ -334,25 +310,35 @@ export function registerAnalyzeCommand(program: Command): void {
           if (cmdOpts.dryRun) {
             // Dry-run: print inference result
             if (opts.format === 'json') {
-              console.log(JSON.stringify({
-                dryRun: true,
-                stats: result.stats,
-                projectProfile: {
-                  projectType: result.projectProfile.projectType,
-                  languages: result.projectProfile.languages.map((l) => l.name),
-                  frameworks: result.projectProfile.frameworks.map((f) => f.name),
-                },
-                inferenceResult: result.inferenceResult,
-                warnings: result.warnings,
-                duration: result.duration,
-              }, null, 2));
+              console.log(
+                JSON.stringify(
+                  {
+                    dryRun: true,
+                    stats: result.stats,
+                    projectProfile: {
+                      projectType: result.projectProfile.projectType,
+                      languages: result.projectProfile.languages.map((l) => l.name),
+                      frameworks: result.projectProfile.frameworks.map((f) => f.name),
+                    },
+                    inferenceResult: result.inferenceResult,
+                    warnings: result.warnings,
+                    duration: result.duration,
+                  },
+                  null,
+                  2,
+                ),
+              );
             } else {
               if (!opts.quiet) {
                 console.error('');
                 console.error('=== Dry Run Results ===');
                 console.error(`Project type: ${result.projectProfile.projectType}`);
-                console.error(`Languages: ${result.projectProfile.languages.map((l) => l.name).join(', ')}`);
-                console.error(`Frameworks: ${result.projectProfile.frameworks.map((f) => f.name).join(', ') || '(none detected)'}`);
+                console.error(
+                  `Languages: ${result.projectProfile.languages.map((l) => l.name).join(', ')}`,
+                );
+                console.error(
+                  `Frameworks: ${result.projectProfile.frameworks.map((f) => f.name).join(', ') || '(none detected)'}`,
+                );
                 console.error('');
               }
               console.log(JSON.stringify(result.inferenceResult, null, 2));
@@ -360,17 +346,23 @@ export function registerAnalyzeCommand(program: Command): void {
           } else {
             // Normal mode: print summary
             if (opts.format === 'json') {
-              console.log(JSON.stringify({
-                outputPath: result.outputPath,
-                stats: result.stats,
-                projectProfile: {
-                  projectType: result.projectProfile.projectType,
-                  languages: result.projectProfile.languages.map((l) => l.name),
-                  frameworks: result.projectProfile.frameworks.map((f) => f.name),
-                },
-                warnings: result.warnings,
-                duration: result.duration,
-              }, null, 2));
+              console.log(
+                JSON.stringify(
+                  {
+                    outputPath: result.outputPath,
+                    stats: result.stats,
+                    projectProfile: {
+                      projectType: result.projectProfile.projectType,
+                      languages: result.projectProfile.languages.map((l) => l.name),
+                      frameworks: result.projectProfile.frameworks.map((f) => f.name),
+                    },
+                    warnings: result.warnings,
+                    duration: result.duration,
+                  },
+                  null,
+                  2,
+                ),
+              );
             } else if (!opts.quiet) {
               console.error('');
               console.error('=== Analysis Complete ===');

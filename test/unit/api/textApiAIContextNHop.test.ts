@@ -96,9 +96,24 @@ describe('AI context builder N-hop context - Feature #168', () => {
         args: { engine: 'redis' },
       });
 
-      edgeAB = makeEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'authenticate' });
-      edgeBC = makeEdge({ fromNode: nodeB.id, toNode: nodeC.id, type: 'sync', label: 'query-user' });
-      edgeCD = makeEdge({ fromNode: nodeC.id, toNode: nodeD.id, type: 'data-flow', label: 'cache-sync' });
+      edgeAB = makeEdge({
+        fromNode: nodeA.id,
+        toNode: nodeB.id,
+        type: 'sync',
+        label: 'authenticate',
+      });
+      edgeBC = makeEdge({
+        fromNode: nodeB.id,
+        toNode: nodeC.id,
+        type: 'sync',
+        label: 'query-user',
+      });
+      edgeCD = makeEdge({
+        fromNode: nodeC.id,
+        toNode: nodeD.id,
+        type: 'data-flow',
+        label: 'cache-sync',
+      });
 
       graph = makeGraph([nodeA, nodeB, nodeC, nodeD], [edgeAB, edgeBC, edgeCD]);
       api = new TextApi(graph, registry);

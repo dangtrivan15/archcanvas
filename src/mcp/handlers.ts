@@ -80,9 +80,8 @@ export function handleAddNode(
     type: args.type,
     displayName: args.displayName,
     parentId: args.parentId,
-    position: args.x !== undefined || args.y !== undefined
-      ? { x: args.x ?? 0, y: args.y ?? 0 }
-      : undefined,
+    position:
+      args.x !== undefined || args.y !== undefined ? { x: args.x ?? 0, y: args.y ?? 0 } : undefined,
     args: args.args,
   });
   return JSON.stringify({ success: true, nodeId: node.id, displayName: node.displayName });
@@ -165,10 +164,7 @@ export function handleUpdateNode(
 /**
  * Handle the 'remove_node' tool call.
  */
-export function handleRemoveNode(
-  ctx: ToolHandlerContext,
-  args: { nodeId: string },
-): string {
+export function handleRemoveNode(ctx: ToolHandlerContext, args: { nodeId: string }): string {
   ctx.textApi.removeNode(args.nodeId);
   return JSON.stringify({ success: true, nodeId: args.nodeId });
 }
@@ -176,10 +172,7 @@ export function handleRemoveNode(
 /**
  * Handle the 'remove_edge' tool call.
  */
-export function handleRemoveEdge(
-  ctx: ToolHandlerContext,
-  args: { edgeId: string },
-): string {
+export function handleRemoveEdge(ctx: ToolHandlerContext, args: { edgeId: string }): string {
   ctx.textApi.removeEdge(args.edgeId);
   return JSON.stringify({ success: true, edgeId: args.edgeId });
 }
@@ -187,10 +180,7 @@ export function handleRemoveEdge(
 /**
  * Handle the 'search' tool call.
  */
-export function handleSearch(
-  ctx: ToolHandlerContext,
-  args: { query: string },
-): string {
+export function handleSearch(ctx: ToolHandlerContext, args: { query: string }): string {
   const results = ctx.textApi.search(args.query);
   return JSON.stringify({ results, count: results.length });
 }
@@ -198,10 +188,7 @@ export function handleSearch(
 /**
  * Handle the 'list_nodedefs' tool call.
  */
-export function handleListNodedefs(
-  ctx: ToolHandlerContext,
-  args: { namespace?: string },
-): string {
+export function handleListNodedefs(ctx: ToolHandlerContext, args: { namespace?: string }): string {
   if (args.namespace) {
     const defs = ctx.registry.listByNamespace(args.namespace);
     return JSON.stringify({
@@ -488,7 +475,11 @@ export async function handleAnalyzeCodebase(
       ctx.markModified();
       await ctx.save(true);
 
-      try { await ctx.saveSidecar(); } catch { /* optional */ }
+      try {
+        await ctx.saveSidecar();
+      } catch {
+        /* optional */
+      }
 
       const { summary } = mergeResult;
       return JSON.stringify({
@@ -521,18 +512,22 @@ export async function handleAnalyzeCodebase(
     // Build a text summary of the detected architecture
     const profile = result.projectProfile;
     const summaryParts: string[] = [];
-    summaryParts.push(`Architecture: ${result.inferenceResult?.architectureName ?? args.architecture_name ?? path.basename(resolvedDir)}`);
+    summaryParts.push(
+      `Architecture: ${result.inferenceResult?.architectureName ?? args.architecture_name ?? path.basename(resolvedDir)}`,
+    );
     summaryParts.push(`Project type: ${profile.projectType}`);
     if (profile.languages.length > 0) {
-      summaryParts.push(`Languages: ${profile.languages.map(l => l.name).join(', ')}`);
+      summaryParts.push(`Languages: ${profile.languages.map((l) => l.name).join(', ')}`);
     }
     if (profile.frameworks.length > 0) {
-      summaryParts.push(`Frameworks: ${profile.frameworks.map(f => f.name).join(', ')}`);
+      summaryParts.push(`Frameworks: ${profile.frameworks.map((f) => f.name).join(', ')}`);
     }
     if (profile.dataStores.length > 0) {
-      summaryParts.push(`Data stores: ${profile.dataStores.map(d => d.type).join(', ')}`);
+      summaryParts.push(`Data stores: ${profile.dataStores.map((d) => d.type).join(', ')}`);
     }
-    summaryParts.push(`Created ${result.stats.nodes} nodes, ${result.stats.edges} edges, ${result.stats.codeRefs} code references`);
+    summaryParts.push(
+      `Created ${result.stats.nodes} nodes, ${result.stats.edges} edges, ${result.stats.codeRefs} code references`,
+    );
     if (result.warnings.length > 0) {
       summaryParts.push(`Warnings: ${result.warnings.join('; ')}`);
     }
@@ -541,7 +536,10 @@ export async function handleAnalyzeCodebase(
     return JSON.stringify({
       success: true,
       output_path: result.outputPath,
-      architecture_name: result.inferenceResult?.architectureName ?? args.architecture_name ?? path.basename(resolvedDir),
+      architecture_name:
+        result.inferenceResult?.architectureName ??
+        args.architecture_name ??
+        path.basename(resolvedDir),
       nodes_created: result.stats.nodes,
       edges_created: result.stats.edges,
       code_refs_linked: result.stats.codeRefs,

@@ -52,7 +52,12 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
     node3 = makeNode({ type: 'messaging/message-queue', displayName: 'Event Queue' });
 
     edge1 = makeEdge({ fromNode: node1.id, toNode: node2.id, type: 'sync', label: 'SQL Queries' });
-    edge2 = makeEdge({ fromNode: node1.id, toNode: node3.id, type: 'async', label: 'Order Events' });
+    edge2 = makeEdge({
+      fromNode: node1.id,
+      toNode: node3.id,
+      type: 'async',
+      label: 'Order Events',
+    });
 
     graph = {
       name: 'E-Commerce',
@@ -74,9 +79,7 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
   it('starts with graph or flowchart directive', () => {
     const result = exportApi.generateMermaid(graph);
     const firstLine = result.split('\n')[0].trim();
-    expect(
-      firstLine.startsWith('graph') || firstLine.startsWith('flowchart')
-    ).toBe(true);
+    expect(firstLine.startsWith('graph') || firstLine.startsWith('flowchart')).toBe(true);
   });
 
   it('uses left-to-right direction (LR)', () => {
@@ -96,7 +99,10 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
     const result = exportApi.generateMermaid(graph);
     const lines = result.split('\n');
     // Each node line should contain a sanitized id and a label in quotes
-    const nodeLines = lines.filter(l => l.includes('"Order Service"') || l.includes('"Orders DB"') || l.includes('"Event Queue"'));
+    const nodeLines = lines.filter(
+      (l) =>
+        l.includes('"Order Service"') || l.includes('"Orders DB"') || l.includes('"Event Queue"'),
+    );
     expect(nodeLines.length).toBe(3);
   });
 
@@ -134,7 +140,7 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
     const result = exportApi.generateMermaid(graph);
     // Database node should use cylinder shape [(label)]
     const nodeLines = result.split('\n');
-    const dbLine = nodeLines.find(l => l.includes('Orders DB'));
+    const dbLine = nodeLines.find((l) => l.includes('Orders DB'));
     expect(dbLine).toBeTruthy();
     expect(dbLine).toContain('[(');
     expect(dbLine).toContain(')]');
@@ -143,7 +149,7 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
   it('uses correct shape for service nodes (rectangle: [label])', () => {
     const result = exportApi.generateMermaid(graph);
     const nodeLines = result.split('\n');
-    const serviceLine = nodeLines.find(l => l.includes('Order Service'));
+    const serviceLine = nodeLines.find((l) => l.includes('Order Service'));
     expect(serviceLine).toBeTruthy();
     // Service (compute) should use [label]
     expect(serviceLine).toMatch(/\["Order Service"\]/);
@@ -152,7 +158,7 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
   it('uses correct shape for queue nodes (stadium: ([label]))', () => {
     const result = exportApi.generateMermaid(graph);
     const nodeLines = result.split('\n');
-    const queueLine = nodeLines.find(l => l.includes('Event Queue'));
+    const queueLine = nodeLines.find((l) => l.includes('Event Queue'));
     expect(queueLine).toBeTruthy();
     expect(queueLine).toContain('([');
     expect(queueLine).toContain('])');
@@ -221,7 +227,7 @@ describe('ExportApi.generateMermaid() - Feature #59', () => {
       edges: [],
     };
     const result = exportApi.generateMermaid(gw);
-    const gwLine = result.split('\n').find(l => l.includes('API Gateway'));
+    const gwLine = result.split('\n').find((l) => l.includes('API Gateway'));
     expect(gwLine).toBeTruthy();
     expect(gwLine).toContain('{{');
     expect(gwLine).toContain('}}');

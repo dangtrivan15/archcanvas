@@ -96,10 +96,7 @@ describe('Feature #38: Undo/redo state serialized in .archc file', () => {
 
       // Import history into a new UndoManager
       const restoredManager = new UndoManager();
-      restoredManager.importHistory(
-        result.undoHistory!.entries,
-        result.undoHistory!.currentIndex,
-      );
+      restoredManager.importHistory(result.undoHistory!.entries, result.undoHistory!.currentIndex);
 
       // Step 5: Call undo() and verify it works with restored history
       expect(restoredManager.canUndo).toBe(true);
@@ -174,10 +171,7 @@ describe('Feature #38: Undo/redo state serialized in .archc file', () => {
 
       // Import and undo
       const restored = new UndoManager();
-      restored.importHistory(
-        result.undoHistory!.entries,
-        result.undoHistory!.currentIndex,
-      );
+      restored.importHistory(result.undoHistory!.entries, result.undoHistory!.currentIndex);
 
       const undone = restored.undo()!;
       expect(undone.nodes[0].displayName).toBe('Orders DB');
@@ -193,11 +187,21 @@ describe('Feature #38: Undo/redo state serialized in .archc file', () => {
       const nodeB = createNode({ type: 'compute/service', displayName: 'B' });
       graph = addNode(addNode(graph, nodeA), nodeB);
 
-      const syncEdge = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'sync call' });
+      const syncEdge = createEdge({
+        fromNode: nodeA.id,
+        toNode: nodeB.id,
+        type: 'sync',
+        label: 'sync call',
+      });
       graph = addEdge(graph, syncEdge);
       undoManager.snapshot('With sync edge', graph);
 
-      const asyncEdge = createEdge({ fromNode: nodeB.id, toNode: nodeA.id, type: 'async', label: 'event' });
+      const asyncEdge = createEdge({
+        fromNode: nodeB.id,
+        toNode: nodeA.id,
+        type: 'async',
+        label: 'event',
+      });
       graph = addEdge(graph, asyncEdge);
       undoManager.snapshot('With async edge', graph);
 
@@ -263,9 +267,7 @@ describe('Feature #38: Undo/redo state serialized in .archc file', () => {
       const node = createNode({ type: 'compute/service', displayName: 'A' });
       graph = addNode(graph, node);
 
-      const entries = [
-        { description: 'State 1', timestampMs: Date.now(), snapshot: graph },
-      ];
+      const entries = [{ description: 'State 1', timestampMs: Date.now(), snapshot: graph }];
 
       undoManager.importHistory(entries, 0);
 

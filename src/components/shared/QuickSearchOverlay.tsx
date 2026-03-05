@@ -51,10 +51,7 @@ function collectAllNodes(
  * Returns null if no match, or { indices, score } if matched.
  * Consecutive matches score higher. Earlier matches score higher.
  */
-function fuzzyMatch(
-  text: string,
-  query: string,
-): { indices: number[]; score: number } | null {
+function fuzzyMatch(text: string, query: string): { indices: number[]; score: number } | null {
   if (!query) return { indices: [], score: 0 };
 
   const lowerText = text.toLowerCase();
@@ -142,7 +139,9 @@ function HighlightedName({ name, matchIndices }: { name: string; matchIndices: n
     <span>
       {parts.map((part, i) =>
         part.highlighted ? (
-          <span key={i} className="font-bold text-blue-600">{part.text}</span>
+          <span key={i} className="font-bold text-blue-600">
+            {part.text}
+          </span>
         ) : (
           <span key={i}>{part.text}</span>
         ),
@@ -251,16 +250,12 @@ export function QuickSearchOverlay() {
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < results.length - 1 ? prev + 1 : 0,
-          );
+          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
           break;
 
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : results.length - 1,
-          );
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
           break;
 
         case 'Enter':
@@ -395,9 +390,7 @@ export function QuickSearchOverlay() {
                       matchIndices={result.matchIndices}
                     />
                     {result.parentContext && (
-                      <span className="ml-1.5 text-xs text-gray-400">
-                        {result.parentContext}
-                      </span>
+                      <span className="ml-1.5 text-xs text-gray-400">{result.parentContext}</span>
                     )}
                   </div>
                   <span className="text-[10px] text-gray-400 shrink-0">
@@ -412,21 +405,31 @@ export function QuickSearchOverlay() {
         {/* Footer hints */}
         <div className="px-3 py-1.5 border-t flex items-center gap-3 text-[10px] text-gray-400">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">↑↓</kbd>
+            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
+              ↑↓
+            </kbd>
             navigate
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">↵</kbd>
+            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
+              ↵
+            </kbd>
             jump
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">esc</kbd>
+            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
+              esc
+            </kbd>
             close
           </span>
           <span className="flex items-center gap-1 ml-auto">
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">n</kbd>
+            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
+              n
+            </kbd>
             /
-            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">N</kbd>
+            <kbd className="px-1 py-0.5 bg-gray-100 border border-gray-200 rounded font-mono">
+              N
+            </kbd>
             next/prev
           </span>
         </div>

@@ -20,7 +20,12 @@ describe('addNoteToEdge - attaches note to edge', () => {
   function createTestGraph() {
     const nodeA = createNode({ type: 'compute/service', displayName: 'Service A' });
     const nodeB = createNode({ type: 'data/database', displayName: 'Database B' });
-    const edge = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'queries' });
+    const edge = createEdge({
+      fromNode: nodeA.id,
+      toNode: nodeB.id,
+      type: 'sync',
+      label: 'queries',
+    });
 
     let graph = createEmptyGraph('Test');
     graph = addNode(graph, nodeA);

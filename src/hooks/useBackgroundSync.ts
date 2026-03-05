@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { enqueueSave as enqueueOp } from '@/core/sync/syncQueue';
-import { initSyncManager, flushQueue } from '@/core/sync/syncManager';
+import { initSyncManager } from '@/core/sync/syncManager';
 import type { SyncStatus, QueuedSaveOperation } from '@/core/sync/syncQueue';
 import { encode } from '@/core/storage/codec';
 import { graphToProto } from '@/core/storage/fileIO';
@@ -64,7 +64,9 @@ export function useBackgroundSync(): BackgroundSyncState {
       onConflict: async (op: QueuedSaveOperation) => {
         // For now, always overwrite with the local version
         // (the user's offline changes are more recent than what was on disk)
-        console.log(`[BackgroundSync] Conflict detected for "${op.fileName}", overwriting with local changes`);
+        console.log(
+          `[BackgroundSync] Conflict detected for "${op.fileName}", overwriting with local changes`,
+        );
         return 'overwrite';
       },
     });

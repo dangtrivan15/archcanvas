@@ -12,10 +12,7 @@ import type { SearchResult } from '@/types/api';
  * - path = ["node-id"] -> children of node-id
  * - path = ["a", "b"] -> children of node "b" (which is child of "a")
  */
-export function getNodesAtLevel(
-  graph: ArchGraph,
-  path: string[],
-): ArchNode[] {
+export function getNodesAtLevel(graph: ArchGraph, path: string[]): ArchNode[] {
   if (path.length === 0) {
     return graph.nodes;
   }
@@ -36,26 +33,18 @@ export function getNodesAtLevel(
  * Get edges at a given navigation level.
  * Only returns edges whose both endpoints are visible at the current level.
  */
-export function getEdgesAtLevel(
-  graph: ArchGraph,
-  path: string[],
-): ArchEdge[] {
+export function getEdgesAtLevel(graph: ArchGraph, path: string[]): ArchEdge[] {
   const visibleNodes = getNodesAtLevel(graph, path);
   const visibleIds = new Set(visibleNodes.map((n) => n.id));
 
-  return graph.edges.filter(
-    (e) => visibleIds.has(e.fromNode) && visibleIds.has(e.toNode),
-  );
+  return graph.edges.filter((e) => visibleIds.has(e.fromNode) && visibleIds.has(e.toNode));
 }
 
 /**
  * Get external (boundary) edges that cross navigation levels.
  * These connect nodes at the current level with nodes outside the current view.
  */
-export function getExternalEdges(
-  graph: ArchGraph,
-  path: string[],
-): ArchEdge[] {
+export function getExternalEdges(graph: ArchGraph, path: string[]): ArchEdge[] {
   const visibleNodes = getNodesAtLevel(graph, path);
   const visibleIds = new Set(visibleNodes.map((n) => n.id));
 
@@ -119,10 +108,7 @@ export function getNeighbors(
 /**
  * Full-text search across node names, properties, notes, and edge labels.
  */
-export function searchGraph(
-  graph: ArchGraph,
-  query: string,
-): SearchResult[] {
+export function searchGraph(graph: ArchGraph, query: string): SearchResult[] {
   if (!query.trim()) return [];
 
   const lowerQuery = query.toLowerCase();

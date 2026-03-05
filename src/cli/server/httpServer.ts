@@ -42,7 +42,12 @@ export interface HttpServerOptions {
 }
 
 interface RouteMatch {
-  handler: (req: IncomingMessage, res: ServerResponse, params: Record<string, string>, body?: unknown) => Promise<void>;
+  handler: (
+    req: IncomingMessage,
+    res: ServerResponse,
+    params: Record<string, string>,
+    body?: unknown,
+  ) => Promise<void>;
   params: Record<string, string>;
 }
 
@@ -88,7 +93,12 @@ function sendError(res: ServerResponse, statusCode: number, message: string): vo
 
 // ─── Route Matching ──────────────────────────────────────────
 
-type RouteHandler = (req: IncomingMessage, res: ServerResponse, params: Record<string, string>, body?: unknown) => Promise<void>;
+type RouteHandler = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  params: Record<string, string>,
+  body?: unknown,
+) => Promise<void>;
 
 interface Route {
   method: string;

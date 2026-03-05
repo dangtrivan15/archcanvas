@@ -17,28 +17,28 @@ const COMPONENT_SRC = readFileSync(
 describe('ShortcutHints', () => {
   describe('Source structure verification', () => {
     it('imports getShortcutManager', () => {
-      expect(COMPONENT_SRC).toContain("import { getShortcutManager }");
+      expect(COMPONENT_SRC).toContain('import { getShortcutManager }');
     });
 
     it('imports formatBindingDisplay', () => {
-      expect(COMPONENT_SRC).toContain("import { formatBindingDisplay }");
+      expect(COMPONENT_SRC).toContain('import { formatBindingDisplay }');
     });
 
     it('imports isActiveElementTextInput from focusZones', () => {
-      expect(COMPONENT_SRC).toContain("import { isActiveElementTextInput }");
+      expect(COMPONENT_SRC).toContain('import { isActiveElementTextInput }');
       expect(COMPONENT_SRC).toContain("from '@/core/input/focusZones'");
     });
 
     it('does not import CanvasMode', () => {
-      expect(COMPONENT_SRC).not.toContain("import { CanvasMode }");
+      expect(COMPONENT_SRC).not.toContain('import { CanvasMode }');
     });
 
     it('uses useCanvasStore for selectedNodeId', () => {
-      expect(COMPONENT_SRC).toContain("useCanvasStore((s) => s.selectedNodeId)");
+      expect(COMPONENT_SRC).toContain('useCanvasStore((s) => s.selectedNodeId)');
     });
 
     it('uses useCanvasStore for selectedEdgeId', () => {
-      expect(COMPONENT_SRC).toContain("useCanvasStore((s) => s.selectedEdgeId)");
+      expect(COMPONENT_SRC).toContain('useCanvasStore((s) => s.selectedEdgeId)');
     });
 
     it('has data-testid for the hints container', () => {
@@ -54,8 +54,8 @@ describe('ShortcutHints', () => {
     });
 
     it('uses localStorage for persistence', () => {
-      expect(COMPONENT_SRC).toContain("localStorage.getItem(STORAGE_KEY)");
-      expect(COMPONENT_SRC).toContain("localStorage.setItem(STORAGE_KEY");
+      expect(COMPONENT_SRC).toContain('localStorage.getItem(STORAGE_KEY)');
+      expect(COMPONENT_SRC).toContain('localStorage.setItem(STORAGE_KEY');
     });
 
     it('handles H key for toggle', () => {
@@ -63,8 +63,8 @@ describe('ShortcutHints', () => {
     });
 
     it('guards toggle with isActiveElementTextInput instead of mode check', () => {
-      expect(COMPONENT_SRC).toContain("isActiveElementTextInput()");
-      expect(COMPONENT_SRC).not.toContain("CanvasMode.Normal");
+      expect(COMPONENT_SRC).toContain('isActiveElementTextInput()');
+      expect(COMPONENT_SRC).not.toContain('CanvasMode.Normal');
     });
 
     it('uses pointer-events-none so hints do not block clicks', () => {
@@ -82,18 +82,18 @@ describe('ShortcutHints', () => {
 
   describe('Hint context logic', () => {
     it('getHints takes hasNode and hasEdge params (no mode param)', () => {
-      expect(COMPONENT_SRC).toContain("function getHints(hasNode: boolean, hasEdge: boolean)");
+      expect(COMPONENT_SRC).toContain('function getHints(hasNode: boolean, hasEdge: boolean)');
     });
 
     it('defines edge hints with change type, delete, deselect', () => {
-      expect(COMPONENT_SRC).toContain("hasEdge");
+      expect(COMPONENT_SRC).toContain('hasEdge');
       expect(COMPONENT_SRC).toContain("'change type'");
       expect(COMPONENT_SRC).toContain("'delete'");
       expect(COMPONENT_SRC).toContain("'deselect'");
     });
 
     it('defines node hints with delete, rename, commands', () => {
-      expect(COMPONENT_SRC).toContain("hasNode");
+      expect(COMPONENT_SRC).toContain('hasNode');
       expect(COMPONENT_SRC).toContain("'delete'");
       expect(COMPONENT_SRC).toContain("'rename'");
       expect(COMPONENT_SRC).toContain("'commands'");
@@ -118,19 +118,19 @@ describe('ShortcutHints', () => {
     });
 
     it('does not have Connect mode hints', () => {
-      expect(COMPONENT_SRC).not.toContain("CanvasMode.Connect");
+      expect(COMPONENT_SRC).not.toContain('CanvasMode.Connect');
     });
 
     it('does not have Edit mode hints', () => {
-      expect(COMPONENT_SRC).not.toContain("CanvasMode.Edit");
+      expect(COMPONENT_SRC).not.toContain('CanvasMode.Edit');
     });
 
     it('uses ShortcutManager getBinding for dynamic bindings', () => {
-      expect(COMPONENT_SRC).toContain("sm.getBinding(actionId)");
+      expect(COMPONENT_SRC).toContain('sm.getBinding(actionId)');
     });
 
     it('uses memoization for hint computation', () => {
-      expect(COMPONENT_SRC).toContain("useMemo");
+      expect(COMPONENT_SRC).toContain('useMemo');
     });
   });
 

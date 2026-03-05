@@ -139,10 +139,7 @@ export function registerListNodedefsCommand(program: Command): void {
           }>;
           if (items.length === 0) return '(no nodedefs found)';
           // Group by namespace
-          const grouped = new Map<
-            string,
-            Array<{ type: string; displayName: string }>
-          >();
+          const grouped = new Map<string, Array<{ type: string; displayName: string }>>();
           for (const item of items) {
             const ns = item.namespace;
             if (!grouped.has(ns)) grouped.set(ns, []);

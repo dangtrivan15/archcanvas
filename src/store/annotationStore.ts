@@ -7,7 +7,7 @@
  */
 
 import { create } from 'zustand';
-import type { Annotation, AnnotationPathData } from '@/types/graph';
+import type { Annotation } from '@/types/graph';
 import { generateId } from '@/utils/idGenerator';
 
 export interface AnnotationStoreState {
@@ -68,7 +68,8 @@ export const useAnnotationStore = create<AnnotationStoreState>((set, get) => ({
   undoStack: [],
 
   enterDrawingMode: () => set({ isDrawingMode: true, isEraserMode: false }),
-  exitDrawingMode: () => set({ isDrawingMode: false, isEraserMode: false, currentAnnotation: null }),
+  exitDrawingMode: () =>
+    set({ isDrawingMode: false, isEraserMode: false, currentAnnotation: null }),
   toggleEraserMode: () => set((s) => ({ isEraserMode: !s.isEraserMode })),
   setColor: (color) => set({ color, isEraserMode: false }),
   setStrokeWidth: (strokeWidth) => set({ strokeWidth }),
@@ -103,10 +104,12 @@ export const useAnnotationStore = create<AnnotationStoreState>((set, get) => ({
 
     const annotation: Annotation = {
       id: generateId(),
-      paths: [{
-        points: currentAnnotation.points,
-        pressures: currentAnnotation.pressures,
-      }],
+      paths: [
+        {
+          points: currentAnnotation.points,
+          pressures: currentAnnotation.pressures,
+        },
+      ],
       color,
       strokeWidth,
       nodeId,
@@ -119,8 +122,7 @@ export const useAnnotationStore = create<AnnotationStoreState>((set, get) => ({
 
   cancelStroke: () => set({ currentAnnotation: null }),
 
-  pushUndo: (annotationId) =>
-    set((s) => ({ undoStack: [...s.undoStack, annotationId] })),
+  pushUndo: (annotationId) => set((s) => ({ undoStack: [...s.undoStack, annotationId] })),
 
   popUndo: () => {
     const { undoStack } = get();

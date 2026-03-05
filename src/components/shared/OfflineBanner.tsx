@@ -51,7 +51,10 @@ export function OfflineBanner() {
       <WifiOff className="w-4 h-4 shrink-0" />
       <span>You are offline — changes will be saved locally</span>
       {cachedFileCount > 0 && (
-        <span className="flex items-center gap-1 ml-auto text-xs text-amber-600" data-testid="offline-cached-count">
+        <span
+          className="flex items-center gap-1 ml-auto text-xs text-amber-600"
+          data-testid="offline-cached-count"
+        >
           <HardDrive className="w-3.5 h-3.5" />
           {cachedFileCount} file{cachedFileCount !== 1 ? 's' : ''} available offline
         </span>

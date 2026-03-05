@@ -93,9 +93,7 @@ describe('formatAsTable', () => {
   });
 
   it('respects minWidth on columns', () => {
-    const wideHeaders: TableColumn[] = [
-      { key: 'x', header: 'X', minWidth: 20 },
-    ];
+    const wideHeaders: TableColumn[] = [{ key: 'x', header: 'X', minWidth: 20 }];
     const rows = [{ x: 'hi' }];
     const result = formatAsTable(wideHeaders, rows);
     const lines = result.split('\n');
@@ -327,10 +325,7 @@ describe('formatOutput', () => {
   });
 
   it('auto-generates table from array data', () => {
-    const result = formatOutput(
-      [{ name: 'A', value: 1 }],
-      'table',
-    );
+    const result = formatOutput([{ name: 'A', value: 1 }], 'table');
     expect(result).toContain('name');
     expect(result).toContain('value');
     expect(result).toContain('A');

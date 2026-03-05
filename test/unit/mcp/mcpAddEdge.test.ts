@@ -31,14 +31,18 @@ describe('MCP add_edge tool - Feature #180', () => {
     ctx = { textApi, registry };
 
     // Step 1: Create 2 nodes via MCP
-    const nodeA = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Service A',
-    }));
-    const nodeB = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database',
-      displayName: 'Database B',
-    }));
+    const nodeA = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Service A',
+      }),
+    );
+    const nodeB = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'Database B',
+      }),
+    );
     nodeAId = nodeA.nodeId;
     nodeBId = nodeB.nodeId;
   });
@@ -96,11 +100,13 @@ describe('MCP add_edge tool - Feature #180', () => {
 
   // Additional: Create edge with different types
   it('creates sync edge', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeAId,
-      toNode: nodeBId,
-      type: 'sync',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeAId,
+        toNode: nodeBId,
+        type: 'sync',
+      }),
+    );
     expect(result.success).toBe(true);
 
     const desc = JSON.parse(dispatchToolCall(ctx, 'describe', { format: 'structured' }));
@@ -108,11 +114,13 @@ describe('MCP add_edge tool - Feature #180', () => {
   });
 
   it('creates async edge', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeAId,
-      toNode: nodeBId,
-      type: 'async',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeAId,
+        toNode: nodeBId,
+        type: 'async',
+      }),
+    );
     expect(result.success).toBe(true);
 
     const desc = JSON.parse(dispatchToolCall(ctx, 'describe', { format: 'structured' }));
@@ -120,11 +128,13 @@ describe('MCP add_edge tool - Feature #180', () => {
   });
 
   it('creates data-flow edge', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeAId,
-      toNode: nodeBId,
-      type: 'data-flow',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeAId,
+        toNode: nodeBId,
+        type: 'data-flow',
+      }),
+    );
     expect(result.success).toBe(true);
 
     const desc = JSON.parse(dispatchToolCall(ctx, 'describe', { format: 'structured' }));
@@ -133,12 +143,14 @@ describe('MCP add_edge tool - Feature #180', () => {
 
   // Additional: Create edge with label
   it('creates an edge with a label', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeAId,
-      toNode: nodeBId,
-      type: 'sync',
-      label: 'HTTP REST',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeAId,
+        toNode: nodeBId,
+        type: 'sync',
+        label: 'HTTP REST',
+      }),
+    );
     expect(result.success).toBe(true);
 
     const desc = JSON.parse(dispatchToolCall(ctx, 'describe', { format: 'structured' }));
@@ -147,16 +159,20 @@ describe('MCP add_edge tool - Feature #180', () => {
 
   // Verify edge ID uniqueness
   it('generates unique edge IDs', () => {
-    const result1 = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeAId,
-      toNode: nodeBId,
-      type: 'sync',
-    }));
-    const result2 = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeBId,
-      toNode: nodeAId,
-      type: 'async',
-    }));
+    const result1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeAId,
+        toNode: nodeBId,
+        type: 'sync',
+      }),
+    );
+    const result2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeBId,
+        toNode: nodeAId,
+        type: 'async',
+      }),
+    );
 
     expect(result1.edgeId).not.toBe(result2.edgeId);
   });
@@ -204,10 +220,12 @@ describe('MCP add_edge tool - Feature #180', () => {
   // Verify multiple edges
   it('creates multiple edges that all appear in describe', () => {
     // Create a third node
-    const nodeC = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'messaging/message-queue',
-      displayName: 'Message Queue',
-    }));
+    const nodeC = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'messaging/message-queue',
+        displayName: 'Message Queue',
+      }),
+    );
 
     dispatchToolCall(ctx, 'add_edge', {
       fromNode: nodeAId,

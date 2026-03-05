@@ -144,9 +144,9 @@ describe('WebFileSystemAdapter', () => {
 
     it('returns null when user cancels the picker', async () => {
       (window as any).showOpenFilePicker = vi.fn();
-      (window as any).showSaveFilePicker = vi.fn().mockRejectedValue(
-        new DOMException('User cancelled', 'AbortError'),
-      );
+      (window as any).showSaveFilePicker = vi
+        .fn()
+        .mockRejectedValue(new DOMException('User cancelled', 'AbortError'));
 
       const result = await adapter.saveFileAs(makeTestData(), 'test.archc');
       expect(result).toBeNull();
@@ -154,12 +154,13 @@ describe('WebFileSystemAdapter', () => {
 
     it('propagates non-abort errors from the picker', async () => {
       (window as any).showOpenFilePicker = vi.fn();
-      (window as any).showSaveFilePicker = vi.fn().mockRejectedValue(
-        new Error('Permission denied'),
-      );
+      (window as any).showSaveFilePicker = vi
+        .fn()
+        .mockRejectedValue(new Error('Permission denied'));
 
-      await expect(adapter.saveFileAs(makeTestData(), 'test.archc'))
-        .rejects.toThrow('Permission denied');
+      await expect(adapter.saveFileAs(makeTestData(), 'test.archc')).rejects.toThrow(
+        'Permission denied',
+      );
     });
   });
 
@@ -208,14 +209,21 @@ describe('WebFileSystemAdapter', () => {
         const el = originalCreateElement(tag);
         if (tag === 'a') {
           el.click = vi.fn();
-          const origDesc = Object.getOwnPropertyDescriptor(HTMLAnchorElement.prototype, 'download')
-            || { set: (v: string) => el.setAttribute('download', v), get: () => el.getAttribute('download') };
+          const origDesc = Object.getOwnPropertyDescriptor(
+            HTMLAnchorElement.prototype,
+            'download',
+          ) || {
+            set: (v: string) => el.setAttribute('download', v),
+            get: () => el.getAttribute('download'),
+          };
           Object.defineProperty(el, 'download', {
             set(val: string) {
               capturedDownloadAttr = val;
               origDesc.set?.call(el, val);
             },
-            get() { return capturedDownloadAttr; },
+            get() {
+              return capturedDownloadAttr;
+            },
           });
         }
         return el;
@@ -272,8 +280,12 @@ describe('WebFileSystemAdapter', () => {
         if (tag === 'a') {
           el.click = clickSpy;
           Object.defineProperty(el, 'download', {
-            set(val: string) { capturedDownloadAttr = val; },
-            get() { return capturedDownloadAttr; },
+            set(val: string) {
+              capturedDownloadAttr = val;
+            },
+            get() {
+              return capturedDownloadAttr;
+            },
           });
         }
         return el;
@@ -371,7 +383,9 @@ describe('WebFileSystemAdapter', () => {
       vi.spyOn(document.body, 'removeChild').mockImplementation((el) => el);
 
       let resolved = false;
-      const savePromise = adapter.saveFile(data).then(() => { resolved = true; });
+      const savePromise = adapter.saveFile(data).then(() => {
+        resolved = true;
+      });
 
       // Should not be resolved immediately
       await vi.advanceTimersByTimeAsync(0);

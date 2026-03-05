@@ -97,7 +97,9 @@ describe('Keyboard Edge Type Cycling', () => {
 
     it('cycles async → data-flow', () => {
       const { edge } = setupStore('async');
-      useCoreStore.getState().updateEdge(edge.id, { type: 'data-flow' }, 'Change edge type to Data Flow');
+      useCoreStore
+        .getState()
+        .updateEdge(edge.id, { type: 'data-flow' }, 'Change edge type to Data Flow');
       const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('data-flow');
     });
@@ -112,7 +114,11 @@ describe('Keyboard Edge Type Cycling', () => {
     it('full cycle: sync → async → data-flow → sync', () => {
       const { edge } = setupStore('sync');
       const types: EdgeType[] = ['sync', 'async', 'data-flow'];
-      const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+      const typeLabels: Record<string, string> = {
+        sync: 'Sync',
+        async: 'Async',
+        'data-flow': 'Data Flow',
+      };
 
       for (let i = 0; i < 3; i++) {
         const currentType = types[i]!;
@@ -121,7 +127,9 @@ describe('Keyboard Edge Type Cycling', () => {
         const currentEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
         expect(currentEdge!.type).toBe(currentType);
 
-        useCoreStore.getState().updateEdge(edge.id, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+        useCoreStore
+          .getState()
+          .updateEdge(edge.id, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
       }
 
       // After 3 cycles, should be back to sync
@@ -161,7 +169,9 @@ describe('Keyboard Edge Type Cycling', () => {
       expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('sync');
 
       useCoreStore.getState().redo();
-      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('data-flow');
+      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe(
+        'data-flow',
+      );
     });
 
     it('undo snapshot has descriptive message', () => {

@@ -102,7 +102,7 @@ describe('NodeFileSystemAdapter: readFile', () => {
 
   it('reads binary data correctly', async () => {
     const filePath = tmpFile('binary.bin');
-    const binary = Buffer.from([0x00, 0xFF, 0x41, 0x52, 0x43, 0x48]);
+    const binary = Buffer.from([0x00, 0xff, 0x41, 0x52, 0x43, 0x48]);
     fs.writeFileSync(filePath, binary);
 
     const adapter = new NodeFileSystemAdapter();
@@ -110,13 +110,15 @@ describe('NodeFileSystemAdapter: readFile', () => {
 
     expect(result.data.length).toBe(6);
     expect(result.data[0]).toBe(0x00);
-    expect(result.data[1]).toBe(0xFF);
+    expect(result.data[1]).toBe(0xff);
     expect(result.data[2]).toBe(0x41);
   });
 
   it('throws NodeFileSystemError for non-existent file', async () => {
     const adapter = new NodeFileSystemAdapter();
-    await expect(adapter.readFile(tmpFile('nonexistent.archc'))).rejects.toThrow(NodeFileSystemError);
+    await expect(adapter.readFile(tmpFile('nonexistent.archc'))).rejects.toThrow(
+      NodeFileSystemError,
+    );
     await expect(adapter.readFile(tmpFile('nonexistent.archc'))).rejects.toThrow('File not found');
   });
 

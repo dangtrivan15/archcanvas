@@ -38,7 +38,9 @@ function makeNode(overrides: Partial<ArchNode> & { id: string; displayName: stri
   };
 }
 
-function makeEdge(overrides: Partial<ArchEdge> & { id: string; fromNode: string; toNode: string }): ArchEdge {
+function makeEdge(
+  overrides: Partial<ArchEdge> & { id: string; fromNode: string; toNode: string },
+): ArchEdge {
   return {
     type: 'sync',
     properties: {},
@@ -58,7 +60,9 @@ function makeGraph(nodes: ArchNode[], edges: ArchEdge[] = []): ArchGraph {
   };
 }
 
-function makeInferredNode(overrides: Partial<InferredNode> & { id: string; displayName: string }): InferredNode {
+function makeInferredNode(
+  overrides: Partial<InferredNode> & { id: string; displayName: string },
+): InferredNode {
   return {
     type: 'compute/service',
     description: '',
@@ -68,7 +72,9 @@ function makeInferredNode(overrides: Partial<InferredNode> & { id: string; displ
   };
 }
 
-function makeInferredEdge(overrides: Partial<InferredEdge> & { from: string; to: string }): InferredEdge {
+function makeInferredEdge(
+  overrides: Partial<InferredEdge> & { from: string; to: string },
+): InferredEdge {
   return {
     type: 'SYNC',
     label: '',
@@ -76,10 +82,7 @@ function makeInferredEdge(overrides: Partial<InferredEdge> & { from: string; to:
   };
 }
 
-function makeInferenceResult(
-  nodes: InferredNode[],
-  edges: InferredEdge[] = [],
-): InferenceResult {
+function makeInferenceResult(nodes: InferredNode[], edges: InferredEdge[] = []): InferenceResult {
   return {
     architectureName: 'Test Architecture',
     architectureDescription: 'Test',
@@ -117,12 +120,8 @@ describe('matchNodes', () => {
   });
 
   it('matches nodes by normalized display name', () => {
-    const existing = [
-      makeNode({ id: 'node-1', displayName: 'Auth Service' }),
-    ];
-    const inferred = [
-      makeInferredNode({ id: 'inferred-1', displayName: 'Auth Service' }),
-    ];
+    const existing = [makeNode({ id: 'node-1', displayName: 'Auth Service' })];
+    const inferred = [makeInferredNode({ id: 'inferred-1', displayName: 'Auth Service' })];
 
     const result = matchNodes(existing, inferred);
     expect(result.matches).toHaveLength(1);
@@ -130,12 +129,8 @@ describe('matchNodes', () => {
   });
 
   it('matches display names with different suffixes (e.g., "Auth" vs "Auth Service")', () => {
-    const existing = [
-      makeNode({ id: 'node-1', displayName: 'Auth' }),
-    ];
-    const inferred = [
-      makeInferredNode({ id: 'inferred-1', displayName: 'Auth Service' }),
-    ];
+    const existing = [makeNode({ id: 'node-1', displayName: 'Auth' })];
+    const inferred = [makeInferredNode({ id: 'inferred-1', displayName: 'Auth Service' })];
 
     const result = matchNodes(existing, inferred);
     expect(result.matches).toHaveLength(1);
@@ -143,9 +138,7 @@ describe('matchNodes', () => {
   });
 
   it('reports unmatched existing nodes', () => {
-    const existing = [
-      makeNode({ id: 'node-1', displayName: 'Old Component' }),
-    ];
+    const existing = [makeNode({ id: 'node-1', displayName: 'Old Component' })];
     const inferred: InferredNode[] = [];
 
     const result = matchNodes(existing, inferred);
@@ -156,9 +149,7 @@ describe('matchNodes', () => {
 
   it('reports unmatched inferred nodes', () => {
     const existing: ArchNode[] = [];
-    const inferred = [
-      makeInferredNode({ id: 'inferred-1', displayName: 'New Component' }),
-    ];
+    const inferred = [makeInferredNode({ id: 'inferred-1', displayName: 'New Component' })];
 
     const result = matchNodes(existing, inferred);
     expect(result.matches).toHaveLength(0);
@@ -217,12 +208,30 @@ describe('mergeAnalysis', () => {
       makeNode({
         id: 'node-1',
         displayName: 'API',
-        notes: [{ id: 'n1', author: 'ai-analyzer', timestampMs: 0, content: 'test', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n1',
+            author: 'ai-analyzer',
+            timestampMs: 0,
+            content: 'test',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
       makeNode({
         id: 'node-2',
         displayName: 'Database',
-        notes: [{ id: 'n2', author: 'ai-analyzer', timestampMs: 0, content: 'test', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n2',
+            author: 'ai-analyzer',
+            timestampMs: 0,
+            content: 'test',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
     ]);
 
@@ -260,7 +269,16 @@ describe('mergeAnalysis', () => {
       makeNode({
         id: 'ai-node',
         displayName: 'Old Service',
-        notes: [{ id: 'n1', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n1',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
     ]);
 
@@ -298,9 +316,7 @@ describe('mergeAnalysis', () => {
   });
 
   it('reports type changes with manual-wins strategy', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'Cache', type: 'data/database' }),
@@ -309,13 +325,11 @@ describe('mergeAnalysis', () => {
     const result = mergeAnalysis(graph, inference, { conflictStrategy: 'manual-wins' });
 
     expect(result.summary.typeChanges).toBe(1);
-    expect(result.warnings.some(w => w.includes('manual-wins'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('manual-wins'))).toBe(true);
   });
 
   it('reports type changes with ai-wins strategy', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'Cache', type: 'data/database' }),
@@ -324,7 +338,7 @@ describe('mergeAnalysis', () => {
     const result = mergeAnalysis(graph, inference, { conflictStrategy: 'ai-wins' });
 
     expect(result.summary.typeChanges).toBe(1);
-    expect(result.warnings.some(w => w.includes('ai-wins'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('ai-wins'))).toBe(true);
   });
 
   it('adds new edges from inference', () => {
@@ -410,7 +424,16 @@ describe('mergeAnalysis', () => {
           fromNode: 'node-1',
           toNode: 'node-2',
           type: 'sync',
-          notes: [{ id: 'n1', author: 'user', timestampMs: 0, content: 'Manual note', tags: [], status: 'none' }],
+          notes: [
+            {
+              id: 'n1',
+              author: 'user',
+              timestampMs: 0,
+              content: 'Manual note',
+              tags: [],
+              status: 'none',
+            },
+          ],
         }),
       ],
     );
@@ -432,9 +455,7 @@ describe('mergeAnalysis', () => {
 
 describe('applyMerge', () => {
   it('adds new nodes to the graph', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'API' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'API' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'API' }),
@@ -445,8 +466,8 @@ describe('applyMerge', () => {
     const merged = applyMerge(graph, mergeResult);
 
     expect(merged.nodes).toHaveLength(2);
-    expect(merged.nodes.find(n => n.displayName === 'New Cache')).toBeDefined();
-    expect(merged.nodes.find(n => n.displayName === 'New Cache')?.type).toBe('data/cache');
+    expect(merged.nodes.find((n) => n.displayName === 'New Cache')).toBeDefined();
+    expect(merged.nodes.find((n) => n.displayName === 'New Cache')?.type).toBe('data/cache');
   });
 
   it('adds new code refs to matched nodes', () => {
@@ -472,15 +493,13 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference);
     const merged = applyMerge(graph, mergeResult);
 
-    const apiNode = merged.nodes.find(n => n.id === 'node-1');
+    const apiNode = merged.nodes.find((n) => n.id === 'node-1');
     expect(apiNode?.codeRefs).toHaveLength(2);
-    expect(apiNode?.codeRefs.some(cr => cr.path === 'src/api/routes.ts')).toBe(true);
+    expect(apiNode?.codeRefs.some((cr) => cr.path === 'src/api/routes.ts')).toBe(true);
   });
 
   it('updates type when ai-wins strategy', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'Cache', type: 'data/database' }),
@@ -490,14 +509,12 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference, options);
     const merged = applyMerge(graph, mergeResult, options);
 
-    const node = merged.nodes.find(n => n.id === 'node-1');
+    const node = merged.nodes.find((n) => n.id === 'node-1');
     expect(node?.type).toBe('data/database');
   });
 
   it('keeps existing type when manual-wins strategy', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'Cache', type: 'data/cache' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'Cache', type: 'data/database' }),
@@ -507,7 +524,7 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference, options);
     const merged = applyMerge(graph, mergeResult, options);
 
-    const node = merged.nodes.find(n => n.id === 'node-1');
+    const node = merged.nodes.find((n) => n.id === 'node-1');
     expect(node?.type).toBe('data/cache');
   });
 
@@ -516,7 +533,16 @@ describe('applyMerge', () => {
       makeNode({
         id: 'ai-node',
         displayName: 'Old Service',
-        notes: [{ id: 'n1', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n1',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
     ]);
 
@@ -524,8 +550,8 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference);
     const merged = applyMerge(graph, mergeResult);
 
-    const node = merged.nodes.find(n => n.id === 'ai-node');
-    expect(node?.notes.some(n => n.tags.includes('possibly-removed'))).toBe(true);
+    const node = merged.nodes.find((n) => n.id === 'ai-node');
+    expect(node?.notes.some((n) => n.tags.includes('possibly-removed'))).toBe(true);
   });
 
   it('adds new edges from inference to the graph', () => {
@@ -574,14 +600,12 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference);
     const merged = applyMerge(graph, mergeResult);
 
-    const edge = merged.edges.find(e => e.id === 'edge-1');
-    expect(edge?.notes.some(n => n.tags.includes('possibly-removed'))).toBe(true);
+    const edge = merged.edges.find((e) => e.id === 'edge-1');
+    expect(edge?.notes.some((n) => n.tags.includes('possibly-removed'))).toBe(true);
   });
 
   it('does not mutate the original graph', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'API' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'API' })]);
 
     const originalNodeCount = graph.nodes.length;
 
@@ -606,10 +630,10 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference);
     const merged = applyMerge(graph, mergeResult);
 
-    const newNode = merged.nodes.find(n => n.displayName === 'New API');
+    const newNode = merged.nodes.find((n) => n.displayName === 'New API');
     expect(newNode).toBeDefined();
-    expect(newNode?.notes.some(n => n.tags.includes('newly-detected'))).toBe(true);
-    expect(newNode?.notes.some(n => n.tags.includes('ai-inferred'))).toBe(true);
+    expect(newNode?.notes.some((n) => n.tags.includes('newly-detected'))).toBe(true);
+    expect(newNode?.notes.some((n) => n.tags.includes('ai-inferred'))).toBe(true);
   });
 
   it('handles complex scenario: renamed components', () => {
@@ -644,17 +668,44 @@ describe('applyMerge', () => {
       makeNode({
         id: 'node-1',
         displayName: 'API',
-        notes: [{ id: 'n1', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n1',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
       makeNode({
         id: 'node-2',
         displayName: 'Legacy Service',
-        notes: [{ id: 'n2', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n2',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
       makeNode({
         id: 'node-3',
         displayName: 'DB',
-        notes: [{ id: 'n3', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n3',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
     ]);
 
@@ -672,9 +723,7 @@ describe('applyMerge', () => {
   });
 
   it('handles adding new components', () => {
-    const graph = makeGraph([
-      makeNode({ id: 'node-1', displayName: 'API' }),
-    ]);
+    const graph = makeGraph([makeNode({ id: 'node-1', displayName: 'API' })]);
 
     const inference = makeInferenceResult([
       makeInferredNode({ id: 'inf-1', displayName: 'API' }),
@@ -686,7 +735,7 @@ describe('applyMerge', () => {
 
     expect(result.matched).toHaveLength(1);
     expect(result.added).toHaveLength(2);
-    expect(result.added.map(n => n.displayName).sort()).toEqual(['New Queue', 'New Worker']);
+    expect(result.added.map((n) => n.displayName).sort()).toEqual(['New Queue', 'New Worker']);
   });
 
   it('skips change notes when addChangeNotes is false', () => {
@@ -694,7 +743,16 @@ describe('applyMerge', () => {
       makeNode({
         id: 'ai-node',
         displayName: 'Old Service',
-        notes: [{ id: 'n1', author: 'ai', timestampMs: 0, content: 'desc', tags: ['ai-inferred'], status: 'none' }],
+        notes: [
+          {
+            id: 'n1',
+            author: 'ai',
+            timestampMs: 0,
+            content: 'desc',
+            tags: ['ai-inferred'],
+            status: 'none',
+          },
+        ],
       }),
     ]);
 
@@ -702,8 +760,8 @@ describe('applyMerge', () => {
     const mergeResult = mergeAnalysis(graph, inference);
     const merged = applyMerge(graph, mergeResult, { addChangeNotes: false });
 
-    const node = merged.nodes.find(n => n.id === 'ai-node');
+    const node = merged.nodes.find((n) => n.id === 'ai-node');
     // Should NOT have a possibly-removed note since addChangeNotes is false
-    expect(node?.notes.some(n => n.tags.includes('possibly-removed'))).toBe(false);
+    expect(node?.notes.some((n) => n.tags.includes('possibly-removed'))).toBe(false);
   });
 });

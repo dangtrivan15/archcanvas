@@ -11,11 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  createEmptyGraph,
-  createNode,
-  addNode,
-} from '@/core/graph/graphEngine';
+import { createEmptyGraph, createNode, addNode } from '@/core/graph/graphEngine';
 import { searchGraph } from '@/core/graph/graphQuery';
 
 describe('Feature #30: Full-text search finds matches in node names', () => {
@@ -50,9 +46,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const results = searchGraph(graph, 'Order');
     expect(results.length).toBeGreaterThan(0);
 
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Order Service');
   });
@@ -83,9 +77,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const { graph, orderService } = createTestGraph();
 
     const results = searchGraph(graph, 'service');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Order Service');
   });
@@ -94,9 +86,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const { graph, orderService } = createTestGraph();
 
     const results = searchGraph(graph, 'SERVICE');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Order Service');
   });
@@ -105,9 +95,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const { graph, orderService } = createTestGraph();
 
     const results = searchGraph(graph, 'oRdEr');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
   });
 
@@ -126,9 +114,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const { graph, paymentGateway } = createTestGraph();
 
     const results = searchGraph(graph, 'Payment');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === paymentGateway.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === paymentGateway.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Payment Gateway');
   });
@@ -137,9 +123,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const { graph, userDatabase } = createTestGraph();
 
     const results = searchGraph(graph, 'Database');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === userDatabase.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === userDatabase.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('User Database');
   });
@@ -155,9 +139,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
     const results = searchGraph(graph, 'user');
     const nodeResults = results.filter((r) => r.type === 'node');
     // At least 'User Database' should match
-    expect(nodeResults.some((r) => r.displayName === 'User Database')).toBe(
-      true,
-    );
+    expect(nodeResults.some((r) => r.displayName === 'User Database')).toBe(true);
   });
 
   it('should find nodes with partial name match (substring)', () => {
@@ -165,9 +147,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
 
     // 'rder' is a substring of 'Order'
     const results = searchGraph(graph, 'rder');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
   });
 
@@ -233,9 +213,7 @@ describe('Feature #30: Full-text search finds matches in node names', () => {
 
     // Search for child node name
     const results = searchGraph(graph, 'Handler');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === child.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === child.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Child Handler');
     expect(match!.parentId).toBe(parent.id);

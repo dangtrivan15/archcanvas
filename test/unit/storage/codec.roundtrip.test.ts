@@ -2,7 +2,13 @@
  * Regression test for Feature 3: Binary codec roundtrip preserves data integrity.
  */
 import { describe, it, expect } from 'vitest';
-import { encode, decode, isArchcFile, readFormatVersion, IntegrityError } from '@/core/storage/codec';
+import {
+  encode,
+  decode,
+  isArchcFile,
+  readFormatVersion,
+  IntegrityError,
+} from '@/core/storage/codec';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { FORMAT_VERSION } from '@/utils/constants';
 

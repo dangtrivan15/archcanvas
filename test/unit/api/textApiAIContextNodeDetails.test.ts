@@ -67,9 +67,21 @@ describe('AI context builder selected node details - Feature #167', () => {
     let api: TextApi;
 
     beforeAll(() => {
-      const note1 = makeNote({ author: 'human', content: 'Primary API service handling all inbound traffic' });
-      const note2 = makeNote({ author: 'ai', content: 'Consider adding rate limiting', status: 'pending', suggestionType: 'improvement' });
-      const note3 = makeNote({ author: 'human', content: 'Deployed on Kubernetes', tags: ['infra'] });
+      const note1 = makeNote({
+        author: 'human',
+        content: 'Primary API service handling all inbound traffic',
+      });
+      const note2 = makeNote({
+        author: 'ai',
+        content: 'Consider adding rate limiting',
+        status: 'pending',
+        suggestionType: 'improvement',
+      });
+      const note3 = makeNote({
+        author: 'human',
+        content: 'Deployed on Kubernetes',
+        tags: ['infra'],
+      });
 
       node = makeNode({
         type: 'compute/service',
@@ -177,7 +189,10 @@ describe('AI context builder selected node details - Feature #167', () => {
 
       expect(ctx.selectedNode!.codeRefs[0]).toEqual({ path: 'src/api/server.ts', role: 'source' });
       expect(ctx.selectedNode!.codeRefs[1]).toEqual({ path: 'api/openapi.yaml', role: 'api_spec' });
-      expect(ctx.selectedNode!.codeRefs[2]).toEqual({ path: 'k8s/deployment.yaml', role: 'deployment' });
+      expect(ctx.selectedNode!.codeRefs[2]).toEqual({
+        path: 'k8s/deployment.yaml',
+        role: 'deployment',
+      });
     });
   });
 

@@ -18,8 +18,14 @@ describe('shapeRegistry', () => {
     expect(shapeNames).toHaveLength(8);
     expect(shapeNames).toEqual(
       expect.arrayContaining([
-        'rectangle', 'cylinder', 'hexagon', 'parallelogram',
-        'cloud', 'stadium', 'document', 'badge',
+        'rectangle',
+        'cylinder',
+        'hexagon',
+        'parallelogram',
+        'cloud',
+        'stadium',
+        'document',
+        'badge',
       ]),
     );
   });

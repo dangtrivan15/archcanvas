@@ -115,9 +115,13 @@ describe('CLI init Command', () => {
       program.exitOverride();
 
       await program.parseAsync([
-        'node', 'archcanvas', 'init',
-        '--name', 'My Architecture',
-        '--output', outputPath,
+        'node',
+        'archcanvas',
+        'init',
+        '--name',
+        'My Architecture',
+        '--output',
+        outputPath,
         '-q',
       ]);
       expect(fs.existsSync(outputPath)).toBe(true);
@@ -188,8 +192,11 @@ describe('CLI init Command', () => {
       program.exitOverride();
 
       await program.parseAsync([
-        'node', 'archcanvas', 'init',
-        '--output', outputPath,
+        'node',
+        'archcanvas',
+        'init',
+        '--output',
+        outputPath,
         '--force',
         '-q',
       ]);
@@ -252,9 +259,13 @@ describe('CLI init Command', () => {
       });
 
       await program.parseAsync([
-        'node', 'archcanvas', 'init',
-        '--output', outputPath,
-        '--format', 'json',
+        'node',
+        'archcanvas',
+        'init',
+        '--output',
+        outputPath,
+        '--format',
+        'json',
         '-q',
       ]);
 

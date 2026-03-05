@@ -7,7 +7,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useUIStore } from '@/store/uiStore';
-import { useResponsiveLayout, NARROW_BREAKPOINT, VERY_NARROW_BREAKPOINT } from '@/hooks/useResponsiveLayout';
+import {
+  useResponsiveLayout,
+  NARROW_BREAKPOINT,
+  VERY_NARROW_BREAKPOINT,
+} from '@/hooks/useResponsiveLayout';
 
 // Helper to simulate window resize
 function simulateResize(width: number) {
@@ -18,7 +22,11 @@ function simulateResize(width: number) {
 describe('Responsive Layout', () => {
   beforeEach(() => {
     // Reset to wide window with default panel states
-    Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+    Object.defineProperty(window, 'innerWidth', {
+      value: 1280,
+      writable: true,
+      configurable: true,
+    });
     useUIStore.setState({
       leftPanelOpen: true,
       rightPanelOpen: true,
@@ -45,19 +53,31 @@ describe('Responsive Layout', () => {
 
   describe('Panel behavior at normal width', () => {
     it('keeps left panel open at normal width', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
       expect(useUIStore.getState().leftPanelOpen).toBe(true);
     });
 
     it('keeps right panel open at normal width', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
       expect(useUIStore.getState().rightPanelOpen).toBe(true);
     });
 
     it('keeps both panels open at width just above narrow breakpoint', () => {
-      Object.defineProperty(window, 'innerWidth', { value: NARROW_BREAKPOINT, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: NARROW_BREAKPOINT,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
       expect(useUIStore.getState().leftPanelOpen).toBe(true);
       expect(useUIStore.getState().rightPanelOpen).toBe(true);
@@ -66,7 +86,11 @@ describe('Responsive Layout', () => {
 
   describe('Auto-close panels on narrow resize', () => {
     it('closes left panel when window shrinks below NARROW_BREAKPOINT', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
 
       act(() => {
@@ -77,7 +101,11 @@ describe('Responsive Layout', () => {
     });
 
     it('closes left panel but keeps right panel when window shrinks below VERY_NARROW_BREAKPOINT (right panel becomes bottom sheet overlay)', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
 
       act(() => {
@@ -91,7 +119,11 @@ describe('Responsive Layout', () => {
     });
 
     it('keeps right panel open when only below narrow breakpoint', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
 
       act(() => {
@@ -106,7 +138,11 @@ describe('Responsive Layout', () => {
   describe('No auto-reopen on window grow', () => {
     it('does NOT reopen left panel when window grows above NARROW_BREAKPOINT', () => {
       // Start narrow
-      Object.defineProperty(window, 'innerWidth', { value: 600, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 600,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ leftPanelOpen: false });
 
       renderHook(() => useResponsiveLayout());
@@ -121,7 +157,11 @@ describe('Responsive Layout', () => {
 
     it('does NOT reopen right panel when window grows above VERY_NARROW_BREAKPOINT', () => {
       // Start very narrow
-      Object.defineProperty(window, 'innerWidth', { value: 500, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 500,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ rightPanelOpen: false });
 
       renderHook(() => useResponsiveLayout());
@@ -137,7 +177,11 @@ describe('Responsive Layout', () => {
 
   describe('Panel already closed behavior', () => {
     it('does nothing if left panel is already closed at narrow width', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ leftPanelOpen: false });
 
       renderHook(() => useResponsiveLayout());
@@ -151,7 +195,11 @@ describe('Responsive Layout', () => {
     });
 
     it('does nothing if right panel is already closed at very narrow width', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ rightPanelOpen: false });
 
       renderHook(() => useResponsiveLayout());
@@ -206,7 +254,11 @@ describe('Responsive Layout', () => {
 
   describe('Mount at narrow width', () => {
     it('closes left panel on mount if window is already below NARROW_BREAKPOINT', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 600, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 600,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ leftPanelOpen: true });
 
       renderHook(() => useResponsiveLayout());
@@ -215,7 +267,11 @@ describe('Responsive Layout', () => {
     });
 
     it('closes left panel but keeps right panel on mount if window is already below VERY_NARROW_BREAKPOINT (right panel becomes bottom sheet)', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 500, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 500,
+        writable: true,
+        configurable: true,
+      });
       useUIStore.setState({ leftPanelOpen: true, rightPanelOpen: true });
 
       renderHook(() => useResponsiveLayout());
@@ -228,7 +284,11 @@ describe('Responsive Layout', () => {
 
   describe('Progressive collapse', () => {
     it('collapses left panel as window narrows; right panel stays open (bottom sheet in compact)', () => {
-      Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true, configurable: true });
+      Object.defineProperty(window, 'innerWidth', {
+        value: 1280,
+        writable: true,
+        configurable: true,
+      });
       renderHook(() => useResponsiveLayout());
 
       // Step 1: Resize to 700px (between very narrow and narrow)

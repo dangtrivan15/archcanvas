@@ -15,7 +15,7 @@ export interface OfflineStatus {
  */
 export function useOfflineStatus(): OfflineStatus {
   const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator !== 'undefined' ? navigator.onLine : true
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
   const [wasOffline, setWasOffline] = useState(false);
 

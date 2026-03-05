@@ -33,7 +33,11 @@ import { nodeTypes } from '@/components/nodes/nodeTypeMap';
 import { lodNodeTypes } from '@/components/nodes/lodNodeTypeMap';
 import { edgeTypes } from '@/components/edges/edgeTypeMap';
 import type { CanvasNode, CanvasEdge, CanvasNodeData } from '@/types/canvas';
-import { useCanvasPerformance, CANVAS_BOUNDS, NODE_COUNT_WARNING } from '@/hooks/useCanvasPerformance';
+import {
+  useCanvasPerformance,
+  CANVAS_BOUNDS,
+  NODE_COUNT_WARNING,
+} from '@/hooks/useCanvasPerformance';
 import { CanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
 import { FpsCounter } from '@/components/canvas/FpsCounter';
 import { NavigationBreadcrumb } from '@/components/canvas/NavigationBreadcrumb';
@@ -44,7 +48,12 @@ import { NodePalette } from '@/components/canvas/NodePalette';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
-import { findNearestNode, findTopLeftNode, extractPositions, type Direction } from '@/core/input/spatialNavigation';
+import {
+  findNearestNode,
+  findTopLeftNode,
+  extractPositions,
+  type Direction,
+} from '@/core/input/spatialNavigation';
 import { formatBindingDisplay } from '@/core/input';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { useLongPress } from '@/hooks/useLongPress';
@@ -62,7 +71,13 @@ export function Canvas() {
 }
 
 function CanvasInner() {
-  const { fitView, screenToFlowPosition, setCenter, getViewport, setViewport: rfSetViewport } = useReactFlow();
+  const {
+    fitView,
+    screenToFlowPosition,
+    setCenter,
+    getViewport,
+    setViewport: rfSetViewport,
+  } = useReactFlow();
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
   const addNode = useCoreStore((s) => s.addNode);
@@ -125,9 +140,17 @@ function CanvasInner() {
   // Context menu state (canvas background)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   // Node context menu state (right-click on a node)
-  const [nodeContextMenu, setNodeContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const [nodeContextMenu, setNodeContextMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+  } | null>(null);
   // Edge context menu state (right-click on an edge)
-  const [edgeContextMenu, setEdgeContextMenu] = useState<{ x: number; y: number; edgeId: string } | null>(null);
+  const [edgeContextMenu, setEdgeContextMenu] = useState<{
+    x: number;
+    y: number;
+    edgeId: string;
+  } | null>(null);
 
   // Watch for fitView requests from other components (e.g., LayoutMenu)
   useEffect(() => {
@@ -199,9 +222,7 @@ function CanvasInner() {
     setRfNodes((prevNodes) => {
       const selectedIds = new Set(prevNodes.filter((n) => n.selected).map((n) => n.id));
       if (selectedIds.size === 0) return rendered.nodes;
-      return rendered.nodes.map((n) =>
-        selectedIds.has(n.id) ? { ...n, selected: true } : n,
-      );
+      return rendered.nodes.map((n) => (selectedIds.has(n.id) ? { ...n, selected: true } : n));
     });
     setRfEdges(rendered.edges);
   }, [rendered]);
@@ -422,12 +443,16 @@ function CanvasInner() {
         }
 
         if (imageFiles.length > 0) {
-          showToast(`${imageFiles.length} image(s) noted — image attachment to nodes is not yet available.`);
+          showToast(
+            `${imageFiles.length} image(s) noted — image attachment to nodes is not yet available.`,
+          );
           return;
         }
 
         // No supported files
-        showToast('Unsupported file type. Drop .archc files to open an architecture, or images to attach.');
+        showToast(
+          'Unsupported file type. Drop .archc files to open an architecture, or images to attach.',
+        );
         return;
       }
 
@@ -451,37 +476,28 @@ function CanvasInner() {
   );
 
   // Handle right-click on canvas background (via React Flow onPaneContextMenu)
-  const onPaneContextMenu = useCallback(
-    (event: MouseEvent | React.MouseEvent) => {
-      event.preventDefault();
-      setNodeContextMenu(null);
-      setEdgeContextMenu(null);
-      setContextMenu({ x: event.clientX, y: event.clientY });
-    },
-    [],
-  );
+  const onPaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
+    event.preventDefault();
+    setNodeContextMenu(null);
+    setEdgeContextMenu(null);
+    setContextMenu({ x: event.clientX, y: event.clientY });
+  }, []);
 
   // Handle right-click on a node - show node context menu
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: CanvasNode) => {
-      event.preventDefault();
-      setContextMenu(null);
-      setEdgeContextMenu(null);
-      setNodeContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
-    },
-    [],
-  );
+  const onNodeContextMenu = useCallback((event: React.MouseEvent, node: CanvasNode) => {
+    event.preventDefault();
+    setContextMenu(null);
+    setEdgeContextMenu(null);
+    setNodeContextMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+  }, []);
 
   // Handle right-click on an edge - show edge context menu
-  const onEdgeContextMenu = useCallback(
-    (event: React.MouseEvent, edge: CanvasEdge) => {
-      event.preventDefault();
-      setContextMenu(null);
-      setNodeContextMenu(null);
-      setEdgeContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id });
-    },
-    [],
-  );
+  const onEdgeContextMenu = useCallback((event: React.MouseEvent, edge: CanvasEdge) => {
+    event.preventDefault();
+    setContextMenu(null);
+    setNodeContextMenu(null);
+    setEdgeContextMenu({ x: event.clientX, y: event.clientY, edgeId: edge.id });
+  }, []);
 
   // Close canvas context menu
   const closeContextMenu = useCallback(() => {
@@ -504,42 +520,39 @@ function CanvasInner() {
   // Only fires for touch/pen pointers (mouse uses right-click).
   const longPressTargetRef = useRef<EventTarget | null>(null);
 
-  const handleLongPress = useCallback(
-    (x: number, y: number) => {
-      const target = longPressTargetRef.current as HTMLElement | SVGElement | null;
-      if (!target) return;
+  const handleLongPress = useCallback((x: number, y: number) => {
+    const target = longPressTargetRef.current as HTMLElement | SVGElement | null;
+    if (!target) return;
 
-      // Check if long-press is on a node (walk up DOM to find data-node-id)
-      const nodeEl = (target as HTMLElement).closest?.('[data-node-id]');
-      if (nodeEl) {
-        const nodeId = nodeEl.getAttribute('data-node-id');
-        if (nodeId) {
-          setContextMenu(null);
-          setEdgeContextMenu(null);
-          setNodeContextMenu({ x, y, nodeId });
-          return;
-        }
+    // Check if long-press is on a node (walk up DOM to find data-node-id)
+    const nodeEl = (target as HTMLElement).closest?.('[data-node-id]');
+    if (nodeEl) {
+      const nodeId = nodeEl.getAttribute('data-node-id');
+      if (nodeId) {
+        setContextMenu(null);
+        setEdgeContextMenu(null);
+        setNodeContextMenu({ x, y, nodeId });
+        return;
       }
+    }
 
-      // Check if long-press is on an edge (React Flow edge elements)
-      const edgeEl = (target as HTMLElement | SVGElement).closest?.('.react-flow__edge');
-      if (edgeEl) {
-        const edgeId = edgeEl.getAttribute('data-id');
-        if (edgeId) {
-          setContextMenu(null);
-          setNodeContextMenu(null);
-          setEdgeContextMenu({ x, y, edgeId });
-          return;
-        }
+    // Check if long-press is on an edge (React Flow edge elements)
+    const edgeEl = (target as HTMLElement | SVGElement).closest?.('.react-flow__edge');
+    if (edgeEl) {
+      const edgeId = edgeEl.getAttribute('data-id');
+      if (edgeId) {
+        setContextMenu(null);
+        setNodeContextMenu(null);
+        setEdgeContextMenu({ x, y, edgeId });
+        return;
       }
+    }
 
-      // Otherwise it's the canvas background
-      setNodeContextMenu(null);
-      setEdgeContextMenu(null);
-      setContextMenu({ x, y });
-    },
-    [],
-  );
+    // Otherwise it's the canvas background
+    setNodeContextMenu(null);
+    setEdgeContextMenu(null);
+    setContextMenu({ x, y });
+  }, []);
 
   const longPressHandlers = useLongPress(handleLongPress);
 
@@ -610,11 +623,12 @@ function CanvasInner() {
       // Helper: delete selected edge(s) directly (no confirmation needed)
       const deleteSelectedEdges = () => {
         const canvasState = useCanvasStore.getState();
-        const edgeIds = canvasState.selectedEdgeIds.length > 0
-          ? canvasState.selectedEdgeIds
-          : canvasState.selectedEdgeId
-            ? [canvasState.selectedEdgeId]
-            : [];
+        const edgeIds =
+          canvasState.selectedEdgeIds.length > 0
+            ? canvasState.selectedEdgeIds
+            : canvasState.selectedEdgeId
+              ? [canvasState.selectedEdgeId]
+              : [];
 
         if (edgeIds.length === 0) return false;
 
@@ -738,7 +752,20 @@ function CanvasInner() {
     // Use capture phase to ensure we handle Delete/Backspace before React Flow
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [navigationPath, zoomOut, selectedNodeId, selectedEdgeId, graph, openDeleteDialog, deleteDialogOpen, placementMode, exitPlacementMode, removeEdge, clearSelection, showToast]);
+  }, [
+    navigationPath,
+    zoomOut,
+    selectedNodeId,
+    selectedEdgeId,
+    graph,
+    openDeleteDialog,
+    deleteDialogOpen,
+    placementMode,
+    exitPlacementMode,
+    removeEdge,
+    clearSelection,
+    showToast,
+  ]);
 
   // Arrow key spatial navigation between nodes
   // Supports: plain arrow (single select), Shift+Arrow (extend selection), Mod+Arrow (toggle)
@@ -832,7 +859,15 @@ function CanvasInner() {
 
     document.addEventListener('keydown', handleArrowNav);
     return () => document.removeEventListener('keydown', handleArrowNav);
-  }, [rfNodes, selectNode, addNodeToSelection, toggleNodeInSelection, setCenter, getViewport, placementMode]);
+  }, [
+    rfNodes,
+    selectNode,
+    addNodeToSelection,
+    toggleNodeInSelection,
+    setCenter,
+    getViewport,
+    placementMode,
+  ]);
 
   // Alt+Arrow: bulk move selected nodes by 20px (or 100px with Shift+Alt)
   // Single undo snapshot per key press. Coordinates clamped to >= 0.
@@ -928,11 +963,16 @@ function CanvasInner() {
       if (!inConnectMode && e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         // Skip if any dialog/overlay is open
         if (
-          uiState.deleteDialogOpen || uiState.connectionDialogOpen ||
-          uiState.unsavedChangesDialogOpen || uiState.errorDialogOpen ||
-          uiState.integrityWarningDialogOpen || uiState.commandPaletteOpen ||
-          uiState.quickSearchOpen || uiState.placementMode
-        ) return;
+          uiState.deleteDialogOpen ||
+          uiState.connectionDialogOpen ||
+          uiState.unsavedChangesDialogOpen ||
+          uiState.errorDialogOpen ||
+          uiState.integrityWarningDialogOpen ||
+          uiState.commandPaletteOpen ||
+          uiState.quickSearchOpen ||
+          uiState.placementMode
+        )
+          return;
 
         const canvasState = useCanvasStore.getState();
         const currentSelected = canvasState.selectedNodeId;
@@ -943,13 +983,14 @@ function CanvasInner() {
 
         // Auto-select first target candidate via spatial navigation
         const positions = extractPositions(rfNodes);
-        const firstTarget = findNearestNode(currentSelected, 'right', positions)
-          || findNearestNode(currentSelected, 'down', positions)
-          || findTopLeftNode(positions.filter(p => p.id !== currentSelected));
+        const firstTarget =
+          findNearestNode(currentSelected, 'right', positions) ||
+          findNearestNode(currentSelected, 'down', positions) ||
+          findTopLeftNode(positions.filter((p) => p.id !== currentSelected));
         if (firstTarget) {
           setConnectTarget(firstTarget);
           // Pan to target
-          const targetPos = positions.find(p => p.id === firstTarget);
+          const targetPos = positions.find((p) => p.id === firstTarget);
           if (targetPos) {
             const currentViewport = getViewport();
             setCenter(targetPos.x, targetPos.y, { zoom: currentViewport.zoom, duration: 200 });
@@ -971,7 +1012,10 @@ function CanvasInner() {
       // ── In 'select-target' step: arrow keys navigate, Enter advances ──
       if (step === 'select-target') {
         const ARROW_MAP: Record<string, Direction> = {
-          ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+          ArrowUp: 'up',
+          ArrowDown: 'down',
+          ArrowLeft: 'left',
+          ArrowRight: 'right',
         };
         const direction = ARROW_MAP[e.key];
         if (direction) {
@@ -983,7 +1027,7 @@ function CanvasInner() {
           const nextTarget = findNearestNode(fromId, direction, positions);
           if (nextTarget && nextTarget !== src) {
             setConnectTarget(nextTarget);
-            const targetPos = positions.find(p => p.id === nextTarget);
+            const targetPos = positions.find((p) => p.id === nextTarget);
             if (targetPos) {
               const currentViewport = getViewport();
               setCenter(targetPos.x, targetPos.y, { zoom: currentViewport.zoom, duration: 200 });
@@ -1003,13 +1047,19 @@ function CanvasInner() {
       // ── In 'pick-type' step: 1/2/3 picks edge type ──
       if (step === 'pick-type') {
         const TYPE_MAP: Record<string, 'sync' | 'async' | 'data-flow'> = {
-          '1': 'sync', '2': 'async', '3': 'data-flow',
+          '1': 'sync',
+          '2': 'async',
+          '3': 'data-flow',
         };
         const edgeType = TYPE_MAP[e.key];
         if (edgeType && src && tgt) {
           e.preventDefault();
           e.stopPropagation();
-          const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+          const typeLabels: Record<string, string> = {
+            sync: 'Sync',
+            async: 'Async',
+            'data-flow': 'Data Flow',
+          };
           const newEdge = addEdge({ fromNode: src, toNode: tgt, type: edgeType });
           exitConnectMode();
           if (newEdge) {
@@ -1025,7 +1075,16 @@ function CanvasInner() {
     // Use capture phase to intercept before normal handlers
     document.addEventListener('keydown', handleConnectMode, true);
     return () => document.removeEventListener('keydown', handleConnectMode, true);
-  }, [rfNodes, enterConnectMode, setConnectTarget, advanceToPickType, exitConnectMode, addEdge, setCenter, getViewport]);
+  }, [
+    rfNodes,
+    enterConnectMode,
+    setConnectTarget,
+    advanceToPickType,
+    exitConnectMode,
+    addEdge,
+    setCenter,
+    getViewport,
+  ]);
 
   // Track viewport changes (pan/zoom) for saving + update performance LOD state
   const onMoveEnd: OnMoveEnd = useCallback(
@@ -1066,7 +1125,16 @@ function CanvasInner() {
               boxShadow: '0 8px 32px hsla(0, 0%, 0%, 0.2)',
             }}
           >
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--pine))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="hsl(var(--pine))"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
@@ -1128,99 +1196,110 @@ function CanvasInner() {
         />
       )}
 
-      <CanvasPerformanceContext.Provider value={{
-        isLowDetailMode: perf.isLowDetailMode,
-        isLowDetailEdges: perf.isLowDetailEdges,
-        prefersReducedMotion: perf.prefersReducedMotion,
-      }}>
-      <ReactFlow
-        nodes={connectStep ? rfNodes.map(n => {
-          if (n.id === connectSource) {
-            // Source node: green glow
-            return { ...n, className: `${n.className || ''} connect-mode-source`.trim() };
-          }
-          if (n.id === connectTarget && connectStep === 'select-target') {
-            // Target candidate: highlight
-            return { ...n, className: `${n.className || ''} connect-mode-target`.trim() };
-          }
-          return n;
-        }) : rfNodes}
-        edges={connectStep && connectSource && connectTarget ? [
-          ...rfEdges,
-          {
-            id: '__connect-preview__',
-            source: connectSource,
-            target: connectTarget,
-            type: 'default',
-            animated: true,
-            style: { strokeDasharray: '8 4', stroke: 'hsl(var(--pine))', strokeWidth: 2, opacity: 0.8 },
-            data: {},
-          } as CanvasEdge,
-        ] : rfEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onSelectionChange={onSelectionChange}
-        onNodeDoubleClick={onNodeDoubleClick}
-        onNodeContextMenu={onNodeContextMenu}
-        onEdgeContextMenu={onEdgeContextMenu}
-        onPaneContextMenu={onPaneContextMenu}
-        onNodeDragStop={onNodeDragStop}
-        onMoveEnd={onMoveEnd}
-        onPaneClick={onPaneClick}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        nodeTypes={perf.isLowDetailMode ? lodNodeTypes : nodeTypes}
-        edgeTypes={edgeTypes}
-        deleteKeyCode={null}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        defaultEdgeOptions={{ type: 'sync' }}
-        translateExtent={CANVAS_BOUNDS}
-        proOptions={{ hideAttribution: true }}
-        className={`bg-background ${placementMode ? 'cursor-crosshair' : ''}`}
+      <CanvasPerformanceContext.Provider
+        value={{
+          isLowDetailMode: perf.isLowDetailMode,
+          isLowDetailEdges: perf.isLowDetailEdges,
+          prefersReducedMotion: perf.prefersReducedMotion,
+        }}
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1.5}
-          className="!fill-subtle/30"
-          style={{ backgroundColor: 'hsl(var(--background))' }}
-          color="hsl(var(--subtle))"
-          data-testid="canvas-background-grid"
-        />
-        {/* Controls - hidden in compact mode (toolbar provides zoom) */}
-        {!isCompact && (
-          <Controls
-            position="bottom-right"
-            aria-label="Canvas controls"
-            data-testid="canvas-controls"
+        <ReactFlow
+          nodes={
+            connectStep
+              ? rfNodes.map((n) => {
+                  if (n.id === connectSource) {
+                    // Source node: green glow
+                    return { ...n, className: `${n.className || ''} connect-mode-source`.trim() };
+                  }
+                  if (n.id === connectTarget && connectStep === 'select-target') {
+                    // Target candidate: highlight
+                    return { ...n, className: `${n.className || ''} connect-mode-target`.trim() };
+                  }
+                  return n;
+                })
+              : rfNodes
+          }
+          edges={
+            connectStep && connectSource && connectTarget
+              ? [
+                  ...rfEdges,
+                  {
+                    id: '__connect-preview__',
+                    source: connectSource,
+                    target: connectTarget,
+                    type: 'default',
+                    animated: true,
+                    style: {
+                      strokeDasharray: '8 4',
+                      stroke: 'hsl(var(--pine))',
+                      strokeWidth: 2,
+                      opacity: 0.8,
+                    },
+                    data: {},
+                  } as CanvasEdge,
+                ]
+              : rfEdges
+          }
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onSelectionChange={onSelectionChange}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
+          onPaneContextMenu={onPaneContextMenu}
+          onNodeDragStop={onNodeDragStop}
+          onMoveEnd={onMoveEnd}
+          onPaneClick={onPaneClick}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          nodeTypes={perf.isLowDetailMode ? lodNodeTypes : nodeTypes}
+          edgeTypes={edgeTypes}
+          deleteKeyCode={null}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          defaultEdgeOptions={{ type: 'sync' }}
+          translateExtent={CANVAS_BOUNDS}
+          proOptions={{ hideAttribution: true }}
+          className={`bg-background ${placementMode ? 'cursor-crosshair' : ''}`}
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1.5}
+            className="!fill-subtle/30"
+            style={{ backgroundColor: 'hsl(var(--background))' }}
+            color="hsl(var(--subtle))"
+            data-testid="canvas-background-grid"
           />
-        )}
-        {/* MiniMap - hidden in compact mode (takes too much space in narrow viewports) */}
-        {!isCompact && (
-          <MiniMap
-            position="bottom-left"
-            nodeStrokeWidth={3}
-            pannable
-            zoomable
-            className="!bg-surface !border !border-border"
-            nodeColor="hsl(var(--highlight-high))"
-            maskColor="hsl(var(--overlay) / 0.6)"
-            aria-label="Mini map"
-            data-testid="canvas-minimap"
-          />
-        )}
-      </ReactFlow>
+          {/* Controls - hidden in compact mode (toolbar provides zoom) */}
+          {!isCompact && (
+            <Controls
+              position="bottom-right"
+              aria-label="Canvas controls"
+              data-testid="canvas-controls"
+            />
+          )}
+          {/* MiniMap - hidden in compact mode (takes too much space in narrow viewports) */}
+          {!isCompact && (
+            <MiniMap
+              position="bottom-left"
+              nodeStrokeWidth={3}
+              pannable
+              zoomable
+              className="!bg-surface !border !border-border"
+              nodeColor="hsl(var(--highlight-high))"
+              maskColor="hsl(var(--overlay) / 0.6)"
+              aria-label="Mini map"
+              data-testid="canvas-minimap"
+            />
+          )}
+        </ReactFlow>
       </CanvasPerformanceContext.Provider>
 
       {/* Canvas Context Menu - shown on right-click on background */}
       {contextMenu && (
-        <CanvasContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onClose={closeContextMenu}
-        />
+        <CanvasContextMenu x={contextMenu.x} y={contextMenu.y} onClose={closeContextMenu} />
       )}
 
       {/* Node Context Menu - shown on right-click on a node */}

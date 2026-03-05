@@ -20,10 +20,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 const KEYBOARD_HEIGHT_THRESHOLD = 100;
 
 /** Selector for right panel containers */
-const RIGHT_PANEL_SELECTORS = [
-  '[data-testid="right-panel"]',
-  '[data-testid="right-panel-sheet"]',
-];
+const RIGHT_PANEL_SELECTORS = ['[data-testid="right-panel"]', '[data-testid="right-panel-sheet"]'];
 
 export interface VirtualKeyboardState {
   /** Whether the on-screen keyboard is currently visible */
@@ -80,7 +77,7 @@ export function useVirtualKeyboard(): VirtualKeyboardState {
 
   // Track the initial window.innerHeight to distinguish keyboard from resize
   const initialInnerHeightRef = useRef<number>(
-    typeof window !== 'undefined' ? window.innerHeight : 0
+    typeof window !== 'undefined' ? window.innerHeight : 0,
   );
 
   const handleViewportResize = useCallback(() => {

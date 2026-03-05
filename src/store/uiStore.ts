@@ -75,8 +75,8 @@ export interface ConnectionDialogInfo {
 }
 
 export interface PlacementModeInfo {
-  nodeType: string;        // e.g. 'compute/service'
-  displayName: string;     // e.g. 'Service'
+  nodeType: string; // e.g. 'compute/service'
+  displayName: string; // e.g. 'Service'
 }
 
 /** Connect mode step: select-target -> pick-type -> done */
@@ -134,7 +134,7 @@ export const LEFT_PANEL_DEFAULT_WIDTH = 240;
 /** Drag below this threshold to snap-collapse the left panel */
 export const LEFT_PANEL_COLLAPSE_THRESHOLD = 120;
 /** Viewport-relative right panel default: 20% of viewport width, floor 260px, ceiling 480px */
-export const RIGHT_PANEL_VIEWPORT_RATIO = 0.20;
+export const RIGHT_PANEL_VIEWPORT_RATIO = 0.2;
 export const RIGHT_PANEL_DEFAULT_FLOOR = 260;
 export const RIGHT_PANEL_DEFAULT_CEILING = 480;
 
@@ -344,7 +344,6 @@ export interface UIStoreState {
   // Toast actions
   showToast: (message: string, durationMs?: number) => void;
   clearToast: () => void;
-
 }
 
 export const useUIStore = create<UIStoreState>((set) => ({
@@ -413,32 +412,23 @@ export const useUIStore = create<UIStoreState>((set) => ({
     set({ themeId });
   },
 
-  toggleLeftPanel: () =>
-    set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
+  toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
 
-  toggleRightPanel: () =>
-    set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+  toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
 
-  setRightPanelTab: (tab) =>
-    set({ rightPanelTab: tab }),
+  setRightPanelTab: (tab) => set({ rightPanelTab: tab }),
 
-  openRightPanel: (tab) =>
-    set({ rightPanelOpen: true, ...(tab ? { rightPanelTab: tab } : {}) }),
+  openRightPanel: (tab) => set({ rightPanelOpen: true, ...(tab ? { rightPanelTab: tab } : {}) }),
 
-  closeRightPanel: () =>
-    set({ rightPanelOpen: false }),
+  closeRightPanel: () => set({ rightPanelOpen: false }),
 
-  openDeleteDialog: (info) =>
-    set({ deleteDialogOpen: true, deleteDialogInfo: info }),
+  openDeleteDialog: (info) => set({ deleteDialogOpen: true, deleteDialogInfo: info }),
 
-  closeDeleteDialog: () =>
-    set({ deleteDialogOpen: false, deleteDialogInfo: null }),
+  closeDeleteDialog: () => set({ deleteDialogOpen: false, deleteDialogInfo: null }),
 
-  openConnectionDialog: (info) =>
-    set({ connectionDialogOpen: true, connectionDialogInfo: info }),
+  openConnectionDialog: (info) => set({ connectionDialogOpen: true, connectionDialogInfo: info }),
 
-  closeConnectionDialog: () =>
-    set({ connectionDialogOpen: false, connectionDialogInfo: null }),
+  closeConnectionDialog: () => set({ connectionDialogOpen: false, connectionDialogInfo: null }),
 
   openUnsavedChangesDialog: (info) =>
     set({ unsavedChangesDialogOpen: true, unsavedChangesDialogInfo: info }),
@@ -446,11 +436,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   closeUnsavedChangesDialog: () =>
     set({ unsavedChangesDialogOpen: false, unsavedChangesDialogInfo: null }),
 
-  openErrorDialog: (info) =>
-    set({ errorDialogOpen: true, errorDialogInfo: info }),
+  openErrorDialog: (info) => set({ errorDialogOpen: true, errorDialogInfo: info }),
 
-  closeErrorDialog: () =>
-    set({ errorDialogOpen: false, errorDialogInfo: null }),
+  closeErrorDialog: () => set({ errorDialogOpen: false, errorDialogInfo: null }),
 
   openIntegrityWarningDialog: (info) =>
     set({ integrityWarningDialogOpen: true, integrityWarningDialogInfo: info }),
@@ -458,17 +446,21 @@ export const useUIStore = create<UIStoreState>((set) => ({
   closeIntegrityWarningDialog: () =>
     set({ integrityWarningDialogOpen: false, integrityWarningDialogInfo: null }),
 
-  enterPlacementMode: (info) =>
-    set({ placementMode: true, placementInfo: info }),
+  enterPlacementMode: (info) => set({ placementMode: true, placementInfo: info }),
 
-  exitPlacementMode: () =>
-    set({ placementMode: false, placementInfo: null }),
+  exitPlacementMode: () => set({ placementMode: false, placementInfo: null }),
 
   setLeftPanelWidth: (width) =>
-    set({ leftPanelWidth: Math.max(LEFT_PANEL_MIN_WIDTH, Math.min(LEFT_PANEL_MAX_WIDTH, width)), leftPanelWidthCustomized: true }),
+    set({
+      leftPanelWidth: Math.max(LEFT_PANEL_MIN_WIDTH, Math.min(LEFT_PANEL_MAX_WIDTH, width)),
+      leftPanelWidthCustomized: true,
+    }),
 
   setRightPanelWidth: (width) =>
-    set({ rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)), rightPanelWidthCustomized: true }),
+    set({
+      rightPanelWidth: Math.max(RIGHT_PANEL_MIN_WIDTH, Math.min(RIGHT_PANEL_MAX_WIDTH, width)),
+      rightPanelWidthCustomized: true,
+    }),
 
   updateLeftPanelWidthFromViewport: (viewportWidth) =>
     set((s) => {
@@ -491,97 +483,70 @@ export const useUIStore = create<UIStoreState>((set) => ({
     });
   },
 
-  openShortcutsHelp: () =>
-    set({ shortcutsHelpOpen: true }),
+  openShortcutsHelp: () => set({ shortcutsHelpOpen: true }),
 
-  closeShortcutsHelp: () =>
-    set({ shortcutsHelpOpen: false }),
+  closeShortcutsHelp: () => set({ shortcutsHelpOpen: false }),
 
-  toggleShortcutsHelp: () =>
-    set((s) => ({ shortcutsHelpOpen: !s.shortcutsHelpOpen })),
+  toggleShortcutsHelp: () => set((s) => ({ shortcutsHelpOpen: !s.shortcutsHelpOpen })),
 
-  openCommandPalette: () =>
-    set({ commandPaletteOpen: true }),
+  openCommandPalette: () => set({ commandPaletteOpen: true }),
 
-  closeCommandPalette: () =>
-    set({ commandPaletteOpen: false }),
+  closeCommandPalette: () => set({ commandPaletteOpen: false }),
 
-  toggleCommandPalette: () =>
-    set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
+  toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
 
-  openQuickSearch: () =>
-    set({ quickSearchOpen: true }),
+  openQuickSearch: () => set({ quickSearchOpen: true }),
 
-  closeQuickSearch: () =>
-    set({ quickSearchOpen: false }),
+  closeQuickSearch: () => set({ quickSearchOpen: false }),
 
-  toggleQuickSearch: () =>
-    set((s) => ({ quickSearchOpen: !s.quickSearchOpen })),
+  toggleQuickSearch: () => set((s) => ({ quickSearchOpen: !s.quickSearchOpen })),
 
-  openShortcutSettings: () =>
-    set({ shortcutSettingsOpen: true }),
+  openShortcutSettings: () => set({ shortcutSettingsOpen: true }),
 
-  closeShortcutSettings: () =>
-    set({ shortcutSettingsOpen: false }),
+  closeShortcutSettings: () => set({ shortcutSettingsOpen: false }),
 
-  openSettingsDialog: () =>
-    set({ settingsDialogOpen: true }),
+  openSettingsDialog: () => set({ settingsDialogOpen: true }),
 
-  closeSettingsDialog: () =>
-    set({ settingsDialogOpen: false }),
+  closeSettingsDialog: () => set({ settingsDialogOpen: false }),
 
-  openTemplatePicker: () =>
-    set({ templatePickerOpen: true }),
+  openTemplatePicker: () => set({ templatePickerOpen: true }),
 
-  closeTemplatePicker: () =>
-    set({ templatePickerOpen: false }),
+  closeTemplatePicker: () => set({ templatePickerOpen: false }),
 
-  openTemplateGallery: () =>
-    set({ templateGalleryOpen: true }),
+  openTemplateGallery: () => set({ templateGalleryOpen: true }),
 
-  closeTemplateGallery: () =>
-    set({ templateGalleryOpen: false }),
+  closeTemplateGallery: () => set({ templateGalleryOpen: false }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
 
-  clearFileOperationLoading: () =>
-    set({ fileOperationLoading: false, fileOperationMessage: null }),
+  clearFileOperationLoading: () => set({ fileOperationLoading: false, fileOperationMessage: null }),
 
-  setPendingRenameNodeId: (nodeId) =>
-    set({ pendingRenameNodeId: nodeId }),
+  setPendingRenameNodeId: (nodeId) => set({ pendingRenameNodeId: nodeId }),
 
-  clearPendingRename: () =>
-    set({ pendingRenameNodeId: null }),
+  clearPendingRename: () => set({ pendingRenameNodeId: null }),
 
-  setInlineEditNodeId: (nodeId) =>
-    set({ inlineEditNodeId: nodeId }),
+  setInlineEditNodeId: (nodeId) => set({ inlineEditNodeId: nodeId }),
 
-  clearInlineEdit: () =>
-    set({ inlineEditNodeId: null }),
+  clearInlineEdit: () => set({ inlineEditNodeId: null }),
 
   setHapticFeedbackEnabled: (enabled) => {
     persistHapticFeedback(enabled);
     set({ hapticFeedbackEnabled: enabled });
   },
 
-  setAutosaveOnBlur: (enabled) =>
-    set({ autosaveOnBlur: enabled }),
+  setAutosaveOnBlur: (enabled) => set({ autosaveOnBlur: enabled }),
 
-  setAutosaveStatusMessage: (message) =>
-    set({ autosaveStatusMessage: message }),
+  setAutosaveStatusMessage: (message) => set({ autosaveStatusMessage: message }),
 
   enterConnectMode: (sourceNodeId) =>
     set({ connectSource: sourceNodeId, connectTarget: null, connectStep: 'select-target' }),
 
-  setConnectTarget: (targetNodeId) =>
-    set({ connectTarget: targetNodeId }),
+  setConnectTarget: (targetNodeId) => set({ connectTarget: targetNodeId }),
 
-  advanceToPickType: () =>
-    set({ connectStep: 'pick-type' }),
+  advanceToPickType: () => set({ connectStep: 'pick-type' }),
 
-  exitConnectMode: () =>
-    set({ connectSource: null, connectTarget: null, connectStep: null }),
+  exitConnectMode: () => set({ connectSource: null, connectTarget: null, connectStep: null }),
 
   showToast: (message, durationMs = 4000) =>
     set((s) => {

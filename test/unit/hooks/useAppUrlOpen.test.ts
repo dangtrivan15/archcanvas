@@ -24,8 +24,9 @@ describe('Feature #292: extractFileName', () => {
   });
 
   it('extracts filename from a file:// URL', () => {
-    expect(extractFileName('file:///var/mobile/Containers/Data/Application/UUID/Documents/arch.archc'))
-      .toBe('arch.archc');
+    expect(
+      extractFileName('file:///var/mobile/Containers/Data/Application/UUID/Documents/arch.archc'),
+    ).toBe('arch.archc');
   });
 
   it('handles URL-encoded characters', () => {
@@ -41,13 +42,17 @@ describe('Feature #292: extractFileName', () => {
   });
 
   it('handles complex nested paths', () => {
-    expect(extractFileName('file:///private/var/mobile/Containers/Data/Application/ABC123/Documents/ArchCanvas/test-file.archc'))
-      .toBe('test-file.archc');
+    expect(
+      extractFileName(
+        'file:///private/var/mobile/Containers/Data/Application/ABC123/Documents/ArchCanvas/test-file.archc',
+      ),
+    ).toBe('test-file.archc');
   });
 
   it('handles content:// URIs (Android-style, future-proofing)', () => {
-    expect(extractFileName('content://com.example.provider/documents/file.archc'))
-      .toBe('file.archc');
+    expect(extractFileName('content://com.example.provider/documents/file.archc')).toBe(
+      'file.archc',
+    );
   });
 });
 
@@ -127,10 +132,7 @@ describe('Feature #292: handleFileUrl', () => {
     // Re-import to pick up mocks
     const { handleFileUrl: handleFileUrlMocked } = await import('@/hooks/useAppUrlOpen');
 
-    const result = await handleFileUrlMocked(
-      'file:///path/to/project.archc',
-      mockApplyDecodedFile,
-    );
+    const result = await handleFileUrlMocked('file:///path/to/project.archc', mockApplyDecodedFile);
 
     expect(result).toBe(true);
     expect(mockApplyDecodedFile).toHaveBeenCalledWith(
@@ -180,10 +182,7 @@ describe('Feature #292: handleFileUrl', () => {
 
     const { handleFileUrl: handleFileUrlMocked } = await import('@/hooks/useAppUrlOpen');
 
-    const result = await handleFileUrlMocked(
-      'file:///path/to/corrupt.archc',
-      mockApplyDecodedFile,
-    );
+    const result = await handleFileUrlMocked('file:///path/to/corrupt.archc', mockApplyDecodedFile);
 
     expect(result).toBe(false);
     expect(mockApplyDecodedFile).not.toHaveBeenCalled();
@@ -285,7 +284,8 @@ describe('Feature #292: useAppUrlOpen web behavior', () => {
   });
 
   it('extractFileName handles deeply nested iOS paths', () => {
-    const url = 'file:///private/var/mobile/Library/Mobile%20Documents/com~apple~CloudDocs/ArchCanvas/My%20Architecture.archc';
+    const url =
+      'file:///private/var/mobile/Library/Mobile%20Documents/com~apple~CloudDocs/ArchCanvas/My%20Architecture.archc';
     expect(extractFileName(url)).toBe('My Architecture.archc');
   });
 });

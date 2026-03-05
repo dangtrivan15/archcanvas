@@ -98,7 +98,13 @@ export function ConnectionTypeDialog() {
       label: label.trim() || undefined,
     });
 
-    console.log('[ConnectionTypeDialog] Edge created:', selectedType, connectionDialogInfo.sourceNodeId, '->', connectionDialogInfo.targetNodeId);
+    console.log(
+      '[ConnectionTypeDialog] Edge created:',
+      selectedType,
+      connectionDialogInfo.sourceNodeId,
+      '->',
+      connectionDialogInfo.targetNodeId,
+    );
     // Haptic success feedback for edge connection
     hapticActions.notification('Success');
     closeConnectionDialog();
@@ -129,14 +135,16 @@ export function ConnectionTypeDialog() {
       aria-modal="true"
       aria-labelledby="connection-dialog-title"
     >
-      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 compact-dialog-sheet" data-testid="connection-dialog-content">
+      <div
+        ref={focusTrapRef}
+        className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 compact-dialog-sheet"
+        data-testid="connection-dialog-content"
+      >
         {/* Header */}
         <h2 id="connection-dialog-title" className="text-lg font-semibold text-gray-900 mb-1">
           Create Connection
         </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Choose the connection type for this edge.
-        </p>
+        <p className="text-sm text-gray-500 mb-4">Choose the connection type for this edge.</p>
 
         {/* Edge type selection */}
         <div className="space-y-2 mb-4" data-testid="edge-type-options">

@@ -43,7 +43,9 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
     });
 
     if (edge) {
-      console.log(`[ConnectNodes] Edge created: ${source.displayName} → ${target.displayName} [${edgeType}]`);
+      console.log(
+        `[ConnectNodes] Edge created: ${source.displayName} → ${target.displayName} [${edgeType}]`,
+      );
     }
 
     setIsOpen(false);
@@ -74,7 +76,9 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           {/* Source node selector */}
           <div>
-            <label htmlFor="edge-source-select" className="text-xs text-gray-500">From Node</label>
+            <label htmlFor="edge-source-select" className="text-xs text-gray-500">
+              From Node
+            </label>
             <select
               id="edge-source-select"
               value={sourceIdx}
@@ -92,7 +96,9 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           {/* Target node selector */}
           <div>
-            <label htmlFor="edge-target-select" className="text-xs text-gray-500">To Node</label>
+            <label htmlFor="edge-target-select" className="text-xs text-gray-500">
+              To Node
+            </label>
             <select
               id="edge-target-select"
               value={targetIdx}
@@ -110,7 +116,9 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           {/* Edge type selector */}
           <div>
-            <label htmlFor="edge-type-select" className="text-xs text-gray-500">Edge Type</label>
+            <label htmlFor="edge-type-select" className="text-xs text-gray-500">
+              Edge Type
+            </label>
             <select
               id="edge-type-select"
               value={edgeType}

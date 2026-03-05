@@ -141,9 +141,7 @@ export class RegistryManagerCore {
 
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new Error(
-        '[RegistryManager] Not initialized. Call initialize() first.',
-      );
+      throw new Error('[RegistryManager] Not initialized. Call initialize() first.');
     }
   }
 }

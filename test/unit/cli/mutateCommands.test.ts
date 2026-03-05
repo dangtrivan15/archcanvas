@@ -89,7 +89,16 @@ afterEach(async () => {
 
 describe('add-node', () => {
   it('adds a node with type and name', async () => {
-    await runCommand(['-f', testFile, 'add-node', '-t', 'compute/service', '-n', 'My Service', '-q']);
+    await runCommand([
+      '-f',
+      testFile,
+      'add-node',
+      '-t',
+      'compute/service',
+      '-n',
+      'My Service',
+      '-q',
+    ]);
 
     const ctx = await GraphContext.loadFromFile(testFile);
     const nodes = ctx.textApi.listNodes();
@@ -100,8 +109,17 @@ describe('add-node', () => {
 
   it('adds a node with --args key=value pairs', async () => {
     await runCommand([
-      '-f', testFile, 'add-node', '-t', 'compute/service', '-n', 'ArgNode',
-      '--args', 'runtime=node', 'version=20', '-q',
+      '-f',
+      testFile,
+      'add-node',
+      '-t',
+      'compute/service',
+      '-n',
+      'ArgNode',
+      '--args',
+      'runtime=node',
+      'version=20',
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(testFile);
@@ -114,8 +132,16 @@ describe('add-node', () => {
   it('adds a child node with --parent', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
     await runCommand([
-      '-f', filePath, 'add-node', '-t', 'compute/service', '-n', 'Child',
-      '--parent', nodeId1, '-q',
+      '-f',
+      filePath,
+      'add-node',
+      '-t',
+      'compute/service',
+      '-n',
+      'Child',
+      '--parent',
+      nodeId1,
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(filePath);
@@ -128,14 +154,27 @@ describe('add-node', () => {
     await runCommand(['-f', testFile, 'add-node', '-t', 'compute/service', '-n', 'Svc', '-q']);
 
     const summaryPath = testFile.replace('.archc', '.summary.md');
-    const exists = await fs.access(summaryPath).then(() => true).catch(() => false);
+    const exists = await fs
+      .access(summaryPath)
+      .then(() => true)
+      .catch(() => false);
     expect(exists).toBe(true);
   });
 
   it('outputs JSON when --format json', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      await runCommand(['-f', testFile, 'add-node', '-t', 'compute/service', '-n', 'JsonNode', '--format', 'json']);
+      await runCommand([
+        '-f',
+        testFile,
+        'add-node',
+        '-t',
+        'compute/service',
+        '-n',
+        'JsonNode',
+        '--format',
+        'json',
+      ]);
 
       // Find the JSON output call
       const jsonCall = logSpy.mock.calls.find((call) => {
@@ -158,8 +197,18 @@ describe('add-edge', () => {
   it('adds an edge between two nodes', async () => {
     const { filePath, nodeId1, nodeId2 } = await createTestFileWithNodes();
     await runCommand([
-      '-f', filePath, 'add-edge', '--from', nodeId1, '--to', nodeId2,
-      '--type', 'async', '--label', 'REST', '-q',
+      '-f',
+      filePath,
+      'add-edge',
+      '--from',
+      nodeId1,
+      '--to',
+      nodeId2,
+      '--type',
+      'async',
+      '--label',
+      'REST',
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(filePath);
@@ -184,8 +233,19 @@ describe('add-edge', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await runCommand([
-        '-f', filePath, 'add-edge', '--from', nodeId1, '--to', nodeId2,
-        '--type', 'data-flow', '--label', 'Events', '--format', 'json',
+        '-f',
+        filePath,
+        'add-edge',
+        '--from',
+        nodeId1,
+        '--to',
+        nodeId2,
+        '--type',
+        'data-flow',
+        '--label',
+        'Events',
+        '--format',
+        'json',
       ]);
 
       const jsonCall = logSpy.mock.calls.find((call) => {
@@ -342,8 +402,16 @@ describe('add-note', () => {
   it('adds a note to a node', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
     await runCommand([
-      '-f', filePath, 'add-note', '--node', nodeId1,
-      '-c', 'This is a note', '-a', 'tester', '-q',
+      '-f',
+      filePath,
+      'add-note',
+      '--node',
+      nodeId1,
+      '-c',
+      'This is a note',
+      '-a',
+      'tester',
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(filePath);
@@ -356,8 +424,16 @@ describe('add-note', () => {
   it('adds a note with --tags', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
     await runCommand([
-      '-f', filePath, 'add-note', '--node', nodeId1,
-      '-c', 'Security note', '--tags', 'security,important,review', '-q',
+      '-f',
+      filePath,
+      'add-note',
+      '--node',
+      nodeId1,
+      '-c',
+      'Security note',
+      '--tags',
+      'security,important,review',
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(filePath);
@@ -370,9 +446,7 @@ describe('add-note', () => {
 
   it('defaults author to cli', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
-    await runCommand([
-      '-f', filePath, 'add-note', '--node', nodeId1, '-c', 'Default author', '-q',
-    ]);
+    await runCommand(['-f', filePath, 'add-note', '--node', nodeId1, '-c', 'Default author', '-q']);
 
     const ctx = await GraphContext.loadFromFile(filePath);
     const node = ctx.textApi.getNode(nodeId1);
@@ -384,8 +458,17 @@ describe('add-note', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await runCommand([
-        '-f', filePath, 'add-note', '--node', nodeId1,
-        '-c', 'JSON note', '--tags', 'tag1,tag2', '--format', 'json',
+        '-f',
+        filePath,
+        'add-note',
+        '--node',
+        nodeId1,
+        '-c',
+        'JSON note',
+        '--tags',
+        'tag1,tag2',
+        '--format',
+        'json',
       ]);
 
       const jsonCall = logSpy.mock.calls.find((call) => {
@@ -418,7 +501,14 @@ describe('update-node', () => {
   it('updates node args', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
     await runCommand([
-      '-f', filePath, 'update-node', nodeId1, '--args', 'env=prod', 'region=us-east-1', '-q',
+      '-f',
+      filePath,
+      'update-node',
+      nodeId1,
+      '--args',
+      'env=prod',
+      'region=us-east-1',
+      '-q',
     ]);
 
     const ctx = await GraphContext.loadFromFile(filePath);
@@ -439,9 +529,7 @@ describe('update-node', () => {
 
   it('updates node properties', async () => {
     const { filePath, nodeId1 } = await createTestFileWithNodes();
-    await runCommand([
-      '-f', filePath, 'update-node', nodeId1, '--set-prop', 'tier=critical', '-q',
-    ]);
+    await runCommand(['-f', filePath, 'update-node', nodeId1, '--set-prop', 'tier=critical', '-q']);
 
     const ctx = await GraphContext.loadFromFile(filePath);
     const node = ctx.textApi.getNode(nodeId1);
@@ -468,8 +556,16 @@ describe('update-node', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await runCommand([
-        '-f', filePath, 'update-node', nodeId1,
-        '-n', 'NewName', '--color', '#00ff00', '--format', 'json',
+        '-f',
+        filePath,
+        'update-node',
+        nodeId1,
+        '-n',
+        'NewName',
+        '--color',
+        '#00ff00',
+        '--format',
+        'json',
       ]);
 
       const jsonCall = logSpy.mock.calls.find((call) => {

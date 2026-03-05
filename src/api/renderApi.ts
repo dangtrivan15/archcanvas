@@ -20,10 +20,7 @@ export class RenderApi {
    * Transform the architecture graph into React Flow nodes and edges
    * for the given navigation path (fractal zoom level).
    */
-  render(
-    graph: ArchGraph,
-    navigationPath: string[],
-  ): { nodes: CanvasNode[]; edges: CanvasEdge[] } {
+  render(graph: ArchGraph, navigationPath: string[]): { nodes: CanvasNode[]; edges: CanvasEdge[] } {
     const archNodes = getNodesAtLevel(graph, navigationPath);
     const archEdges = getEdgesAtLevel(graph, navigationPath);
 
@@ -48,9 +45,7 @@ export class RenderApi {
       .filter((p) => p.direction === 'outbound')
       .map((p) => ({ name: p.name, protocol: p.protocol }));
 
-    const pendingSuggestionCount = node.notes.filter(
-      (n) => n.status === 'pending',
-    ).length;
+    const pendingSuggestionCount = node.notes.filter((n) => n.status === 'pending').length;
 
     // Note count excludes pending suggestions (they have their own badge)
     const regularNoteCount = node.notes.length - pendingSuggestionCount;

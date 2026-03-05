@@ -11,7 +11,8 @@ import { useUIStore } from '@/store/uiStore';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
+  const actual =
+    await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
     saveArchcFile: vi.fn(),
@@ -37,7 +38,7 @@ vi.mock('@/store/canvasStore', () => {
     setLayoutSpacing: vi.fn(),
     resetLayoutSpacing: vi.fn(),
   };
-  const useCanvasStore = (selector?: any) => selector ? selector(state) : state;
+  const useCanvasStore = (selector?: any) => (selector ? selector(state) : state);
   useCanvasStore.getState = () => state;
   useCanvasStore.subscribe = vi.fn(() => vi.fn());
   return {
@@ -56,7 +57,7 @@ vi.mock('@/store/navigationStore', () => {
     zoomOut: vi.fn(),
     zoomToLevel: vi.fn(),
   };
-  const useNavigationStore = (selector?: any) => selector ? selector(state) : state;
+  const useNavigationStore = (selector?: any) => (selector ? selector(state) : state);
   useNavigationStore.getState = () => state;
   useNavigationStore.subscribe = vi.fn(() => vi.fn());
   return { useNavigationStore };
@@ -115,8 +116,28 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
         description: '',
         owners: [],
         nodes: [
-          { id: 'n1', type: 'compute/service', displayName: 'Service A', args: {}, codeRefs: [], notes: [], properties: {}, position: { x: 0, y: 0 }, children: [] },
-          { id: 'n2', type: 'data/database', displayName: 'DB', args: {}, codeRefs: [], notes: [], properties: {}, position: { x: 300, y: 0 }, children: [] },
+          {
+            id: 'n1',
+            type: 'compute/service',
+            displayName: 'Service A',
+            args: {},
+            codeRefs: [],
+            notes: [],
+            properties: {},
+            position: { x: 0, y: 0 },
+            children: [],
+          },
+          {
+            id: 'n2',
+            type: 'data/database',
+            displayName: 'DB',
+            args: {},
+            codeRefs: [],
+            notes: [],
+            properties: {},
+            position: { x: 300, y: 0 },
+            children: [],
+          },
         ],
         edges: [],
       },

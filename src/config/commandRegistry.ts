@@ -56,7 +56,10 @@ export function getStaticCommands(): Command[] {
         const { zoomToRoot } = useNavigationStore.getState();
         const { isDirty } = useCoreStore.getState();
         const { openUnsavedChangesDialog } = useUIStore.getState();
-        const doNew = () => { newFile(); zoomToRoot(); };
+        const doNew = () => {
+          newFile();
+          zoomToRoot();
+        };
         if (isDirty) {
           openUnsavedChangesDialog({ onConfirm: doNew });
         } else {
@@ -144,7 +147,8 @@ export function getStaticCommands(): Command[] {
       keywords: ['duplicate', 'copy', 'clone', 'replicate'],
       iconName: 'Copy',
       execute: () => {
-        const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } = useCanvasStore.getState();
+        const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } =
+          useCanvasStore.getState();
         const { duplicateSelection } = useCoreStore.getState();
 
         let nodeIds: string[] = [];
@@ -339,10 +343,18 @@ export function getStaticCommands(): Command[] {
         const edge = graph.edges.find((e) => e.id === selectedEdgeId);
         if (!edge) return;
         const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
-        const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+        const typeLabels: Record<string, string> = {
+          sync: 'Sync',
+          async: 'Async',
+          'data-flow': 'Data Flow',
+        };
         const currentIdx = types.indexOf(edge.type);
         const nextType = types[(currentIdx + 1) % types.length]!;
-        updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+        updateEdge(
+          selectedEdgeId,
+          { type: nextType },
+          `Change edge type to ${typeLabels[nextType]}`,
+        );
         showToast(`Changed to ${typeLabels[nextType]}`);
       },
       isEnabled: () => useCanvasStore.getState().selectedEdgeId !== null,
@@ -452,7 +464,10 @@ export function getNodeCreationCommands(): Command[] {
       category: 'Node',
       iconName,
       keywords: [
-        'add', 'new', 'create', 'node',
+        'add',
+        'new',
+        'create',
+        'node',
         displayName.toLowerCase(),
         typeKey,
         nodeDef.metadata.namespace,
@@ -507,7 +522,9 @@ export function getNodeCreationCommands(): Command[] {
           openRightPanel('properties');
           // Trigger rename mode (auto-focus display name input)
           setPendingRenameNodeId(node.id);
-          console.log(`[CommandPalette] Created ${typeKey} node: ${node.displayName} at (${x}, ${y})`);
+          console.log(
+            `[CommandPalette] Created ${typeKey} node: ${node.displayName} at (${x}, ${y})`,
+          );
         }
       },
     });
@@ -519,7 +536,10 @@ export function getNodeCreationCommands(): Command[] {
 /**
  * Calculate viewport center in graph coordinates.
  */
-function _viewportCenter(viewport: { x: number; y: number; zoom: number }): { x: number; y: number } {
+function _viewportCenter(viewport: { x: number; y: number; zoom: number }): {
+  x: number;
+  y: number;
+} {
   // Convert viewport offset to graph coordinates.
   // React Flow viewport: panX = -x*zoom, panY = -y*zoom
   // The center of the window in graph coords is:
@@ -536,7 +556,10 @@ function _viewportCenter(viewport: { x: number; y: number; zoom: number }): { x:
 /**
  * Find a node by ID, recursively searching children.
  */
-function _findNodeById(nodes: import('@/types/graph').ArchNode[], id: string): import('@/types/graph').ArchNode | undefined {
+function _findNodeById(
+  nodes: import('@/types/graph').ArchNode[],
+  id: string,
+): import('@/types/graph').ArchNode | undefined {
   for (const node of nodes) {
     if (node.id === id) return node;
     if (node.children.length > 0) {
@@ -830,7 +853,6 @@ export function getBulkOperationCommands(): Command[] {
         const minX = Math.min(...nodes.map((n) => n.position.x));
         const minY = Math.min(...nodes.map((n) => n.position.y));
         const maxX = Math.max(...nodes.map((n) => n.position.x + (n.position.width || 200)));
-        const maxY = Math.max(...nodes.map((n) => n.position.y + (n.position.height || 100)));
 
         // Create a container node centered above the group
         const groupNode = textApi.addNode({
@@ -912,7 +934,9 @@ function _moveNodeInGraph(
   x: number,
   y: number,
 ): import('@/types/graph').ArchGraph {
-  function updateNodes(nodes: import('@/types/graph').ArchNode[]): import('@/types/graph').ArchNode[] {
+  function updateNodes(
+    nodes: import('@/types/graph').ArchNode[],
+  ): import('@/types/graph').ArchNode[] {
     return nodes.map((node) => {
       if (node.id === nodeId) {
         return { ...node, position: { ...node.position, x, y } };
@@ -930,7 +954,12 @@ function _moveNodeInGraph(
  * Get all available commands (static + dynamic node navigation + node creation + bulk ops).
  */
 export function getAllCommands(): Command[] {
-  return [...getStaticCommands(), ...getBulkOperationCommands(), ...getNodeCreationCommands(), ...getNodeCommands()];
+  return [
+    ...getStaticCommands(),
+    ...getBulkOperationCommands(),
+    ...getNodeCreationCommands(),
+    ...getNodeCommands(),
+  ];
 }
 
 /**

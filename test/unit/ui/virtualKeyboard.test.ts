@@ -43,7 +43,7 @@ function createMockVisualViewport(height: number) {
       const handlers = viewportListeners.get(event) || [];
       viewportListeners.set(
         event,
-        handlers.filter((h) => h !== handler)
+        handlers.filter((h) => h !== handler),
       );
     }),
   };
@@ -102,7 +102,7 @@ describe('useVirtualKeyboard', () => {
       renderHook(() => useVirtualKeyboard());
       expect(mockVisualViewport.addEventListener).toHaveBeenCalledWith(
         'resize',
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -296,7 +296,7 @@ describe('useVirtualKeyboard', () => {
 
       expect(mockVisualViewport.removeEventListener).toHaveBeenCalledWith(
         'resize',
-        expect.any(Function)
+        expect.any(Function),
       );
     });
   });
@@ -320,25 +320,33 @@ describe('useVirtualKeyboard', () => {
 
       // Cycle 1: open
       mockVisualViewport.height = 450;
-      act(() => { fireViewportResize(); });
+      act(() => {
+        fireViewportResize();
+      });
       expect(result.current.isKeyboardVisible).toBe(true);
       expect(result.current.keyboardHeight).toBe(362);
 
       // Cycle 1: close
       mockVisualViewport.height = 812;
-      act(() => { fireViewportResize(); });
+      act(() => {
+        fireViewportResize();
+      });
       expect(result.current.isKeyboardVisible).toBe(false);
       expect(result.current.keyboardHeight).toBe(0);
 
       // Cycle 2: open with different height
       mockVisualViewport.height = 550;
-      act(() => { fireViewportResize(); });
+      act(() => {
+        fireViewportResize();
+      });
       expect(result.current.isKeyboardVisible).toBe(true);
       expect(result.current.keyboardHeight).toBe(262);
 
       // Cycle 2: close
       mockVisualViewport.height = 812;
-      act(() => { fireViewportResize(); });
+      act(() => {
+        fireViewportResize();
+      });
       expect(result.current.isKeyboardVisible).toBe(false);
     });
   });

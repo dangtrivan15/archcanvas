@@ -144,9 +144,7 @@ describe('Feature #281: ClipboardAdapter for cross-platform clipboard access', (
 
     it('falls back to textarea+execCommand when navigator.clipboard throws', async () => {
       // Make navigator.clipboard.writeText throw
-      mockNavigatorClipboard(
-        vi.fn().mockRejectedValue(new Error('Not allowed')),
-      );
+      mockNavigatorClipboard(vi.fn().mockRejectedValue(new Error('Not allowed')));
 
       // Mock DOM methods for the fallback
       const mockTextarea = {
@@ -167,9 +165,7 @@ describe('Feature #281: ClipboardAdapter for cross-platform clipboard access', (
       if (!document.execCommand) {
         (document as Record<string, unknown>).execCommand = () => true;
       }
-      const execCommandSpy = vi
-        .spyOn(document, 'execCommand')
-        .mockReturnValue(true);
+      const execCommandSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
 
       await adapter.copyText('fallback text');
 
@@ -182,18 +178,14 @@ describe('Feature #281: ClipboardAdapter for cross-platform clipboard access', (
     });
 
     it('fallback textarea is positioned off-screen', async () => {
-      mockNavigatorClipboard(
-        vi.fn().mockRejectedValue(new Error('Not allowed')),
-      );
+      mockNavigatorClipboard(vi.fn().mockRejectedValue(new Error('Not allowed')));
 
       const mockTextarea = {
         value: '',
         style: {} as Record<string, string>,
         select: vi.fn(),
       };
-      vi.spyOn(document, 'createElement').mockReturnValue(
-        mockTextarea as unknown as HTMLElement,
-      );
+      vi.spyOn(document, 'createElement').mockReturnValue(mockTextarea as unknown as HTMLElement);
       vi.spyOn(document.body, 'appendChild').mockReturnValue(
         mockTextarea as unknown as HTMLElement,
       );

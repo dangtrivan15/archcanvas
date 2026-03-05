@@ -14,10 +14,7 @@
  */
 
 import { Command } from 'commander';
-import {
-  type GlobalOptions,
-  withErrorHandler,
-} from '@/cli/index';
+import { type GlobalOptions, withErrorHandler } from '@/cli/index';
 
 export interface BackupPushOptions {
   remote: string;
@@ -153,10 +150,7 @@ export async function createTag(tagName: string, message: string): Promise<void>
 /**
  * Push branch and tags to remote.
  */
-export async function pushToRemote(
-  remote: string,
-  branch: string,
-): Promise<void> {
+export async function pushToRemote(remote: string, branch: string): Promise<void> {
   await execGit(['push', remote, branch, '--tags']);
 }
 
@@ -174,10 +168,7 @@ export async function stashChanges(): Promise<boolean> {
 /**
  * Verify a tag exists on the remote.
  */
-export async function verifyRemoteTag(
-  remote: string,
-  tagName: string,
-): Promise<boolean> {
+export async function verifyRemoteTag(remote: string, tagName: string): Promise<boolean> {
   try {
     const output = await execGit(['ls-remote', '--tags', remote, `refs/tags/${tagName}`]);
     return output.includes(tagName);
@@ -263,9 +254,7 @@ export async function enableBranchProtection(
 /**
  * Execute the full backup-push pipeline.
  */
-export async function executeBackupPush(
-  options: BackupPushOptions,
-): Promise<BackupPushResult> {
+export async function executeBackupPush(options: BackupPushOptions): Promise<BackupPushResult> {
   const warnings: string[] = [];
   let stashed = false;
 
@@ -359,34 +348,12 @@ export async function executeBackupPush(
 export function registerBackupPushCommand(program: Command): void {
   program
     .command('backup-push')
-    .description(
-      'Push a tagged backup of the current state to remote before cleanup',
-    )
-    .option(
-      '--remote <name>',
-      'Git remote to push to',
-      'origin',
-    )
-    .option(
-      '--stash',
-      'Auto-stash uncommitted changes before pushing',
-      false,
-    )
-    .option(
-      '--lock',
-      'Enable branch protection on remote after push',
-      false,
-    )
-    .option(
-      '--dry-run',
-      'Show what would be done without making changes',
-      false,
-    )
-    .option(
-      '--tag-prefix <prefix>',
-      'Tag name prefix',
-      'pre-cleanup-backup-v',
-    )
+    .description('Push a tagged backup of the current state to remote before cleanup')
+    .option('--remote <name>', 'Git remote to push to', 'origin')
+    .option('--stash', 'Auto-stash uncommitted changes before pushing', false)
+    .option('--lock', 'Enable branch protection on remote after push', false)
+    .option('--dry-run', 'Show what would be done without making changes', false)
+    .option('--tag-prefix <prefix>', 'Tag name prefix', 'pre-cleanup-backup-v')
     .action(
       withErrorHandler(async (cmdOpts: BackupPushOptions) => {
         const opts = program.opts<GlobalOptions>();

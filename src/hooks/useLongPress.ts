@@ -36,9 +36,7 @@ export interface LongPressHandlers {
  * @param onLongPress - Callback fired with {x, y} (client coordinates) on long press
  * @returns Pointer event handlers to spread onto the target element
  */
-export function useLongPress(
-  onLongPress: (x: number, y: number) => void,
-): LongPressHandlers {
+export function useLongPress(onLongPress: (x: number, y: number) => void): LongPressHandlers {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const activeRef = useRef(false);

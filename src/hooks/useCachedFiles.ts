@@ -33,9 +33,7 @@ export function useCachedFiles() {
         .map((req) => {
           const url = req.url;
           const urlObj = new URL(url);
-          const name = decodeURIComponent(
-            urlObj.pathname.split('/').pop() || url
-          );
+          const name = decodeURIComponent(urlObj.pathname.split('/').pop() || url);
           return { url, name };
         });
       setCachedFiles(entries);
@@ -62,7 +60,7 @@ export function useCachedFiles() {
         console.warn('[useCachedFiles] Failed to remove cached file:', err);
       }
     },
-    [refreshCachedFiles]
+    [refreshCachedFiles],
   );
 
   const clearAllCachedFiles = useCallback(async () => {

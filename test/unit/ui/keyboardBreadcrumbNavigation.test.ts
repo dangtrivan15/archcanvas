@@ -253,7 +253,7 @@ describe('Source Code Verification', () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/App.tsx', 'utf-8');
     expect(source).toContain('data-testid="breadcrumb"');
-    expect(source).toContain("Root");
+    expect(source).toContain('Root');
     expect(source).toContain("parts.join(' > ')");
     expect(source).toContain('navigationPath.length > 0');
   });

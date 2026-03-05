@@ -252,7 +252,8 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       undoManager.snapshot('Initial', graph);
 
       const moved = batchMoveNodes(graph, [{ nodeId: 'n1', x: 120, y: 100 }]);
-      const desc = `Move ${1} node${1 === 1 ? '' : 's'}`;
+      const count = 1;
+      const desc = `Move ${count} node${count === 1 ? '' : 's'}`;
       undoManager.snapshot(desc, moved);
 
       expect(undoManager.entries[1]!.description).toBe('Move 1 node');
@@ -615,21 +616,15 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
 
       // Undo to step 2
       const u1 = undoManager.undo();
-      expect(findNode(u1!, 'n1')!.position).toEqual(
-        expect.objectContaining({ x: 140, y: 100 }),
-      );
+      expect(findNode(u1!, 'n1')!.position).toEqual(expect.objectContaining({ x: 140, y: 100 }));
 
       // Undo to step 1
       const u2 = undoManager.undo();
-      expect(findNode(u2!, 'n1')!.position).toEqual(
-        expect.objectContaining({ x: 120, y: 100 }),
-      );
+      expect(findNode(u2!, 'n1')!.position).toEqual(expect.objectContaining({ x: 120, y: 100 }));
 
       // Undo to initial
       const u3 = undoManager.undo();
-      expect(findNode(u3!, 'n1')!.position).toEqual(
-        expect.objectContaining({ x: 100, y: 100 }),
-      );
+      expect(findNode(u3!, 'n1')!.position).toEqual(expect.objectContaining({ x: 100, y: 100 }));
     });
   });
 });

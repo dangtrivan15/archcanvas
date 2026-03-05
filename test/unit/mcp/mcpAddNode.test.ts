@@ -132,14 +132,18 @@ describe('MCP add_node tool - Feature #179', () => {
 
   // Verify node ID uniqueness
   it('generates unique node IDs', () => {
-    const result1 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Service 1',
-    }));
-    const result2 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Service 2',
-    }));
+    const result1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Service 1',
+      }),
+    );
+    const result2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Service 2',
+      }),
+    );
 
     expect(result1.nodeId).not.toBe(result2.nodeId);
   });

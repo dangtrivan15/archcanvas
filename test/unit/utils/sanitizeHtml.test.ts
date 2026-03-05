@@ -68,7 +68,9 @@ describe('sanitizeHtml', () => {
   });
 
   it('removes form elements', () => {
-    const result = sanitizeHtml('<form action="evil"><input type="text"><button>Submit</button></form>');
+    const result = sanitizeHtml(
+      '<form action="evil"><input type="text"><button>Submit</button></form>',
+    );
     expect(result).not.toContain('<form');
     expect(result).not.toContain('<input');
     expect(result).not.toContain('<button');

@@ -75,7 +75,9 @@ export function DeleteConfirmationDialog() {
       clearSelection();
       closeDeleteDialog();
       hapticActions.notification('Warning');
-      showToast(`Deleted ${deleteDialogInfo.nodeIds!.length} nodes. ${formatBinding('mod+z')} to undo`);
+      showToast(
+        `Deleted ${deleteDialogInfo.nodeIds!.length} nodes. ${formatBinding('mod+z')} to undo`,
+      );
     } else {
       // Single node deletion (original behavior)
       const deletedName = deleteDialogInfo.nodeName;
@@ -85,7 +87,15 @@ export function DeleteConfirmationDialog() {
       hapticActions.notification('Warning');
       showToast(`Deleted ${deletedName}. ${formatBinding('mod+z')} to undo`);
     }
-  }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog, showToast, formatBinding, hapticActions]);
+  }, [
+    deleteDialogInfo,
+    removeNode,
+    clearSelection,
+    closeDeleteDialog,
+    showToast,
+    formatBinding,
+    hapticActions,
+  ]);
 
   // Handle keyboard: Escape to cancel, Enter to confirm
   const handleKeyDown = useCallback(
@@ -139,7 +149,11 @@ export function DeleteConfirmationDialog() {
       aria-modal="true"
       aria-labelledby="delete-dialog-title"
     >
-      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet" data-testid="delete-dialog-content">
+      <div
+        ref={focusTrapRef}
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
+        data-testid="delete-dialog-content"
+      >
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
@@ -151,9 +165,15 @@ export function DeleteConfirmationDialog() {
             </h2>
             <p className="text-sm text-gray-500 mt-1">
               {isMulti ? (
-                <>Are you sure you want to delete <strong data-testid="delete-node-name">{nodeCount} selected nodes</strong>?</>
+                <>
+                  Are you sure you want to delete{' '}
+                  <strong data-testid="delete-node-name">{nodeCount} selected nodes</strong>?
+                </>
               ) : (
-                <>Are you sure you want to delete <strong data-testid="delete-node-name">{nodeName}</strong>?</>
+                <>
+                  Are you sure you want to delete{' '}
+                  <strong data-testid="delete-node-name">{nodeName}</strong>?
+                </>
               )}
             </p>
           </div>
@@ -161,10 +181,11 @@ export function DeleteConfirmationDialog() {
 
         {/* Impact details */}
         {hasImpact && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4" data-testid="delete-impact-info">
-            <p className="text-sm font-medium text-amber-800 mb-2">
-              This will also remove:
-            </p>
+          <div
+            className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4"
+            data-testid="delete-impact-info"
+          >
+            <p className="text-sm font-medium text-amber-800 mb-2">This will also remove:</p>
             <ul className="text-sm text-amber-700 space-y-1">
               {edgeCount > 0 && (
                 <li data-testid="delete-edge-count">

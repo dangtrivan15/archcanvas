@@ -52,9 +52,7 @@ describe('Feature #344: Inference Result to ArchCanvas Graph Builder', () => {
           type: 'database',
           displayName: 'Users Database',
           description: 'PostgreSQL database for user data',
-          codeRefs: [
-            { path: 'src/db/schema.sql', role: 'SCHEMA' },
-          ],
+          codeRefs: [{ path: 'src/db/schema.sql', role: 'SCHEMA' }],
           children: [],
         },
         {
@@ -212,8 +210,22 @@ describe('Feature #344: Inference Result to ArchCanvas Graph Builder', () => {
         architectureName: 'Test',
         architectureDescription: 'Test system',
         nodes: [
-          { id: 'a', type: 'service', displayName: 'A', description: '', codeRefs: [], children: [] },
-          { id: 'b', type: 'database', displayName: 'B', description: '', codeRefs: [], children: [] },
+          {
+            id: 'a',
+            type: 'service',
+            displayName: 'A',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
+          {
+            id: 'b',
+            type: 'database',
+            displayName: 'B',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
           { id: 'c', type: 'cache', displayName: 'C', description: '', codeRefs: [], children: [] },
         ],
         edges: [
@@ -407,11 +419,16 @@ describe('Feature #344: Inference Result to ArchCanvas Graph Builder', () => {
         architectureName: 'Test',
         architectureDescription: 'Test',
         nodes: [
-          { id: 'a', type: 'service', displayName: 'A', description: '', codeRefs: [], children: [] },
+          {
+            id: 'a',
+            type: 'service',
+            displayName: 'A',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
         ],
-        edges: [
-          { from: 'nonexistent', to: 'a', type: 'SYNC', label: 'bad edge' },
-        ],
+        edges: [{ from: 'nonexistent', to: 'a', type: 'SYNC', label: 'bad edge' }],
       };
 
       const result = await buildGraph(inference, textApi, registry, { autoLayout: false });
@@ -427,11 +444,16 @@ describe('Feature #344: Inference Result to ArchCanvas Graph Builder', () => {
         architectureName: 'Test',
         architectureDescription: 'Test',
         nodes: [
-          { id: 'a', type: 'service', displayName: 'A', description: '', codeRefs: [], children: [] },
+          {
+            id: 'a',
+            type: 'service',
+            displayName: 'A',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
         ],
-        edges: [
-          { from: 'a', to: 'nonexistent', type: 'SYNC', label: 'bad edge' },
-        ],
+        edges: [{ from: 'a', to: 'nonexistent', type: 'SYNC', label: 'bad edge' }],
       };
 
       const result = await buildGraph(inference, textApi, registry, { autoLayout: false });
@@ -526,9 +548,30 @@ describe('Feature #344: Inference Result to ArchCanvas Graph Builder', () => {
         architectureName: 'Test',
         architectureDescription: 'Test',
         nodes: [
-          { id: 'a', type: 'microservice', displayName: 'A', description: '', codeRefs: [], children: [] },
-          { id: 'b', type: 'lambda', displayName: 'B', description: '', codeRefs: [], children: [] },
-          { id: 'c', type: 'postgres', displayName: 'C', description: '', codeRefs: [], children: [] },
+          {
+            id: 'a',
+            type: 'microservice',
+            displayName: 'A',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
+          {
+            id: 'b',
+            type: 'lambda',
+            displayName: 'B',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
+          {
+            id: 'c',
+            type: 'postgres',
+            displayName: 'C',
+            description: '',
+            codeRefs: [],
+            children: [],
+          },
         ],
         edges: [],
       };

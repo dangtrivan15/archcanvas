@@ -61,9 +61,7 @@ export class ExportApi {
       lines.push('');
       for (const edge of graph.edges) {
         const label = edge.label ? ` — "${edge.label}"` : '';
-        lines.push(
-          `- \`${edge.fromNode}\` → \`${edge.toNode}\` [${edge.type}]${label}`,
-        );
+        lines.push(`- \`${edge.fromNode}\` → \`${edge.toNode}\` [${edge.type}]${label}`);
       }
       lines.push('');
     }
@@ -79,14 +77,9 @@ export class ExportApi {
     const summary = this.generateMarkdownSummary(graph);
     const mermaid = this.generateMermaid(graph);
 
-    const mermaidSection = [
-      '## Architecture Diagram',
-      '',
-      '```mermaid',
-      mermaid,
-      '```',
-      '',
-    ].join('\n');
+    const mermaidSection = ['## Architecture Diagram', '', '```mermaid', mermaid, '```', ''].join(
+      '\n',
+    );
 
     return summary + mermaidSection;
   }
@@ -321,11 +314,7 @@ export class ExportApi {
   // Private helpers
   // ============================================================
 
-  private renderNodeMarkdown(
-    node: ArchNode,
-    lines: string[],
-    depth: number,
-  ): void {
+  private renderNodeMarkdown(node: ArchNode, lines: string[], depth: number): void {
     const indent = '  '.repeat(depth);
     const heading = '#'.repeat(Math.min(depth + 3, 6));
     lines.push(`${indent}${heading} ${node.displayName}`);
@@ -343,7 +332,9 @@ export class ExportApi {
     }
 
     if (node.codeRefs.length > 0) {
-      lines.push(`${indent}- **Code refs:** ${node.codeRefs.map((cr) => `\`${cr.path}\``).join(', ')}`);
+      lines.push(
+        `${indent}- **Code refs:** ${node.codeRefs.map((cr) => `\`${cr.path}\``).join(', ')}`,
+      );
     }
 
     lines.push('');

@@ -17,7 +17,10 @@ import path from 'node:path';
 import os from 'node:os';
 
 // Helper: start HTTP server on a random-ish port
-async function startServer(ctx: GraphContext, port = 0): Promise<{ server: Server; baseUrl: string }> {
+async function startServer(
+  ctx: GraphContext,
+  port = 0,
+): Promise<{ server: Server; baseUrl: string }> {
   const options: HttpServerOptions = { port, host: '127.0.0.1', cors: false };
   const server = createHttpServer(ctx, options);
 
@@ -118,7 +121,10 @@ describe('HTTP API Integration', () => {
       // List nodes (envelope)
       const listNodes = await httpRequest(`${baseUrl}/api/nodes`);
       expect(listNodes.status).toBe(200);
-      const nodesEnv = listNodes.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const nodesEnv = listNodes.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       const nodes = nodesEnv.data;
       expect(nodes).toHaveLength(2);
       expect(nodesEnv.meta.count).toBe(2);
@@ -142,7 +148,10 @@ describe('HTTP API Integration', () => {
       // List edges (envelope)
       const listEdges = await httpRequest(`${baseUrl}/api/edges`);
       expect(listEdges.status).toBe(200);
-      const edgesEnv = listEdges.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const edgesEnv = listEdges.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       const edges = edgesEnv.data;
       expect(edges).toHaveLength(1);
 
@@ -154,7 +163,9 @@ describe('HTTP API Integration', () => {
 
       // Verify update (envelope)
       const getUpdated = await httpRequest(`${baseUrl}/api/nodes/${node1.id}`);
-      expect((getUpdated.data as { data: Record<string, unknown> }).data.displayName).toBe('UpdatedWebAPI');
+      expect((getUpdated.data as { data: Record<string, unknown> }).data.displayName).toBe(
+        'UpdatedWebAPI',
+      );
 
       // Add note
       const addNote = await httpRequest(`${baseUrl}/api/nodes/${node1.id}/notes`, 'POST', {
@@ -383,7 +394,7 @@ describe('HTTP API Integration', () => {
       expect(nodes).toHaveLength(5);
 
       // All IDs should be unique
-      const ids = nodes.map(n => n.id);
+      const ids = nodes.map((n) => n.id);
       expect(new Set(ids).size).toBe(5);
 
       // Fire concurrent reads while writing
@@ -423,7 +434,12 @@ describe('HTTP API Integration', () => {
       reloaded.textApi.addNode({ type: 'compute/service', displayName: 'AuthService' });
       const dbNode = reloaded.textApi.addNode({ type: 'data/database', displayName: 'UserDB' });
       reloaded.textApi.addNode({ type: 'messaging/message-queue', displayName: 'EventQueue' });
-      reloaded.textApi.addEdge({ fromNode: reloaded.textApi.listNodes()[0].id, toNode: dbNode.id, type: 'sync', label: 'SQL' });
+      reloaded.textApi.addEdge({
+        fromNode: reloaded.textApi.listNodes()[0].id,
+        toNode: dbNode.id,
+        type: 'sync',
+        label: 'SQL',
+      });
       await reloaded.save(true);
 
       const s = await startServer(reloaded);
@@ -485,7 +501,9 @@ describe('HTTP API Integration', () => {
       const nodesEnv = nodesRes.data as { data: Array<Record<string, unknown>> };
       const nodeId = nodesEnv.data[0].id;
 
-      const res = await httpRequest(`${baseUrl}/api/describe?scope=node&nodeId=${nodeId}&format=structured`);
+      const res = await httpRequest(
+        `${baseUrl}/api/describe?scope=node&nodeId=${nodeId}&format=structured`,
+      );
       expect(res.status).toBe(200);
       const body = res.data as { data: string; meta: Record<string, unknown> };
       expect(body.meta.scope).toBe('node');
@@ -494,7 +512,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/nodes returns NodeSummary[] in envelope with count', async () => {
       const res = await httpRequest(`${baseUrl}/api/nodes`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data).toHaveLength(3);
       expect(body.meta.count).toBe(3);
       // Verify NodeSummary shape
@@ -528,7 +549,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/edges returns EdgeSummary[] in envelope with count', async () => {
       const res = await httpRequest(`${baseUrl}/api/edges`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data).toHaveLength(1);
       expect(body.meta.count).toBe(1);
       // Verify EdgeSummary shape
@@ -542,7 +566,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/search?q=<query> returns SearchResult[] in envelope', async () => {
       const res = await httpRequest(`${baseUrl}/api/search?q=Auth`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data.length).toBeGreaterThan(0);
       expect(body.meta.query).toBe('Auth');
       expect(body.meta.count).toBe(body.data.length);
@@ -556,7 +583,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/nodedefs returns all nodedefs in envelope', async () => {
       const res = await httpRequest(`${baseUrl}/api/nodedefs`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data.length).toBeGreaterThan(0);
       expect(body.meta.count).toBe(body.data.length);
       // Verify nodedef summary shape
@@ -571,7 +601,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/nodedefs?namespace=compute filters by namespace', async () => {
       const res = await httpRequest(`${baseUrl}/api/nodedefs?namespace=compute`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data.length).toBeGreaterThan(0);
       expect(body.meta.namespace).toBe('compute');
       // All should be compute namespace
@@ -583,7 +616,10 @@ describe('HTTP API Integration', () => {
     it('GET /api/nodedefs?namespace=data filters by data namespace', async () => {
       const res = await httpRequest(`${baseUrl}/api/nodedefs?namespace=data`);
       expect(res.status).toBe(200);
-      const body = res.data as { data: Array<Record<string, unknown>>; meta: Record<string, unknown> };
+      const body = res.data as {
+        data: Array<Record<string, unknown>>;
+        meta: Record<string, unknown>;
+      };
       expect(body.data.length).toBeGreaterThan(0);
       for (const def of body.data) {
         expect(def.namespace).toBe('data');
@@ -630,7 +666,8 @@ describe('HTTP API Integration', () => {
     try {
       // Add some data first
       await httpRequest(`${baseUrl}/api/nodes`, 'POST', {
-        type: 'compute/service', displayName: 'ExportSvc',
+        type: 'compute/service',
+        displayName: 'ExportSvc',
       });
 
       // Markdown
@@ -1089,7 +1126,14 @@ describe('HTTP API Integration', () => {
       });
       const nodeId = (create.data as Record<string, unknown>).id as string;
 
-      for (const role of ['source', 'api-spec', 'schema', 'deployment', 'config', 'test'] as const) {
+      for (const role of [
+        'source',
+        'api-spec',
+        'schema',
+        'deployment',
+        'config',
+        'test',
+      ] as const) {
         const res = await httpRequest(`${baseUrl}/api/nodes/${nodeId}/code-refs`, 'POST', {
           path: `src/${role}/file.ts`,
           role,

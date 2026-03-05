@@ -37,8 +37,8 @@ function makeScanResult(opts: {
   nestedFiles?: string[];
   rootDirs?: DirectoryEntry[];
 }): ScanResult {
-  const rootFileEntries = (opts.rootFiles ?? []).map(f => makeFile(f));
-  const nestedFileEntries = (opts.nestedFiles ?? []).map(f => makeFile(f));
+  const rootFileEntries = (opts.rootFiles ?? []).map((f) => makeFile(f));
+  const nestedFileEntries = (opts.nestedFiles ?? []).map((f) => makeFile(f));
 
   // Build language breakdown
   const languageBreakdown: Record<string, number> = {};
@@ -103,7 +103,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const pkgFile = result.files.find(f => f.path === 'package.json');
+      const pkgFile = result.files.find((f) => f.path === 'package.json');
       expect(pkgFile).toBeDefined();
       expect(pkgFile!.tier).toBe(1);
       expect(pkgFile!.reason).toContain('package.json');
@@ -114,7 +114,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const goMod = result.files.find(f => f.path === 'go.mod');
+      const goMod = result.files.find((f) => f.path === 'go.mod');
       expect(goMod).toBeDefined();
       expect(goMod!.tier).toBe(1);
     });
@@ -124,7 +124,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const cargo = result.files.find(f => f.path === 'Cargo.toml');
+      const cargo = result.files.find((f) => f.path === 'Cargo.toml');
       expect(cargo).toBeDefined();
       expect(cargo!.tier).toBe(1);
     });
@@ -134,7 +134,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const df = result.files.find(f => f.path === 'Dockerfile');
+      const df = result.files.find((f) => f.path === 'Dockerfile');
       expect(df).toBeDefined();
       expect(df!.tier).toBe(1);
     });
@@ -144,7 +144,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const dc = result.files.find(f => f.path === 'docker-compose.yml');
+      const dc = result.files.find((f) => f.path === 'docker-compose.yml');
       expect(dc).toBeDefined();
       expect(dc!.tier).toBe(1);
     });
@@ -154,7 +154,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const readme = result.files.find(f => f.path === 'README.md');
+      const readme = result.files.find((f) => f.path === 'README.md');
       expect(readme).toBeDefined();
       expect(readme!.tier).toBe(1);
     });
@@ -164,7 +164,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const ts = result.files.find(f => f.path === 'tsconfig.json');
+      const ts = result.files.find((f) => f.path === 'tsconfig.json');
       expect(ts).toBeDefined();
       expect(ts!.tier).toBe(1);
     });
@@ -176,7 +176,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const tier1Files = result.files.filter(f => f.tier === 1);
+      const tier1Files = result.files.filter((f) => f.tier === 1);
       expect(tier1Files.length).toBe(4);
     });
   });
@@ -187,7 +187,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const entry = result.files.find(f => f.path === 'src/index.ts');
+      const entry = result.files.find((f) => f.path === 'src/index.ts');
       expect(entry).toBeDefined();
       expect(entry!.tier).toBe(2);
       expect(entry!.reason).toContain('Entry point');
@@ -198,7 +198,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const entry = result.files.find(f => f.path === 'main.go');
+      const entry = result.files.find((f) => f.path === 'main.go');
       expect(entry).toBeDefined();
       expect(entry!.tier).toBe(2);
     });
@@ -208,7 +208,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const entry = result.files.find(f => f.path === 'main.py');
+      const entry = result.files.find((f) => f.path === 'main.py');
       expect(entry).toBeDefined();
       expect(entry!.tier).toBe(2);
     });
@@ -218,7 +218,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile({ entryPoints: ['src/server.ts'] });
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const entry = result.files.find(f => f.path === 'src/server.ts');
+      const entry = result.files.find((f) => f.path === 'src/server.ts');
       expect(entry).toBeDefined();
       expect(entry!.tier).toBe(2);
     });
@@ -228,7 +228,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const route = result.files.find(f => f.path === 'src/routes.ts');
+      const route = result.files.find((f) => f.path === 'src/routes.ts');
       expect(route).toBeDefined();
       expect(route!.tier).toBe(2);
       expect(route!.reason).toContain('Route definition');
@@ -239,7 +239,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const router = result.files.find(f => f.path === 'src/router.js');
+      const router = result.files.find((f) => f.path === 'src/router.js');
       expect(router).toBeDefined();
       expect(router!.tier).toBe(2);
     });
@@ -249,7 +249,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const urls = result.files.find(f => f.path === 'app/urls.py');
+      const urls = result.files.find((f) => f.path === 'app/urls.py');
       expect(urls).toBeDefined();
       expect(urls!.tier).toBe(2);
     });
@@ -259,7 +259,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const proto = result.files.find(f => f.path === 'proto/schema.proto');
+      const proto = result.files.find((f) => f.path === 'proto/schema.proto');
       expect(proto).toBeDefined();
       expect(proto!.tier).toBe(2);
       expect(proto!.reason).toContain('Schema');
@@ -270,7 +270,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const gql = result.files.find(f => f.path === 'src/schema.graphql');
+      const gql = result.files.find((f) => f.path === 'src/schema.graphql');
       expect(gql).toBeDefined();
       expect(gql!.tier).toBe(2);
     });
@@ -280,7 +280,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const api = result.files.find(f => f.path === 'openapi.yaml');
+      const api = result.files.find((f) => f.path === 'openapi.yaml');
       expect(api).toBeDefined();
       expect(api!.tier).toBe(2);
     });
@@ -290,7 +290,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const prisma = result.files.find(f => f.path === 'prisma/schema.prisma');
+      const prisma = result.files.find((f) => f.path === 'prisma/schema.prisma');
       expect(prisma).toBeDefined();
       expect(prisma!.tier).toBe(2);
     });
@@ -302,7 +302,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const idx = result.files.find(f => f.path === 'src/utils/index.ts');
+      const idx = result.files.find((f) => f.path === 'src/utils/index.ts');
       expect(idx).toBeDefined();
       expect(idx!.tier).toBe(3);
       expect(idx!.reason).toContain('Module index');
@@ -313,7 +313,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const init = result.files.find(f => f.path === 'app/__init__.py');
+      const init = result.files.find((f) => f.path === 'app/__init__.py');
       expect(init).toBeDefined();
       expect(init!.tier).toBe(3);
     });
@@ -323,7 +323,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const modRs = result.files.find(f => f.path === 'src/utils/mod.rs');
+      const modRs = result.files.find((f) => f.path === 'src/utils/mod.rs');
       expect(modRs).toBeDefined();
       expect(modRs!.tier).toBe(3);
     });
@@ -333,7 +333,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const idx = result.files.find(f => f.path === 'src/components/index.js');
+      const idx = result.files.find((f) => f.path === 'src/components/index.js');
       expect(idx).toBeDefined();
       expect(idx!.tier).toBe(3);
     });
@@ -351,7 +351,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const tier4 = result.files.filter(f => f.tier === 4);
+      const tier4 = result.files.filter((f) => f.tier === 4);
       expect(tier4.length).toBeGreaterThanOrEqual(1);
       expect(tier4.length).toBeLessThanOrEqual(2); // max 2 per dir
       expect(tier4[0].reason).toContain('Representative');
@@ -370,7 +370,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const tier4 = result.files.filter(f => f.tier === 4);
+      const tier4 = result.files.filter((f) => f.tier === 4);
       expect(tier4.length).toBe(2);
     });
 
@@ -383,24 +383,20 @@ describe('selectKeyFiles', () => {
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
       // src/index.ts should be Tier 2, not duplicated as Tier 4
-      const duplicates = result.files.filter(f => f.path === 'src/index.ts');
+      const duplicates = result.files.filter((f) => f.path === 'src/index.ts');
       expect(duplicates.length).toBe(1);
       expect(duplicates[0].tier).toBe(2);
     });
 
     it('only selects source code files (not config/data)', () => {
       const scan = makeScanResult({
-        nestedFiles: [
-          'data/records.json',
-          'data/users.csv',
-          'data/schema.sql',
-        ],
+        nestedFiles: ['data/records.json', 'data/users.csv', 'data/schema.sql'],
       });
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
       // .json, .csv, .sql are not in the source extensions list for Tier 4
-      const tier4 = result.files.filter(f => f.tier === 4);
+      const tier4 = result.files.filter((f) => f.tier === 4);
       expect(tier4.length).toBe(0);
     });
   });
@@ -451,8 +447,8 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const tier1Idx = result.files.findIndex(f => f.tier === 1);
-      const tier2Idx = result.files.findIndex(f => f.tier === 2);
+      const tier1Idx = result.files.findIndex((f) => f.tier === 1);
+      const tier2Idx = result.files.findIndex((f) => f.tier === 2);
 
       expect(tier1Idx).toBeLessThan(tier2Idx);
     });
@@ -460,15 +456,15 @@ describe('selectKeyFiles', () => {
     it('includes Tier 2 before Tier 3', () => {
       const scan = makeScanResult({
         nestedFiles: [
-          'src/index.ts',        // Tier 2 entry point
-          'src/utils/index.ts',  // Tier 3 barrel
+          'src/index.ts', // Tier 2 entry point
+          'src/utils/index.ts', // Tier 3 barrel
         ],
       });
       const profile = makeProfile();
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const tier2Idx = result.files.findIndex(f => f.tier === 2);
-      const tier3Idx = result.files.findIndex(f => f.tier === 3);
+      const tier2Idx = result.files.findIndex((f) => f.tier === 2);
+      const tier3Idx = result.files.findIndex((f) => f.tier === 3);
 
       expect(tier2Idx).toBeLessThan(tier3Idx);
     });
@@ -549,9 +545,9 @@ describe('selectKeyFiles', () => {
 
       // Should have Tier 1 configs + Tier 2 entry/routes + Tier 3 barrel
       expect(result.files.length).toBeGreaterThanOrEqual(5);
-      expect(result.files.some(f => f.path === 'package.json' && f.tier === 1)).toBe(true);
-      expect(result.files.some(f => f.path === 'src/index.ts' && f.tier === 2)).toBe(true);
-      expect(result.files.some(f => f.path === 'src/routes.ts' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'package.json' && f.tier === 1)).toBe(true);
+      expect(result.files.some((f) => f.path === 'src/index.ts' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'src/routes.ts' && f.tier === 2)).toBe(true);
     });
 
     it('handles Go project', () => {
@@ -565,8 +561,8 @@ describe('selectKeyFiles', () => {
       });
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      expect(result.files.some(f => f.path === 'go.mod' && f.tier === 1)).toBe(true);
-      expect(result.files.some(f => f.path === 'main.go' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'go.mod' && f.tier === 1)).toBe(true);
+      expect(result.files.some((f) => f.path === 'main.go' && f.tier === 2)).toBe(true);
     });
 
     it('handles Python project', () => {
@@ -580,10 +576,10 @@ describe('selectKeyFiles', () => {
       });
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      expect(result.files.some(f => f.path === 'requirements.txt' && f.tier === 1)).toBe(true);
-      expect(result.files.some(f => f.path === 'manage.py' && f.tier === 2)).toBe(true);
-      expect(result.files.some(f => f.path === 'app/urls.py' && f.tier === 2)).toBe(true);
-      expect(result.files.some(f => f.path === 'app/__init__.py' && f.tier === 3)).toBe(true);
+      expect(result.files.some((f) => f.path === 'requirements.txt' && f.tier === 1)).toBe(true);
+      expect(result.files.some((f) => f.path === 'manage.py' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'app/urls.py' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'app/__init__.py' && f.tier === 3)).toBe(true);
     });
 
     it('handles Rust project', () => {
@@ -597,9 +593,9 @@ describe('selectKeyFiles', () => {
       });
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      expect(result.files.some(f => f.path === 'Cargo.toml' && f.tier === 1)).toBe(true);
-      expect(result.files.some(f => f.path === 'src/main.rs' && f.tier === 2)).toBe(true);
-      expect(result.files.some(f => f.path === 'src/routes/mod.rs' && f.tier === 3)).toBe(true);
+      expect(result.files.some((f) => f.path === 'Cargo.toml' && f.tier === 1)).toBe(true);
+      expect(result.files.some((f) => f.path === 'src/main.rs' && f.tier === 2)).toBe(true);
+      expect(result.files.some((f) => f.path === 'src/routes/mod.rs' && f.tier === 3)).toBe(true);
     });
   });
 
@@ -612,7 +608,7 @@ describe('selectKeyFiles', () => {
       const profile = makeProfile({ entryPoints: ['src/index.ts'] });
       const result = selectKeyFiles(scan, profile, defaultOpts);
 
-      const matchingFiles = result.files.filter(f => f.path === 'src/index.ts');
+      const matchingFiles = result.files.filter((f) => f.path === 'src/index.ts');
       expect(matchingFiles.length).toBe(1);
     });
   });

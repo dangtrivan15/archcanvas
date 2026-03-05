@@ -5,7 +5,14 @@
 
 import { create } from 'zustand';
 import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
-import type { AddNodeParams, AddEdgeParams, AddNoteParams, AddCodeRefParams, UpdateNodeParams, SuggestParams } from '@/types/api';
+import type {
+  AddNodeParams,
+  AddEdgeParams,
+  AddNoteParams,
+  AddCodeRefParams,
+  UpdateNodeParams,
+  SuggestParams,
+} from '@/types/api';
 import { RegistryManager } from '@/core/registry/registryManager';
 import { createEmptyGraph, moveNode as engineMoveNode } from '@/core/graph/graphEngine';
 import { countAllNodes } from '@/core/graph/graphQuery';
@@ -13,16 +20,22 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { pickArchcFile, decodeArchcData, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown, graphToProto } from '@/core/storage/fileIO';
+import {
+  pickArchcFile,
+  decodeArchcData,
+  saveArchcFile,
+  saveArchcFileAs,
+  deriveSummaryFileName,
+  saveSummaryMarkdown,
+  graphToProto,
+} from '@/core/storage/fileIO';
 import { enqueueSave } from '@/core/sync/syncQueue';
-import { encode } from '@/core/storage/codec';
-import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
+import { encode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAIStore } from '@/store/aiStore';
 import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
-import { generateId } from '@/utils/idGenerator';
 
 export interface CoreStoreState {
   // State
@@ -68,7 +81,11 @@ export interface CoreStoreState {
   removeNode: (nodeId: string) => void;
   updateNode: (nodeId: string, params: UpdateNodeParams) => void;
   addEdge: (params: AddEdgeParams) => ArchEdge | undefined;
-  updateEdge: (edgeId: string, updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>, snapshotDescription?: string) => void;
+  updateEdge: (
+    edgeId: string,
+    updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>,
+    snapshotDescription?: string,
+  ) => void;
   removeEdge: (edgeId: string) => void;
   addNote: (params: AddNoteParams) => Note | undefined;
   removeNote: (nodeId: string, noteId: string) => void;
@@ -78,7 +95,10 @@ export interface CoreStoreState {
   resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   updateNodeColor: (nodeId: string, color: string | undefined) => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
-  moveNodes: (moves: Array<{ nodeId: string; x: number; y: number }>, snapshotDescription?: string) => void;
+  moveNodes: (
+    moves: Array<{ nodeId: string; x: number; y: number }>,
+    snapshotDescription?: string,
+  ) => void;
   duplicateSelection: (nodeIds: string[]) => string[];
 
   // Annotations
@@ -266,7 +286,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     // Request fit view so the canvas adjusts to show all nodes
     useCanvasStore.getState().requestFitView();
 
-    console.log(`[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`);
+    console.log(
+      `[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`,
+    );
   },
 
   /**
@@ -310,7 +332,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
           const { openIntegrityWarningDialog } = useUIStore.getState();
           openIntegrityWarningDialog({
             message:
-              'The file\'s integrity checksum does not match its contents. ' +
+              "The file's integrity checksum does not match its contents. " +
               'The file may have been corrupted or modified outside of ArchCanvas. ' +
               'Opening it anyway may result in unexpected behavior.',
             onProceed: async () => {
@@ -333,11 +355,17 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
                 console.log(`[CoreStore] Opened file with skipped checksum: ${picked.fileName}`);
               } catch (retryErr) {
                 clearFileOperationLoading();
-                console.error('[CoreStore] Failed to open file even with skipped checksum:', retryErr);
+                console.error(
+                  '[CoreStore] Failed to open file even with skipped checksum:',
+                  retryErr,
+                );
                 const { openErrorDialog } = useUIStore.getState();
                 openErrorDialog({
                   title: 'Failed to Open File',
-                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the file contents.',
+                  message:
+                    retryErr instanceof Error
+                      ? retryErr.message
+                      : 'Failed to decode the file contents.',
                 });
               }
             },
@@ -357,12 +385,17 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       if (err instanceof CodecError) {
         openErrorDialog({
           title: 'Invalid File Format',
-          message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
+          message:
+            err.message ||
+            'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
         });
       } else {
         openErrorDialog({
           title: 'Failed to Open File',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the file.',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'An unexpected error occurred while opening the file.',
         });
       }
 
@@ -402,7 +435,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       // If offline, queue the save for background sync instead of writing directly
       if (!navigator.onLine) {
         try {
-          const protoFile = graphToProto(graph, canvasState, undefined, aiState, fileCreatedAtMs ?? undefined);
+          const protoFile = graphToProto(
+            graph,
+            canvasState,
+            undefined,
+            aiState,
+            fileCreatedAtMs ?? undefined,
+          );
           const binaryData = await encode(protoFile);
           await enqueueSave(fileName, binaryData);
           clearFileOperationLoading();
@@ -444,7 +483,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
       // Show toast — if no file handle, the file was downloaded via browser fallback
       if (!get().fileHandle) {
-        useUIStore.getState().showToast('File downloaded to your browser\'s download folder');
+        useUIStore.getState().showToast("File downloaded to your browser's download folder");
       } else {
         useUIStore.getState().showToast('File saved');
       }
@@ -458,9 +497,10 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const { openErrorDialog } = useUIStore.getState();
       openErrorDialog({
         title: 'Save Failed',
-        message: err instanceof Error
-          ? `Could not save the file: ${err.message}`
-          : 'An unexpected error occurred while saving the file. Please try again.',
+        message:
+          err instanceof Error
+            ? `Could not save the file: ${err.message}`
+            : 'An unexpected error occurred while saving the file. Please try again.',
       });
       return false;
     }
@@ -487,7 +527,13 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
-      const result = await saveArchcFileAs(graph, fileName, canvasState, aiState, fileCreatedAtMs ?? undefined);
+      const result = await saveArchcFileAs(
+        graph,
+        fileName,
+        canvasState,
+        aiState,
+        fileCreatedAtMs ?? undefined,
+      );
       if (!result) {
         // User cancelled the picker
         set({ isSaving: false });
@@ -525,7 +571,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
       // Show toast — if no file handle returned, it was a browser download fallback
       if (!result.fileHandle) {
-        useUIStore.getState().showToast(`"${result.fileName}" downloaded to your browser\'s download folder`);
+        useUIStore
+          .getState()
+          .showToast(`"${result.fileName}" downloaded to your browser's download folder`);
       } else {
         useUIStore.getState().showToast(`Saved as "${result.fileName}"`);
       }
@@ -539,9 +587,10 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const { openErrorDialog } = useUIStore.getState();
       openErrorDialog({
         title: 'Save Failed',
-        message: err instanceof Error
-          ? `Could not save the file: ${err.message}`
-          : 'An unexpected error occurred while saving the file. Please try again.',
+        message:
+          err instanceof Error
+            ? `Could not save the file: ${err.message}`
+            : 'An unexpected error occurred while saving the file. Please try again.',
       });
       return false;
     }
@@ -583,26 +632,31 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
           const { openIntegrityWarningDialog } = useUIStore.getState();
           openIntegrityWarningDialog({
             message:
-              'The file\'s integrity checksum does not match its contents. ' +
+              "The file's integrity checksum does not match its contents. " +
               'The file may have been corrupted or modified outside of ArchCanvas. ' +
               'Opening it anyway may result in unexpected behavior.',
             onProceed: async () => {
               try {
                 setFileOperationLoading('Loading file...');
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
-                  data,
-                  { skipChecksumVerification: true },
-                );
+                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data, {
+                  skipChecksumVerification: true,
+                });
                 get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
                 clearFileOperationLoading();
                 console.log(`[CoreStore] Loaded file from URL with skipped checksum: ${fileName}`);
               } catch (retryErr) {
                 clearFileOperationLoading();
-                console.error('[CoreStore] Failed to load file even with skipped checksum:', retryErr);
+                console.error(
+                  '[CoreStore] Failed to load file even with skipped checksum:',
+                  retryErr,
+                );
                 const { openErrorDialog } = useUIStore.getState();
                 openErrorDialog({
                   title: 'Failed to Open File',
-                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the file contents.',
+                  message:
+                    retryErr instanceof Error
+                      ? retryErr.message
+                      : 'Failed to decode the file contents.',
                 });
               }
             },
@@ -619,12 +673,17 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       if (err instanceof CodecError) {
         openErrorDialog({
           title: 'Invalid File Format',
-          message: err.message || 'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
+          message:
+            err.message ||
+            'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
         });
       } else {
         openErrorDialog({
           title: 'Failed to Open File',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the file.',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'An unexpected error occurred while opening the file.',
         });
       }
 
@@ -671,26 +730,31 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
           const { openIntegrityWarningDialog } = useUIStore.getState();
           openIntegrityWarningDialog({
             message:
-              'The dropped file\'s integrity checksum does not match its contents. ' +
+              "The dropped file's integrity checksum does not match its contents. " +
               'The file may have been corrupted or modified outside of ArchCanvas. ' +
               'Opening it anyway may result in unexpected behavior.',
             onProceed: async () => {
               try {
                 setFileOperationLoading('Opening dropped file...');
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
-                  data,
-                  { skipChecksumVerification: true },
-                );
+                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data, {
+                  skipChecksumVerification: true,
+                });
                 get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
                 clearFileOperationLoading();
                 console.log(`[CoreStore] Loaded dropped file with skipped checksum: ${fileName}`);
               } catch (retryErr) {
                 clearFileOperationLoading();
-                console.error('[CoreStore] Failed to load dropped file even with skipped checksum:', retryErr);
+                console.error(
+                  '[CoreStore] Failed to load dropped file even with skipped checksum:',
+                  retryErr,
+                );
                 const { openErrorDialog } = useUIStore.getState();
                 openErrorDialog({
                   title: 'Failed to Open File',
-                  message: retryErr instanceof Error ? retryErr.message : 'Failed to decode the dropped file.',
+                  message:
+                    retryErr instanceof Error
+                      ? retryErr.message
+                      : 'Failed to decode the dropped file.',
                 });
               }
             },
@@ -707,12 +771,17 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       if (err instanceof CodecError) {
         openErrorDialog({
           title: 'Invalid File Format',
-          message: err.message || 'The dropped file could not be opened because it is not a valid ArchCanvas file.',
+          message:
+            err.message ||
+            'The dropped file could not be opened because it is not a valid ArchCanvas file.',
         });
       } else {
         openErrorDialog({
           title: 'Failed to Open File',
-          message: err instanceof Error ? err.message : 'An unexpected error occurred while opening the dropped file.',
+          message:
+            err instanceof Error
+              ? err.message
+              : 'An unexpected error occurred while opening the dropped file.',
         });
       }
 
@@ -725,7 +794,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Automatically pre-fills default arg values from the nodedef when no explicit args are provided.
    */
   addNode: (params) => {
-    const { textApi, undoManager, graph, registry } = get();
+    const { textApi, undoManager, registry } = get();
     if (!textApi || !undoManager) return undefined;
 
     // Pre-fill default values from nodedef for args not explicitly provided
@@ -763,7 +832,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Remove a node from the graph.
    */
   removeNode: (nodeId) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return;
 
     textApi.removeNode(nodeId);
@@ -784,7 +853,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Update a node's properties.
    */
   updateNode: (nodeId, params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return;
 
     textApi.updateNode(nodeId, params);
@@ -803,7 +872,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Add an edge to the graph.
    */
   addEdge: (params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return undefined;
 
     const edge = textApi.addEdge(params);
@@ -844,7 +913,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Remove an edge from the graph.
    */
   removeEdge: (edgeId) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return;
 
     textApi.removeEdge(edgeId);
@@ -864,7 +933,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Add a note to a node or edge.
    */
   addNote: (params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return undefined;
 
     const note = textApi.addNote(params);
@@ -923,7 +992,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Add a code reference to a node.
    */
   addCodeRef: (params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return;
 
     textApi.addCodeRef(params);
@@ -942,7 +1011,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Create a pending AI suggestion note on a node.
    */
   suggest: (params) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return undefined;
 
     const note = textApi.suggest(params);
@@ -963,12 +1032,15 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
    * Accept or dismiss an AI suggestion note.
    */
   resolveSuggestion: (nodeId, noteId, action) => {
-    const { textApi, undoManager, graph } = get();
+    const { textApi, undoManager } = get();
     if (!textApi || !undoManager) return;
 
     textApi.resolveSuggestion(nodeId, noteId, action);
     const updatedGraph = textApi.getGraph();
-    undoManager.snapshot(`${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`, updatedGraph);
+    undoManager.snapshot(
+      `${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`,
+      updatedGraph,
+    );
 
     set({
       graph: updatedGraph,
@@ -1154,9 +1226,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     const { graph } = get();
     const updatedGraph: ArchGraph = {
       ...graph,
-      annotations: nodeId
-        ? (graph.annotations ?? []).filter((a) => a.nodeId !== nodeId)
-        : [],
+      annotations: nodeId ? (graph.annotations ?? []).filter((a) => a.nodeId !== nodeId) : [],
     };
     set({ graph: updatedGraph, isDirty: true });
   },

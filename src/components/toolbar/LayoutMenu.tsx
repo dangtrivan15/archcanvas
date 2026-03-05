@@ -3,7 +3,15 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { LayoutGrid, ChevronDown, ArrowRightFromLine, ArrowDownFromLine, Maximize, Settings2, RotateCcw } from 'lucide-react';
+import {
+  LayoutGrid,
+  ChevronDown,
+  ArrowRightFromLine,
+  ArrowDownFromLine,
+  Maximize,
+  Settings2,
+  RotateCcw,
+} from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore, DEFAULT_LAYOUT_SPACING } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -245,7 +253,9 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           >
             <Maximize className="w-4 h-4" />
             <span>Fit View</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+shift+l')}</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+              {formatBinding('mod+shift+l')}
+            </span>
           </button>
         </div>
       )}

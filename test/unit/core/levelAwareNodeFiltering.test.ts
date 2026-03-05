@@ -13,12 +13,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { RenderApi } from '@/api/renderApi';
 import { RegistryManager } from '@/core/registry/registryManager';
-import {
-  createEmptyGraph,
-  createNode,
-  addNode,
-  addChildNode,
-} from '@/core/graph/graphEngine';
+import { createEmptyGraph, createNode, addNode, addChildNode } from '@/core/graph/graphEngine';
 import { getNodesAtLevel } from '@/core/graph/graphQuery';
 import type { ArchGraph } from '@/types/graph';
 

@@ -60,7 +60,11 @@ describe('TextApi.getNode() - Feature #41', () => {
     it('should return complete node detail with args, properties, notes, codeRefs, and edges', () => {
       // Step 1: Create node with args, properties, 2 notes, 1 code ref, and 2 connected edges
       const note1 = makeNote({ author: 'human', content: 'This service handles auth' });
-      const note2 = makeNote({ author: 'ai', content: 'Consider adding rate limiting', status: 'pending' });
+      const note2 = makeNote({
+        author: 'ai',
+        content: 'Consider adding rate limiting',
+        status: 'pending',
+      });
 
       const codeRef: CodeRef = { path: 'src/services/auth.ts', role: 'source' };
 

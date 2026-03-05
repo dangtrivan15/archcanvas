@@ -118,12 +118,15 @@ describe('CLI analyze command', () => {
       program.exitOverride();
       try {
         await program.parseAsync([
-          'node', 'archcanvas', 'analyze', '/tmp/nonexistent-test-dir-archcanvas-xyz',
+          'node',
+          'archcanvas',
+          'analyze',
+          '/tmp/nonexistent-test-dir-archcanvas-xyz',
         ]);
       } catch {
         // expected
       }
-      const errorCalls = errorSpy.mock.calls.map(c => c.join(' ')).join('\n');
+      const errorCalls = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
       expect(errorCalls).toContain('not found');
     });
 
@@ -135,13 +138,11 @@ describe('CLI analyze command', () => {
         const program = createProgram();
         program.exitOverride();
         try {
-          await program.parseAsync([
-            'node', 'archcanvas', 'analyze', tmpFile,
-          ]);
+          await program.parseAsync(['node', 'archcanvas', 'analyze', tmpFile]);
         } catch {
           // expected
         }
-        const errorCalls = errorSpy.mock.calls.map(c => c.join(' ')).join('\n');
+        const errorCalls = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
         expect(errorCalls).toContain('Not a directory');
       } finally {
         fs.unlinkSync(tmpFile);
@@ -180,21 +181,31 @@ describe('CLI analyze command', () => {
     it('runs dry-run analysis on a temp directory and outputs JSON', async () => {
       // Create a minimal project directory
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'archcanvas-analyze-'));
-      fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({
-        name: 'test-project',
-        dependencies: { express: '^4.0.0' },
-      }));
+      fs.writeFileSync(
+        path.join(tmpDir, 'package.json'),
+        JSON.stringify({
+          name: 'test-project',
+          dependencies: { express: '^4.0.0' },
+        }),
+      );
       fs.writeFileSync(path.join(tmpDir, 'index.js'), 'const express = require("express");');
 
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas', '--format', 'json',
-          'analyze', tmpDir, '--dry-run', '--name', 'TestProject',
+          'node',
+          'archcanvas',
+          '--format',
+          'json',
+          'analyze',
+          tmpDir,
+          '--dry-run',
+          '--name',
+          'TestProject',
         ]);
 
         // Find the JSON output in console.log calls
-        const logOutput = logSpy.mock.calls.map(c => c[0]).join('\n');
+        const logOutput = logSpy.mock.calls.map((c) => c[0]).join('\n');
         expect(logOutput).toBeTruthy();
 
         // Parse JSON output
@@ -215,8 +226,16 @@ describe('CLI analyze command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas', '--format', 'json',
-          'analyze', tmpDir, '--output', outputPath, '--name', 'TestProject',
+          'node',
+          'archcanvas',
+          '--format',
+          'json',
+          'analyze',
+          tmpDir,
+          '--output',
+          outputPath,
+          '--name',
+          'TestProject',
         ]);
 
         // The .archc file should be created
@@ -243,12 +262,9 @@ describe('CLI analyze command', () => {
 
       try {
         const program = createProgram();
-        await program.parseAsync([
-          'node', 'archcanvas',
-          'analyze', tmpDir, '--dry-run',
-        ]);
+        await program.parseAsync(['node', 'archcanvas', 'analyze', tmpDir, '--dry-run']);
 
-        const errOutput = errorSpy.mock.calls.map(c => c.join(' ')).join('\n');
+        const errOutput = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
         // Should show progress phases
         expect(errOutput).toContain('Scanning');
       } finally {
@@ -262,12 +278,9 @@ describe('CLI analyze command', () => {
 
       try {
         const program = createProgram();
-        await program.parseAsync([
-          'node', 'archcanvas',
-          'analyze', tmpDir, '--dry-run',
-        ]);
+        await program.parseAsync(['node', 'archcanvas', 'analyze', tmpDir, '--dry-run']);
 
-        const errOutput = errorSpy.mock.calls.map(c => c.join(' ')).join('\n');
+        const errOutput = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
         expect(errOutput).toContain('ANTHROPIC_API_KEY');
       } finally {
         fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -281,12 +294,9 @@ describe('CLI analyze command', () => {
 
       try {
         const program = createProgram();
-        await program.parseAsync([
-          'node', 'archcanvas',
-          'analyze', tmpDir, '--output', outputPath,
-        ]);
+        await program.parseAsync(['node', 'archcanvas', 'analyze', tmpDir, '--output', outputPath]);
 
-        const errOutput = errorSpy.mock.calls.map(c => c.join(' ')).join('\n');
+        const errOutput = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
         expect(errOutput).toContain('Nodes created');
         expect(errOutput).toContain('Edges created');
         expect(errOutput).toContain('Output file');

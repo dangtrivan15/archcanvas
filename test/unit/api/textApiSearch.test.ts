@@ -17,9 +17,7 @@ import { RegistryManager } from '@/core/registry/registryManager';
 import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
 import { generateId } from '@/utils/idGenerator';
 
-function makeNode(
-  overrides: Partial<ArchNode> & { type: string; displayName: string },
-): ArchNode {
+function makeNode(overrides: Partial<ArchNode> & { type: string; displayName: string }): ArchNode {
   return {
     id: generateId(),
     type: overrides.type,
@@ -143,9 +141,7 @@ describe('TextApi.search() - Feature #49', () => {
     const { api, orderService } = createDiverseGraph();
 
     const results = api.search('Service');
-    const match = results.find(
-      (r) => r.type === 'node' && r.id === orderService.id,
-    );
+    const match = results.find((r) => r.type === 'node' && r.id === orderService.id);
     expect(match).toBeDefined();
     expect(match!.displayName).toBe('Order Service');
   });
@@ -273,9 +269,7 @@ describe('TextApi.search() - Feature #49', () => {
     const results = api.search('postgres');
     expect(results.length).toBeGreaterThan(0);
 
-    const match = results.find(
-      (r) => r.type === 'node' && r.displayName === 'User Database',
-    );
+    const match = results.find((r) => r.type === 'node' && r.displayName === 'User Database');
     expect(match).toBeDefined();
   });
 
@@ -286,9 +280,7 @@ describe('TextApi.search() - Feature #49', () => {
     const results = api.search('critical');
     expect(results.length).toBeGreaterThan(0);
 
-    const match = results.find(
-      (r) => r.type === 'node' && r.displayName === 'Payment Gateway',
-    );
+    const match = results.find((r) => r.type === 'node' && r.displayName === 'Payment Gateway');
     expect(match).toBeDefined();
   });
 

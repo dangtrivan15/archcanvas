@@ -73,22 +73,25 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
     useUIStore.getState().clearInlineEdit();
   }, [nodeData.displayName]);
 
-  const handleInlineKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      confirmEdit();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      revertEdit();
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      confirmEdit();
-    }
-  }, [confirmEdit, revertEdit]);
+  const handleInlineKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmEdit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        revertEdit();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        confirmEdit();
+      }
+    },
+    [confirmEdit, revertEdit],
+  );
 
   const effectiveColor = useMemo(
-    () => isRef ? '#A855F7' : getEffectiveNodeColor(nodeData.color, nodeData.nodedefType),
+    () => (isRef ? '#A855F7' : getEffectiveNodeColor(nodeData.color, nodeData.nodedefType)),
     [nodeData.color, nodeData.nodedefType, isRef],
   );
 
@@ -114,7 +117,14 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-foam !border-2 !border-surface !rounded-full"
-            style={getHandlePosition('parallelogram', 'left', index, inboundPorts.length, PARALLELOGRAM_WIDTH, nodeHeight)}
+            style={getHandlePosition(
+              'parallelogram',
+              'left',
+              index,
+              inboundPorts.length,
+              PARALLELOGRAM_WIDTH,
+              nodeHeight,
+            )}
             data-testid={`port-in-${port.name}`}
             data-port-name={port.name}
             data-port-direction="inbound"
@@ -165,21 +175,34 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
                   spellCheck={false}
                 />
               ) : (
-                <div className="text-sm font-medium text-text truncate" data-testid="node-display-name">
+                <div
+                  className="text-sm font-medium text-text truncate"
+                  data-testid="node-display-name"
+                >
                   {nodeData.displayName}
                 </div>
               )}
-              <span className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full" data-testid="node-type-label">
+              <span
+                className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full"
+                data-testid="node-type-label"
+              >
                 {nodeData.nodedefType}
               </span>
             </div>
             {isRef && (
-              <span className="shrink-0" data-testid="ref-indicator" title={`Reference to: ${nodeData.refSource}`}>
+              <span
+                className="shrink-0"
+                data-testid="ref-indicator"
+                title={`Reference to: ${nodeData.refSource}`}
+              >
                 <ExternalLink className="w-3.5 h-3.5 text-iris" />
               </span>
             )}
             {nodeData.hasChildren && (
-              <div className="text-xs text-iris cursor-pointer" title="Has children - double click to zoom in">
+              <div
+                className="text-xs text-iris cursor-pointer"
+                title="Has children - double click to zoom in"
+              >
                 ▶
               </div>
             )}
@@ -223,7 +246,14 @@ function ParallelogramNodeComponent({ data, selected }: NodeProps) {
             id={port.name}
             title={port.name}
             className="!w-3 !h-3 !bg-pine !border-2 !border-surface !rounded-full"
-            style={getHandlePosition('parallelogram', 'right', index, outboundPorts.length, PARALLELOGRAM_WIDTH, nodeHeight)}
+            style={getHandlePosition(
+              'parallelogram',
+              'right',
+              index,
+              outboundPorts.length,
+              PARALLELOGRAM_WIDTH,
+              nodeHeight,
+            )}
             data-testid={`port-out-${port.name}`}
             data-port-name={port.name}
             data-port-direction="outbound"

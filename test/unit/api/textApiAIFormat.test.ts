@@ -66,7 +66,11 @@ describe('Feature #54: AI formatter produces valid XML output', () => {
 
     // Step 1: Create architecture with 2 nodes, 1 edge, and notes
     const note1 = makeNote({ content: 'Performance concern', author: 'alice' });
-    const note2 = makeNote({ content: 'AI suggestion: add caching', author: 'ai', status: 'pending' });
+    const note2 = makeNote({
+      content: 'AI suggestion: add caching',
+      author: 'ai',
+      status: 'pending',
+    });
 
     node1 = makeNode({
       type: 'compute/service',

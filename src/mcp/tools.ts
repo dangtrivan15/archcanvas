@@ -30,7 +30,10 @@ export const TOOL_DEFINITIONS = {
       parentId: z.string().optional().describe('Parent node ID for nesting'),
       x: z.number().optional().describe('X position'),
       y: z.number().optional().describe('Y position'),
-      args: z.record(z.union([z.string(), z.number(), z.boolean()])).optional().describe('Node arguments'),
+      args: z
+        .record(z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe('Node arguments'),
     },
   },
 
@@ -61,12 +64,18 @@ export const TOOL_DEFINITIONS = {
 
   update_node: {
     name: 'update_node',
-    description: 'Update a node\'s display name, args, or properties.',
+    description: "Update a node's display name, args, or properties.",
     inputSchema: {
       nodeId: z.string().describe('Node ID to update'),
       displayName: z.string().optional().describe('New display name'),
-      args: z.record(z.union([z.string(), z.number(), z.boolean()])).optional().describe('Updated arguments'),
-      properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional().describe('Updated properties'),
+      args: z
+        .record(z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe('Updated arguments'),
+      properties: z
+        .record(z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe('Updated properties'),
     },
   },
 
@@ -104,23 +113,32 @@ export const TOOL_DEFINITIONS = {
 
   save: {
     name: 'save',
-    description: 'Explicitly save the current architecture state to the .archc file. Only works when the server was started with --file.',
+    description:
+      'Explicitly save the current architecture state to the .archc file. Only works when the server was started with --file.',
     inputSchema: {
-      force: z.boolean().optional().describe('Force save even if no changes detected (default: false)'),
+      force: z
+        .boolean()
+        .optional()
+        .describe('Force save even if no changes detected (default: false)'),
     },
   },
 
   file_info: {
     name: 'file_info',
-    description: 'Get metadata about the loaded .archc file (name, file path, timestamps, node/edge counts).',
+    description:
+      'Get metadata about the loaded .archc file (name, file path, timestamps, node/edge counts).',
     inputSchema: {},
   },
 
   export_markdown: {
     name: 'export_markdown',
-    description: 'Generate a markdown summary of the architecture (includes overview, components, connections).',
+    description:
+      'Generate a markdown summary of the architecture (includes overview, components, connections).',
     inputSchema: {
-      includeMermaid: z.boolean().optional().describe('Include a Mermaid diagram in the output (default: false)'),
+      includeMermaid: z
+        .boolean()
+        .optional()
+        .describe('Include a Mermaid diagram in the output (default: false)'),
     },
   },
 
@@ -132,12 +150,15 @@ export const TOOL_DEFINITIONS = {
 
   update_edge: {
     name: 'update_edge',
-    description: 'Update an edge\'s type, label, or properties.',
+    description: "Update an edge's type, label, or properties.",
     inputSchema: {
       edgeId: z.string().describe('Edge ID to update'),
       type: z.enum(['sync', 'async', 'data-flow']).optional().describe('New connection type'),
       label: z.string().optional().describe('New edge label'),
-      properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional().describe('Updated properties'),
+      properties: z
+        .record(z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe('Updated properties'),
     },
   },
 
@@ -147,7 +168,9 @@ export const TOOL_DEFINITIONS = {
     inputSchema: {
       nodeId: z.string().describe('Target node ID'),
       path: z.string().describe('File path to reference'),
-      role: z.enum(['source', 'api-spec', 'schema', 'deployment', 'config', 'test']).describe('Role of the code reference'),
+      role: z
+        .enum(['source', 'api-spec', 'schema', 'deployment', 'config', 'test'])
+        .describe('Role of the code reference'),
     },
   },
 
@@ -177,14 +200,36 @@ export const TOOL_DEFINITIONS = {
 
   analyze_codebase: {
     name: 'analyze_codebase',
-    description: 'Analyze a codebase directory and generate an architecture graph (.archc file). Scans the directory, detects frameworks and infrastructure, optionally uses AI inference, and produces a visual architecture. Returns a summary of the detected architecture. Use merge=true to incrementally update an existing .archc file.',
+    description:
+      'Analyze a codebase directory and generate an architecture graph (.archc file). Scans the directory, detects frameworks and infrastructure, optionally uses AI inference, and produces a visual architecture. Returns a summary of the detected architecture. Use merge=true to incrementally update an existing .archc file.',
     inputSchema: {
       directory: z.string().describe('Absolute path to the codebase directory to analyze'),
-      output_path: z.string().optional().describe('Output path for the .archc file (default: <directory>/architecture.archc)'),
-      depth: z.enum(['quick', 'standard', 'deep']).optional().describe('Analysis depth: quick (single AI prompt), standard (multi-step), deep (refinement). Default: standard'),
-      architecture_name: z.string().optional().describe('Name for the architecture (default: directory name)'),
-      merge: z.boolean().optional().describe('If true, merge into existing .archc file instead of generating from scratch. Preserves manual nodes and customizations.'),
-      strategy: z.enum(['ai-wins', 'manual-wins', 'prompt']).optional().describe('Conflict resolution strategy for merge mode: ai-wins (prefer new inference), manual-wins (preserve existing), prompt (flag conflicts). Default: manual-wins'),
+      output_path: z
+        .string()
+        .optional()
+        .describe('Output path for the .archc file (default: <directory>/architecture.archc)'),
+      depth: z
+        .enum(['quick', 'standard', 'deep'])
+        .optional()
+        .describe(
+          'Analysis depth: quick (single AI prompt), standard (multi-step), deep (refinement). Default: standard',
+        ),
+      architecture_name: z
+        .string()
+        .optional()
+        .describe('Name for the architecture (default: directory name)'),
+      merge: z
+        .boolean()
+        .optional()
+        .describe(
+          'If true, merge into existing .archc file instead of generating from scratch. Preserves manual nodes and customizations.',
+        ),
+      strategy: z
+        .enum(['ai-wins', 'manual-wins', 'prompt'])
+        .optional()
+        .describe(
+          'Conflict resolution strategy for merge mode: ai-wins (prefer new inference), manual-wins (preserve existing), prompt (flag conflicts). Default: manual-wins',
+        ),
     },
   },
 } as const;

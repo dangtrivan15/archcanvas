@@ -31,7 +31,8 @@ describe('Feature #195: Network failure during AI chat shows retry option', () =
       const content = '⚠ Can you explain the error handling?';
       const role = 'user';
       // Error detection only applies to assistant messages
-      const isError = role === 'assistant' && (content.startsWith('⚠ ') || content.startsWith('Error: '));
+      const isError =
+        role === 'assistant' && (content.startsWith('⚠ ') || content.startsWith('Error: '));
       expect(isError).toBe(false);
     });
   });
@@ -62,7 +63,8 @@ describe('Feature #195: Network failure during AI chat shows retry option', () =
     it('API 529 overloaded error produces retryable message', () => {
       const error = new AIClientError('Overloaded', 529, 'overloaded_error');
       expect(error.statusCode).toBe(529);
-      const friendlyMsg = 'The AI service is currently overloaded. Please try again in a few minutes.';
+      const friendlyMsg =
+        'The AI service is currently overloaded. Please try again in a few minutes.';
       expect(friendlyMsg).toContain('try again');
     });
 
@@ -78,12 +80,21 @@ describe('Feature #195: Network failure during AI chat shows retry option', () =
     it('filters out error messages from conversation history', () => {
       const messages = [
         { id: '1', role: 'user' as const, content: 'What does this service do?', timestamp: 1000 },
-        { id: '2', role: 'assistant' as const, content: '⚠ Rate limit exceeded. Please wait a moment and try again.', timestamp: 1001 },
+        {
+          id: '2',
+          role: 'assistant' as const,
+          content: '⚠ Rate limit exceeded. Please wait a moment and try again.',
+          timestamp: 1001,
+        },
       ];
 
       // Filter logic from handleRetry
       const filtered = messages.filter(
-        (m) => !(m.role === 'assistant' && (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))),
+        (m) =>
+          !(
+            m.role === 'assistant' &&
+            (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))
+          ),
       );
 
       expect(filtered).toHaveLength(1);
@@ -94,13 +105,27 @@ describe('Feature #195: Network failure during AI chat shows retry option', () =
     it('keeps normal assistant messages in history during retry', () => {
       const messages = [
         { id: '1', role: 'user' as const, content: 'Hello', timestamp: 1000 },
-        { id: '2', role: 'assistant' as const, content: 'Hi there! How can I help?', timestamp: 1001 },
+        {
+          id: '2',
+          role: 'assistant' as const,
+          content: 'Hi there! How can I help?',
+          timestamp: 1001,
+        },
         { id: '3', role: 'user' as const, content: 'What is this?', timestamp: 1002 },
-        { id: '4', role: 'assistant' as const, content: '⚠ Network error. Please check your internet connection and try again.', timestamp: 1003 },
+        {
+          id: '4',
+          role: 'assistant' as const,
+          content: '⚠ Network error. Please check your internet connection and try again.',
+          timestamp: 1003,
+        },
       ];
 
       const filtered = messages.filter(
-        (m) => !(m.role === 'assistant' && (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))),
+        (m) =>
+          !(
+            m.role === 'assistant' &&
+            (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))
+          ),
       );
 
       expect(filtered).toHaveLength(3);
@@ -118,7 +143,11 @@ describe('Feature #195: Network failure during AI chat shows retry option', () =
       ];
 
       const filtered = messages.filter(
-        (m) => !(m.role === 'assistant' && (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))),
+        (m) =>
+          !(
+            m.role === 'assistant' &&
+            (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))
+          ),
       );
 
       expect(filtered).toHaveLength(2);

@@ -18,15 +18,11 @@ export interface NavigationStoreState {
 export const useNavigationStore = create<NavigationStoreState>((set) => ({
   path: [],
 
-  zoomIn: (nodeId) =>
-    set((s) => ({ path: [...s.path, nodeId] })),
+  zoomIn: (nodeId) => set((s) => ({ path: [...s.path, nodeId] })),
 
-  zoomOut: () =>
-    set((s) => ({ path: s.path.slice(0, -1) })),
+  zoomOut: () => set((s) => ({ path: s.path.slice(0, -1) })),
 
-  zoomToRoot: () =>
-    set({ path: [] }),
+  zoomToRoot: () => set({ path: [] }),
 
-  zoomToLevel: (path) =>
-    set({ path }),
+  zoomToLevel: (path) => set({ path }),
 }));

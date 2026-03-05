@@ -119,9 +119,7 @@ const VALID_STEP2_RESPONSE = {
   ],
 };
 
-function createMockSender(
-  responses: string | string[],
-): AIMessageSender {
+function createMockSender(responses: string | string[]): AIMessageSender {
   const responseArray = Array.isArray(responses) ? [...responses] : [responses];
   let callIndex = 0;
 
@@ -144,10 +142,7 @@ function createMockSender(
   };
 }
 
-function createFailingSender(
-  failCount: number,
-  successResponse: string,
-): AIMessageSender {
+function createFailingSender(failCount: number, successResponse: string): AIMessageSender {
   let callCount = 0;
   return {
     sendMessage: vi.fn(async () => {
@@ -532,9 +527,7 @@ describe('inferArchitecture', () => {
         onProgress: (e) => events.push(e),
       });
 
-      const step1Complete = events.find(
-        (e) => e.step === 1 && e.partialResult,
-      );
+      const step1Complete = events.find((e) => e.step === 1 && e.partialResult);
       expect(step1Complete?.partialResult?.architectureDescription).toBeDefined();
     });
 
@@ -688,20 +681,35 @@ describe('inferArchitecture', () => {
       const result1: InferenceResult = {
         architectureName: 'Test App',
         architectureDescription: 'First batch',
-        nodes: [{ id: 'svc-a', type: 'service', displayName: 'Service A', description: 'A', codeRefs: [], children: [] }],
+        nodes: [
+          {
+            id: 'svc-a',
+            type: 'service',
+            displayName: 'Service A',
+            description: 'A',
+            codeRefs: [],
+            children: [],
+          },
+        ],
         edges: [],
       };
       const result2: InferenceResult = {
         architectureName: 'Test App',
         architectureDescription: 'Second batch',
-        nodes: [{ id: 'db-b', type: 'database', displayName: 'DB B', description: 'B', codeRefs: [], children: [] }],
+        nodes: [
+          {
+            id: 'db-b',
+            type: 'database',
+            displayName: 'DB B',
+            description: 'B',
+            codeRefs: [],
+            children: [],
+          },
+        ],
         edges: [],
       };
 
-      const sender = createMockSender([
-        JSON.stringify(result1),
-        JSON.stringify(result2),
-      ]);
+      const sender = createMockSender([JSON.stringify(result1), JSON.stringify(result2)]);
 
       const result = await inferArchitecture(sender, makeProfile(), keyFiles, {
         depth: 'quick',

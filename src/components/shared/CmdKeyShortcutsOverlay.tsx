@@ -59,7 +59,10 @@ export function CmdKeyShortcutsOverlay() {
             const categoryColor = CATEGORY_COLORS[category];
 
             return (
-              <div key={category} data-testid={`cmd-overlay-category-${category.toLowerCase().replace(' ', '-')}`}>
+              <div
+                key={category}
+                data-testid={`cmd-overlay-category-${category.toLowerCase().replace(' ', '-')}`}
+              >
                 {/* Category heading */}
                 <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 ${categoryColor}`}>
                   {category}
@@ -68,13 +71,8 @@ export function CmdKeyShortcutsOverlay() {
                 {/* Shortcut rows */}
                 <div className="space-y-1.5">
                   {shortcuts.map((shortcut) => (
-                    <div
-                      key={shortcut.id}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span className="text-white/70 text-xs truncate">
-                        {shortcut.description}
-                      </span>
+                    <div key={shortcut.id} className="flex items-center justify-between gap-3">
+                      <span className="text-white/70 text-xs truncate">{shortcut.description}</span>
                       <kbd className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[11px] font-mono font-medium text-white/90 bg-white/15 border border-white/20 rounded-md min-w-[2rem] justify-center whitespace-nowrap">
                         {getShortcutKeys(shortcut)}
                       </kbd>

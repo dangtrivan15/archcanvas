@@ -15,7 +15,9 @@ import path from 'node:path';
 import os from 'node:os';
 
 // Helper to run a CLI command and capture stdout/stderr
-async function runCli(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+async function runCli(
+  args: string[],
+): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   const program = createProgram();
   let stdout = '';
   let stderr = '';
@@ -73,16 +75,26 @@ describe('CLI Integration: Full Round-Trip', () => {
     // 1. Init a new architecture
     const initResult = await runCli([
       'init',
-      '--name', 'Integration Test Arch',
-      '--output', archcFile,
+      '--name',
+      'Integration Test Arch',
+      '--output',
+      archcFile,
     ]);
     expect(initResult.exitCode).toBe(0);
     expect(fs.existsSync(archcFile)).toBe(true);
 
     // 2. Add a node (use -q to suppress human message before JSON)
     const addNode1 = await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'add-node', '--type', 'compute/service', '--name', 'AuthService',
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'add-node',
+      '--type',
+      'compute/service',
+      '--name',
+      'AuthService',
     ]);
     expect(addNode1.exitCode).toBe(0);
     const node1 = JSON.parse(addNode1.stdout);
@@ -91,8 +103,16 @@ describe('CLI Integration: Full Round-Trip', () => {
 
     // 3. Add another node
     const addNode2 = await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'add-node', '--type', 'data/database', '--name', 'UsersDB',
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'add-node',
+      '--type',
+      'data/database',
+      '--name',
+      'UsersDB',
     ]);
     expect(addNode2.exitCode).toBe(0);
     const node2 = JSON.parse(addNode2.stdout);
@@ -100,8 +120,20 @@ describe('CLI Integration: Full Round-Trip', () => {
 
     // 4. Add an edge between them
     const addEdge = await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'add-edge', '--from', node1.id, '--to', node2.id, '--type', 'sync', '--label', 'queries',
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'add-edge',
+      '--from',
+      node1.id,
+      '--to',
+      node2.id,
+      '--type',
+      'sync',
+      '--label',
+      'queries',
     ]);
     expect(addEdge.exitCode).toBe(0);
     const edge = JSON.parse(addEdge.stdout);
@@ -109,28 +141,19 @@ describe('CLI Integration: Full Round-Trip', () => {
 
     // 5. Describe the architecture (human format — the describe command's default)
     // describe returns a string. With --format human, printOutput uses the humanFormatter
-    const descResult = await runCli([
-      '-f', archcFile,
-      'describe', '--style', 'human',
-    ]);
+    const descResult = await runCli(['-f', archcFile, 'describe', '--style', 'human']);
     expect(descResult.exitCode).toBe(0);
     expect(descResult.stdout).toContain('AuthService');
     expect(descResult.stdout).toContain('UsersDB');
 
     // 6. Export as markdown
-    const exportMd = await runCli([
-      '-f', archcFile,
-      'export', '--type', 'markdown',
-    ]);
+    const exportMd = await runCli(['-f', archcFile, 'export', '--type', 'markdown']);
     expect(exportMd.exitCode).toBe(0);
     expect(exportMd.stdout).toContain('AuthService');
     expect(exportMd.stdout).toContain('UsersDB');
 
     // 7. Export as mermaid
-    const exportMermaid = await runCli([
-      '-f', archcFile,
-      'export', '--type', 'mermaid',
-    ]);
+    const exportMermaid = await runCli(['-f', archcFile, 'export', '--type', 'mermaid']);
     expect(exportMermaid.exitCode).toBe(0);
     expect(exportMermaid.stdout).toContain('graph');
   });
@@ -141,16 +164,21 @@ describe('CLI Integration: Full Round-Trip', () => {
     await runCli(['init', '--name', 'Persist Test', '--output', archcFile]);
 
     const addResult = await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'add-node', '--type', 'compute/service', '--name', 'PersistService',
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'add-node',
+      '--type',
+      'compute/service',
+      '--name',
+      'PersistService',
     ]);
     const nodeId = JSON.parse(addResult.stdout).id;
 
     // Re-read from file and verify the node is present
-    const listResult = await runCli([
-      '-f', archcFile, '--format', 'json',
-      'list-nodes',
-    ]);
+    const listResult = await runCli(['-f', archcFile, '--format', 'json', 'list-nodes']);
     expect(listResult.exitCode).toBe(0);
     const nodes = JSON.parse(listResult.stdout);
     expect(nodes).toHaveLength(1);
@@ -162,20 +190,14 @@ describe('CLI Integration: Full Round-Trip', () => {
 
   describe('Error handling', () => {
     it('errors when file does not exist', async () => {
-      const result = await runCli([
-        '-f', path.join(tmpDir, 'nonexistent.archc'),
-        'describe',
-      ]);
+      const result = await runCli(['-f', path.join(tmpDir, 'nonexistent.archc'), 'describe']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Error');
     });
 
     it('errors when getting a non-existent node ID', async () => {
       await runCli(['init', '--output', archcFile]);
-      const result = await runCli([
-        '-f', archcFile,
-        'get-node', 'INVALID_NODE_ID_12345',
-      ]);
+      const result = await runCli(['-f', archcFile, 'get-node', 'INVALID_NODE_ID_12345']);
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('not found');
     });
@@ -193,15 +215,20 @@ describe('CLI Integration: Full Round-Trip', () => {
   it('--format json produces valid parseable JSON for list-nodes and search', async () => {
     await runCli(['init', '--name', 'JSON Test', '--output', archcFile]);
     await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'add-node', '--type', 'compute/service', '--name', 'JsonNode',
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'add-node',
+      '--type',
+      'compute/service',
+      '--name',
+      'JsonNode',
     ]);
 
     // list-nodes with JSON format produces array
-    const listResult = await runCli([
-      '-f', archcFile, '--format', 'json',
-      'list-nodes',
-    ]);
+    const listResult = await runCli(['-f', archcFile, '--format', 'json', 'list-nodes']);
     expect(listResult.exitCode).toBe(0);
     const parsed = JSON.parse(listResult.stdout);
     expect(Array.isArray(parsed)).toBe(true);
@@ -210,8 +237,13 @@ describe('CLI Integration: Full Round-Trip', () => {
     // describe --format json: describe() returns a string, printOutput JSON-encodes it,
     // so we get a double-encoded JSON string. Parse twice to get the structured object.
     const descResult = await runCli([
-      '-f', archcFile, '--format', 'json',
-      'describe', '--style', 'structured',
+      '-f',
+      archcFile,
+      '--format',
+      'json',
+      'describe',
+      '--style',
+      'structured',
     ]);
     expect(descResult.exitCode).toBe(0);
     // First parse removes the JSON.stringify wrapper
@@ -221,10 +253,7 @@ describe('CLI Integration: Full Round-Trip', () => {
     expect(descObj.nodeCount).toBe(1);
 
     // search with JSON format
-    const searchResult = await runCli([
-      '-f', archcFile, '--format', 'json',
-      'search', 'JsonNode',
-    ]);
+    const searchResult = await runCli(['-f', archcFile, '--format', 'json', 'search', 'JsonNode']);
     expect(searchResult.exitCode).toBe(0);
     const searchParsed = JSON.parse(searchResult.stdout);
     expect(Array.isArray(searchParsed)).toBe(true);
@@ -236,20 +265,66 @@ describe('CLI Integration: Full Round-Trip', () => {
     await runCli(['init', '--name', 'Remove Test', '--output', archcFile]);
 
     const n1 = JSON.parse(
-      (await runCli(['-f', archcFile, '-q', '--format', 'json', 'add-node', '--type', 'compute/service', '--name', 'SvcA'])).stdout,
+      (
+        await runCli([
+          '-f',
+          archcFile,
+          '-q',
+          '--format',
+          'json',
+          'add-node',
+          '--type',
+          'compute/service',
+          '--name',
+          'SvcA',
+        ])
+      ).stdout,
     );
     const n2 = JSON.parse(
-      (await runCli(['-f', archcFile, '-q', '--format', 'json', 'add-node', '--type', 'compute/service', '--name', 'SvcB'])).stdout,
+      (
+        await runCli([
+          '-f',
+          archcFile,
+          '-q',
+          '--format',
+          'json',
+          'add-node',
+          '--type',
+          'compute/service',
+          '--name',
+          'SvcB',
+        ])
+      ).stdout,
     );
 
     const edge = JSON.parse(
-      (await runCli(['-f', archcFile, '-q', '--format', 'json', 'add-edge', '--from', n1.id, '--to', n2.id, '--type', 'async'])).stdout,
+      (
+        await runCli([
+          '-f',
+          archcFile,
+          '-q',
+          '--format',
+          'json',
+          'add-edge',
+          '--from',
+          n1.id,
+          '--to',
+          n2.id,
+          '--type',
+          'async',
+        ])
+      ).stdout,
     );
 
     // Remove edge (positional argument, not --id)
     const removeResult = await runCli([
-      '-f', archcFile, '-q', '--format', 'json',
-      'remove-edge', edge.id,
+      '-f',
+      archcFile,
+      '-q',
+      '--format',
+      'json',
+      'remove-edge',
+      edge.id,
     ]);
     expect(removeResult.exitCode).toBe(0);
 

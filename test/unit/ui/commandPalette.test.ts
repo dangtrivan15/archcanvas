@@ -132,7 +132,9 @@ describe('Command Registry', () => {
     });
 
     it('node command execution selects the node and opens right panel', () => {
-      const node = useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Target' })!;
+      const node = useCoreStore
+        .getState()
+        .addNode({ type: 'compute/service', displayName: 'Target' })!;
 
       const commands = getNodeCommands();
       commands[0].execute();

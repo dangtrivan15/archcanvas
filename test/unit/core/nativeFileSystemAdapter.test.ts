@@ -161,7 +161,9 @@ describe('Feature #279: NativeFileSystemAdapter — Source structure', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('Feature #279: NativeFileSystemAdapter — pickFile', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
+  let adapter: InstanceType<
+    typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter
+  >;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -174,12 +176,14 @@ describe('Feature #279: NativeFileSystemAdapter — pickFile', () => {
     const base64Data = uint8ArrayToBase64(testData);
 
     mockFilePicker.pickFiles.mockResolvedValue({
-      files: [{
-        name: 'project.archc',
-        path: '/var/mobile/Documents/project.archc',
-        mimeType: 'application/octet-stream',
-        size: 4,
-      }],
+      files: [
+        {
+          name: 'project.archc',
+          path: '/var/mobile/Documents/project.archc',
+          mimeType: 'application/octet-stream',
+          size: 4,
+        },
+      ],
     });
     mockFilesystem.readFile.mockResolvedValue({ data: base64Data });
 
@@ -197,12 +201,14 @@ describe('Feature #279: NativeFileSystemAdapter — pickFile', () => {
     const base64Data = uint8ArrayToBase64(testData);
 
     mockFilePicker.pickFiles.mockResolvedValue({
-      files: [{
-        name: 'test.archc',
-        path: '/var/mobile/Documents/test.archc',
-        mimeType: 'application/octet-stream',
-        size: 3,
-      }],
+      files: [
+        {
+          name: 'test.archc',
+          path: '/var/mobile/Documents/test.archc',
+          mimeType: 'application/octet-stream',
+          size: 3,
+        },
+      ],
     });
     mockFilesystem.readFile.mockResolvedValue({ data: base64Data });
 
@@ -240,12 +246,14 @@ describe('Feature #279: NativeFileSystemAdapter — pickFile', () => {
   it('uses file path as the handle for save-in-place', async () => {
     const testData = new Uint8Array([5]);
     mockFilePicker.pickFiles.mockResolvedValue({
-      files: [{
-        name: 'my.archc',
-        path: '/path/to/my.archc',
-        mimeType: 'application/octet-stream',
-        size: 1,
-      }],
+      files: [
+        {
+          name: 'my.archc',
+          path: '/path/to/my.archc',
+          mimeType: 'application/octet-stream',
+          size: 1,
+        },
+      ],
     });
     mockFilesystem.readFile.mockResolvedValue({ data: uint8ArrayToBase64(testData) });
 
@@ -259,7 +267,9 @@ describe('Feature #279: NativeFileSystemAdapter — pickFile', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('Feature #279: NativeFileSystemAdapter — saveFile', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
+  let adapter: InstanceType<
+    typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter
+  >;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -326,7 +336,9 @@ describe('Feature #279: NativeFileSystemAdapter — saveFile', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('Feature #279: NativeFileSystemAdapter — saveFileAs', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
+  let adapter: InstanceType<
+    typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter
+  >;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -416,7 +428,9 @@ describe('Feature #279: NativeFileSystemAdapter — saveFileAs', () => {
 // ═══════════════════════════════════════════════════════════════════
 
 describe('Feature #279: NativeFileSystemAdapter — shareFile', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
+  let adapter: InstanceType<
+    typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter
+  >;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -559,10 +573,7 @@ describe('Feature #279: NativeFileSystemAdapter — Factory integration', () => 
   });
 
   it('fileSystemAdapter factory imports NativeFileSystemAdapter dynamically', () => {
-    const factorySrc = fs.readFileSync(
-      path.join(SRC_DIR, 'fileSystemAdapter.ts'),
-      'utf-8',
-    );
+    const factorySrc = fs.readFileSync(path.join(SRC_DIR, 'fileSystemAdapter.ts'), 'utf-8');
     expect(factorySrc).toContain("await import('./nativeFileSystemAdapter')");
   });
 });
@@ -572,7 +583,9 @@ describe('Feature #279: NativeFileSystemAdapter — Factory integration', () => 
 // ═══════════════════════════════════════════════════════════════════
 
 describe('Feature #279: NativeFileSystemAdapter — Error handling', () => {
-  let adapter: InstanceType<typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter>;
+  let adapter: InstanceType<
+    typeof import('@/core/platform/nativeFileSystemAdapter').NativeFileSystemAdapter
+  >;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -602,12 +615,14 @@ describe('Feature #279: NativeFileSystemAdapter — Error handling', () => {
 
   it('pickFile returns null when picked file has no path', async () => {
     mockFilePicker.pickFiles.mockResolvedValue({
-      files: [{
-        name: 'test.archc',
-        mimeType: 'application/octet-stream',
-        size: 100,
-        // No path field
-      }],
+      files: [
+        {
+          name: 'test.archc',
+          mimeType: 'application/octet-stream',
+          size: 100,
+          // No path field
+        },
+      ],
     });
 
     const result = await adapter.pickFile();

@@ -159,7 +159,7 @@ function buildStructuralFallback(
       type: 'service',
       displayName: architectureName,
       description: 'Main application (no specific architecture detected)',
-      codeRefs: profile.entryPoints.map(ep => ({ path: ep, role: 'SOURCE' as const })),
+      codeRefs: profile.entryPoints.map((ep) => ({ path: ep, role: 'SOURCE' as const })),
       children: [],
     });
   }
@@ -177,13 +177,31 @@ function buildStructuralFallback(
  */
 function frameworkToNodeType(fw: DetectedFramework): string {
   const name = fw.name.toLowerCase();
-  if (['next.js', 'nuxt', 'sveltekit', 'remix', 'astro', 'gatsby', 'angular', 'react', 'vue', 'svelte'].includes(name) || name === 'next.js') {
+  if (
+    [
+      'next.js',
+      'nuxt',
+      'sveltekit',
+      'remix',
+      'astro',
+      'gatsby',
+      'angular',
+      'react',
+      'vue',
+      'svelte',
+    ].includes(name) ||
+    name === 'next.js'
+  ) {
     return 'web-app';
   }
   if (['expo', 'capacitor'].includes(name)) {
     return 'mobile-app';
   }
-  if (['express', 'fastapi', 'flask', 'django', 'rails', 'gin', 'spring boot', 'actix web'].includes(name)) {
+  if (
+    ['express', 'fastapi', 'flask', 'django', 'rails', 'gin', 'spring boot', 'actix web'].includes(
+      name,
+    )
+  ) {
     return 'service';
   }
   if (['serverless framework'].includes(name)) {
@@ -255,7 +273,12 @@ export async function analyzeCodebase(
   const architectureName = options.architectureName ?? path.basename(resolvedRoot);
   const outputPath = options.outputPath ?? path.join(resolvedRoot, 'architecture.archc');
 
-  function emitProgress(phase: PipelinePhase, message: string, percent: number, detail?: Record<string, unknown>) {
+  function emitProgress(
+    phase: PipelinePhase,
+    message: string,
+    percent: number,
+    detail?: Record<string, unknown>,
+  ) {
     if (verbose) {
       console.log(`[pipeline:${phase}] ${message}`, detail ? JSON.stringify(detail) : '');
     }
@@ -280,11 +303,16 @@ export async function analyzeCodebase(
     throw new Error(`Scan failed: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  emitProgress('scanning', `Scan complete: ${scanResult.totalFiles} files, ${scanResult.totalDirs} directories`, 15, {
-    totalFiles: scanResult.totalFiles,
-    totalDirs: scanResult.totalDirs,
-    languageCount: Object.keys(scanResult.languageBreakdown).length,
-  });
+  emitProgress(
+    'scanning',
+    `Scan complete: ${scanResult.totalFiles} files, ${scanResult.totalDirs} directories`,
+    15,
+    {
+      totalFiles: scanResult.totalFiles,
+      totalDirs: scanResult.totalDirs,
+      languageCount: Object.keys(scanResult.languageBreakdown).length,
+    },
+  );
 
   if (verbose) {
     console.log('[pipeline:scanning] Language breakdown:', scanResult.languageBreakdown);
@@ -303,13 +331,18 @@ export async function analyzeCodebase(
     throw new Error(`Detection failed: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  emitProgress('detecting', `Detection complete: ${projectProfile.projectType} project, ${projectProfile.languages.length} languages, ${projectProfile.frameworks.length} frameworks`, 30, {
-    projectType: projectProfile.projectType,
-    languages: projectProfile.languages.map(l => l.name),
-    frameworks: projectProfile.frameworks.map(f => f.name),
-    dataStores: projectProfile.dataStores.map(d => d.type),
-    infraSignals: projectProfile.infraSignals.map(s => s.type),
-  });
+  emitProgress(
+    'detecting',
+    `Detection complete: ${projectProfile.projectType} project, ${projectProfile.languages.length} languages, ${projectProfile.frameworks.length} frameworks`,
+    30,
+    {
+      projectType: projectProfile.projectType,
+      languages: projectProfile.languages.map((l) => l.name),
+      frameworks: projectProfile.frameworks.map((f) => f.name),
+      dataStores: projectProfile.dataStores.map((d) => d.type),
+      infraSignals: projectProfile.infraSignals.map((s) => s.type),
+    },
+  );
 
   if (verbose) {
     console.log('[pipeline:detecting] Project profile:', JSON.stringify(projectProfile, null, 2));
@@ -334,19 +367,27 @@ export async function analyzeCodebase(
     throw new Error(`File selection failed: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  emitProgress('selecting', `Selected ${keyFiles.files.length} key files (~${keyFiles.totalTokenEstimate} tokens)`, 45, {
-    selectedFiles: keyFiles.files.length,
-    tokenEstimate: keyFiles.totalTokenEstimate,
-    tiers: {
-      tier1: keyFiles.files.filter(f => f.tier === 1).length,
-      tier2: keyFiles.files.filter(f => f.tier === 2).length,
-      tier3: keyFiles.files.filter(f => f.tier === 3).length,
-      tier4: keyFiles.files.filter(f => f.tier === 4).length,
+  emitProgress(
+    'selecting',
+    `Selected ${keyFiles.files.length} key files (~${keyFiles.totalTokenEstimate} tokens)`,
+    45,
+    {
+      selectedFiles: keyFiles.files.length,
+      tokenEstimate: keyFiles.totalTokenEstimate,
+      tiers: {
+        tier1: keyFiles.files.filter((f) => f.tier === 1).length,
+        tier2: keyFiles.files.filter((f) => f.tier === 2).length,
+        tier3: keyFiles.files.filter((f) => f.tier === 3).length,
+        tier4: keyFiles.files.filter((f) => f.tier === 4).length,
+      },
     },
-  });
+  );
 
   if (verbose) {
-    console.log('[pipeline:selecting] Selected files:', keyFiles.files.map(f => `${f.path} (tier ${f.tier})`));
+    console.log(
+      '[pipeline:selecting] Selected files:',
+      keyFiles.files.map((f) => `${f.path} (tier ${f.tier})`),
+    );
   }
 
   // ─── Phase 4: Inferring ───────────────────────────────────────
@@ -370,18 +411,31 @@ export async function analyzeCodebase(
         },
       };
 
-      inferenceResult = await inferArchitecture(aiSender, projectProfile, keyFiles, inferenceOptions);
+      inferenceResult = await inferArchitecture(
+        aiSender,
+        projectProfile,
+        keyFiles,
+        inferenceOptions,
+      );
 
-      emitProgress('inferring', `Inference complete: ${inferenceResult.nodes.length} nodes, ${inferenceResult.edges.length} edges`, 75, {
-        nodes: inferenceResult.nodes.length,
-        edges: inferenceResult.edges.length,
-        architectureName: inferenceResult.architectureName,
-      });
+      emitProgress(
+        'inferring',
+        `Inference complete: ${inferenceResult.nodes.length} nodes, ${inferenceResult.edges.length} edges`,
+        75,
+        {
+          nodes: inferenceResult.nodes.length,
+          edges: inferenceResult.edges.length,
+          architectureName: inferenceResult.architectureName,
+        },
+      );
     } catch (e) {
       // AI inference failed — fall back to structural analysis
-      const errorMsg = e instanceof InferenceError
-        ? `${e.code}: ${e.message}`
-        : (e instanceof Error ? e.message : String(e));
+      const errorMsg =
+        e instanceof InferenceError
+          ? `${e.code}: ${e.message}`
+          : e instanceof Error
+            ? e.message
+            : String(e);
 
       warnings.push(`AI inference failed (falling back to structural analysis): ${errorMsg}`);
       emitProgress('inferring', `AI inference failed, using structural fallback: ${errorMsg}`, 75);
@@ -423,7 +477,8 @@ export async function analyzeCodebase(
         nodes: inferenceResult.nodes.length,
         edges: inferenceResult.edges.length,
         codeRefs: inferenceResult.nodes.reduce(
-          (sum, n) => sum + n.codeRefs.length + n.children.reduce((cs, c) => cs + c.codeRefs.length, 0),
+          (sum, n) =>
+            sum + n.codeRefs.length + n.children.reduce((cs, c) => cs + c.codeRefs.length, 0),
           0,
         ),
       },
@@ -463,12 +518,17 @@ export async function analyzeCodebase(
   // Collect build warnings
   warnings.push(...buildResult.warnings);
 
-  emitProgress('building', `Graph built: ${buildResult.nodesCreated} nodes, ${buildResult.edgesCreated} edges, ${buildResult.codeRefsAttached} code refs`, 90, {
-    nodesCreated: buildResult.nodesCreated,
-    edgesCreated: buildResult.edgesCreated,
-    codeRefsAttached: buildResult.codeRefsAttached,
-    warnings: buildResult.warnings.length,
-  });
+  emitProgress(
+    'building',
+    `Graph built: ${buildResult.nodesCreated} nodes, ${buildResult.edgesCreated} edges, ${buildResult.codeRefsAttached} code refs`,
+    90,
+    {
+      nodesCreated: buildResult.nodesCreated,
+      edgesCreated: buildResult.edgesCreated,
+      codeRefsAttached: buildResult.codeRefsAttached,
+      warnings: buildResult.warnings.length,
+    },
+  );
 
   if (verbose) {
     console.log('[pipeline:building] Build result:', {
@@ -505,14 +565,19 @@ export async function analyzeCodebase(
 
   const duration = Date.now() - startTime;
 
-  emitProgress('complete', `Analysis complete in ${duration}ms: ${buildResult.nodesCreated} nodes, ${buildResult.edgesCreated} edges`, 100, {
-    outputPath,
-    nodes: buildResult.nodesCreated,
-    edges: buildResult.edgesCreated,
-    codeRefs: buildResult.codeRefsAttached,
-    duration,
-    warnings: warnings.length,
-  });
+  emitProgress(
+    'complete',
+    `Analysis complete in ${duration}ms: ${buildResult.nodesCreated} nodes, ${buildResult.edgesCreated} edges`,
+    100,
+    {
+      outputPath,
+      nodes: buildResult.nodesCreated,
+      edges: buildResult.edgesCreated,
+      codeRefs: buildResult.codeRefsAttached,
+      duration,
+      warnings: warnings.length,
+    },
+  );
 
   return {
     outputPath,

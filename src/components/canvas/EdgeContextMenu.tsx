@@ -47,16 +47,14 @@ export function EdgeContextMenu({ x, y, edgeId, onClose }: EdgeContextMenuProps)
   const menuItems: ContextMenuItem[] = [
     { label: 'Edit', icon: Pencil, action: handleEdit, testId: 'ctx-edge-edit' },
     { label: 'Add Note', icon: StickyNote, action: handleAddNote, testId: 'ctx-edge-add-note' },
-    { label: 'Delete', icon: Trash2, action: handleDelete, testId: 'ctx-edge-delete', isDanger: true },
+    {
+      label: 'Delete',
+      icon: Trash2,
+      action: handleDelete,
+      testId: 'ctx-edge-delete',
+      isDanger: true,
+    },
   ];
 
-  return (
-    <TouchContextMenu
-      x={x}
-      y={y}
-      onClose={onClose}
-      header={edgeLabel}
-      items={menuItems}
-    />
-  );
+  return <TouchContextMenu x={x} y={y} onClose={onClose} header={edgeLabel} items={menuItems} />;
 }

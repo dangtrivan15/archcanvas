@@ -36,15 +36,39 @@ const NODE_TYPES = [
 
 // Unique service name parts for generating distinctive display names
 const PREFIXES = [
-  'User', 'Order', 'Payment', 'Auth', 'Notification',
-  'Inventory', 'Shipping', 'Search', 'Analytics', 'Report',
-  'Billing', 'Catalog', 'Cart', 'Review', 'Media',
-  'Config', 'Session', 'Rate', 'Audit', 'Export',
+  'User',
+  'Order',
+  'Payment',
+  'Auth',
+  'Notification',
+  'Inventory',
+  'Shipping',
+  'Search',
+  'Analytics',
+  'Report',
+  'Billing',
+  'Catalog',
+  'Cart',
+  'Review',
+  'Media',
+  'Config',
+  'Session',
+  'Rate',
+  'Audit',
+  'Export',
 ];
 
 const SUFFIXES = [
-  'Service', 'Database', 'Cache', 'EventBus', 'Queue',
-  'Gateway', 'LoadBalancer', 'Logger', 'Monitor', 'Storage',
+  'Service',
+  'Database',
+  'Cache',
+  'EventBus',
+  'Queue',
+  'Gateway',
+  'LoadBalancer',
+  'Logger',
+  'Monitor',
+  'Storage',
 ];
 
 /**
@@ -124,7 +148,7 @@ describe('Search responds within 500ms for 100-node architecture', () => {
       for (const r of results.filter((r) => r.type === 'node')) {
         expect(
           r.displayName.toLowerCase().includes('user') ||
-          r.matchContext.toLowerCase().includes('user'),
+            r.matchContext.toLowerCase().includes('user'),
         ).toBe(true);
       }
     });
@@ -247,8 +271,18 @@ describe('Search responds within 500ms for 100-node architecture', () => {
     });
 
     it('10 sequential searches complete within 500ms total', () => {
-      const queries = ['User', 'Order', 'Payment', 'Auth', 'Gateway',
-        'Database', 'Cache', 'Queue', 'Logger', 'Monitor'];
+      const queries = [
+        'User',
+        'Order',
+        'Payment',
+        'Auth',
+        'Gateway',
+        'Database',
+        'Cache',
+        'Queue',
+        'Logger',
+        'Monitor',
+      ];
       const start = performance.now();
       for (const q of queries) {
         searchGraph(graph, q);

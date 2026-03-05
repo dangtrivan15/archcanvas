@@ -74,17 +74,29 @@ export function IntegrityWarningDialog() {
       aria-labelledby="integrity-warning-title"
       aria-describedby="integrity-warning-message"
     >
-      <div ref={focusTrapRef} className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet" data-testid="integrity-warning-content">
+      <div
+        ref={focusTrapRef}
+        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
+        data-testid="integrity-warning-content"
+      >
         {/* Header */}
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h2 id="integrity-warning-title" className="text-lg font-semibold text-gray-900" data-testid="integrity-warning-title">
+            <h2
+              id="integrity-warning-title"
+              className="text-lg font-semibold text-gray-900"
+              data-testid="integrity-warning-title"
+            >
               File Integrity Warning
             </h2>
-            <p id="integrity-warning-message" className="text-sm text-gray-500 mt-1" data-testid="integrity-warning-message">
+            <p
+              id="integrity-warning-message"
+              className="text-sm text-gray-500 mt-1"
+              data-testid="integrity-warning-message"
+            >
               {info.message}
             </p>
           </div>

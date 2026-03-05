@@ -5,7 +5,13 @@
  * @vitest-environment happy-dom
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useUIStore, TOOLBAR_DEFAULT_HEIGHT, STATUS_BAR_DEFAULT_HEIGHT, TOOLBAR_HEIGHT_STORAGE_KEY, STATUS_BAR_HEIGHT_STORAGE_KEY } from '@/store/uiStore';
+import {
+  useUIStore,
+  TOOLBAR_DEFAULT_HEIGHT,
+  STATUS_BAR_DEFAULT_HEIGHT,
+  TOOLBAR_HEIGHT_STORAGE_KEY,
+  STATUS_BAR_HEIGHT_STORAGE_KEY,
+} from '@/store/uiStore';
 
 function setCustomHeights() {
   const store = useUIStore.getState();

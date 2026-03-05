@@ -13,7 +13,18 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Settings, Eye, EyeOff, Save, Trash2, X, Check, RotateCcw, Palette, Vibrate } from 'lucide-react';
+import {
+  Settings,
+  Eye,
+  EyeOff,
+  Save,
+  Trash2,
+  X,
+  Check,
+  RotateCcw,
+  Palette,
+  Vibrate,
+} from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import {
@@ -165,8 +176,8 @@ export function SettingsDialog() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-1">AI Configuration</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Enter your Anthropic API key to enable AI-powered architecture analysis.
-              Your key is stored locally and never sent to any third-party server.
+              Enter your Anthropic API key to enable AI-powered architecture analysis. Your key is
+              stored locally and never sent to any third-party server.
             </p>
 
             {/* API Key Input */}
@@ -243,9 +254,7 @@ export function SettingsDialog() {
             {/* Status indicator */}
             <div className="mt-2 text-xs" data-testid="settings-key-source">
               {keySource === 'settings' && (
-                <span className="text-green-600">
-                  Using API key from Settings (stored locally)
-                </span>
+                <span className="text-green-600">Using API key from Settings (stored locally)</span>
               )}
               {keySource === 'environment' && (
                 <span className="text-blue-600">
@@ -283,9 +292,11 @@ export function SettingsDialog() {
                     }}
                     className={`
                       inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors
-                      ${isActive
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-300'
-                        : 'border-gray-300 text-[hsl(var(--text))] hover:bg-[hsl(var(--highlight-low))]'}
+                      ${
+                        isActive
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-300'
+                          : 'border-gray-300 text-[hsl(var(--text))] hover:bg-[hsl(var(--highlight-low))]'
+                      }
                     `}
                     data-testid={`theme-option-${id}`}
                     aria-pressed={isActive}
@@ -349,9 +360,9 @@ export function SettingsDialog() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Layout</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Reset panel widths to their viewport-relative defaults.
-              Any custom sizes you've set by dragging will be cleared.
-              Toolbar and status bar use responsive CSS sizing automatically.
+              Reset panel widths to their viewport-relative defaults. Any custom sizes you've set by
+              dragging will be cleared. Toolbar and status bar use responsive CSS sizing
+              automatically.
             </p>
             <div className="flex gap-2 flex-wrap">
               <button

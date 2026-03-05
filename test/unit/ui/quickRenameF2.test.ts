@@ -7,7 +7,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SHORTCUT_ACTIONS, parseBinding, eventMatchesBinding, getShortcutManager, resetShortcutManager } from '@/core/shortcuts/shortcutManager';
+import {
+  SHORTCUT_ACTIONS,
+  parseBinding,
+  eventMatchesBinding,
+  getShortcutManager,
+  resetShortcutManager,
+} from '@/core/shortcuts/shortcutManager';
 import { KEYBOARD_SHORTCUTS } from '@/config/keyboardShortcuts';
 import { getStaticCommands, searchCommands } from '@/config/commandRegistry';
 import { useUIStore } from '@/store/uiStore';

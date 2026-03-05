@@ -27,7 +27,12 @@ function makeFile(relativePath: string, size = 100): FileEntry {
   };
 }
 
-function makeDir(name: string, relativePath: string, files: FileEntry[] = [], directories: DirectoryEntry[] = []): DirectoryEntry {
+function makeDir(
+  name: string,
+  relativePath: string,
+  files: FileEntry[] = [],
+  directories: DirectoryEntry[] = [],
+): DirectoryEntry {
   return { name, relativePath, files, directories };
 }
 
@@ -36,8 +41,8 @@ function makeScanResult(opts: {
   nestedFiles?: string[];
   rootDirs?: DirectoryEntry[];
 }): ScanResult {
-  const rootFileEntries = (opts.rootFiles ?? []).map(f => makeFile(f));
-  const nestedFileEntries = (opts.nestedFiles ?? []).map(f => makeFile(f));
+  const rootFileEntries = (opts.rootFiles ?? []).map((f) => makeFile(f));
+  const nestedFileEntries = (opts.nestedFiles ?? []).map((f) => makeFile(f));
 
   // Build language breakdown
   const languageBreakdown: Record<string, number> = {};
@@ -63,7 +68,7 @@ function makeScanResult(opts: {
       // Link to parent
       if (parentPath && dirMap.has(parentPath)) {
         const parent = dirMap.get(parentPath)!;
-        if (!parent.directories.some(d => d.relativePath === currentPath)) {
+        if (!parent.directories.some((d) => d.relativePath === currentPath)) {
           parent.directories.push(dirMap.get(currentPath)!);
         }
       }
@@ -108,7 +113,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['src/index.ts', 'src/App.tsx', 'src/util.ts'],
     });
     const langs = detectLanguages(scan);
-    const ts = langs.find(l => l.name === 'TypeScript');
+    const ts = langs.find((l) => l.name === 'TypeScript');
     expect(ts).toBeDefined();
     expect(ts!.fileCount).toBe(3);
     expect(ts!.extensions).toContain('.ts');
@@ -120,7 +125,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['src/index.js', 'src/App.jsx', 'lib/util.mjs'],
     });
     const langs = detectLanguages(scan);
-    const js = langs.find(l => l.name === 'JavaScript');
+    const js = langs.find((l) => l.name === 'JavaScript');
     expect(js).toBeDefined();
     expect(js!.fileCount).toBe(3);
   });
@@ -131,7 +136,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['src/main.py', 'src/util.py'],
     });
     const langs = detectLanguages(scan);
-    const py = langs.find(l => l.name === 'Python');
+    const py = langs.find((l) => l.name === 'Python');
     expect(py).toBeDefined();
     expect(py!.fileCount).toBe(2);
   });
@@ -142,7 +147,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['main.go', 'pkg/handler.go'],
     });
     const langs = detectLanguages(scan);
-    const go = langs.find(l => l.name === 'Go');
+    const go = langs.find((l) => l.name === 'Go');
     expect(go).toBeDefined();
     expect(go!.fileCount).toBe(2);
   });
@@ -153,7 +158,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['src/main.rs', 'src/lib.rs'],
     });
     const langs = detectLanguages(scan);
-    const rust = langs.find(l => l.name === 'Rust');
+    const rust = langs.find((l) => l.name === 'Rust');
     expect(rust).toBeDefined();
     expect(rust!.fileCount).toBe(2);
   });
@@ -164,7 +169,7 @@ describe('detectLanguages', () => {
       nestedFiles: ['src/main/java/App.java', 'src/main/java/Service.java'],
     });
     const langs = detectLanguages(scan);
-    const java = langs.find(l => l.name === 'Java');
+    const java = langs.find((l) => l.name === 'Java');
     expect(java).toBeDefined();
     expect(java!.fileCount).toBe(2);
   });
@@ -172,8 +177,13 @@ describe('detectLanguages', () => {
   it('should sort languages by file count descending', () => {
     const scan = makeScanResult({
       nestedFiles: [
-        'a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', // 5 TS
-        'x.py', 'y.py', // 2 Python
+        'a.ts',
+        'b.ts',
+        'c.ts',
+        'd.ts',
+        'e.ts', // 5 TS
+        'x.py',
+        'y.py', // 2 Python
         'z.go', // 1 Go
       ],
     });
@@ -188,8 +198,8 @@ describe('detectLanguages', () => {
       nestedFiles: ['a.ts', 'b.ts', 'c.py', 'd.py', 'e.py', 'f.py'],
     });
     const langs = detectLanguages(scan);
-    const ts = langs.find(l => l.name === 'TypeScript')!;
-    const py = langs.find(l => l.name === 'Python')!;
+    const ts = langs.find((l) => l.name === 'TypeScript')!;
+    const py = langs.find((l) => l.name === 'Python')!;
     expect(ts.percentage).toBeCloseTo(33.3, 0);
     expect(py.percentage).toBeCloseTo(66.7, 0);
   });
@@ -205,7 +215,7 @@ describe('detectLanguages', () => {
       rootFiles: ['go.mod'],
     });
     const langs = detectLanguages(scan);
-    const go = langs.find(l => l.name === 'Go');
+    const go = langs.find((l) => l.name === 'Go');
     expect(go).toBeDefined();
   });
 });
@@ -217,8 +227,8 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/app/page.tsx'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Next.js')).toBe(true);
-    const nextjs = frameworks.find(f => f.name === 'Next.js')!;
+    expect(frameworks.some((f) => f.name === 'Next.js')).toBe(true);
+    const nextjs = frameworks.find((f) => f.name === 'Next.js')!;
     expect(nextjs.confidence).toBe('high');
     expect(nextjs.evidence).toBe('next.config.js');
   });
@@ -228,7 +238,7 @@ describe('detectFrameworks', () => {
       rootFiles: ['package.json', 'vite.config.ts'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Vite')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Vite')).toBe(true);
   });
 
   it('should detect React from .tsx files', () => {
@@ -237,8 +247,8 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/App.tsx', 'src/index.tsx'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'React')).toBe(true);
-    const react = frameworks.find(f => f.name === 'React')!;
+    expect(frameworks.some((f) => f.name === 'React')).toBe(true);
+    const react = frameworks.find((f) => f.name === 'React')!;
     expect(react.confidence).toBe('medium');
   });
 
@@ -248,7 +258,7 @@ describe('detectFrameworks', () => {
       nestedFiles: ['myapp/settings.py'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Django')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Django')).toBe(true);
   });
 
   it('should detect Angular from angular.json', () => {
@@ -256,8 +266,8 @@ describe('detectFrameworks', () => {
       rootFiles: ['angular.json', 'package.json'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Angular')).toBe(true);
-    expect(frameworks.find(f => f.name === 'Angular')!.confidence).toBe('high');
+    expect(frameworks.some((f) => f.name === 'Angular')).toBe(true);
+    expect(frameworks.find((f) => f.name === 'Angular')!.confidence).toBe('high');
   });
 
   it('should detect Vue from .vue files', () => {
@@ -265,7 +275,7 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/App.vue', 'src/components/Header.vue'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Vue')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Vue')).toBe(true);
   });
 
   it('should detect Svelte from .svelte files', () => {
@@ -273,7 +283,7 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/App.svelte'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Svelte')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Svelte')).toBe(true);
   });
 
   it('should detect Tailwind CSS from config', () => {
@@ -281,7 +291,7 @@ describe('detectFrameworks', () => {
       rootFiles: ['tailwind.config.js'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Tailwind CSS')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Tailwind CSS')).toBe(true);
   });
 
   it('should detect multiple frameworks', () => {
@@ -290,9 +300,9 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/App.tsx'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Vite')).toBe(true);
-    expect(frameworks.some(f => f.name === 'Tailwind CSS')).toBe(true);
-    expect(frameworks.some(f => f.name === 'React')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Vite')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Tailwind CSS')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'React')).toBe(true);
   });
 
   it('should detect Spring Boot from application.properties', () => {
@@ -301,7 +311,7 @@ describe('detectFrameworks', () => {
       nestedFiles: ['src/main/resources/application.properties'],
     });
     const frameworks = detectFrameworks(scan);
-    expect(frameworks.some(f => f.name === 'Spring Boot')).toBe(true);
+    expect(frameworks.some((f) => f.name === 'Spring Boot')).toBe(true);
   });
 
   it('should return empty for unknown project', () => {
@@ -376,10 +386,7 @@ describe('detectProjectType', () => {
   it('should detect microservices from docker-compose + 2 Dockerfiles', () => {
     const scan = makeScanResult({
       rootFiles: ['docker-compose.yml'],
-      nestedFiles: [
-        'api/Dockerfile',
-        'worker/Dockerfile',
-      ],
+      nestedFiles: ['api/Dockerfile', 'worker/Dockerfile'],
     });
     expect(detectProjectType(scan)).toBe('microservices');
   });
@@ -462,13 +469,13 @@ describe('detectInfraSignals', () => {
   it('should detect Docker from Dockerfile', () => {
     const scan = makeScanResult({ rootFiles: ['Dockerfile'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'docker')).toBe(true);
+    expect(signals.some((s) => s.type === 'docker')).toBe(true);
   });
 
   it('should detect docker-compose', () => {
     const scan = makeScanResult({ rootFiles: ['docker-compose.yml'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'docker-compose')).toBe(true);
+    expect(signals.some((s) => s.type === 'docker-compose')).toBe(true);
   });
 
   it('should detect GitHub Actions', () => {
@@ -476,13 +483,13 @@ describe('detectInfraSignals', () => {
       nestedFiles: ['.github/workflows/ci.yml'],
     });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'ci-github')).toBe(true);
+    expect(signals.some((s) => s.type === 'ci-github')).toBe(true);
   });
 
   it('should detect GitLab CI', () => {
     const scan = makeScanResult({ rootFiles: ['.gitlab-ci.yml'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'ci-gitlab')).toBe(true);
+    expect(signals.some((s) => s.type === 'ci-gitlab')).toBe(true);
   });
 
   it('should detect Terraform', () => {
@@ -490,7 +497,7 @@ describe('detectInfraSignals', () => {
       nestedFiles: ['infra/main.tf', 'infra/variables.tf'],
     });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'terraform')).toBe(true);
+    expect(signals.some((s) => s.type === 'terraform')).toBe(true);
   });
 
   it('should detect Kubernetes from directory', () => {
@@ -498,25 +505,25 @@ describe('detectInfraSignals', () => {
       nestedFiles: ['k8s/deployment.yaml', 'k8s/service.yaml'],
     });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'kubernetes')).toBe(true);
+    expect(signals.some((s) => s.type === 'kubernetes')).toBe(true);
   });
 
   it('should detect Jenkins', () => {
     const scan = makeScanResult({ rootFiles: ['Jenkinsfile'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'ci-jenkins')).toBe(true);
+    expect(signals.some((s) => s.type === 'ci-jenkins')).toBe(true);
   });
 
   it('should detect Vercel', () => {
     const scan = makeScanResult({ rootFiles: ['vercel.json'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'vercel')).toBe(true);
+    expect(signals.some((s) => s.type === 'vercel')).toBe(true);
   });
 
   it('should detect Netlify', () => {
     const scan = makeScanResult({ rootFiles: ['netlify.toml'] });
     const signals = detectInfraSignals(scan);
-    expect(signals.some(s => s.type === 'netlify')).toBe(true);
+    expect(signals.some((s) => s.type === 'netlify')).toBe(true);
   });
 
   it('should detect multiple signals', () => {
@@ -540,7 +547,7 @@ describe('detectDataStores', () => {
       nestedFiles: ['prisma/schema.prisma'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'prisma')).toBe(true);
+    expect(stores.some((s) => s.type === 'prisma')).toBe(true);
   });
 
   it('should detect Drizzle from drizzle.config.ts', () => {
@@ -548,7 +555,7 @@ describe('detectDataStores', () => {
       rootFiles: ['drizzle.config.ts'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'drizzle')).toBe(true);
+    expect(stores.some((s) => s.type === 'drizzle')).toBe(true);
   });
 
   it('should detect SQLite from .sqlite files', () => {
@@ -556,7 +563,7 @@ describe('detectDataStores', () => {
       nestedFiles: ['data/app.sqlite'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'sqlite')).toBe(true);
+    expect(stores.some((s) => s.type === 'sqlite')).toBe(true);
   });
 
   it('should detect TypeORM from ormconfig', () => {
@@ -564,7 +571,7 @@ describe('detectDataStores', () => {
       rootFiles: ['ormconfig.json'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'typeorm')).toBe(true);
+    expect(stores.some((s) => s.type === 'typeorm')).toBe(true);
   });
 
   it('should detect Protocol Buffers from .proto files', () => {
@@ -572,7 +579,7 @@ describe('detectDataStores', () => {
       nestedFiles: ['proto/schema.proto'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'protobuf')).toBe(true);
+    expect(stores.some((s) => s.type === 'protobuf')).toBe(true);
   });
 
   it('should detect Firebase from firebase.json', () => {
@@ -580,7 +587,7 @@ describe('detectDataStores', () => {
       rootFiles: ['firebase.json'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'firebase')).toBe(true);
+    expect(stores.some((s) => s.type === 'firebase')).toBe(true);
   });
 
   it('should detect Knex from knexfile', () => {
@@ -588,7 +595,7 @@ describe('detectDataStores', () => {
       rootFiles: ['knexfile.ts'],
     });
     const stores = detectDataStores(scan);
-    expect(stores.some(s => s.type === 'knex')).toBe(true);
+    expect(stores.some((s) => s.type === 'knex')).toBe(true);
   });
 
   it('should return empty for project without data stores', () => {
@@ -668,12 +675,12 @@ describe('detectProject (integration)', () => {
 
     expect(profile.languages.length).toBeGreaterThan(0);
     expect(profile.languages[0].name).toBe('TypeScript');
-    expect(profile.frameworks.some(f => f.name === 'React')).toBe(true);
-    expect(profile.frameworks.some(f => f.name === 'Vite')).toBe(true);
-    expect(profile.frameworks.some(f => f.name === 'Tailwind CSS')).toBe(true);
+    expect(profile.frameworks.some((f) => f.name === 'React')).toBe(true);
+    expect(profile.frameworks.some((f) => f.name === 'Vite')).toBe(true);
+    expect(profile.frameworks.some((f) => f.name === 'Tailwind CSS')).toBe(true);
     expect(profile.projectType).toBe('single-app');
     expect(profile.buildSystems).toContain('npm');
-    expect(profile.infraSignals.some(s => s.type === 'ci-github')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'ci-github')).toBe(true);
     expect(profile.entryPoints).toContain('src/index.tsx');
   });
 
@@ -692,33 +699,28 @@ describe('detectProject (integration)', () => {
 
     const profile = detectProject(scan);
 
-    expect(profile.languages.some(l => l.name === 'Go')).toBe(true);
+    expect(profile.languages.some((l) => l.name === 'Go')).toBe(true);
     expect(profile.projectType).toBe('microservices');
     expect(profile.buildSystems).toContain('go modules');
     expect(profile.buildSystems).toContain('make');
-    expect(profile.infraSignals.some(s => s.type === 'docker')).toBe(true);
-    expect(profile.infraSignals.some(s => s.type === 'docker-compose')).toBe(true);
-    expect(profile.infraSignals.some(s => s.type === 'terraform')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'docker')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'docker-compose')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'terraform')).toBe(true);
   });
 
   it('should produce full ProjectProfile for a Python Django project', () => {
     const scan = makeScanResult({
       rootFiles: ['requirements.txt', 'Dockerfile', '.gitlab-ci.yml', 'manage.py'],
-      nestedFiles: [
-        'myapp/settings.py',
-        'myapp/urls.py',
-        'myapp/views.py',
-        'myapp/models.py',
-      ],
+      nestedFiles: ['myapp/settings.py', 'myapp/urls.py', 'myapp/views.py', 'myapp/models.py'],
     });
 
     const profile = detectProject(scan);
 
-    expect(profile.languages.some(l => l.name === 'Python')).toBe(true);
-    expect(profile.frameworks.some(f => f.name === 'Django')).toBe(true);
+    expect(profile.languages.some((l) => l.name === 'Python')).toBe(true);
+    expect(profile.frameworks.some((f) => f.name === 'Django')).toBe(true);
     expect(profile.projectType).toBe('single-app');
-    expect(profile.infraSignals.some(s => s.type === 'docker')).toBe(true);
-    expect(profile.infraSignals.some(s => s.type === 'ci-gitlab')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'docker')).toBe(true);
+    expect(profile.infraSignals.some((s) => s.type === 'ci-gitlab')).toBe(true);
     expect(profile.entryPoints).toContain('manage.py');
   });
 
@@ -770,7 +772,7 @@ describe('detectProject (integration)', () => {
 
     const profile = detectProject(scan);
 
-    expect(profile.languages.some(l => l.name === 'Rust')).toBe(true);
+    expect(profile.languages.some((l) => l.name === 'Rust')).toBe(true);
     expect(profile.buildSystems).toContain('cargo');
     expect(profile.entryPoints).toContain('src/main.rs');
     expect(profile.entryPoints).toContain('src/lib.rs');

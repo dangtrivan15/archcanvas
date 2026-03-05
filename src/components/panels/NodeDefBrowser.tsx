@@ -6,9 +6,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import { Search, ChevronRight, ChevronDown, X } from 'lucide-react';
-import {
-  Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
-} from 'lucide-react';
+import { Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
@@ -77,8 +75,8 @@ export function NodeDefBrowser() {
       groups[ns].push(def);
     }
     // Sort namespaces alphabetically
-    const sorted: [string, NodeDef[]][] = Object.entries(groups).sort(
-      ([a], [b]) => a.localeCompare(b),
+    const sorted: [string, NodeDef[]][] = Object.entries(groups).sort(([a], [b]) =>
+      a.localeCompare(b),
     );
     return sorted;
   }, [allNodeDefs]);
@@ -95,12 +93,9 @@ export function NodeDefBrowser() {
     });
   }, []);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-    },
-    [],
-  );
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  }, []);
 
   const handleNodeDefClick = useCallback(
     (typeKey: string, displayName: string) => {
@@ -117,7 +112,11 @@ export function NodeDefBrowser() {
   // Icon-only rail mode for narrow viewports (<500px)
   if (isIconRail) {
     return (
-      <div className="h-full flex flex-col items-center py-2 gap-1" data-testid="nodedef-browser" data-mode="icon-rail">
+      <div
+        className="h-full flex flex-col items-center py-2 gap-1"
+        data-testid="nodedef-browser"
+        data-mode="icon-rail"
+      >
         {/* Close button */}
         <button
           onClick={toggleLeftPanel}
@@ -132,7 +131,11 @@ export function NodeDefBrowser() {
         {groupedNodeDefs.map(([namespace, defs]) => {
           const NsIcon = namespaceIcons[namespace] ?? Box;
           return (
-            <div key={namespace} className="flex flex-col items-center gap-0.5" data-testid={`nodedef-group-${namespace}`}>
+            <div
+              key={namespace}
+              className="flex flex-col items-center gap-0.5"
+              data-testid={`nodedef-group-${namespace}`}
+            >
               <button
                 onClick={() => toggleNamespace(namespace)}
                 className="p-2 rounded hover:bg-gray-100 transition-colors touch-target group relative"
@@ -147,30 +150,30 @@ export function NodeDefBrowser() {
                 </span>
               </button>
               {/* Show compact node icons when expanded */}
-              {!collapsedNamespaces.has(namespace) && defs.map((def) => {
-                const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
-                const Icon = iconMap[def.metadata.icon] ?? Box;
-                const isActive = placementMode && placementInfo?.nodeType === typeKey;
-                return (
-                  <button
-                    key={typeKey}
-                    className={`p-1.5 rounded transition-colors touch-target group relative
-                               ${isActive
-                                 ? 'bg-blue-100 ring-1 ring-blue-300'
-                                 : 'hover:bg-blue-50'
+              {!collapsedNamespaces.has(namespace) &&
+                defs.map((def) => {
+                  const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
+                  const Icon = iconMap[def.metadata.icon] ?? Box;
+                  const isActive = placementMode && placementInfo?.nodeType === typeKey;
+                  return (
+                    <button
+                      key={typeKey}
+                      className={`p-1.5 rounded transition-colors touch-target group relative
+                               ${
+                                 isActive ? 'bg-blue-100 ring-1 ring-blue-300' : 'hover:bg-blue-50'
                                }`}
-                    onClick={() => handleNodeDefClick(typeKey, def.metadata.displayName)}
-                    title={def.metadata.displayName}
-                    data-testid={`nodedef-entry-${typeKey}`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                    {/* Tooltip */}
-                    <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
-                      {def.metadata.displayName}
-                    </span>
-                  </button>
-                );
-              })}
+                      onClick={() => handleNodeDefClick(typeKey, def.metadata.displayName)}
+                      title={def.metadata.displayName}
+                      data-testid={`nodedef-entry-${typeKey}`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                      {/* Tooltip */}
+                      <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                        {def.metadata.displayName}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
           );
         })}
@@ -253,30 +256,40 @@ export function NodeDefBrowser() {
                           key={typeKey}
                           className={`flex items-start gap-2 px-3 py-2 cursor-pointer
                                      border-l-2 transition-colors touch-target-row
-                                     ${isActive
-                                       ? 'bg-blue-100 border-blue-500 ring-1 ring-blue-300'
-                                       : 'border-transparent hover:bg-blue-50 hover:border-blue-400'
+                                     ${
+                                       isActive
+                                         ? 'bg-blue-100 border-blue-500 ring-1 ring-blue-300'
+                                         : 'border-transparent hover:bg-blue-50 hover:border-blue-400'
                                      }`}
                           data-testid={`nodedef-entry-${typeKey}`}
                           title={def.metadata.description}
                           onClick={() => handleNodeDefClick(typeKey, def.metadata.displayName)}
                           draggable
                           onDragStart={(e) => {
-                            e.dataTransfer.setData('application/archcanvas-nodedef', JSON.stringify({
-                              nodeType: typeKey,
-                              displayName: def.metadata.displayName,
-                            }));
+                            e.dataTransfer.setData(
+                              'application/archcanvas-nodedef',
+                              JSON.stringify({
+                                nodeType: typeKey,
+                                displayName: def.metadata.displayName,
+                              }),
+                            );
                             e.dataTransfer.effectAllowed = 'copy';
                           }}
                         >
-                          <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                          <Icon
+                            className={`w-4 h-4 mt-0.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}
+                          />
                           <div className="min-w-0 flex-1">
-                            <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-800' : 'text-gray-800'}`}
-                                 data-testid={`nodedef-name-${typeKey}`}>
+                            <div
+                              className={`text-sm font-medium truncate ${isActive ? 'text-blue-800' : 'text-gray-800'}`}
+                              data-testid={`nodedef-name-${typeKey}`}
+                            >
                               {def.metadata.displayName}
                             </div>
-                            <div className={`text-xs truncate ${isActive ? 'text-blue-500' : 'text-gray-400'}`}
-                                 data-testid={`nodedef-desc-${typeKey}`}>
+                            <div
+                              className={`text-xs truncate ${isActive ? 'text-blue-500' : 'text-gray-400'}`}
+                              data-testid={`nodedef-desc-${typeKey}`}
+                            >
                               {def.metadata.description}
                             </div>
                           </div>

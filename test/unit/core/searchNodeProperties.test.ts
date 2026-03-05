@@ -10,11 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  createEmptyGraph,
-  createNode,
-  addNode,
-} from '@/core/graph/graphEngine';
+import { createEmptyGraph, createNode, addNode } from '@/core/graph/graphEngine';
 import { searchGraph } from '@/core/graph/graphQuery';
 
 describe('Feature #31: Full-text search finds matches in node properties', () => {

@@ -6,11 +6,7 @@
  */
 
 import type { PromptTemplate } from './types';
-import {
-  NODE_TYPE_REGISTRY_TEXT,
-  STANDARD_RESPONSE_SCHEMA,
-  WEB_APP_FEW_SHOT,
-} from './shared';
+import { NODE_TYPE_REGISTRY_TEXT, STANDARD_RESPONSE_SCHEMA, WEB_APP_FEW_SHOT } from './shared';
 
 export const generalTemplate: PromptTemplate = {
   id: 'general',

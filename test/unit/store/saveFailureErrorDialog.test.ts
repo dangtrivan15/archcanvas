@@ -10,7 +10,8 @@ import { useUIStore } from '@/store/uiStore';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
+  const actual =
+    await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
     saveArchcFile: vi.fn(),

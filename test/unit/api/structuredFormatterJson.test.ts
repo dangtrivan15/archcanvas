@@ -70,8 +70,16 @@ describe('Structured formatter produces valid JSON - Feature #56', () => {
 
     // Step 1: Create architecture with nodes, edges, notes
     const note1 = makeNote({ author: 'alice', content: 'Gateway handles all ingress traffic' });
-    const note2 = makeNote({ author: 'bob', content: 'Consider adding rate limiting', tags: ['todo'] });
-    const note3 = makeNote({ author: 'charlie', content: 'DB schema needs review', status: 'pending' });
+    const note2 = makeNote({
+      author: 'bob',
+      content: 'Consider adding rate limiting',
+      tags: ['todo'],
+    });
+    const note3 = makeNote({
+      author: 'charlie',
+      content: 'DB schema needs review',
+      status: 'pending',
+    });
 
     node1 = makeNode({
       type: 'compute/api-gateway',
@@ -208,9 +216,15 @@ describe('Structured formatter produces valid JSON - Feature #56', () => {
 
   it('note counts reflect actual notes on nodes', () => {
     const parsed = JSON.parse(textApi.describe({ format: 'structured' }));
-    const gateway = parsed.nodes.find((n: { displayName: string }) => n.displayName === 'API Gateway');
-    const ordersDb = parsed.nodes.find((n: { displayName: string }) => n.displayName === 'Orders DB');
-    const orderSvc = parsed.nodes.find((n: { displayName: string }) => n.displayName === 'Order Service');
+    const gateway = parsed.nodes.find(
+      (n: { displayName: string }) => n.displayName === 'API Gateway',
+    );
+    const ordersDb = parsed.nodes.find(
+      (n: { displayName: string }) => n.displayName === 'Orders DB',
+    );
+    const orderSvc = parsed.nodes.find(
+      (n: { displayName: string }) => n.displayName === 'Order Service',
+    );
     expect(gateway.noteCount).toBe(2); // 2 notes on API Gateway
     expect(ordersDb.noteCount).toBe(1); // 1 note on Orders DB
     expect(orderSvc.noteCount).toBe(0); // no notes on Order Service

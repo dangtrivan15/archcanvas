@@ -52,9 +52,15 @@ describe('findNearestNode with grid layout', () => {
   // D(0,200) E(200,200) F(400,200)
   // G(0,400) H(200,400) I(400,400)
   const grid = [
-    pos('A', 0, 0), pos('B', 200, 0), pos('C', 400, 0),
-    pos('D', 0, 200), pos('E', 200, 200), pos('F', 400, 200),
-    pos('G', 0, 400), pos('H', 200, 400), pos('I', 400, 400),
+    pos('A', 0, 0),
+    pos('B', 200, 0),
+    pos('C', 400, 0),
+    pos('D', 0, 200),
+    pos('E', 200, 200),
+    pos('F', 400, 200),
+    pos('G', 0, 400),
+    pos('H', 200, 400),
+    pos('I', 400, 400),
   ];
 
   it('right from center selects right neighbor', () => {
@@ -160,10 +166,7 @@ describe('findNearestNode with tree layout', () => {
 // ================================================================
 describe('findNearestNode with sparse layout', () => {
   // Two nodes far apart
-  const sparse = [
-    pos('A', 0, 0),
-    pos('B', 1000, 500),
-  ];
+  const sparse = [pos('A', 0, 0), pos('B', 1000, 500)];
 
   it('right from A finds B', () => {
     expect(findNearestNode('A', 'right', sparse)).toBe('B');
@@ -215,8 +218,8 @@ describe('findTopLeftNode', () => {
   it('selects node with minimum x+y', () => {
     const positions = [
       pos('A', 100, 100), // score = 200
-      pos('B', 0, 50),     // score = 50 (smallest)
-      pos('C', 300, 0),    // score = 300
+      pos('B', 0, 50), // score = 50 (smallest)
+      pos('C', 300, 0), // score = 300
     ];
     expect(findTopLeftNode(positions)).toBe('B');
   });
@@ -231,8 +234,8 @@ describe('findTopLeftNode', () => {
 
   it('picks first minimum when tied', () => {
     const positions = [
-      pos('A', 50, 50),   // score = 100
-      pos('B', 100, 0),    // score = 100
+      pos('A', 50, 50), // score = 100
+      pos('B', 100, 0), // score = 100
     ];
     // Both have same score, first one wins
     expect(findTopLeftNode(positions)).toBe('A');
@@ -254,10 +257,7 @@ describe('extractPositions', () => {
   });
 
   it('handles multiple nodes', () => {
-    const nodes = [
-      makeNode('n1', 0, 0, 200, 100),
-      makeNode('n2', 300, 200, 200, 100),
-    ];
+    const nodes = [makeNode('n1', 0, 0, 200, 100), makeNode('n2', 300, 200, 200, 100)];
     const result = extractPositions(nodes);
     expect(result).toHaveLength(2);
     expect(result[0]!.id).toBe('n1');
@@ -285,8 +285,8 @@ describe('Cone algorithm', () => {
     // Two nodes to the right, one closer but slightly off-axis, one far but perfect
     const positions = [
       pos('current', 0, 0),
-      pos('close-angled', 100, 50),   // close, slight angle
-      pos('far-perfect', 500, 0),     // far, perfectly right
+      pos('close-angled', 100, 50), // close, slight angle
+      pos('far-perfect', 500, 0), // far, perfectly right
     ];
     expect(findNearestNode('current', 'right', positions)).toBe('close-angled');
   });
@@ -303,7 +303,7 @@ describe('Cone algorithm', () => {
     const positions = [
       pos('A', 0, 0),
       pos('B', 100, 100), // diagonal
-      pos('C', 200, 0),   // horizontal right
+      pos('C', 200, 0), // horizontal right
     ];
     // Right from A: C is perfectly right, B is diagonal (down-right)
     expect(findNearestNode('A', 'right', positions)).toBe('B');
@@ -317,11 +317,8 @@ describe('Hemisphere fallback', () => {
   it('selects node at 70 degrees when nothing in 60-degree cone', () => {
     // Node at ~70 degrees angle (just outside cone, within hemisphere)
     const dx = 100;
-    const dy = dx * Math.tan(70 * Math.PI / 180); // ~274.7
-    const positions = [
-      pos('current', 0, 0),
-      pos('target', dx, dy),
-    ];
+    const dy = dx * Math.tan((70 * Math.PI) / 180); // ~274.7
+    const positions = [pos('current', 0, 0), pos('target', dx, dy)];
     // Down from current: angle to target is ~70 degrees from right, which is ~20 from down
     // Actually the angle from down (PI/2) to atan2(274.7, 100) = 1.22 rad = 69.9 deg
     // Diff from down = PI/2 - 1.22 = 0.35 rad = ~20 deg, which IS within 60 deg cone

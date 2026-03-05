@@ -79,13 +79,7 @@ function hexagon(w: number, h: number): string {
 /** Parallelogram - slanted sides */
 function parallelogram(w: number, h: number): string {
   const skew = Math.min(w * 0.15, 24);
-  return [
-    `M ${skew} 0`,
-    `L ${w} 0`,
-    `L ${w - skew} ${h}`,
-    `L 0 ${h}`,
-    'Z',
-  ].join(' ');
+  return [`M ${skew} 0`, `L ${w} 0`, `L ${w - skew} ${h}`, `L 0 ${h}`, 'Z'].join(' ');
 }
 
 /** Cloud shape - composed of overlapping arcs */

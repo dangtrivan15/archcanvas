@@ -122,6 +122,15 @@ export function useCanvasPerformance(): CanvasPerformanceState {
       setNodeCount,
       updateZoom,
     }),
-    [isLowDetailMode, isLowDetailEdges, prefersReducedMotion, fps, fpsEnabled, toggleFps, nodeCount, nodeCountWarning],
+    [
+      isLowDetailMode,
+      isLowDetailEdges,
+      prefersReducedMotion,
+      fps,
+      fpsEnabled,
+      toggleFps,
+      nodeCount,
+      nodeCountWarning,
+    ],
   );
 }

@@ -74,17 +74,23 @@ export function NodeContextMenu({ x, y, nodeId, onClose }: NodeContextMenuProps)
     { label: 'Edit', icon: Pencil, action: handleEdit, testId: 'ctx-node-edit' },
     { label: 'Add Note', icon: StickyNote, action: handleAddNote, testId: 'ctx-node-add-note' },
     { label: 'Add Child', icon: Plus, action: handleAddChild, testId: 'ctx-node-add-child' },
-    { label: 'Zoom In', icon: ZoomIn, action: handleZoomIn, testId: 'ctx-node-zoom-in', disabled: !hasChildren },
-    { label: 'Delete', icon: Trash2, action: handleDelete, testId: 'ctx-node-delete', isDanger: true },
+    {
+      label: 'Zoom In',
+      icon: ZoomIn,
+      action: handleZoomIn,
+      testId: 'ctx-node-zoom-in',
+      disabled: !hasChildren,
+    },
+    {
+      label: 'Delete',
+      icon: Trash2,
+      action: handleDelete,
+      testId: 'ctx-node-delete',
+      isDanger: true,
+    },
   ];
 
   return (
-    <TouchContextMenu
-      x={x}
-      y={y}
-      onClose={onClose}
-      header={node?.displayName}
-      items={menuItems}
-    />
+    <TouchContextMenu x={x} y={y} onClose={onClose} header={node?.displayName} items={menuItems} />
   );
 }

@@ -37,8 +37,16 @@ const NODE_TYPES = [
 ];
 
 const NAMES = [
-  'User', 'Order', 'Payment', 'Auth', 'Notification',
-  'Inventory', 'Shipping', 'Search', 'Analytics', 'Report',
+  'User',
+  'Order',
+  'Payment',
+  'Auth',
+  'Notification',
+  'Inventory',
+  'Shipping',
+  'Search',
+  'Analytics',
+  'Report',
 ];
 
 /**
@@ -58,7 +66,7 @@ function createMediumArchitecture(nodeCount: number, edgeCount: number): ArchGra
       args: {
         environment: i % 2 === 0 ? 'production' : 'staging',
         version: `v${i}.0.0`,
-        replicas: i % 3 + 1,
+        replicas: (i % 3) + 1,
       },
     });
     nodeIds.push(node.id);

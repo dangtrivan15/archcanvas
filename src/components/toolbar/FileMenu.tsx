@@ -3,7 +3,21 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { File, FolderOpen, Save, Download, ChevronDown, FilePlus, Image, FileImage, FileText, GitBranch, Loader2, Check, Rocket } from 'lucide-react';
+import {
+  File,
+  FolderOpen,
+  Save,
+  Download,
+  ChevronDown,
+  FilePlus,
+  Image,
+  FileImage,
+  FileText,
+  GitBranch,
+  Loader2,
+  Check,
+  Rocket,
+} from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -113,7 +127,9 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           >
             <FilePlus className="w-4 h-4" />
             <span>New</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+n')}</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+              {formatBinding('mod+n')}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -134,46 +150,40 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
           >
             <FolderOpen className="w-4 h-4" />
             <span>Open...</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+o')}</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+              {formatBinding('mod+o')}
+            </span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <button
             onClick={handleSave}
             disabled={isSaving}
             className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
-              isSaving
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:bg-[hsl(var(--muted))]'
+              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[hsl(var(--muted))]'
             }`}
             role="menuitem"
             data-testid="save-button"
           >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'Saving...' : 'Save'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+s')}</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+              {formatBinding('mod+s')}
+            </span>
           </button>
           <button
             onClick={handleSaveAs}
             disabled={isSaving}
             className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors text-left touch-target-row ${
-              isSaving
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:bg-[hsl(var(--muted))]'
+              isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[hsl(var(--muted))]'
             }`}
             role="menuitem"
             data-testid="save-as-button"
           >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'Saving...' : 'Save As...'}</span>
-            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">{formatBinding('mod+shift+s')}</span>
+            <span className="ml-auto text-xs text-[hsl(var(--muted-foreground))]">
+              {formatBinding('mod+shift+s')}
+            </span>
           </button>
           <div className="h-px bg-[hsl(var(--border))] my-1" />
           <div

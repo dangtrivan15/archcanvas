@@ -19,7 +19,7 @@ function createPdfLikeFile(): Uint8Array {
   data[1] = 0x50; // P
   data[2] = 0x44; // D
   data[3] = 0x46; // F
-  data[4] = 0x2D; // -
+  data[4] = 0x2d; // -
   data[5] = 0x31; // 1
   return data;
 }
@@ -29,7 +29,7 @@ function createZipLikeFile(): Uint8Array {
   const data = new Uint8Array(50);
   // ZIP magic bytes: PK
   data[0] = 0x50; // P
-  data[1] = 0x4B; // K
+  data[1] = 0x4b; // K
   data[2] = 0x03;
   data[3] = 0x04;
   return data;

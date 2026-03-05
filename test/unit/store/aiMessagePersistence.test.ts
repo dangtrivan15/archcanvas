@@ -82,8 +82,20 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
         {
           id: 'conv-1',
           messages: [
-            { id: 'msg-1', role: 'user', content: 'Restored message', timestampMs: 1000, suggestions: [] },
-            { id: 'msg-2', role: 'assistant', content: 'Restored response', timestampMs: 2000, suggestions: [] },
+            {
+              id: 'msg-1',
+              role: 'user',
+              content: 'Restored message',
+              timestampMs: 1000,
+              suggestions: [],
+            },
+            {
+              id: 'msg-2',
+              role: 'assistant',
+              content: 'Restored response',
+              timestampMs: 2000,
+              suggestions: [],
+            },
           ],
           createdAtMs: 1000,
         },
@@ -107,10 +119,34 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
           {
             id: 'conv-test-1',
             messages: [
-              { id: 'msg-user-1', role: 'user' as const, content: 'What is this architecture?', timestampMs: 1000, suggestions: [] },
-              { id: 'msg-ai-1', role: 'assistant' as const, content: 'This is a microservices architecture.', timestampMs: 2000, suggestions: [] },
-              { id: 'msg-user-2', role: 'user' as const, content: 'How many services?', timestampMs: 3000, suggestions: [] },
-              { id: 'msg-ai-2', role: 'assistant' as const, content: 'There are 5 services.', timestampMs: 4000, suggestions: [] },
+              {
+                id: 'msg-user-1',
+                role: 'user' as const,
+                content: 'What is this architecture?',
+                timestampMs: 1000,
+                suggestions: [],
+              },
+              {
+                id: 'msg-ai-1',
+                role: 'assistant' as const,
+                content: 'This is a microservices architecture.',
+                timestampMs: 2000,
+                suggestions: [],
+              },
+              {
+                id: 'msg-user-2',
+                role: 'user' as const,
+                content: 'How many services?',
+                timestampMs: 3000,
+                suggestions: [],
+              },
+              {
+                id: 'msg-ai-2',
+                role: 'assistant' as const,
+                content: 'There are 5 services.',
+                timestampMs: 4000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 1000,
           },
@@ -153,7 +189,13 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
           {
             id: 'conv-1',
             messages: [
-              { id: 'msg-1', role: 'user' as const, content: 'Hello', timestampMs: 1709312400000, suggestions: [] },
+              {
+                id: 'msg-1',
+                role: 'user' as const,
+                content: 'Hello',
+                timestampMs: 1709312400000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 1709312400000,
           },
@@ -204,8 +246,20 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
           {
             id: 'conv-id-test',
             messages: [
-              { id: 'unique-msg-id-1', role: 'user' as const, content: 'Test', timestampMs: 1000, suggestions: [] },
-              { id: 'unique-msg-id-2', role: 'assistant' as const, content: 'Reply', timestampMs: 2000, suggestions: [] },
+              {
+                id: 'unique-msg-id-1',
+                role: 'user' as const,
+                content: 'Test',
+                timestampMs: 1000,
+                suggestions: [],
+              },
+              {
+                id: 'unique-msg-id-2',
+                role: 'assistant' as const,
+                content: 'Reply',
+                timestampMs: 2000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 1000,
           },
@@ -226,8 +280,20 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
           {
             id: 'conv-roles',
             messages: [
-              { id: 'msg-u', role: 'user' as const, content: 'User says hello', timestampMs: 1000, suggestions: [] },
-              { id: 'msg-a', role: 'assistant' as const, content: 'AI responds', timestampMs: 2000, suggestions: [] },
+              {
+                id: 'msg-u',
+                role: 'user' as const,
+                content: 'User says hello',
+                timestampMs: 1000,
+                suggestions: [],
+              },
+              {
+                id: 'msg-a',
+                role: 'assistant' as const,
+                content: 'AI responds',
+                timestampMs: 2000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 1000,
           },
@@ -251,7 +317,13 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
           {
             id: 'conv-global',
             messages: [
-              { id: 'g1', role: 'user' as const, content: 'Global question', timestampMs: 1000, suggestions: [] },
+              {
+                id: 'g1',
+                role: 'user' as const,
+                content: 'Global question',
+                timestampMs: 1000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 1000,
           },
@@ -259,7 +331,13 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
             id: 'conv-scoped',
             scopedToNodeId: 'node-123',
             messages: [
-              { id: 's1', role: 'user' as const, content: 'Node-scoped question', timestampMs: 2000, suggestions: [] },
+              {
+                id: 's1',
+                role: 'user' as const,
+                content: 'Node-scoped question',
+                timestampMs: 2000,
+                suggestions: [],
+              },
             ],
             createdAtMs: 2000,
           },
@@ -284,7 +362,9 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
       useAIStore.getState().addMessage('user', 'What does this system do?');
       useAIStore.getState().addMessage('assistant', 'This system handles order processing.');
       useAIStore.getState().addMessage('user', 'Can you explain the data flow?');
-      useAIStore.getState().addMessage('assistant', 'Data flows from API Gateway to Order Service to Database.');
+      useAIStore
+        .getState()
+        .addMessage('assistant', 'Data flows from API Gateway to Order Service to Database.');
 
       // Step 2: Save the file (get AI state from store)
       const conversations = useAIStore.getState().conversations;
@@ -313,7 +393,9 @@ describe('Feature #174: AI message history persisted in .archc file', () => {
       expect(restoredMessages[0].content).toBe('What does this system do?');
       expect(restoredMessages[1].content).toBe('This system handles order processing.');
       expect(restoredMessages[2].content).toBe('Can you explain the data flow?');
-      expect(restoredMessages[3].content).toBe('Data flows from API Gateway to Order Service to Database.');
+      expect(restoredMessages[3].content).toBe(
+        'Data flows from API Gateway to Order Service to Database.',
+      );
 
       // Step 7: Verify both user and AI messages appear
       expect(restoredMessages[0].role).toBe('user');

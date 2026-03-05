@@ -137,9 +137,7 @@ describe('Quick Search Overlay - Fuzzy Search Algorithm', () => {
     setupGraphWithNodes();
     const nodes = useCoreStore.getState().graph.nodes;
     // Both "api gateway" and "API Gateway" should be findable
-    const apiNodes = nodes.filter((n) =>
-      n.displayName.toLowerCase().includes('api gateway'),
-    );
+    const apiNodes = nodes.filter((n) => n.displayName.toLowerCase().includes('api gateway'));
     expect(apiNodes.length).toBe(1);
   });
 });
@@ -232,21 +230,16 @@ describe('Quick Search Overlay - Component Structure', () => {
   });
 
   it('QuickSearchOverlay is rendered in App', async () => {
-    const appSource = await import('fs').then((fs) =>
-      fs.readFileSync('src/App.tsx', 'utf-8'),
-    );
+    const appSource = await import('fs').then((fs) => fs.readFileSync('src/App.tsx', 'utf-8'));
     expect(appSource).toContain('QuickSearchOverlay');
-    expect(appSource).toContain("import { QuickSearchOverlay }");
+    expect(appSource).toContain('import { QuickSearchOverlay }');
   });
 });
 
 describe('Quick Search Overlay - Source Code Verification', () => {
   it('overlay has correct data-testid attributes', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('data-testid="quick-search-overlay"');
     expect(source).toContain('data-testid="quick-search"');
     expect(source).toContain('data-testid="quick-search-input"');
@@ -256,10 +249,7 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 
   it('overlay is accessible (ARIA attributes)', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('role="dialog"');
     expect(source).toContain('aria-modal="true"');
     expect(source).toContain('aria-label="Quick search"');
@@ -271,48 +261,33 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 
   it('overlay shows max 8 results (MAX_RESULTS)', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('const MAX_RESULTS = 8');
   });
 
   it('fuzzy match implementation supports consecutive bonus', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('consecutiveBonus');
     expect(source).toContain('exactIndex');
   });
 
   it('highlighted name component bolds matching chars', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('HighlightedName');
     expect(source).toContain('font-bold text-blue-600');
   });
 
   it('overlay shows "No nodes found" when empty', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('No nodes found');
   });
 
   it('supports keyboard navigation (ArrowUp/Down/Enter/Escape)', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain("case 'ArrowDown':");
     expect(source).toContain("case 'ArrowUp':");
     expect(source).toContain("case 'Enter':");
@@ -321,10 +296,7 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 
   it('overlay displays node type icons', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('getNodeIconName');
     expect(source).toContain('IconComponent');
     expect(source).toContain('iconMap');
@@ -332,30 +304,21 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 
   it('overlay shows parent context in results', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('parentContext');
     expect(source).toContain('collectAllNodes');
   });
 
   it('jumpToNode stores results for n/N navigation', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('_lastSearchResults');
     expect(source).toContain('_lastSelectedIndex');
   });
 
   it('footer shows keyboard hints', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('navigate');
     expect(source).toContain('jump');
     expect(source).toContain('close');
@@ -364,10 +327,7 @@ describe('Quick Search Overlay - Source Code Verification', () => {
 
   it('clicking backdrop closes overlay', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync(
-      'src/components/shared/QuickSearchOverlay.tsx',
-      'utf-8',
-    );
+    const source = fs.readFileSync('src/components/shared/QuickSearchOverlay.tsx', 'utf-8');
     expect(source).toContain('e.target === e.currentTarget');
     expect(source).toContain('closeSearch()');
   });

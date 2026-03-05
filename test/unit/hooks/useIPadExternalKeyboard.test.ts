@@ -436,7 +436,11 @@ describe('iPad platform detection for keyboard shortcuts', () => {
     _setPlatformForTesting('ipad');
     const binding = parseBinding('mod+s');
     const event = {
-      metaKey: true, ctrlKey: false, shiftKey: false, altKey: false, key: 's',
+      metaKey: true,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 's',
     } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
@@ -445,7 +449,11 @@ describe('iPad platform detection for keyboard shortcuts', () => {
     _setPlatformForTesting('ipad');
     const binding = parseBinding('mod+s');
     const event = {
-      metaKey: false, ctrlKey: true, shiftKey: false, altKey: false, key: 's',
+      metaKey: false,
+      ctrlKey: true,
+      shiftKey: false,
+      altKey: false,
+      key: 's',
     } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(false);
   });
@@ -464,49 +472,97 @@ describe('single-key shortcuts on iPad', () => {
 
   it('matches plain "s" for node:add-service', () => {
     const binding = parseBinding('s');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 's' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 's',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches plain "d" for node:add-database', () => {
     const binding = parseBinding('d');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'd' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 'd',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches plain "c" key binding', () => {
     const binding = parseBinding('c');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'c' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 'c',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches plain "i" key binding', () => {
     const binding = parseBinding('i');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'i' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 'i',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches "escape"', () => {
     const binding = parseBinding('escape');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'Escape' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 'Escape',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches "f2" for node:rename', () => {
     const binding = parseBinding('f2');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: 'f2' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 'f2',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches "?" for shortcuts help', () => {
     const binding = parseBinding('?');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: true, altKey: false, key: '?' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: true,
+      altKey: false,
+      key: '?',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 
   it('matches "/" for quick search', () => {
     const binding = parseBinding('/');
-    const event = { metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, key: '/' } as KeyboardEvent;
+    const event = {
+      metaKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: '/',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(event, binding)).toBe(true);
   });
 });

@@ -99,17 +99,13 @@ describe('Feature #99: Level-aware filtering shows correct edges at each level',
     });
 
     it('has edge A->B', () => {
-      const abEdge = graph.edges.find(
-        (e) => e.fromNode === nodeAId && e.toNode === nodeBId,
-      );
+      const abEdge = graph.edges.find((e) => e.fromNode === nodeAId && e.toNode === nodeBId);
       expect(abEdge).toBeDefined();
       expect(abEdge!.label).toBe('REST');
     });
 
     it('has edge C->D', () => {
-      const cdEdge = graph.edges.find(
-        (e) => e.fromNode === nodeCId && e.toNode === nodeDId,
-      );
+      const cdEdge = graph.edges.find((e) => e.fromNode === nodeCId && e.toNode === nodeDId);
       expect(cdEdge).toBeDefined();
       expect(cdEdge!.label).toBe('Events');
     });
@@ -134,9 +130,7 @@ describe('Feature #99: Level-aware filtering shows correct edges at each level',
 
     it('C->D edge is NOT visible at root level', () => {
       const edges = getEdgesAtLevel(graph, []);
-      const cdEdge = edges.find(
-        (e) => e.fromNode === nodeCId && e.toNode === nodeDId,
-      );
+      const cdEdge = edges.find((e) => e.fromNode === nodeCId && e.toNode === nodeDId);
       expect(cdEdge).toBeUndefined();
     });
 
@@ -167,9 +161,7 @@ describe('Feature #99: Level-aware filtering shows correct edges at each level',
 
     it('A->B edge is NOT visible when drilled into A', () => {
       const edges = getEdgesAtLevel(graph, [nodeAId]);
-      const abEdge = edges.find(
-        (e) => e.fromNode === nodeAId && e.toNode === nodeBId,
-      );
+      const abEdge = edges.find((e) => e.fromNode === nodeAId && e.toNode === nodeBId);
       expect(abEdge).toBeUndefined();
     });
 

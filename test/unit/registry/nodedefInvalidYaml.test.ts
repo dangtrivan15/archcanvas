@@ -9,10 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import {
-  validateNodeDef,
-  safeValidateNodeDef,
-} from '@/core/registry/nodedefValidator';
+import { validateNodeDef, safeValidateNodeDef } from '@/core/registry/nodedefValidator';
 import { parseNodeDefYaml } from '@/core/registry/loader';
 import { RegistryManager } from '@/core/registry/registryManager';
 
@@ -362,9 +359,7 @@ describe('Feature #190: Invalid nodedef YAML shows validation error', () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        const kindIssue = result.error.issues.find(
-          (issue) => issue.path.join('.') === 'kind',
-        );
+        const kindIssue = result.error.issues.find((issue) => issue.path.join('.') === 'kind');
         expect(kindIssue).toBeDefined();
         // Should mention "NodeDef" as the expected value
         expect(kindIssue!.message).toContain('NodeDef');

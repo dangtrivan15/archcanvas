@@ -26,7 +26,13 @@ if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
 }
 
 function AsyncEdgeComponent({
-  sourceX, sourceY, targetX, targetY, id, selected, label,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  id,
+  selected,
+  label,
 }: EdgeProps) {
   const { prefersReducedMotion, isLowDetailEdges } = useCanvasPerformanceContext();
   const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });

@@ -26,8 +26,14 @@ function expectUsableContentArea(insets: ShapeInsets, width: number, height: num
 
 describe('getShapeInsets', () => {
   const shapes: ShapeName[] = [
-    'rectangle', 'cylinder', 'hexagon', 'parallelogram',
-    'cloud', 'stadium', 'document', 'badge',
+    'rectangle',
+    'cylinder',
+    'hexagon',
+    'parallelogram',
+    'cloud',
+    'stadium',
+    'document',
+    'badge',
   ];
 
   it.each(shapes)('%s returns positive insets', (shape) => {
@@ -179,8 +185,8 @@ describe('stadium insets', () => {
     const h = 80;
     const insets = getShapeInsets('stadium', 240, h);
     // Stadium radius is h/2 = 40, padding should account for some portion
-    expect(insets.left).toBeGreaterThanOrEqual(h / 2 * 0.3);
-    expect(insets.right).toBeGreaterThanOrEqual(h / 2 * 0.3);
+    expect(insets.left).toBeGreaterThanOrEqual((h / 2) * 0.3);
+    expect(insets.right).toBeGreaterThanOrEqual((h / 2) * 0.3);
   });
 
   it('has standard vertical padding', () => {

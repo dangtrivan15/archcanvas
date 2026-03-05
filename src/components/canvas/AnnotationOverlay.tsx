@@ -152,7 +152,9 @@ export function AnnotationOverlay() {
       if (isEraserMode) {
         // Find annotation under pointer
         const target = e.target as SVGElement;
-        const annotationId = target.closest('[data-annotation-id]')?.getAttribute('data-annotation-id');
+        const annotationId = target
+          .closest('[data-annotation-id]')
+          ?.getAttribute('data-annotation-id');
         if (annotationId) {
           removeAnnotation(annotationId);
         }
@@ -218,11 +220,7 @@ export function AnnotationOverlay() {
       style={{
         zIndex: isDrawingMode ? 40 : 5,
         pointerEvents: isDrawingMode ? 'auto' : 'none',
-        cursor: isDrawingMode
-          ? isEraserMode
-            ? 'crosshair'
-            : 'crosshair'
-          : 'default',
+        cursor: isDrawingMode ? (isEraserMode ? 'crosshair' : 'crosshair') : 'default',
         touchAction: 'none',
       }}
       data-testid="annotation-overlay"

@@ -65,14 +65,19 @@ export function EdgeDetailPanel() {
           {/* Edge ID */}
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">ID</label>
-            <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded break-all" data-testid="detail-edge-id">
+            <div
+              className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded break-all"
+              data-testid="detail-edge-id"
+            >
               {edge.id}
             </div>
           </div>
 
           {/* From Node */}
           <div>
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">From Node</label>
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              From Node
+            </label>
             <div className="mt-1 text-sm" data-testid="detail-edge-from">
               <div className="font-mono text-xs text-gray-400">{edge.fromNode}</div>
               {fromNode && <div className="text-gray-700">{fromNode.displayName}</div>}
@@ -81,7 +86,9 @@ export function EdgeDetailPanel() {
 
           {/* To Node */}
           <div>
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">To Node</label>
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              To Node
+            </label>
             <div className="mt-1 text-sm" data-testid="detail-edge-to">
               <div className="font-mono text-xs text-gray-400">{edge.toNode}</div>
               {toNode && <div className="text-gray-700">{toNode.displayName}</div>}
@@ -90,7 +97,9 @@ export function EdgeDetailPanel() {
 
           {/* Edge Type */}
           <div>
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Type</label>
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Type
+            </label>
             <div className="mt-1 text-sm font-mono" data-testid="detail-edge-type">
               {edge.type}
             </div>
@@ -98,7 +107,9 @@ export function EdgeDetailPanel() {
 
           {/* Label */}
           <div>
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Label</label>
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Label
+            </label>
             <div className="mt-1 text-sm" data-testid="detail-edge-label-value">
               {edge.label || <span className="text-gray-400">none</span>}
             </div>
@@ -106,12 +117,18 @@ export function EdgeDetailPanel() {
 
           {/* Properties */}
           <div>
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Properties</label>
-            <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded" data-testid="detail-edge-properties">
-              {Object.keys(edge.properties).length === 0
-                ? <span className="text-gray-400">empty object {'{}'}</span>
-                : JSON.stringify(edge.properties, null, 2)
-              }
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Properties
+            </label>
+            <div
+              className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded"
+              data-testid="detail-edge-properties"
+            >
+              {Object.keys(edge.properties).length === 0 ? (
+                <span className="text-gray-400">empty object {'{}'}</span>
+              ) : (
+                JSON.stringify(edge.properties, null, 2)
+              )}
             </div>
           </div>
 
@@ -121,22 +138,29 @@ export function EdgeDetailPanel() {
               Notes ({edge.notes.length})
             </label>
             <div className="mt-1 text-xs" data-testid="detail-edge-notes">
-              {edge.notes.length === 0
-                ? <span className="text-gray-400">empty array []</span>
-                : edge.notes.map((note) => (
-                    <div key={note.id} className="border rounded p-2 mt-1">
-                      {note.author.toLowerCase() === 'ai' ? (
-                        <div className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200" data-testid="note-author" data-author-type="ai">
-                          <Bot className="w-3 h-3" />
-                          AI
-                        </div>
-                      ) : (
-                        <div className="font-medium" data-testid="note-author">{note.author}</div>
-                      )}
-                      <div>{note.content}</div>
-                    </div>
-                  ))
-              }
+              {edge.notes.length === 0 ? (
+                <span className="text-gray-400">empty array []</span>
+              ) : (
+                edge.notes.map((note) => (
+                  <div key={note.id} className="border rounded p-2 mt-1">
+                    {note.author.toLowerCase() === 'ai' ? (
+                      <div
+                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
+                        data-testid="note-author"
+                        data-author-type="ai"
+                      >
+                        <Bot className="w-3 h-3" />
+                        AI
+                      </div>
+                    ) : (
+                      <div className="font-medium" data-testid="note-author">
+                        {note.author}
+                      </div>
+                    )}
+                    <div>{note.content}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

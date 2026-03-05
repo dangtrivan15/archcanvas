@@ -43,12 +43,7 @@ import {
   addCodeRef as engineAddCodeRef,
   removeNoteFromNode,
 } from '@/core/graph/graphEngine';
-import {
-  searchGraph,
-  getNeighbors,
-  flattenNodes,
-  countAllNodes,
-} from '@/core/graph/graphQuery';
+import { searchGraph, getNeighbors, flattenNodes, countAllNodes } from '@/core/graph/graphQuery';
 
 export class TextApi {
   private graph: ArchGraph;
@@ -332,7 +327,10 @@ export class TextApi {
   /**
    * Update an edge's type, label, or properties.
    */
-  updateEdge(edgeId: string, updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>): void {
+  updateEdge(
+    edgeId: string,
+    updates: Partial<Pick<ArchEdge, 'type' | 'label' | 'properties'>>,
+  ): void {
     this.graph = engineUpdateEdge(this.graph, edgeId, updates);
   }
 
@@ -368,11 +366,7 @@ export class TextApi {
   /**
    * Accept or dismiss an AI suggestion.
    */
-  resolveSuggestion(
-    nodeId: string,
-    noteId: string,
-    action: 'accepted' | 'dismissed',
-  ): void {
+  resolveSuggestion(nodeId: string, noteId: string, action: 'accepted' | 'dismissed'): void {
     this.graph = updateNoteStatus(this.graph, nodeId, noteId, action);
   }
 
@@ -462,7 +456,9 @@ export class TextApi {
   private buildAIDescription(_options: DescribeOptions): string {
     const lines: string[] = [];
     lines.push(`<architecture name="${this.graph.name}">`);
-    lines.push(`  <summary nodes="${countAllNodes(this.graph)}" edges="${this.graph.edges.length}" />`);
+    lines.push(
+      `  <summary nodes="${countAllNodes(this.graph)}" edges="${this.graph.edges.length}" />`,
+    );
 
     for (const node of flattenNodes(this.graph.nodes)) {
       lines.push(`  <node id="${node.id}" type="${node.type}" name="${node.displayName}">`);
@@ -482,7 +478,9 @@ export class TextApi {
       if (node.notes.length > 0) {
         lines.push(`    <notes count="${node.notes.length}">`);
         for (const note of node.notes) {
-          lines.push(`      <note author="${note.author}" status="${note.status}">${note.content}</note>`);
+          lines.push(
+            `      <note author="${note.author}" status="${note.status}">${note.content}</note>`,
+          );
         }
         lines.push(`    </notes>`);
       }

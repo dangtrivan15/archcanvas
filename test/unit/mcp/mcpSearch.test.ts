@@ -138,14 +138,18 @@ describe('MCP search tool - Feature #185', () => {
   // Additional: Search across edge labels
   it('finds matching edge by label', () => {
     // Create two nodes first
-    const node1 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Service A',
-    }));
-    const node2 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database',
-      displayName: 'Database B',
-    }));
+    const node1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Service A',
+      }),
+    );
+    const node2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'Database B',
+      }),
+    );
 
     // Create edge with a distinct label
     dispatchToolCall(ctx, 'add_edge', {
@@ -159,19 +163,19 @@ describe('MCP search tool - Feature #185', () => {
     const parsed = JSON.parse(result);
 
     expect(parsed.count).toBeGreaterThanOrEqual(1);
-    const edgeResult = parsed.results.find(
-      (r: { type: string }) => r.type === 'edge',
-    );
+    const edgeResult = parsed.results.find((r: { type: string }) => r.type === 'edge');
     expect(edgeResult).toBeDefined();
     expect(edgeResult.matchContext).toContain('fetch orders');
   });
 
   // Additional: Search across notes
   it('finds matching note content', () => {
-    const node = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Billing Service',
-    }));
+    const node = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Billing Service',
+      }),
+    );
 
     dispatchToolCall(ctx, 'add_note', {
       nodeId: node.nodeId,
@@ -183,9 +187,7 @@ describe('MCP search tool - Feature #185', () => {
     const parsed = JSON.parse(result);
 
     expect(parsed.count).toBeGreaterThanOrEqual(1);
-    const noteResult = parsed.results.find(
-      (r: { type: string }) => r.type === 'note',
-    );
+    const noteResult = parsed.results.find((r: { type: string }) => r.type === 'note');
     expect(noteResult).toBeDefined();
     expect(noteResult.displayName).toContain('Billing Service');
   });

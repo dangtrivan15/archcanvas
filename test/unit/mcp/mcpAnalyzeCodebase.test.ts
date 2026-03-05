@@ -311,10 +311,8 @@ describe('MCP analyze_codebase tool', () => {
       );
 
       const progressEvents: AnalyzeProgress[] = [];
-      await handleAnalyzeCodebase(
-        ctx,
-        { directory: '/test' },
-        (event) => progressEvents.push(event),
+      await handleAnalyzeCodebase(ctx, { directory: '/test' }, (event) =>
+        progressEvents.push(event),
       );
 
       expect(progressEvents.length).toBe(2);
@@ -334,7 +332,10 @@ describe('MCP analyze_codebase tool', () => {
         stats: { nodes: 10, edges: 8, codeRefs: 5 },
         projectProfile: {
           projectType: 'microservices',
-          languages: [{ name: 'Go', percentage: 60 }, { name: 'TypeScript', percentage: 40 }],
+          languages: [
+            { name: 'Go', percentage: 60 },
+            { name: 'TypeScript', percentage: 40 },
+          ],
           frameworks: [{ name: 'Gin', confidence: 'high', evidence: 'go.mod' }],
           dataStores: [],
           infraSignals: [],

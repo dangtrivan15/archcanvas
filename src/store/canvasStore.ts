@@ -187,26 +187,20 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
       selectedNodeIds: [],
     }),
 
-  setViewport: (viewport) =>
-    set({ viewport }),
+  setViewport: (viewport) => set({ viewport }),
 
-  requestFitView: () =>
-    set((s) => ({ fitViewCounter: s.fitViewCounter + 1 })),
+  requestFitView: () => set((s) => ({ fitViewCounter: s.fitViewCounter + 1 })),
 
-  requestZoomIn: () =>
-    set((s) => ({ zoomInCounter: s.zoomInCounter + 1 })),
+  requestZoomIn: () => set((s) => ({ zoomInCounter: s.zoomInCounter + 1 })),
 
-  requestZoomOut: () =>
-    set((s) => ({ zoomOutCounter: s.zoomOutCounter + 1 })),
+  requestZoomOut: () => set((s) => ({ zoomOutCounter: s.zoomOutCounter + 1 })),
 
-  requestZoom100: () =>
-    set((s) => ({ zoom100Counter: s.zoom100Counter + 1 })),
+  requestZoom100: () => set((s) => ({ zoom100Counter: s.zoom100Counter + 1 })),
 
   setLayoutSpacing: (spacing) =>
     set((s) => ({ layoutSpacing: { ...s.layoutSpacing, ...spacing } })),
 
-  resetLayoutSpacing: () =>
-    set({ layoutSpacing: { ...DEFAULT_LAYOUT_SPACING } }),
+  resetLayoutSpacing: () => set({ layoutSpacing: { ...DEFAULT_LAYOUT_SPACING } }),
 
   requestCenterOnNode: (nodeId) =>
     set((s) => ({ centerOnNodeId: nodeId, centerOnNodeCounter: s.centerOnNodeCounter + 1 })),

@@ -90,13 +90,7 @@ describe('RegistryManager.listByNamespace()', () => {
   // Verify all 5 namespaces are present
   it('lists exactly 5 namespaces', () => {
     const namespaces = registry.listNamespaces().sort();
-    expect(namespaces).toEqual([
-      'compute',
-      'data',
-      'messaging',
-      'network',
-      'observability',
-    ]);
+    expect(namespaces).toEqual(['compute', 'data', 'messaging', 'network', 'observability']);
   });
 
   // All namespaces combined total 15 nodedefs

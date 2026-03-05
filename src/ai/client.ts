@@ -163,10 +163,11 @@ export async function sendMessage(options: SendMessageOptions): Promise<SendMess
  */
 async function handleNonStreamingResponse(response: Response): Promise<SendMessageResult> {
   const data = await response.json();
-  const content = data.content
-    ?.filter((block: { type: string }) => block.type === 'text')
-    .map((block: { text: string }) => block.text)
-    .join('') ?? '';
+  const content =
+    data.content
+      ?.filter((block: { type: string }) => block.type === 'text')
+      .map((block: { text: string }) => block.text)
+      .join('') ?? '';
 
   return {
     content,

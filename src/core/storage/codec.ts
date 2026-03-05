@@ -67,9 +67,7 @@ function computeSha256(data: Uint8Array): Uint8Array {
 export async function encode(file: IArchCanvasFile): Promise<Uint8Array> {
   // Ensure header exists with timestamps
   const now = Date.now();
-  const header = file.header
-    ? FileHeader.create(file.header)
-    : FileHeader.create();
+  const header = file.header ? FileHeader.create(file.header) : FileHeader.create();
 
   if (!header.formatVersion) {
     header.formatVersion = FORMAT_VERSION;
@@ -84,9 +82,7 @@ export async function encode(file: IArchCanvasFile): Promise<Uint8Array> {
 
   // Encode to protobuf bytes
   const fileToEncode: IArchCanvasFile = { ...file, header };
-  const payload = ArchCanvasFile.encode(
-    ArchCanvasFile.create(fileToEncode)
-  ).finish();
+  const payload = ArchCanvasFile.encode(ArchCanvasFile.create(fileToEncode)).finish();
 
   // Compute SHA-256 of the protobuf payload
   const checksum = await computeSha256(payload);
@@ -100,8 +96,8 @@ export async function encode(file: IArchCanvasFile): Promise<Uint8Array> {
 
   // Write format version as uint16 big-endian (offset 6)
   const versionOffset = MAGIC_BYTES.length;
-  result[versionOffset] = (version >> 8) & 0xFF;
-  result[versionOffset + 1] = version & 0xFF;
+  result[versionOffset] = (version >> 8) & 0xff;
+  result[versionOffset + 1] = version & 0xff;
 
   // Write SHA-256 checksum (offset 8)
   const checksumOffset = versionOffset + 2;
@@ -138,14 +134,11 @@ export interface DecodeOptions {
  * @throws {CodecError} If magic bytes or format are invalid
  * @throws {IntegrityError} If checksum verification fails
  */
-export async function decode(
-  data: Uint8Array,
-  options?: DecodeOptions
-): Promise<ArchCanvasFile> {
+export async function decode(data: Uint8Array, options?: DecodeOptions): Promise<ArchCanvasFile> {
   // Validate minimum size
   if (data.length < HEADER_SIZE) {
     throw new CodecError(
-      `File too small: expected at least ${HEADER_SIZE} bytes, got ${data.length}`
+      `File too small: expected at least ${HEADER_SIZE} bytes, got ${data.length}`,
     );
   }
 
@@ -154,7 +147,7 @@ export async function decode(
     if (data[i] !== MAGIC_BYTES[i]) {
       throw new CodecError(
         `Invalid file format: magic bytes mismatch at position ${i}. ` +
-        `Expected 0x${MAGIC_BYTES[i]!.toString(16)}, got 0x${data[i]!.toString(16)}`
+          `Expected 0x${MAGIC_BYTES[i]!.toString(16)}, got 0x${data[i]!.toString(16)}`,
       );
     }
   }
@@ -165,7 +158,7 @@ export async function decode(
   if (version > FORMAT_VERSION) {
     throw new CodecError(
       `Unsupported format version: ${version}. This file was created with a newer version of ArchCanvas. ` +
-      `Please update ArchCanvas to the latest version to open this file. (Current max supported version: ${FORMAT_VERSION})`
+        `Please update ArchCanvas to the latest version to open this file. (Current max supported version: ${FORMAT_VERSION})`,
     );
   }
 
@@ -182,14 +175,14 @@ export async function decode(
 
     if (storedChecksum.length !== computedChecksum.length) {
       throw new IntegrityError(
-        `Checksum size mismatch: stored ${storedChecksum.length} bytes, computed ${computedChecksum.length} bytes`
+        `Checksum size mismatch: stored ${storedChecksum.length} bytes, computed ${computedChecksum.length} bytes`,
       );
     }
     for (let i = 0; i < computedChecksum.length; i++) {
       if (storedChecksum[i] !== computedChecksum[i]) {
         throw new IntegrityError(
           'File integrity check failed: SHA-256 checksum does not match. ' +
-          'The file may be corrupted or tampered with.'
+            'The file may be corrupted or tampered with.',
         );
       }
     }
@@ -201,18 +194,14 @@ export async function decode(
     decoded = ArchCanvasFile.decode(payload);
   } catch (err) {
     throw new CodecError(
-      `Failed to decode protobuf payload: ${err instanceof Error ? err.message : String(err)}`
+      `Failed to decode protobuf payload: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 
   // Step 6b: Verify decoded message has valid field types
-  const verifyError = ArchCanvasFile.verify(
-    decoded as unknown as Record<string, unknown>
-  );
+  const verifyError = ArchCanvasFile.verify(decoded as unknown as Record<string, unknown>);
   if (verifyError) {
-    throw new CodecError(
-      `Malformed protobuf data: ${verifyError}`
-    );
+    throw new CodecError(`Malformed protobuf data: ${verifyError}`);
   }
 
   // Step 7: Set checksum on decoded header for metadata access

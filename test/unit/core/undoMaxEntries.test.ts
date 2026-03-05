@@ -11,11 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { UndoManager } from '@/core/history/undoManager';
-import {
-  createEmptyGraph,
-  createNode,
-  addNode,
-} from '@/core/graph/graphEngine';
+import { createEmptyGraph, createNode, addNode } from '@/core/graph/graphEngine';
 import { MAX_UNDO_ENTRIES } from '@/utils/constants';
 import type { ArchGraph } from '@/types/graph';
 

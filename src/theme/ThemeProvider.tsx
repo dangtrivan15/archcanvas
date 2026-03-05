@@ -58,11 +58,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme: setThemeAction,
   };
 
-  return (
-    <ThemeContext.Provider value={contextValue}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
 }
 
 /**
