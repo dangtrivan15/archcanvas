@@ -11030,3 +11030,60 @@ Date: 2026-03-05
 
 #### Commit: f980e3f
 #### Feature #442 marked passing
+
+---
+
+## Session: Feature #436 - Improve Type Safety and Remove Any-Casts
+Date: 2026-03-05
+
+### Feature #436: Improve Type Safety and Remove Any-Casts - PASSING
+
+#### Changes (32 files):
+
+**Type Declarations (vite-env.d.ts):**
+- Added `PointerEventWithAzimuth` interface for Apple Pencil azimuthAngle
+- Added `NavigatorUAData` interface for User-Agent Client Hints API
+- Extended `Navigator` interface with optional `userAgentData`
+- Added `excludeAcceptAllOption` to `OpenFilePickerOptions` and `SaveFilePickerOptions`
+
+**Eliminated `as any` casts (4 files):**
+- usePencilInput.ts: `(e as any).azimuthAngle` → `(e as PointerEventWithAzimuth).azimuthAngle`
+- platformDetector.ts: `(navigator as any).userAgentData` → `navigator.userAgentData`
+- ThemeSwitcher.tsx: `themeId as any` → `(themeIds as readonly string[]).indexOf(themeId)`
+- NodeShell.tsx: `{ xmlns: ... } as any` → typed React spread
+
+**Eliminated `as unknown as` casts (8 node components + Canvas):**
+- GenericNode, HexagonNode, CloudNode, CylinderNode, DocumentNode, ParallelogramNode, SimplifiedNode, StadiumNode: Changed `NodeProps` to `NodeProps<CanvasNode>`, removed double cast
+- Canvas.tsx: Removed redundant `node.data as unknown as CanvasNodeData` since CanvasNode already types data
+
+**Improved IndexedDB type safety (syncQueue.ts):**
+- Added `getTypedResult<T>()` helper to centralize IDBRequest type assertions
+- Replaced 3 direct `as` casts with typed helper calls
+
+**Fixed 57 pre-existing strict-mode errors across src/ → 0 errors:**
+- suggestionParser.ts: Guarded regex capture groups with `?? ''`
+- renderApi.ts: Added `?? 'generic'` fallback for shape lookup
+- textApi.ts: Widened registry param from `RegistryManager` to `RegistryManagerCore`
+- selectors.ts: Removed unused `countAllNodes` import
+- useFocusTrap.ts: Added optional chaining for focus element access
+- sanitizeHtml.ts: Used `attributes.item(i)` with null guard
+- annotationStore.ts: Added `?? null` for pop-from-array pattern
+- ThemeProvider.tsx: Added fallback for theme lookup
+- AnnotationOverlay.tsx: Used `React.JSX.Element` (fixed missing JSX namespace)
+- fileSelector.ts, scanner.ts, inferEngine.ts, prompts/index.ts, merge.ts: Added null guards for array index access
+- NodeDetailPanel.tsx: Added non-null assertion for cyclic color lookup
+- TemplateGallery.tsx, TemplatePreview.tsx: Fixed nullable architecture/name patterns
+- cli/formatter.ts: Changed interfaces to structural types (removed index signatures)
+- cli/server/routes/mutation.ts: Fixed Zod `.default()` patterns
+
+#### Verification:
+- tsc --noEmit (src/ only): **0 errors** (was 57 before)
+- Vite build: PASS
+- vitest run: 4536 passing, 156 failing (all pre-existing, 0 new)
+- Browser: App loads correctly, all UI functional
+- Console: 0 app errors (only pre-existing SSL/PWA)
+- No mock data patterns: PASS
+- No `as any` in non-proto src files: PASS
+
+#### Commit: cf25a93
+#### Feature #436 marked passing
