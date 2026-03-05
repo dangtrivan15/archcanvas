@@ -10117,3 +10117,82 @@ Date: 2026-03-05
 #### Commit: eaadc4c
 #### Feature #368 marked passing
 #### Progress: 416/426 features passing (97.7%)
+
+---
+
+## Session: Feature #374 - Stage Manager Support (iPadOS 16+)
+Date: 2026-03-05
+
+### Feature #374: Stage Manager Support (iPadOS 16+) - PASSING
+
+#### Implementation:
+- Updated src/hooks/useViewportSize.ts:
+  - Added debounced resize handler (RESIZE_DEBOUNCE_MS = 100ms) to prevent layout thrashing during Stage Manager window dragging
+  - Added MIN_VIABLE_WIDTH (300) and MIN_VIABLE_HEIGHT (400) constants
+  - Added isMinimal flag to ViewportSize interface
+  - Added screen.orientation change listener for Stage Manager external display detection
+  - Properly cleans up debounce timer on unmount
+- Created src/hooks/useStageManagerResize.ts:
+  - Maintains React Flow canvas viewport center during free-form window resize
+  - Calculates flow-coordinate center before resize and adjusts pan to keep it centered
+  - Debounced to match RESIZE_DEBOUNCE_MS for consistency
+  - Listens to both window resize and screen.orientation change events
+- Updated src/hooks/useResponsiveLayout.ts:
+  - Added debounced resize handler consistent with useViewportSize
+  - Prevents panel auto-close thrashing during rapid resize
+- Updated src/components/canvas/Canvas.tsx:
+  - Integrated useStageManagerResize hook in CanvasInner component
+- Updated src/App.tsx:
+  - Added minWidth/minHeight to root container using MIN_VIABLE_WIDTH/HEIGHT
+  - Hide status bar in isMinimal mode to maximize canvas space
+
+#### Verification:
+- Vite build: PASS
+- App loads at 1280x720 (default): PASS with full UI
+- Resize to 300x400 (minimum viable): PASS - compact toolbar, no left panel, status bar hidden, canvas usable
+- Resize to 500x600 (narrow Stage Manager): PASS - compact mode, status bar visible
+- Resize to 800x600 (medium Stage Manager): PASS - regular mode with full toolbar
+- Rapid resize sequence (400->600->1024): PASS - smooth transitions, no errors
+- Resize to 1024x768 (wide): PASS - full desktop layout
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: d12f837
+#### Feature #374 marked passing
+#### Progress: 418/426 features passing (98.1%)
+
+---
+
+## Session: Feature #370 - Freeform Annotation Layer with Apple Pencil
+Date: 2026-03-05
+
+### Feature #370: Freeform Annotation Layer with Apple Pencil - PASSING
+
+#### Implementation:
+- **Proto schema**: Added Annotation and AnnotationPath messages to archcanvas.proto
+  - Annotation: id, paths[], color, stroke_width, node_id, timestamp_ms
+  - AnnotationPath: points[] (flat x,y pairs), pressures[] (0-1 per point)
+- **Graph types**: Added Annotation/AnnotationPathData interfaces to graph.ts, added annotations[] to ArchGraph
+- **FileIO converters**: Added protoAnnotationToAnnotation and annotationToProtoAnnotation for .archc persistence
+- **Annotation store** (src/store/annotationStore.ts): Zustand store managing drawing mode, eraser mode, color, stroke width, current stroke, undo stack
+- **AnnotationOverlay** (src/components/canvas/AnnotationOverlay.tsx): SVG overlay rendering saved annotations with viewport transform, handles pointer events for drawing with pressure-variable stroke width via quadratic bezier paths
+- **AnnotationToolbar** (src/components/canvas/AnnotationToolbar.tsx): Floating toolbar with 9-color picker, stroke width +/-, eraser toggle, undo stroke, clear all, exit mode
+- **coreStore**: Added addAnnotation, removeAnnotation, clearAnnotations mutations
+- **Toolbar.tsx**: Added Annotate toggle button (PenTool icon) that enters/exits drawing mode
+- Updated graphEngine, stackLoader, fileIO empty graph creation to include annotations: []
+- Regenerated proto TypeScript files
+
+#### Verification:
+- Vite build: PASS
+- Annotate button appears in toolbar: PASS
+- Clicking Annotate enters drawing mode (green highlight, "Drawing" label): PASS
+- Annotation toolbar appears with color picker, stroke width, eraser, undo, clear, exit: PASS
+- Drawing on canvas produces red annotation (default color): PASS
+- Color change to blue works, new annotation drawn in blue: PASS
+- Undo removes last stroke: PASS
+- Clear all removes all annotations: PASS
+- Exiting drawing mode hides toolbar but annotations remain visible: PASS
+- Status bar shows "Modified" after drawing: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 02b42a7
+#### Feature #370 marked passing
