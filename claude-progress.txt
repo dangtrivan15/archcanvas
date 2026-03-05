@@ -11106,3 +11106,11 @@ SESSION: 2026-03-05 - Feature #443
 - Feature #443 marked passing
 
 ## Progress: 440/446 features passing (98.7%)
+
+---
+
+Session: Feature 441 - Clean Up API Layer
+Date: 2026-03-05
+Status: PASSING
+Changes: Added Zod validation schemas, fixed return types, removed dead code, extracted shared helpers in ExportApi
+Commit: 2a49668
