@@ -23,6 +23,7 @@ import cacheYaml from './builtins/core/data/cache.yaml?raw';
 import objectStorageYaml from './builtins/core/data/object-storage.yaml?raw';
 import repositoryYaml from './builtins/core/data/repository.yaml?raw';
 import searchIndexYaml from './builtins/core/data/search-index.yaml?raw';
+import featureStoreYaml from './builtins/core/data/feature-store.yaml?raw';
 
 // Messaging namespace
 import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
@@ -62,6 +63,7 @@ import ragPipelineYaml from './builtins/core/ai/rag-pipeline.yaml?raw';
 import agentYaml from './builtins/core/ai/agent.yaml?raw';
 import promptRegistryYaml from './builtins/core/ai/prompt-registry.yaml?raw';
 import modelServingYaml from './builtins/core/ai/model-serving.yaml?raw';
+import guardrailsYaml from './builtins/core/ai/guardrails.yaml?raw';
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -94,6 +96,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'data/object-storage.yaml', rawYaml: objectStorageYaml, namespace: 'data', name: 'object-storage' },
   { filePath: 'data/repository.yaml', rawYaml: repositoryYaml, namespace: 'data', name: 'repository' },
   { filePath: 'data/search-index.yaml', rawYaml: searchIndexYaml, namespace: 'data', name: 'search-index' },
+  { filePath: 'data/feature-store.yaml', rawYaml: featureStoreYaml, namespace: 'data', name: 'feature-store' },
   // Messaging (3)
   { filePath: 'messaging/message-queue.yaml', rawYaml: messageQueueYaml, namespace: 'messaging', name: 'message-queue' },
   { filePath: 'messaging/event-bus.yaml', rawYaml: eventBusYaml, namespace: 'messaging', name: 'event-bus' },
@@ -126,6 +129,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'ai/agent.yaml', rawYaml: agentYaml, namespace: 'ai', name: 'agent' },
   { filePath: 'ai/prompt-registry.yaml', rawYaml: promptRegistryYaml, namespace: 'ai', name: 'prompt-registry' },
   { filePath: 'ai/model-serving.yaml', rawYaml: modelServingYaml, namespace: 'ai', name: 'model-serving' },
+  { filePath: 'ai/guardrails.yaml', rawYaml: guardrailsYaml, namespace: 'ai', name: 'guardrails' },
 ];
 
 /**
