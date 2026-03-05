@@ -105,7 +105,12 @@ export async function computeElkLayout(
 /**
  * Apply ELK layout to an ArchGraph, returning a new graph with updated positions.
  * Only lays out nodes at the given navigation level (root by default).
- * Accepts optional spacing configuration to override default node/layer spacing.
+ *
+ * @param graph - The architecture graph to layout
+ * @param direction - Layout direction: 'horizontal' (left-to-right) or 'vertical' (top-to-bottom)
+ * @param navigationPath - Fractal zoom path to target (empty = root level)
+ * @param spacing - Optional custom node/layer spacing to override defaults
+ * @returns New graph with updated node positions (immutable)
  */
 export async function applyElkLayout(
   graph: ArchGraph,

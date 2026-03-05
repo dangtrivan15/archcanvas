@@ -15,6 +15,7 @@ const ArgsMap = z.record(ArgValue);
 
 // ─── Text API: Query schemas ────────────────────────────────
 
+/** Schema for TextApi.describe() options - validates format, scope, and filter params */
 export const DescribeOptionsSchema = z.object({
   format: z.enum(['ai', 'human', 'structured']),
   scope: z.enum(['full', 'node', 'nodes']).optional(),
@@ -36,6 +37,7 @@ export const NoteIdSchema = z.string().min(1, 'Note ID must not be empty');
 
 // ─── Text API: Mutation schemas ─────────────────────────────
 
+/** Schema for TextApi.addNode() - validates type, displayName, optional position/args/parentId */
 export const AddNodeSchema = z.object({
   type: z.string().min(1, 'Node type is required'),
   displayName: z.string().min(1, 'Display name is required'),
@@ -49,6 +51,7 @@ export const AddNodeSchema = z.object({
   args: ArgsMap.optional(),
 });
 
+/** Schema for TextApi.addEdge() - validates fromNode, toNode, type, optional ports/label */
 export const AddEdgeSchema = z.object({
   fromNode: z.string().min(1, 'Source node ID (fromNode) is required'),
   toNode: z.string().min(1, 'Target node ID (toNode) is required'),
@@ -58,6 +61,7 @@ export const AddEdgeSchema = z.object({
   label: z.string().optional(),
 });
 
+/** Schema for TextApi.addNote() - validates author, content, and exactly one of nodeId/edgeId */
 export const AddNoteSchema = z
   .object({
     nodeId: z.string().optional(),
@@ -92,6 +96,7 @@ export const UpdateEdgeSchema = z.object({
   properties: ArgsMap.optional(),
 });
 
+/** Schema for TextApi.suggest() - validates nodeId, content, and optional suggestionType */
 export const SuggestSchema = z.object({
   nodeId: z.string().min(1, 'Node ID is required'),
   content: z.string().min(1, 'Suggestion content is required'),

@@ -1,10 +1,5 @@
 /**
- * UI store - panel visibility, modals, toasts.
- *
- * Toolbar and status bar sizing is handled purely via CSS clamp() in the components:
- * - Toolbar: clamp(2.5rem, 3.5vh, 3.5rem)
- * - Status bar: clamp(1.5rem, 2vh, 2.25rem)
- * No JS state or localStorage persistence is needed for those heights.
+ * UI store - panel visibility, modals, toasts, toolbar/status bar sizing.
  */
 
 import { create } from 'zustand';
@@ -14,6 +9,80 @@ import { preferences } from '@/core/platform/preferencesAdapter';
 /** localStorage / Capacitor Preferences keys for persisted values */
 export const THEME_STORAGE_KEY = 'theme';
 export const HAPTIC_FEEDBACK_STORAGE_KEY = 'haptic-feedback';
+export const TOOLBAR_HEIGHT_STORAGE_KEY = 'toolbar-height';
+export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
+
+/* ── Toolbar height constants ────────────────────────────────── */
+export const TOOLBAR_DEFAULT_HEIGHT = 48;
+export const TOOLBAR_MIN_HEIGHT = 32;
+export const TOOLBAR_MAX_HEIGHT = 96;
+export const TOOLBAR_VIEWPORT_RATIO = 0.05;
+export const TOOLBAR_DEFAULT_FLOOR = 40;
+export const TOOLBAR_DEFAULT_CEILING = 56;
+
+/* ── Status bar height constants ─────────────────────────────── */
+export const STATUS_BAR_DEFAULT_HEIGHT = 24;
+export const STATUS_BAR_MIN_HEIGHT = 16;
+export const STATUS_BAR_MAX_HEIGHT = 48;
+export const STATUS_BAR_VIEWPORT_RATIO = 0.025;
+export const STATUS_BAR_DEFAULT_FLOOR = 20;
+export const STATUS_BAR_DEFAULT_CEILING = 36;
+
+/**
+ * Compute the default toolbar height based on viewport height.
+ * Returns TOOLBAR_VIEWPORT_RATIO * viewportHeight, clamped between floor and ceiling.
+ */
+export function computeDefaultToolbarHeight(viewportHeight?: number): number {
+  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
+  const raw = Math.round(vh * TOOLBAR_VIEWPORT_RATIO);
+  return Math.max(TOOLBAR_DEFAULT_FLOOR, Math.min(TOOLBAR_DEFAULT_CEILING, raw));
+}
+
+/**
+ * Compute the default status bar height based on viewport height.
+ */
+export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
+  const vh = viewportHeight ?? (typeof window !== 'undefined' ? window.innerHeight : 900);
+  const raw = Math.round(vh * STATUS_BAR_VIEWPORT_RATIO);
+  return Math.max(STATUS_BAR_DEFAULT_FLOOR, Math.min(STATUS_BAR_DEFAULT_CEILING, raw));
+}
+
+const NAMESPACE = 'archcanvas:';
+
+/**
+ * Load persisted toolbar & status bar heights from localStorage.
+ * Returns partial state with only the fields that were persisted.
+ */
+export function loadPersistedHeights(): {
+  toolbarHeight?: number;
+  toolbarHeightCustomized?: boolean;
+  statusBarHeight?: number;
+  statusBarHeightCustomized?: boolean;
+} {
+  const result: ReturnType<typeof loadPersistedHeights> = {};
+  if (typeof window === 'undefined') return result;
+  try {
+    const tb = localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
+    if (tb !== null) {
+      const v = Number(tb);
+      if (!isNaN(v) && v >= TOOLBAR_MIN_HEIGHT && v <= TOOLBAR_MAX_HEIGHT) {
+        result.toolbarHeight = v;
+        result.toolbarHeightCustomized = true;
+      }
+    }
+    const sb = localStorage.getItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
+    if (sb !== null) {
+      const v = Number(sb);
+      if (!isNaN(v) && v >= STATUS_BAR_MIN_HEIGHT && v <= STATUS_BAR_MAX_HEIGHT) {
+        result.statusBarHeight = v;
+        result.statusBarHeightCustomized = true;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return result;
+}
 
 /**
  * Synchronously read the persisted haptic feedback preference from localStorage.
@@ -176,6 +245,12 @@ export interface UIStoreState {
   /** Whether the user has explicitly set a custom right panel width */
   rightPanelWidthCustomized: boolean;
 
+  // Toolbar and status bar heights
+  toolbarHeight: number;
+  toolbarHeightCustomized: boolean;
+  statusBarHeight: number;
+  statusBarHeightCustomized: boolean;
+
   // Delete confirmation dialog
   deleteDialogOpen: boolean;
   deleteDialogInfo: DeleteDialogInfo | null;
@@ -291,6 +366,12 @@ export interface UIStoreState {
   /** Reset all panel sizes to viewport-relative defaults (clears custom values) */
   resetBarSizes: () => void;
 
+  // Toolbar / status bar height actions
+  setToolbarHeight: (height: number) => void;
+  setStatusBarHeight: (height: number) => void;
+  /** Reset toolbar and status bar to fixed defaults (48px / 24px) and clear localStorage */
+  resetBarSizesToFixedDefaults: () => void;
+
   // Keyboard shortcuts help dialog actions
   openShortcutsHelp: () => void;
   closeShortcutsHelp: () => void;
@@ -362,6 +443,11 @@ export const useUIStore = create<UIStoreState>((set) => ({
   leftPanelWidthCustomized: false,
   rightPanelWidth: computeDefaultRightPanelWidth(),
   rightPanelWidthCustomized: false,
+
+  toolbarHeight: loadPersistedHeights().toolbarHeight ?? TOOLBAR_DEFAULT_HEIGHT,
+  toolbarHeightCustomized: loadPersistedHeights().toolbarHeightCustomized ?? false,
+  statusBarHeight: loadPersistedHeights().statusBarHeight ?? STATUS_BAR_DEFAULT_HEIGHT,
+  statusBarHeightCustomized: loadPersistedHeights().statusBarHeightCustomized ?? false,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -486,6 +572,41 @@ export const useUIStore = create<UIStoreState>((set) => ({
       leftPanelWidthCustomized: false,
       rightPanelWidth: computeDefaultRightPanelWidth(),
       rightPanelWidthCustomized: false,
+    });
+  },
+
+  setToolbarHeight: (height) => {
+    const clamped = Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height));
+    try {
+      localStorage.setItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`, String(clamped));
+    } catch {
+      /* ignore */
+    }
+    set({ toolbarHeight: clamped, toolbarHeightCustomized: true });
+  },
+
+  setStatusBarHeight: (height) => {
+    const clamped = Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height));
+    try {
+      localStorage.setItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`, String(clamped));
+    } catch {
+      /* ignore */
+    }
+    set({ statusBarHeight: clamped, statusBarHeightCustomized: true });
+  },
+
+  resetBarSizesToFixedDefaults: () => {
+    try {
+      localStorage.removeItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
+      localStorage.removeItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
+    } catch {
+      /* ignore */
+    }
+    set({
+      toolbarHeight: TOOLBAR_DEFAULT_HEIGHT,
+      toolbarHeightCustomized: false,
+      statusBarHeight: STATUS_BAR_DEFAULT_HEIGHT,
+      statusBarHeightCustomized: false,
     });
   },
 

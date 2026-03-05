@@ -1,3 +1,11 @@
+/**
+ * useOfflineStatus - tracks browser online/offline connectivity state.
+ *
+ * Uses `navigator.onLine` and the `online`/`offline` window events
+ * to provide reactive state for displaying connectivity banners
+ * and triggering offline sync operations.
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 
 export interface OfflineStatus {

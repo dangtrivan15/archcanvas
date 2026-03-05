@@ -11109,6 +11109,43 @@ SESSION: 2026-03-05 - Feature #443
 
 ---
 
+## Session: Feature #444 - Clean Up Proto Schema and Serialization Layer
+Date: 2026-03-05
+
+### Feature #444: Clean Up Proto Schema and Serialization Layer - PASSING
+
+#### Audit Findings:
+1. Proto schema vs generated code: In sync (both 6708 lines)
+2. StringList value type: Defined in proto but silently dropped during serialization - FIXED
+3. Empty payload edge case: No check for zero-length payload after header - FIXED
+4. computeSha256 misleading async: Function is sync but called with await - DOCUMENTED
+5. readFormatVersion: Only used in tests, but valid utility - KEPT
+6. All proto types: Used and needed, no dead message types
+
+#### Changes Made (14 files):
+- Added PropertyValue/PropertyMap type aliases to types/graph.ts
+- Updated 11 files to use PropertyMap instead of inline Record types
+- Added StringList support in protoValueMapToRecord and recordToProtoValueMap
+- Added empty payload detection in codec decode
+- Added computeSha256 sync/async documentation
+- Added 6 new roundtrip tests for StringList values
+
+#### Verification:
+- tsc --noEmit (src/ only): 0 errors
+- Vite build: PASS
+- 6/6 new tests: PASS
+- 133/133 codec + storage tests: PASS
+- Full suite: 4630/4697 pass (67 pre-existing failures, 0 new)
+- Browser: App loads correctly
+- Console: 0 app errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Commit: 0029b03
+#### Feature #444 marked passing
+#### Progress: 443/446 features passing (99.3%)
+
+---
+
 Session: Feature 441 - Clean Up API Layer
 Date: 2026-03-05
 Status: PASSING
