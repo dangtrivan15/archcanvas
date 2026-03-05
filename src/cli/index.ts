@@ -19,6 +19,7 @@ import { registerInfoCommand } from '@/cli/commands/info';
 import { registerExportCommand } from '@/cli/commands/export';
 import { registerMutateCommands } from '@/cli/commands/mutate';
 import { registerAnalyzeCommand } from '@/cli/commands/analyze';
+import { registerBackupPushCommand } from '@/cli/commands/backupPush';
 
 // ─── Version ──────────────────────────────────────────────────
 
@@ -249,6 +250,9 @@ export function createProgram(): Command {
 
   // ─── analyze ──────────────────────────────────────────────
   registerAnalyzeCommand(program);
+
+  // ─── backup-push ──────────────────────────────────────────
+  registerBackupPushCommand(program);
 
   // ─── list-nodedefs ─────────────────────────────────────────
 
