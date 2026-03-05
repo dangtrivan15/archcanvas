@@ -17,6 +17,8 @@ export type {
   EdgeType,
   NoteStatus,
   CodeRefRole,
+  PropertyValue,
+  PropertyMap,
 } from './graph';
 
 // Canvas types (React Flow)

@@ -15,6 +15,7 @@ import type {
   CodeRefRole,
   SavedCanvasState,
   Annotation,
+  PropertyMap,
 } from '@/types/graph';
 import type { AIConversation, AIMessage, AISuggestion } from '@/types/ai';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
@@ -291,8 +292,8 @@ function protoAnnotationToAnnotation(protoAnn: archcanvas.IAnnotation): Annotati
 
 function protoValueMapToRecord(
   map: { [key: string]: archcanvas.IValue } | null | undefined,
-): Record<string, string | number | boolean> {
-  const result: Record<string, string | number | boolean> = {};
+): PropertyMap {
+  const result: PropertyMap = {};
   if (!map) return result;
 
   for (const [key, value] of Object.entries(map)) {
@@ -302,6 +303,8 @@ function protoValueMapToRecord(
       result[key] = value.numberValue;
     } else if (value.boolValue != null) {
       result[key] = value.boolValue;
+    } else if (value.stringListValue?.values) {
+      result[key] = [...value.stringListValue.values];
     }
   }
 
@@ -514,7 +517,7 @@ function codeRefToProtoCodeRef(codeRef: CodeRef): archcanvas.ICodeRef {
   };
 }
 
-function recordToProtoValueMap(record: Record<string, string | number | boolean>): {
+function recordToProtoValueMap(record: PropertyMap): {
   [key: string]: archcanvas.IValue;
 } {
   const result: { [key: string]: archcanvas.IValue } = {};
@@ -525,6 +528,8 @@ function recordToProtoValueMap(record: Record<string, string | number | boolean>
       result[key] = { numberValue: value };
     } else if (typeof value === 'boolean') {
       result[key] = { boolValue: value };
+    } else if (Array.isArray(value)) {
+      result[key] = { stringListValue: { values: [...value] } };
     }
   }
   return result;

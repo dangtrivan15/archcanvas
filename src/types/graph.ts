@@ -4,6 +4,15 @@
  * Proto types are converted to/from these via the codec layer.
  */
 
+/**
+ * Union of all value types supported by node args and properties.
+ * Matches the proto `Value` oneof: string, number, bool, string_list.
+ */
+export type PropertyValue = string | number | boolean | string[];
+
+/** Record of named property values (used for node args and properties). */
+export type PropertyMap = Record<string, PropertyValue>;
+
 export interface ArchGraph {
   name: string;
   description: string;
@@ -38,10 +47,10 @@ export interface ArchNode {
   id: string;
   type: string;
   displayName: string;
-  args: Record<string, string | number | boolean>;
+  args: PropertyMap;
   codeRefs: CodeRef[];
   notes: Note[];
-  properties: Record<string, string | number | boolean>;
+  properties: PropertyMap;
   position: Position;
   children: ArchNode[];
   refSource?: string;
@@ -57,7 +66,7 @@ export interface ArchEdge {
   toPort?: string;
   type: EdgeType;
   label?: string;
-  properties: Record<string, string | number | boolean>;
+  properties: PropertyMap;
   notes: Note[];
 }
 

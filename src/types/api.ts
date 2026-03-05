@@ -2,6 +2,8 @@
  * API types for the Text API, Render API, and Export API.
  */
 
+import type { PropertyMap } from './graph';
+
 export type DescribeFormat = 'ai' | 'human' | 'structured';
 
 export interface DescribeOptions {
@@ -28,8 +30,8 @@ export interface NodeDetail {
   id: string;
   type: string;
   displayName: string;
-  args: Record<string, string | number | boolean>;
-  properties: Record<string, string | number | boolean>;
+  args: PropertyMap;
+  properties: PropertyMap;
   codeRefs: { path: string; role: string }[];
   notes: { id: string; author: string; content: string; timestampMs: number; status: string }[];
   children: NodeSummary[];
@@ -61,7 +63,7 @@ export interface AddNodeParams {
   displayName: string;
   parentId?: string;
   position?: { x: number; y: number };
-  args?: Record<string, string | number | boolean>;
+  args?: PropertyMap;
 }
 
 export interface AddEdgeParams {
@@ -83,8 +85,8 @@ export interface AddNoteParams {
 
 export interface UpdateNodeParams {
   displayName?: string;
-  args?: Record<string, string | number | boolean>;
-  properties?: Record<string, string | number | boolean>;
+  args?: PropertyMap;
+  properties?: PropertyMap;
 }
 
 export interface AddCodeRefParams {

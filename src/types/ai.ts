@@ -2,6 +2,8 @@
  * AI integration types for the chat panel and Claude API.
  */
 
+import type { PropertyMap } from './graph';
+
 export interface AIConversation {
   id: string;
   scopedToNodeId?: string;
@@ -31,7 +33,7 @@ export interface AIContext {
     id: string;
     type: string;
     displayName: string;
-    args: Record<string, string | number | boolean>;
+    args: PropertyMap;
     notes: { author: string; content: string }[];
     codeRefs: { path: string; role: string }[];
   };

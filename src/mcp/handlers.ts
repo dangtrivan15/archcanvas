@@ -7,6 +7,7 @@ import type { TextApi } from '@/api/textApi';
 import type { RegistryManager } from '@/core/registry/registryManager';
 import type { GraphContext } from '@/cli/context';
 import type { DescribeFormat } from '@/types/api';
+import type { PropertyMap } from '@/types/graph';
 import { ExportApi } from '@/api/exportApi';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import type { AnalyzeProgress } from '@/analyze/pipeline';
@@ -73,7 +74,7 @@ export function handleAddNode(
     parentId?: string;
     x?: number;
     y?: number;
-    args?: Record<string, string | number | boolean>;
+    args?: PropertyMap;
   },
 ): string {
   const node = ctx.textApi.addNode({
@@ -149,8 +150,8 @@ export function handleUpdateNode(
   args: {
     nodeId: string;
     displayName?: string;
-    args?: Record<string, string | number | boolean>;
-    properties?: Record<string, string | number | boolean>;
+    args?: PropertyMap;
+    properties?: PropertyMap;
   },
 ): string {
   ctx.textApi.updateNode(args.nodeId, {
@@ -305,7 +306,7 @@ export function handleUpdateEdge(
     edgeId: string;
     type?: 'sync' | 'async' | 'data-flow';
     label?: string;
-    properties?: Record<string, string | number | boolean>;
+    properties?: PropertyMap;
   },
 ): string {
   try {

@@ -3,6 +3,8 @@
  * NodeDefs are loaded from YAML files and define the schema for each node type.
  */
 
+import type { PropertyMap } from './graph';
+
 export interface NodeDef {
   kind: 'NodeDef';
   apiVersion: string;
@@ -72,5 +74,5 @@ export interface ChildSlotDef {
 export interface VariantDef {
   name: string;
   description: string;
-  args: Record<string, string | number | boolean>;
+  args: PropertyMap;
 }

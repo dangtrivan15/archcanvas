@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
+import type { ArchGraph, ArchNode, ArchEdge, Note, PropertyMap } from '@/types/graph';
 import type {
   AddNodeParams,
   AddEdgeParams,
@@ -37,25 +37,44 @@ import { useAIStore } from '@/store/aiStore';
 import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
 
+/**
+ * Core store state - the central Zustand store bridging the core engine to React.
+ *
+ * Manages:
+ * - **Graph state**: Current architecture graph, dirty flag, file metadata
+ * - **Engine instances**: Registry, TextApi, RenderApi, ExportApi, UndoManager
+ * - **File operations**: New, Open, Save, Save As, Load from URL/dropped file
+ * - **Graph mutations**: CRUD on nodes, edges, notes, code refs, annotations
+ * - **Undo/redo**: Snapshot-based history via UndoManager
+ * - **Auto-layout**: ELK-based automatic node positioning
+ */
 export interface CoreStoreState {
-  // State
+  /** The current architecture graph (nodes, edges, annotations) */
   graph: ArchGraph;
+  /** Whether the graph has unsaved changes since last save/open */
   isDirty: boolean;
+  /** Display name of the current file (shown in title bar) */
   fileName: string;
+  /** Whether core engines (registry, APIs, undo) have been initialized */
   initialized: boolean;
 
-  // Engine instances
+  /** Node type registry (resolves NodeDef YAML definitions) */
   registry: RegistryManager | null;
+  /** Text API instance for querying/mutating architecture data */
   textApi: TextApi | null;
+  /** Render API instance for graph-to-React-Flow transformation */
   renderApi: RenderApi | null;
+  /** Export API instance for markdown/mermaid/PNG/SVG generation */
   exportApi: ExportApi | null;
+  /** Undo manager instance for snapshot-based history */
   undoManager: UndoManager | null;
 
-  // Computed counts
+  /** Total node count including nested children (derived, updated on mutations) */
   nodeCount: number;
+  /** Total edge count (derived, updated on mutations) */
   edgeCount: number;
 
-  // Save guard (prevents concurrent saves from double-click or rapid Ctrl+S)
+  /** Guard flag preventing concurrent saves from double-click or rapid Ctrl+S */
   isSaving: boolean;
 
   // Initialization
@@ -801,7 +820,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     if (registry) {
       const nodeDef = registry.resolve(params.type);
       if (nodeDef && nodeDef.spec.args.length > 0) {
-        const defaults: Record<string, string | number | boolean> = {};
+        const defaults: PropertyMap = {};
         for (const argDef of nodeDef.spec.args) {
           if (argDef.default !== undefined) {
             defaults[argDef.name] = argDef.default;
