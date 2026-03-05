@@ -1,6 +1,6 @@
 /**
  * DeleteConfirmationDialog - modal overlay showing deletion impact.
- * Displays the node name, affected edges, and child nodes.
+ * Displays the node name (or count for multi-select), affected edges, and child nodes.
  * User can Cancel or Confirm the deletion.
  * Fully keyboard accessible: Enter=confirm, Escape=cancel, Tab between buttons.
  * Shows undo hint toast after successful deletion.
@@ -36,14 +36,55 @@ export function DeleteConfirmationDialog() {
 
   const handleConfirm = useCallback(() => {
     if (!deleteDialogInfo) return;
-    const deletedName = deleteDialogInfo.nodeName;
-    removeNode(deleteDialogInfo.nodeId);
-    clearSelection();
-    closeDeleteDialog();
-    // Haptic warning feedback for destructive action
-    hapticActions.notification('Warning');
-    // Show undo hint toast
-    showToast(`Deleted ${deletedName}. ${formatBinding('mod+z')} to undo`);
+
+    const isMulti = deleteDialogInfo.nodeIds && deleteDialogInfo.nodeIds.length > 1;
+
+    if (isMulti) {
+      // Multi-node deletion: remove all nodes, single undo snapshot
+      const { textApi, undoManager } = useCoreStore.getState();
+      if (textApi && undoManager) {
+        const nodeIds = deleteDialogInfo.nodeIds!;
+        for (const nodeId of nodeIds) {
+          textApi.removeNode(nodeId);
+        }
+        const updatedGraph = textApi.getGraph();
+        undoManager.snapshot(`Delete ${nodeIds.length} nodes`, updatedGraph);
+
+        // Helper to count all nodes recursively
+        const countAllNodes = (graph: typeof updatedGraph): number => {
+          let count = 0;
+          const countRecursive = (nodes: typeof graph.nodes) => {
+            for (const node of nodes) {
+              count++;
+              if (node.children.length > 0) countRecursive(node.children);
+            }
+          };
+          countRecursive(graph.nodes);
+          return count;
+        };
+
+        useCoreStore.setState({
+          graph: updatedGraph,
+          isDirty: true,
+          nodeCount: countAllNodes(updatedGraph),
+          edgeCount: updatedGraph.edges.length,
+          canUndo: undoManager.canUndo,
+          canRedo: undoManager.canRedo,
+        });
+      }
+      clearSelection();
+      closeDeleteDialog();
+      hapticActions.notification('Warning');
+      showToast(`Deleted ${deleteDialogInfo.nodeIds!.length} nodes. ${formatBinding('mod+z')} to undo`);
+    } else {
+      // Single node deletion (original behavior)
+      const deletedName = deleteDialogInfo.nodeName;
+      removeNode(deleteDialogInfo.nodeId);
+      clearSelection();
+      closeDeleteDialog();
+      hapticActions.notification('Warning');
+      showToast(`Deleted ${deletedName}. ${formatBinding('mod+z')} to undo`);
+    }
   }, [deleteDialogInfo, removeNode, clearSelection, closeDeleteDialog, showToast, formatBinding, hapticActions]);
 
   // Handle keyboard: Escape to cancel, Enter to confirm
@@ -85,7 +126,8 @@ export function DeleteConfirmationDialog() {
 
   if (!deleteDialogOpen || !deleteDialogInfo) return null;
 
-  const { nodeName, edgeCount, childCount } = deleteDialogInfo;
+  const { nodeName, edgeCount, childCount, nodeCount } = deleteDialogInfo;
+  const isMulti = (nodeCount ?? 1) > 1;
   const hasImpact = edgeCount > 0 || childCount > 0;
 
   return (
@@ -105,10 +147,14 @@ export function DeleteConfirmationDialog() {
           </div>
           <div>
             <h2 id="delete-dialog-title" className="text-lg font-semibold text-gray-900">
-              Delete Node
+              {isMulti ? `Delete ${nodeCount} Nodes` : 'Delete Node'}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Are you sure you want to delete <strong data-testid="delete-node-name">{nodeName}</strong>?
+              {isMulti ? (
+                <>Are you sure you want to delete <strong data-testid="delete-node-name">{nodeCount} selected nodes</strong>?</>
+              ) : (
+                <>Are you sure you want to delete <strong data-testid="delete-node-name">{nodeName}</strong>?</>
+              )}
             </p>
           </div>
         </div>
