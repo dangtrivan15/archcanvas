@@ -10385,3 +10385,42 @@ Date: 2026-03-05
 #### Commit: b5f907b
 #### Feature #346 marked passing
 #### Progress: 424/426 features passing (99.5%)
+
+---
+
+## Session: Feature #348 - Incremental Re-analysis and Merge
+Date: 2026-03-05
+
+### Feature #348: Incremental Re-analysis and Merge - PASSING
+
+#### Implementation:
+- Created `src/analyze/merge.ts` with core merge logic:
+  - `matchNodes()`: Two-pass node matching (code-ref paths, then display names)
+  - `mergeAnalysis()`: Non-destructive merge producing MergeResult
+  - `applyMerge()`: Applies MergeResult to produce new ArchGraph
+  - Node matching by overlapping code-ref paths (pass 1) and normalized display names (pass 2)
+  - Edge matching translating inferred node IDs to existing node IDs
+  - Three conflict resolution strategies: ai-wins, manual-wins, prompt
+  - Preserves manually created nodes/edges (never flagged as removed)
+  - AI-inferred unmatched nodes flagged as "possibly removed" with pending notes
+  - New inferred nodes added with "newly-detected" notes
+  - Code ref updates tracked for matched nodes
+  - Type change detection with strategy-dependent handling
+- CLI `--merge` and `--strategy` flags already wired by prior agent (feature #346)
+- MCP `merge` and `strategy` options already wired by prior agent (feature #347)
+- Created `test/unit/analyze/merge.test.ts` with 30 tests:
+  - matchNodes: code-ref matching, display-name matching, unmatched existing/inferred, preference for code-ref, type change detection
+  - mergeAnalysis: simple merge summary, manual node preservation, AI node flagging, code ref updates, type changes with both strategies, edge addition/preservation/flagging, manual edge preservation
+  - applyMerge: new node addition, code ref updates, type update with ai-wins, type preservation with manual-wins, possibly-removed notes, edge addition, edge flagging, immutability, newly-detected notes, renamed components, removed components, new components, skip notes option
+
+#### Verification:
+- Vitest: 30/30 tests passing
+- All 296 analyze tests pass (no regressions)
+- Vite build: PASS
+- App loads without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 6868477
+#### Feature #348 marked passing
+#### Progress: 424/426 features passing (99.5%)
