@@ -9521,3 +9521,94 @@ Date: 2026-03-05
 
 #### Feature #404 marked passing
 #### Progress: 393/426 features passing (92.3%)
+
+---
+
+## Session: Feature #405 - Add ai/guardrails node type
+Date: 2026-03-05
+
+### Feature #405: Add `ai/guardrails` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/guardrails.yaml`:
+  - namespace: ai, name: guardrails, displayName: Guardrails
+  - shape: hexagon, icon: Shield
+  - Args: framework (enum: Guardrails AI/NeMo Guardrails/LLM-Guard/Custom), inputValidation (boolean), outputFiltering (boolean), piiDetection (boolean), toxicityCheck (boolean), tokenLimit (number)
+  - Ports: raw-input (inbound), raw-output (inbound), validated-input (outbound), filtered-output (outbound)
+  - Variants: Guardrails AI, NeMo Guardrails, LLM-Guard, Custom Guardrails
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Shield icon already in `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Node Types panel shows AI category with 8 entries including Guardrails: PASS
+- Node renders on canvas with hexagon shape: PASS
+- Shield icon displayed: PASS
+- Args shown: framework=Guardrails AI, inputValidation=true, outputFiltering=true, +3 more: PASS
+- Inbound port handles (raw-input, raw-output) visible: PASS
+- Outbound port handles (validated-input, filtered-output) visible: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: a66d0b6
+#### Feature #405 marked passing
+#### Progress: 395/426 features passing (92.7%)
+
+---
+
+## Session: Feature #407 - Add integration/mcp-server node type
+Date: 2026-03-05
+
+### Feature #407: Add `integration/mcp-server` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/integration/mcp-server.yaml`:
+  - namespace: integration, name: mcp-server, displayName: MCP Server
+  - shape: hexagon, icon: Puzzle
+  - Args: transport (enum: stdio/SSE/streamable HTTP), toolsCount (number), resourcesCount (number), auth (enum: none/Bearer/OAuth2)
+  - Ports: mcp-request (inbound), tool-result (outbound), resource-content (outbound)
+  - Variants: Local stdio MCP Server, Remote SSE MCP Server, HTTP MCP Server, Database Tools MCP Server
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Added Puzzle icon to `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows INTEGRATION category with 4 entries including MCP Server: PASS
+- Node renders on canvas with hexagon shape: PASS
+- Puzzle icon displayed: PASS
+- Args shown: transport=stdio, toolsCount=5, resourcesCount=3, +1 more: PASS
+- Inbound port handle (mcp-request) visible: PASS
+- Outbound port handles (tool-result, resource-content) visible: PASS
+- Console: 39 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 6354a8f
+#### Feature #407 marked passing
+#### Progress: 396/426 features passing (92.9%)
+
+---
+
+## Session: Feature #406 - Add data/feature-store node type
+Date: 2026-03-05
+
+### Feature #406: Add `data/feature-store` node type - PASSING
+
+#### Implementation:
+- YAML, loader registration, and icon mapping were already in place from a previous session
+- `src/core/registry/builtins/core/data/feature-store.yaml` contains:
+  - namespace: data, name: feature-store, displayName: Feature Store
+  - shape: cylinder, icon: Layers
+  - Args: engine (enum: Feast/Tecton/Hopsworks/SageMaker Feature Store/Custom), onlineStore (boolean), offlineStore (boolean), materializationSchedule (string)
+  - Ports: feature-write (inbound), feature-serve (outbound)
+  - Variants: Feast, Tecton, Hopsworks, SageMaker Feature Store
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- Layers icon already in `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Node Types panel shows Data category with 6 entries including Feature Store: PASS
+- Node renders on canvas with cylinder shape: PASS
+- Layers icon displayed: PASS
+- Args shown: engine=Feast, onlineStore=true, offlineStore=true, +1 more: PASS
+- Inbound port handle (feature-write) visible: PASS
+- Outbound port handle (feature-serve) visible: PASS
+- Console: 39 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Feature #406 marked passing
+#### Progress: 396/426 features passing (92.9%)
