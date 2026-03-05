@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { X, Rocket, Layers, ArrowRight, MessageSquare, MessageCircle, Brain, Smartphone, Zap, BarChart3, Network } from 'lucide-react';
+import { X, Rocket, Layers, ArrowRight, MessageSquare, MessageCircle, Brain, Smartphone, Zap, BarChart3, Network, HeartPulse, Users, Wrench, ShoppingCart, Landmark } from 'lucide-react';
 import { getAvailableStacks, instantiateStack, type StackTemplate } from '@/stacks/stackLoader';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -21,6 +21,11 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Zap,
   BarChart3,
   Network,
+  HeartPulse,
+  Users,
+  Wrench,
+  ShoppingCart,
+  Landmark,
 };
 
 export function TemplatePicker() {
