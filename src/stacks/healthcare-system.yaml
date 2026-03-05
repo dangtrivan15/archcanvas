@@ -1,0 +1,403 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: healthcare-system
+  displayName: Healthcare System
+  description: HIPAA-ready healthcare platform with patient portal, telehealth, FHIR API gateway, clinical services, secure data stores, HL7/FHIR event bus, Epic integration, and full audit trail. Includes Keycloak RBAC, HashiCorp Vault for PHI encryption, AWS WAF perimeter, and ELK audit logging.
+  icon: HeartPulse
+  tags:
+    - healthcare
+    - HIPAA
+    - FHIR
+    - enterprise
+
+nodes:
+  - id: patient-portal
+    type: client/web-app
+    displayName: Patient Portal
+    args:
+      framework: React
+      rendering: SPA
+      authProvider: Keycloak
+    position:
+      x: 50
+      y: 50
+      width: 200
+      height: 100
+
+  - id: telehealth-app
+    type: client/mobile-app
+    displayName: Telehealth App
+    args:
+      platform: React Native
+      minOS: "iOS 15 / Android 12"
+      pushNotifications: true
+    position:
+      x: 50
+      y: 200
+      width: 200
+      height: 100
+
+  - id: fhir-gateway
+    type: compute/api-gateway
+    displayName: FHIR API Gateway
+    args:
+      provider: Kong
+      rateLimiting: true
+      authentication: OAuth2/SMART
+      protocol: FHIR R4
+    position:
+      x: 350
+      y: 125
+      width: 200
+      height: 100
+
+  - id: patient-service
+    type: compute/service
+    displayName: Patient Service
+    args:
+      language: TypeScript
+      framework: Express
+      healthCheck: true
+      domain: patient-management
+    position:
+      x: 650
+      y: 50
+      width: 200
+      height: 100
+
+  - id: scheduling-service
+    type: compute/service
+    displayName: Scheduling Service
+    args:
+      language: TypeScript
+      framework: Express
+      healthCheck: true
+      domain: appointment-scheduling
+    position:
+      x: 650
+      y: 200
+      width: 200
+      height: 100
+
+  - id: clinical-service
+    type: compute/service
+    displayName: Clinical Service
+    args:
+      language: TypeScript
+      framework: Express
+      healthCheck: true
+      domain: clinical-records
+    position:
+      x: 650
+      y: 350
+      width: 200
+      height: 100
+
+  - id: database
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+      maxConnections: 200
+      encryption: AES-256
+    position:
+      x: 950
+      y: 50
+      width: 200
+      height: 100
+
+  - id: medical-imaging
+    type: data/object-storage
+    displayName: Medical Imaging (S3)
+    args:
+      provider: AWS S3
+      versioning: true
+      encryption: AES-256
+      lifecycle: HIPAA-compliant
+    position:
+      x: 950
+      y: 200
+      width: 200
+      height: 100
+
+  - id: patient-search
+    type: data/search-index
+    displayName: Patient Search
+    args:
+      engine: Elasticsearch
+      replicas: 2
+      shards: 5
+    position:
+      x: 950
+      y: 350
+      width: 200
+      height: 100
+
+  - id: cache
+    type: data/cache
+    displayName: Redis Cache
+    args:
+      engine: Redis
+      maxMemory: 4GB
+      evictionPolicy: allkeys-lru
+      encryption: true
+    position:
+      x: 950
+      y: 500
+      width: 200
+      height: 100
+
+  - id: event-bus
+    type: messaging/event-bus
+    displayName: HL7/FHIR Event Bus
+    args:
+      provider: Kafka
+      partitions: 12
+      replicationFactor: 3
+      protocol: HL7/FHIR
+    position:
+      x: 650
+      y: 500
+      width: 200
+      height: 100
+
+  - id: appointment-notifications
+    type: messaging/notification
+    displayName: Appointment Reminders
+    args:
+      provider: SNS
+      channels: SMS,email,push
+      hipaaCompliant: true
+    position:
+      x: 350
+      y: 500
+      width: 200
+      height: 100
+
+  - id: twilio-telehealth
+    type: integration/third-party-api
+    displayName: Twilio Telehealth
+    args:
+      provider: Twilio
+      service: Video/Voice
+      hipaaCompliant: true
+    position:
+      x: 350
+      y: 350
+      width: 200
+      height: 100
+
+  - id: epic-fhir
+    type: integration/third-party-api
+    displayName: Epic FHIR Integration
+    args:
+      provider: Epic
+      protocol: FHIR R4
+      authType: SMART on FHIR
+    position:
+      x: 1250
+      y: 350
+      width: 200
+      height: 100
+
+  - id: keycloak-auth
+    type: security/auth-provider
+    displayName: Keycloak RBAC
+    args:
+      provider: Keycloak
+      protocol: OIDC
+      roles: doctor,nurse,patient,admin
+      mfa: true
+    position:
+      x: 50
+      y: 400
+      width: 200
+      height: 100
+
+  - id: phi-vault
+    type: security/vault
+    displayName: HashiCorp Vault
+    args:
+      provider: HashiCorp Vault
+      sealType: auto-unseal
+      transitEngine: true
+      purpose: PHI encryption keys
+    position:
+      x: 1250
+      y: 50
+      width: 200
+      height: 100
+
+  - id: hipaa-waf
+    type: security/waf
+    displayName: AWS WAF
+    args:
+      provider: AWS WAF
+      ruleSet: HIPAA-perimeter
+      geoBlocking: true
+      rateLimiting: true
+    position:
+      x: 350
+      y: 0
+      width: 200
+      height: 100
+
+  - id: audit-logging
+    type: observability/logging
+    displayName: ELK Audit Trail
+    args:
+      platform: ELK Stack
+      retentionDays: 2555
+      hipaaCompliant: true
+      auditTrail: true
+    position:
+      x: 1250
+      y: 200
+      width: 200
+      height: 100
+
+  - id: monitoring
+    type: observability/monitoring
+    displayName: Prometheus/Grafana
+    args:
+      platform: Prometheus/Grafana
+      scrapeInterval: 15s
+      alertChannels: pagerduty,slack
+    position:
+      x: 1250
+      y: 500
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: patient-portal
+    toNode: fhir-gateway
+    type: sync
+    label: HTTPS
+
+  - fromNode: telehealth-app
+    toNode: fhir-gateway
+    type: sync
+    label: HTTPS
+
+  - fromNode: hipaa-waf
+    toNode: fhir-gateway
+    type: sync
+    label: WAF Filter
+
+  - fromNode: fhir-gateway
+    toNode: patient-service
+    type: sync
+    label: FHIR Patient
+
+  - fromNode: fhir-gateway
+    toNode: scheduling-service
+    type: sync
+    label: FHIR Scheduling
+
+  - fromNode: fhir-gateway
+    toNode: clinical-service
+    type: sync
+    label: FHIR Clinical
+
+  - fromNode: patient-service
+    toNode: database
+    type: sync
+    label: Patient Records
+
+  - fromNode: patient-service
+    toNode: medical-imaging
+    type: sync
+    label: Store/Retrieve Images
+
+  - fromNode: patient-service
+    toNode: patient-search
+    type: sync
+    label: Index Patients
+
+  - fromNode: clinical-service
+    toNode: database
+    type: sync
+    label: Clinical Records
+
+  - fromNode: clinical-service
+    toNode: epic-fhir
+    type: sync
+    label: FHIR Interop
+
+  - fromNode: scheduling-service
+    toNode: database
+    type: sync
+    label: Appointments
+
+  - fromNode: scheduling-service
+    toNode: appointment-notifications
+    type: async
+    label: Send Reminders
+
+  - fromNode: scheduling-service
+    toNode: twilio-telehealth
+    type: sync
+    label: Create Video Session
+
+  - fromNode: patient-service
+    toNode: event-bus
+    type: async
+    label: Patient Events
+
+  - fromNode: scheduling-service
+    toNode: event-bus
+    type: async
+    label: Scheduling Events
+
+  - fromNode: clinical-service
+    toNode: event-bus
+    type: async
+    label: Clinical Events
+
+  - fromNode: patient-service
+    toNode: phi-vault
+    type: sync
+    label: Encrypt PHI
+
+  - fromNode: scheduling-service
+    toNode: phi-vault
+    type: sync
+    label: Encrypt PHI
+
+  - fromNode: clinical-service
+    toNode: phi-vault
+    type: sync
+    label: Encrypt PHI
+
+  - fromNode: patient-service
+    toNode: audit-logging
+    type: async
+    label: Audit Log
+
+  - fromNode: scheduling-service
+    toNode: audit-logging
+    type: async
+    label: Audit Log
+
+  - fromNode: clinical-service
+    toNode: audit-logging
+    type: async
+    label: Audit Log
+
+  - fromNode: patient-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: scheduling-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: clinical-service
+    toNode: monitoring
+    type: async
+    label: Metrics
