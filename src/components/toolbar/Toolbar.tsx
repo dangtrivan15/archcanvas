@@ -36,14 +36,19 @@ export function Toolbar() {
   return (
     <header
       className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar"
-      style={{ height: 'clamp(2.5rem, 3.5vh, 3.5rem)', padding: isCompact ? '0 0.5rem' : '0 0.75rem' }}
+      style={{
+        height: 'clamp(2.5rem, 3.5vh, 3.5rem)',
+        padding: isCompact ? '0 0.5rem' : '0 0.75rem',
+      }}
       role="toolbar"
       aria-label="Main toolbar"
       data-testid="toolbar"
     >
       {/* App branding */}
       <div className="flex items-center gap-2 ml-3 mr-2">
-        <span className={`font-bold tracking-tight text-[hsl(var(--foreground))] ${isCompact ? 'text-xs' : 'text-sm'}`}>
+        <span
+          className={`font-bold tracking-tight text-[hsl(var(--foreground))] ${isCompact ? 'text-xs' : 'text-sm'}`}
+        >
           {isCompact ? 'AC' : 'ArchCanvas'}
         </span>
       </div>
@@ -60,7 +65,7 @@ export function Toolbar() {
       {/* Annotate button - toggles freeform drawing mode */}
       <button
         type="button"
-        onClick={() => isDrawingMode ? exitDrawingMode() : enterDrawingMode()}
+        onClick={() => (isDrawingMode ? exitDrawingMode() : enterDrawingMode())}
         className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
           isDrawingMode
             ? 'bg-[hsl(var(--pine))] text-white'
@@ -90,14 +95,14 @@ export function Toolbar() {
       </button>
 
       {/* Divider - scales proportionally with toolbar height */}
-      {!isCompact && <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />}
+      {!isCompact && (
+        <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />
+      )}
 
       {/* Filename display - hidden in compact mode */}
       {!isCompact && (
         <div className="flex items-center gap-1 ml-2 text-sm text-[hsl(var(--muted-foreground))]">
-          <span data-testid="filename-display">
-            {fileName}
-          </span>
+          <span data-testid="filename-display">{fileName}</span>
           {isDirty && (
             <span className="text-[hsl(var(--foreground))] font-medium" title="Unsaved changes">
               *
@@ -108,7 +113,11 @@ export function Toolbar() {
 
       {/* Dirty indicator in compact mode (just the asterisk) */}
       {isCompact && isDirty && (
-        <span className="text-[hsl(var(--foreground))] font-medium text-sm ml-1" title="Unsaved changes" data-testid="compact-dirty-indicator">
+        <span
+          className="text-[hsl(var(--foreground))] font-medium text-sm ml-1"
+          title="Unsaved changes"
+          data-testid="compact-dirty-indicator"
+        >
           *
         </span>
       )}

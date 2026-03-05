@@ -28,10 +28,12 @@ import type { RouteDefinition, RouteHandler } from './query';
 
 // ─── Zod Schemas ─────────────────────────────────────────────
 
-const PositionSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-}).optional();
+const PositionSchema = z
+  .object({
+    x: z.number(),
+    y: z.number(),
+  })
+  .optional();
 
 const AddNodeSchema = z.object({
   type: z.string().min(1, 'type is required'),
@@ -41,14 +43,16 @@ const AddNodeSchema = z.object({
   args: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
-const UpdateNodeSchema = z.object({
-  displayName: z.string().min(1).optional(),
-  args: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-  properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-  color: z.string().optional(),
-}).refine((data) => Object.keys(data).length > 0, {
-  message: 'At least one field must be provided for update',
-});
+const UpdateNodeSchema = z
+  .object({
+    displayName: z.string().min(1).optional(),
+    args: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+    properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+    color: z.string().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 const AddEdgeSchema = z.object({
   fromNode: z.string().min(1, 'fromNode is required'),
@@ -59,13 +63,15 @@ const AddEdgeSchema = z.object({
   toPort: z.string().optional(),
 });
 
-const UpdateEdgeSchema = z.object({
-  type: z.enum(['sync', 'async', 'data-flow']).optional(),
-  label: z.string().optional(),
-  properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-}).refine((data) => Object.keys(data).length > 0, {
-  message: 'At least one field must be provided for update',
-});
+const UpdateEdgeSchema = z
+  .object({
+    type: z.enum(['sync', 'async', 'data-flow']).optional(),
+    label: z.string().optional(),
+    properties: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
 
 const AddNoteSchema = z.object({
   content: z.string().min(1, 'content is required'),
@@ -102,11 +108,7 @@ function sendNoContent(res: ServerResponse): void {
  * Validate request body against a Zod schema.
  * Returns parsed data on success, or sends 400 error and returns null.
  */
-function validateBody<T>(
-  res: ServerResponse,
-  body: unknown,
-  schema: z.ZodType<T>,
-): T | null {
+function validateBody<T>(res: ServerResponse, body: unknown, schema: z.ZodType<T>): T | null {
   if (body === undefined || body === null) {
     sendError(res, 400, 'Request body is required');
     return null;

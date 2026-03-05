@@ -141,7 +141,11 @@ describe('TextApi.resolveSuggestion() - Feature #52', () => {
     it('should allow accepting one and dismissing another', () => {
       const { textApi, nodeId } = createApiWithNode();
 
-      const note1 = textApi.suggest({ nodeId, content: 'Good idea', suggestionType: 'improvement' });
+      const note1 = textApi.suggest({
+        nodeId,
+        content: 'Good idea',
+        suggestionType: 'improvement',
+      });
       const note2 = textApi.suggest({ nodeId, content: 'Bad idea', suggestionType: 'improvement' });
 
       textApi.resolveSuggestion(nodeId, note1.id, 'accepted');

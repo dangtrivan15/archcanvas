@@ -59,9 +59,18 @@ describe('Template IndexedDB Storage', () => {
   });
 
   it('lists all imported templates', async () => {
-    await saveImportedTemplate({ metadata: makeMetadata({ id: 'tmpl-1', name: 'Template 1' }), data: makeData() });
-    await saveImportedTemplate({ metadata: makeMetadata({ id: 'tmpl-2', name: 'Template 2' }), data: makeData() });
-    await saveImportedTemplate({ metadata: makeMetadata({ id: 'tmpl-3', name: 'Template 3' }), data: makeData() });
+    await saveImportedTemplate({
+      metadata: makeMetadata({ id: 'tmpl-1', name: 'Template 1' }),
+      data: makeData(),
+    });
+    await saveImportedTemplate({
+      metadata: makeMetadata({ id: 'tmpl-2', name: 'Template 2' }),
+      data: makeData(),
+    });
+    await saveImportedTemplate({
+      metadata: makeMetadata({ id: 'tmpl-3', name: 'Template 3' }),
+      data: makeData(),
+    });
 
     const all = await getImportedTemplates();
     expect(all).toHaveLength(3);

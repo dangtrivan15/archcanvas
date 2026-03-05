@@ -3,7 +3,19 @@
  * Handles File System Access API with fallback, and proto-to-graph conversion.
  */
 
-import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState, Annotation, AnnotationPathData } from '@/types/graph';
+import type {
+  ArchGraph,
+  ArchNode,
+  ArchEdge,
+  Note,
+  CodeRef,
+  Position,
+  EdgeType,
+  NoteStatus,
+  CodeRefRole,
+  SavedCanvasState,
+  Annotation,
+} from '@/types/graph';
 import type { AIConversation, AIMessage, AISuggestion } from '@/types/ai';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { archcanvas, Architecture } from '@/proto/archcanvas';
@@ -242,7 +254,9 @@ function protoEdgeTypeToEdgeType(protoType: archcanvas.Edge.EdgeType | null | un
   }
 }
 
-function protoNoteStatusToStatus(protoStatus: archcanvas.Note.NoteStatus | null | undefined): NoteStatus {
+function protoNoteStatusToStatus(
+  protoStatus: archcanvas.Note.NoteStatus | null | undefined,
+): NoteStatus {
   switch (protoStatus) {
     case archcanvas.Note.NoteStatus.NONE:
     case 0:
@@ -407,9 +421,7 @@ export function graphToProto(
       entries: undoHistory.entries.map((entry) => {
         // Encode the ArchGraph snapshot to Architecture proto bytes
         const archProto = graphToArchitectureProto(entry.snapshot);
-        const architectureSnapshot = Architecture.encode(
-          Architecture.create(archProto),
-        ).finish();
+        const architectureSnapshot = Architecture.encode(Architecture.create(archProto)).finish();
 
         return {
           description: entry.description,
@@ -452,8 +464,8 @@ function nodeToProtoNode(node: ArchNode): archcanvas.INode {
 
 function edgeToProtoEdge(edge: ArchEdge): archcanvas.IEdge {
   const typeMap: Record<EdgeType, number> = {
-    'sync': 0,
-    'async': 1,
+    sync: 0,
+    async: 1,
     'data-flow': 2,
   };
   return {
@@ -471,10 +483,10 @@ function edgeToProtoEdge(edge: ArchEdge): archcanvas.IEdge {
 
 function noteToProtoNote(note: Note): archcanvas.INote {
   const statusMap: Record<NoteStatus, number> = {
-    'none': 0,
-    'pending': 1,
-    'accepted': 2,
-    'dismissed': 3,
+    none: 0,
+    pending: 1,
+    accepted: 2,
+    dismissed: 3,
   };
   return {
     id: note.id,
@@ -489,12 +501,12 @@ function noteToProtoNote(note: Note): archcanvas.INote {
 
 function codeRefToProtoCodeRef(codeRef: CodeRef): archcanvas.ICodeRef {
   const roleMap: Record<CodeRefRole, number> = {
-    'source': 0,
+    source: 0,
     'api-spec': 1,
-    'schema': 2,
-    'deployment': 3,
-    'config': 4,
-    'test': 5,
+    schema: 2,
+    deployment: 3,
+    config: 4,
+    test: 5,
   };
   return {
     path: codeRef.path,
@@ -502,9 +514,9 @@ function codeRefToProtoCodeRef(codeRef: CodeRef): archcanvas.ICodeRef {
   };
 }
 
-function recordToProtoValueMap(
-  record: Record<string, string | number | boolean>,
-): { [key: string]: archcanvas.IValue } {
+function recordToProtoValueMap(record: Record<string, string | number | boolean>): {
+  [key: string]: archcanvas.IValue;
+} {
   const result: { [key: string]: archcanvas.IValue } = {};
   for (const [key, value] of Object.entries(record)) {
     if (typeof value === 'string') {
@@ -541,9 +553,9 @@ function messageToProtoAIMessage(msg: AIMessage): archcanvas.IAIMessage {
 
 function suggestionToProtoAISuggestion(sug: AISuggestion): archcanvas.IAISuggestion {
   const statusMap: Record<string, number> = {
-    'pending': 1,
-    'accepted': 2,
-    'dismissed': 3,
+    pending: 1,
+    accepted: 2,
+    dismissed: 3,
   };
   return {
     id: sug.id,
@@ -564,7 +576,12 @@ function suggestionToProtoAISuggestion(sug: AISuggestion): archcanvas.IAISuggest
 export async function decodeArchcData(
   data: Uint8Array,
   decodeOptions?: import('./codec').DecodeOptions,
-): Promise<{ graph: ArchGraph; canvasState?: SavedCanvasState; aiState?: AIStateData; createdAtMs?: number }> {
+): Promise<{
+  graph: ArchGraph;
+  canvasState?: SavedCanvasState;
+  aiState?: AIStateData;
+  createdAtMs?: number;
+}> {
   const decoded = await decode(data, decodeOptions);
   return protoToGraphFull(decoded);
 }

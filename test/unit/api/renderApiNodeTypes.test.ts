@@ -48,10 +48,7 @@ describe('RenderApi maps nodedef types to React components', () => {
 
   // Step 3: Verify 'messaging/message-queue' maps via parallelogram shape
   it("maps 'messaging/message-queue' to 'queue' component type", () => {
-    const canvasNode = renderSingleNode(
-      'messaging/message-queue',
-      'My Queue',
-    );
+    const canvasNode = renderSingleNode('messaging/message-queue', 'My Queue');
     expect(canvasNode.type).toBe('queue');
   });
 
@@ -86,10 +83,7 @@ describe('RenderApi maps nodedef types to React components', () => {
 
   // Data types with cylinder shape all map to 'database' (CylinderNode)
   it("maps 'data/object-storage' to 'database' via cylinder shape", () => {
-    const canvasNode = renderSingleNode(
-      'data/object-storage',
-      'My Storage',
-    );
+    const canvasNode = renderSingleNode('data/object-storage', 'My Storage');
     expect(canvasNode.type).toBe('database');
   });
 
@@ -105,27 +99,18 @@ describe('RenderApi maps nodedef types to React components', () => {
   });
 
   it("maps 'messaging/stream-processor' to 'queue' via parallelogram shape", () => {
-    const canvasNode = renderSingleNode(
-      'messaging/stream-processor',
-      'My Stream',
-    );
+    const canvasNode = renderSingleNode('messaging/stream-processor', 'My Stream');
     expect(canvasNode.type).toBe('queue');
   });
 
   // Network types: load-balancer has hexagon shape
   it("maps 'network/load-balancer' to 'gateway' via hexagon shape", () => {
-    const canvasNode = renderSingleNode(
-      'network/load-balancer',
-      'My LB',
-    );
+    const canvasNode = renderSingleNode('network/load-balancer', 'My LB');
     expect(canvasNode.type).toBe('gateway');
   });
 
   it("maps 'observability/logging' to 'generic' via rectangle shape", () => {
-    const canvasNode = renderSingleNode(
-      'observability/logging',
-      'My Logger',
-    );
+    const canvasNode = renderSingleNode('observability/logging', 'My Logger');
     expect(canvasNode.type).toBe('generic');
   });
 
@@ -142,9 +127,7 @@ describe('RenderApi maps nodedef types to React components', () => {
     const result = renderApi.render(graph, []);
     expect(result.nodes).toHaveLength(5);
 
-    const typeMap = new Map(
-      result.nodes.map((n) => [n.data.displayName, n.type]),
-    );
+    const typeMap = new Map(result.nodes.map((n) => [n.data.displayName, n.type]));
 
     // Shape-based routing: rectangle→generic, cylinder→database, parallelogram→queue, hexagon→gateway
     expect(typeMap.get('Svc')).toBe('generic');

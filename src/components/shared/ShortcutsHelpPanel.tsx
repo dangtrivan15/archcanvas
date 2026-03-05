@@ -138,9 +138,7 @@ export function ShortcutsHelpPanel() {
                       className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-50"
                       data-testid={`shortcut-${shortcut.id}`}
                     >
-                      <span className="text-sm text-gray-700">
-                        {shortcut.description}
-                      </span>
+                      <span className="text-sm text-gray-700">{shortcut.description}</span>
                       <kbd
                         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded shadow-sm min-w-[2.5rem] justify-center"
                         data-testid={`shortcut-keys-${shortcut.id}`}
@@ -158,7 +156,11 @@ export function ShortcutsHelpPanel() {
         {/* Footer */}
         <div className="px-6 py-3 border-t flex items-center justify-between shrink-0">
           <p className="text-xs text-gray-400">
-            Press <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border border-gray-200 rounded">?</kbd> to toggle this panel
+            Press{' '}
+            <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border border-gray-200 rounded">
+              ?
+            </kbd>{' '}
+            to toggle this panel
           </p>
           <button
             type="button"

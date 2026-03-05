@@ -55,11 +55,7 @@ describe('Feature #97: Navigation path state updates correctly on zoom', () => {
       useNavigationStore.getState().zoomIn('level-1');
       useNavigationStore.getState().zoomIn('level-2');
       useNavigationStore.getState().zoomIn('level-3');
-      expect(useNavigationStore.getState().path).toEqual([
-        'level-1',
-        'level-2',
-        'level-3',
-      ]);
+      expect(useNavigationStore.getState().path).toEqual(['level-1', 'level-2', 'level-3']);
     });
 
     it('handles deep nesting (5+ levels)', () => {
@@ -139,11 +135,7 @@ describe('Feature #97: Navigation path state updates correctly on zoom', () => {
     it('replaces existing path entirely', () => {
       useNavigationStore.setState({ path: ['old-a', 'old-b'] });
       useNavigationStore.getState().zoomToLevel(['new-x', 'new-y', 'new-z']);
-      expect(useNavigationStore.getState().path).toEqual([
-        'new-x',
-        'new-y',
-        'new-z',
-      ]);
+      expect(useNavigationStore.getState().path).toEqual(['new-x', 'new-y', 'new-z']);
     });
   });
 
@@ -154,20 +146,14 @@ describe('Feature #97: Navigation path state updates correctly on zoom', () => {
       useNavigationStore.getState().zoomOut();
       useNavigationStore.getState().zoomIn('child-b');
 
-      expect(useNavigationStore.getState().path).toEqual([
-        'parent',
-        'child-b',
-      ]);
+      expect(useNavigationStore.getState().path).toEqual(['parent', 'child-b']);
     });
 
     it('zoomToLevel then zoomIn builds on the set path', () => {
       useNavigationStore.getState().zoomToLevel(['service-a']);
       useNavigationStore.getState().zoomIn('handler-1');
 
-      expect(useNavigationStore.getState().path).toEqual([
-        'service-a',
-        'handler-1',
-      ]);
+      expect(useNavigationStore.getState().path).toEqual(['service-a', 'handler-1']);
     });
 
     it('zoomToRoot then zoomIn starts fresh path', () => {

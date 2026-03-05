@@ -76,15 +76,15 @@ describe('Feature #288: Web app manifest and app icons for PWA', () => {
     });
 
     it('has at least one icon with purpose "any"', () => {
-      const anyIcons = manifest.icons.filter((i: { purpose: string }) =>
-        i.purpose === 'any' || i.purpose === 'any maskable'
+      const anyIcons = manifest.icons.filter(
+        (i: { purpose: string }) => i.purpose === 'any' || i.purpose === 'any maskable',
       );
       expect(anyIcons.length).toBeGreaterThan(0);
     });
 
     it('has at least one maskable icon', () => {
-      const maskableIcons = manifest.icons.filter((i: { purpose: string }) =>
-        i.purpose === 'maskable' || i.purpose === 'any maskable'
+      const maskableIcons = manifest.icons.filter(
+        (i: { purpose: string }) => i.purpose === 'maskable' || i.purpose === 'any maskable',
       );
       expect(maskableIcons.length).toBeGreaterThan(0);
     });
@@ -211,7 +211,15 @@ describe('Feature #288: Web app manifest and app icons for PWA', () => {
     });
 
     it('manifest has all required PWA fields', () => {
-      const requiredFields = ['name', 'short_name', 'icons', 'start_url', 'display', 'theme_color', 'background_color'];
+      const requiredFields = [
+        'name',
+        'short_name',
+        'icons',
+        'start_url',
+        'display',
+        'theme_color',
+        'background_color',
+      ];
       for (const field of requiredFields) {
         expect(manifest[field]).toBeDefined();
       }

@@ -68,18 +68,21 @@ describe('Enhanced focus ring styling', () => {
   });
 
   it('arg text inputs have focus ring classes', () => {
-    const expectedClasses = 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
+    const expectedClasses =
+      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
     expect(expectedClasses).toContain('focus:ring-2');
     expect(expectedClasses).toContain('focus:ring-offset-1');
   });
 
   it('boolean toggle buttons have focus ring classes', () => {
-    const expectedClasses = 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
+    const expectedClasses =
+      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
     expect(expectedClasses).toContain('focus:ring-2');
   });
 
   it('enum select fields have focus ring classes', () => {
-    const expectedClasses = 'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
+    const expectedClasses =
+      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1';
     expect(expectedClasses).toContain('focus:ring-2');
   });
 });

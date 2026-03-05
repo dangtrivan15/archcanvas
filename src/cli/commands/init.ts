@@ -11,11 +11,7 @@
 
 import { Command } from 'commander';
 import { GraphContext } from '@/cli/context';
-import {
-  type GlobalOptions,
-  withErrorHandler,
-  suppressDiagnosticLogs,
-} from '@/cli/index';
+import { type GlobalOptions, withErrorHandler, suppressDiagnosticLogs } from '@/cli/index';
 
 interface InitOptions {
   name: string;
@@ -30,21 +26,9 @@ export function registerInitCommand(program: Command): void {
   program
     .command('init')
     .description('Create a new .archc architecture file')
-    .option(
-      '--name <name>',
-      'Architecture name',
-      'Untitled Architecture',
-    )
-    .option(
-      '-o, --output <path>',
-      'Output file path',
-      './architecture.archc',
-    )
-    .option(
-      '--force',
-      'Overwrite existing file without error',
-      false,
-    )
+    .option('--name <name>', 'Architecture name', 'Untitled Architecture')
+    .option('-o, --output <path>', 'Output file path', './architecture.archc')
+    .option('--force', 'Overwrite existing file without error', false)
     .action(
       withErrorHandler(async (cmdOpts: InitOptions) => {
         const opts = program.opts<GlobalOptions>();
@@ -55,9 +39,7 @@ export function registerInitCommand(program: Command): void {
 
         // Check if file already exists (unless --force)
         if (!cmdOpts.force && fs.existsSync(resolvedOutput)) {
-          throw new Error(
-            `File already exists: ${resolvedOutput}\nUse --force to overwrite.`,
-          );
+          throw new Error(`File already exists: ${resolvedOutput}\nUse --force to overwrite.`);
         }
 
         // Suppress diagnostic log noise from registry init
@@ -84,9 +66,7 @@ export function registerInitCommand(program: Command): void {
           const stats = fs.statSync(resolvedOutput);
           const sizeBytes = stats.size;
           const sizeDisplay =
-            sizeBytes < 1024
-              ? `${sizeBytes} bytes`
-              : `${(sizeBytes / 1024).toFixed(1)} KB`;
+            sizeBytes < 1024 ? `${sizeBytes} bytes` : `${(sizeBytes / 1024).toFixed(1)} KB`;
 
           console.log(
             `Created new architecture "${cmdOpts.name}" at ${resolvedOutput} (${sizeDisplay})`,

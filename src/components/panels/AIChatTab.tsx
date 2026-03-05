@@ -8,7 +8,17 @@
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Send, Bot, User, Info, Loader2, Sparkles, Check, AlertTriangle, RefreshCw } from 'lucide-react';
+import {
+  Send,
+  Bot,
+  User,
+  Info,
+  Loader2,
+  Sparkles,
+  Check,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useAIStore } from '@/store/aiStore';
@@ -187,7 +197,8 @@ export function AIChatTab() {
    * Build system prompt with architecture context.
    */
   const buildSystemPrompt = useCallback(() => {
-    let context = 'You are an AI architecture assistant for ArchCanvas, a visual architecture design tool. ';
+    let context =
+      'You are an AI architecture assistant for ArchCanvas, a visual architecture design tool. ';
     context += `The architecture "${graph.name || 'Untitled'}" has ${graph.nodes.length} nodes and ${graph.edges.length} edges. `;
 
     if (node) {
@@ -269,7 +280,7 @@ export function AIChatTab() {
    * Send with placeholder response (when API key is not configured).
    */
   const sendWithPlaceholder = useCallback(
-    (userContent: string) => {
+    (_userContent: string) => {
       const assistantMsgId = `msg-${Date.now()}-assistant`;
 
       // Create streaming placeholder
@@ -357,7 +368,13 @@ export function AIChatTab() {
 
     // Build conversation history from current messages, filtering out error messages
     const retryHistory: ChatMessage[] = messages
-      .filter((m) => !(m.role === 'assistant' && (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))))
+      .filter(
+        (m) =>
+          !(
+            m.role === 'assistant' &&
+            (m.content.startsWith('⚠ ') || m.content.startsWith('Error: '))
+          ),
+      )
       .map((m) => ({
         id: m.id,
         role: m.role,
@@ -379,7 +396,10 @@ export function AIChatTab() {
   return (
     <div className="flex flex-col h-full" data-testid="aichat-tab">
       {/* Context indicator */}
-      <div className="px-3 py-2 bg-blue-50 border-b border-blue-100 rounded-t" data-testid="ai-context-indicator">
+      <div
+        className="px-3 py-2 bg-blue-50 border-b border-blue-100 rounded-t"
+        data-testid="ai-context-indicator"
+      >
         <div className="flex items-center gap-1.5 text-xs text-blue-700">
           <Info className="w-3.5 h-3.5 shrink-0" />
           <span className="font-medium">Context:</span>
@@ -387,7 +407,10 @@ export function AIChatTab() {
             {node ? node.displayName : 'No node selected'}
           </span>
         </div>
-        <div className="text-[11px] text-blue-500 mt-0.5 ml-5" data-testid="ai-context-neighbor-count">
+        <div
+          className="text-[11px] text-blue-500 mt-0.5 ml-5"
+          data-testid="ai-context-neighbor-count"
+        >
           {node
             ? neighborCount === 0
               ? 'No connections'
@@ -398,7 +421,10 @@ export function AIChatTab() {
 
       {/* Missing API key banner */}
       {!isAIConfigured() && (
-        <div className="mx-3 mt-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg" data-testid="ai-missing-key-banner">
+        <div
+          className="mx-3 mt-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg"
+          data-testid="ai-missing-key-banner"
+        >
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -430,91 +456,102 @@ export function AIChatTab() {
           <div className="text-center text-sm text-gray-400 py-8" data-testid="ai-empty-state">
             <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>Ask questions about this node</p>
-            <p className="text-xs mt-1">AI will use the selected node and its neighbors as context</p>
+            <p className="text-xs mt-1">
+              AI will use the selected node and its neighbors as context
+            </p>
           </div>
         ) : (
           messages.map((msg) => {
-            const isError = msg.role === 'assistant' && (msg.content.startsWith('⚠ ') || msg.content.startsWith('Error: '));
+            const isError =
+              msg.role === 'assistant' &&
+              (msg.content.startsWith('⚠ ') || msg.content.startsWith('Error: '));
             return (
-            <div
-              key={msg.id}
-              className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              data-testid={isError ? 'ai-message-error' : `ai-message-${msg.role}`}
-            >
-              {msg.role === 'assistant' && (
-                isError ? (
-                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  </div>
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-blue-600" />
-                  </div>
-                )
-              )}
-              <div className={`max-w-[85%] ${msg.role === 'assistant' ? '' : ''}`}>
-                <div
-                  className={`rounded-lg px-3 py-2 text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : isError
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {msg.content}
-                  {msg.isStreaming && (
-                    <span className="inline-block ml-1 animate-pulse" data-testid="ai-streaming-indicator">
-                      <Loader2 className="w-3 h-3 inline animate-spin" />
-                    </span>
-                  )}
-                </div>
-                {/* Apply button for completed assistant messages when a node is selected (not for errors) */}
-                {msg.role === 'assistant' && !msg.isStreaming && !isError && selectedNodeId && msg.content && (
-                  <div className="mt-1">
-                    {appliedMessageIds.has(msg.id) ? (
+              <div
+                key={msg.id}
+                className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                data-testid={isError ? 'ai-message-error' : `ai-message-${msg.role}`}
+              >
+                {msg.role === 'assistant' &&
+                  (isError ? (
+                    <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                      <Bot className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                  ))}
+                <div className={`max-w-[85%] ${msg.role === 'assistant' ? '' : ''}`}>
+                  <div
+                    className={`rounded-lg px-3 py-2 text-sm ${
+                      msg.role === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : isError
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                          : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {msg.content}
+                    {msg.isStreaming && (
                       <span
-                        className="inline-flex items-center gap-1 text-xs text-green-600 px-2 py-0.5"
-                        data-testid="ai-suggestion-applied"
+                        className="inline-block ml-1 animate-pulse"
+                        data-testid="ai-streaming-indicator"
                       >
-                        <Check className="w-3 h-3" />
-                        Applied as note
+                        <Loader2 className="w-3 h-3 inline animate-spin" />
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => handleApply(msg.id, msg.content)}
-                        className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2 py-0.5 rounded transition-colors"
-                        title="Apply as pending note on this node"
-                        data-testid="ai-apply-suggestion"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Apply
-                      </button>
                     )}
                   </div>
-                )}
-                {/* Retry button for error messages */}
-                {isError && !isStreaming && lastFailedContentRef.current && (
-                  <div className="mt-1">
-                    <button
-                      onClick={handleRetry}
-                      className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 px-2 py-0.5 rounded transition-colors"
-                      title="Retry sending the last message"
-                      data-testid="ai-retry-button"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Retry
-                    </button>
+                  {/* Apply button for completed assistant messages when a node is selected (not for errors) */}
+                  {msg.role === 'assistant' &&
+                    !msg.isStreaming &&
+                    !isError &&
+                    selectedNodeId &&
+                    msg.content && (
+                      <div className="mt-1">
+                        {appliedMessageIds.has(msg.id) ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-xs text-green-600 px-2 py-0.5"
+                            data-testid="ai-suggestion-applied"
+                          >
+                            <Check className="w-3 h-3" />
+                            Applied as note
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleApply(msg.id, msg.content)}
+                            className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-2 py-0.5 rounded transition-colors"
+                            title="Apply as pending note on this node"
+                            data-testid="ai-apply-suggestion"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            Apply
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  {/* Retry button for error messages */}
+                  {isError && !isStreaming && lastFailedContentRef.current && (
+                    <div className="mt-1">
+                      <button
+                        onClick={handleRetry}
+                        className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 px-2 py-0.5 rounded transition-colors"
+                        title="Retry sending the last message"
+                        data-testid="ai-retry-button"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Retry
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {msg.role === 'user' && (
+                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5 text-gray-600" />
                   </div>
                 )}
               </div>
-              {msg.role === 'user' && (
-                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                  <User className="w-3.5 h-3.5 text-gray-600" />
-                </div>
-              )}
-            </div>
-          );})
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>

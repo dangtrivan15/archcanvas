@@ -19,7 +19,10 @@ import os from 'node:os';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
-async function startServer(ctx: GraphContext, port = 0): Promise<{ server: Server; baseUrl: string }> {
+async function startServer(
+  ctx: GraphContext,
+  port = 0,
+): Promise<{ server: Server; baseUrl: string }> {
   const options: HttpServerOptions = { port, host: '127.0.0.1', cors: false };
   const server = createHttpServer(ctx, options);
 
@@ -75,7 +78,12 @@ describe('HTTP Export Endpoints (Feature #313)', () => {
     // Add nodes and edges for meaningful export content
     const svc = reloaded.textApi.addNode({ type: 'compute/service', displayName: 'AuthService' });
     const db = reloaded.textApi.addNode({ type: 'data/database', displayName: 'UserDB' });
-    reloaded.textApi.addEdge({ fromNode: svc.id, toNode: db.id, type: 'sync', label: 'SQL queries' });
+    reloaded.textApi.addEdge({
+      fromNode: svc.id,
+      toNode: db.id,
+      type: 'sync',
+      label: 'SQL queries',
+    });
     await reloaded.save(true);
 
     const s = await startServer(reloaded);

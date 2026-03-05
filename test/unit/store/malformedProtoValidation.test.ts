@@ -5,12 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  encode,
-  decode,
-  CodecError,
-  IntegrityError,
-} from '@/core/storage/codec';
+import { encode, decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import {
   ArchCanvasFile,
   FileHeader,
@@ -85,10 +80,7 @@ function encodeVarint(value: number): Uint8Array {
 /**
  * Encode a length-delimited field (string or embedded message).
  */
-function encodeLengthDelimited(
-  fieldNumber: number,
-  data: Uint8Array
-): Uint8Array {
+function encodeLengthDelimited(fieldNumber: number, data: Uint8Array): Uint8Array {
   const tag = encodeVarint(protoTag(fieldNumber, 2));
   const length = encodeVarint(data.length);
   const result = new Uint8Array(tag.length + length.length + data.length);
@@ -215,9 +207,9 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
     it('rejects payload where embedded message length exceeds buffer', async () => {
       // Field 1 (header), wire type 2, length = 99999 (way beyond actual data)
       const malformed = concat(
-        encodeVarint(protoTag(1, 2)),  // field 1, length-delimited
-        encodeVarint(99999),           // length = 99999 (exceeds buffer)
-        new Uint8Array([0x08, 0x01])   // only 2 bytes of actual data
+        encodeVarint(protoTag(1, 2)), // field 1, length-delimited
+        encodeVarint(99999), // length = 99999 (exceeds buffer)
+        new Uint8Array([0x08, 0x01]), // only 2 bytes of actual data
       );
       const archcFile = await wrapPayloadAsArchcFile(malformed);
 
@@ -229,10 +221,10 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Construct a FileHeader-like message where field 2 (tool_version string)
       // has an impossibly large length
       const headerPayload = concat(
-        encodeVarintField(1, 1),            // format_version = 1
-        encodeVarint(protoTag(2, 2)),       // field 2 (tool_version), LEN
-        encodeVarint(50000),                // length = 50000 (way too large)
-        utf8Encode('short')                 // only 5 bytes of data
+        encodeVarintField(1, 1), // format_version = 1
+        encodeVarint(protoTag(2, 2)), // field 2 (tool_version), LEN
+        encodeVarint(50000), // length = 50000 (way too large)
+        utf8Encode('short'), // only 5 bytes of data
       );
       // Wrap as ArchCanvasFile field 1 (header)
       const outerPayload = encodeLengthDelimited(1, headerPayload);
@@ -249,9 +241,9 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Tag: field 1, wire type 2 = 0x0A
       const stringBytes = utf8Encode('not_a_number');
       const headerPayload = concat(
-        encodeVarint(protoTag(1, 2)),  // field 1 as LEN instead of VARINT
+        encodeVarint(protoTag(1, 2)), // field 1 as LEN instead of VARINT
         encodeVarint(stringBytes.length),
-        stringBytes
+        stringBytes,
       );
 
       // Wrap in ArchCanvasFile (field 1 = header)
@@ -274,7 +266,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Architecture.name (field 1) should be string (wire_type=2)
       // We encode it as varint (wire_type=0)
       const archPayload = concat(
-        encodeVarintField(1, 12345)  // name as varint instead of string
+        encodeVarintField(1, 12345), // name as varint instead of string
       );
 
       // Wrap in ArchCanvasFile (field 2 = architecture)
@@ -296,17 +288,17 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
     it('rejects payload with corrupted nested Node message', async () => {
       // Build Architecture with a Node where position field (field 8, message)
       // contains garbage bytes that don't form valid Position fields
-      const garbagePosition = new Uint8Array([0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA]);
+      const garbagePosition = new Uint8Array([0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa]);
       const nodePayload = concat(
-        encodeLengthDelimited(1, utf8Encode('node-corrupt')),  // id
-        encodeLengthDelimited(2, utf8Encode('compute/svc')),   // type
-        encodeLengthDelimited(3, utf8Encode('Corrupt Node')),  // display_name
-        encodeLengthDelimited(8, garbagePosition)              // position (garbage)
+        encodeLengthDelimited(1, utf8Encode('node-corrupt')), // id
+        encodeLengthDelimited(2, utf8Encode('compute/svc')), // type
+        encodeLengthDelimited(3, utf8Encode('Corrupt Node')), // display_name
+        encodeLengthDelimited(8, garbagePosition), // position (garbage)
       );
 
       const archPayload = concat(
-        encodeLengthDelimited(1, utf8Encode('Test Arch')),  // name
-        encodeLengthDelimited(4, nodePayload)               // nodes[0]
+        encodeLengthDelimited(1, utf8Encode('Test Arch')), // name
+        encodeLengthDelimited(4, nodePayload), // nodes[0]
       );
 
       const outerPayload = encodeLengthDelimited(2, archPayload);
@@ -327,15 +319,15 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Edge.type is an enum (varint), valid values 0-2
       // We put a very large value: 99999
       const edgePayload = concat(
-        encodeLengthDelimited(1, utf8Encode('edge-bad')),   // id
-        encodeLengthDelimited(2, utf8Encode('node-a')),     // from_node
-        encodeLengthDelimited(3, utf8Encode('node-b')),     // to_node
-        encodeVarintField(6, 99999)                         // type = 99999 (invalid enum)
+        encodeLengthDelimited(1, utf8Encode('edge-bad')), // id
+        encodeLengthDelimited(2, utf8Encode('node-a')), // from_node
+        encodeLengthDelimited(3, utf8Encode('node-b')), // to_node
+        encodeVarintField(6, 99999), // type = 99999 (invalid enum)
       );
 
       const archPayload = concat(
         encodeLengthDelimited(1, utf8Encode('Test Arch')),
-        encodeLengthDelimited(5, edgePayload)               // edges[0]
+        encodeLengthDelimited(5, edgePayload), // edges[0]
       );
 
       const outerPayload = encodeLengthDelimited(2, archPayload);
@@ -360,7 +352,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Manually create a message object with wrong type
       const badMessage = {
         header: {
-          formatVersion: 'not_a_number',  // Should be integer
+          formatVersion: 'not_a_number', // Should be integer
           toolVersion: '0.1.0',
         },
       };
@@ -374,7 +366,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
     it('verify() detects non-string in architecture name field', () => {
       const badMessage = {
         architecture: {
-          name: 12345,  // Should be string
+          name: 12345, // Should be string
           description: 'valid desc',
         },
       };
@@ -389,7 +381,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       const badMessage = {
         architecture: {
           name: 'Test',
-          nodes: 'not_an_array',  // Should be array
+          nodes: 'not_an_array', // Should be array
         },
       };
 
@@ -405,7 +397,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
           name: 'Test',
           nodes: [
             {
-              id: 42,  // Should be string
+              id: 42, // Should be string
               type: 'compute/service',
             },
           ],
@@ -425,7 +417,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
             {
               id: 'node-1',
               position: {
-                x: 'not_a_number',  // Should be number (double)
+                x: 'not_a_number', // Should be number (double)
               },
             },
           ],
@@ -480,7 +472,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       // Inside FileHeader, use field 10 (unknown) with invalid wire type 7
       // Tag: (10 << 3) | 7 = 0x57
       const badHeaderContent = new Uint8Array([
-        0x57,  // tag: field 10, wire type 7 (INVALID) → skipType(7) throws
+        0x57, // tag: field 10, wire type 7 (INVALID) → skipType(7) throws
         0x00,
       ]);
       const outerPayload = encodeLengthDelimited(1, badHeaderContent);
@@ -511,7 +503,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       const malformed = concat(
         encodeVarint(protoTag(1, 2)),
         encodeVarint(999999),
-        new Uint8Array([0x01])
+        new Uint8Array([0x01]),
       );
       const archcFile = await wrapPayloadAsArchcFile(malformed);
 
@@ -525,18 +517,18 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
 
     it('deeply nested corruption produces Error subclass, not crash', async () => {
       // Node → children → nested Node with garbage
-      const innerGarbage = new Uint8Array([0xFF, 0xFF, 0xFF, 0xFF, 0x0F]);
+      const innerGarbage = new Uint8Array([0xff, 0xff, 0xff, 0xff, 0x0f]);
       const innerNodePayload = concat(
         encodeLengthDelimited(1, utf8Encode('inner-node')),
-        encodeLengthDelimited(9, innerGarbage)  // children field with garbage
+        encodeLengthDelimited(9, innerGarbage), // children field with garbage
       );
       const outerNodePayload = concat(
         encodeLengthDelimited(1, utf8Encode('outer-node')),
-        encodeLengthDelimited(9, innerNodePayload)  // children[0]
+        encodeLengthDelimited(9, innerNodePayload), // children[0]
       );
       const archPayload = concat(
         encodeLengthDelimited(1, utf8Encode('Test')),
-        encodeLengthDelimited(4, outerNodePayload)
+        encodeLengthDelimited(4, outerNodePayload),
       );
       const outerPayload = encodeLengthDelimited(2, archPayload);
       const archcFile = await wrapPayloadAsArchcFile(outerPayload);
@@ -553,7 +545,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
     it('multiple sequential malformation variants all produce proper errors', async () => {
       const variants: Uint8Array[] = [
         // 1. Invalid wire type
-        new Uint8Array([0x0F, 0x00]),
+        new Uint8Array([0x0f, 0x00]),
         // 2. Just a tag with no value
         new Uint8Array([0x08]),
         // 3. Varint that never terminates (all high bits set)
@@ -592,7 +584,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
       const badMessage = {
         architecture: {
           nodes: [
-            { id: 999 },  // id should be string
+            { id: 999 }, // id should be string
           ],
         },
       };
@@ -645,10 +637,7 @@ describe('Feature #206: Proto message validation rejects malformed data', () => 
     });
 
     it('error dialog can be dismissed and app continues', async () => {
-      const malformed = concat(
-        encodeVarint(protoTag(1, 2)),
-        encodeVarint(999999)
-      );
+      const malformed = concat(encodeVarint(protoTag(1, 2)), encodeVarint(999999));
       const archcFile = await wrapPayloadAsArchcFile(malformed);
 
       try {

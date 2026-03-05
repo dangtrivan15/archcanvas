@@ -13,7 +13,7 @@
 import type { TextApi } from '@/api/textApi';
 import type { RegistryManagerCore } from '@/core/registry/registryCore';
 import type { InferenceResult, InferredNode, InferredEdge, InferredCodeRef } from './inferEngine';
-import type { ArchNode, ArchGraph, CodeRefRole } from '@/types/graph';
+import type { ArchNode, CodeRefRole } from '@/types/graph';
 import type { AddEdgeParams } from '@/types/api';
 import { computeElkLayout } from '@/core/layout/elkLayout';
 
@@ -53,158 +53,158 @@ export interface BuildResult {
  */
 const TYPE_FALLBACK_MAP: Record<string, string> = {
   // Compute synonyms
-  'microservice': 'compute/service',
-  'service': 'compute/service',
-  'api': 'compute/service',
+  microservice: 'compute/service',
+  service: 'compute/service',
+  api: 'compute/service',
   'api-server': 'compute/service',
-  'backend': 'compute/service',
-  'server': 'compute/service',
+  backend: 'compute/service',
+  server: 'compute/service',
   'rest-api': 'compute/service',
   'grpc-service': 'compute/service',
   'graphql-server': 'compute/service',
   'web-server': 'compute/service',
-  'function': 'compute/function',
-  'lambda': 'compute/function',
-  'serverless': 'compute/function',
+  function: 'compute/function',
+  lambda: 'compute/function',
+  serverless: 'compute/function',
   'cloud-function': 'compute/function',
-  'worker': 'compute/worker',
+  worker: 'compute/worker',
   'background-worker': 'compute/worker',
   'job-processor': 'compute/worker',
-  'consumer': 'compute/worker',
+  consumer: 'compute/worker',
   'api-gateway': 'compute/api-gateway',
-  'gateway': 'compute/api-gateway',
+  gateway: 'compute/api-gateway',
   'reverse-proxy': 'compute/api-gateway',
-  'proxy': 'compute/api-gateway',
+  proxy: 'compute/api-gateway',
   'cron-job': 'compute/cron-job',
-  'cron': 'compute/cron-job',
-  'scheduler': 'compute/cron-job',
+  cron: 'compute/cron-job',
+  scheduler: 'compute/cron-job',
   'scheduled-task': 'compute/cron-job',
-  'container': 'compute/container',
-  'docker': 'compute/container',
-  'kubernetes': 'compute/container',
-  'k8s': 'compute/container',
+  container: 'compute/container',
+  docker: 'compute/container',
+  kubernetes: 'compute/container',
+  k8s: 'compute/container',
 
   // Data synonyms
-  'database': 'data/database',
-  'db': 'data/database',
+  database: 'data/database',
+  db: 'data/database',
   'relational-database': 'data/database',
   'sql-database': 'data/database',
   'nosql-database': 'data/database',
-  'postgres': 'data/database',
-  'postgresql': 'data/database',
-  'mysql': 'data/database',
-  'mongodb': 'data/database',
-  'dynamodb': 'data/database',
-  'cache': 'data/cache',
-  'redis': 'data/cache',
-  'memcached': 'data/cache',
+  postgres: 'data/database',
+  postgresql: 'data/database',
+  mysql: 'data/database',
+  mongodb: 'data/database',
+  dynamodb: 'data/database',
+  cache: 'data/cache',
+  redis: 'data/cache',
+  memcached: 'data/cache',
   'in-memory-cache': 'data/cache',
   'object-storage': 'data/object-storage',
   'blob-storage': 'data/object-storage',
-  's3': 'data/object-storage',
-  'gcs': 'data/object-storage',
+  s3: 'data/object-storage',
+  gcs: 'data/object-storage',
   'file-storage': 'data/object-storage',
-  'storage': 'data/object-storage',
-  'repository': 'data/repository',
+  storage: 'data/object-storage',
+  repository: 'data/repository',
   'artifact-repository': 'data/repository',
   'search-index': 'data/search-index',
-  'search': 'data/search-index',
-  'elasticsearch': 'data/search-index',
+  search: 'data/search-index',
+  elasticsearch: 'data/search-index',
   'graph-database': 'data/graph-database',
-  'neo4j': 'data/graph-database',
+  neo4j: 'data/graph-database',
   'feature-store': 'data/feature-store',
 
   // Messaging synonyms
   'message-queue': 'messaging/message-queue',
-  'queue': 'messaging/message-queue',
-  'mq': 'messaging/message-queue',
-  'rabbitmq': 'messaging/message-queue',
-  'sqs': 'messaging/message-queue',
+  queue: 'messaging/message-queue',
+  mq: 'messaging/message-queue',
+  rabbitmq: 'messaging/message-queue',
+  sqs: 'messaging/message-queue',
   'event-bus': 'messaging/event-bus',
-  'pubsub': 'messaging/event-bus',
+  pubsub: 'messaging/event-bus',
   'pub-sub': 'messaging/event-bus',
-  'kafka': 'messaging/event-bus',
-  'sns': 'messaging/event-bus',
+  kafka: 'messaging/event-bus',
+  sns: 'messaging/event-bus',
   'event-stream': 'messaging/event-bus',
   'stream-processor': 'messaging/stream-processor',
-  'flink': 'messaging/stream-processor',
-  'kinesis': 'messaging/stream-processor',
-  'notification': 'messaging/notification',
+  flink: 'messaging/stream-processor',
+  kinesis: 'messaging/stream-processor',
+  notification: 'messaging/notification',
   'push-notification': 'messaging/notification',
 
   // Network synonyms
   'load-balancer': 'network/load-balancer',
-  'lb': 'network/load-balancer',
-  'elb': 'network/load-balancer',
-  'alb': 'network/load-balancer',
-  'cdn': 'network/cdn',
-  'cloudfront': 'network/cdn',
-  'cloudflare': 'network/cdn',
+  lb: 'network/load-balancer',
+  elb: 'network/load-balancer',
+  alb: 'network/load-balancer',
+  cdn: 'network/cdn',
+  cloudfront: 'network/cdn',
+  cloudflare: 'network/cdn',
 
   // Observability synonyms
-  'logging': 'observability/logging',
+  logging: 'observability/logging',
   'log-aggregator': 'observability/logging',
-  'elk': 'observability/logging',
-  'monitoring': 'observability/monitoring',
-  'metrics': 'observability/monitoring',
-  'prometheus': 'observability/monitoring',
-  'datadog': 'observability/monitoring',
-  'grafana': 'observability/monitoring',
-  'tracing': 'observability/tracing',
-  'jaeger': 'observability/tracing',
+  elk: 'observability/logging',
+  monitoring: 'observability/monitoring',
+  metrics: 'observability/monitoring',
+  prometheus: 'observability/monitoring',
+  datadog: 'observability/monitoring',
+  grafana: 'observability/monitoring',
+  tracing: 'observability/tracing',
+  jaeger: 'observability/tracing',
   'llm-monitor': 'observability/llm-monitor',
 
   // Security synonyms
   'auth-provider': 'security/auth-provider',
-  'auth': 'security/auth-provider',
+  auth: 'security/auth-provider',
   'identity-provider': 'security/auth-provider',
-  'idp': 'security/auth-provider',
-  'oauth': 'security/auth-provider',
-  'vault': 'security/vault',
+  idp: 'security/auth-provider',
+  oauth: 'security/auth-provider',
+  vault: 'security/vault',
   'secret-manager': 'security/vault',
-  'secrets': 'security/vault',
-  'waf': 'security/waf',
-  'firewall': 'security/waf',
+  secrets: 'security/vault',
+  waf: 'security/waf',
+  firewall: 'security/waf',
 
   // Integration synonyms
   'third-party-api': 'integration/third-party-api',
   'external-api': 'integration/third-party-api',
-  'saas': 'integration/third-party-api',
-  'webhook': 'integration/webhook',
-  'webhooks': 'integration/webhook',
+  saas: 'integration/third-party-api',
+  webhook: 'integration/webhook',
+  webhooks: 'integration/webhook',
   'etl-pipeline': 'integration/etl-pipeline',
-  'etl': 'integration/etl-pipeline',
+  etl: 'integration/etl-pipeline',
   'data-pipeline': 'integration/etl-pipeline',
   'mcp-server': 'integration/mcp-server',
 
   // Client synonyms
   'web-app': 'client/web-app',
-  'frontend': 'client/web-app',
-  'spa': 'client/web-app',
-  'webapp': 'client/web-app',
-  'website': 'client/web-app',
+  frontend: 'client/web-app',
+  spa: 'client/web-app',
+  webapp: 'client/web-app',
+  website: 'client/web-app',
   'mobile-app': 'client/mobile-app',
-  'mobile': 'client/mobile-app',
-  'ios': 'client/mobile-app',
-  'android': 'client/mobile-app',
-  'cli': 'client/cli',
+  mobile: 'client/mobile-app',
+  ios: 'client/mobile-app',
+  android: 'client/mobile-app',
+  cli: 'client/cli',
   'command-line': 'client/cli',
 
   // AI synonyms
   'llm-provider': 'ai/llm-provider',
-  'llm': 'ai/llm-provider',
+  llm: 'ai/llm-provider',
   'ai-model': 'ai/llm-provider',
   'embedding-service': 'ai/embedding-service',
-  'embeddings': 'ai/embedding-service',
+  embeddings: 'ai/embedding-service',
   'vector-store': 'ai/vector-store',
   'vector-db': 'ai/vector-store',
   'rag-pipeline': 'ai/rag-pipeline',
-  'rag': 'ai/rag-pipeline',
-  'agent': 'ai/agent',
+  rag: 'ai/rag-pipeline',
+  agent: 'ai/agent',
   'ai-agent': 'ai/agent',
   'prompt-registry': 'ai/prompt-registry',
   'model-serving': 'ai/model-serving',
-  'guardrails': 'ai/guardrails',
+  guardrails: 'ai/guardrails',
 };
 
 /**
@@ -287,12 +287,12 @@ function mapEdgeType(aiType: string): AddEdgeParams['type'] {
  */
 function mapCodeRefRole(aiRole: string): CodeRefRole {
   const roleMap: Record<string, CodeRefRole> = {
-    'SOURCE': 'source',
-    'API_SPEC': 'api-spec',
-    'SCHEMA': 'schema',
-    'DEPLOYMENT': 'deployment',
-    'CONFIG': 'config',
-    'TEST': 'test',
+    SOURCE: 'source',
+    API_SPEC: 'api-spec',
+    SCHEMA: 'schema',
+    DEPLOYMENT: 'deployment',
+    CONFIG: 'config',
+    TEST: 'test',
   };
   return roleMap[aiRole.toUpperCase()] ?? 'source';
 }
@@ -384,9 +384,7 @@ export async function buildGraph(
 
       textApi.setGraph({ ...currentGraph, nodes: updatedNodes });
     } catch (e) {
-      result.warnings.push(
-        `Auto-layout failed: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      result.warnings.push(`Auto-layout failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -451,11 +449,7 @@ function createNodeRecursive(
 /**
  * Create an edge between two nodes, mapping inference IDs to actual IDs.
  */
-function createEdge(
-  inferredEdge: InferredEdge,
-  textApi: TextApi,
-  result: BuildResult,
-): void {
+function createEdge(inferredEdge: InferredEdge, textApi: TextApi, result: BuildResult): void {
   const fromId = result.nodeIdMap.get(inferredEdge.from);
   const toId = result.nodeIdMap.get(inferredEdge.to);
 

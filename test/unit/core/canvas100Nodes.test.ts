@@ -18,7 +18,13 @@ import {
   updateNode,
   moveNode,
 } from '@/core/graph/graphEngine';
-import { countAllNodes, flattenNodes, getNodesAtLevel, getEdgesAtLevel, searchGraph } from '@/core/graph/graphQuery';
+import {
+  countAllNodes,
+  flattenNodes,
+  getNodesAtLevel,
+  getEdgesAtLevel,
+  searchGraph,
+} from '@/core/graph/graphQuery';
 import { RegistryManager } from '@/core/registry/registryManager';
 import { RenderApi } from '@/api/renderApi';
 import type { ArchGraph, ArchNode } from '@/types/graph';

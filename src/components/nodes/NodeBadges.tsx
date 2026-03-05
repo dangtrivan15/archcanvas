@@ -24,7 +24,13 @@ interface BadgeConfig {
   textColor: string;
 }
 
-export function NodeBadges({ noteCount, pendingSuggestionCount, codeRefCount, className = '', dividerColor }: NodeBadgesProps) {
+export function NodeBadges({
+  noteCount,
+  pendingSuggestionCount,
+  codeRefCount,
+  className = '',
+  dividerColor,
+}: NodeBadgesProps) {
   const badges: BadgeConfig[] = [
     {
       count: noteCount,
@@ -52,7 +58,7 @@ export function NodeBadges({ noteCount, pendingSuggestionCount, codeRefCount, cl
     },
   ];
 
-  const visibleBadges = badges.filter(b => b.count > 0);
+  const visibleBadges = badges.filter((b) => b.count > 0);
   if (visibleBadges.length === 0) return null;
 
   return (

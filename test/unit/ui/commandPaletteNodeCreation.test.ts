@@ -261,9 +261,7 @@ describe('Command Palette Node Creation - Nested Navigation', () => {
     const workerCmd = commands.find((c) => c.label === 'Add Worker')!;
     workerCmd.execute();
 
-    const parentNode = useCoreStore.getState().graph.nodes.find(
-      (n) => n.type === 'compute/worker'
-    );
+    const parentNode = useCoreStore.getState().graph.nodes.find((n) => n.type === 'compute/worker');
     expect(parentNode).toBeDefined();
 
     // Simulate navigating into the parent node
@@ -278,9 +276,7 @@ describe('Command Palette Node Creation - Nested Navigation', () => {
     expect(selectedId).toBeTruthy();
 
     // Find the parent node again - it should have a child now
-    const updatedParent = useCoreStore.getState().graph.nodes.find(
-      (n) => n.id === parentNode!.id
-    );
+    const updatedParent = useCoreStore.getState().graph.nodes.find((n) => n.id === parentNode!.id);
     expect(updatedParent).toBeDefined();
     expect(updatedParent!.children.length).toBeGreaterThan(0);
     expect(updatedParent!.children[0].type).toBe('compute/service');

@@ -12,7 +12,8 @@ import { useUIStore } from '@/store/uiStore';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
+  const actual =
+    await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
     saveArchcFile: vi.fn(),
@@ -230,7 +231,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
 
       // Slow save
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       // Start save (captures graph2)
       const saveResult = useCoreStore.getState().saveFile();
@@ -283,7 +288,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
       useCoreStore.getState().undo();
@@ -307,15 +316,17 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       const graphNoEdges = createGraphWithNodes(2);
       const graphWithEdge: ArchGraph = {
         ...createGraphWithNodes(2),
-        edges: [{
-          id: 'edge-1',
-          fromNode: 'node-0',
-          toNode: 'node-1',
-          type: 'SYNC' as any,
-          label: 'calls',
-          properties: {},
-          notes: [],
-        }],
+        edges: [
+          {
+            id: 'edge-1',
+            fromNode: 'node-0',
+            toNode: 'node-1',
+            type: 'SYNC' as any,
+            label: 'calls',
+            properties: {},
+            notes: [],
+          },
+        ],
       };
 
       store.undoManager!.snapshot('No edges', graphNoEdges);
@@ -332,7 +343,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
       useCoreStore.getState().undo();
@@ -369,7 +384,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
       useCoreStore.getState().undo();
@@ -411,7 +430,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
 
       // Now start save with graph1
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
 
@@ -451,7 +474,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((r) => { resolveSave = r; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
 
@@ -492,7 +519,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: any) => void;
-      mockSaveArchcFileAs.mockReturnValue(new Promise((r) => { resolveSave = r; }));
+      mockSaveArchcFileAs.mockReturnValue(
+        new Promise((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFileAs();
 
@@ -525,7 +556,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let resolveSave!: (value: any) => void;
-      mockSaveArchcFileAs.mockReturnValue(new Promise((r) => { resolveSave = r; }));
+      mockSaveArchcFileAs.mockReturnValue(
+        new Promise((r) => {
+          resolveSave = r;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFileAs();
 
@@ -626,7 +661,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       });
 
       let rejectSave!: (err: Error) => void;
-      mockSaveArchcFile.mockReturnValue(new Promise<boolean>((_, reject) => { rejectSave = reject; }));
+      mockSaveArchcFile.mockReturnValue(
+        new Promise<boolean>((_, reject) => {
+          rejectSave = reject;
+        }),
+      );
 
       const saveResult = useCoreStore.getState().saveFile();
 
@@ -709,7 +748,9 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       let resolveSave!: (value: boolean) => void;
       mockSaveArchcFile.mockImplementation((graph) => {
         capturedGraph = graph;
-        return new Promise<boolean>((r) => { resolveSave = r; });
+        return new Promise<boolean>((r) => {
+          resolveSave = r;
+        });
       });
 
       const saveResult = useCoreStore.getState().saveFile();

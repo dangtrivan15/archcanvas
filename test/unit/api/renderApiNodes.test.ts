@@ -73,25 +73,19 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
 
   it('positions match the original ArchNode positions', () => {
     // Service node at (100, 200)
-    const serviceCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Order Service',
-    );
+    const serviceCanvas = canvasNodes.find((n) => n.data.displayName === 'Order Service');
     expect(serviceCanvas).toBeDefined();
     expect(serviceCanvas!.position.x).toBe(100);
     expect(serviceCanvas!.position.y).toBe(200);
 
     // Database node at (400, 200)
-    const dbCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Orders DB',
-    );
+    const dbCanvas = canvasNodes.find((n) => n.data.displayName === 'Orders DB');
     expect(dbCanvas).toBeDefined();
     expect(dbCanvas!.position.x).toBe(400);
     expect(dbCanvas!.position.y).toBe(200);
 
     // Queue node at (250, 400)
-    const queueCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Order Events',
-    );
+    const queueCanvas = canvasNodes.find((n) => n.data.displayName === 'Order Events');
     expect(queueCanvas).toBeDefined();
     expect(queueCanvas!.position.x).toBe(250);
     expect(queueCanvas!.position.y).toBe(400);
@@ -116,19 +110,13 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   });
 
   it('each CanvasNode data has nodedefType matching the original type', () => {
-    const serviceCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Order Service',
-    );
+    const serviceCanvas = canvasNodes.find((n) => n.data.displayName === 'Order Service');
     expect(serviceCanvas!.data.nodedefType).toBe('compute/service');
 
-    const dbCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Orders DB',
-    );
+    const dbCanvas = canvasNodes.find((n) => n.data.displayName === 'Orders DB');
     expect(dbCanvas!.data.nodedefType).toBe('data/database');
 
-    const queueCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Order Events',
-    );
+    const queueCanvas = canvasNodes.find((n) => n.data.displayName === 'Order Events');
     expect(queueCanvas!.data.nodedefType).toBe('messaging/message-queue');
   });
 
@@ -142,9 +130,7 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   });
 
   it('compute/service node has inbound and outbound ports from nodedef', () => {
-    const serviceCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'compute/service',
-    );
+    const serviceCanvas = canvasNodes.find((n) => n.data.nodedefType === 'compute/service');
     expect(serviceCanvas).toBeDefined();
 
     // Service nodedef should have ports defined
@@ -158,9 +144,7 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   });
 
   it('data/database node has ports from nodedef', () => {
-    const dbCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'data/database',
-    );
+    const dbCanvas = canvasNodes.find((n) => n.data.nodedefType === 'data/database');
     expect(dbCanvas).toBeDefined();
 
     const { inbound, outbound } = dbCanvas!.data.ports;
@@ -172,9 +156,7 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   });
 
   it('messaging/message-queue node has ports from nodedef', () => {
-    const queueCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'messaging/message-queue',
-    );
+    const queueCanvas = canvasNodes.find((n) => n.data.nodedefType === 'messaging/message-queue');
     expect(queueCanvas).toBeDefined();
 
     const { inbound, outbound } = queueCanvas!.data.ports;
@@ -187,19 +169,13 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
 
   // Additional coverage: verify correct React Flow type mapping
   it('maps node types to correct React Flow component types', () => {
-    const serviceCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'compute/service',
-    );
+    const serviceCanvas = canvasNodes.find((n) => n.data.nodedefType === 'compute/service');
     expect(serviceCanvas!.type).toBe('service');
 
-    const dbCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'data/database',
-    );
+    const dbCanvas = canvasNodes.find((n) => n.data.nodedefType === 'data/database');
     expect(dbCanvas!.type).toBe('database');
 
-    const queueCanvas = canvasNodes.find(
-      (n) => n.data.nodedefType === 'messaging/message-queue',
-    );
+    const queueCanvas = canvasNodes.find((n) => n.data.nodedefType === 'messaging/message-queue');
     expect(queueCanvas!.type).toBe('queue');
   });
 
@@ -213,17 +189,13 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   });
 
   it('CanvasNode data includes args from original ArchNode', () => {
-    const serviceCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Order Service',
-    );
+    const serviceCanvas = canvasNodes.find((n) => n.data.displayName === 'Order Service');
     expect(serviceCanvas!.data.args).toEqual({
       language: 'TypeScript',
       framework: 'Express',
     });
 
-    const dbCanvas = canvasNodes.find(
-      (n) => n.data.displayName === 'Orders DB',
-    );
+    const dbCanvas = canvasNodes.find((n) => n.data.displayName === 'Orders DB');
     expect(dbCanvas!.data.args).toEqual({
       engine: 'PostgreSQL',
       version: '15',

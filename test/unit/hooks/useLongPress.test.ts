@@ -116,9 +116,7 @@ describe('Feature #283: useLongPress hook', () => {
       const { result } = renderHook(() => useLongPress(onLongPress));
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'touch' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'touch' }));
       });
 
       act(() => {
@@ -154,9 +152,7 @@ describe('Feature #283: useLongPress hook', () => {
       const { result } = renderHook(() => useLongPress(onLongPress));
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'mouse' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'mouse' }));
       });
 
       act(() => {
@@ -171,9 +167,7 @@ describe('Feature #283: useLongPress hook', () => {
       const { result } = renderHook(() => useLongPress(onLongPress));
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'mouse' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'mouse' }));
       });
 
       // Even after a very long time, shouldn't fire
@@ -193,9 +187,7 @@ describe('Feature #283: useLongPress hook', () => {
       const { result } = renderHook(() => useLongPress(onLongPress));
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'touch' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'touch' }));
       });
 
       act(() => {
@@ -218,9 +210,7 @@ describe('Feature #283: useLongPress hook', () => {
       const { result } = renderHook(() => useLongPress(onLongPress));
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'touch' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'touch' }));
       });
 
       act(() => {
@@ -433,17 +423,14 @@ describe('Feature #283: useLongPress hook', () => {
     it('callback can be updated via rerender', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
-      const { result, rerender } = renderHook(
-        ({ cb }) => useLongPress(cb),
-        { initialProps: { cb: callback1 } },
-      );
+      const { result, rerender } = renderHook(({ cb }) => useLongPress(cb), {
+        initialProps: { cb: callback1 },
+      });
 
       rerender({ cb: callback2 });
 
       act(() => {
-        result.current.onPointerDown(
-          mockPointerEvent('pointerdown', { pointerType: 'touch' }),
-        );
+        result.current.onPointerDown(mockPointerEvent('pointerdown', { pointerType: 'touch' }));
       });
 
       act(() => {

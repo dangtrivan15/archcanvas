@@ -42,24 +42,30 @@ describe('MCP Additional Tools - Feature #309', () => {
     ctx = { textApi, registry };
 
     // Create two nodes and an edge
-    const r1 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Service A',
-    }));
+    const r1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Service A',
+      }),
+    );
     nodeId1 = r1.nodeId;
 
-    const r2 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database',
-      displayName: 'Database B',
-    }));
+    const r2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'Database B',
+      }),
+    );
     nodeId2 = r2.nodeId;
 
-    const r3 = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeId1,
-      toNode: nodeId2,
-      type: 'sync',
-      label: 'queries',
-    }));
+    const r3 = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeId1,
+        toNode: nodeId2,
+        type: 'sync',
+        label: 'queries',
+      }),
+    );
     edgeId = r3.edgeId;
   });
 
@@ -81,7 +87,15 @@ describe('MCP Additional Tools - Feature #309', () => {
   });
 
   it('all new tool definitions have name, description, inputSchema', () => {
-    for (const key of ['export_markdown', 'export_mermaid', 'update_edge', 'add_code_ref', 'remove_note', 'get_edges', 'init_architecture'] as const) {
+    for (const key of [
+      'export_markdown',
+      'export_mermaid',
+      'update_edge',
+      'add_code_ref',
+      'remove_note',
+      'get_edges',
+      'init_architecture',
+    ] as const) {
       const def = TOOL_DEFINITIONS[key];
       expect(def.name).toBe(key);
       expect(def.description).toBeTruthy();
@@ -143,43 +157,53 @@ describe('MCP Additional Tools - Feature #309', () => {
 
   describe('update_edge', () => {
     it('updates edge label via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'update_edge', {
-        edgeId,
-        label: 'reads from',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'update_edge', {
+          edgeId,
+          label: 'reads from',
+        }),
+      );
       expect(result.success).toBe(true);
       expect(result.edgeId).toBe(edgeId);
     });
 
     it('updates edge type via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'update_edge', {
-        edgeId,
-        type: 'async',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'update_edge', {
+          edgeId,
+          type: 'async',
+        }),
+      );
       expect(result.success).toBe(true);
     });
 
     it('updates edge properties via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'update_edge', {
-        edgeId,
-        properties: { protocol: 'grpc', timeout: 30 },
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'update_edge', {
+          edgeId,
+          properties: { protocol: 'grpc', timeout: 30 },
+        }),
+      );
       expect(result.success).toBe(true);
     });
 
     it('handleUpdateEdge returns success', () => {
-      const result = JSON.parse(handleUpdateEdge(ctx, {
-        edgeId,
-        label: 'writes to',
-      }));
+      const result = JSON.parse(
+        handleUpdateEdge(ctx, {
+          edgeId,
+          label: 'writes to',
+        }),
+      );
       expect(result.success).toBe(true);
     });
 
     it('silently succeeds for nonexistent edge ID (no-op)', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'update_edge', {
-        edgeId: 'nonexistent',
-        label: 'oops',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'update_edge', {
+          edgeId: 'nonexistent',
+          label: 'oops',
+        }),
+      );
       // The engine silently ignores nonexistent edges (maps over without match)
       expect(result.success).toBe(true);
     });
@@ -189,22 +213,26 @@ describe('MCP Additional Tools - Feature #309', () => {
 
   describe('add_code_ref', () => {
     it('adds code reference via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'add_code_ref', {
-        nodeId: nodeId1,
-        path: 'src/services/serviceA.ts',
-        role: 'source',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'add_code_ref', {
+          nodeId: nodeId1,
+          path: 'src/services/serviceA.ts',
+          role: 'source',
+        }),
+      );
       expect(result.success).toBe(true);
       expect(result.nodeId).toBe(nodeId1);
       expect(result.path).toBe('src/services/serviceA.ts');
     });
 
     it('handleAddCodeRef returns success with nodeId and path', () => {
-      const result = JSON.parse(handleAddCodeRef(ctx, {
-        nodeId: nodeId1,
-        path: 'src/api/spec.yaml',
-        role: 'api-spec',
-      }));
+      const result = JSON.parse(
+        handleAddCodeRef(ctx, {
+          nodeId: nodeId1,
+          path: 'src/api/spec.yaml',
+          role: 'api-spec',
+        }),
+      );
       expect(result.success).toBe(true);
     });
 
@@ -226,28 +254,34 @@ describe('MCP Additional Tools - Feature #309', () => {
     let noteId: string;
 
     beforeEach(() => {
-      const r = JSON.parse(dispatchToolCall(ctx, 'add_note', {
-        nodeId: nodeId1,
-        author: 'tester',
-        content: 'This is a test note',
-      }));
+      const r = JSON.parse(
+        dispatchToolCall(ctx, 'add_note', {
+          nodeId: nodeId1,
+          author: 'tester',
+          content: 'This is a test note',
+        }),
+      );
       noteId = r.noteId;
     });
 
     it('removes note via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'remove_note', {
-        nodeId: nodeId1,
-        noteId,
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'remove_note', {
+          nodeId: nodeId1,
+          noteId,
+        }),
+      );
       expect(result.success).toBe(true);
       expect(result.noteId).toBe(noteId);
     });
 
     it('handleRemoveNote returns success', () => {
-      const result = JSON.parse(handleRemoveNote(ctx, {
-        nodeId: nodeId1,
-        noteId,
-      }));
+      const result = JSON.parse(
+        handleRemoveNote(ctx, {
+          nodeId: nodeId1,
+          noteId,
+        }),
+      );
       expect(result.success).toBe(true);
     });
 
@@ -290,9 +324,11 @@ describe('MCP Additional Tools - Feature #309', () => {
 
   describe('init_architecture', () => {
     it('resets architecture via dispatch', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'init_architecture', {
-        name: 'Fresh Start',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'init_architecture', {
+          name: 'Fresh Start',
+        }),
+      );
       expect(result.success).toBe(true);
       expect(result.name).toBe('Fresh Start');
     });
@@ -313,10 +349,12 @@ describe('MCP Additional Tools - Feature #309', () => {
     });
 
     it('sets description when provided', () => {
-      const result = JSON.parse(dispatchToolCall(ctx, 'init_architecture', {
-        name: 'New Arch',
-        description: 'A fresh architecture',
-      }));
+      const result = JSON.parse(
+        dispatchToolCall(ctx, 'init_architecture', {
+          name: 'New Arch',
+          description: 'A fresh architecture',
+        }),
+      );
       expect(result.success).toBe(true);
       expect(result.description).toBe('A fresh architecture');
     });

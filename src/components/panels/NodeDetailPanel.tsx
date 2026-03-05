@@ -5,7 +5,29 @@
  */
 
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, Pencil, MessageSquare, FileCode, Settings, StickyNote, Check, XCircle, FileText, Database, Cloud, Cog, TestTube2, File, Copy, CheckCircle, Bot, Palette, RotateCcw } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  Pencil,
+  MessageSquare,
+  FileCode,
+  Settings,
+  StickyNote,
+  Check,
+  XCircle,
+  FileText,
+  Database,
+  Cloud,
+  Cog,
+  TestTube2,
+  File,
+  Copy,
+  CheckCircle,
+  Bot,
+  Palette,
+  RotateCcw,
+} from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -60,16 +82,19 @@ export function NodeDetailPanel() {
     return registry.resolve(node.type);
   }, [node, registry]);
 
-  const handleAddNote = useCallback((noteTags?: string[]) => {
-    if (!selectedNodeId || !noteContent.trim()) return;
-    addNote({
-      nodeId: selectedNodeId,
-      author: noteAuthor,
-      content: noteContent.trim(),
-      tags: noteTags,
-    });
-    setNoteContent('');
-  }, [selectedNodeId, noteContent, noteAuthor, addNote]);
+  const handleAddNote = useCallback(
+    (noteTags?: string[]) => {
+      if (!selectedNodeId || !noteContent.trim()) return;
+      addNote({
+        nodeId: selectedNodeId,
+        author: noteAuthor,
+        content: noteContent.trim(),
+        tags: noteTags,
+      });
+      setNoteContent('');
+    },
+    [selectedNodeId, noteContent, noteAuthor, addNote],
+  );
 
   // Auto-switch to properties tab when rename mode is triggered
   useEffect(() => {
@@ -119,9 +144,10 @@ export function NodeDetailPanel() {
             key={key}
             onClick={() => setActiveTab(key)}
             className={`flex-1 flex items-center justify-center gap-1 py-2 text-xs transition-colors touch-target-row
-              ${activeTab === key
-                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              ${
+                activeTab === key
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             data-testid={`tab-${key}`}
           >
@@ -138,9 +164,7 @@ export function NodeDetailPanel() {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-3">
-          {activeTab === 'properties' && (
-            <PropertiesTab node={node} nodeDef={nodeDef} />
-          )}
+          {activeTab === 'properties' && <PropertiesTab node={node} nodeDef={nodeDef} />}
           {activeTab === 'notes' && (
             <NotesTab
               node={node}
@@ -152,16 +176,20 @@ export function NodeDetailPanel() {
               onAddNote={handleAddNote}
             />
           )}
-          {activeTab === 'coderefs' && (
-            <CodeRefsTab node={node} nodeId={selectedNodeId!} />
-          )}
+          {activeTab === 'coderefs' && <CodeRefsTab node={node} nodeId={selectedNodeId!} />}
         </div>
       )}
     </div>
   );
 }
 
-function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof findNode>>; nodeDef?: NodeDef }) {
+function PropertiesTab({
+  node,
+  nodeDef,
+}: {
+  node: NonNullable<ReturnType<typeof findNode>>;
+  nodeDef?: NodeDef;
+}) {
   const updateNode = useCoreStore((s) => s.updateNode);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
@@ -218,65 +246,77 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
     }
   }, [isEditingName]);
 
-  const handleArgChange = useCallback((argName: string, value: string | number | boolean) => {
-    if (!selectedNodeId) return;
-    const updatedArgs = { ...node.args, [argName]: value };
-    // Remove empty string values (treated as "cleared")
-    if (value === '') {
-      delete updatedArgs[argName];
-    }
-    updateNode(selectedNodeId, { args: updatedArgs });
-    setTouched((prev) => ({ ...prev, [argName]: true }));
-  }, [selectedNodeId, node.args, updateNode]);
-
-  const handleNumberInputChange = useCallback((argName: string, rawValue: string) => {
-    setNumberInputValues((prev) => ({ ...prev, [argName]: rawValue }));
-    setTouched((prev) => ({ ...prev, [argName]: true }));
-    if (!selectedNodeId) return;
-    // Only update the actual arg value if the input is a valid number or empty
-    if (rawValue === '' || rawValue === '-') {
-      const updatedArgs = { ...node.args };
-      delete updatedArgs[argName];
-      updateNode(selectedNodeId, { args: updatedArgs });
-    } else {
-      const num = Number(rawValue);
-      if (!isNaN(num) && rawValue.trim() !== '') {
-        const updatedArgs = { ...node.args, [argName]: num };
-        updateNode(selectedNodeId, { args: updatedArgs });
+  const handleArgChange = useCallback(
+    (argName: string, value: string | number | boolean) => {
+      if (!selectedNodeId) return;
+      const updatedArgs = { ...node.args, [argName]: value };
+      // Remove empty string values (treated as "cleared")
+      if (value === '') {
+        delete updatedArgs[argName];
       }
-    }
-  }, [selectedNodeId, node.args, updateNode]);
+      updateNode(selectedNodeId, { args: updatedArgs });
+      setTouched((prev) => ({ ...prev, [argName]: true }));
+    },
+    [selectedNodeId, node.args, updateNode],
+  );
+
+  const handleNumberInputChange = useCallback(
+    (argName: string, rawValue: string) => {
+      setNumberInputValues((prev) => ({ ...prev, [argName]: rawValue }));
+      setTouched((prev) => ({ ...prev, [argName]: true }));
+      if (!selectedNodeId) return;
+      // Only update the actual arg value if the input is a valid number or empty
+      if (rawValue === '' || rawValue === '-') {
+        const updatedArgs = { ...node.args };
+        delete updatedArgs[argName];
+        updateNode(selectedNodeId, { args: updatedArgs });
+      } else {
+        const num = Number(rawValue);
+        if (!isNaN(num) && rawValue.trim() !== '') {
+          const updatedArgs = { ...node.args, [argName]: num };
+          updateNode(selectedNodeId, { args: updatedArgs });
+        }
+      }
+    },
+    [selectedNodeId, node.args, updateNode],
+  );
 
   const handleArgBlur = useCallback((argName: string) => {
     setTouched((prev) => ({ ...prev, [argName]: true }));
   }, []);
 
-  const getValidationError = useCallback((argDef: ArgDef): string | null => {
-    // Number field validation: check for non-numeric text
-    if (argDef.type === 'number') {
-      const rawValue = numberInputValues[argDef.name];
-      if (rawValue !== undefined && rawValue !== '' && rawValue !== '-') {
-        const num = Number(rawValue);
-        if (isNaN(num)) {
-          return `${argDef.name} must be a valid number`;
+  const getValidationError = useCallback(
+    (argDef: ArgDef): string | null => {
+      // Number field validation: check for non-numeric text
+      if (argDef.type === 'number') {
+        const rawValue = numberInputValues[argDef.name];
+        if (rawValue !== undefined && rawValue !== '' && rawValue !== '-') {
+          const num = Number(rawValue);
+          if (isNaN(num)) {
+            return `${argDef.name} must be a valid number`;
+          }
         }
       }
-    }
-    // Required field validation
-    if (!argDef.required) return null;
-    const value = node.args[argDef.name];
-    if (value === undefined || value === null || value === '') {
-      return `${argDef.name} is required`;
-    }
-    return null;
-  }, [node.args, numberInputValues]);
+      // Required field validation
+      if (!argDef.required) return null;
+      const value = node.args[argDef.name];
+      if (value === undefined || value === null || value === '') {
+        return `${argDef.name} is required`;
+      }
+      return null;
+    },
+    [node.args, numberInputValues],
+  );
 
   return (
     <div className="space-y-4" data-testid="properties-tab" ref={propertiesContainerRef}>
       {/* Node ID */}
       <div>
         <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">ID</label>
-        <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded break-all" data-testid="detail-node-id">
+        <div
+          className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded break-all"
+          data-testid="detail-node-id"
+        >
           {node.id}
         </div>
       </div>
@@ -284,7 +324,9 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
       {/* Display Name (editable) */}
       <div>
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</label>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Display Name
+          </label>
           {!isEditingName && (
             <button
               onClick={() => {
@@ -364,8 +406,16 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
               const validationError = getValidationError(argDef);
               const isTouched = touched[argDef.name];
               // Show error for: required field empty, or number field with invalid input
-              const isNumberError = argDef.type === 'number' && validationError !== null && isTouched;
-              const showError = isNumberError || (isRequired && validationError !== null && (isTouched || (currentValue === undefined || currentValue === null || currentValue === '')));
+              const isNumberError =
+                argDef.type === 'number' && validationError !== null && isTouched;
+              const showError =
+                isNumberError ||
+                (isRequired &&
+                  validationError !== null &&
+                  (isTouched ||
+                    currentValue === undefined ||
+                    currentValue === null ||
+                    currentValue === ''));
 
               return (
                 <div
@@ -374,28 +424,51 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                   data-testid={`nodedef-arg-${argDef.name}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-700 flex items-center gap-1" data-testid="arg-name">
+                    <span
+                      className="text-xs font-medium text-gray-700 flex items-center gap-1"
+                      data-testid="arg-name"
+                    >
                       {argDef.name}
                       {isRequired && (
-                        <span className="text-red-500" data-testid="required-indicator" title="Required">*</span>
+                        <span
+                          className="text-red-500"
+                          data-testid="required-indicator"
+                          title="Required"
+                        >
+                          *
+                        </span>
                       )}
                     </span>
                     <div className="flex items-center gap-1">
                       {isRequired && (
-                        <span className="text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-600 font-medium" data-testid="required-badge">
+                        <span
+                          className="text-[10px] px-1 py-0.5 rounded bg-red-100 text-red-600 font-medium"
+                          data-testid="required-badge"
+                        >
                           Required
                         </span>
                       )}
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-mono" data-testid="arg-type">{argDef.type}</span>
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 font-mono"
+                        data-testid="arg-type"
+                      >
+                        {argDef.type}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5" data-testid="arg-description">{argDef.description}</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5" data-testid="arg-description">
+                    {argDef.description}
+                  </div>
 
                   {/* Editable form control */}
                   <div className="mt-1.5">
                     {argDef.type === 'enum' && argDef.options ? (
                       <select
-                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
+                        value={
+                          currentValue !== undefined && currentValue !== null
+                            ? String(currentValue)
+                            : ''
+                        }
                         onChange={(e) => handleArgChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
                         aria-label={argDef.name}
@@ -405,17 +478,27 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                       >
                         <option value="">— Select —</option>
                         {argDef.options.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
                         ))}
                       </select>
                     ) : argDef.type === 'number' ? (
                       <input
                         type="text"
                         inputMode="numeric"
-                        value={numberInputValues[argDef.name] !== undefined ? numberInputValues[argDef.name] : (currentValue !== undefined && currentValue !== null ? String(currentValue) : '')}
+                        value={
+                          numberInputValues[argDef.name] !== undefined
+                            ? numberInputValues[argDef.name]
+                            : currentValue !== undefined && currentValue !== null
+                              ? String(currentValue)
+                              : ''
+                        }
                         onChange={(e) => handleNumberInputChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
-                        placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        placeholder={
+                          argDef.default !== undefined ? `Default: ${argDef.default}` : ''
+                        }
                         aria-label={argDef.name}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
@@ -441,7 +524,10 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                                 className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${isChecked ? 'translate-x-[18px]' : 'translate-x-[3px]'}`}
                               />
                             </button>
-                            <span className="text-xs text-gray-600" data-testid={`arg-toggle-label-${argDef.name}`}>
+                            <span
+                              className="text-xs text-gray-600"
+                              data-testid={`arg-toggle-label-${argDef.name}`}
+                            >
                               {isChecked ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
@@ -450,10 +536,16 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                     ) : (
                       <input
                         type="text"
-                        value={currentValue !== undefined && currentValue !== null ? String(currentValue) : ''}
+                        value={
+                          currentValue !== undefined && currentValue !== null
+                            ? String(currentValue)
+                            : ''
+                        }
                         onChange={(e) => handleArgChange(argDef.name, e.target.value)}
                         onBlur={() => handleArgBlur(argDef.name)}
-                        placeholder={argDef.default !== undefined ? `Default: ${argDef.default}` : ''}
+                        placeholder={
+                          argDef.default !== undefined ? `Default: ${argDef.default}` : ''
+                        }
                         aria-label={argDef.name}
                         className={`w-full text-xs border rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${showError ? 'border-red-400' : 'border-gray-200'}`}
                         data-testid={`arg-input-${argDef.name}`}
@@ -464,7 +556,10 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
 
                   {/* Validation error */}
                   {showError && (
-                    <div className="mt-1 text-[11px] text-red-600 flex items-center gap-1" data-testid={`arg-error-${argDef.name}`}>
+                    <div
+                      className="mt-1 text-[11px] text-red-600 flex items-center gap-1"
+                      data-testid={`arg-error-${argDef.name}`}
+                    >
                       <span>⚠</span> {validationError}
                     </div>
                   )}
@@ -472,7 +567,12 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
                   {argDef.default !== undefined && (
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] text-gray-400">Default:</span>
-                      <span className="text-[10px] font-mono text-gray-500" data-testid="arg-default">{String(argDef.default)}</span>
+                      <span
+                        className="text-[10px] font-mono text-gray-500"
+                        data-testid="arg-default"
+                      >
+                        {String(argDef.default)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -485,12 +585,18 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
       {/* Fallback: Raw args when nodedef is not available */}
       {!nodeDef && (
         <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Arguments</label>
-          <div className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded" data-testid="detail-args">
-            {Object.keys(node.args).length === 0
-              ? <span className="text-gray-400">empty object {'{}'}</span>
-              : JSON.stringify(node.args, null, 2)
-            }
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Arguments
+          </label>
+          <div
+            className="mt-1 text-xs font-mono bg-gray-50 px-2 py-1 rounded"
+            data-testid="detail-args"
+          >
+            {Object.keys(node.args).length === 0 ? (
+              <span className="text-gray-400">empty object {'{}'}</span>
+            ) : (
+              JSON.stringify(node.args, null, 2)
+            )}
           </div>
         </div>
       )}
@@ -504,14 +610,15 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
           Children ({node.children.length})
         </label>
         <div className="mt-1 text-xs" data-testid="detail-children">
-          {node.children.length === 0
-            ? <span className="text-gray-400">empty array []</span>
-            : node.children.map((child) => (
-                <div key={child.id} className="bg-gray-50 px-2 py-1 rounded mt-1">
-                  {child.displayName} ({child.type})
-                </div>
-              ))
-          }
+          {node.children.length === 0 ? (
+            <span className="text-gray-400">empty array []</span>
+          ) : (
+            node.children.map((child) => (
+              <div key={child.id} className="bg-gray-50 px-2 py-1 rounded mt-1">
+                {child.displayName} ({child.type})
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -521,10 +628,11 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
           Notes ({node.notes.length})
         </label>
         <div className="mt-1 text-xs" data-testid="detail-notes-count">
-          {node.notes.length === 0
-            ? <span className="text-gray-400">empty array []</span>
-            : <span>{node.notes.length} note(s)</span>
-          }
+          {node.notes.length === 0 ? (
+            <span className="text-gray-400">empty array []</span>
+          ) : (
+            <span>{node.notes.length} note(s)</span>
+          )}
         </div>
       </div>
 
@@ -534,10 +642,11 @@ function PropertiesTab({ node, nodeDef }: { node: NonNullable<ReturnType<typeof 
           Code References ({node.codeRefs.length})
         </label>
         <div className="mt-1 text-xs" data-testid="detail-coderefs-count">
-          {node.codeRefs.length === 0
-            ? <span className="text-gray-400">empty array []</span>
-            : <span>{node.codeRefs.length} reference(s)</span>
-          }
+          {node.codeRefs.length === 0 ? (
+            <span className="text-gray-400">empty array []</span>
+          ) : (
+            <span>{node.codeRefs.length} reference(s)</span>
+          )}
         </div>
       </div>
     </div>
@@ -559,10 +668,13 @@ function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNod
   const effectiveColor = getEffectiveNodeColor(customColor, node.type);
   const hasCustomColor = !!customColor && customColor.trim() !== '';
 
-  const handleColorSelect = useCallback((color: string) => {
-    if (!selectedNodeId) return;
-    updateNodeColor(selectedNodeId, color);
-  }, [selectedNodeId, updateNodeColor]);
+  const handleColorSelect = useCallback(
+    (color: string) => {
+      if (!selectedNodeId) return;
+      updateNodeColor(selectedNodeId, color);
+    },
+    [selectedNodeId, updateNodeColor],
+  );
 
   const handleResetColor = useCallback(() => {
     if (!selectedNodeId) return;
@@ -592,7 +704,9 @@ function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNod
             />
             <span className="font-mono text-gray-600">{effectiveColor}</span>
             {hasCustomColor && (
-              <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-600 font-medium">custom</span>
+              <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-600 font-medium">
+                custom
+              </span>
             )}
           </button>
 
@@ -613,7 +727,10 @@ function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNod
 
         {/* Color palette (expandable) */}
         {isOpen && (
-          <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200" data-testid="color-palette">
+          <div
+            className="mt-2 p-2 bg-gray-50 rounded border border-gray-200"
+            data-testid="color-palette"
+          >
             <div className="text-[10px] text-gray-500 mb-1.5">
               Type default: <span className="font-mono">{defaultColor}</span>
             </div>
@@ -668,17 +785,23 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
     setIsAdding(false);
   }, [selectedNodeId, newKey, newValue, node.properties, updateNode]);
 
-  const handleRemoveProperty = useCallback((key: string) => {
-    if (!selectedNodeId) return;
-    const updatedProperties = { ...node.properties };
-    delete updatedProperties[key];
-    updateNode(selectedNodeId, { properties: updatedProperties });
-  }, [selectedNodeId, node.properties, updateNode]);
+  const handleRemoveProperty = useCallback(
+    (key: string) => {
+      if (!selectedNodeId) return;
+      const updatedProperties = { ...node.properties };
+      delete updatedProperties[key];
+      updateNode(selectedNodeId, { properties: updatedProperties });
+    },
+    [selectedNodeId, node.properties, updateNode],
+  );
 
-  const handleStartEdit = useCallback((key: string) => {
-    setEditingKey(key);
-    setEditValue(String(node.properties[key] ?? ''));
-  }, [node.properties]);
+  const handleStartEdit = useCallback(
+    (key: string) => {
+      setEditingKey(key);
+      setEditValue(String(node.properties[key] ?? ''));
+    },
+    [node.properties],
+  );
 
   const handleSaveEdit = useCallback(() => {
     if (!selectedNodeId || editingKey === null) return;
@@ -693,22 +816,25 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
     setEditValue('');
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, action: () => void) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      action();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      if (isAdding) {
-        setIsAdding(false);
-        setNewKey('');
-        setNewValue('');
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, action: () => void) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        action();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        if (isAdding) {
+          setIsAdding(false);
+          setNewKey('');
+          setNewValue('');
+        }
+        if (editingKey !== null) {
+          handleCancelEdit();
+        }
       }
-      if (editingKey !== null) {
-        handleCancelEdit();
-      }
-    }
-  }, [isAdding, editingKey, handleCancelEdit]);
+    },
+    [isAdding, editingKey, handleCancelEdit],
+  );
 
   return (
     <div data-testid="custom-properties-section">
@@ -730,9 +856,14 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
 
       {/* Add new property form */}
       {isAdding && (
-        <div className="mt-2 border rounded-lg p-2 bg-blue-50/50 border-blue-200 space-y-2" data-testid="add-property-form">
+        <div
+          className="mt-2 border rounded-lg p-2 bg-blue-50/50 border-blue-200 space-y-2"
+          data-testid="add-property-form"
+        >
           <div>
-            <label htmlFor="new-property-key" className="text-xs text-gray-500">Key</label>
+            <label htmlFor="new-property-key" className="text-xs text-gray-500">
+              Key
+            </label>
             <input
               id="new-property-key"
               type="text"
@@ -746,7 +877,9 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
             />
           </div>
           <div>
-            <label htmlFor="new-property-value" className="text-xs text-gray-500">Value</label>
+            <label htmlFor="new-property-value" className="text-xs text-gray-500">
+              Value
+            </label>
             <input
               id="new-property-value"
               type="text"
@@ -769,7 +902,11 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
               Add
             </button>
             <button
-              onClick={() => { setIsAdding(false); setNewKey(''); setNewValue(''); }}
+              onClick={() => {
+                setIsAdding(false);
+                setNewKey('');
+                setNewValue('');
+              }}
               className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100"
               data-testid="cancel-add-property"
             >
@@ -782,7 +919,10 @@ function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof
       {/* Property list */}
       <div className="mt-2 space-y-1" data-testid="properties-list">
         {propertyEntries.length === 0 && !isAdding && (
-          <div className="text-xs text-gray-400 text-center py-3" data-testid="properties-empty-state">
+          <div
+            className="text-xs text-gray-400 text-center py-3"
+            data-testid="properties-empty-state"
+          >
             No custom properties. Click "Add Property" to create one.
           </div>
         )}
@@ -857,7 +997,7 @@ function getTagColor(tag: string) {
   // Deterministic color based on tag string hash
   let hash = 0;
   for (let i = 0; i < tag.length; i++) {
-    hash = ((hash << 5) - hash) + tag.charCodeAt(i);
+    hash = (hash << 5) - hash + tag.charCodeAt(i);
     hash = hash & hash; // Convert to 32-bit integer
   }
   return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
@@ -918,14 +1058,17 @@ function NotesTab({
     setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
-  const handleTagKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      handleAddTag();
-    } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
-    }
-  }, [tagInput, tags, handleAddTag]);
+  const handleTagKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        handleAddTag();
+      } else if (e.key === 'Backspace' && tagInput === '' && tags.length > 0) {
+        setTags((prev) => prev.slice(0, -1));
+      }
+    },
+    [tagInput, tags, handleAddTag],
+  );
 
   const handleSave = useCallback(() => {
     // Guard against double-click creating duplicate notes
@@ -957,12 +1100,15 @@ function NotesTab({
     setContentError('');
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCancel();
-    }
-  }, [handleCancel]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+    },
+    [handleCancel],
+  );
 
   // Edit existing note handlers
   const handleStartEdit = useCallback((note: { id: string; content: string }) => {
@@ -970,12 +1116,15 @@ function NotesTab({
     setEditContent(note.content);
   }, []);
 
-  const handleSaveEdit = useCallback((noteId: string) => {
-    if (!editContent.trim()) return;
-    updateNote(nodeId, noteId, editContent.trim());
-    setEditingNoteId(null);
-    setEditContent('');
-  }, [editContent, nodeId, updateNote]);
+  const handleSaveEdit = useCallback(
+    (noteId: string) => {
+      if (!editContent.trim()) return;
+      updateNote(nodeId, noteId, editContent.trim());
+      setEditingNoteId(null);
+      setEditContent('');
+    },
+    [editContent, nodeId, updateNote],
+  );
 
   return (
     <div className="space-y-3" data-testid="notes-tab">
@@ -993,7 +1142,9 @@ function NotesTab({
         <div className="space-y-2 border rounded-lg p-3 bg-gray-50" data-testid="note-editor">
           <div className="text-xs font-medium text-gray-500 uppercase">New Note</div>
           <div>
-            <label htmlFor="note-author" className="text-xs text-gray-500">Author</label>
+            <label htmlFor="note-author" className="text-xs text-gray-500">
+              Author
+            </label>
             <input
               id="note-author"
               type="text"
@@ -1005,10 +1156,15 @@ function NotesTab({
             />
           </div>
           <div>
-            <label htmlFor="note-content" className="text-xs text-gray-500">Content</label>
+            <label htmlFor="note-content" className="text-xs text-gray-500">
+              Content
+            </label>
             <textarea
               value={noteContent}
-              onChange={(e) => { onNoteContentChange(e.target.value); if (contentError) setContentError(''); }}
+              onChange={(e) => {
+                onNoteContentChange(e.target.value);
+                if (contentError) setContentError('');
+              }}
               onKeyDown={handleKeyDown}
               id="note-content"
               className={`w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white resize-none focus:outline-none ${contentError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`}
@@ -1018,7 +1174,9 @@ function NotesTab({
               data-testid="note-content-input"
             />
             {contentError && (
-              <div className="text-xs text-red-500 mt-0.5" data-testid="note-content-error">{contentError}</div>
+              <div className="text-xs text-red-500 mt-0.5" data-testid="note-content-error">
+                {contentError}
+              </div>
             )}
           </div>
           <div>
@@ -1049,7 +1207,7 @@ function NotesTab({
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
                 onBlur={handleAddTag}
-                placeholder={tags.length === 0 ? "Type tag and press Enter..." : ""}
+                placeholder={tags.length === 0 ? 'Type tag and press Enter...' : ''}
                 aria-label="Add tag"
                 className="flex-1 min-w-[80px] text-xs border-none outline-none bg-transparent px-1 py-0.5"
                 data-testid="note-tags-input"
@@ -1080,7 +1238,9 @@ function NotesTab({
       {/* Note list - chronologically sorted (oldest first) */}
       <div className="space-y-2" data-testid="notes-list">
         {sortedNotes.length === 0 ? (
-          <div className="text-sm text-gray-400 text-center py-4" data-testid="notes-empty-state">No notes yet</div>
+          <div className="text-sm text-gray-400 text-center py-4" data-testid="notes-empty-state">
+            No notes yet
+          </div>
         ) : (
           sortedNotes.map((note) => {
             // Compute note card styles based on status
@@ -1091,160 +1251,169 @@ function NotesTab({
               isAccepted ? 'bg-green-50 border-green-300' : '',
               isDismissed ? 'bg-gray-50 border-gray-200 opacity-60' : '',
               !isAccepted && !isDismissed ? 'bg-white' : '',
-            ].filter(Boolean).join(' ');
+            ]
+              .filter(Boolean)
+              .join(' ');
 
             return (
-            <div key={note.id} className={cardClassName} data-testid={`note-${note.id}`}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  {note.author.toLowerCase() === 'ai' ? (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
-                      data-testid="note-author"
-                      data-author-type="ai"
-                    >
-                      <Bot className="w-3 h-3" />
-                      AI
-                    </span>
-                  ) : (
-                    <span className="text-xs font-medium text-gray-700" data-testid="note-author">
-                      {note.author}
-                    </span>
-                  )}
-                  {/* Accepted visual indicator */}
-                  {isAccepted && (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"
-                      data-testid="accepted-indicator"
-                    >
-                      <CheckCircle className="w-3 h-3" />
-                      Accepted
-                    </span>
-                  )}
-                  {/* Dismissed visual indicator */}
-                  {isDismissed && (
-                    <span
-                      className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300"
-                      data-testid="dismissed-indicator"
-                    >
-                      <XCircle className="w-3 h-3" />
-                      Dismissed
-                    </span>
-                  )}
+              <div key={note.id} className={cardClassName} data-testid={`note-${note.id}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    {note.author.toLowerCase() === 'ai' ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200"
+                        data-testid="note-author"
+                        data-author-type="ai"
+                      >
+                        <Bot className="w-3 h-3" />
+                        AI
+                      </span>
+                    ) : (
+                      <span className="text-xs font-medium text-gray-700" data-testid="note-author">
+                        {note.author}
+                      </span>
+                    )}
+                    {/* Accepted visual indicator */}
+                    {isAccepted && (
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"
+                        data-testid="accepted-indicator"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Accepted
+                      </span>
+                    )}
+                    {/* Dismissed visual indicator */}
+                    {isDismissed && (
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300"
+                        data-testid="dismissed-indicator"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Dismissed
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className="text-xs text-gray-400"
+                    data-testid="note-timestamp"
+                    title={new Date(note.timestampMs).toLocaleString()}
+                  >
+                    {formatRelativeTime(note.timestampMs)}
+                  </span>
                 </div>
-                <span className="text-xs text-gray-400" data-testid="note-timestamp" title={new Date(note.timestampMs).toLocaleString()}>
-                  {formatRelativeTime(note.timestampMs)}
-                </span>
-              </div>
-              {/* Note content - dimmed text for dismissed notes */}
-              {editingNoteId === note.id ? (
-                <div className="space-y-2 mt-1" data-testid="note-edit-form">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    aria-label="Edit note content"
-                    className="w-full text-sm border rounded px-2 py-1.5 bg-white border-gray-200 focus:border-blue-400 focus:outline-none resize-none"
-                    rows={3}
-                    data-testid="note-edit-input"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        e.preventDefault();
-                        setEditingNoteId(null);
-                        setEditContent('');
-                      }
-                    }}
+                {/* Note content - dimmed text for dismissed notes */}
+                {editingNoteId === note.id ? (
+                  <div className="space-y-2 mt-1" data-testid="note-edit-form">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      aria-label="Edit note content"
+                      className="w-full text-sm border rounded px-2 py-1.5 bg-white border-gray-200 focus:border-blue-400 focus:outline-none resize-none"
+                      rows={3}
+                      data-testid="note-edit-input"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          e.preventDefault();
+                          setEditingNoteId(null);
+                          setEditContent('');
+                        }
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSaveEdit(note.id)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                        data-testid="save-edit-button"
+                      >
+                        <Check className="w-3 h-3" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingNoteId(null);
+                          setEditContent('');
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                        data-testid="cancel-edit-button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`text-sm prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 ${isDismissed ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                    data-testid="note-content"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
                   />
-                  <div className="flex gap-2">
+                )}
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span data-testid="note-id">ID: {note.id}</span>
+                    <span data-testid="note-status">Status: {note.status}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/* Edit button - only show when not editing */}
+                    {editingNoteId !== note.id && (
+                      <button
+                        onClick={() => handleStartEdit(note)}
+                        className="p-1 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors touch-target"
+                        title="Edit note"
+                        data-testid={`edit-note-${note.id}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleSaveEdit(note.id)}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                      data-testid="save-edit-button"
+                      onClick={() => removeNote(nodeId, note.id)}
+                      className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors touch-target"
+                      title="Delete note"
+                      data-testid={`delete-note-${note.id}`}
                     >
-                      <Check className="w-3 h-3" />
-                      Save
-                    </button>
-                    <button
-                      onClick={() => { setEditingNoteId(null); setEditContent(''); }}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                      data-testid="cancel-edit-button"
-                    >
-                      Cancel
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div
-                  className={`text-sm prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 ${isDismissed ? 'text-gray-400 line-through' : 'text-gray-800'}`}
-                  data-testid="note-content"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
-                />
-              )}
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span data-testid="note-id">ID: {note.id}</span>
-                  <span data-testid="note-status">Status: {note.status}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  {/* Edit button - only show when not editing */}
-                  {editingNoteId !== note.id && (
+                {note.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2" data-testid="note-tags">
+                    {note.tags.map((tag) => {
+                      const color = getTagColor(tag);
+                      return (
+                        <span
+                          key={tag}
+                          className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${color.bg} ${color.text} ${color.border}`}
+                          data-testid={`tag-badge-${tag}`}
+                        >
+                          {tag}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Accept/Dismiss buttons for pending AI suggestions */}
+                {note.status === 'pending' && (
+                  <div className="flex gap-2 mt-2" data-testid="suggestion-actions">
                     <button
-                      onClick={() => handleStartEdit(note)}
-                      className="p-1 text-gray-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors touch-target"
-                      title="Edit note"
-                      data-testid={`edit-note-${note.id}`}
+                      onClick={() => resolveSuggestion(nodeId, note.id, 'accepted')}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 touch-target"
+                      data-testid="accept-suggestion"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Check className="w-3 h-3" />
+                      Accept
                     </button>
-                  )}
-                  <button
-                    onClick={() => removeNote(nodeId, note.id)}
-                    className="p-1 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors touch-target"
-                    title="Delete note"
-                    data-testid={`delete-note-${note.id}`}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                    <button
+                      onClick={() => resolveSuggestion(nodeId, note.id, 'dismissed')}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 touch-target"
+                      data-testid="dismiss-suggestion"
+                    >
+                      <XCircle className="w-3 h-3" />
+                      Dismiss
+                    </button>
+                  </div>
+                )}
               </div>
-              {note.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2" data-testid="note-tags">
-                  {note.tags.map((tag) => {
-                    const color = getTagColor(tag);
-                    return (
-                      <span
-                        key={tag}
-                        className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${color.bg} ${color.text} ${color.border}`}
-                        data-testid={`tag-badge-${tag}`}
-                      >
-                        {tag}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-              {/* Accept/Dismiss buttons for pending AI suggestions */}
-              {note.status === 'pending' && (
-                <div className="flex gap-2 mt-2" data-testid="suggestion-actions">
-                  <button
-                    onClick={() => resolveSuggestion(nodeId, note.id, 'accepted')}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 touch-target"
-                    data-testid="accept-suggestion"
-                  >
-                    <Check className="w-3 h-3" />
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => resolveSuggestion(nodeId, note.id, 'dismissed')}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 touch-target"
-                    data-testid="dismiss-suggestion"
-                  >
-                    <XCircle className="w-3 h-3" />
-                    Dismiss
-                  </button>
-                </div>
-              )}
-            </div>
             );
           })
         )}
@@ -1253,11 +1422,19 @@ function NotesTab({
   );
 }
 
-function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof findNode>>; nodeId: string }) {
+function CodeRefsTab({
+  node,
+  nodeId,
+}: {
+  node: NonNullable<ReturnType<typeof findNode>>;
+  nodeId: string;
+}) {
   const addCodeRef = useCoreStore((s) => s.addCodeRef);
   const [isAdding, setIsAdding] = useState(false);
   const [path, setPath] = useState('');
-  const [role, setRole] = useState<'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'>('source');
+  const [role, setRole] = useState<
+    'source' | 'api-spec' | 'schema' | 'deployment' | 'config' | 'test'
+  >('source');
   const [pathError, setPathError] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -1285,37 +1462,58 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
 
   const getRoleIcon = (refRole: string) => {
     switch (refRole) {
-      case 'source': return <FileCode className="w-4 h-4 text-blue-500 shrink-0" />;
-      case 'api-spec': return <FileText className="w-4 h-4 text-green-500 shrink-0" />;
-      case 'schema': return <Database className="w-4 h-4 text-purple-500 shrink-0" />;
-      case 'deployment': return <Cloud className="w-4 h-4 text-orange-500 shrink-0" />;
-      case 'config': return <Cog className="w-4 h-4 text-gray-500 shrink-0" />;
-      case 'test': return <TestTube2 className="w-4 h-4 text-yellow-500 shrink-0" />;
-      default: return <File className="w-4 h-4 text-gray-400 shrink-0" />;
+      case 'source':
+        return <FileCode className="w-4 h-4 text-blue-500 shrink-0" />;
+      case 'api-spec':
+        return <FileText className="w-4 h-4 text-green-500 shrink-0" />;
+      case 'schema':
+        return <Database className="w-4 h-4 text-purple-500 shrink-0" />;
+      case 'deployment':
+        return <Cloud className="w-4 h-4 text-orange-500 shrink-0" />;
+      case 'config':
+        return <Cog className="w-4 h-4 text-gray-500 shrink-0" />;
+      case 'test':
+        return <TestTube2 className="w-4 h-4 text-yellow-500 shrink-0" />;
+      default:
+        return <File className="w-4 h-4 text-gray-400 shrink-0" />;
     }
   };
 
   const getRoleBadgeStyle = (refRole: string): string => {
     switch (refRole) {
-      case 'source': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'api-spec': return 'bg-green-100 text-green-700 border-green-200';
-      case 'schema': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'deployment': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'config': return 'bg-gray-100 text-gray-700 border-gray-300';
-      case 'test': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-500 border-gray-200';
+      case 'source':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'api-spec':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'schema':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'deployment':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
+      case 'config':
+        return 'bg-gray-100 text-gray-700 border-gray-300';
+      case 'test':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-500 border-gray-200';
     }
   };
 
   const getRoleBadgeLabel = (refRole: string): string => {
     switch (refRole) {
-      case 'source': return 'Source';
-      case 'api-spec': return 'API Spec';
-      case 'schema': return 'Schema';
-      case 'deployment': return 'Deployment';
-      case 'config': return 'Config';
-      case 'test': return 'Test';
-      default: return refRole;
+      case 'source':
+        return 'Source';
+      case 'api-spec':
+        return 'API Spec';
+      case 'schema':
+        return 'Schema';
+      case 'deployment':
+        return 'Deployment';
+      case 'config':
+        return 'Config';
+      case 'test':
+        return 'Test';
+      default:
+        return refRole;
     }
   };
 
@@ -1331,18 +1529,21 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
     setIsAdding(false);
   }, [nodeId, path, role, addCodeRef]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setIsAdding(false);
-      setPath('');
-      setRole('source');
-      setPathError('');
-    }
-  }, [handleSubmit]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSubmit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsAdding(false);
+        setPath('');
+        setRole('source');
+        setPathError('');
+      }
+    },
+    [handleSubmit],
+  );
 
   return (
     <div className="space-y-3" data-testid="coderefs-tab">
@@ -1360,12 +1561,17 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
         <div className="border rounded-lg p-3 bg-gray-50 space-y-2" data-testid="add-coderef-form">
           <div className="text-xs font-medium text-gray-500 uppercase">Add Code Reference</div>
           <div>
-            <label htmlFor="coderef-path" className="text-xs text-gray-500">File Path</label>
+            <label htmlFor="coderef-path" className="text-xs text-gray-500">
+              File Path
+            </label>
             <input
               id="coderef-path"
               type="text"
               value={path}
-              onChange={(e) => { setPath(e.target.value); if (pathError) setPathError(''); }}
+              onChange={(e) => {
+                setPath(e.target.value);
+                if (pathError) setPathError('');
+              }}
               onKeyDown={handleKeyDown}
               placeholder="e.g., src/api/handler.ts"
               className={`w-full mt-0.5 text-sm border rounded px-2 py-1 bg-white focus:outline-none ${pathError ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`}
@@ -1373,11 +1579,15 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
               data-testid="coderef-path-input"
             />
             {pathError && (
-              <div className="text-xs text-red-500 mt-0.5" data-testid="coderef-path-error">{pathError}</div>
+              <div className="text-xs text-red-500 mt-0.5" data-testid="coderef-path-error">
+                {pathError}
+              </div>
             )}
           </div>
           <div>
-            <label htmlFor="coderef-role" className="text-xs text-gray-500">Role</label>
+            <label htmlFor="coderef-role" className="text-xs text-gray-500">
+              Role
+            </label>
             <select
               id="coderef-role"
               value={role}
@@ -1386,7 +1596,9 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
               data-testid="coderef-role-select"
             >
               {roleOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -1400,7 +1612,12 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
               Add
             </button>
             <button
-              onClick={() => { setIsAdding(false); setPath(''); setRole('source'); setPathError(''); }}
+              onClick={() => {
+                setIsAdding(false);
+                setPath('');
+                setRole('source');
+                setPathError('');
+              }}
               className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 rounded hover:bg-gray-100 touch-target"
               data-testid="cancel-coderef-button"
             >
@@ -1413,7 +1630,12 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
       {/* Code References list */}
       <div data-testid="coderefs-list">
         {node.codeRefs.length === 0 ? (
-          <div className="text-sm text-gray-400 text-center py-4" data-testid="coderefs-empty-state">No code references</div>
+          <div
+            className="text-sm text-gray-400 text-center py-4"
+            data-testid="coderefs-empty-state"
+          >
+            No code references
+          </div>
         ) : (
           <div className="space-y-2">
             {node.codeRefs.map((ref, i) => (
@@ -1424,9 +1646,13 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
                 onClick={() => handleCopyPath(ref.path, i)}
                 title="Click to copy path"
               >
-                <div className="mt-0.5" data-testid="coderef-icon">{getRoleIcon(ref.role)}</div>
+                <div className="mt-0.5" data-testid="coderef-icon">
+                  {getRoleIcon(ref.role)}
+                </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-mono truncate" data-testid="coderef-path">{ref.path}</div>
+                  <div className="text-sm font-mono truncate" data-testid="coderef-path">
+                    {ref.path}
+                  </div>
                   <span
                     className={`inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border mt-0.5 ${getRoleBadgeStyle(ref.role)}`}
                     data-testid="coderef-role"
@@ -1442,7 +1668,10 @@ function CodeRefsTab({ node, nodeId }: { node: NonNullable<ReturnType<typeof fin
                   )}
                 </div>
                 {copiedIndex === i && (
-                  <div className="absolute right-2 top-0 -translate-y-full bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg" data-testid="copy-feedback">
+                  <div
+                    className="absolute right-2 top-0 -translate-y-full bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg"
+                    data-testid="copy-feedback"
+                  >
                     Copied!
                   </div>
                 )}

@@ -230,7 +230,13 @@ describe('FileHeader timestamps', () => {
 
       // Edit and second save
       result1.graph.name = 'Edited Once';
-      const proto2 = graphToProto(result1.graph, undefined, undefined, undefined, result1.createdAtMs);
+      const proto2 = graphToProto(
+        result1.graph,
+        undefined,
+        undefined,
+        undefined,
+        result1.createdAtMs,
+      );
       const binary2 = await encode(proto2);
 
       // Second open
@@ -242,7 +248,13 @@ describe('FileHeader timestamps', () => {
 
       // Edit and third save
       result2.graph.name = 'Edited Twice';
-      const proto3 = graphToProto(result2.graph, undefined, undefined, undefined, result2.createdAtMs);
+      const proto3 = graphToProto(
+        result2.graph,
+        undefined,
+        undefined,
+        undefined,
+        result2.createdAtMs,
+      );
       const binary3 = await encode(proto3);
 
       // Third open and final verification

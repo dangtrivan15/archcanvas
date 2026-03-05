@@ -157,7 +157,8 @@ export function useKeyboardShortcuts() {
         case 'edit:duplicate':
           e.preventDefault();
           {
-            const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } = useCanvasStore.getState();
+            const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } =
+              useCanvasStore.getState();
             const { duplicateSelection } = useCoreStore.getState();
 
             // Determine which nodes to duplicate
@@ -262,11 +263,19 @@ export function useKeyboardShortcuts() {
             if (!edge) break;
 
             const types: Array<'sync' | 'async' | 'data-flow'> = ['sync', 'async', 'data-flow'];
-            const typeLabels: Record<string, string> = { sync: 'Sync', async: 'Async', 'data-flow': 'Data Flow' };
+            const typeLabels: Record<string, string> = {
+              sync: 'Sync',
+              async: 'Async',
+              'data-flow': 'Data Flow',
+            };
             const currentIdx = types.indexOf(edge.type);
             const nextType = types[(currentIdx + 1) % types.length]!;
 
-            updateEdge(selectedEdgeId, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
+            updateEdge(
+              selectedEdgeId,
+              { type: nextType },
+              `Change edge type to ${typeLabels[nextType]}`,
+            );
             showToast(`Changed to ${typeLabels[nextType]}`);
           }
           break;
@@ -331,13 +340,33 @@ export function useKeyboardShortcuts() {
               selectNode(node.id);
               openRightPanel('properties');
               setPendingRenameNodeId(node.id);
-              console.log(`[HotkeyCreate] Created ${typeKey} node: ${node.displayName} at (${x}, ${y})`);
+              console.log(
+                `[HotkeyCreate] Created ${typeKey} node: ${node.displayName} at (${x}, ${y})`,
+              );
             }
           }
           break;
       }
     },
-    [saveFile, saveFileAs, newFile, openFile, undo, redo, openUnsavedChangesDialog, toggleShortcutsHelp, toggleCommandPalette, toggleQuickSearch, zoomToRoot, requestZoomIn, requestZoomOut, requestFitView, requestZoom100, selectNodes, selectEdges],
+    [
+      saveFile,
+      saveFileAs,
+      newFile,
+      openFile,
+      undo,
+      redo,
+      openUnsavedChangesDialog,
+      toggleShortcutsHelp,
+      toggleCommandPalette,
+      toggleQuickSearch,
+      zoomToRoot,
+      requestZoomIn,
+      requestZoomOut,
+      requestFitView,
+      requestZoom100,
+      selectNodes,
+      selectEdges,
+    ],
   );
 
   useEffect(() => {
@@ -351,7 +380,10 @@ export function useKeyboardShortcuts() {
 /**
  * Calculate viewport center in graph coordinates.
  */
-function _viewportCenter(viewport: { x: number; y: number; zoom: number }): { x: number; y: number } {
+function _viewportCenter(viewport: { x: number; y: number; zoom: number }): {
+  x: number;
+  y: number;
+} {
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
   return {
@@ -363,7 +395,10 @@ function _viewportCenter(viewport: { x: number; y: number; zoom: number }): { x:
 /**
  * Find a node by ID, recursively searching children.
  */
-function _findNodeById(nodes: import('@/types/graph').ArchNode[], id: string): import('@/types/graph').ArchNode | undefined {
+function _findNodeById(
+  nodes: import('@/types/graph').ArchNode[],
+  id: string,
+): import('@/types/graph').ArchNode | undefined {
   for (const node of nodes) {
     if (node.id === id) return node;
     if (node.children.length > 0) {

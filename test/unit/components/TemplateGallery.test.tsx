@@ -160,7 +160,9 @@ vi.mock('@/templates/registry', () => {
 
   return {
     getAllTemplates: vi.fn().mockResolvedValue(templates),
-    getBuiltinTemplates: vi.fn().mockReturnValue(templates.filter((t) => t.metadata.source === 'builtin')),
+    getBuiltinTemplates: vi
+      .fn()
+      .mockReturnValue(templates.filter((t) => t.metadata.source === 'builtin')),
   };
 });
 

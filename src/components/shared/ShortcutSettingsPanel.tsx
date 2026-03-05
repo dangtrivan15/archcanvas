@@ -98,7 +98,7 @@ export function ShortcutSettingsPanel() {
         setUpdateCounter((c) => c + 1);
       }
     },
-    [open, recordingActionId, manager, closeDialog]
+    [open, recordingActionId, manager, closeDialog],
   );
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function ShortcutSettingsPanel() {
         closeDialog();
       }
     },
-    [closeDialog]
+    [closeDialog],
   );
 
   // Force-apply conflicting binding (overwrite the conflict)
@@ -138,7 +138,7 @@ export function ShortcutSettingsPanel() {
       setConflictInfo(null);
       setUpdateCounter((c) => c + 1);
     },
-    [manager]
+    [manager],
   );
 
   // Reset all bindings
@@ -210,10 +210,14 @@ export function ShortcutSettingsPanel() {
 
         {/* Conflict Warning */}
         {conflictInfo && (
-          <div className="px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3" data-testid="shortcut-conflict-warning">
+          <div
+            className="px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3"
+            data-testid="shortcut-conflict-warning"
+          >
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span className="text-sm text-amber-800 flex-1">
-              <strong>{formatBindingForDisplay(conflictInfo.binding)}</strong> is already bound to <strong>{conflictInfo.conflictWith}</strong>.
+              <strong>{formatBindingForDisplay(conflictInfo.binding)}</strong> is already bound to{' '}
+              <strong>{conflictInfo.conflictWith}</strong>.
             </span>
             <button
               type="button"
@@ -225,7 +229,10 @@ export function ShortcutSettingsPanel() {
             </button>
             <button
               type="button"
-              onClick={() => { setConflictInfo(null); setRecordingActionId(null); }}
+              onClick={() => {
+                setConflictInfo(null);
+                setRecordingActionId(null);
+              }}
               className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
               data-testid="shortcut-conflict-cancel"
             >
@@ -241,7 +248,10 @@ export function ShortcutSettingsPanel() {
             const style = CATEGORY_COLORS[category] || { color: 'text-gray-700', bg: 'bg-gray-50' };
 
             return (
-              <div key={category} data-testid={`shortcut-settings-category-${category.toLowerCase()}`}>
+              <div
+                key={category}
+                data-testid={`shortcut-settings-category-${category.toLowerCase()}`}
+              >
                 {/* Category header */}
                 <div className="flex items-center gap-2 mb-2">
                   <span
@@ -276,7 +286,11 @@ export function ShortcutSettingsPanel() {
         {/* Footer */}
         <div className="px-6 py-3 border-t text-center shrink-0">
           <p className="text-xs text-gray-400">
-            Click a shortcut to rebind it. Press <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border border-gray-200 rounded">Esc</kbd> to cancel.
+            Click a shortcut to rebind it. Press{' '}
+            <kbd className="px-1.5 py-0.5 text-xs font-mono bg-gray-100 border border-gray-200 rounded">
+              Esc
+            </kbd>{' '}
+            to cancel.
           </p>
         </div>
       </div>
@@ -313,11 +327,12 @@ function ShortcutRow({
           onClick={onStartRecording}
           className={`
             inline-flex items-center gap-1 px-2 py-0.5 text-xs font-mono font-medium rounded border cursor-pointer transition-colors
-            ${isRecording
-              ? 'bg-blue-100 text-blue-700 border-blue-300 ring-2 ring-blue-200 animate-pulse'
-              : isCustomized
-                ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
-                : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+            ${
+              isRecording
+                ? 'bg-blue-100 text-blue-700 border-blue-300 ring-2 ring-blue-200 animate-pulse'
+                : isCustomized
+                  ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                  : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
             }
             min-w-[3rem] justify-center
           `}

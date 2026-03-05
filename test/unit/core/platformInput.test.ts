@@ -335,12 +335,24 @@ describe('ShortcutManager uses centralized platform detection', () => {
 
     _setPlatformForTesting('mac');
     // On Mac, metaKey should match mod
-    const macEvent = { metaKey: true, ctrlKey: false, shiftKey: false, altKey: false, key: 's' } as KeyboardEvent;
+    const macEvent = {
+      metaKey: true,
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      key: 's',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(macEvent, binding)).toBe(true);
 
     _setPlatformForTesting('windows');
     // On Windows, ctrlKey should match mod
-    const winEvent = { metaKey: false, ctrlKey: true, shiftKey: false, altKey: false, key: 's' } as KeyboardEvent;
+    const winEvent = {
+      metaKey: false,
+      ctrlKey: true,
+      shiftKey: false,
+      altKey: false,
+      key: 's',
+    } as KeyboardEvent;
     expect(eventMatchesBinding(winEvent, binding)).toBe(true);
   });
 });

@@ -10,7 +10,7 @@ import {
 
 describe('Right panel default width scales relative to viewport width', () => {
   it('exports the correct constants', () => {
-    expect(RIGHT_PANEL_VIEWPORT_RATIO).toBe(0.20);
+    expect(RIGHT_PANEL_VIEWPORT_RATIO).toBe(0.2);
     expect(RIGHT_PANEL_DEFAULT_FLOOR).toBe(260);
     expect(RIGHT_PANEL_DEFAULT_CEILING).toBe(480);
   });
@@ -59,7 +59,9 @@ describe('Right panel default width scales relative to viewport width', () => {
 
     // Custom width is now persisted and different from initial default
     // (this confirms the setter works and overrides the default)
-    expect(useUIStore.getState().rightPanelWidth).not.toBe(initialWidth === 400 ? -1 : initialWidth);
+    expect(useUIStore.getState().rightPanelWidth).not.toBe(
+      initialWidth === 400 ? -1 : initialWidth,
+    );
   });
 
   it('setRightPanelWidth clamps to MIN/MAX bounds', async () => {

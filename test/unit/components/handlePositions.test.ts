@@ -12,7 +12,16 @@ describe('handlePositions', () => {
   const H = 100;
 
   describe('getHandlePosition returns valid styles', () => {
-    const shapes: ShapeName[] = ['rectangle', 'cylinder', 'hexagon', 'parallelogram', 'cloud', 'stadium', 'document', 'badge'];
+    const shapes: ShapeName[] = [
+      'rectangle',
+      'cylinder',
+      'hexagon',
+      'parallelogram',
+      'cloud',
+      'stadium',
+      'document',
+      'badge',
+    ];
     const sides: HandleSide[] = ['left', 'right'];
 
     for (const shape of shapes) {
@@ -157,9 +166,9 @@ describe('handlePositions', () => {
   describe('rectangle', () => {
     it('evenly spaces ports along the side', () => {
       const styles = Array.from({ length: 3 }, (_, i) =>
-        getHandlePosition('rectangle', 'left', i, 3, W, H)
+        getHandlePosition('rectangle', 'left', i, 3, W, H),
       );
-      const tops = styles.map(s => parseFloat(s.top));
+      const tops = styles.map((s) => parseFloat(s.top));
       // Should be approximately 25%, 50%, 75%
       expect(tops[0]).toBeCloseTo(25, 0);
       expect(tops[1]).toBeCloseTo(50, 0);

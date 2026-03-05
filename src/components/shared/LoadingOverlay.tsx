@@ -20,7 +20,10 @@ export function LoadingOverlay() {
       aria-live="polite"
       aria-label={message ?? 'Loading...'}
     >
-      <div className="bg-white rounded-lg shadow-xl px-8 py-6 flex flex-col items-center gap-3" data-testid="loading-overlay-content">
+      <div
+        className="bg-white rounded-lg shadow-xl px-8 py-6 flex flex-col items-center gap-3"
+        data-testid="loading-overlay-content"
+      >
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" data-testid="loading-spinner" />
         <p className="text-sm text-gray-700 font-medium" data-testid="loading-message">
           {message ?? 'Loading...'}

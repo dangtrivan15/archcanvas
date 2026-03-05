@@ -28,11 +28,14 @@ describe('CLI export Command', () => {
     const program = createProgram();
     const initOutput = path.join(tmpDir, 'test.archc');
     await program.parseAsync([
-      'node', 'archcanvas',
+      'node',
+      'archcanvas',
       '--quiet',
       'init',
-      '--name', 'Export Test Architecture',
-      '--output', initOutput,
+      '--name',
+      'Export Test Architecture',
+      '--output',
+      initOutput,
     ]);
     testArchcFile = initOutput;
   });
@@ -95,10 +98,13 @@ describe('CLI export Command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'markdown',
+          '--type',
+          'markdown',
         ]);
 
         const output = logs.join('\n');
@@ -121,11 +127,7 @@ describe('CLI export Command', () => {
 
       try {
         const program = createProgram();
-        await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
-          'export',
-        ]);
+        await program.parseAsync(['node', 'archcanvas', '--file', testArchcFile, 'export']);
 
         const output = logs.join('\n');
         expect(output).toContain('# Export Test Architecture');
@@ -145,10 +147,13 @@ describe('CLI export Command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'markdown',
+          '--type',
+          'markdown',
           '--with-mermaid',
         ]);
 
@@ -176,10 +181,13 @@ describe('CLI export Command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'mermaid',
+          '--type',
+          'mermaid',
         ]);
 
         const output = logs.join('\n');
@@ -200,11 +208,15 @@ describe('CLI export Command', () => {
 
       const program = createProgram();
       await program.parseAsync([
-        'node', 'archcanvas',
-        '--file', testArchcFile,
+        'node',
+        'archcanvas',
+        '--file',
+        testArchcFile,
         'export',
-        '--type', 'markdown',
-        '--output', outputPath,
+        '--type',
+        'markdown',
+        '--output',
+        outputPath,
       ]);
 
       expect(fs.existsSync(outputPath)).toBe(true);
@@ -217,11 +229,15 @@ describe('CLI export Command', () => {
 
       const program = createProgram();
       await program.parseAsync([
-        'node', 'archcanvas',
-        '--file', testArchcFile,
+        'node',
+        'archcanvas',
+        '--file',
+        testArchcFile,
         'export',
-        '--type', 'mermaid',
-        '--output', outputPath,
+        '--type',
+        'mermaid',
+        '--output',
+        outputPath,
       ]);
 
       expect(fs.existsSync(outputPath)).toBe(true);
@@ -241,11 +257,15 @@ describe('CLI export Command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'markdown',
-          '--output', outputPath,
+          '--type',
+          'markdown',
+          '--output',
+          outputPath,
         ]);
 
         const output = logs.join('\n');
@@ -267,12 +287,16 @@ describe('CLI export Command', () => {
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           '--quiet',
           'export',
-          '--type', 'markdown',
-          '--output', outputPath,
+          '--type',
+          'markdown',
+          '--output',
+          outputPath,
         ]);
 
         expect(fs.existsSync(outputPath)).toBe(true);
@@ -293,15 +317,21 @@ describe('CLI export Command', () => {
       const origExit = process.exit;
       let exitCode: number | undefined;
       console.error = (...args: unknown[]) => errors.push(String(args[0] ?? ''));
-      process.exit = ((code?: number) => { exitCode = code; throw new Error('EXIT'); }) as never;
+      process.exit = ((code?: number) => {
+        exitCode = code;
+        throw new Error('EXIT');
+      }) as never;
 
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'png',
+          '--type',
+          'png',
         ]);
       } catch (e: unknown) {
         if (!(e instanceof Error && e.message === 'EXIT')) throw e;
@@ -322,15 +352,21 @@ describe('CLI export Command', () => {
       const origExit = process.exit;
       let exitCode: number | undefined;
       console.error = (...args: unknown[]) => errors.push(String(args[0] ?? ''));
-      process.exit = ((code?: number) => { exitCode = code; throw new Error('EXIT'); }) as never;
+      process.exit = ((code?: number) => {
+        exitCode = code;
+        throw new Error('EXIT');
+      }) as never;
 
       try {
         const program = createProgram();
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', testArchcFile,
+          'node',
+          'archcanvas',
+          '--file',
+          testArchcFile,
           'export',
-          '--type', 'svg',
+          '--type',
+          'svg',
         ]);
       } catch (e: unknown) {
         if (!(e instanceof Error && e.message === 'EXIT')) throw e;

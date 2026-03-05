@@ -40,7 +40,9 @@ export interface PencilInputState {
  * @param containerRef - Optional ref to a container element (defaults to document)
  * @returns Current pencil input state from the store
  */
-export function usePencilInput(containerRef?: React.RefObject<HTMLElement | null>): PencilInputState {
+export function usePencilInput(
+  containerRef?: React.RefObject<HTMLElement | null>,
+): PencilInputState {
   const updatePencilState = usePencilStore((s) => s.updatePencilState);
   const setPencilActive = usePencilStore((s) => s.setPencilActive);
   const resetPencilState = usePencilStore((s) => s.resetPencilState);

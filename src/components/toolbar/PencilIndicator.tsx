@@ -31,9 +31,7 @@ export function PencilIndicator({ compact }: PencilIndicatorProps) {
   return (
     <div
       className={`inline-flex items-center justify-center gap-1 text-sm font-medium rounded-md transition-colors ${
-        isPencilActive
-          ? 'text-[hsl(var(--primary))]'
-          : 'text-[hsl(var(--muted-foreground))]'
+        isPencilActive ? 'text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'
       } ${compact ? 'px-1.5 py-1' : 'px-2 py-1.5'}`}
       title={title}
       aria-label={title}

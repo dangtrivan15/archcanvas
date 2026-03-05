@@ -7,18 +7,26 @@
  */
 
 import type { PromptTemplate } from './types';
-import {
-  NODE_TYPE_REGISTRY_TEXT,
-  STANDARD_RESPONSE_SCHEMA,
-  WEB_APP_FEW_SHOT,
-} from './shared';
+import { NODE_TYPE_REGISTRY_TEXT, STANDARD_RESPONSE_SCHEMA, WEB_APP_FEW_SHOT } from './shared';
 
 export const webAppTemplate: PromptTemplate = {
   id: 'web-app',
   name: 'Web Application Analysis',
   description:
     'Optimized for frontend/backend web apps (React, Next.js, Express, Django, Rails, etc.). Focuses on client-server architecture, routing, and API patterns.',
-  tags: ['web', 'frontend', 'backend', 'spa', 'ssr', 'fullstack', 'react', 'nextjs', 'express', 'django', 'rails'],
+  tags: [
+    'web',
+    'frontend',
+    'backend',
+    'spa',
+    'ssr',
+    'fullstack',
+    'react',
+    'nextjs',
+    'express',
+    'django',
+    'rails',
+  ],
 
   systemPrompt: `You are an expert web application architect analyzing a codebase to infer its system architecture.
 You specialize in frontend/backend web applications and understand modern web patterns.

@@ -25,8 +25,8 @@ function buildWithVersion(version: number): Uint8Array {
 
   // Write version as uint16 big-endian
   const versionOffset = MAGIC_BYTES.length;
-  data[versionOffset] = (version >> 8) & 0xFF;
-  data[versionOffset + 1] = version & 0xFF;
+  data[versionOffset] = (version >> 8) & 0xff;
+  data[versionOffset + 1] = version & 0xff;
 
   // SHA-256 and payload are zero-filled (will fail checksum, but we test version first)
 
@@ -123,8 +123,8 @@ describe('File format version validation - Feature #205', () => {
   it('version check happens before checksum verification', async () => {
     // Even with skipChecksumVerification, future version should still be rejected
     const data = buildWithVersion(9999);
-    await expect(
-      decode(data, { skipChecksumVerification: true })
-    ).rejects.toThrow(/Unsupported format version/);
+    await expect(decode(data, { skipChecksumVerification: true })).rejects.toThrow(
+      /Unsupported format version/,
+    );
   });
 });

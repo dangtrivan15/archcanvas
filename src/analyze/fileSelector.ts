@@ -134,11 +134,7 @@ const SCHEMA_PATTERNS = [
 ];
 
 // Tier 3: Structural - index/barrel files
-const TIER3_INDEX_PATTERNS = [
-  /^index\.(ts|js|tsx|jsx)$/,
-  /^__init__\.py$/,
-  /^mod\.rs$/,
-];
+const TIER3_INDEX_PATTERNS = [/^index\.(ts|js|tsx|jsx)$/, /^__init__\.py$/, /^mod\.rs$/];
 
 // ── Core Logic ───────────────────────────────────────────────────────────────
 
@@ -231,9 +227,30 @@ function selectRepresentativeFiles(
   const dirGroups = new Map<string, FileEntry[]>();
 
   const sourceExtensions = new Set([
-    '.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java',
-    '.kt', '.rb', '.php', '.cs', '.swift', '.scala', '.dart',
-    '.vue', '.svelte', '.ex', '.exs', '.clj', '.c', '.cpp', '.h', '.hpp',
+    '.ts',
+    '.tsx',
+    '.js',
+    '.jsx',
+    '.py',
+    '.go',
+    '.rs',
+    '.java',
+    '.kt',
+    '.rb',
+    '.php',
+    '.cs',
+    '.swift',
+    '.scala',
+    '.dart',
+    '.vue',
+    '.svelte',
+    '.ex',
+    '.exs',
+    '.clj',
+    '.c',
+    '.cpp',
+    '.h',
+    '.hpp',
   ]);
 
   for (const file of allFiles) {
@@ -269,10 +286,7 @@ function selectRepresentativeFiles(
  * Read file content with smart truncation.
  * Prioritizes top-of-file (imports, declarations) and truncates after maxLines.
  */
-function readFileContent(
-  filePath: string,
-  maxLines: number,
-): string {
+function readFileContent(filePath: string, maxLines: number): string {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split('\n');
@@ -327,11 +341,7 @@ export function selectKeyFiles(
    * Try to add a file to the selection if within budget.
    * Returns true if added, false if budget exceeded.
    */
-  function tryAddFile(
-    file: FileEntry,
-    tier: FileTier,
-    reason: string,
-  ): boolean {
+  function tryAddFile(file: FileEntry, tier: FileTier, reason: string): boolean {
     if (selectedPaths.has(file.relativePath)) return true; // already selected
 
     let content: string;
@@ -379,7 +389,7 @@ export function selectKeyFiles(
   let budgetExceeded = false;
 
   // Add Tier 1
-  for (const item of classified.filter(c => c.tier === 1)) {
+  for (const item of classified.filter((c) => c.tier === 1)) {
     if (!tryAddFile(item.file, item.tier, item.reason)) {
       budgetExceeded = true;
       break;
@@ -388,7 +398,7 @@ export function selectKeyFiles(
 
   // Add Tier 2
   if (!budgetExceeded) {
-    for (const item of classified.filter(c => c.tier === 2)) {
+    for (const item of classified.filter((c) => c.tier === 2)) {
       if (!tryAddFile(item.file, item.tier, item.reason)) {
         budgetExceeded = true;
         break;
@@ -398,7 +408,7 @@ export function selectKeyFiles(
 
   // Add Tier 3
   if (!budgetExceeded) {
-    for (const item of classified.filter(c => c.tier === 3)) {
+    for (const item of classified.filter((c) => c.tier === 3)) {
       if (!tryAddFile(item.file, item.tier, item.reason)) {
         budgetExceeded = true;
         break;

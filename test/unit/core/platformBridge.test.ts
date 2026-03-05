@@ -20,12 +20,7 @@ vi.mock('@capacitor/core', () => ({
 }));
 
 import { Capacitor } from '@capacitor/core';
-import {
-  isNative,
-  isWeb,
-  isIOS,
-  getPlatformType,
-} from '@/core/platform/platformBridge';
+import { isNative, isWeb, isIOS, getPlatformType } from '@/core/platform/platformBridge';
 import type { PlatformType } from '@/core/platform/platformBridge';
 
 const mockCapacitor = Capacitor as unknown as {

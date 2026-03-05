@@ -83,7 +83,11 @@ describe('TextApi.getAIContext() - Feature #53', () => {
 
     beforeAll(() => {
       const noteOnA = makeNote({ author: 'human', content: 'API gateway for traffic routing' });
-      const noteOnB = makeNote({ author: 'ai', content: 'Handles order processing', status: 'pending' });
+      const noteOnB = makeNote({
+        author: 'ai',
+        content: 'Handles order processing',
+        status: 'pending',
+      });
 
       nodeA = makeNode({
         type: 'compute/service',
@@ -104,15 +108,25 @@ describe('TextApi.getAIContext() - Feature #53', () => {
         args: { engine: 'postgres' },
       });
 
-      const edgeAB = makeEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'REST' });
-      const edgeBC = makeEdge({ fromNode: nodeB.id, toNode: nodeC.id, type: 'async', label: 'query' });
+      const edgeAB = makeEdge({
+        fromNode: nodeA.id,
+        toNode: nodeB.id,
+        type: 'sync',
+        label: 'REST',
+      });
+      const edgeBC = makeEdge({
+        fromNode: nodeB.id,
+        toNode: nodeC.id,
+        type: 'async',
+        label: 'query',
+      });
 
       graph = makeGraph([nodeA, nodeB, nodeC], [edgeAB, edgeBC]);
       api = new TextApi(graph, registry);
     });
 
     // Step 2: Call textApi.getAIContext(A.id, 1)
-    it('should include A\'s full details as selectedNode with depth=1', () => {
+    it("should include A's full details as selectedNode with depth=1", () => {
       const ctx = api.getAIContext(nodeA.id, 1);
 
       expect(ctx.selectedNode).toBeDefined();
@@ -122,7 +136,7 @@ describe('TextApi.getAIContext() - Feature #53', () => {
       expect(ctx.selectedNode!.args).toEqual({ port: '8080' });
     });
 
-    it('should include A\'s notes in selectedNode', () => {
+    it("should include A's notes in selectedNode", () => {
       const ctx = api.getAIContext(nodeA.id, 1);
 
       expect(ctx.selectedNode!.notes).toHaveLength(1);
@@ -130,7 +144,7 @@ describe('TextApi.getAIContext() - Feature #53', () => {
       expect(ctx.selectedNode!.notes[0].content).toBe('API gateway for traffic routing');
     });
 
-    it('should include A\'s codeRefs in selectedNode', () => {
+    it("should include A's codeRefs in selectedNode", () => {
       const ctx = api.getAIContext(nodeA.id, 1);
 
       expect(ctx.selectedNode!.codeRefs).toHaveLength(1);

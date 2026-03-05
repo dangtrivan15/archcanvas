@@ -11,20 +11,8 @@
  *   </NodeShell>
  */
 
-import {
-  memo,
-  useId,
-  useRef,
-  useState,
-  useEffect,
-  useMemo,
-  type ReactNode,
-} from 'react';
-import {
-  shapeRegistry,
-  cylinderLid,
-  type ShapeName,
-} from './shapeRegistry';
+import { memo, useId, useRef, useState, useEffect, useMemo, type ReactNode } from 'react';
+import { shapeRegistry, cylinderLid, type ShapeName } from './shapeRegistry';
 import { getShapeInsets } from './shapeInsets';
 import { hexToNormalizedRgb } from '@/utils/nodeColors';
 
@@ -71,8 +59,15 @@ function NodeShellComponent({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         // Use shape-aware vertical insets for height calculation
-        const insets = getShapeInsets(shape, width, Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + 40));
-        const h = Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + insets.top + insets.bottom);
+        const insets = getShapeInsets(
+          shape,
+          width,
+          Math.max(MIN_HEIGHT, Math.ceil(entry.contentRect.height) + 40),
+        );
+        const h = Math.max(
+          MIN_HEIGHT,
+          Math.ceil(entry.contentRect.height) + insets.top + insets.bottom,
+        );
         setMeasuredHeight(h);
       }
     });
@@ -124,7 +119,12 @@ function NodeShellComponent({
   return (
     <div
       className="relative"
-      style={{ width, height: effectiveHeight, filter: shadowFilter, transition: 'filter 180ms ease, transform 180ms ease' }}
+      style={{
+        width,
+        height: effectiveHeight,
+        filter: shadowFilter,
+        transition: 'filter 180ms ease, transform 180ms ease',
+      }}
       data-testid="node-shell"
       data-shape={shape}
       onMouseEnter={(e) => {
@@ -239,7 +239,10 @@ function NodeShellComponent({
             ref={contentRef}
             /* xmlns required for foreignObject in SVG */
             {...({ xmlns: 'http://www.w3.org/1999/xhtml' } as any)}
-            style={{ width: '100%', minHeight: Math.max(0, MIN_HEIGHT - insets.top - insets.bottom) }}
+            style={{
+              width: '100%',
+              minHeight: Math.max(0, MIN_HEIGHT - insets.top - insets.bottom),
+            }}
             data-testid="node-shell-content"
           >
             {children}

@@ -138,27 +138,21 @@ describe('Feature #42: Text API getEdges() returns edge summaries', () => {
 
     // Step 5: Verify edge types match what was created
     it('contains a sync edge from service to db', () => {
-      const syncEdge = edges.find(
-        (e) => e.fromNode === serviceId && e.toNode === dbId,
-      );
+      const syncEdge = edges.find((e) => e.fromNode === serviceId && e.toNode === dbId);
       expect(syncEdge).toBeDefined();
       expect(syncEdge!.type).toBe('sync');
       expect(syncEdge!.label).toBe('SQL queries');
     });
 
     it('contains an async edge from service to queue', () => {
-      const asyncEdge = edges.find(
-        (e) => e.fromNode === serviceId && e.toNode === queueId,
-      );
+      const asyncEdge = edges.find((e) => e.fromNode === serviceId && e.toNode === queueId);
       expect(asyncEdge).toBeDefined();
       expect(asyncEdge!.type).toBe('async');
       expect(asyncEdge!.label).toBe('publishes events');
     });
 
     it('contains a data-flow edge from cache to service', () => {
-      const dfEdge = edges.find(
-        (e) => e.fromNode === cacheId && e.toNode === serviceId,
-      );
+      const dfEdge = edges.find((e) => e.fromNode === cacheId && e.toNode === serviceId);
       expect(dfEdge).toBeDefined();
       expect(dfEdge!.type).toBe('data-flow');
       expect(dfEdge!.label).toBe('session data');

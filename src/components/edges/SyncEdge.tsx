@@ -9,9 +9,7 @@ import { memo } from 'react';
 import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react';
 import { useCanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
 
-function SyncEdgeComponent({
-  sourceX, sourceY, targetX, targetY, id, selected, label,
-}: EdgeProps) {
+function SyncEdgeComponent({ sourceX, sourceY, targetX, targetY, id, selected, label }: EdgeProps) {
   const { prefersReducedMotion, isLowDetailEdges } = useCanvasPerformanceContext();
   const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });
 

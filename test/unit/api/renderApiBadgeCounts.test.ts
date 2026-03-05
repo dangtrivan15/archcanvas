@@ -147,21 +147,56 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       graph = addNode(graph, node);
 
       // 5 notes total: 3 pending, 1 accepted, 1 dismissed
-      graph = addNoteToNode(graph, node.id, createNote({
-        author: 'ai', content: 'Suggestion 1', status: 'pending', suggestionType: 'add_node',
-      }));
-      graph = addNoteToNode(graph, node.id, createNote({
-        author: 'ai', content: 'Suggestion 2', status: 'pending', suggestionType: 'add_edge',
-      }));
-      graph = addNoteToNode(graph, node.id, createNote({
-        author: 'ai', content: 'Suggestion 3', status: 'pending', suggestionType: 'modify',
-      }));
-      graph = addNoteToNode(graph, node.id, createNote({
-        author: 'ai', content: 'Accepted one', status: 'accepted', suggestionType: 'add_node',
-      }));
-      graph = addNoteToNode(graph, node.id, createNote({
-        author: 'ai', content: 'Dismissed one', status: 'dismissed', suggestionType: 'modify',
-      }));
+      graph = addNoteToNode(
+        graph,
+        node.id,
+        createNote({
+          author: 'ai',
+          content: 'Suggestion 1',
+          status: 'pending',
+          suggestionType: 'add_node',
+        }),
+      );
+      graph = addNoteToNode(
+        graph,
+        node.id,
+        createNote({
+          author: 'ai',
+          content: 'Suggestion 2',
+          status: 'pending',
+          suggestionType: 'add_edge',
+        }),
+      );
+      graph = addNoteToNode(
+        graph,
+        node.id,
+        createNote({
+          author: 'ai',
+          content: 'Suggestion 3',
+          status: 'pending',
+          suggestionType: 'modify',
+        }),
+      );
+      graph = addNoteToNode(
+        graph,
+        node.id,
+        createNote({
+          author: 'ai',
+          content: 'Accepted one',
+          status: 'accepted',
+          suggestionType: 'add_node',
+        }),
+      );
+      graph = addNoteToNode(
+        graph,
+        node.id,
+        createNote({
+          author: 'ai',
+          content: 'Dismissed one',
+          status: 'dismissed',
+          suggestionType: 'modify',
+        }),
+      );
 
       const result = renderApi.render(graph, []);
       canvasNode = result.nodes[0];
@@ -217,12 +252,24 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
         position: { x: 0, y: 0 },
       });
       graph = addNode(graph, node1);
-      graph = addNoteToNode(graph, node1.id, createNote({
-        author: 'user', content: 'Note 1', status: 'none',
-      }));
-      graph = addNoteToNode(graph, node1.id, createNote({
-        author: 'user', content: 'Note 2', status: 'none',
-      }));
+      graph = addNoteToNode(
+        graph,
+        node1.id,
+        createNote({
+          author: 'user',
+          content: 'Note 1',
+          status: 'none',
+        }),
+      );
+      graph = addNoteToNode(
+        graph,
+        node1.id,
+        createNote({
+          author: 'user',
+          content: 'Note 2',
+          status: 'none',
+        }),
+      );
       graph = addCodeRef(graph, node1.id, { path: 'src/gateway.ts', role: 'source' });
 
       // Node 2: 1 note (1 pending), 3 code refs
@@ -232,9 +279,16 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
         position: { x: 200, y: 0 },
       });
       graph = addNode(graph, node2);
-      graph = addNoteToNode(graph, node2.id, createNote({
-        author: 'ai', content: 'Pending suggestion', status: 'pending', suggestionType: 'add_node',
-      }));
+      graph = addNoteToNode(
+        graph,
+        node2.id,
+        createNote({
+          author: 'ai',
+          content: 'Pending suggestion',
+          status: 'pending',
+          suggestionType: 'add_node',
+        }),
+      );
       graph = addCodeRef(graph, node2.id, { path: 'schema/main.sql', role: 'schema' });
       graph = addCodeRef(graph, node2.id, { path: 'src/db.ts', role: 'source' });
       graph = addCodeRef(graph, node2.id, { path: 'test/db.test.ts', role: 'test' });

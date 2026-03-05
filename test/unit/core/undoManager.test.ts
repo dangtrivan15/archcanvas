@@ -362,7 +362,12 @@ describe('UndoManager - undo reverts last graph mutation', () => {
       const nodeA = createNode({ type: 'compute/service', displayName: 'A' });
       const nodeB = createNode({ type: 'data/database', displayName: 'B' });
       graph = addNode(addNode(graph, nodeA), nodeB);
-      const edge = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'reads' });
+      const edge = createEdge({
+        fromNode: nodeA.id,
+        toNode: nodeB.id,
+        type: 'sync',
+        label: 'reads',
+      });
       graph = addEdge(graph, edge);
 
       // Snapshot with A, B, and edge

@@ -53,9 +53,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const results = searchGraph(graph, 'REST');
     expect(results.length).toBeGreaterThan(0);
 
-    const edgeMatch = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeMatch = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeMatch).toBeDefined();
   });
 
@@ -67,9 +65,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const results = searchGraph(graph, 'HTTP');
     expect(results.length).toBeGreaterThan(0);
 
-    const edgeMatch = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeMatch = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeMatch).toBeDefined();
   });
 
@@ -79,9 +75,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'REST');
-    const edgeResult = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeResult = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeResult).toBeDefined();
     expect(edgeResult!.type).toBe('edge');
   });
@@ -90,9 +84,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'REST');
-    const edgeResult = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeResult = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeResult).toBeDefined();
     expect(edgeResult!.matchContext).toContain('Label:');
     expect(edgeResult!.matchContext).toContain('HTTP REST');
@@ -102,9 +94,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'REST');
-    const edgeResult = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeResult = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeResult).toBeDefined();
     expect(edgeResult!.displayName).toBe('HTTP REST');
   });
@@ -115,9 +105,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'rest');
-    const edgeMatch = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeMatch = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeMatch).toBeDefined();
   });
 
@@ -125,9 +113,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'hTtP rEsT');
-    const edgeMatch = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeMatch = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeMatch).toBeDefined();
   });
 
@@ -137,9 +123,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     const { graph, edge } = createTestGraph();
 
     const results = searchGraph(graph, 'REST');
-    const edgeResult = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeResult = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeResult).toBeDefined();
     expect(edgeResult!.score).toBe(10);
   });
@@ -225,9 +209,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
 
     // 'TTP' is a substring of 'HTTP'
     const results = searchGraph(graph, 'TTP');
-    const edgeMatch = results.find(
-      (r) => r.type === 'edge' && r.id === edge.id,
-    );
+    const edgeMatch = results.find((r) => r.type === 'edge' && r.id === edge.id);
     expect(edgeMatch).toBeDefined();
   });
 
@@ -264,9 +246,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
     // Manually add note to the edge for testing
     graph = {
       ...graph,
-      edges: graph.edges.map((e) =>
-        e.id === edge.id ? { ...e, notes: [note] } : e,
-      ),
+      edges: graph.edges.map((e) => (e.id === edge.id ? { ...e, notes: [note] } : e)),
     };
 
     // Search for something in the note (edge has no label)
@@ -279,7 +259,7 @@ describe('Feature #33: Full-text search finds matches in edge labels', () => {
 
   // --- No false positives ---
 
-  it('should return no edge matches when query doesn\'t match any label', () => {
+  it("should return no edge matches when query doesn't match any label", () => {
     const { graph } = createTestGraph();
 
     const results = searchGraph(graph, 'GraphQL');

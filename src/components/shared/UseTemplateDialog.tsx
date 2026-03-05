@@ -70,88 +70,91 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
     return () => window.removeEventListener('keydown', handler, true);
   }, [template, onClose]);
 
-  const doInstantiate = useCallback(async (archName: string) => {
-    if (!template || !textApi || !undoManager) return;
+  const doInstantiate = useCallback(
+    async (archName: string) => {
+      if (!template || !textApi || !undoManager) return;
 
-    setLoading(true);
-    try {
-      // Parse template into an ArchGraph
-      let graph: ArchGraph;
-      let displayName: string;
-
-      if (typeof template.data === 'string') {
-        // Built-in: raw YAML string
-        const parsed = parseYaml(template.data) as {
-          metadata: StackTemplate['metadata'];
-          nodes: StackTemplate['nodes'];
-          edges: StackTemplate['edges'];
-        };
-        const stack: StackTemplate = {
-          metadata: parsed.metadata,
-          nodes: parsed.nodes || [],
-          edges: parsed.edges || [],
-        };
-        graph = instantiateStack(stack);
-        displayName = stack.metadata.displayName;
-      } else {
-        // Imported: Architecture proto bytes
-        try {
-          const archProto = Architecture.decode(template.data);
-          graph = protoToGraph({ architecture: archProto });
-          displayName = template.metadata.name;
-        } catch (err) {
-          console.error('[UseTemplate] Failed to decode imported template:', err);
-          showToast('Failed to load imported template');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Override the architecture name with user-provided name
-      graph.name = archName.trim() || displayName;
-
-      // Apply ELK auto-layout
+      setLoading(true);
       try {
-        const layoutResult = await computeElkLayout(graph.nodes, graph.edges, 'horizontal');
-        for (const node of graph.nodes) {
-          const pos = layoutResult.positions.get(node.id);
-          if (pos) {
-            node.position = { ...node.position, x: pos.x, y: pos.y };
+        // Parse template into an ArchGraph
+        let graph: ArchGraph;
+        let displayName: string;
+
+        if (typeof template.data === 'string') {
+          // Built-in: raw YAML string
+          const parsed = parseYaml(template.data) as {
+            metadata: StackTemplate['metadata'];
+            nodes: StackTemplate['nodes'];
+            edges: StackTemplate['edges'];
+          };
+          const stack: StackTemplate = {
+            metadata: parsed.metadata,
+            nodes: parsed.nodes || [],
+            edges: parsed.edges || [],
+          };
+          graph = instantiateStack(stack);
+          displayName = stack.metadata.displayName;
+        } else {
+          // Imported: Architecture proto bytes
+          try {
+            const archProto = Architecture.decode(template.data);
+            graph = protoToGraph({ architecture: archProto });
+            displayName = template.metadata.name;
+          } catch (err) {
+            console.error('[UseTemplate] Failed to decode imported template:', err);
+            showToast('Failed to load imported template');
+            setLoading(false);
+            return;
           }
         }
+
+        // Override the architecture name with user-provided name
+        graph.name = archName.trim() || displayName;
+
+        // Apply ELK auto-layout
+        try {
+          const layoutResult = await computeElkLayout(graph.nodes, graph.edges, 'horizontal');
+          for (const node of graph.nodes) {
+            const pos = layoutResult.positions.get(node.id);
+            if (pos) {
+              node.position = { ...node.position, x: pos.x, y: pos.y };
+            }
+          }
+        } catch (err) {
+          console.warn('[UseTemplate] ELK layout failed, using template positions:', err);
+        }
+
+        // Load graph onto canvas
+        textApi.setGraph(graph);
+        undoManager.clear();
+        undoManager.snapshot('Use template: ' + archName, graph);
+
+        useCoreStore.setState({
+          graph,
+          isDirty: true,
+          fileName: archName.trim() || displayName,
+          fileHandle: null,
+          fileCreatedAtMs: null,
+          nodeCount: graph.nodes.length,
+          edgeCount: graph.edges.length,
+          canUndo: false,
+          canRedo: false,
+        });
+
+        zoomToRoot();
+        requestFitView();
+        showToast(`Created "${archName.trim() || displayName}" from template`);
+        onClose();
+        onSuccess?.();
       } catch (err) {
-        console.warn('[UseTemplate] ELK layout failed, using template positions:', err);
+        console.error('[UseTemplate] Failed to instantiate template:', err);
+        showToast('Failed to create architecture from template');
+      } finally {
+        setLoading(false);
       }
-
-      // Load graph onto canvas
-      textApi.setGraph(graph);
-      undoManager.clear();
-      undoManager.snapshot('Use template: ' + archName, graph);
-
-      useCoreStore.setState({
-        graph,
-        isDirty: true,
-        fileName: archName.trim() || displayName,
-        fileHandle: null,
-        fileCreatedAtMs: null,
-        nodeCount: graph.nodes.length,
-        edgeCount: graph.edges.length,
-        canUndo: false,
-        canRedo: false,
-      });
-
-      zoomToRoot();
-      requestFitView();
-      showToast(`Created "${archName.trim() || displayName}" from template`);
-      onClose();
-      onSuccess?.();
-    } catch (err) {
-      console.error('[UseTemplate] Failed to instantiate template:', err);
-      showToast('Failed to create architecture from template');
-    } finally {
-      setLoading(false);
-    }
-  }, [template, textApi, undoManager, zoomToRoot, requestFitView, showToast, onClose, onSuccess]);
+    },
+    [template, textApi, undoManager, zoomToRoot, requestFitView, showToast, onClose, onSuccess],
+  );
 
   const handleConfirm = useCallback(() => {
     const archName = name.trim() || template?.metadata.name || 'Untitled';
@@ -206,7 +209,8 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
               Use Template
             </h2>
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              {template.metadata.name} - {template.metadata.nodeCount} nodes, {template.metadata.edgeCount} edges
+              {template.metadata.name} - {template.metadata.nodeCount} nodes,{' '}
+              {template.metadata.edgeCount} edges
             </p>
           </div>
         </div>

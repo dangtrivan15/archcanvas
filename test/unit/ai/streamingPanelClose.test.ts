@@ -107,7 +107,9 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
     it('conversation state is preserved after simulated panel close and reopen', () => {
       // Phase 1: Send messages (user + assistant reply)
       useAIStore.getState().addMessage('user', 'Explain the database node');
-      useAIStore.getState().addMessage('assistant', 'The database node is a persistent data store...');
+      useAIStore
+        .getState()
+        .addMessage('assistant', 'The database node is a persistent data store...');
 
       // Phase 2: "Close" the panel (in reality, the component unmounts but store stays)
       // No action needed - Zustand stores are global
@@ -116,7 +118,9 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
       const messagesAfterReopen = useAIStore.getState().getMessages();
       expect(messagesAfterReopen).toHaveLength(2);
       expect(messagesAfterReopen[0].content).toBe('Explain the database node');
-      expect(messagesAfterReopen[1].content).toBe('The database node is a persistent data store...');
+      expect(messagesAfterReopen[1].content).toBe(
+        'The database node is a persistent data store...',
+      );
     });
 
     it('node-scoped messages persist across panel close/reopen', () => {
@@ -303,23 +307,19 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
   describe('source code verification', () => {
     it('AIChatTab has cleanup useEffect that aborts on unmount', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync(
-        'src/components/panels/AIChatTab.tsx',
-        'utf-8',
-      );
+      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
       // Verify cleanup effect exists
       expect(source).toContain('abortControllerRef.current?.abort()');
       // Verify it's in a useEffect return (cleanup)
-      expect(source).toMatch(/useEffect\(\(\)\s*=>\s*\{[\s\S]*?return\s*\(\)\s*=>\s*\{[\s\S]*?abortControllerRef\.current\?\.abort\(\)/);
+      expect(source).toMatch(
+        /useEffect\(\(\)\s*=>\s*\{[\s\S]*?return\s*\(\)\s*=>\s*\{[\s\S]*?abortControllerRef\.current\?\.abort\(\)/,
+      );
     });
 
     it('AIChatTab catches AbortError and returns early', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync(
-        'src/components/panels/AIChatTab.tsx',
-        'utf-8',
-      );
+      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
       // Verify AbortError is caught
       expect(source).toContain("(error as Error).name === 'AbortError'");
@@ -329,10 +329,7 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
 
     it('AIChatTab has finally block that resets isStreaming', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync(
-        'src/components/panels/AIChatTab.tsx',
-        'utf-8',
-      );
+      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
       // Verify finally block resets state
       expect(source).toContain('abortControllerRef.current = null');
@@ -360,10 +357,7 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
 
     it('user messages are persisted BEFORE streaming begins', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync(
-        'src/components/panels/AIChatTab.tsx',
-        'utf-8',
-      );
+      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
       // In handleSend, persistMessage('user', trimmed) is called before sendWithAI
       const handleSendMatch = source.match(

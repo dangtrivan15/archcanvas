@@ -7,7 +7,7 @@ import { isPencilDrawEvent, isNavigationEvent } from '../../../src/hooks/usePenc
 // and verify the store updates correctly.
 
 describe('usePencilInput logic', () => {
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
 
   beforeEach(() => {
     // Reset pencil store
@@ -26,15 +26,19 @@ describe('usePencilInput logic', () => {
     if (typeof globalThis.document === 'undefined') {
       (globalThis as any).document = {};
     }
-    (globalThis as any).document.addEventListener = vi.fn((event: string, handler: Function) => {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(handler);
-    });
-    (globalThis as any).document.removeEventListener = vi.fn((event: string, handler: Function) => {
-      if (listeners[event]) {
-        listeners[event] = listeners[event].filter((h) => h !== handler);
-      }
-    });
+    (globalThis as any).document.addEventListener = vi.fn(
+      (event: string, handler: (...args: unknown[]) => void) => {
+        if (!listeners[event]) listeners[event] = [];
+        listeners[event].push(handler);
+      },
+    );
+    (globalThis as any).document.removeEventListener = vi.fn(
+      (event: string, handler: (...args: unknown[]) => void) => {
+        if (listeners[event]) {
+          listeners[event] = listeners[event].filter((h) => h !== handler);
+        }
+      },
+    );
   });
 
   afterEach(() => {

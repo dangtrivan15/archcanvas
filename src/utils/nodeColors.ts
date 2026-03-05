@@ -24,30 +24,30 @@ export const NODE_COLOR_PALETTE = [
 
 /** Default colors per specific node type (most specific match) */
 const NODE_TYPE_COLOR_MAP: Record<string, string> = {
-  'compute/service': '#3B82F6',       // Blue
-  'compute/function': '#6366F1',      // Indigo
-  'compute/worker': '#8B5CF6',        // Purple
-  'compute/api-gateway': '#06B6D4',   // Cyan
-  'data/database': '#10B981',         // Green
-  'data/cache': '#14B8A6',            // Teal
-  'data/object-storage': '#84CC16',   // Lime
-  'data/repository': '#059669',       // Emerald
+  'compute/service': '#3B82F6', // Blue
+  'compute/function': '#6366F1', // Indigo
+  'compute/worker': '#8B5CF6', // Purple
+  'compute/api-gateway': '#06B6D4', // Cyan
+  'data/database': '#10B981', // Green
+  'data/cache': '#14B8A6', // Teal
+  'data/object-storage': '#84CC16', // Lime
+  'data/repository': '#059669', // Emerald
   'messaging/message-queue': '#F59E0B', // Amber/Orange
-  'messaging/event-bus': '#D97706',   // Darker amber
+  'messaging/event-bus': '#D97706', // Darker amber
   'messaging/stream-processor': '#EA580C', // Deep orange
   'network/load-balancer': '#8B5CF6', // Purple
-  'network/cdn': '#A855F7',           // Light purple
-  'network/dns': '#7C3AED',           // Violet
+  'network/cdn': '#A855F7', // Light purple
+  'network/dns': '#7C3AED', // Violet
   'observability/logging': '#06B6D4', // Cyan
   'observability/monitoring': '#0891B2', // Darker cyan
 };
 
 /** Fallback colors per namespace (when no specific type match) */
 const NAMESPACE_COLOR_FALLBACK: Record<string, string> = {
-  compute: '#3B82F6',     // Blue
-  data: '#10B981',        // Green
-  messaging: '#F59E0B',   // Orange
-  network: '#8B5CF6',     // Purple
+  compute: '#3B82F6', // Blue
+  data: '#10B981', // Green
+  messaging: '#F59E0B', // Orange
+  network: '#8B5CF6', // Purple
   observability: '#06B6D4', // Cyan
 };
 
@@ -89,14 +89,18 @@ export function getEffectiveNodeColor(customColor: string | undefined, nodeType:
  * Used for node header backgrounds.
  */
 export function colorToBackground(hexColor: string, alpha: number = 0.12): string {
-  return `${hexColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+  return `${hexColor}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0')}`;
 }
 
 /**
  * Convert a hex color to a border variant (with alpha).
  */
 export function colorToBorder(hexColor: string, alpha: number = 0.5): string {
-  return `${hexColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+  return `${hexColor}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0')}`;
 }
 
 /**
@@ -115,9 +119,13 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
  * @param hexColor - The accent color in hex (e.g., '#3B82F6')
  * @param elevation - 'default' for subtle shadow, 'hover' for more prominent
  */
-export function colorTintedShadow(hexColor: string, elevation: 'default' | 'hover' = 'default'): string {
+export function colorTintedShadow(
+  hexColor: string,
+  elevation: 'default' | 'hover' = 'default',
+): string {
   const rgb = hexToRgb(hexColor);
-  if (!rgb) return elevation === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.15)';
+  if (!rgb)
+    return elevation === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : '0 4px 12px rgba(0,0,0,0.15)';
   const { r, g, b } = rgb;
   if (elevation === 'hover') {
     return `0 4px 12px rgba(${r},${g},${b},0.25), 0 2px 4px rgba(${r},${g},${b},0.15)`;

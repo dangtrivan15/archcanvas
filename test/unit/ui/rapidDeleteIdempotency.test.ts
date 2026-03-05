@@ -75,7 +75,7 @@ beforeEach(() => {
 function simulateDeleteKeyHandler(
   key: 'Delete' | 'Backspace',
   graph: ArchGraph,
-  options?: { navigationPathLength?: number }
+  options?: { navigationPathLength?: number },
 ): { prevented: boolean; dialogOpened: boolean } {
   const navPathLength = options?.navigationPathLength ?? 0;
 
@@ -145,7 +145,7 @@ function simulateDeleteConfirm(removeNodeFn: (nodeId: string) => void): void {
   useUIStore.getState().closeDeleteDialog();
 }
 
-describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
+describe("Feature #213: Rapid delete clicks don't remove extra nodes", () => {
   // ==========================================================
   // 1. Delete dialog guard prevents multiple openings
   // ==========================================================
@@ -278,7 +278,7 @@ describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
 
       // All 3 nodes should still be present
       expect(result.nodes).toHaveLength(3);
-      expect(result.nodes.map(n => n.id)).toEqual(['node-a', 'node-b', 'node-c']);
+      expect(result.nodes.map((n) => n.id)).toEqual(['node-a', 'node-b', 'node-c']);
     });
 
     it('removing node A then removing node A again does not affect B or C', () => {
@@ -287,12 +287,12 @@ describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
       // Remove A first time
       graph = engineRemoveNode(graph, 'node-a');
       expect(graph.nodes).toHaveLength(2);
-      expect(graph.nodes.map(n => n.id)).toEqual(['node-b', 'node-c']);
+      expect(graph.nodes.map((n) => n.id)).toEqual(['node-b', 'node-c']);
 
       // Remove A second time (already gone) - should be harmless
       graph = engineRemoveNode(graph, 'node-a');
       expect(graph.nodes).toHaveLength(2);
-      expect(graph.nodes.map(n => n.id)).toEqual(['node-b', 'node-c']);
+      expect(graph.nodes.map((n) => n.id)).toEqual(['node-b', 'node-c']);
     });
 
     it('five successive removeNode calls on same ID leave other nodes intact', () => {
@@ -303,7 +303,7 @@ describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
       }
 
       expect(graph.nodes).toHaveLength(2);
-      expect(graph.nodes.map(n => n.id)).toEqual(['node-b', 'node-c']);
+      expect(graph.nodes.map((n) => n.id)).toEqual(['node-b', 'node-c']);
     });
   });
 
@@ -422,12 +422,12 @@ describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
 
       // Verify only A is removed
       expect(graph.nodes).toHaveLength(2);
-      expect(graph.nodes.find(n => n.id === 'node-a')).toBeUndefined();
+      expect(graph.nodes.find((n) => n.id === 'node-a')).toBeUndefined();
 
       // Verify B and C still exist
-      expect(graph.nodes.find(n => n.id === 'node-b')).toBeDefined();
-      expect(graph.nodes.find(n => n.id === 'node-c')).toBeDefined();
-      expect(graph.nodes.map(n => n.displayName)).toEqual(['Node B', 'Node C']);
+      expect(graph.nodes.find((n) => n.id === 'node-b')).toBeDefined();
+      expect(graph.nodes.find((n) => n.id === 'node-c')).toBeDefined();
+      expect(graph.nodes.map((n) => n.displayName)).toEqual(['Node B', 'Node C']);
     });
 
     it('after deleting A, further Delete presses do not affect B or C', () => {
@@ -447,7 +447,7 @@ describe('Feature #213: Rapid delete clicks don\'t remove extra nodes', () => {
 
       // B and C are still intact
       expect(graph.nodes).toHaveLength(2);
-      expect(graph.nodes.map(n => n.id)).toEqual(['node-b', 'node-c']);
+      expect(graph.nodes.map((n) => n.id)).toEqual(['node-b', 'node-c']);
       // No dialog opened for any other node
       expect(useUIStore.getState().deleteDialogOpen).toBe(false);
     });

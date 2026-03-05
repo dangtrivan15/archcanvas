@@ -8,8 +8,8 @@ import './index.css';
 // Register PWA service worker for offline support.
 // autoUpdate mode: new SW activates immediately without prompting.
 // updateSW can be called to trigger a reload when a new SW is available
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _updateSW = registerSW({
+// Side-effect: registers the SW and sets up auto-update
+registerSW({
   onNeedRefresh() {
     // Auto-update: new version detected, will activate on next load
     console.log('[PWA] New content available; will activate on next reload.');
@@ -21,9 +21,12 @@ const _updateSW = registerSW({
     console.log(`[PWA] Service worker registered: ${swUrl}`);
     // Check for SW updates every hour
     if (registration) {
-      setInterval(() => {
-        registration.update();
-      }, 60 * 60 * 1000);
+      setInterval(
+        () => {
+          registration.update();
+        },
+        60 * 60 * 1000,
+      );
     }
   },
   onRegisterError(error) {

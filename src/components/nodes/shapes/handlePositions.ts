@@ -72,11 +72,7 @@ export function getHandlePosition(
 // ─── Rectangle ──────────────────────────────────────────────────────────────
 // Evenly spaced along the straight left/right edges.
 
-function getRectanglePosition(
-  side: HandleSide,
-  index: number,
-  total: number,
-): HandlePositionStyle {
+function getRectanglePosition(side: HandleSide, index: number, total: number): HandlePositionStyle {
   const t = (index + 1) / (total + 1); // 0 < t < 1
   return {
     top: `${t * 100}%`,
@@ -127,7 +123,7 @@ function getHexagonPosition(
   index: number,
   total: number,
   width: number,
-  height: number,
+  _height: number,
 ): HandlePositionStyle {
   const inset = Math.min(width * 0.2, 30);
   // Constrain to middle 70% to stay on flat angled edges
@@ -136,9 +132,7 @@ function getHexagonPosition(
   const t = total === 1 ? 0.5 : minT + (index / (total - 1)) * (maxT - minT);
 
   // X offset from bounding box edge to shape boundary
-  const xOffset = t <= 0.5
-    ? inset * (1 - 2 * t)
-    : inset * (2 * t - 1);
+  const xOffset = t <= 0.5 ? inset * (1 - 2 * t) : inset * (2 * t - 1);
 
   if (side === 'left') {
     return {
@@ -165,7 +159,7 @@ function getParallelogramPosition(
   index: number,
   total: number,
   width: number,
-  height: number,
+  _height: number,
 ): HandlePositionStyle {
   const skew = Math.min(width * 0.15, 24);
   // Use 20%-80% vertical range
@@ -211,9 +205,7 @@ function getCloudPosition(
   return {
     top: '50%',
     ...(side === 'left' ? { left: 0 } : { right: 0 }),
-    transform: total === 1
-      ? 'translateY(-50%)'
-      : `translateY(calc(-50% + ${centerOffset}px))`,
+    transform: total === 1 ? 'translateY(-50%)' : `translateY(calc(-50% + ${centerOffset}px))`,
   };
 }
 

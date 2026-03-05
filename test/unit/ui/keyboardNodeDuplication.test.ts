@@ -23,10 +23,7 @@ import {
   getShortcutManager,
   resetShortcutManager,
 } from '@/core/shortcuts/shortcutManager';
-import {
-  KEYBOARD_SHORTCUTS,
-  getShortcutsByCategory,
-} from '@/config/keyboardShortcuts';
+import { KEYBOARD_SHORTCUTS, getShortcutsByCategory } from '@/config/keyboardShortcuts';
 import { getStaticCommands, getAllCommands } from '@/config/commandRegistry';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -325,7 +322,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
 
     // The new edge should connect the duplicated nodes, not the originals
     const newEdge = updatedGraph.edges.find(
-      (e) => e.fromNode === newIds[0] && e.toNode === newIds[1]
+      (e) => e.fromNode === newIds[0] && e.toNode === newIds[1],
     );
     expect(newEdge).toBeDefined();
     expect(newEdge!.type).toBe('SYNC');
@@ -479,9 +476,7 @@ describe('Keyboard Node Duplication - Command Palette', () => {
   it('edit:duplicate command has correct keywords', () => {
     const commands = getStaticCommands();
     const dupCommand = commands.find((c) => c.id === 'edit:duplicate');
-    expect(dupCommand!.keywords).toEqual(
-      expect.arrayContaining(['duplicate', 'copy', 'clone'])
-    );
+    expect(dupCommand!.keywords).toEqual(expect.arrayContaining(['duplicate', 'copy', 'clone']));
   });
 
   it('edit:duplicate command has Copy icon', () => {

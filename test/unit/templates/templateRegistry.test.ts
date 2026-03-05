@@ -56,7 +56,7 @@ describe('Template Registry — Built-in Templates', () => {
       expect(typeof t.data).toBe('string');
       expect((t.data as string).length).toBeGreaterThan(0);
       // Verify it starts with YAML-like content
-      expect((t.data as string)).toContain('metadata:');
+      expect(t.data as string).toContain('metadata:');
     }
   });
 

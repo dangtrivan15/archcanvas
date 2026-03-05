@@ -25,11 +25,7 @@ const INNER_GAP = 4; // breathing room between shape edge and content
  * These insets define the foreignObject position inside the SVG bounding box,
  * ensuring that inner content never overlaps the shape's stroke/boundary.
  */
-export function getShapeInsets(
-  shape: ShapeName,
-  width: number,
-  height: number,
-): ShapeInsets {
+export function getShapeInsets(shape: ShapeName, width: number, height: number): ShapeInsets {
   switch (shape) {
     case 'rectangle':
     case 'badge':

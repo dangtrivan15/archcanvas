@@ -11,7 +11,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { analyzeCodebase, type AnalyzeOptions, type AnalyzeProgress, type PipelinePhase } from '@/analyze/pipeline';
+import {
+  analyzeCodebase,
+  type AnalyzeOptions,
+  type AnalyzeProgress,
+  type PipelinePhase,
+} from '@/analyze/pipeline';
 import type { AIMessageSender } from '@/analyze/inferEngine';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -167,7 +172,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     });
 
     // Should have progress events for all phases
-    const phases = progressEvents.map(e => e.phase);
+    const phases = progressEvents.map((e) => e.phase);
     expect(phases).toContain('scanning');
     expect(phases).toContain('detecting');
     expect(phases).toContain('selecting');
@@ -206,7 +211,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     expect(result.stats.nodes).toBeGreaterThanOrEqual(1);
 
     // Should have warning about AI failure
-    expect(result.warnings.some(w => w.includes('AI inference failed'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('AI inference failed'))).toBe(true);
   }, 30000); // inferEngine retries with exponential backoff
 
   it('should fall back to structural analysis when no AI sender provided', async () => {
@@ -221,7 +226,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     expect(result.outputPath).toBe(outputPath);
     expect(fs.existsSync(outputPath)).toBe(true);
     expect(result.stats.nodes).toBeGreaterThanOrEqual(1);
-    expect(result.warnings.some(w => w.includes('No AI sender provided'))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('No AI sender provided'))).toBe(true);
   });
 
   it('should support dry-run mode', async () => {
@@ -260,7 +265,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
 
     // Should have logged verbose output
     expect(consoleSpy).toHaveBeenCalled();
-    const logCalls = consoleSpy.mock.calls.map(c => c[0]);
+    const logCalls = consoleSpy.mock.calls.map((c) => c[0]);
     expect(logCalls.some((msg: string) => msg.includes('[pipeline:'))).toBe(true);
 
     consoleSpy.mockRestore();
@@ -324,7 +329,9 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     });
 
     // Scanning event should report limited files
-    const scanEvent = progressEvents.find(e => e.phase === 'scanning' && e.detail?.totalFiles !== undefined);
+    const scanEvent = progressEvents.find(
+      (e) => e.phase === 'scanning' && e.detail?.totalFiles !== undefined,
+    );
     expect(scanEvent).toBeDefined();
     expect(scanEvent!.detail!.totalFiles).toBeLessThanOrEqual(6); // small project anyway
   });

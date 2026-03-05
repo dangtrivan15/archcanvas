@@ -25,9 +25,7 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
    */
   const getEditableFields = useCallback((): HTMLElement[] => {
     if (!containerRef.current) return [];
-    return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(EDITABLE_FIELD_SELECTOR),
-    );
+    return Array.from(containerRef.current.querySelectorAll<HTMLElement>(EDITABLE_FIELD_SELECTOR));
   }, [containerRef]);
 
   /**
@@ -64,7 +62,10 @@ export function usePropertyKeyboardNav(containerRef: React.RefObject<HTMLElement
         }
 
         fields[nextIndex]!.focus();
-        if (fields[nextIndex] instanceof HTMLInputElement || fields[nextIndex] instanceof HTMLTextAreaElement) {
+        if (
+          fields[nextIndex] instanceof HTMLInputElement ||
+          fields[nextIndex] instanceof HTMLTextAreaElement
+        ) {
           (fields[nextIndex] as HTMLInputElement).select();
         }
         return;

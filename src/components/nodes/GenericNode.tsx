@@ -18,13 +18,52 @@
 import { memo, useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { CanvasNodeData } from '@/types/canvas';
-import { getEffectiveNodeColor, colorToBackground, colorTintedShadow, colorGlowShadow } from '@/utils/nodeColors';
+import {
+  getEffectiveNodeColor,
+  colorToBackground,
+  colorTintedShadow,
+  colorGlowShadow,
+} from '@/utils/nodeColors';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import {
-  Box, Server, Database, HardDrive, Radio, Globe, Shield, ShieldCheck, ShieldAlert, LockKeyhole, Cpu, Layers,
-  Inbox, GitFork, Activity, BarChart3, FileText, Cog, Zap, Archive, Plug, Webhook, Workflow,
-  Smartphone, ExternalLink, Terminal, Clock, Container, Search, Bell, ScanSearch, Brain, Binary, GitMerge, Bot, Puzzle, Network,
+  Box,
+  Server,
+  Database,
+  HardDrive,
+  Radio,
+  Globe,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  LockKeyhole,
+  Cpu,
+  Layers,
+  Inbox,
+  GitFork,
+  Activity,
+  BarChart3,
+  FileText,
+  Cog,
+  Zap,
+  Archive,
+  Plug,
+  Webhook,
+  Workflow,
+  Smartphone,
+  ExternalLink,
+  Terminal,
+  Clock,
+  Container,
+  Search,
+  Bell,
+  ScanSearch,
+  Brain,
+  Binary,
+  GitMerge,
+  Bot,
+  Puzzle,
+  Network,
 } from 'lucide-react';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeArgsTable } from './NodeArgsTable';
@@ -117,29 +156,34 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   }, [nodeData.displayName]);
 
   /** Handle keyboard events on the inline edit input */
-  const handleInlineKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation(); // Prevent canvas shortcuts from firing
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      confirmEdit();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      revertEdit();
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      confirmEdit();
-    }
-  }, [confirmEdit, revertEdit]);
+  const handleInlineKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      e.stopPropagation(); // Prevent canvas shortcuts from firing
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmEdit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        revertEdit();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        confirmEdit();
+      }
+    },
+    [confirmEdit, revertEdit],
+  );
 
   // Compute effective color (custom or type-default)
   const effectiveColor = useMemo(
-    () => isRef ? '#A855F7' : getEffectiveNodeColor(nodeData.color, nodeData.nodedefType),
+    () => (isRef ? '#A855F7' : getEffectiveNodeColor(nodeData.color, nodeData.nodedefType)),
     [nodeData.color, nodeData.nodedefType, isRef],
   );
 
   // Compute style objects for color application
   const headerBgStyle = useMemo(
-    () => ({ background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.18)}, ${colorToBackground(effectiveColor, 0.05)})` }),
+    () => ({
+      background: `linear-gradient(to bottom, ${colorToBackground(effectiveColor, 0.18)}, ${colorToBackground(effectiveColor, 0.05)})`,
+    }),
     [effectiveColor],
   );
 
@@ -169,19 +213,16 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
   );
 
   // Body background: gradient tint for 3D depth (matches NodeShell's gradient approach)
-  const bodyBackgroundStyle = useMemo(
-    () => {
-      if (isRef) {
-        return { background: 'hsl(var(--iris) / 0.08)' };
-      }
-      // Gradient: color tint at top (10%) fading to lighter (4%), layered over surface
-      // Plus a white-to-dark lighting gradient for 3D depth (matches NodeShell)
-      return {
-        background: `linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), linear-gradient(to bottom, ${effectiveColor}18, ${effectiveColor}0A), hsl(var(--surface))`,
-      };
-    },
-    [effectiveColor, isRef],
-  );
+  const bodyBackgroundStyle = useMemo(() => {
+    if (isRef) {
+      return { background: 'hsl(var(--iris) / 0.08)' };
+    }
+    // Gradient: color tint at top (10%) fading to lighter (4%), layered over surface
+    // Plus a white-to-dark lighting gradient for 3D depth (matches NodeShell)
+    return {
+      background: `linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.02)), linear-gradient(to bottom, ${effectiveColor}18, ${effectiveColor}0A), hsl(var(--surface))`,
+    };
+  }, [effectiveColor, isRef]);
 
   return (
     <div
@@ -281,7 +322,10 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
               {nodeData.displayName}
             </div>
           )}
-          <span className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full" data-testid="node-type-label">
+          <span
+            className="inline-block mt-0.5 px-1.5 py-0 rounded-full bg-highlight-med text-[10px] leading-4 text-muted-foreground truncate max-w-full"
+            data-testid="node-type-label"
+          >
             {nodeData.nodedefType}
           </span>
         </div>
@@ -295,7 +339,10 @@ function GenericNodeComponent({ data, selected }: NodeProps) {
           </span>
         )}
         {nodeData.hasChildren && (
-          <div className="text-xs text-iris cursor-pointer" title="Has children - double click to zoom in">
+          <div
+            className="text-xs text-iris cursor-pointer"
+            title="Has children - double click to zoom in"
+          >
             ▶
           </div>
         )}

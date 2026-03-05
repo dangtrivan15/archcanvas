@@ -15,7 +15,15 @@ import { dataPipelineTemplate } from './dataPipeline';
 import { NODE_TYPE_REGISTRY_TEXT, STANDARD_RESPONSE_SCHEMA } from './shared';
 
 // Re-export types
-export type { PromptTemplate, AnalysisStep, ResponseSchema, PostProcessor, FewShotExample, TemplateRegistryEntry, TemplateMatcher } from './types';
+export type {
+  PromptTemplate,
+  AnalysisStep,
+  ResponseSchema,
+  PostProcessor,
+  FewShotExample,
+  TemplateRegistryEntry,
+  TemplateMatcher,
+} from './types';
 export { NODE_TYPE_REGISTRY_TEXT, STANDARD_RESPONSE_SCHEMA };
 
 // ── Matchers ─────────────────────────────────────────────────────────────────
@@ -28,7 +36,18 @@ const webAppMatcher: TemplateMatcher = (profile: ProjectProfile): number => {
   let score = 0;
 
   // Frontend framework detection
-  const webFrameworks = ['React', 'Vue', 'Angular', 'Svelte', 'SvelteKit', 'Next.js', 'Nuxt', 'Remix', 'Astro', 'Gatsby'];
+  const webFrameworks = [
+    'React',
+    'Vue',
+    'Angular',
+    'Svelte',
+    'SvelteKit',
+    'Next.js',
+    'Nuxt',
+    'Remix',
+    'Astro',
+    'Gatsby',
+  ];
   for (const fw of profile.frameworks) {
     if (webFrameworks.includes(fw.name)) {
       score += fw.confidence === 'high' ? 30 : fw.confidence === 'medium' ? 20 : 10;
@@ -36,7 +55,20 @@ const webAppMatcher: TemplateMatcher = (profile: ProjectProfile): number => {
   }
 
   // Backend framework detection
-  const backendFrameworks = ['Express', 'Express.js', 'Koa', 'Fastify', 'Hapi', 'Django', 'Flask', 'FastAPI', 'Rails', 'Spring Boot', 'Gin', 'Actix Web'];
+  const backendFrameworks = [
+    'Express',
+    'Express.js',
+    'Koa',
+    'Fastify',
+    'Hapi',
+    'Django',
+    'Flask',
+    'FastAPI',
+    'Rails',
+    'Spring Boot',
+    'Gin',
+    'Actix Web',
+  ];
   for (const fw of profile.frameworks) {
     if (backendFrameworks.includes(fw.name)) {
       score += fw.confidence === 'high' ? 15 : 10;
@@ -49,15 +81,22 @@ const webAppMatcher: TemplateMatcher = (profile: ProjectProfile): number => {
   }
 
   // Web-related entry points
-  const webEntryPoints = ['index.html', 'src/App.tsx', 'src/App.jsx', 'src/main.tsx', 'pages/', 'app/'];
+  const webEntryPoints = [
+    'index.html',
+    'src/App.tsx',
+    'src/App.jsx',
+    'src/main.tsx',
+    'pages/',
+    'app/',
+  ];
   for (const ep of profile.entryPoints) {
-    if (webEntryPoints.some(pattern => ep.includes(pattern))) {
+    if (webEntryPoints.some((pattern) => ep.includes(pattern))) {
       score += 5;
     }
   }
 
   // Tailwind/CSS frameworks boost
-  if (profile.frameworks.some(f => f.name === 'Tailwind CSS')) {
+  if (profile.frameworks.some((f) => f.name === 'Tailwind CSS')) {
     score += 5;
   }
 
@@ -95,7 +134,7 @@ const microservicesMatcher: TemplateMatcher = (profile: ProjectProfile): number 
   }
 
   // gRPC / proto signals
-  if (profile.dataStores.some(ds => ds.type === 'protobuf')) {
+  if (profile.dataStores.some((ds) => ds.type === 'protobuf')) {
     score += 10;
   }
 
@@ -123,7 +162,7 @@ const dataPipelineMatcher: TemplateMatcher = (profile: ProjectProfile): number =
   }
 
   // Python is the dominant data pipeline language
-  const pythonLang = profile.languages.find(l => l.name === 'Python');
+  const pythonLang = profile.languages.find((l) => l.name === 'Python');
   if (pythonLang && pythonLang.percentage > 50) {
     score += 10;
   }
@@ -178,7 +217,7 @@ let customTemplates: TemplateRegistryEntry[] = [];
  * Get all available templates (built-in + custom).
  */
 export function listTemplates(): PromptTemplate[] {
-  return [...BUILTIN_TEMPLATES, ...customTemplates].map(e => e.template);
+  return [...BUILTIN_TEMPLATES, ...customTemplates].map((e) => e.template);
 }
 
 /**
@@ -186,7 +225,7 @@ export function listTemplates(): PromptTemplate[] {
  */
 export function getTemplateById(id: string): PromptTemplate | undefined {
   const all = [...BUILTIN_TEMPLATES, ...customTemplates];
-  return all.find(e => e.template.id === id)?.template;
+  return all.find((e) => e.template.id === id)?.template;
 }
 
 /**
@@ -200,10 +239,7 @@ export function getTemplateById(id: string): PromptTemplate | undefined {
  * @param minScore - Minimum score to beat general template (default: 20)
  * @returns The best-matching prompt template
  */
-export function selectTemplate(
-  profile: ProjectProfile,
-  minScore: number = 20,
-): PromptTemplate {
+export function selectTemplate(profile: ProjectProfile, minScore: number = 20): PromptTemplate {
   const all = [...BUILTIN_TEMPLATES, ...customTemplates];
 
   let bestEntry = all[0]; // general is first
@@ -227,10 +263,7 @@ export function selectTemplate(
  * @param templateId - Optional template ID for manual override
  * @returns The selected prompt template
  */
-export function resolveTemplate(
-  profile: ProjectProfile,
-  templateId?: string,
-): PromptTemplate {
+export function resolveTemplate(profile: ProjectProfile, templateId?: string): PromptTemplate {
   if (templateId) {
     const template = getTemplateById(templateId);
     if (template) return template;
@@ -250,7 +283,7 @@ export function registerCustomTemplate(
   matcher: TemplateMatcher = () => 0,
 ): void {
   // Remove existing template with same ID if present
-  customTemplates = customTemplates.filter(e => e.template.id !== template.id);
+  customTemplates = customTemplates.filter((e) => e.template.id !== template.id);
   customTemplates.push({ template, matcher });
 }
 
@@ -260,7 +293,7 @@ export function registerCustomTemplate(
  */
 export function unregisterCustomTemplate(id: string): boolean {
   const before = customTemplates.length;
-  customTemplates = customTemplates.filter(e => e.template.id !== id);
+  customTemplates = customTemplates.filter((e) => e.template.id !== id);
   return customTemplates.length < before;
 }
 
@@ -280,9 +313,7 @@ export function clearCustomTemplates(): void {
  *
  * @param configs - Array of template config objects from the user's config file
  */
-export function loadCustomTemplatesFromConfig(
-  configs: CustomTemplateConfig[],
-): void {
+export function loadCustomTemplatesFromConfig(configs: CustomTemplateConfig[]): void {
   for (const config of configs) {
     const template = configToTemplate(config);
     registerCustomTemplate(template, () => config.autoSelectScore ?? 0);

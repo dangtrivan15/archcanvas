@@ -63,9 +63,10 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
   // ─── Share File ────────────────────────────────────────────
 
   async shareFile(data: Uint8Array | string, filename: string, mimeType: string): Promise<void> {
-    const blob = data instanceof Uint8Array
-      ? new Blob([data], { type: mimeType })
-      : new Blob([data], { type: mimeType });
+    const blob =
+      data instanceof Uint8Array
+        ? new Blob([data], { type: mimeType })
+        : new Blob([data], { type: mimeType });
 
     // Try Web Share API if available
     if (navigator.share && navigator.canShare) {
@@ -199,9 +200,7 @@ export class WebFileSystemAdapter implements FileSystemAdapter {
     mimeType: string,
   ): Promise<void> {
     return new Promise((resolve) => {
-      const blob = data instanceof Blob
-        ? data
-        : new Blob([data], { type: mimeType });
+      const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

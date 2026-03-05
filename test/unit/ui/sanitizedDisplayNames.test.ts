@@ -10,7 +10,13 @@
  * - All rendering contexts (canvas nodes, detail panel, breadcrumbs, edges)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
-import { createEmptyGraph, createNode, addNode, createEdge, addEdge } from '@/core/graph/graphEngine';
+import {
+  createEmptyGraph,
+  createNode,
+  addNode,
+  createEdge,
+  addEdge,
+} from '@/core/graph/graphEngine';
 import { RenderApi } from '@/api/renderApi';
 import { RegistryManager } from '@/core/registry/registryManager';
 import type { ArchGraph } from '@/types/graph';
@@ -293,8 +299,8 @@ describe('Feature #207: Sanitized user input in node display names', () => {
       expect(graph.edges.length).toBe(1);
       expect(graph.edges[0].label).toBe('<script>edge</script>');
       // Node names preserved
-      const fromNode = graph.nodes.find(n => n.id === edge.fromNode);
-      const toNode = graph.nodes.find(n => n.id === edge.toNode);
+      const fromNode = graph.nodes.find((n) => n.id === edge.fromNode);
+      const toNode = graph.nodes.find((n) => n.id === edge.toNode);
       expect(fromNode?.displayName).toBe(HTML_INJECTION);
       expect(toNode?.displayName).toBe(SCRIPT_INJECTION);
     });

@@ -63,10 +63,7 @@ function openDB(): Promise<IDBDatabase> {
  * If there's already a pending save for the same fileName, replaces it
  * (only the latest version matters).
  */
-export async function enqueueSave(
-  fileName: string,
-  data: Uint8Array,
-): Promise<void> {
+export async function enqueueSave(fileName: string, data: Uint8Array): Promise<void> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {

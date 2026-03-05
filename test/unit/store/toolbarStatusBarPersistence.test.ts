@@ -226,12 +226,16 @@ describe('Feature #321 - Toolbar and Status Bar Height Persistence', () => {
   describe('Edge cases', () => {
     it('persists value at exact minimum', () => {
       useUIStore.getState().setToolbarHeight(TOOLBAR_MIN_HEIGHT);
-      expect(localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`)).toBe(String(TOOLBAR_MIN_HEIGHT));
+      expect(localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`)).toBe(
+        String(TOOLBAR_MIN_HEIGHT),
+      );
     });
 
     it('persists value at exact maximum', () => {
       useUIStore.getState().setToolbarHeight(TOOLBAR_MAX_HEIGHT);
-      expect(localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`)).toBe(String(TOOLBAR_MAX_HEIGHT));
+      expect(localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`)).toBe(
+        String(TOOLBAR_MAX_HEIGHT),
+      );
     });
 
     it('exports loadPersistedHeights function', () => {

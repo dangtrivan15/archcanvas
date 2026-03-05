@@ -71,7 +71,7 @@ describe('Feature #293: iOS code signing and archive build configuration', () =>
       // Find the Release target config section (504EC3181FED79650016851F)
       // and verify SWIFT_ACTIVE_COMPILATION_CONDITIONS is empty
       const releaseTargetMatch = pbxproj.match(
-        /504EC3181FED79650016851F[^}]*SWIFT_ACTIVE_COMPILATION_CONDITIONS\s*=\s*"([^"]*)"/
+        /504EC3181FED79650016851F[^}]*SWIFT_ACTIVE_COMPILATION_CONDITIONS\s*=\s*"([^"]*)"/,
       );
       if (releaseTargetMatch) {
         expect(releaseTargetMatch[1]).not.toContain('DEBUG');

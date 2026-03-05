@@ -49,9 +49,9 @@ async function createChecksumMismatchFile(): Promise<Uint8Array> {
   // Corrupt the stored SHA-256 checksum (bytes 8-39), NOT the payload
   // This way the payload protobuf is still valid, but the checksum won't match
   const corrupted = new Uint8Array(encoded);
-  corrupted[8] = corrupted[8]! ^ 0xFF;
-  corrupted[9] = corrupted[9]! ^ 0xFF;
-  corrupted[10] = corrupted[10]! ^ 0xFF;
+  corrupted[8] = corrupted[8]! ^ 0xff;
+  corrupted[9] = corrupted[9]! ^ 0xff;
+  corrupted[10] = corrupted[10]! ^ 0xff;
 
   return corrupted;
 }
@@ -148,7 +148,9 @@ describe('Feature #189: Opening file with checksum mismatch shows warning', () =
       let proceeded = false;
       useUIStore.getState().openIntegrityWarningDialog({
         message: 'Test warning',
-        onProceed: () => { proceeded = true; },
+        onProceed: () => {
+          proceeded = true;
+        },
       });
 
       const info = useUIStore.getState().integrityWarningDialogInfo;
@@ -163,7 +165,9 @@ describe('Feature #189: Opening file with checksum mismatch shows warning', () =
       let proceeded = false;
       useUIStore.getState().openIntegrityWarningDialog({
         message: 'File integrity warning',
-        onProceed: () => { proceeded = true; },
+        onProceed: () => {
+          proceeded = true;
+        },
       });
 
       // User clicks Cancel
@@ -177,7 +181,9 @@ describe('Feature #189: Opening file with checksum mismatch shows warning', () =
       let proceeded = false;
       useUIStore.getState().openIntegrityWarningDialog({
         message: 'File integrity warning',
-        onProceed: () => { proceeded = true; },
+        onProceed: () => {
+          proceeded = true;
+        },
       });
 
       // User clicks "Open Anyway"

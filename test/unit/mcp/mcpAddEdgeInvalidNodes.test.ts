@@ -31,19 +31,23 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
     ctx = { textApi, registry };
 
     // Create one valid node
-    const nodeResult = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Valid Service',
-    }));
+    const nodeResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Valid Service',
+      }),
+    );
     validNodeId = nodeResult.nodeId;
   });
 
   it('returns error when fromNode ID does not exist', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: 'nonexistent-node-id',
-      toNode: validNodeId,
-      type: 'sync',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: 'nonexistent-node-id',
+        toNode: validNodeId,
+        type: 'sync',
+      }),
+    );
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -51,11 +55,13 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
   });
 
   it('returns error when toNode ID does not exist', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: validNodeId,
-      toNode: 'another-fake-id',
-      type: 'async',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: validNodeId,
+        toNode: 'another-fake-id',
+        type: 'async',
+      }),
+    );
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -63,11 +69,13 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
   });
 
   it('returns error when both fromNode and toNode do not exist', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: 'fake-from-node',
-      toNode: 'fake-to-node',
-      type: 'data-flow',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: 'fake-from-node',
+        toNode: 'fake-to-node',
+        type: 'data-flow',
+      }),
+    );
 
     expect(result.success).toBe(false);
     expect(result.error).toBeDefined();
@@ -76,11 +84,13 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
   });
 
   it('error message mentions "does not exist" for invalid node ID', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: 'missing-node-xyz',
-      toNode: validNodeId,
-      type: 'sync',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: 'missing-node-xyz',
+        toNode: validNodeId,
+        type: 'sync',
+      }),
+    );
 
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/does not exist/i);
@@ -93,11 +103,13 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
     const nodeCountBefore = describeBefore.nodeCount;
 
     // Attempt to add edge with invalid node
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: 'nonexistent-id',
-      toNode: validNodeId,
-      type: 'sync',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: 'nonexistent-id',
+        toNode: validNodeId,
+        type: 'sync',
+      }),
+    );
     expect(result.success).toBe(false);
 
     // Verify state is unchanged
@@ -143,25 +155,31 @@ describe('Feature #191: Adding edge between non-existent nodes fails gracefully'
 
   it('valid edge creation still works after failed attempt', () => {
     // First, fail
-    const failResult = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: 'nonexistent',
-      toNode: validNodeId,
-      type: 'sync',
-    }));
+    const failResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: 'nonexistent',
+        toNode: validNodeId,
+        type: 'sync',
+      }),
+    );
     expect(failResult.success).toBe(false);
 
     // Create a second valid node
-    const nodeB = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database',
-      displayName: 'Database B',
-    }));
+    const nodeB = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'Database B',
+      }),
+    );
 
     // Now create a valid edge — should succeed
-    const successResult = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: validNodeId,
-      toNode: nodeB.nodeId,
-      type: 'sync',
-    }));
+    const successResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: validNodeId,
+        toNode: nodeB.nodeId,
+        type: 'sync',
+      }),
+    );
     expect(successResult.success).toBe(true);
     expect(successResult.edgeId).toBeDefined();
 

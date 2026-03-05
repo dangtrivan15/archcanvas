@@ -100,9 +100,7 @@ function createTestFile(): ArchCanvasFile {
             engine: Value.create({ stringValue: 'postgres' }),
             version: Value.create({ stringValue: '15' }),
           },
-          codeRefs: [
-            CodeRef.create({ path: 'migrations/', role: CodeRefRole.SCHEMA }),
-          ],
+          codeRefs: [CodeRef.create({ path: 'migrations/', role: CodeRefRole.SCHEMA })],
           notes: [],
           properties: {},
           position: Position.create({ x: 400, y: 200, width: 240, height: 120 }),
@@ -276,7 +274,7 @@ describe('Binary codec (.archc)', () => {
 
     it('rejects files with wrong magic bytes', async () => {
       const bad = new Uint8Array(50); // large enough to pass size check
-      bad[0] = 0xFF; // wrong magic byte
+      bad[0] = 0xff; // wrong magic byte
       await expect(decode(bad)).rejects.toThrow(CodecError);
       await expect(decode(bad)).rejects.toThrow('magic bytes mismatch');
     });
@@ -287,7 +285,7 @@ describe('Binary codec (.archc)', () => {
 
       // Modify version to 999 (offset 6-7)
       binary[6] = 0x03;
-      binary[7] = 0xE7;
+      binary[7] = 0xe7;
 
       await expect(decode(binary)).rejects.toThrow(CodecError);
       await expect(decode(binary)).rejects.toThrow('Unsupported format version');
@@ -309,7 +307,7 @@ describe('Binary codec (.archc)', () => {
       const decoded = await decode(binary);
 
       expect(decoded.architecture?.description).toBe(
-        'A microservices architecture for an e-commerce system'
+        'A microservices architecture for an e-commerce system',
       );
       expect(decoded.architecture?.owners).toEqual(['alice', 'bob']);
     });
@@ -384,9 +382,7 @@ describe('Binary codec (.archc)', () => {
       expect(conv?.scopedToNodeId).toBe('svc-order');
       expect(conv?.messages).toHaveLength(2);
       expect(conv?.messages?.[1]?.suggestions).toHaveLength(1);
-      expect(conv?.messages?.[1]?.suggestions?.[0]?.content).toBe(
-        'Add circuit breaker pattern'
-      );
+      expect(conv?.messages?.[1]?.suggestions?.[0]?.content).toBe('Add circuit breaker pattern');
     });
 
     it('preserves undo history with binary snapshots', async () => {
@@ -415,7 +411,13 @@ describe('Binary codec (.archc)', () => {
     it('handles empty architecture', async () => {
       const minimal = ArchCanvasFile.create({
         header: FileHeader.create({ formatVersion: FORMAT_VERSION }),
-        architecture: Architecture.create({ name: 'Empty', description: '', owners: [], nodes: [], edges: [] }),
+        architecture: Architecture.create({
+          name: 'Empty',
+          description: '',
+          owners: [],
+          nodes: [],
+          edges: [],
+        }),
         canvasState: CanvasState.create({}),
         aiState: AIState.create({ conversations: [] }),
         undoHistory: UndoHistory.create({ entries: [], currentIndex: 0, maxEntries: 100 }),

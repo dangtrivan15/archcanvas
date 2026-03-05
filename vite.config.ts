@@ -17,17 +17,11 @@ export default defineConfig({
         enabled: true,
         type: 'module',
       },
-      includeAssets: [
-        'icons/*.png',
-        'icons/*.svg',
-        'manifest.json',
-      ],
+      includeAssets: ['icons/*.png', 'icons/*.svg', 'manifest.json'],
       manifest: false, // Use existing public/manifest.json
       workbox: {
         // Precache app shell: HTML, JS, CSS, fonts, icons
-        globPatterns: [
-          '**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}',
-        ],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
         // Runtime caching strategies
         runtimeCaching: [
           {

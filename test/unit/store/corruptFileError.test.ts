@@ -29,7 +29,7 @@ function createTooSmallFile(): Uint8Array {
 function createWrongMagicFile(): Uint8Array {
   const data = new Uint8Array(50);
   // Wrong magic bytes
-  data.set([0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0x00], 0);
+  data.set([0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0x00], 0);
   return data;
 }
 
@@ -39,7 +39,7 @@ function createUnsupportedVersionFile(): Uint8Array {
   data.set(MAGIC_BYTES, 0);
   // Version 999 (big-endian)
   data[6] = 0x03;
-  data[7] = 0xE7;
+  data[7] = 0xe7;
   return data;
 }
 

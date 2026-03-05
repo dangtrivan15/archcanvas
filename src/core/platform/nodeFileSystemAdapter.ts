@@ -246,18 +246,10 @@ export class NodeFileSystemAdapter implements FileSystemAdapter {
 
     switch (code) {
       case 'ENOENT':
-        return new NodeFileSystemError(
-          `File not found: ${filePath}`,
-          code,
-          filePath,
-        );
+        return new NodeFileSystemError(`File not found: ${filePath}`, code, filePath);
       case 'EACCES':
       case 'EPERM':
-        return new NodeFileSystemError(
-          `Permission denied: ${filePath}`,
-          code,
-          filePath,
-        );
+        return new NodeFileSystemError(`Permission denied: ${filePath}`, code, filePath);
       case 'EISDIR':
         return new NodeFileSystemError(
           `Path is a directory, expected a file: ${filePath}`,

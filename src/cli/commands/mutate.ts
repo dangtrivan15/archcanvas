@@ -85,13 +85,15 @@ export function registerMutateCommands(program: Command): void {
 
           writeInfo(`Added node "${cmdOpts.name}" (${node.id})`, opts.quiet);
           if (opts.format === 'json') {
-            writeOutput(formatAsJson({
-              id: node.id,
-              type: cmdOpts.type,
-              displayName: cmdOpts.name,
-              parentId: cmdOpts.parent ?? null,
-              args: args ?? {},
-            }));
+            writeOutput(
+              formatAsJson({
+                id: node.id,
+                type: cmdOpts.type,
+                displayName: cmdOpts.name,
+                parentId: cmdOpts.parent ?? null,
+                args: args ?? {},
+              }),
+            );
           }
         },
       ),
@@ -122,13 +124,15 @@ export function registerMutateCommands(program: Command): void {
 
           writeInfo(`Added edge ${cmdOpts.from} → ${cmdOpts.to} (${edge.id})`, opts.quiet);
           if (opts.format === 'json') {
-            writeOutput(formatAsJson({
-              id: edge.id,
-              from: cmdOpts.from,
-              to: cmdOpts.to,
-              type: cmdOpts.type,
-              label: cmdOpts.label ?? null,
-            }));
+            writeOutput(
+              formatAsJson({
+                id: edge.id,
+                from: cmdOpts.from,
+                to: cmdOpts.to,
+                type: cmdOpts.type,
+                label: cmdOpts.label ?? null,
+              }),
+            );
           }
         },
       ),
@@ -214,7 +218,10 @@ export function registerMutateCommands(program: Command): void {
 
           // Parse comma-separated tags
           const tags = cmdOpts.tags
-            ? cmdOpts.tags.split(',').map((t) => t.trim()).filter(Boolean)
+            ? cmdOpts.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
             : undefined;
 
           const note = ctx.textApi.addNote({
@@ -228,13 +235,15 @@ export function registerMutateCommands(program: Command): void {
 
           writeInfo(`Added note to node "${cmdOpts.node}" (${note.id})`, opts.quiet);
           if (opts.format === 'json') {
-            writeOutput(formatAsJson({
-              id: note.id,
-              nodeId: cmdOpts.node,
-              content: cmdOpts.content,
-              author: cmdOpts.author,
-              tags: tags ?? [],
-            }));
+            writeOutput(
+              formatAsJson({
+                id: note.id,
+                nodeId: cmdOpts.node,
+                content: cmdOpts.content,
+                author: cmdOpts.author,
+                tags: tags ?? [],
+              }),
+            );
           }
         },
       ),
@@ -290,14 +299,16 @@ export function registerMutateCommands(program: Command): void {
 
           writeInfo(`Updated node "${id}"`, opts.quiet);
           if (opts.format === 'json') {
-            writeOutput(formatAsJson({
-              id,
-              updated: true,
-              displayName: cmdOpts.name ?? null,
-              args: cmdOpts.args ? parseKeyValuePairs(cmdOpts.args) : null,
-              properties: cmdOpts.setProp ? parseKeyValuePairs(cmdOpts.setProp) : null,
-              color: cmdOpts.color ?? null,
-            }));
+            writeOutput(
+              formatAsJson({
+                id,
+                updated: true,
+                displayName: cmdOpts.name ?? null,
+                args: cmdOpts.args ? parseKeyValuePairs(cmdOpts.args) : null,
+                properties: cmdOpts.setProp ? parseKeyValuePairs(cmdOpts.setProp) : null,
+                color: cmdOpts.color ?? null,
+              }),
+            );
           }
         },
       ),

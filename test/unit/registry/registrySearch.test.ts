@@ -31,8 +31,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     expect(results.length).toBeGreaterThan(0);
 
     const dbDef = results.find(
-      (def) =>
-        def.metadata.namespace === 'data' && def.metadata.name === 'database',
+      (def) => def.metadata.namespace === 'data' && def.metadata.name === 'database',
     );
     expect(dbDef).toBeDefined();
     expect(dbDef!.metadata.displayName).toBe('Database');
@@ -45,9 +44,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     expect(results.length).toBeGreaterThan(0);
 
     const mqDef = results.find(
-      (def) =>
-        def.metadata.namespace === 'messaging' &&
-        def.metadata.name === 'message-queue',
+      (def) => def.metadata.namespace === 'messaging' && def.metadata.name === 'message-queue',
     );
     expect(mqDef).toBeDefined();
     expect(mqDef!.metadata.displayName).toBe('Message Queue');
@@ -60,9 +57,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     expect(results.length).toBeGreaterThan(0);
 
     const lbDef = results.find(
-      (def) =>
-        def.metadata.namespace === 'network' &&
-        def.metadata.name === 'load-balancer',
+      (def) => def.metadata.namespace === 'network' && def.metadata.name === 'load-balancer',
     );
     expect(lbDef).toBeDefined();
     expect(lbDef!.metadata.displayName).toBe('Load Balancer');
@@ -118,9 +113,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     const results = registry.search('Load Balancer');
     expect(results.length).toBeGreaterThan(0);
 
-    const lbDef = results.find(
-      (def) => def.metadata.name === 'load-balancer',
-    );
+    const lbDef = results.find((def) => def.metadata.name === 'load-balancer');
     expect(lbDef).toBeDefined();
   });
 
@@ -136,9 +129,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     expect(results.length).toBeGreaterThan(0);
 
     const fnDef = results.find(
-      (def) =>
-        def.metadata.namespace === 'compute' &&
-        def.metadata.name === 'function',
+      (def) => def.metadata.namespace === 'compute' && def.metadata.name === 'function',
     );
     expect(fnDef).toBeDefined();
   });
@@ -149,9 +140,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     expect(results.length).toBeGreaterThan(0);
 
     const svcDef = results.find(
-      (def) =>
-        def.metadata.namespace === 'compute' &&
-        def.metadata.name === 'service',
+      (def) => def.metadata.namespace === 'compute' && def.metadata.name === 'service',
     );
     expect(svcDef).toBeDefined();
   });
@@ -167,9 +156,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
     const results = registry.search('gate');
     expect(results.length).toBeGreaterThan(0);
 
-    const gwDef = results.find(
-      (def) => def.metadata.name === 'api-gateway',
-    );
+    const gwDef = results.find((def) => def.metadata.name === 'api-gateway');
     expect(gwDef).toBeDefined();
   });
 });

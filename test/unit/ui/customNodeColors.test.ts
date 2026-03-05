@@ -295,7 +295,11 @@ describe('RenderApi: node color in canvas data', () => {
   });
 
   it('passes custom color from position.color', () => {
-    const node = createNode({ type: 'compute/service', displayName: 'API', position: { color: '#EF4444' } });
+    const node = createNode({
+      type: 'compute/service',
+      displayName: 'API',
+      position: { color: '#EF4444' },
+    });
     let graph = createEmptyGraph();
     graph = addNode(graph, node);
 

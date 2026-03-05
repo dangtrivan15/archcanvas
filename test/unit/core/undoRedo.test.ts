@@ -316,7 +316,12 @@ describe('UndoManager - redo restores undone mutation', () => {
       const nodeA = createNode({ type: 'compute/service', displayName: 'A' });
       const nodeB = createNode({ type: 'data/database', displayName: 'B' });
       graph = addNode(addNode(graph, nodeA), nodeB);
-      const edge = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'async', label: 'publishes' });
+      const edge = createEdge({
+        fromNode: nodeA.id,
+        toNode: nodeB.id,
+        type: 'async',
+        label: 'publishes',
+      });
       graph = addEdge(graph, edge);
       undoManager.snapshot('Base with edge', graph);
 

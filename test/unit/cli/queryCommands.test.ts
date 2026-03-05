@@ -131,25 +131,13 @@ async function captureOutput(
 
 describe('describe command', () => {
   it('outputs architecture description in human format', async () => {
-    const { stdout } = await captureOutput([
-      'describe',
-      '--file',
-      TEST_FILE,
-      '--format',
-      'human',
-    ]);
+    const { stdout } = await captureOutput(['describe', '--file', TEST_FILE, '--format', 'human']);
     const output = stdout.join('\n');
     expect(output).toContain('Query Test Architecture');
   });
 
   it('outputs architecture description in JSON format', async () => {
-    const { stdout } = await captureOutput([
-      'describe',
-      '--file',
-      TEST_FILE,
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['describe', '--file', TEST_FILE, '--format', 'json']);
     const output = stdout.join('\n');
     const parsed = JSON.parse(output);
     expect(parsed).toBeDefined();
@@ -185,11 +173,7 @@ describe('describe command', () => {
   });
 
   it('requires --file flag', async () => {
-    const { stderr, exitCode } = await captureOutput([
-      'describe',
-      '--format',
-      'human',
-    ]);
+    const { stderr, exitCode } = await captureOutput(['describe', '--format', 'human']);
     expect(exitCode).toBe(1);
     expect(stderr.join(' ')).toContain('--file');
   });
@@ -216,13 +200,7 @@ describe('list-nodes command', () => {
   });
 
   it('lists all nodes in JSON format with correct structure', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodes',
-      '--file',
-      TEST_FILE,
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodes', '--file', TEST_FILE, '--format', 'json']);
     const output = stdout.join('\n');
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
@@ -363,9 +341,7 @@ describe('search command', () => {
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
     expect(parsed.length).toBeGreaterThan(0);
-    const match = parsed.find(
-      (r: { displayName: string }) => r.displayName === 'API Gateway',
-    );
+    const match = parsed.find((r: { displayName: string }) => r.displayName === 'API Gateway');
     expect(match).toBeDefined();
     expect(match.type).toBe('node');
   });
@@ -441,11 +417,7 @@ describe('search command', () => {
 
 describe('list-nodedefs command', () => {
   it('lists all 15 built-in nodedefs in JSON format', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'json']);
     const output = stdout.join('\n');
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
@@ -453,11 +425,7 @@ describe('list-nodedefs command', () => {
   });
 
   it('each nodedef has type, displayName, and namespace', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'json']);
     const parsed = JSON.parse(stdout.join('\n'));
     for (const def of parsed) {
       expect(def.type).toBeDefined();
@@ -497,11 +465,7 @@ describe('list-nodedefs command', () => {
   });
 
   it('shows human-readable grouped output', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'human',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'human']);
     const output = stdout.join('\n');
     expect(output).toContain('compute/');
     expect(output).toContain('data/');
@@ -511,11 +475,7 @@ describe('list-nodedefs command', () => {
   });
 
   it('includes specific nodedef types', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'json']);
     const parsed = JSON.parse(stdout.join('\n'));
     const types = parsed.map((d: { type: string }) => d.type);
     expect(types).toContain('compute/service');
@@ -527,22 +487,14 @@ describe('list-nodedefs command', () => {
 
   it('does not require --file flag', async () => {
     // list-nodedefs should work without --file since it just reads built-in definitions
-    const { stdout, exitCode } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'json',
-    ]);
+    const { stdout, exitCode } = await captureOutput(['list-nodedefs', '--format', 'json']);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout.join('\n'));
     expect(parsed.length).toBe(15);
   });
 
   it('table format shows columns', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'table',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'table']);
     const output = stdout.join('\n');
     expect(output).toContain('type');
     expect(output).toContain('displayName');
@@ -554,25 +506,13 @@ describe('list-nodedefs command', () => {
 
 describe('Format flag consistency', () => {
   it('describe respects --format json', async () => {
-    const { stdout } = await captureOutput([
-      'describe',
-      '--file',
-      TEST_FILE,
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['describe', '--file', TEST_FILE, '--format', 'json']);
     // JSON format should produce valid JSON
     expect(() => JSON.parse(stdout.join('\n'))).not.toThrow();
   });
 
   it('list-nodes respects --format json', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodes',
-      '--file',
-      TEST_FILE,
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodes', '--file', TEST_FILE, '--format', 'json']);
     expect(() => JSON.parse(stdout.join('\n'))).not.toThrow();
   });
 
@@ -589,11 +529,7 @@ describe('Format flag consistency', () => {
   });
 
   it('list-nodedefs respects --format json', async () => {
-    const { stdout } = await captureOutput([
-      'list-nodedefs',
-      '--format',
-      'json',
-    ]);
+    const { stdout } = await captureOutput(['list-nodedefs', '--format', 'json']);
     expect(() => JSON.parse(stdout.join('\n'))).not.toThrow();
   });
 });
@@ -618,12 +554,7 @@ describe('Error output to stderr', () => {
   });
 
   it('node not found error goes to stderr', async () => {
-    const { stderr, exitCode } = await captureOutput([
-      'get-node',
-      'fake-id',
-      '--file',
-      TEST_FILE,
-    ]);
+    const { stderr, exitCode } = await captureOutput(['get-node', 'fake-id', '--file', TEST_FILE]);
     expect(exitCode).toBe(1);
     expect(stderr.join(' ')).toContain('not found');
   });

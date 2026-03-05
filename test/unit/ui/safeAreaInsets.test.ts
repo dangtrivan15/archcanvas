@@ -133,13 +133,19 @@ describe('Feature #285: Safe area insets for iPad notch and home indicator', () 
     const appTsx = readFile('src/App.tsx');
 
     it('has safe-area-left class on the left panel', () => {
-      const leftPanelMatch = appTsx.match(/data-testid="left-panel"[^>]*>|className="[^"]*safe-area-left[^"]*"[^>]*data-testid="left-panel"/);
+      const leftPanelMatch = appTsx.match(
+        /data-testid="left-panel"[^>]*>|className="[^"]*safe-area-left[^"]*"[^>]*data-testid="left-panel"/,
+      );
       // Also check by finding the left panel aside
-      expect(appTsx).toMatch(/left-panel[\s\S]{0,200}safe-area-left|safe-area-left[\s\S]{0,200}left-panel/);
+      expect(appTsx).toMatch(
+        /left-panel[\s\S]{0,200}safe-area-left|safe-area-left[\s\S]{0,200}left-panel/,
+      );
     });
 
     it('has safe-area-right class on the right panel', () => {
-      expect(appTsx).toMatch(/right-panel[\s\S]{0,200}safe-area-right|safe-area-right[\s\S]{0,200}right-panel/);
+      expect(appTsx).toMatch(
+        /right-panel[\s\S]{0,200}safe-area-right|safe-area-right[\s\S]{0,200}right-panel/,
+      );
     });
   });
 
@@ -204,7 +210,7 @@ describe('Feature #285: Safe area insets for iPad notch and home indicator', () 
       // Verify the left panel aside has safe-area-left in its className
       const leftPanelSection = app.slice(
         app.indexOf('data-testid="left-panel"') - 200,
-        app.indexOf('data-testid="left-panel"')
+        app.indexOf('data-testid="left-panel"'),
       );
       expect(leftPanelSection).toContain('safe-area-left');
     });
@@ -213,7 +219,7 @@ describe('Feature #285: Safe area insets for iPad notch and home indicator', () 
       const app = readFile('src/App.tsx');
       const rightPanelSection = app.slice(
         app.indexOf('data-testid="right-panel"') - 200,
-        app.indexOf('data-testid="right-panel"')
+        app.indexOf('data-testid="right-panel"'),
       );
       expect(rightPanelSection).toContain('safe-area-right');
     });

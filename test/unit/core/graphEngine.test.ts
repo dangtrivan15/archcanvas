@@ -113,7 +113,7 @@ describe('addChildNode - recursive nesting', () => {
   });
 
   it('should handle adding child to non-existent parent gracefully', () => {
-    let graph = createEmptyGraph('Test');
+    const graph = createEmptyGraph('Test');
     const child = createNode({ type: 'compute/function', displayName: 'Orphan' });
 
     // Adding to non-existent parent should not crash

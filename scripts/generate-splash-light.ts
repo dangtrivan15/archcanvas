@@ -23,11 +23,16 @@ async function main() {
 
   // Create new buffer with light background, preserving non-background pixels
   const newData = Buffer.alloc(data.length);
-  const darkBgR = 26, darkBgG = 26, darkBgB = 46; // #1a1a2e
+  const darkBgR = 26,
+    darkBgG = 26,
+    darkBgB = 46; // #1a1a2e
   const tolerance = 30;
 
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    const r = data[i],
+      g = data[i + 1],
+      b = data[i + 2],
+      a = data[i + 3];
 
     // Check if pixel is close to the dark background color
     const dr = Math.abs(r - darkBgR);
@@ -51,15 +56,17 @@ async function main() {
 
   // Write light splash variants
   const lightSplash = sharp(newData, {
-    raw: { width: info.width, height: info.height, channels: info.channels as 4 }
+    raw: { width: info.width, height: info.height, channels: info.channels as 4 },
   }).png();
 
   await lightSplash.toFile(path.join(SPLASH_DIR, 'splash-light-2732x2732.png'));
 
   // Copy for all 3 scales (1x, 2x, 3x)
   const buf = await sharp(newData, {
-    raw: { width: info.width, height: info.height, channels: info.channels as 4 }
-  }).png().toBuffer();
+    raw: { width: info.width, height: info.height, channels: info.channels as 4 },
+  })
+    .png()
+    .toBuffer();
 
   await sharp(buf).toFile(path.join(SPLASH_DIR, 'splash-light-2732x2732-1.png'));
   await sharp(buf).toFile(path.join(SPLASH_DIR, 'splash-light-2732x2732-2.png'));

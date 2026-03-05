@@ -6,8 +6,18 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import {
-  Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers,
-  GripVertical, Search, X,
+  Box,
+  Server,
+  Database,
+  HardDrive,
+  Radio,
+  Globe,
+  Shield,
+  Cpu,
+  Layers,
+  GripVertical,
+  Search,
+  X,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useCoreStore } from '@/store/coreStore';
@@ -15,7 +25,15 @@ import { useViewportSize } from '@/hooks/useViewportSize';
 import type { NodeDef } from '@/types/nodedef';
 
 const iconMap: Record<string, React.ElementType> = {
-  Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers, Box,
+  Server,
+  Database,
+  HardDrive,
+  Radio,
+  Globe,
+  Shield,
+  Cpu,
+  Layers,
+  Box,
 };
 
 const namespaceLabels: Record<string, string> = {
@@ -75,28 +93,25 @@ export function NodePalette() {
   }, [allNodeDefs]);
 
   // Pointer-based drag handlers
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent, def: NodeDef) => {
-      // Only respond to primary button (touch, pen, or left mouse)
-      if (e.button !== 0) return;
+  const handlePointerDown = useCallback((e: React.PointerEvent, def: NodeDef) => {
+    // Only respond to primary button (touch, pen, or left mouse)
+    if (e.button !== 0) return;
 
-      const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
-      setDragState({
-        nodeType: typeKey,
-        displayName: def.metadata.displayName,
-        icon: def.metadata.icon,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        active: false,
-        startX: e.clientX,
-        startY: e.clientY,
-      });
+    const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
+    setDragState({
+      nodeType: typeKey,
+      displayName: def.metadata.displayName,
+      icon: def.metadata.icon,
+      clientX: e.clientX,
+      clientY: e.clientY,
+      active: false,
+      startX: e.clientX,
+      startY: e.clientY,
+    });
 
-      // Capture pointer so we get move/up events even outside the element
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    },
-    [],
-  );
+    // Capture pointer so we get move/up events even outside the element
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
@@ -146,26 +161,21 @@ export function NodePalette() {
     [dragState, screenToFlowPosition, addNode, isCompact],
   );
 
-  const handlePointerCancel = useCallback(
-    (e: React.PointerEvent) => {
-      try {
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {
-        // ignore
-      }
-      setDragState(null);
-    },
-    [],
-  );
+  const handlePointerCancel = useCallback((e: React.PointerEvent) => {
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+    setDragState(null);
+  }, []);
 
   // Also handle global pointer events for drag that leaves the palette
   useEffect(() => {
     if (!dragState?.active) return;
 
     const handleGlobalMove = (e: PointerEvent) => {
-      setDragState((prev) =>
-        prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : null,
-      );
+      setDragState((prev) => (prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : null));
     };
 
     const handleGlobalUp = (e: PointerEvent) => {
@@ -190,7 +200,14 @@ export function NodePalette() {
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
     };
-  }, [dragState?.active, dragState?.nodeType, dragState?.displayName, screenToFlowPosition, addNode, isCompact]);
+  }, [
+    dragState?.active,
+    dragState?.nodeType,
+    dragState?.displayName,
+    screenToFlowPosition,
+    addNode,
+    isCompact,
+  ]);
 
   // Render a single palette item
   const renderItem = (def: NodeDef) => {
@@ -217,9 +234,7 @@ export function NodePalette() {
           <div className="text-sm font-medium text-gray-800 truncate">
             {def.metadata.displayName}
           </div>
-          <div className="text-[11px] text-gray-400 truncate">
-            {def.metadata.description}
-          </div>
+          <div className="text-[11px] text-gray-400 truncate">{def.metadata.description}</div>
         </div>
         <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
       </div>
@@ -301,9 +316,10 @@ export function NodePalette() {
     <button
       onClick={() => setIsOpen(!isOpen)}
       className={`flex items-center justify-center rounded-full shadow-lg transition-all
-                 ${isOpen
-                   ? 'bg-gray-700 text-white w-10 h-10'
-                   : 'bg-blue-600 text-white px-4 h-10 gap-2 hover:bg-blue-700'
+                 ${
+                   isOpen
+                     ? 'bg-gray-700 text-white w-10 h-10'
+                     : 'bg-blue-600 text-white px-4 h-10 gap-2 hover:bg-blue-700'
                  }`}
       data-testid="palette-toggle"
       aria-label={isOpen ? 'Close node palette' : 'Add node'}
@@ -350,9 +366,7 @@ export function NodePalette() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div style={{ maxHeight: 'calc(55vh - 56px)', overflow: 'auto' }}>
-              {paletteContent}
-            </div>
+            <div style={{ maxHeight: 'calc(55vh - 56px)', overflow: 'auto' }}>{paletteContent}</div>
           </div>
         )}
 
@@ -387,9 +401,7 @@ export function NodePalette() {
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div style={{ maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>
-            {paletteContent}
-          </div>
+          <div style={{ maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}>{paletteContent}</div>
         </div>
       )}
 

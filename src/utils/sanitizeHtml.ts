@@ -34,19 +34,58 @@ const DANGEROUS_ELEMENTS = new Set([
 
 /** Allowed elements for markdown output. Everything else gets unwrapped (children kept). */
 const ALLOWED_ELEMENTS = new Set([
-  'P', 'BR', 'HR',
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-  'STRONG', 'B', 'EM', 'I', 'U', 'S', 'DEL', 'INS',
-  'CODE', 'PRE', 'KBD', 'SAMP', 'VAR',
-  'BLOCKQUOTE', 'Q', 'CITE',
-  'A', 'IMG',
-  'UL', 'OL', 'LI',
-  'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TH', 'TD', 'CAPTION',
-  'DL', 'DT', 'DD',
-  'DIV', 'SPAN',
-  'FIGURE', 'FIGCAPTION',
-  'DETAILS', 'SUMMARY',
-  'ABBR', 'SUP', 'SUB', 'SMALL', 'MARK',
+  'P',
+  'BR',
+  'HR',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'STRONG',
+  'B',
+  'EM',
+  'I',
+  'U',
+  'S',
+  'DEL',
+  'INS',
+  'CODE',
+  'PRE',
+  'KBD',
+  'SAMP',
+  'VAR',
+  'BLOCKQUOTE',
+  'Q',
+  'CITE',
+  'A',
+  'IMG',
+  'UL',
+  'OL',
+  'LI',
+  'TABLE',
+  'THEAD',
+  'TBODY',
+  'TFOOT',
+  'TR',
+  'TH',
+  'TD',
+  'CAPTION',
+  'DL',
+  'DT',
+  'DD',
+  'DIV',
+  'SPAN',
+  'FIGURE',
+  'FIGCAPTION',
+  'DETAILS',
+  'SUMMARY',
+  'ABBR',
+  'SUP',
+  'SUB',
+  'SMALL',
+  'MARK',
 ]);
 
 /** Allowed attributes per element (all lowercase). */
@@ -66,7 +105,12 @@ const SAFE_URL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', '#']);
 function isSafeUrl(url: string): boolean {
   const trimmed = url.trim().toLowerCase();
   // Allow relative URLs (no protocol), anchor links, and safe protocols
-  if (trimmed.startsWith('#') || trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+  if (
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../')
+  ) {
     return true;
   }
   try {

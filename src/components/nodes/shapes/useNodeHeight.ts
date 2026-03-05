@@ -5,7 +5,7 @@
  * on the actual rendered height (e.g., cylinder caps, document wave).
  */
 
-import { useRef, useState, useEffect, useCallback, type RefObject } from 'react';
+import { useRef, useState, useEffect, type RefObject } from 'react';
 
 const DEFAULT_HEIGHT = 80;
 

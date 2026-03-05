@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 describe('useOfflineStatus logic', () => {
   let addEventListenerSpy: ReturnType<typeof vi.spyOn>;
   let removeEventListenerSpy: ReturnType<typeof vi.spyOn>;
-  const listeners: Record<string, Function[]> = {};
+  const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
 
   beforeEach(() => {
     listeners.online = [];
@@ -20,16 +20,20 @@ describe('useOfflineStatus logic', () => {
       (globalThis as any).navigator = { onLine: true };
     }
 
-    (globalThis as any).window.addEventListener = vi.fn((event: string, handler: Function) => {
-      if (!listeners[event]) listeners[event] = [];
-      listeners[event].push(handler);
-    });
+    (globalThis as any).window.addEventListener = vi.fn(
+      (event: string, handler: (...args: unknown[]) => void) => {
+        if (!listeners[event]) listeners[event] = [];
+        listeners[event].push(handler);
+      },
+    );
 
-    (globalThis as any).window.removeEventListener = vi.fn((event: string, handler: Function) => {
-      if (listeners[event]) {
-        listeners[event] = listeners[event].filter((h) => h !== handler);
-      }
-    });
+    (globalThis as any).window.removeEventListener = vi.fn(
+      (event: string, handler: (...args: unknown[]) => void) => {
+        if (listeners[event]) {
+          listeners[event] = listeners[event].filter((h) => h !== handler);
+        }
+      },
+    );
   });
 
   afterEach(() => {

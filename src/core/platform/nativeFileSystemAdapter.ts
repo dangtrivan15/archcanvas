@@ -89,9 +89,10 @@ export class NativeFileSystemAdapter implements FileSystemAdapter {
       });
 
       // fileContent.data is a base64 string on native
-      const data = typeof fileContent.data === 'string'
-        ? base64ToUint8Array(fileContent.data)
-        : new Uint8Array(await (fileContent.data as Blob).arrayBuffer());
+      const data =
+        typeof fileContent.data === 'string'
+          ? base64ToUint8Array(fileContent.data)
+          : new Uint8Array(await (fileContent.data as Blob).arrayBuffer());
 
       return {
         data,
@@ -146,9 +147,7 @@ export class NativeFileSystemAdapter implements FileSystemAdapter {
    */
   async saveFileAs(data: Uint8Array, suggestedName: string): Promise<SaveFileAsResult | null> {
     // Ensure the file has a .archc extension
-    const fileName = suggestedName.endsWith('.archc')
-      ? suggestedName
-      : `${suggestedName}.archc`;
+    const fileName = suggestedName.endsWith('.archc') ? suggestedName : `${suggestedName}.archc`;
 
     const filePath = `${ARCHC_SUBFOLDER}/${fileName}`;
 
@@ -183,11 +182,7 @@ export class NativeFileSystemAdapter implements FileSystemAdapter {
    * Writes the data to a temporary file, then presents the share sheet
    * with that file's URI. Works for .archc, PNG, SVG, markdown, etc.
    */
-  async shareFile(
-    data: Uint8Array | string,
-    filename: string,
-    _mimeType: string,
-  ): Promise<void> {
+  async shareFile(data: Uint8Array | string, filename: string, _mimeType: string): Promise<void> {
     // Write to a temporary file
     const tempPath = `tmp/${filename}`;
 

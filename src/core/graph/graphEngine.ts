@@ -5,7 +5,11 @@
 
 import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position } from '@/types/graph';
 import { generateId } from '@/utils/idGenerator';
-import { DEFAULT_NODE_WIDTH, DEFAULT_NODE_HEIGHT, DEFAULT_ARCHITECTURE_NAME } from '@/utils/constants';
+import {
+  DEFAULT_NODE_WIDTH,
+  DEFAULT_NODE_HEIGHT,
+  DEFAULT_ARCHITECTURE_NAME,
+} from '@/utils/constants';
 
 // ============================================================
 // Factory Functions
@@ -115,22 +119,14 @@ export function addNode(graph: ArchGraph, node: ArchNode): ArchGraph {
 /**
  * Add a child node to an existing parent node (recursive search).
  */
-export function addChildNode(
-  graph: ArchGraph,
-  parentId: string,
-  child: ArchNode,
-): ArchGraph {
+export function addChildNode(graph: ArchGraph, parentId: string, child: ArchNode): ArchGraph {
   return {
     ...graph,
     nodes: addChildToNodes(graph.nodes, parentId, child),
   };
 }
 
-function addChildToNodes(
-  nodes: ArchNode[],
-  parentId: string,
-  child: ArchNode,
-): ArchNode[] {
+function addChildToNodes(nodes: ArchNode[], parentId: string, child: ArchNode): ArchNode[] {
   return nodes.map((node) => {
     if (node.id === parentId) {
       return { ...node, children: [...node.children, child] };
@@ -155,9 +151,7 @@ export function removeNode(graph: ArchGraph, nodeId: string): ArchGraph {
   return {
     ...graph,
     nodes: removeNodeFromList(graph.nodes, nodeId),
-    edges: graph.edges.filter(
-      (e) => !removedIds.has(e.fromNode) && !removedIds.has(e.toNode),
-    ),
+    edges: graph.edges.filter((e) => !removedIds.has(e.fromNode) && !removedIds.has(e.toNode)),
   };
 }
 
@@ -271,24 +265,14 @@ function updateNodeColorInList(
 /**
  * Move a node to a new position (recursive search).
  */
-export function moveNode(
-  graph: ArchGraph,
-  nodeId: string,
-  x: number,
-  y: number,
-): ArchGraph {
+export function moveNode(graph: ArchGraph, nodeId: string, x: number, y: number): ArchGraph {
   return {
     ...graph,
     nodes: moveNodeInList(graph.nodes, nodeId, x, y),
   };
 }
 
-function moveNodeInList(
-  nodes: ArchNode[],
-  nodeId: string,
-  x: number,
-  y: number,
-): ArchNode[] {
+function moveNodeInList(nodes: ArchNode[], nodeId: string, x: number, y: number): ArchNode[] {
   return nodes.map((node) => {
     if (node.id === nodeId) {
       return { ...node, position: { ...node.position, x, y } };
@@ -360,22 +344,14 @@ export function updateEdge(
 /**
  * Add a note to a node (recursive search).
  */
-export function addNoteToNode(
-  graph: ArchGraph,
-  nodeId: string,
-  note: Note,
-): ArchGraph {
+export function addNoteToNode(graph: ArchGraph, nodeId: string, note: Note): ArchGraph {
   return {
     ...graph,
     nodes: addNoteToNodeList(graph.nodes, nodeId, note),
   };
 }
 
-function addNoteToNodeList(
-  nodes: ArchNode[],
-  nodeId: string,
-  note: Note,
-): ArchNode[] {
+function addNoteToNodeList(nodes: ArchNode[], nodeId: string, note: Note): ArchNode[] {
   return nodes.map((node) => {
     if (node.id === nodeId) {
       return { ...node, notes: [...node.notes, note] };
@@ -393,11 +369,7 @@ function addNoteToNodeList(
 /**
  * Add a note to an edge.
  */
-export function addNoteToEdge(
-  graph: ArchGraph,
-  edgeId: string,
-  note: Note,
-): ArchGraph {
+export function addNoteToEdge(graph: ArchGraph, edgeId: string, note: Note): ArchGraph {
   return {
     ...graph,
     edges: graph.edges.map((edge) => {
@@ -412,22 +384,14 @@ export function addNoteToEdge(
 /**
  * Remove a note from a node (recursive search).
  */
-export function removeNoteFromNode(
-  graph: ArchGraph,
-  nodeId: string,
-  noteId: string,
-): ArchGraph {
+export function removeNoteFromNode(graph: ArchGraph, nodeId: string, noteId: string): ArchGraph {
   return {
     ...graph,
     nodes: removeNoteFromNodeList(graph.nodes, nodeId, noteId),
   };
 }
 
-function removeNoteFromNodeList(
-  nodes: ArchNode[],
-  nodeId: string,
-  noteId: string,
-): ArchNode[] {
+function removeNoteFromNodeList(nodes: ArchNode[], nodeId: string, noteId: string): ArchNode[] {
   return nodes.map((node) => {
     if (node.id === nodeId) {
       return { ...node, notes: node.notes.filter((n) => n.id !== noteId) };
@@ -467,9 +431,7 @@ function updateNoteInNodeList(
     if (node.id === nodeId) {
       return {
         ...node,
-        notes: node.notes.map((n) =>
-          n.id === noteId ? { ...n, status } : n,
-        ),
+        notes: node.notes.map((n) => (n.id === noteId ? { ...n, status } : n)),
       };
     }
     if (node.children.length > 0) {
@@ -508,9 +470,7 @@ function updateNoteContentInNodeList(
     if (node.id === nodeId) {
       return {
         ...node,
-        notes: node.notes.map((n) =>
-          n.id === noteId ? { ...n, content } : n,
-        ),
+        notes: node.notes.map((n) => (n.id === noteId ? { ...n, content } : n)),
       };
     }
     if (node.children.length > 0) {
@@ -530,22 +490,14 @@ function updateNoteContentInNodeList(
 /**
  * Add a code reference to a node (recursive search).
  */
-export function addCodeRef(
-  graph: ArchGraph,
-  nodeId: string,
-  codeRef: CodeRef,
-): ArchGraph {
+export function addCodeRef(graph: ArchGraph, nodeId: string, codeRef: CodeRef): ArchGraph {
   return {
     ...graph,
     nodes: addCodeRefToNodeList(graph.nodes, nodeId, codeRef),
   };
 }
 
-function addCodeRefToNodeList(
-  nodes: ArchNode[],
-  nodeId: string,
-  codeRef: CodeRef,
-): ArchNode[] {
+function addCodeRefToNodeList(nodes: ArchNode[], nodeId: string, codeRef: CodeRef): ArchNode[] {
   return nodes.map((node) => {
     if (node.id === nodeId) {
       return { ...node, codeRefs: [...node.codeRefs, codeRef] };
@@ -567,17 +519,11 @@ function addCodeRefToNodeList(
 /**
  * Find a node by ID, searching recursively through children.
  */
-export function findNode(
-  graph: ArchGraph,
-  nodeId: string,
-): ArchNode | undefined {
+export function findNode(graph: ArchGraph, nodeId: string): ArchNode | undefined {
   return findNodeInList(graph.nodes, nodeId);
 }
 
-function findNodeInList(
-  nodes: ArchNode[],
-  nodeId: string,
-): ArchNode | undefined {
+function findNodeInList(nodes: ArchNode[], nodeId: string): ArchNode | undefined {
   for (const node of nodes) {
     if (node.id === nodeId) return node;
     if (node.children.length > 0) {
@@ -591,10 +537,7 @@ function findNodeInList(
 /**
  * Find an edge by ID.
  */
-export function findEdge(
-  graph: ArchGraph,
-  edgeId: string,
-): ArchEdge | undefined {
+export function findEdge(graph: ArchGraph, edgeId: string): ArchEdge | undefined {
   return graph.edges.find((e) => e.id === edgeId);
 }
 
@@ -602,17 +545,11 @@ export function findEdge(
  * Find the parent of a node by searching recursively.
  * Returns undefined if the node is at root level.
  */
-export function findNodeParent(
-  graph: ArchGraph,
-  nodeId: string,
-): ArchNode | undefined {
+export function findNodeParent(graph: ArchGraph, nodeId: string): ArchNode | undefined {
   return findParentInList(graph.nodes, nodeId);
 }
 
-function findParentInList(
-  nodes: ArchNode[],
-  nodeId: string,
-): ArchNode | undefined {
+function findParentInList(nodes: ArchNode[], nodeId: string): ArchNode | undefined {
   for (const node of nodes) {
     if (node.children.some((child) => child.id === nodeId)) {
       return node;
@@ -629,10 +566,7 @@ function findParentInList(
  * Get the navigation path (breadcrumb) for a node.
  * Returns array of node IDs from root to the target node.
  */
-export function getNodePath(
-  graph: ArchGraph,
-  nodeId: string,
-): string[] {
+export function getNodePath(graph: ArchGraph, nodeId: string): string[] {
   const path: string[] = [];
   if (buildPath(graph.nodes, nodeId, path)) {
     return path;
@@ -640,11 +574,7 @@ export function getNodePath(
   return [];
 }
 
-function buildPath(
-  nodes: ArchNode[],
-  targetId: string,
-  path: string[],
-): boolean {
+function buildPath(nodes: ArchNode[], targetId: string, path: string[]): boolean {
   for (const node of nodes) {
     if (node.id === targetId) {
       path.push(node.id);

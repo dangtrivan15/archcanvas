@@ -143,7 +143,10 @@ describe('Feature #13: updateNode modifies displayName while preserving properti
     // Manually set properties
     const nodeWithProps = {
       ...node,
-      properties: { region: 'us-east-1', tier: 'premium' } as Record<string, string | number | boolean>,
+      properties: { region: 'us-east-1', tier: 'premium' } as Record<
+        string,
+        string | number | boolean
+      >,
     };
     let graph = createEmptyGraph('Test');
     graph = addNode(graph, nodeWithProps);

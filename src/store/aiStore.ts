@@ -55,18 +55,13 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
           createdAtMs: Date.now(),
         };
         return {
-          conversations: [
-            ...s.conversations,
-            { ...globalConv, messages: [msg] },
-          ],
+          conversations: [...s.conversations, { ...globalConv, messages: [msg] }],
         };
       }
 
       return {
         conversations: s.conversations.map((c) =>
-          c.id === globalConv!.id
-            ? { ...c, messages: [...c.messages, msg] }
-            : c,
+          c.id === globalConv!.id ? { ...c, messages: [...c.messages, msg] } : c,
         ),
       };
     });
@@ -94,18 +89,13 @@ export const useAIStore = create<AIStoreState>((set, get) => ({
           createdAtMs: Date.now(),
         };
         return {
-          conversations: [
-            ...s.conversations,
-            { ...nodeConv, messages: [msg] },
-          ],
+          conversations: [...s.conversations, { ...nodeConv, messages: [msg] }],
         };
       }
 
       return {
         conversations: s.conversations.map((c) =>
-          c.id === nodeConv!.id
-            ? { ...c, messages: [...c.messages, msg] }
-            : c,
+          c.id === nodeConv!.id ? { ...c, messages: [...c.messages, msg] } : c,
         ),
       };
     });

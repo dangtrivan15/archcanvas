@@ -140,8 +140,13 @@ describe('Feature #198: File System Access API fallback', () => {
           // Capture the download attribute when set
           const origSetAttr = el.setAttribute.bind(el);
           Object.defineProperty(el, 'download', {
-            set(val: string) { downloadName = val; origSetAttr('download', val); },
-            get() { return downloadName; },
+            set(val: string) {
+              downloadName = val;
+              origSetAttr('download', val);
+            },
+            get() {
+              return downloadName;
+            },
           });
         }
         return el;
@@ -169,8 +174,12 @@ describe('Feature #198: File System Access API fallback', () => {
         if (tag === 'a') {
           el.click = vi.fn();
           Object.defineProperty(el, 'download', {
-            set(val: string) { downloadName = val; },
-            get() { return downloadName; },
+            set(val: string) {
+              downloadName = val;
+            },
+            get() {
+              return downloadName;
+            },
           });
         }
         return el;

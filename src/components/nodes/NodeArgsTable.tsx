@@ -27,10 +27,7 @@ export const NodeArgsTable: React.FC<NodeArgsTableProps> = ({
   const remaining = entries.length - maxRows;
 
   return (
-    <div
-      className={`text-xs text-subtle ${className}`}
-      data-testid="node-args-table"
-    >
+    <div className={`text-xs text-subtle ${className}`} data-testid="node-args-table">
       <table className={`w-full border-collapse ${centered ? 'mx-auto' : ''}`}>
         <tbody>
           {visible.map(([key, value]) => (
@@ -41,9 +38,7 @@ export const NodeArgsTable: React.FC<NodeArgsTableProps> = ({
               >
                 {key}
               </td>
-              <td className="text-left truncate max-w-[120px]">
-                {String(value)}
-              </td>
+              <td className="text-left truncate max-w-[120px]">{String(value)}</td>
             </tr>
           ))}
         </tbody>

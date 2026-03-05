@@ -134,7 +134,12 @@ describe('Feature #37: New action after undo discards redo future', () => {
     graph = addNode(addNode(graph, nodeA), nodeB);
     undoManager.snapshot('Two nodes', graph);
 
-    const edge1 = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'original' });
+    const edge1 = createEdge({
+      fromNode: nodeA.id,
+      toNode: nodeB.id,
+      type: 'sync',
+      label: 'original',
+    });
     graph = addEdge(graph, edge1);
     undoManager.snapshot('Add original edge', graph);
 
@@ -144,7 +149,12 @@ describe('Feature #37: New action after undo discards redo future', () => {
     expect(undoManager.canRedo).toBe(true);
 
     // New action: add a different edge
-    const edge2 = createEdge({ fromNode: nodeB.id, toNode: nodeA.id, type: 'async', label: 'branched' });
+    const edge2 = createEdge({
+      fromNode: nodeB.id,
+      toNode: nodeA.id,
+      type: 'async',
+      label: 'branched',
+    });
     const branchedGraph = addEdge(afterUndo, edge2);
     undoManager.snapshot('Add branched edge', branchedGraph);
 

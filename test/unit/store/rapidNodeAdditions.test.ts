@@ -8,7 +8,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
+  const actual =
+    await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
     saveArchcFile: vi.fn(),
@@ -63,7 +64,7 @@ vi.mock('@/core/layout/elkLayout', () => ({
 import { useCoreStore } from '@/store/coreStore';
 import type { ArchNode } from '@/types/graph';
 
-describe('Feature #229: Rapid node additions don\'t lose data', () => {
+describe("Feature #229: Rapid node additions don't lose data", () => {
   beforeEach(() => {
     useCoreStore.setState({
       initialized: false,
@@ -333,7 +334,10 @@ describe('Feature #229: Rapid node additions don\'t lose data', () => {
       expect(useCoreStore.getState().nodeCount).toBe(20);
 
       // Verify each display name
-      const names = useCoreStore.getState().graph.nodes.map((n) => n.displayName).sort();
+      const names = useCoreStore
+        .getState()
+        .graph.nodes.map((n) => n.displayName)
+        .sort();
       for (let i = 0; i < 20; i++) {
         expect(names).toContain(`BulkNode-${i}`);
       }

@@ -10,7 +10,8 @@ import { useUIStore } from '@/store/uiStore';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
+  const actual =
+    await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
     saveArchcFile: vi.fn(),
@@ -47,7 +48,7 @@ vi.mock('@/store/navigationStore', () => {
     zoomOut: vi.fn(),
     zoomToLevel: vi.fn(),
   };
-  const useNavigationStore = (selector?: any) => selector ? selector(state) : state;
+  const useNavigationStore = (selector?: any) => (selector ? selector(state) : state);
   useNavigationStore.getState = () => state;
   useNavigationStore.subscribe = vi.fn(() => vi.fn());
   return { useNavigationStore };

@@ -178,9 +178,9 @@ describe('GraphContext.loadFromFile', () => {
   });
 
   it('throws for non-existent file', async () => {
-    await expect(
-      GraphContext.loadFromFile(tmpFile('ghost.archc'))
-    ).rejects.toThrow('File not found');
+    await expect(GraphContext.loadFromFile(tmpFile('ghost.archc'))).rejects.toThrow(
+      'File not found',
+    );
   });
 
   it('throws for corrupted file', async () => {

@@ -46,7 +46,12 @@ describe('ExportApi.generateSummaryWithMermaid() - Feature #156', () => {
 
     nodeA = makeNode({ id: 'node-a', type: 'compute/service', displayName: 'Auth Service' });
     nodeB = makeNode({ id: 'node-b', type: 'storage/database', displayName: 'User DB' });
-    const edge: ArchEdge = makeEdge({ fromNode: 'node-a', toNode: 'node-b', type: 'sync', label: 'query' });
+    const edge: ArchEdge = makeEdge({
+      fromNode: 'node-a',
+      toNode: 'node-b',
+      type: 'sync',
+      label: 'query',
+    });
 
     graph = {
       name: 'My Test Architecture',

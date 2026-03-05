@@ -60,10 +60,12 @@ describe('MCP Integration: File-Backed Mode', () => {
     };
 
     // Add a node via MCP tool
-    const addResult = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'MCP Service',
-    }));
+    const addResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'MCP Service',
+      }),
+    );
     expect(addResult.success).toBe(true);
     const nodeId = addResult.nodeId;
 
@@ -90,22 +92,28 @@ describe('MCP Integration: File-Backed Mode', () => {
     };
 
     // Add two nodes
-    const node1 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Frontend',
-    }));
-    const node2 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Backend',
-    }));
+    const node1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Frontend',
+      }),
+    );
+    const node2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Backend',
+      }),
+    );
 
     // Add edge
-    const edge = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: node1.nodeId,
-      toNode: node2.nodeId,
-      type: 'sync',
-      label: 'HTTP',
-    }));
+    const edge = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: node1.nodeId,
+        toNode: node2.nodeId,
+        type: 'sync',
+        label: 'HTTP',
+      }),
+    );
     expect(edge.success).toBe(true);
 
     // Save
@@ -185,10 +193,12 @@ describe('MCP Integration: File-Backed Mode', () => {
     expect(descResult.nodeCount).toBe(0);
 
     // Mutations should work (in-memory only)
-    const addResult = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'MemoryNode',
-    }));
+    const addResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'MemoryNode',
+      }),
+    );
     expect(addResult.success).toBe(true);
 
     // Verify node exists
@@ -251,32 +261,48 @@ describe('MCP Integration: File-Backed Mode', () => {
     };
 
     // Add 3 nodes
-    const n1 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service', displayName: 'Svc1',
-    }));
-    const n2 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database', displayName: 'DB1',
-    }));
-    const n3 = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'messaging/message-queue', displayName: 'Queue1',
-    }));
+    const n1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Svc1',
+      }),
+    );
+    const n2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'DB1',
+      }),
+    );
+    const n3 = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'messaging/message-queue',
+        displayName: 'Queue1',
+      }),
+    );
 
     // Add 2 edges
     dispatchToolCall(ctx, 'add_edge', {
-      fromNode: n1.nodeId, toNode: n2.nodeId, type: 'sync',
+      fromNode: n1.nodeId,
+      toNode: n2.nodeId,
+      type: 'sync',
     });
     dispatchToolCall(ctx, 'add_edge', {
-      fromNode: n1.nodeId, toNode: n3.nodeId, type: 'async',
+      fromNode: n1.nodeId,
+      toNode: n3.nodeId,
+      type: 'async',
     });
 
     // Add a note
     dispatchToolCall(ctx, 'add_note', {
-      nodeId: n1.nodeId, author: 'test', content: 'Integration test note',
+      nodeId: n1.nodeId,
+      author: 'test',
+      content: 'Integration test note',
     });
 
     // Update a node
     dispatchToolCall(ctx, 'update_node', {
-      nodeId: n2.nodeId, displayName: 'UsersDB',
+      nodeId: n2.nodeId,
+      displayName: 'UsersDB',
     });
 
     // Save and reload
@@ -288,11 +314,11 @@ describe('MCP Integration: File-Backed Mode', () => {
     expect(graph.edges).toHaveLength(2);
 
     // Verify updated name
-    const db = graph.nodes.find(n => n.id === n2.nodeId);
+    const db = graph.nodes.find((n) => n.id === n2.nodeId);
     expect(db?.displayName).toBe('UsersDB');
 
     // Verify note
-    const svc = graph.nodes.find(n => n.id === n1.nodeId);
+    const svc = graph.nodes.find((n) => n.id === n1.nodeId);
     expect(svc?.notes).toHaveLength(1);
     expect(svc?.notes[0].content).toBe('Integration test note');
   });

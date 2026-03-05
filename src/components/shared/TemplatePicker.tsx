@@ -4,7 +4,25 @@
  */
 
 import { useState } from 'react';
-import { X, Rocket, Layers, ArrowRight, MessageSquare, MessageCircle, Brain, Smartphone, Zap, BarChart3, Network, HeartPulse, Users, Wrench, ShoppingCart, Landmark, Radio } from 'lucide-react';
+import {
+  X,
+  Rocket,
+  Layers,
+  ArrowRight,
+  MessageSquare,
+  MessageCircle,
+  Brain,
+  Smartphone,
+  Zap,
+  BarChart3,
+  Network,
+  HeartPulse,
+  Users,
+  Wrench,
+  ShoppingCart,
+  Landmark,
+  Radio,
+} from 'lucide-react';
 import { getAvailableStacks, instantiateStack, type StackTemplate } from '@/stacks/stackLoader';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -41,7 +59,6 @@ export function TemplatePicker() {
 function TemplatePickerContent({ onClose }: { onClose: () => void }) {
   const [selectedStack, setSelectedStack] = useState<StackTemplate | null>(null);
   const stacks = getAvailableStacks();
-  const _setGraph = useCoreStore((s) => s._setGraph);
   const textApi = useCoreStore((s) => s.textApi);
   const undoManager = useCoreStore((s) => s.undoManager);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
@@ -79,16 +96,17 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" data-testid="template-picker-overlay">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      data-testid="template-picker-overlay"
+    >
       <div
         className="bg-[hsl(var(--background))] border border-[hsl(var(--border))] rounded-lg shadow-xl w-[600px] max-w-[90vw] max-h-[80vh] flex flex-col"
         data-testid="template-picker-dialog"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--border))]">
-          <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">
-            New from Template
-          </h2>
+          <h2 className="text-lg font-semibold text-[hsl(var(--foreground))]">New from Template</h2>
           <button
             onClick={onClose}
             className="p-1 rounded hover:bg-[hsl(var(--muted))] transition-colors"

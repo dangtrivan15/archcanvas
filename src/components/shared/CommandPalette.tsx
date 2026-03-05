@@ -7,7 +7,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Search, Box } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-import { getAllCommands, searchCommands, type Command, type CommandCategory } from '@/config/commandRegistry';
+import {
+  getAllCommands,
+  searchCommands,
+  type Command,
+  type CommandCategory,
+} from '@/config/commandRegistry';
 import { iconMap } from '@/components/nodes/GenericNode';
 
 /** Category badge colors */
@@ -115,13 +120,7 @@ export function CommandPalette() {
           break;
       }
     },
-    [
-      itemCount,
-      filteredCommands,
-      selectedIndex,
-      executeCommand,
-      closePalette,
-    ],
+    [itemCount, filteredCommands, selectedIndex, executeCommand, closePalette],
   );
 
   // Global Escape handler (capture phase to intercept before other handlers)

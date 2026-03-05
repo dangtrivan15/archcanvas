@@ -346,9 +346,7 @@ describe('Feature #308: File-Backed MCP Server', () => {
       const mcpCmd = program.commands.find((c) => c.name() === 'mcp');
       expect(mcpCmd).toBeDefined();
       // Check it has --file option
-      const fileOption = mcpCmd!.options.find(
-        (o) => o.long === '--file' || o.short === '-f',
-      );
+      const fileOption = mcpCmd!.options.find((o) => o.long === '--file' || o.short === '-f');
       expect(fileOption).toBeDefined();
     });
   });

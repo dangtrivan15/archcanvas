@@ -6,9 +6,24 @@
  */
 
 import {
-  Rocket, Layers, MessageSquare, MessageCircle, Brain, Smartphone,
-  Zap, BarChart3, Network, HeartPulse, Users, Wrench, ShoppingCart,
-  Landmark, Radio, FileBox, Trash2, Play,
+  Rocket,
+  Layers,
+  MessageSquare,
+  MessageCircle,
+  Brain,
+  Smartphone,
+  Zap,
+  BarChart3,
+  Network,
+  HeartPulse,
+  Users,
+  Wrench,
+  ShoppingCart,
+  Landmark,
+  Radio,
+  FileBox,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import type { TemplateMetadata } from '@/templates/types';
 

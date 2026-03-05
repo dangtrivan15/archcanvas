@@ -14,10 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  FocusZone,
-  isActiveElementTextInput,
-} from '../../../src/core/input/focusZones';
+import { FocusZone, isActiveElementTextInput } from '../../../src/core/input/focusZones';
 
 describe('FocusZone enum', () => {
   it('has Canvas zone', () => {
@@ -156,7 +153,9 @@ describe('FocusZone integration with keyboard handlers', () => {
   it('Canvas.tsx imports isActiveElementTextInput', async () => {
     const fs = await import('fs');
     const canvasSource = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
-    expect(canvasSource).toContain("import { isActiveElementTextInput } from '@/core/input/focusZones'");
+    expect(canvasSource).toContain(
+      "import { isActiveElementTextInput } from '@/core/input/focusZones'",
+    );
   });
 
   it('Canvas.tsx uses isActiveElementTextInput instead of inline tagName checks', async () => {
@@ -166,7 +165,9 @@ describe('FocusZone integration with keyboard handlers', () => {
     expect(canvasSource).toContain('isActiveElementTextInput()');
     // The old inline check pattern should NOT be present in the keyboard handler
     // (it may still be in comments, so we check the actual handler code)
-    const handlerMatch = canvasSource.match(/const handleKeyDown[\s\S]*?return \(\) => document\.removeEventListener/);
+    const handlerMatch = canvasSource.match(
+      /const handleKeyDown[\s\S]*?return \(\) => document\.removeEventListener/,
+    );
     if (handlerMatch) {
       expect(handlerMatch[0]).not.toContain("target.tagName === 'INPUT'");
     }
@@ -280,7 +281,12 @@ describe('useFocusZone derived booleans', () => {
 
   it('isInputFocused is true for TextInput and CommandPalette', () => {
     const inputZones = [FocusZone.TextInput, FocusZone.CommandPalette];
-    const nonInputZones = [FocusZone.Canvas, FocusZone.LeftPanel, FocusZone.RightPanel, FocusZone.Dialog];
+    const nonInputZones = [
+      FocusZone.Canvas,
+      FocusZone.LeftPanel,
+      FocusZone.RightPanel,
+      FocusZone.Dialog,
+    ];
 
     for (const zone of inputZones) {
       const isInput = zone === FocusZone.TextInput || zone === FocusZone.CommandPalette;
@@ -303,7 +309,12 @@ describe('useFocusZone derived booleans', () => {
 
   it('isPanelFocused is true for LeftPanel and RightPanel', () => {
     const panelZones = [FocusZone.LeftPanel, FocusZone.RightPanel];
-    const nonPanelZones = [FocusZone.Canvas, FocusZone.Dialog, FocusZone.CommandPalette, FocusZone.TextInput];
+    const nonPanelZones = [
+      FocusZone.Canvas,
+      FocusZone.Dialog,
+      FocusZone.CommandPalette,
+      FocusZone.TextInput,
+    ];
 
     for (const zone of panelZones) {
       const isPanel = zone === FocusZone.LeftPanel || zone === FocusZone.RightPanel;

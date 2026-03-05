@@ -47,8 +47,7 @@ class MockGitRunner implements GitRunner {
     this.calls.push(args);
     const key = args.join(' ');
     for (const { match, value } of this.responses) {
-      const matched =
-        typeof match === 'string' ? key.includes(match) : match.test(key);
+      const matched = typeof match === 'string' ? key.includes(match) : match.test(key);
       if (matched) {
         if (value instanceof Error) throw value;
         return value;
@@ -352,9 +351,7 @@ describe('CLI backup-push command', () => {
     });
 
     it('throws on detached HEAD (empty branch name)', async () => {
-      const mock = new MockGitRunner()
-        .on('--porcelain', '')
-        .on('--show-current', '');
+      const mock = new MockGitRunner().on('--porcelain', '').on('--show-current', '');
       setGitRunner(mock);
 
       await expect(

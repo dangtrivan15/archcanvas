@@ -29,7 +29,12 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIPadExternalKeyboard } from '@/hooks/useIPadExternalKeyboard';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
-import { useViewportSize, ICON_RAIL_BREAKPOINT, MIN_VIABLE_WIDTH, MIN_VIABLE_HEIGHT } from '@/hooks/useViewportSize';
+import {
+  useViewportSize,
+  ICON_RAIL_BREAKPOINT,
+  MIN_VIABLE_WIDTH,
+  MIN_VIABLE_HEIGHT,
+} from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
@@ -72,26 +77,32 @@ export function App() {
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
-  const { isCompact, isMinimal, width: viewportWidth, height: viewportHeight } = useViewportSize();
+  const { isCompact, isMinimal, width: viewportWidth } = useViewportSize();
 
   // Virtual keyboard detection for on-screen keyboard handling
   const { isKeyboardVisible, keyboardHeight } = useVirtualKeyboard();
 
-  const handleLeftResize = useCallback((delta: number) => {
-    const newWidth = leftPanelWidth + delta;
-    // Snap-to-collapse: if dragged below collapse threshold, close the panel
-    if (newWidth < LEFT_PANEL_COLLAPSE_THRESHOLD) {
-      if (leftPanelOpen) {
-        toggleLeftPanel();
+  const handleLeftResize = useCallback(
+    (delta: number) => {
+      const newWidth = leftPanelWidth + delta;
+      // Snap-to-collapse: if dragged below collapse threshold, close the panel
+      if (newWidth < LEFT_PANEL_COLLAPSE_THRESHOLD) {
+        if (leftPanelOpen) {
+          toggleLeftPanel();
+        }
+        return;
       }
-      return;
-    }
-    setLeftPanelWidth(newWidth);
-  }, [leftPanelWidth, setLeftPanelWidth, leftPanelOpen, toggleLeftPanel]);
+      setLeftPanelWidth(newWidth);
+    },
+    [leftPanelWidth, setLeftPanelWidth, leftPanelOpen, toggleLeftPanel],
+  );
 
-  const handleRightResize = useCallback((delta: number) => {
-    setRightPanelWidth(rightPanelWidth + delta);
-  }, [rightPanelWidth, setRightPanelWidth]);
+  const handleRightResize = useCallback(
+    (delta: number) => {
+      setRightPanelWidth(rightPanelWidth + delta);
+    },
+    [rightPanelWidth, setRightPanelWidth],
+  );
 
   // iPad external keyboard: capture-phase interception to suppress WKWebView defaults
   // Must be registered before useKeyboardShortcuts so capture fires first
@@ -163,7 +174,10 @@ export function App() {
 
   return (
     <FocusZoneProvider>
-      <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" style={{ minWidth: MIN_VIABLE_WIDTH, minHeight: MIN_VIABLE_HEIGHT }}>
+      <div
+        className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+        style={{ minWidth: MIN_VIABLE_WIDTH, minHeight: MIN_VIABLE_HEIGHT }}
+      >
         {/* Offline Status Banner */}
         <OfflineBanner />
 
@@ -308,7 +322,11 @@ export function App() {
         <Toast />
 
         {/* Status Bar - hidden in minimal Stage Manager windows to maximize canvas space */}
-        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)', display: isMinimal ? 'none' : undefined }}>
+        <footer
+          className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm"
+          data-testid="status-bar"
+          style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)', display: isMinimal ? 'none' : undefined }}
+        >
           <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
             {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) - always visible */}
             <ModeStatusBar />
@@ -317,32 +335,51 @@ export function App() {
             <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
             {/* Non-essential items: hidden in compact mode via CSS */}
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-            <span data-testid="node-count" className="status-bar-compact-hide">Nodes: {nodeCount}</span>
+            <span data-testid="node-count" className="status-bar-compact-hide">
+              Nodes: {nodeCount}
+            </span>
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-            <span data-testid="edge-count" className="status-bar-compact-hide">Edges: {edgeCount}</span>
+            <span data-testid="edge-count" className="status-bar-compact-hide">
+              Edges: {edgeCount}
+            </span>
             {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
               <>
                 <span className="mx-1 text-gray-300">|</span>
                 <span data-testid="selection-count" className="text-blue-500 font-medium">
-                  Selected: {selectedNodeIds.length > 0 ? `${selectedNodeIds.length} node${selectedNodeIds.length !== 1 ? 's' : ''}` : `${selectedEdgeIds.length} edge${selectedEdgeIds.length !== 1 ? 's' : ''}`}
+                  Selected:{' '}
+                  {selectedNodeIds.length > 0
+                    ? `${selectedNodeIds.length} node${selectedNodeIds.length !== 1 ? 's' : ''}`
+                    : `${selectedEdgeIds.length} edge${selectedEdgeIds.length !== 1 ? 's' : ''}`}
                 </span>
               </>
             )}
             {autosaveStatusMessage && (
               <>
                 <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-                <span data-testid="autosave-status" className="text-green-600 status-bar-compact-hide">{autosaveStatusMessage}</span>
+                <span
+                  data-testid="autosave-status"
+                  className="text-green-600 status-bar-compact-hide"
+                >
+                  {autosaveStatusMessage}
+                </span>
               </>
             )}
             <SyncStatusIndicator syncStatus={syncStatus} pendingCount={pendingCount} />
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-            <span data-testid="zoom-level" className="status-bar-compact-hide">Zoom: {Math.round(zoom * 100)}%</span>
+            <span data-testid="zoom-level" className="status-bar-compact-hide">
+              Zoom: {Math.round(zoom * 100)}%
+            </span>
             <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-            <span className="status-bar-compact-hide"><CachedFilesIndicator /></span>
+            <span className="status-bar-compact-hide">
+              <CachedFilesIndicator />
+            </span>
             {navigationPath.length > 0 && (
               <>
                 <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-                <span data-testid="breadcrumb" className="text-blue-600 font-medium status-bar-compact-hide">
+                <span
+                  data-testid="breadcrumb"
+                  className="text-blue-600 font-medium status-bar-compact-hide"
+                >
                   {(() => {
                     const parts = ['Root'];
                     for (const nodeId of navigationPath) {

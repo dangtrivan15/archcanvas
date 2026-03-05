@@ -42,21 +42,24 @@ export function useAutoSaveOnBlur() {
 
     console.log('[AutoSave] Tab hidden with unsaved changes, triggering autosave...');
 
-    useCoreStore.getState().saveFile().then((success) => {
-      if (success) {
-        console.log('[AutoSave] Autosave completed successfully');
-        // Show brief status message
-        setAutosaveStatusMessage('Autosaved');
-        // Clear the status after a timeout
-        if (statusTimeoutRef.current) {
-          clearTimeout(statusTimeoutRef.current);
+    useCoreStore
+      .getState()
+      .saveFile()
+      .then((success) => {
+        if (success) {
+          console.log('[AutoSave] Autosave completed successfully');
+          // Show brief status message
+          setAutosaveStatusMessage('Autosaved');
+          // Clear the status after a timeout
+          if (statusTimeoutRef.current) {
+            clearTimeout(statusTimeoutRef.current);
+          }
+          statusTimeoutRef.current = setTimeout(() => {
+            setAutosaveStatusMessage(null);
+            statusTimeoutRef.current = null;
+          }, AUTOSAVE_STATUS_DURATION);
         }
-        statusTimeoutRef.current = setTimeout(() => {
-          setAutosaveStatusMessage(null);
-          statusTimeoutRef.current = null;
-        }, AUTOSAVE_STATUS_DURATION);
-      }
-    });
+      });
   }, [autosaveOnBlur, setAutosaveStatusMessage]);
 
   const handleWindowBlur = useCallback(() => {
@@ -71,19 +74,22 @@ export function useAutoSaveOnBlur() {
 
     console.log('[AutoSave] Window blur with unsaved changes, triggering autosave...');
 
-    useCoreStore.getState().saveFile().then((success) => {
-      if (success) {
-        console.log('[AutoSave] Autosave completed successfully');
-        setAutosaveStatusMessage('Autosaved');
-        if (statusTimeoutRef.current) {
-          clearTimeout(statusTimeoutRef.current);
+    useCoreStore
+      .getState()
+      .saveFile()
+      .then((success) => {
+        if (success) {
+          console.log('[AutoSave] Autosave completed successfully');
+          setAutosaveStatusMessage('Autosaved');
+          if (statusTimeoutRef.current) {
+            clearTimeout(statusTimeoutRef.current);
+          }
+          statusTimeoutRef.current = setTimeout(() => {
+            setAutosaveStatusMessage(null);
+            statusTimeoutRef.current = null;
+          }, AUTOSAVE_STATUS_DURATION);
         }
-        statusTimeoutRef.current = setTimeout(() => {
-          setAutosaveStatusMessage(null);
-          statusTimeoutRef.current = null;
-        }, AUTOSAVE_STATUS_DURATION);
-      }
-    });
+      });
   }, [autosaveOnBlur, setAutosaveStatusMessage]);
 
   useEffect(() => {

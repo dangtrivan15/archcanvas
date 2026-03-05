@@ -20,9 +20,7 @@ export class UndoManager {
 
   constructor(maxEntries: number = MAX_UNDO_ENTRIES) {
     this.maxEntries = maxEntries;
-    console.log(
-      `[UndoManager] Initialized with max ${this.maxEntries} entries`,
-    );
+    console.log(`[UndoManager] Initialized with max ${this.maxEntries} entries`);
   }
 
   /**
@@ -146,10 +144,7 @@ export class UndoManager {
    * Import undo history from deserialized data (e.g., loading from .archc file).
    * Replaces current history with the imported data.
    */
-  importHistory(
-    entries: UndoEntry[],
-    currentIndex: number,
-  ): void {
+  importHistory(entries: UndoEntry[], currentIndex: number): void {
     this.entries = entries.map((e) => ({
       description: e.description,
       timestampMs: e.timestampMs,

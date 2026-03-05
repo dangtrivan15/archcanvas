@@ -15,12 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
-import {
-  createEmptyGraph,
-  addNode,
-  createNode,
-  findNode,
-} from '@/core/graph/graphEngine';
+import { createEmptyGraph, addNode, createNode, findNode } from '@/core/graph/graphEngine';
 import { TextApi } from '@/api/textApi';
 import { RegistryManager } from '@/core/registry/registryManager';
 import type { ArchGraph, ArchNode } from '@/types/graph';
@@ -51,12 +46,26 @@ function createNotesTabSimulator(nodeId: string, addNoteFn: (params: any) => any
 
   return {
     // State getters
-    getState: () => ({ isEditing, noteContent, noteAuthor, contentError, tags, tagInput, savingNoteRef }),
+    getState: () => ({
+      isEditing,
+      noteContent,
+      noteAuthor,
+      contentError,
+      tags,
+      tagInput,
+      savingNoteRef,
+    }),
 
     // Set note content (mirrors parent's setNoteContent)
-    setNoteContent: (content: string) => { noteContent = content; },
-    setNoteAuthor: (author: string) => { noteAuthor = author; },
-    setTags: (newTags: string[]) => { tags = newTags; },
+    setNoteContent: (content: string) => {
+      noteContent = content;
+    },
+    setNoteAuthor: (author: string) => {
+      noteAuthor = author;
+    },
+    setTags: (newTags: string[]) => {
+      tags = newTags;
+    },
 
     /**
      * Simulates clicking the "Add Note" button.
@@ -128,7 +137,7 @@ function createNotesTabSimulator(nodeId: string, addNoteFn: (params: any) => any
   };
 }
 
-describe('Feature #214: Double-click Add Note doesn\'t create duplicate notes', () => {
+describe("Feature #214: Double-click Add Note doesn't create duplicate notes", () => {
   let registry: RegistryManager;
 
   beforeEach(() => {
@@ -325,9 +334,18 @@ describe('Feature #214: Double-click Add Note doesn\'t create duplicate notes', 
       }
 
       expect(mockAddNote).toHaveBeenCalledTimes(3);
-      expect(mockAddNote).toHaveBeenNthCalledWith(1, expect.objectContaining({ content: 'Note number 1' }));
-      expect(mockAddNote).toHaveBeenNthCalledWith(2, expect.objectContaining({ content: 'Note number 2' }));
-      expect(mockAddNote).toHaveBeenNthCalledWith(3, expect.objectContaining({ content: 'Note number 3' }));
+      expect(mockAddNote).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ content: 'Note number 1' }),
+      );
+      expect(mockAddNote).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ content: 'Note number 2' }),
+      );
+      expect(mockAddNote).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ content: 'Note number 3' }),
+      );
     });
 
     it('guard resets on Cancel so next save works', () => {

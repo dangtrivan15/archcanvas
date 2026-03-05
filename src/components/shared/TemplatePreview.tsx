@@ -6,7 +6,7 @@
  * Users can confirm loading with "Use Template" or close the preview.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -43,7 +43,12 @@ function archNodeToCanvas(node: ArchNode): CanvasNode {
   switch (namespace) {
     case 'data': {
       const name = node.type.split('/')[1];
-      if (name === 'database' || name === 'cache' || name === 'object-storage' || name === 'repository')
+      if (
+        name === 'database' ||
+        name === 'cache' ||
+        name === 'object-storage' ||
+        name === 'repository'
+      )
         nodeType = name;
       break;
     }
@@ -182,11 +187,7 @@ export function TemplatePreview({ record, onUseTemplate, onClose }: TemplatePrev
         if (cancelled) return;
 
         // Apply ELK layout
-        const layoutResult = await computeElkLayout(
-          archGraph.nodes,
-          archGraph.edges,
-          'horizontal',
-        );
+        const layoutResult = await computeElkLayout(archGraph.nodes, archGraph.edges, 'horizontal');
         if (cancelled) return;
 
         // Apply layout positions
@@ -217,7 +218,9 @@ export function TemplatePreview({ record, onUseTemplate, onClose }: TemplatePrev
     }
 
     preparePreview();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [record]);
 
   // Node type breakdown
@@ -275,7 +278,10 @@ export function TemplatePreview({ record, onUseTemplate, onClose }: TemplatePrev
             data-testid="template-preview-canvas"
           >
             {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center" data-testid="template-preview-loading">
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                data-testid="template-preview-loading"
+              >
                 <div className="flex flex-col items-center gap-2 text-[hsl(var(--muted-foreground))]">
                   <Loader2 className="w-8 h-8 animate-spin" />
                   <span className="text-sm">Preparing preview...</span>
@@ -332,7 +338,9 @@ export function TemplatePreview({ record, onUseTemplate, onClose }: TemplatePrev
                   >
                     <Box className="w-3 h-3 text-[hsl(var(--muted-foreground))] shrink-0" />
                     <span className="truncate flex-1">{shortTypeName(type)}</span>
-                    <span className="text-[hsl(var(--muted-foreground))] tabular-nums">{count}</span>
+                    <span className="text-[hsl(var(--muted-foreground))] tabular-nums">
+                      {count}
+                    </span>
                   </div>
                 ))}
               </div>

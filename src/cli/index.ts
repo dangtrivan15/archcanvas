@@ -24,8 +24,7 @@ import { registerBackupPushCommand } from '@/cli/commands/backupPush';
 // ─── Version ──────────────────────────────────────────────────
 
 const VERSION = '0.1.0';
-const DESCRIPTION =
-  'Visual architecture design tool — CLI for .archc files';
+const DESCRIPTION = 'Visual architecture design tool — CLI for .archc files';
 
 // ─── Output Formatting ───────────────────────────────────────
 
@@ -52,7 +51,6 @@ import {
   formatNodeDetail,
   formatSearchResult,
   writeOutput,
-  writeInfo,
 } from '@/cli/formatter';
 
 /** Global options shared across all commands. */
@@ -159,10 +157,7 @@ export function createProgram(): Command {
     .name('archcanvas')
     .description(DESCRIPTION)
     .version(VERSION, '-v, --version', 'Display the version number')
-    .addOption(
-      new Option('-f, --file <path>', 'Path to the .archc file')
-        .env('ARCHCANVAS_FILE'),
-    )
+    .addOption(new Option('-f, --file <path>', 'Path to the .archc file').env('ARCHCANVAS_FILE'))
     .addOption(
       new Option('--format <format>', 'Output format')
         .choices(['json', 'table', 'human'])
@@ -345,7 +340,11 @@ export function createProgram(): Command {
     .option('-f <path>', 'Alias for --file')
     .action(
       withErrorHandler(async (_cmdOpts: Record<string, string>, cmd: Command) => {
-        const opts = cmd.optsWithGlobals() as GlobalOptions & { transport: string; file?: string; f?: string };
+        const opts = cmd.optsWithGlobals() as GlobalOptions & {
+          transport: string;
+          file?: string;
+          f?: string;
+        };
         const filePath = opts.file ?? opts.f ?? (cmd.parent?.opts() as GlobalOptions)?.file;
 
         const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');

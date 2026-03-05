@@ -13,8 +13,8 @@ import { isActiveElementTextInput } from '@/core/input/focusZones';
 const STORAGE_KEY = 'archcanvas:hints-visible';
 
 interface HintItem {
-  key: string;       // display key (e.g., "⌘K")
-  label: string;     // action label (e.g., "commands")
+  key: string; // display key (e.g., "⌘K")
+  label: string; // action label (e.g., "commands")
 }
 
 /**
@@ -73,7 +73,9 @@ export function ShortcutHints() {
       const next = !prev;
       try {
         localStorage.setItem(STORAGE_KEY, String(next));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, []);

@@ -57,9 +57,9 @@ describe('NodeDef Zod validation', () => {
 
         if (!result.success) {
           // Show detailed error for debugging
-          const errors = result.error.issues.map(
-            (issue) => `  ${issue.path.join('.')}: ${issue.message}`,
-          ).join('\n');
+          const errors = result.error.issues
+            .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)
+            .join('\n');
           throw new Error(`Zod validation failed for ${namespace}/${name}:\n${errors}`);
         }
 
@@ -112,7 +112,10 @@ describe('NodeDef Zod validation', () => {
 
           // Enum args must have options
           if (arg.type === 'enum') {
-            expect(Array.isArray(arg.options), `${name} arg '${arg.name}' is enum but missing options`).toBe(true);
+            expect(
+              Array.isArray(arg.options),
+              `${name} arg '${arg.name}' is enum but missing options`,
+            ).toBe(true);
             expect(arg.options!.length).toBeGreaterThan(0);
           }
         }
@@ -143,7 +146,15 @@ describe('NodeDef Zod validation', () => {
     it('rejects object with missing kind', () => {
       const invalid = {
         apiVersion: 'v1',
-        metadata: { name: 'test', namespace: 'test', version: '1.0.0', displayName: 'Test', description: 'Test', icon: 'Test', tags: [] },
+        metadata: {
+          name: 'test',
+          namespace: 'test',
+          version: '1.0.0',
+          displayName: 'Test',
+          description: 'Test',
+          icon: 'Test',
+          tags: [],
+        },
         spec: { args: [], ports: [] },
       };
       const result = safeValidateNodeDef(invalid);
@@ -154,7 +165,15 @@ describe('NodeDef Zod validation', () => {
       const invalid = {
         kind: 'WrongKind',
         apiVersion: 'v1',
-        metadata: { name: 'test', namespace: 'test', version: '1.0.0', displayName: 'Test', description: 'Test', icon: 'Test', tags: [] },
+        metadata: {
+          name: 'test',
+          namespace: 'test',
+          version: '1.0.0',
+          displayName: 'Test',
+          description: 'Test',
+          icon: 'Test',
+          tags: [],
+        },
         spec: { args: [], ports: [] },
       };
       const result = safeValidateNodeDef(invalid);
@@ -165,7 +184,15 @@ describe('NodeDef Zod validation', () => {
       const invalid = {
         kind: 'NodeDef',
         apiVersion: 'v1',
-        metadata: { name: 'test', namespace: 'test', version: '1.0.0', displayName: 'Test', description: 'Test', icon: 'Test', tags: [] },
+        metadata: {
+          name: 'test',
+          namespace: 'test',
+          version: '1.0.0',
+          displayName: 'Test',
+          description: 'Test',
+          icon: 'Test',
+          tags: [],
+        },
         spec: {
           args: [{ name: 'bad', type: 'invalid-type', description: 'Bad arg' }],
           ports: [],

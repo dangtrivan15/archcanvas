@@ -14,7 +14,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createProgram, printOutput, withErrorHandler, loadContext, type GlobalOptions } from '@/cli/index';
+import {
+  createProgram,
+  printOutput,
+  withErrorHandler,
+  loadContext,
+  type GlobalOptions,
+} from '@/cli/index';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -197,9 +203,7 @@ describe('CLI Entry Point', () => {
 
     it('outputs JSON with 2-space indent for json format', () => {
       printOutput({ name: 'test', count: 5 }, 'json');
-      expect(logSpy).toHaveBeenCalledWith(
-        JSON.stringify({ name: 'test', count: 5 }, null, 2),
-      );
+      expect(logSpy).toHaveBeenCalledWith(JSON.stringify({ name: 'test', count: 5 }, null, 2));
     });
 
     it('uses humanFormatter for human format when provided', () => {
@@ -208,7 +212,13 @@ describe('CLI Entry Point', () => {
     });
 
     it('displays table format for arrays', () => {
-      printOutput([{ id: 'a', name: 'Foo' }, { id: 'b', name: 'Bar' }], 'table');
+      printOutput(
+        [
+          { id: 'a', name: 'Foo' },
+          { id: 'b', name: 'Bar' },
+        ],
+        'table',
+      );
       const output = logSpy.mock.calls.map((c) => c[0]).join('\n');
       expect(output).toContain('id');
       expect(output).toContain('name');
@@ -308,9 +318,7 @@ describe('CLI Entry Point', () => {
       } catch {
         // process.exit throws
       }
-      expect(errorSpy).toHaveBeenCalledWith(
-        'Error: --file <path> is required for this command.',
-      );
+      expect(errorSpy).toHaveBeenCalledWith('Error: --file <path> is required for this command.');
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
@@ -325,9 +333,7 @@ describe('CLI Entry Point', () => {
       } catch {
         // process.exit throws
       }
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Error: Failed to load'),
-      );
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Error: Failed to load'));
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
   });
@@ -335,9 +341,7 @@ describe('CLI Entry Point', () => {
   // ─── package.json Configuration ────────────────────────────
 
   describe('package.json', () => {
-    const pkg = JSON.parse(
-      fs.readFileSync(path.resolve('package.json'), 'utf-8'),
-    );
+    const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf-8'));
 
     it('has bin field with archcanvas entry', () => {
       expect(pkg.bin).toBeDefined();
@@ -363,10 +367,7 @@ describe('CLI Entry Point', () => {
 
   describe('Entry point file', () => {
     it('has #!/usr/bin/env node shebang', () => {
-      const content = fs.readFileSync(
-        path.resolve('src/cli/index.ts'),
-        'utf-8',
-      );
+      const content = fs.readFileSync(path.resolve('src/cli/index.ts'), 'utf-8');
       expect(content.startsWith('#!/usr/bin/env node')).toBe(true);
     });
 

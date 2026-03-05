@@ -136,7 +136,8 @@ describe('FileSystemAdapter factory', () => {
   });
 
   it('returns WebFileSystemAdapter in test environment', async () => {
-    const { getFileSystemAdapter, _resetFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+    const { getFileSystemAdapter, _resetFileSystemAdapter } =
+      await import('@/core/platform/fileSystemAdapter');
     _resetFileSystemAdapter();
 
     const adapter = await getFileSystemAdapter();

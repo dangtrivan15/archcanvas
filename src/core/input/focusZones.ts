@@ -66,12 +66,9 @@ export function useFocusZone() {
     activeZone,
     setActiveZone,
     isCanvasFocused: activeZone === FocusZone.Canvas,
-    isInputFocused:
-      activeZone === FocusZone.TextInput ||
-      activeZone === FocusZone.CommandPalette,
+    isInputFocused: activeZone === FocusZone.TextInput || activeZone === FocusZone.CommandPalette,
     isDialogFocused: activeZone === FocusZone.Dialog,
-    isPanelFocused:
-      activeZone === FocusZone.LeftPanel || activeZone === FocusZone.RightPanel,
+    isPanelFocused: activeZone === FocusZone.LeftPanel || activeZone === FocusZone.RightPanel,
   };
 }
 
@@ -107,11 +104,7 @@ export function FocusZoneRegion({
     (e: React.FocusEvent) => {
       const target = e.target as HTMLElement;
       // If the focus landed on a text-input element, override to TextInput zone
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         setActiveZone(FocusZone.TextInput);
       } else {
         setActiveZone(zone);
@@ -159,11 +152,7 @@ export function isActiveElementTextInput(): boolean {
   const el = document.activeElement;
   if (!el) return false;
   const tag = (el as HTMLElement).tagName;
-  return (
-    tag === 'INPUT' ||
-    tag === 'TEXTAREA' ||
-    (el as HTMLElement).isContentEditable === true
-  );
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable === true;
 }
 
 // Re-export context for testing

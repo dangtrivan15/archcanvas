@@ -81,9 +81,7 @@ export function ModeStatusBar() {
 
   // Breadcrumb parts
   const breadcrumbParts = useMemo(() => {
-    const parts: { label: string; path: string[] }[] = [
-      { label: 'Root', path: [] },
-    ];
+    const parts: { label: string; path: string[] }[] = [{ label: 'Root', path: [] }];
     for (let i = 0; i < navigationPath.length; i++) {
       const nodeId = navigationPath[i] as string;
       const node = findNode(graph, nodeId);
@@ -154,10 +152,7 @@ export function ModeStatusBar() {
 
       {/* Right: Selection count */}
       {selectionCount > 0 && (
-        <span
-          data-testid="mode-selection-count"
-          className="text-blue-500 font-medium shrink-0"
-        >
+        <span data-testid="mode-selection-count" className="text-blue-500 font-medium shrink-0">
           {selectionCount} {selectionCount === 1 ? 'node' : 'nodes'}
         </span>
       )}

@@ -11,13 +11,13 @@
  * It imports protobufjs/minimal and re-exports it as a namespace.
  */
 
-// @ts-expect-error - protobufjs/minimal is CJS, TypeScript types may not match exactly
 import protobufMinimal from 'protobufjs/minimal';
 
 // In Vite, the namespace import already has named exports.
 // In Node.js ESM (tsx), they're under .default.
 // This normalizes the difference.
-const protobuf = (protobufMinimal as { default?: typeof protobufMinimal }).default ?? protobufMinimal;
+const protobuf =
+  (protobufMinimal as { default?: typeof protobufMinimal }).default ?? protobufMinimal;
 
 export const Reader = protobuf.Reader;
 export const Writer = protobuf.Writer;

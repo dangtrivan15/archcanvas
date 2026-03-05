@@ -19,8 +19,15 @@ export const microservicesTemplate: PromptTemplate = {
   description:
     'Optimized for distributed systems with multiple services. Focuses on service boundaries, inter-service communication, API gateways, and event-driven patterns.',
   tags: [
-    'microservices', 'distributed', 'docker', 'kubernetes', 'k8s',
-    'service-mesh', 'api-gateway', 'event-driven', 'grpc',
+    'microservices',
+    'distributed',
+    'docker',
+    'kubernetes',
+    'k8s',
+    'service-mesh',
+    'api-gateway',
+    'event-driven',
+    'grpc',
   ],
 
   systemPrompt: `You are an expert distributed systems architect analyzing a codebase to infer its microservices architecture.

@@ -19,8 +19,18 @@ export const dataPipelineTemplate: PromptTemplate = {
   description:
     'Optimized for ETL, data processing, and analytics systems. Focuses on data flow, storage tiers, orchestration, and transformation stages.',
   tags: [
-    'data', 'etl', 'pipeline', 'analytics', 'warehouse', 'data-engineering',
-    'airflow', 'spark', 'flink', 'dbt', 'kafka', 'streaming',
+    'data',
+    'etl',
+    'pipeline',
+    'analytics',
+    'warehouse',
+    'data-engineering',
+    'airflow',
+    'spark',
+    'flink',
+    'dbt',
+    'kafka',
+    'streaming',
   ],
 
   systemPrompt: `You are an expert data engineer analyzing a codebase to infer its data pipeline architecture.

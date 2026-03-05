@@ -35,9 +35,14 @@ describe('CLI info Command', () => {
     program.exitOverride();
     // Global options must come before the subcommand
     await program.parseAsync([
-      'node', 'archcanvas', '-q', 'init',
-      '--name', archName,
-      '--output', outputPath,
+      'node',
+      'archcanvas',
+      '-q',
+      'init',
+      '--name',
+      archName,
+      '--output',
+      outputPath,
     ]);
     return outputPath;
   }
@@ -61,12 +66,7 @@ describe('CLI info Command', () => {
 
     try {
       // Global options (--file, --format) must come before the subcommand
-      await program.parseAsync([
-        'node', 'archcanvas',
-        '--file', filePath,
-        ...extraArgs,
-        'info',
-      ]);
+      await program.parseAsync(['node', 'archcanvas', '--file', filePath, ...extraArgs, 'info']);
     } catch {
       // May throw on process.exit override
     }
@@ -300,8 +300,10 @@ describe('CLI info Command', () => {
 
       try {
         await program.parseAsync([
-          'node', 'archcanvas',
-          '--file', '/tmp/nonexistent-file.archc',
+          'node',
+          'archcanvas',
+          '--file',
+          '/tmp/nonexistent-file.archc',
           'info',
         ]);
       } catch {

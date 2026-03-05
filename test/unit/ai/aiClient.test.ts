@@ -145,7 +145,9 @@ describe('AI Client - sendMessage', () => {
   });
 
   it('returns complete content from non-streaming response', async () => {
-    global.fetch = vi.fn(async () => createMockResponse('The database is a PostgreSQL instance.')) as unknown as typeof fetch;
+    global.fetch = vi.fn(async () =>
+      createMockResponse('The database is a PostgreSQL instance.'),
+    ) as unknown as typeof fetch;
 
     const result: SendMessageResult = await sendMessage({
       messages: [{ role: 'user', content: 'Describe the database' }],
@@ -217,13 +219,13 @@ describe('AI Client - sendMessage', () => {
     const configModule = await import('@/ai/config');
     vi.mocked(configModule.getAnthropicApiKey).mockReturnValue(undefined);
 
-    await expect(
-      sendMessage({ messages: [{ role: 'user', content: 'Hello' }] }),
-    ).rejects.toThrow(AIClientError);
+    await expect(sendMessage({ messages: [{ role: 'user', content: 'Hello' }] })).rejects.toThrow(
+      AIClientError,
+    );
 
-    await expect(
-      sendMessage({ messages: [{ role: 'user', content: 'Hello' }] }),
-    ).rejects.toThrow('API key not configured');
+    await expect(sendMessage({ messages: [{ role: 'user', content: 'Hello' }] })).rejects.toThrow(
+      'API key not configured',
+    );
 
     // Restore the mock for subsequent tests
     vi.mocked(configModule.getAnthropicApiKey).mockReturnValue('test-api-key-12345');

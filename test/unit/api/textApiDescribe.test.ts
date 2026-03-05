@@ -130,11 +130,15 @@ describe('TextApi.describe() - Feature #39', () => {
     const parsed = JSON.parse(result);
 
     // API Gateway: 1 outbound edge
-    const gateway = parsed.nodes.find((n: { displayName: string }) => n.displayName === 'API Gateway');
+    const gateway = parsed.nodes.find(
+      (n: { displayName: string }) => n.displayName === 'API Gateway',
+    );
     expect(gateway.connectionCount).toBe(1);
 
     // Order Service: 1 inbound + 1 outbound = 2
-    const order = parsed.nodes.find((n: { displayName: string }) => n.displayName === 'Order Service');
+    const order = parsed.nodes.find(
+      (n: { displayName: string }) => n.displayName === 'Order Service',
+    );
     expect(order.connectionCount).toBe(2);
 
     // Products DB: 1 inbound edge

@@ -24,7 +24,7 @@ function makeNode(overrides: Partial<ArchNode> & { type: string; displayName: st
 }
 
 function getMermaidLine(output: string, displayName: string): string | undefined {
-  return output.split('\n').find(l => l.includes(`"${displayName}"`));
+  return output.split('\n').find((l) => l.includes(`"${displayName}"`));
 }
 
 describe('ExportApi Mermaid shape mapping - Feature #60', () => {
@@ -184,11 +184,14 @@ describe('ExportApi Mermaid shape mapping - Feature #60', () => {
     const result = exportApi.generateMermaid(graph);
 
     // Extract the shape delimiters for each node
-    const lines = result.split('\n').filter(l => l.trim() && !l.startsWith('graph'));
+    const lines = result.split('\n').filter((l) => l.trim() && !l.startsWith('graph'));
 
     // Each line uses different opening/closing shapes
-    const shapes = lines.map(l => {
-      const idEnd = l.trimStart().indexOf(']') > -1 || l.trimStart().indexOf('(') > -1 || l.trimStart().indexOf('{') > -1;
+    const shapes = lines.map((l) => {
+      const idEnd =
+        l.trimStart().indexOf(']') > -1 ||
+        l.trimStart().indexOf('(') > -1 ||
+        l.trimStart().indexOf('{') > -1;
       return l.trim();
     });
 

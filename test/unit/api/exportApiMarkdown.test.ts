@@ -51,12 +51,26 @@ describe('ExportApi.generateMarkdownSummary() - Feature #58', () => {
     // Step 1: Create architecture 'E-Commerce' with 4 nodes and 3 edges
     node1 = makeNode({ type: 'compute/api-gateway', displayName: 'API Gateway' });
     node2 = makeNode({ type: 'compute/service', displayName: 'Order Service' });
-    node3 = makeNode({ type: 'data/database', displayName: 'Orders DB', args: { engine: 'PostgreSQL' } });
+    node3 = makeNode({
+      type: 'data/database',
+      displayName: 'Orders DB',
+      args: { engine: 'PostgreSQL' },
+    });
     node4 = makeNode({ type: 'messaging/message-queue', displayName: 'Event Queue' });
 
     edge1 = makeEdge({ fromNode: node1.id, toNode: node2.id, type: 'sync', label: 'REST API' });
-    edge2 = makeEdge({ fromNode: node2.id, toNode: node3.id, type: 'data-flow', label: 'SQL Queries' });
-    edge3 = makeEdge({ fromNode: node2.id, toNode: node4.id, type: 'async', label: 'Order Events' });
+    edge2 = makeEdge({
+      fromNode: node2.id,
+      toNode: node3.id,
+      type: 'data-flow',
+      label: 'SQL Queries',
+    });
+    edge3 = makeEdge({
+      fromNode: node2.id,
+      toNode: node4.id,
+      type: 'async',
+      label: 'Order Events',
+    });
 
     graph = {
       name: 'E-Commerce',

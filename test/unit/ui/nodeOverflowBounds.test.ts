@@ -48,8 +48,7 @@ function createNodeAndGetCanvasData(overrides: {
   return result.nodes[0].data as unknown as CanvasNodeData;
 }
 
-describe('Feature #220: Nodes don\'t overflow their bounds', () => {
-
+describe("Feature #220: Nodes don't overflow their bounds", () => {
   // --- CSS class verification (structural tests) ---
 
   describe('GenericNode CSS overflow classes (structural verification)', () => {
@@ -97,7 +96,8 @@ describe('Feature #220: Nodes don\'t overflow their bounds', () => {
 
   describe('Long display names', () => {
     it('very long display name (50+ chars) is stored verbatim for CSS truncation', () => {
-      const longName = 'This Is A Very Long Node Display Name That Should Be Truncated With Ellipsis In The UI';
+      const longName =
+        'This Is A Very Long Node Display Name That Should Be Truncated With Ellipsis In The UI';
       const data = createNodeAndGetCanvasData({ displayName: longName });
       // The full name is stored in data; truncation happens in CSS via 'truncate' class
       expect(data.displayName).toBe(longName);
@@ -148,7 +148,8 @@ describe('Feature #220: Nodes don\'t overflow their bounds', () => {
     it('args with long values are stored correctly (CSS truncates)', () => {
       const longValueArgs = {
         description: 'This is a very long description value that would overflow without truncation',
-        connection_string: 'postgresql://user:password@very-long-hostname.example.com:5432/database_name',
+        connection_string:
+          'postgresql://user:password@very-long-hostname.example.com:5432/database_name',
       };
       const data = createNodeAndGetCanvasData({ args: longValueArgs });
       expect(data.args.description).toBe(longValueArgs.description);
@@ -200,7 +201,8 @@ describe('Feature #220: Nodes don\'t overflow their bounds', () => {
       // CSS enforces same width bounds regardless of content
       const shortData = createNodeAndGetCanvasData({ displayName: 'A' });
       const longData = createNodeAndGetCanvasData({
-        displayName: 'A Very Long Node Name That Exceeds Maximum Width Of Two Hundred And Eighty Pixels',
+        displayName:
+          'A Very Long Node Name That Exceeds Maximum Width Of Two Hundred And Eighty Pixels',
       });
       // Both have valid displayName data; CSS enforces width bounds
       expect(shortData.displayName.length).toBeLessThan(longData.displayName.length);
@@ -223,13 +225,21 @@ describe('Feature #220: Nodes don\'t overflow their bounds', () => {
   describe('Multiple nodes with varied content coexist', () => {
     it('graph with nodes of very different name lengths renders correctly', () => {
       let graph = createEmptyGraph();
-      const n1 = createNode({ type: 'compute/service', displayName: 'A', position: { x: 0, y: 0 } });
+      const n1 = createNode({
+        type: 'compute/service',
+        displayName: 'A',
+        position: { x: 0, y: 0 },
+      });
       const n2 = createNode({
         type: 'compute/service',
         displayName: 'This Is An Extremely Long Node Display Name That Goes On And On And On',
         position: { x: 300, y: 0 },
       });
-      const n3 = createNode({ type: 'data/database', displayName: 'DB', position: { x: 600, y: 0 } });
+      const n3 = createNode({
+        type: 'data/database',
+        displayName: 'DB',
+        position: { x: 600, y: 0 },
+      });
       graph = addNode(graph, n1);
       graph = addNode(graph, n2);
       graph = addNode(graph, n3);
@@ -239,7 +249,9 @@ describe('Feature #220: Nodes don\'t overflow their bounds', () => {
 
       const names = result.nodes.map((n) => (n.data as unknown as CanvasNodeData).displayName);
       expect(names).toContain('A');
-      expect(names).toContain('This Is An Extremely Long Node Display Name That Goes On And On And On');
+      expect(names).toContain(
+        'This Is An Extremely Long Node Display Name That Goes On And On And On',
+      );
       expect(names).toContain('DB');
     });
 

@@ -42,8 +42,8 @@ export interface ScanResult {
 }
 
 export interface ScanOptions {
-  maxDepth?: number;        // default 10
-  maxFiles?: number;        // default 10000
+  maxDepth?: number; // default 10
+  maxFiles?: number; // default 10000
   additionalIgnore?: string[]; // extra glob-like patterns to ignore
 }
 
@@ -235,9 +235,8 @@ export async function scanDirectory(
   const additionalIgnore = options.additionalIgnore ?? [];
 
   // Parse additional ignore patterns as gitignore rules
-  const additionalRules = additionalIgnore.length > 0
-    ? parseGitignore(additionalIgnore.join('\n'))
-    : [];
+  const additionalRules =
+    additionalIgnore.length > 0 ? parseGitignore(additionalIgnore.join('\n')) : [];
 
   const resolvedRoot = path.resolve(rootPath);
   const languageBreakdown: LanguageBreakdown = {};
@@ -261,11 +260,7 @@ export async function scanDirectory(
   /**
    * Recursively walk a directory.
    */
-  function walk(
-    dirPath: string,
-    depth: number,
-    parentRules: IgnoreRule[],
-  ): DirectoryEntry {
+  function walk(dirPath: string, depth: number, parentRules: IgnoreRule[]): DirectoryEntry {
     const dirName = path.basename(dirPath);
     const relativePath = path.relative(resolvedRoot, dirPath).replace(/\\/g, '/');
 

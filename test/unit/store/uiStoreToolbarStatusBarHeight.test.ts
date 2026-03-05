@@ -4,7 +4,22 @@
  * Feature #323: Toolbar default height scales relative to viewport height.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useUIStore, TOOLBAR_MIN_HEIGHT, TOOLBAR_MAX_HEIGHT, STATUS_BAR_DEFAULT_HEIGHT, STATUS_BAR_MIN_HEIGHT, STATUS_BAR_MAX_HEIGHT, computeDefaultToolbarHeight, TOOLBAR_DEFAULT_FLOOR, TOOLBAR_DEFAULT_CEILING, TOOLBAR_VIEWPORT_RATIO, computeDefaultStatusBarHeight, STATUS_BAR_VIEWPORT_RATIO, STATUS_BAR_DEFAULT_FLOOR, STATUS_BAR_DEFAULT_CEILING } from '@/store/uiStore';
+import {
+  useUIStore,
+  TOOLBAR_MIN_HEIGHT,
+  TOOLBAR_MAX_HEIGHT,
+  STATUS_BAR_DEFAULT_HEIGHT,
+  STATUS_BAR_MIN_HEIGHT,
+  STATUS_BAR_MAX_HEIGHT,
+  computeDefaultToolbarHeight,
+  TOOLBAR_DEFAULT_FLOOR,
+  TOOLBAR_DEFAULT_CEILING,
+  TOOLBAR_VIEWPORT_RATIO,
+  computeDefaultStatusBarHeight,
+  STATUS_BAR_VIEWPORT_RATIO,
+  STATUS_BAR_DEFAULT_FLOOR,
+  STATUS_BAR_DEFAULT_CEILING,
+} from '@/store/uiStore';
 
 describe('UI Store - Toolbar and Status Bar Height Management', () => {
   beforeEach(() => {

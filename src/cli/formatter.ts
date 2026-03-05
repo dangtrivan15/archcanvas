@@ -54,10 +54,7 @@ export function formatAsJson(data: unknown): string {
  * // Auth  compute/service
  * ```
  */
-export function formatAsTable(
-  headers: TableColumn[],
-  rows: Record<string, unknown>[],
-): string {
+export function formatAsTable(headers: TableColumn[], rows: Record<string, unknown>[]): string {
   if (rows.length === 0) {
     return '(no results)';
   }
@@ -76,11 +73,7 @@ export function formatAsTable(
   const lines: string[] = [];
 
   // Header row
-  lines.push(
-    headers
-      .map((col, i) => padCell(col.header, widths[i]!, col.align))
-      .join('  '),
-  );
+  lines.push(headers.map((col, i) => padCell(col.header, widths[i]!, col.align)).join('  '));
 
   // Separator
   lines.push(widths.map((w) => '─'.repeat(w)).join('  '));
@@ -158,10 +151,7 @@ interface SearchResultData {
  * - table: ASCII table with ID, Type, Display Name columns
  * - human: Indented list with name [type] (id)
  */
-export function formatNodeSummary(
-  nodes: NodeSummaryData[],
-  format: OutputFormat,
-): string {
+export function formatNodeSummary(nodes: NodeSummaryData[], format: OutputFormat): string {
   if (format === 'json') {
     return formatAsJson(nodes);
   }
@@ -182,9 +172,7 @@ export function formatNodeSummary(
   }
 
   // human
-  return nodes
-    .map((n) => `  ${n.displayName} [${n.type}] (${n.id})`)
-    .join('\n');
+  return nodes.map((n) => `  ${n.displayName} [${n.type}] (${n.id})`).join('\n');
 }
 
 /**
@@ -194,10 +182,7 @@ export function formatNodeSummary(
  * - table: Key-value table
  * - human: Multi-line detail view
  */
-export function formatNodeDetail(
-  node: NodeDetailData,
-  format: OutputFormat,
-): string {
+export function formatNodeDetail(node: NodeDetailData, format: OutputFormat): string {
   if (format === 'json') {
     return formatAsJson(node);
   }
@@ -215,7 +200,10 @@ export function formatNodeDetail(
       rows.push({ field: 'Properties', value: JSON.stringify(node.properties) });
     }
     if (node.codeRefs && node.codeRefs.length > 0) {
-      rows.push({ field: 'Code Refs', value: node.codeRefs.map((r) => `${r.path} (${r.role})`).join(', ') });
+      rows.push({
+        field: 'Code Refs',
+        value: node.codeRefs.map((r) => `${r.path} (${r.role})`).join(', '),
+      });
     }
     if (node.notes && node.notes.length > 0) {
       rows.push({ field: 'Notes', value: `${node.notes.length} note(s)` });
@@ -269,10 +257,7 @@ export function formatNodeDetail(
  * - table: ASCII table with ID, From, To, Type, Label columns
  * - human: Arrow-style list (from → to)
  */
-export function formatEdgeSummary(
-  edges: EdgeSummaryData[],
-  format: OutputFormat,
-): string {
+export function formatEdgeSummary(edges: EdgeSummaryData[], format: OutputFormat): string {
   if (format === 'json') {
     return formatAsJson(edges);
   }
@@ -343,9 +328,7 @@ export function formatSearchResult(
   }
 
   // human
-  return results
-    .map((r) => `  [${r.type}] ${r.displayName} — ${r.matchContext}`)
-    .join('\n');
+  return results.map((r) => `  [${r.type}] ${r.displayName} — ${r.matchContext}`).join('\n');
 }
 
 // ─── Generic Output Helper ───────────────────────────────────
@@ -394,9 +377,7 @@ export function formatOutput(
     // Key-value format for objects
     const entries = Object.entries(data as Record<string, unknown>);
     const maxKeyLen = Math.max(...entries.map(([k]) => k.length));
-    return entries
-      .map(([key, value]) => `${key.padEnd(maxKeyLen)}  ${String(value)}`)
-      .join('\n');
+    return entries.map(([key, value]) => `${key.padEnd(maxKeyLen)}  ${String(value)}`).join('\n');
   }
 
   return String(data);

@@ -74,7 +74,8 @@ export function TouchContextMenu({ x, y, onClose, header, items }: TouchContextM
     const handle = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
       if (
-        menuRef.current && !menuRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
         (!submenuRef.current || !submenuRef.current.contains(target))
       ) {
         onClose();
@@ -184,9 +185,10 @@ export function TouchContextMenu({ x, y, onClose, header, items }: TouchContextM
             ? `translateY(${swipeOffset}px) scale(1)`
             : 'translateY(-8px) scale(0.92)',
           opacity: visible ? dismissOpacity : 0,
-          transition: swipeOffset > 0
-            ? 'none'
-            : 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease-out',
+          transition:
+            swipeOffset > 0
+              ? 'none'
+              : 'transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease-out',
           transformOrigin: 'top left',
         }}
         role="menu"
@@ -239,13 +241,14 @@ export function TouchContextMenu({ x, y, onClose, header, items }: TouchContextM
                   className={`
                     flex items-center gap-3 w-full px-4 py-2.5 text-[14px] text-left
                     transition-colors duration-100 touch-target-row select-none
-                    ${item.disabled
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : item.isDanger
-                        ? 'text-red-500 active:bg-red-100/80 hover:bg-red-50/80'
-                        : isActive
-                          ? 'bg-blue-500/10 text-blue-600'
-                          : 'text-gray-800 active:bg-gray-200/60 hover:bg-gray-100/60'
+                    ${
+                      item.disabled
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : item.isDanger
+                          ? 'text-red-500 active:bg-red-100/80 hover:bg-red-50/80'
+                          : isActive
+                            ? 'bg-blue-500/10 text-blue-600'
+                            : 'text-gray-800 active:bg-gray-200/60 hover:bg-gray-100/60'
                     }
                   `}
                   role="menuitem"
@@ -253,9 +256,7 @@ export function TouchContextMenu({ x, y, onClose, header, items }: TouchContextM
                 >
                   <Icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={1.8} />
                   <span className="flex-1 font-medium">{item.label}</span>
-                  {hasSubmenu && (
-                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  )}
+                  {hasSubmenu && <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                 </button>
               );
             })}
@@ -300,11 +301,12 @@ export function TouchContextMenu({ x, y, onClose, header, items }: TouchContextM
                     className={`
                       flex items-center gap-3 w-full px-4 py-2.5 text-[14px] text-left
                       transition-colors duration-100 touch-target-row select-none
-                      ${sub.disabled
-                        ? 'text-gray-300 cursor-not-allowed'
-                        : sub.isDanger
-                          ? 'text-red-500 active:bg-red-100/80 hover:bg-red-50/80'
-                          : 'text-gray-800 active:bg-gray-200/60 hover:bg-gray-100/60'
+                      ${
+                        sub.disabled
+                          ? 'text-gray-300 cursor-not-allowed'
+                          : sub.isDanger
+                            ? 'text-red-500 active:bg-red-100/80 hover:bg-red-50/80'
+                            : 'text-gray-800 active:bg-gray-200/60 hover:bg-gray-100/60'
                       }
                     `}
                     role="menuitem"

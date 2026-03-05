@@ -9,7 +9,13 @@ import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react';
 import { useCanvasPerformanceContext } from '@/contexts/CanvasPerformanceContext';
 
 function DataFlowEdgeComponent({
-  sourceX, sourceY, targetX, targetY, id, selected, label,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  id,
+  selected,
+  label,
 }: EdgeProps) {
   const { prefersReducedMotion, isLowDetailEdges } = useCanvasPerformanceContext();
   const [edgePath] = getStraightPath({ sourceX, sourceY, targetX, targetY });

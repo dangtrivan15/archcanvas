@@ -24,7 +24,12 @@ function buildChainGraph() {
 
   const edgeAB = createEdge({ fromNode: nodeA.id, toNode: nodeB.id, type: 'sync', label: 'A->B' });
   const edgeBC = createEdge({ fromNode: nodeB.id, toNode: nodeC.id, type: 'async', label: 'B->C' });
-  const edgeCD = createEdge({ fromNode: nodeC.id, toNode: nodeD.id, type: 'data-flow', label: 'C->D' });
+  const edgeCD = createEdge({
+    fromNode: nodeC.id,
+    toNode: nodeD.id,
+    type: 'data-flow',
+    label: 'C->D',
+  });
 
   let graph = createEmptyGraph('Chain');
   graph = addNode(graph, nodeA);

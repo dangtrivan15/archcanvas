@@ -126,8 +126,6 @@ describe('RegistryManager.resolve()', () => {
 
   it('throws if registry is not initialized', () => {
     const uninit = new RegistryManager();
-    expect(() => uninit.resolve('compute/service')).toThrow(
-      'Not initialized',
-    );
+    expect(() => uninit.resolve('compute/service')).toThrow('Not initialized');
   });
 });

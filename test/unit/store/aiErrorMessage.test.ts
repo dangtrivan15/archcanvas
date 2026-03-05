@@ -49,9 +49,13 @@ function getUserFriendlyErrorMessage(error: unknown): string {
 describe('Feature #194: AI API error displays user-friendly message', () => {
   describe('getUserFriendlyErrorMessage', () => {
     it('returns API key configuration message when key is not set', () => {
-      const error = new AIClientError('Anthropic API key not configured. Set VITE_ANTHROPIC_API_KEY in .env');
+      const error = new AIClientError(
+        'Anthropic API key not configured. Set VITE_ANTHROPIC_API_KEY in .env',
+      );
       const message = getUserFriendlyErrorMessage(error);
-      expect(message).toBe('AI is not configured. Please set your VITE_ANTHROPIC_API_KEY environment variable.');
+      expect(message).toBe(
+        'AI is not configured. Please set your VITE_ANTHROPIC_API_KEY environment variable.',
+      );
     });
 
     it('returns authentication error for 401 status', () => {
@@ -81,7 +85,9 @@ describe('Feature #194: AI API error displays user-friendly message', () => {
     it('returns overloaded message for 529 status', () => {
       const error = new AIClientError('Overloaded', 529, 'overloaded_error');
       const message = getUserFriendlyErrorMessage(error);
-      expect(message).toBe('The AI service is currently overloaded. Please try again in a few minutes.');
+      expect(message).toBe(
+        'The AI service is currently overloaded. Please try again in a few minutes.',
+      );
     });
 
     it('returns server error message for 500 status', () => {
@@ -97,9 +103,15 @@ describe('Feature #194: AI API error displays user-friendly message', () => {
     });
 
     it('returns invalid request message for 400 status', () => {
-      const error = new AIClientError('Bad request: context too long', 400, 'invalid_request_error');
+      const error = new AIClientError(
+        'Bad request: context too long',
+        400,
+        'invalid_request_error',
+      );
       const message = getUserFriendlyErrorMessage(error);
-      expect(message).toBe('The request was too large or invalid. Try shortening your message or starting a new conversation.');
+      expect(message).toBe(
+        'The request was too large or invalid. Try shortening your message or starting a new conversation.',
+      );
     });
 
     it('returns network error for TypeError with fetch', () => {
@@ -126,8 +138,12 @@ describe('Feature #194: AI API error displays user-friendly message', () => {
     });
 
     it('returns generic message for null/undefined', () => {
-      expect(getUserFriendlyErrorMessage(null)).toBe('An unexpected error occurred. Please try again.');
-      expect(getUserFriendlyErrorMessage(undefined)).toBe('An unexpected error occurred. Please try again.');
+      expect(getUserFriendlyErrorMessage(null)).toBe(
+        'An unexpected error occurred. Please try again.',
+      );
+      expect(getUserFriendlyErrorMessage(undefined)).toBe(
+        'An unexpected error occurred. Please try again.',
+      );
     });
   });
 
@@ -173,7 +189,11 @@ describe('Feature #194: AI API error displays user-friendly message', () => {
     });
 
     it('user-friendly messages do not expose raw API details', () => {
-      const error = new AIClientError('{"error":{"type":"rate_limit_error","message":"Request rate limit reached"}}', 429, 'rate_limit_error');
+      const error = new AIClientError(
+        '{"error":{"type":"rate_limit_error","message":"Request rate limit reached"}}',
+        429,
+        'rate_limit_error',
+      );
       const message = getUserFriendlyErrorMessage(error);
       // Should NOT contain JSON
       expect(message).not.toContain('{');

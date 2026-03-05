@@ -61,11 +61,7 @@ function simulateCanvasEscapeHandler(target?: HTMLElement): { prevented: boolean
   // Replicate Canvas.tsx logic exactly
   // 1. Don't handle when typing in an input/textarea
   if (target) {
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable
-    ) {
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
       return { prevented };
     }
   }
@@ -110,7 +106,7 @@ function simulateCanvasEscapeHandler(target?: HTMLElement): { prevented: boolean
  */
 function simulateDialogEscapeHandler(
   isOpen: boolean,
-  closeAction: () => void
+  closeAction: () => void,
 ): { prevented: boolean; stopped: boolean } {
   const event = new KeyboardEvent('keydown', {
     key: 'Escape',
@@ -299,7 +295,7 @@ describe('Feature #211: Keyboard shortcut Escape deselects and closes panels', (
 
       const { stopped } = simulateDialogEscapeHandler(
         true,
-        useUIStore.getState().closeDeleteDialog
+        useUIStore.getState().closeDeleteDialog,
       );
 
       expect(stopped).toBe(true);
@@ -330,11 +326,15 @@ describe('Feature #211: Keyboard shortcut Escape deselects and closes panels', (
 
       // Test each dialog type prevents canvas Escape from deselecting
       const dialogTypes = [
-        () => useUIStore.getState().openDeleteDialog({ nodeId: 'x', nodeName: 'X', edgeCount: 0, childCount: 0 }),
+        () =>
+          useUIStore
+            .getState()
+            .openDeleteDialog({ nodeId: 'x', nodeName: 'X', edgeCount: 0, childCount: 0 }),
         () => useUIStore.getState().openConnectionDialog({ sourceNodeId: 'a', targetNodeId: 'b' }),
         () => useUIStore.getState().openUnsavedChangesDialog({ onConfirm: vi.fn() }),
         () => useUIStore.getState().openErrorDialog({ title: 'Err', message: 'msg' }),
-        () => useUIStore.getState().openIntegrityWarningDialog({ message: 'warn', onProceed: vi.fn() }),
+        () =>
+          useUIStore.getState().openIntegrityWarningDialog({ message: 'warn', onProceed: vi.fn() }),
       ];
 
       for (const openDialog of dialogTypes) {

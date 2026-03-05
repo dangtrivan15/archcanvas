@@ -30,10 +30,12 @@ describe('MCP add_note tool - Feature #181', () => {
     ctx = { textApi, registry };
 
     // Step 1: Create a node via MCP
-    const nodeResult = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'compute/service',
-      displayName: 'Auth Service',
-    }));
+    const nodeResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'Auth Service',
+      }),
+    );
     nodeId = nodeResult.nodeId;
   });
 
@@ -114,12 +116,14 @@ describe('MCP add_note tool - Feature #181', () => {
 
   // Additional: Note with tags
   it('creates a note with tags', () => {
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_note', {
-      nodeId,
-      author: 'architect',
-      content: 'Security review needed.',
-      tags: ['security', 'review'],
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_note', {
+        nodeId,
+        author: 'architect',
+        content: 'Security review needed.',
+        tags: ['security', 'review'],
+      }),
+    );
 
     expect(result.success).toBe(true);
     expect(result.noteId).toBeTruthy();
@@ -151,16 +155,20 @@ describe('MCP add_note tool - Feature #181', () => {
 
   // Verify note ID uniqueness
   it('generates unique note IDs', () => {
-    const result1 = JSON.parse(dispatchToolCall(ctx, 'add_note', {
-      nodeId,
-      author: 'dev',
-      content: 'Note 1',
-    }));
-    const result2 = JSON.parse(dispatchToolCall(ctx, 'add_note', {
-      nodeId,
-      author: 'dev',
-      content: 'Note 2',
-    }));
+    const result1 = JSON.parse(
+      dispatchToolCall(ctx, 'add_note', {
+        nodeId,
+        author: 'dev',
+        content: 'Note 1',
+      }),
+    );
+    const result2 = JSON.parse(
+      dispatchToolCall(ctx, 'add_note', {
+        nodeId,
+        author: 'dev',
+        content: 'Note 2',
+      }),
+    );
 
     expect(result1.noteId).not.toBe(result2.noteId);
   });
@@ -180,22 +188,28 @@ describe('MCP add_note tool - Feature #181', () => {
   // Verify note on edge (add_note supports edges too)
   it('creates a note on an edge', () => {
     // Create second node and edge first
-    const nodeB = JSON.parse(dispatchToolCall(ctx, 'add_node', {
-      type: 'data/database',
-      displayName: 'Users DB',
-    }));
-    const edge = JSON.parse(dispatchToolCall(ctx, 'add_edge', {
-      fromNode: nodeId,
-      toNode: nodeB.nodeId,
-      type: 'sync',
-    }));
+    const nodeB = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'data/database',
+        displayName: 'Users DB',
+      }),
+    );
+    const edge = JSON.parse(
+      dispatchToolCall(ctx, 'add_edge', {
+        fromNode: nodeId,
+        toNode: nodeB.nodeId,
+        type: 'sync',
+      }),
+    );
 
     // Add note to the edge
-    const result = JSON.parse(dispatchToolCall(ctx, 'add_note', {
-      edgeId: edge.edgeId,
-      author: 'architect',
-      content: 'Consider caching this connection.',
-    }));
+    const result = JSON.parse(
+      dispatchToolCall(ctx, 'add_note', {
+        edgeId: edge.edgeId,
+        author: 'architect',
+        content: 'Consider caching this connection.',
+      }),
+    );
 
     expect(result.success).toBe(true);
     expect(result.noteId).toBeTruthy();

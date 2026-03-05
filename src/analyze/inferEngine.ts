@@ -132,7 +132,11 @@ export const inferenceResultSchema = z.object({
 
 /** Built-in node types available in ArchCanvas */
 const BUILTIN_NODE_TYPES = [
-  { name: 'service', namespace: 'compute', description: 'A backend service, API server, or microservice' },
+  {
+    name: 'service',
+    namespace: 'compute',
+    description: 'A backend service, API server, or microservice',
+  },
   { name: 'function', namespace: 'compute', description: 'A serverless function or lambda' },
   { name: 'worker', namespace: 'compute', description: 'A background worker or job processor' },
   { name: 'api-gateway', namespace: 'compute', description: 'An API gateway or reverse proxy' },
@@ -141,12 +145,32 @@ const BUILTIN_NODE_TYPES = [
   { name: 'object-storage', namespace: 'data', description: 'Blob/object storage (S3, GCS)' },
   { name: 'repository', namespace: 'data', description: 'A code or artifact repository' },
   { name: 'message-queue', namespace: 'messaging', description: 'A message queue (RabbitMQ, SQS)' },
-  { name: 'event-bus', namespace: 'messaging', description: 'An event bus or pub/sub system (Kafka, SNS)' },
-  { name: 'stream-processor', namespace: 'messaging', description: 'A stream processing system (Flink, Kinesis)' },
-  { name: 'load-balancer', namespace: 'network', description: 'A load balancer or traffic distributor' },
+  {
+    name: 'event-bus',
+    namespace: 'messaging',
+    description: 'An event bus or pub/sub system (Kafka, SNS)',
+  },
+  {
+    name: 'stream-processor',
+    namespace: 'messaging',
+    description: 'A stream processing system (Flink, Kinesis)',
+  },
+  {
+    name: 'load-balancer',
+    namespace: 'network',
+    description: 'A load balancer or traffic distributor',
+  },
   { name: 'cdn', namespace: 'network', description: 'A content delivery network' },
-  { name: 'logging', namespace: 'observability', description: 'A logging aggregation system (ELK, CloudWatch)' },
-  { name: 'monitoring', namespace: 'observability', description: 'A monitoring/metrics system (Prometheus, Datadog)' },
+  {
+    name: 'logging',
+    namespace: 'observability',
+    description: 'A logging aggregation system (ELK, CloudWatch)',
+  },
+  {
+    name: 'monitoring',
+    namespace: 'observability',
+    description: 'A monitoring/metrics system (Prometheus, Datadog)',
+  },
 ];
 
 const CHARS_PER_TOKEN = 4;
@@ -163,9 +187,9 @@ const DEFAULT_TOKEN_LIMIT_PER_CALL = 100_000;
 // ── Prompt Construction ──────────────────────────────────────────────────────
 
 function formatNodeTypeList(): string {
-  return BUILTIN_NODE_TYPES.map(
-    (t) => `  - ${t.name} (${t.namespace}): ${t.description}`,
-  ).join('\n');
+  return BUILTIN_NODE_TYPES.map((t) => `  - ${t.name} (${t.namespace}): ${t.description}`).join(
+    '\n',
+  );
 }
 
 function formatProjectProfile(profile: ProjectProfile): string {
@@ -225,10 +249,7 @@ Your job is to identify the architectural components (services, databases, queue
 
 IMPORTANT: You must respond ONLY with valid JSON matching the specified schema. No markdown, no explanations outside the JSON.`;
 
-function buildQuickPrompt(
-  profile: ProjectProfile,
-  fileContents: string,
-): string {
+function buildQuickPrompt(profile: ProjectProfile, fileContents: string): string {
   return `Analyze this codebase and infer its system architecture.
 
 ## Project Profile
@@ -270,10 +291,7 @@ Respond with a JSON object matching this schema:
 Respond ONLY with the JSON object. No markdown code fences, no explanations.`;
 }
 
-function buildStep1Prompt(
-  profile: ProjectProfile,
-  fileContents: string,
-): string {
+function buildStep1Prompt(profile: ProjectProfile, fileContents: string): string {
   return `Analyze this codebase and identify all high-level architectural components and their roles.
 
 ## Project Profile
@@ -333,10 +351,7 @@ Respond with a JSON object:
 Respond ONLY with the JSON object. No markdown code fences.`;
 }
 
-function buildStep3Prompt(
-  step1Response: string,
-  step2Response: string,
-): string {
+function buildStep3Prompt(step1Response: string, step2Response: string): string {
   return `Based on the components and relationships identified, now map everything to ArchCanvas node types and suggest a hierarchy.
 
 ## Components
@@ -481,10 +496,7 @@ function estimateTokens(text: string): number {
 /**
  * Split files into batches that fit within a token limit.
  */
-export function batchFiles(
-  files: SelectedFile[],
-  tokenLimitPerBatch: number,
-): SelectedFile[][] {
+export function batchFiles(files: SelectedFile[], tokenLimitPerBatch: number): SelectedFile[][] {
   const batches: SelectedFile[][] = [];
   let currentBatch: SelectedFile[] = [];
   let currentTokens = 0;
@@ -721,9 +733,7 @@ async function inferStandard(
   const tokenLimit = options.tokenLimitPerCall ?? DEFAULT_TOKEN_LIMIT_PER_CALL;
 
   const batches = batchFiles(keyFiles.files, tokenLimit);
-  const fileContents = formatFileContents(
-    batches.length === 1 ? keyFiles.files : batches[0],
-  );
+  const fileContents = formatFileContents(batches.length === 1 ? keyFiles.files : batches[0]);
 
   // Step 1: Identify components
   options.onProgress?.({
@@ -795,10 +805,7 @@ async function inferStandard(
     description: 'Step 3/3: Mapping to ArchCanvas node types...',
   });
 
-  const step3Prompt = buildStep3Prompt(
-    extractJson(step1Response),
-    extractJson(step2Response),
-  );
+  const step3Prompt = buildStep3Prompt(extractJson(step1Response), extractJson(step2Response));
   const step3Response = await sendWithRetry(
     sender,
     [{ role: 'user', content: step3Prompt }],
@@ -932,9 +939,6 @@ export async function inferArchitecture(
     case 'deep':
       return inferDeep(sender, projectProfile, keyFiles, options);
     default:
-      throw new InferenceError(
-        `Unknown analysis depth: ${depth}`,
-        'AI_ERROR',
-      );
+      throw new InferenceError(`Unknown analysis depth: ${depth}`, 'AI_ERROR');
   }
 }

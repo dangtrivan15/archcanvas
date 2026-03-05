@@ -238,11 +238,11 @@ describe('Feature #261: Bulk Operations via Command Palette', () => {
       const fs = await import('fs');
       const content = fs.readFileSync('src/config/commandRegistry.ts', 'utf-8');
       // Each operation has exactly one snapshot call
-      expect(content).toContain("undoManager.snapshot(`Delete");
-      expect(content).toContain("undoManager.snapshot(`Duplicate");
-      expect(content).toContain("undoManager.snapshot(`Align");
-      expect(content).toContain("undoManager.snapshot(`Distribute");
-      expect(content).toContain("undoManager.snapshot(`Group");
+      expect(content).toContain('undoManager.snapshot(`Delete');
+      expect(content).toContain('undoManager.snapshot(`Duplicate');
+      expect(content).toContain('undoManager.snapshot(`Align');
+      expect(content).toContain('undoManager.snapshot(`Distribute');
+      expect(content).toContain('undoManager.snapshot(`Group');
     });
 
     it('align operations calculate average position', async () => {

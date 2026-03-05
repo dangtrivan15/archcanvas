@@ -38,10 +38,7 @@ export function NavigationBreadcrumb() {
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);
 
   // Resolve path node IDs to display names
-  const segments = useMemo(
-    () => resolvePathNames(graph.nodes, path),
-    [graph.nodes, path],
-  );
+  const segments = useMemo(() => resolvePathNames(graph.nodes, path), [graph.nodes, path]);
 
   // Don't render if at root level (no navigation path)
   if (path.length === 0) return null;
@@ -69,7 +66,11 @@ export function NavigationBreadcrumb() {
         const pathToHere = path.slice(0, index + 1);
 
         return (
-          <span key={segment.id} className="flex items-center gap-1" data-testid={`breadcrumb-segment-${index}`}>
+          <span
+            key={segment.id}
+            className="flex items-center gap-1"
+            data-testid={`breadcrumb-segment-${index}`}
+          >
             <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
             {isLast ? (
               <span className="text-gray-900 font-medium">{segment.displayName}</span>

@@ -85,12 +85,23 @@ describe('ExportApi markdown statistics - Feature #61', () => {
 
     const edge1 = makeEdge({ fromNode: node1.id, toNode: node2.id, type: 'sync', label: 'REST' });
     const edge2 = makeEdge({ fromNode: node1.id, toNode: node3.id, type: 'sync', label: 'REST' });
-    const edge3 = makeEdge({ fromNode: node2.id, toNode: node4.id, type: 'data-flow', label: 'SQL' });
-    const edge4 = makeEdge({ fromNode: node3.id, toNode: node5.id, type: 'async', label: 'Events' });
+    const edge3 = makeEdge({
+      fromNode: node2.id,
+      toNode: node4.id,
+      type: 'data-flow',
+      label: 'SQL',
+    });
+    const edge4 = makeEdge({
+      fromNode: node3.id,
+      toNode: node5.id,
+      type: 'async',
+      label: 'Events',
+    });
 
     graph = {
       name: 'Microservices Platform',
-      description: 'A microservices architecture with gateway, services, and event-driven messaging',
+      description:
+        'A microservices architecture with gateway, services, and event-driven messaging',
       owners: ['platform-team', 'backend-team'],
       nodes: [node1, node2, node3, node4, node5],
       edges: [edge1, edge2, edge3, edge4],

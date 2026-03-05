@@ -41,7 +41,8 @@ export function useResponsiveLayout() {
       mountedRef.current = true;
     }
 
-    const crossedBelowNarrow = !isMount && prevWidth >= NARROW_BREAKPOINT && width < NARROW_BREAKPOINT;
+    const crossedBelowNarrow =
+      !isMount && prevWidth >= NARROW_BREAKPOINT && width < NARROW_BREAKPOINT;
 
     if (crossedBelowNarrow || (isMount && width < NARROW_BREAKPOINT)) {
       // Below narrow breakpoint: close left panel if open

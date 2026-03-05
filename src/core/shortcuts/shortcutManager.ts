@@ -62,11 +62,26 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
 
   // Selection
   { id: 'select:all', label: 'Select All Nodes', category: 'Edit', defaultBinding: 'mod+a' },
-  { id: 'select:all-edges', label: 'Select All Edges', category: 'Edit', defaultBinding: 'mod+shift+a' },
+  {
+    id: 'select:all-edges',
+    label: 'Select All Edges',
+    category: 'Edit',
+    defaultBinding: 'mod+shift+a',
+  },
 
   // Canvas
-  { id: 'canvas:command-palette', label: 'Command Palette', category: 'Canvas', defaultBinding: 'mod+k' },
-  { id: 'canvas:deselect', label: 'Deselect / Close', category: 'Canvas', defaultBinding: 'escape' },
+  {
+    id: 'canvas:command-palette',
+    label: 'Command Palette',
+    category: 'Canvas',
+    defaultBinding: 'mod+k',
+  },
+  {
+    id: 'canvas:deselect',
+    label: 'Deselect / Close',
+    category: 'Canvas',
+    defaultBinding: 'escape',
+  },
   { id: 'canvas:shortcuts-help', label: 'Shortcuts Help', category: 'Canvas', defaultBinding: '?' },
 
   // View / Zoom
@@ -76,11 +91,31 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'view:zoom-100', label: 'Zoom to 100%', category: 'View', defaultBinding: 'mod+1' },
 
   // Navigation
-  { id: 'nav:zoom-out', label: 'Zoom Out to Parent', category: 'Navigation', defaultBinding: 'backspace' },
+  {
+    id: 'nav:zoom-out',
+    label: 'Zoom Out to Parent',
+    category: 'Navigation',
+    defaultBinding: 'backspace',
+  },
   { id: 'nav:arrow-up', label: 'Navigate Up', category: 'Navigation', defaultBinding: 'arrowup' },
-  { id: 'nav:arrow-down', label: 'Navigate Down', category: 'Navigation', defaultBinding: 'arrowdown' },
-  { id: 'nav:arrow-left', label: 'Navigate Left', category: 'Navigation', defaultBinding: 'arrowleft' },
-  { id: 'nav:arrow-right', label: 'Navigate Right', category: 'Navigation', defaultBinding: 'arrowright' },
+  {
+    id: 'nav:arrow-down',
+    label: 'Navigate Down',
+    category: 'Navigation',
+    defaultBinding: 'arrowdown',
+  },
+  {
+    id: 'nav:arrow-left',
+    label: 'Navigate Left',
+    category: 'Navigation',
+    defaultBinding: 'arrowleft',
+  },
+  {
+    id: 'nav:arrow-right',
+    label: 'Navigate Right',
+    category: 'Navigation',
+    defaultBinding: 'arrowright',
+  },
 
   // Quick Search
   { id: 'nav:search', label: 'Quick Search', category: 'Navigation', defaultBinding: '/' },
@@ -100,7 +135,10 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
  * Parse a binding string into a KeyBinding object.
  */
 export function parseBinding(raw: string): KeyBinding {
-  const parts = raw.toLowerCase().split('+').map((p) => p.trim());
+  const parts = raw
+    .toLowerCase()
+    .split('+')
+    .map((p) => p.trim());
   const binding: KeyBinding = {
     raw,
     mod: false,
@@ -182,13 +220,20 @@ export function eventMatchesBinding(event: KeyboardEvent, binding: KeyBinding): 
 
   // Special key mappings
   switch (binding.key) {
-    case 'escape': return eventKey === 'escape';
-    case 'delete': return eventKey === 'delete';
-    case 'backspace': return eventKey === 'backspace';
-    case 'enter': return eventKey === 'enter';
-    case 'tab': return eventKey === 'tab';
-    case '?': return event.key === '?';
-    default: return eventKey === binding.key;
+    case 'escape':
+      return eventKey === 'escape';
+    case 'delete':
+      return eventKey === 'delete';
+    case 'backspace':
+      return eventKey === 'backspace';
+    case 'enter':
+      return eventKey === 'enter';
+    case 'tab':
+      return eventKey === 'tab';
+    case '?':
+      return event.key === '?';
+    default:
+      return eventKey === binding.key;
   }
 }
 
@@ -219,11 +264,21 @@ export function eventToBindingString(event: KeyboardEvent): string | null {
 
   // Map special keys
   switch (key) {
-    case 'escape': parts.push('escape'); break;
-    case 'delete': parts.push('delete'); break;
-    case 'backspace': parts.push('backspace'); break;
-    case 'enter': parts.push('enter'); break;
-    case 'tab': parts.push('tab'); break;
+    case 'escape':
+      parts.push('escape');
+      break;
+    case 'delete':
+      parts.push('delete');
+      break;
+    case 'backspace':
+      parts.push('backspace');
+      break;
+    case 'enter':
+      parts.push('enter');
+      break;
+    case 'tab':
+      parts.push('tab');
+      break;
     default:
       // For '?' key, record it directly
       if (event.key === '?') {

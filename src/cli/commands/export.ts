@@ -16,11 +16,7 @@
  */
 
 import { Command, Option } from 'commander';
-import {
-  type GlobalOptions,
-  loadContext,
-  withErrorHandler,
-} from '@/cli/index';
+import { type GlobalOptions, loadContext, withErrorHandler } from '@/cli/index';
 
 interface ExportOptions {
   type: string;
@@ -41,11 +37,7 @@ export function registerExportCommand(program: Command): void {
         .default('markdown'),
     )
     .option('-o, --output <path>', 'Output file path (stdout if omitted)')
-    .option(
-      '--with-mermaid',
-      'Include Mermaid diagram in markdown output',
-      false,
-    )
+    .option('--with-mermaid', 'Include Mermaid diagram in markdown output', false)
     .action(
       withErrorHandler(async (cmdOpts: ExportOptions) => {
         const opts = program.opts<GlobalOptions>();
@@ -55,8 +47,8 @@ export function registerExportCommand(program: Command): void {
           const fmt = cmdOpts.type.toUpperCase();
           console.error(
             `Error: ${fmt} export is not supported in the CLI.\n` +
-            `${fmt} export requires a browser DOM (html-to-image).\n` +
-            `Use the web UI to export as ${fmt}, or choose "markdown" or "mermaid" format.`,
+              `${fmt} export requires a browser DOM (html-to-image).\n` +
+              `Use the web UI to export as ${fmt}, or choose "markdown" or "mermaid" format.`,
           );
           process.exit(1);
         }

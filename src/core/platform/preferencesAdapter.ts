@@ -28,7 +28,10 @@ export async function get(key: string): Promise<string | null> {
       const result = await Preferences.get({ key: namespacedKey });
       return result.value;
     } catch (e) {
-      console.warn('[preferencesAdapter] Capacitor Preferences get failed, falling back to localStorage:', e);
+      console.warn(
+        '[preferencesAdapter] Capacitor Preferences get failed, falling back to localStorage:',
+        e,
+      );
     }
   }
 
@@ -52,7 +55,10 @@ export async function set(key: string, value: string): Promise<void> {
       await Preferences.set({ key: namespacedKey, value });
       return;
     } catch (e) {
-      console.warn('[preferencesAdapter] Capacitor Preferences set failed, falling back to localStorage:', e);
+      console.warn(
+        '[preferencesAdapter] Capacitor Preferences set failed, falling back to localStorage:',
+        e,
+      );
     }
   }
 
@@ -76,7 +82,10 @@ export async function remove(key: string): Promise<void> {
       await Preferences.remove({ key: namespacedKey });
       return;
     } catch (e) {
-      console.warn('[preferencesAdapter] Capacitor Preferences remove failed, falling back to localStorage:', e);
+      console.warn(
+        '[preferencesAdapter] Capacitor Preferences remove failed, falling back to localStorage:',
+        e,
+      );
     }
   }
 

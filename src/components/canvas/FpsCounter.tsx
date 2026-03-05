@@ -45,12 +45,8 @@ function FpsCounterComponent({
       </div>
       <div>Nodes: {nodeCount}</div>
       <div>Zoom: {(zoom * 100).toFixed(0)}%</div>
-      {isLowDetailMode && (
-        <div style={{ color: '#60a5fa' }}>LOD: ON</div>
-      )}
-      {prefersReducedMotion && (
-        <div style={{ color: '#c084fc' }}>Reduced Motion</div>
-      )}
+      {isLowDetailMode && <div style={{ color: '#60a5fa' }}>LOD: ON</div>}
+      {prefersReducedMotion && <div style={{ color: '#c084fc' }}>Reduced Motion</div>}
     </div>
   );
 }

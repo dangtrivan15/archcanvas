@@ -53,7 +53,10 @@ function sendError(res: ServerResponse, statusCode: number, message: string): vo
 }
 
 /** Wrap a payload in the standard { data, meta } envelope. */
-function envelope(data: unknown, extra?: Record<string, unknown>): { data: unknown; meta: Record<string, unknown> } {
+function envelope(
+  data: unknown,
+  extra?: Record<string, unknown>,
+): { data: unknown; meta: Record<string, unknown> } {
   return {
     data,
     meta: {
@@ -94,9 +97,10 @@ export function createQueryRoutes(ctx: GraphContext): RouteDefinition[] {
 
         const scope = (searchParams.get('scope') ?? 'full') as 'full' | 'node' | 'nodes';
         const nodeId = searchParams.get('nodeId') ?? undefined;
-        const format = (searchParams.get('format') ??
-          searchParams.get('style') ??
-          'human') as 'structured' | 'human' | 'ai';
+        const format = (searchParams.get('format') ?? searchParams.get('style') ?? 'human') as
+          | 'structured'
+          | 'human'
+          | 'ai';
 
         // Validate scope + nodeId combination
         if (scope === 'node' && !nodeId) {
@@ -192,10 +196,14 @@ export function createQueryRoutes(ctx: GraphContext): RouteDefinition[] {
           portCount: def.spec.ports.length,
         }));
 
-        sendJson(res, 200, envelope(summaries, {
-          count: summaries.length,
-          ...(namespace ? { namespace } : {}),
-        }));
+        sendJson(
+          res,
+          200,
+          envelope(summaries, {
+            count: summaries.length,
+            ...(namespace ? { namespace } : {}),
+          }),
+        );
       },
     },
   ];

@@ -5,22 +5,15 @@
 import { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 
-const CATEGORIES = [
-  'general',
-  'ai-ml',
-  'cloud-native',
-  'enterprise',
-  'consumer',
-  'data',
-] as const;
+const CATEGORIES = ['general', 'ai-ml', 'cloud-native', 'enterprise', 'consumer', 'data'] as const;
 
 const CATEGORY_LABELS: Record<string, string> = {
-  'general': 'General',
+  general: 'General',
   'ai-ml': 'AI/ML',
   'cloud-native': 'Cloud-native',
-  'enterprise': 'Enterprise',
-  'consumer': 'Consumer',
-  'data': 'Data',
+  enterprise: 'Enterprise',
+  consumer: 'Consumer',
+  data: 'Data',
 };
 
 interface ImportTemplateDialogProps {
@@ -69,9 +62,7 @@ export function ImportTemplateDialog({
         <div className="flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--border))]">
           <div className="flex items-center gap-2">
             <Upload className="w-4 h-4 text-blue-600" />
-            <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">
-              Import Template
-            </h3>
+            <h3 className="text-sm font-semibold text-[hsl(var(--foreground))]">Import Template</h3>
           </div>
           <button
             onClick={onCancel}

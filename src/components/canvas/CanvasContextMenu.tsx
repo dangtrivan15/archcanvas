@@ -5,7 +5,17 @@
  */
 
 import { useCallback } from 'react';
-import { Plus, Clipboard, LayoutGrid, Maximize, Server, Database, Radio, Globe, Activity } from 'lucide-react';
+import {
+  Plus,
+  Clipboard,
+  LayoutGrid,
+  Maximize,
+  Server,
+  Database,
+  Radio,
+  Globe,
+  Activity,
+} from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -105,12 +115,5 @@ export function CanvasContextMenu({ x, y, onClose }: CanvasContextMenuProps) {
     { label: 'Fit View', icon: Maximize, action: handleFitView, testId: 'ctx-fit-view' },
   ];
 
-  return (
-    <TouchContextMenu
-      x={x}
-      y={y}
-      onClose={onClose}
-      items={menuItems}
-    />
-  );
+  return <TouchContextMenu x={x} y={y} onClose={onClose} items={menuItems} />;
 }

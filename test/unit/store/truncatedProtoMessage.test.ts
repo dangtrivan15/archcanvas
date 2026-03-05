@@ -5,12 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  encode,
-  decode,
-  CodecError,
-  IntegrityError,
-} from '@/core/storage/codec';
+import { encode, decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import {
   ArchCanvasFile,
   FileHeader,
@@ -215,13 +210,13 @@ describe('Feature #199: Proto deserialization handles truncated messages', () =>
   describe('Error does not crash the app', () => {
     it('all truncation variants produce Error subclasses (never unhandled)', async () => {
       const variants = [
-        validBinary.slice(0, 1),                                    // 1 byte
-        validBinary.slice(0, 6),                                    // magic only
-        validBinary.slice(0, 20),                                   // partial header
-        validBinary.slice(0, 40),                                   // header only
-        truncatePayloadToHalf(validBinary),                         // half payload
-        truncateToHalf(validBinary),                                // half total
-        validBinary.slice(0, validBinary.length - 1),               // missing last byte
+        validBinary.slice(0, 1), // 1 byte
+        validBinary.slice(0, 6), // magic only
+        validBinary.slice(0, 20), // partial header
+        validBinary.slice(0, 40), // header only
+        truncatePayloadToHalf(validBinary), // half payload
+        truncateToHalf(validBinary), // half total
+        validBinary.slice(0, validBinary.length - 1), // missing last byte
       ];
 
       for (const truncated of variants) {
