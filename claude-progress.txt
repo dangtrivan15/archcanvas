@@ -10685,3 +10685,39 @@ Date: 2026-03-05
 
 #### Commit: 0adeaf9
 #### Feature #431 marked passing
+
+---
+
+## Session: Feature #432 - Locking Backup Push (Pre-Cleanup Snapshot)
+Date: 2026-03-05
+
+### Feature #432: Locking Backup Push - PASSING
+
+#### Implementation:
+- Created `src/cli/commands/backupPush.ts`:
+  - New `archcanvas backup-push` CLI command
+  - Options: --remote (default: origin), --stash (auto-stash dirty tree), --lock (enable branch protection), --dry-run, --tag-prefix (default: pre-cleanup-backup-v)
+  - Full pipeline: clean check → stash → branch detection → tag creation → push → branch protection → verify
+  - Date-based tag generation (pre-cleanup-backup-v<YYYY-MM-DD>) with dedup suffix (-2, -3, etc.)
+  - Injectable GitRunner interface for testability (setGitRunner/resetGitRunner)
+  - GitHub branch protection via REST API when GITHUB_TOKEN/GH_TOKEN is set
+  - Graceful error handling: push failures become warnings, missing tokens produce actionable messages
+  - JSON output support via --format json
+- Registered in `src/cli/index.ts` as backup-push subcommand
+- Created `test/unit/cli/backupPush.test.ts` with 31 tests:
+  - Command registration: name, description, all 5 options with correct defaults
+  - Utility functions: isWorkingTreeClean, getCurrentBranch, getHeadSha, generateTagName, createTag, pushToRemote, stashChanges, verifyRemoteTag
+  - executeBackupPush: dirty tree error, dry-run, successful push, auto-stash, lock warning, detached HEAD error, push failure warning, custom prefix, custom remote, dry-run+lock, dry-run+stash
+  - enableBranchProtection: no token warning, non-GitHub remote warning
+
+#### Verification:
+- Vitest: 31/31 tests passing
+- All 314 CLI tests: PASS (0 regressions)
+- Vite build: PASS
+- App loads in browser without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: def562f
+#### Feature #432 marked passing
+#### Progress: 432/446 features passing (96.9%)
