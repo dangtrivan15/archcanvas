@@ -170,7 +170,8 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
   // Additional coverage: verify correct React Flow type mapping
   it('maps node types to correct React Flow component types', () => {
     const serviceCanvas = canvasNodes.find((n) => n.data.nodedefType === 'compute/service');
-    expect(serviceCanvas!.type).toBe('service');
+    // compute/service has shape: rectangle → maps to 'generic' component
+    expect(serviceCanvas!.type).toBe('generic');
 
     const dbCanvas = canvasNodes.find((n) => n.data.nodedefType === 'data/database');
     expect(dbCanvas!.type).toBe('database');

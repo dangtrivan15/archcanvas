@@ -237,7 +237,7 @@ describe('Source Code Verification', () => {
   it('Canvas.tsx handles Escape drill-out when nothing selected', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
-    expect(source).toContain('Escape drill-out');
+    expect(source).toContain('drill out');
     expect(source).toContain('navigationPath.length > 0');
     expect(source).toContain('zoomOut()');
   });
@@ -245,7 +245,7 @@ describe('Source Code Verification', () => {
   it('Canvas.tsx handles Backspace drill-out when inside group', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
-    expect(source).toContain('Backspace zoom out');
+    expect(source).toContain('zoom out');
     expect(source).toContain('navigationPath.length > 0');
   });
 

@@ -14,19 +14,19 @@ export const STATUS_BAR_HEIGHT_STORAGE_KEY = 'status-bar-height';
 
 /* ── Toolbar height constants ────────────────────────────────── */
 export const TOOLBAR_DEFAULT_HEIGHT = 48;
-export const TOOLBAR_MIN_HEIGHT = 32;
-export const TOOLBAR_MAX_HEIGHT = 96;
-export const TOOLBAR_VIEWPORT_RATIO = 0.05;
+export const TOOLBAR_MIN_HEIGHT = 36;
+export const TOOLBAR_MAX_HEIGHT = 80;
+export const TOOLBAR_VIEWPORT_RATIO = 0.035;
 export const TOOLBAR_DEFAULT_FLOOR = 40;
-export const TOOLBAR_DEFAULT_CEILING = 56;
+export const TOOLBAR_DEFAULT_CEILING = 64;
 
 /* ── Status bar height constants ─────────────────────────────── */
 export const STATUS_BAR_DEFAULT_HEIGHT = 24;
-export const STATUS_BAR_MIN_HEIGHT = 16;
+export const STATUS_BAR_MIN_HEIGHT = 20;
 export const STATUS_BAR_MAX_HEIGHT = 48;
-export const STATUS_BAR_VIEWPORT_RATIO = 0.025;
+export const STATUS_BAR_VIEWPORT_RATIO = 0.02;
 export const STATUS_BAR_DEFAULT_FLOOR = 20;
-export const STATUS_BAR_DEFAULT_CEILING = 36;
+export const STATUS_BAR_DEFAULT_CEILING = 40;
 
 /**
  * Compute the default toolbar height based on viewport height.
@@ -50,16 +50,17 @@ export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
 const NAMESPACE = 'archcanvas:';
 
 /**
- * Load persisted toolbar & status bar heights from localStorage.
+ * Read persisted toolbar & status bar heights from localStorage.
  * Returns partial state with only the fields that were persisted.
+ * Used internally during store initialization.
  */
-export function loadPersistedHeights(): {
+function readPersistedHeights(): {
   toolbarHeight?: number;
   toolbarHeightCustomized?: boolean;
   statusBarHeight?: number;
   statusBarHeightCustomized?: boolean;
 } {
-  const result: ReturnType<typeof loadPersistedHeights> = {};
+  const result: ReturnType<typeof readPersistedHeights> = {};
   if (typeof window === 'undefined') return result;
   try {
     const tb = localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
@@ -82,6 +83,20 @@ export function loadPersistedHeights(): {
     // ignore
   }
   return result;
+}
+
+/**
+ * Load persisted toolbar & status bar heights from localStorage and apply to store.
+ * Used for async loading (e.g., Capacitor Preferences on native platforms).
+ */
+export async function loadPersistedHeights(): Promise<void> {
+  const persisted = readPersistedHeights();
+  if (persisted.toolbarHeight !== undefined) {
+    useUIStore.getState().setToolbarHeight(persisted.toolbarHeight);
+  }
+  if (persisted.statusBarHeight !== undefined) {
+    useUIStore.getState().setStatusBarHeight(persisted.statusBarHeight);
+  }
 }
 
 /**
@@ -369,6 +384,10 @@ export interface UIStoreState {
   // Toolbar / status bar height actions
   setToolbarHeight: (height: number) => void;
   setStatusBarHeight: (height: number) => void;
+  /** Update toolbar height from viewport resize (only if not customized) */
+  updateToolbarHeightFromViewport: (viewportHeight: number) => void;
+  /** Update status bar height from viewport resize (only if not customized) */
+  updateStatusBarHeightFromViewport: (viewportHeight: number) => void;
   /** Reset toolbar and status bar to fixed defaults (48px / 24px) and clear localStorage */
   resetBarSizesToFixedDefaults: () => void;
 
@@ -444,10 +463,10 @@ export const useUIStore = create<UIStoreState>((set) => ({
   rightPanelWidth: computeDefaultRightPanelWidth(),
   rightPanelWidthCustomized: false,
 
-  toolbarHeight: loadPersistedHeights().toolbarHeight ?? TOOLBAR_DEFAULT_HEIGHT,
-  toolbarHeightCustomized: loadPersistedHeights().toolbarHeightCustomized ?? false,
-  statusBarHeight: loadPersistedHeights().statusBarHeight ?? STATUS_BAR_DEFAULT_HEIGHT,
-  statusBarHeightCustomized: loadPersistedHeights().statusBarHeightCustomized ?? false,
+  toolbarHeight: readPersistedHeights().toolbarHeight ?? TOOLBAR_DEFAULT_HEIGHT,
+  toolbarHeightCustomized: readPersistedHeights().toolbarHeightCustomized ?? false,
+  statusBarHeight: readPersistedHeights().statusBarHeight ?? STATUS_BAR_DEFAULT_HEIGHT,
+  statusBarHeightCustomized: readPersistedHeights().statusBarHeightCustomized ?? false,
 
   deleteDialogOpen: false,
   deleteDialogInfo: null,
@@ -567,11 +586,21 @@ export const useUIStore = create<UIStoreState>((set) => ({
     }),
 
   resetBarSizes: () => {
+    try {
+      localStorage.removeItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
+      localStorage.removeItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
+    } catch {
+      /* ignore */
+    }
     set({
       leftPanelWidth: computeDefaultLeftPanelWidth(),
       leftPanelWidthCustomized: false,
       rightPanelWidth: computeDefaultRightPanelWidth(),
       rightPanelWidthCustomized: false,
+      toolbarHeight: computeDefaultToolbarHeight(),
+      toolbarHeightCustomized: false,
+      statusBarHeight: computeDefaultStatusBarHeight(),
+      statusBarHeightCustomized: false,
     });
   },
 
@@ -594,6 +623,18 @@ export const useUIStore = create<UIStoreState>((set) => ({
     }
     set({ statusBarHeight: clamped, statusBarHeightCustomized: true });
   },
+
+  updateToolbarHeightFromViewport: (viewportHeight) =>
+    set((s) => {
+      if (s.toolbarHeightCustomized) return s;
+      return { toolbarHeight: computeDefaultToolbarHeight(viewportHeight) };
+    }),
+
+  updateStatusBarHeightFromViewport: (viewportHeight) =>
+    set((s) => {
+      if (s.statusBarHeightCustomized) return s;
+      return { statusBarHeight: computeDefaultStatusBarHeight(viewportHeight) };
+    }),
 
   resetBarSizesToFixedDefaults: () => {
     try {

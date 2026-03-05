@@ -82,7 +82,7 @@ If the user asks you to modify code, explain that you're a project assistant and
     </environment_setup>
   </prerequisites>
 
-  <feature_count>446</feature_count>
+  <feature_count>234</feature_count>
 
   <storage_architecture>
     <description>

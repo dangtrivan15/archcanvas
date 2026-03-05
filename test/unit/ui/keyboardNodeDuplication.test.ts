@@ -307,7 +307,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
     store.addEdge({
       fromNode: nodeA!.id,
       toNode: nodeB!.id,
-      type: 'SYNC',
+      type: 'sync',
       label: 'reads from',
     });
 
@@ -325,7 +325,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
       (e) => e.fromNode === newIds[0] && e.toNode === newIds[1],
     );
     expect(newEdge).toBeDefined();
-    expect(newEdge!.type).toBe('SYNC');
+    expect(newEdge!.type).toBe('sync');
     expect(newEdge!.label).toBe('reads from');
   });
 
@@ -348,8 +348,8 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
     });
 
     // Edge from A → B (internal) and B → C (external to selection A+B)
-    store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'SYNC' });
-    store.addEdge({ fromNode: nodeB!.id, toNode: nodeC!.id, type: 'ASYNC' });
+    store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'sync' });
+    store.addEdge({ fromNode: nodeB!.id, toNode: nodeC!.id, type: 'async' });
 
     const edgeCountBefore = useCoreStore.getState().graph.edges.length;
     // Only duplicate A and B, not C
@@ -373,7 +373,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
       position: { x: 200, y: 0 },
     });
 
-    store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'SYNC' });
+    store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'sync' });
 
     const edgeCountBefore = useCoreStore.getState().graph.edges.length;
     // Only duplicate A (single node → no edge duplication)

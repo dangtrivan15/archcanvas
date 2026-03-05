@@ -177,7 +177,11 @@ describe('Canvas renders 100 nodes without lag', () => {
     });
 
     it('each CanvasNode has a recognized node type', () => {
-      const validTypes = ['service', 'database', 'cache', 'generic', 'queue', 'gateway'];
+      const validTypes = [
+        'service', 'database', 'cache', 'generic', 'queue', 'gateway',
+        'cloud', 'stadium', 'document', 'object-storage', 'repository',
+        'stream-processor', 'event-bus', 'cdn', 'logging',
+      ];
       const { nodes } = renderApi.render(graph100, []);
       for (const node of nodes) {
         expect(validTypes).toContain(node.type);

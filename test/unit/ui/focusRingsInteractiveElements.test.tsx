@@ -213,7 +213,7 @@ describe('Feature #222: Focus rings visible on interactive elements', () => {
       render(<NodeDefBrowser />);
       // Find any group toggle button
       const computeBtn = screen.getByText('Compute').closest('button');
-      expect(computeBtn).toBeTruthy();
+      expect(computeBtn).toBeInTheDocument();
       expect(computeBtn!.tagName).toBe('BUTTON');
       computeBtn!.focus();
       expect(document.activeElement).toBe(computeBtn);
@@ -228,7 +228,7 @@ describe('Feature #222: Focus rings visible on interactive elements', () => {
 
       // Check dropdown appeared
       const dropdown = screen.getByTestId('file-menu-dropdown');
-      expect(dropdown).toBeTruthy();
+      expect(dropdown).toBeInTheDocument();
 
       // All menu items should be button elements with role="menuitem"
       const menuItems = dropdown.querySelectorAll('[role="menuitem"]');
@@ -246,7 +246,7 @@ describe('Feature #222: Focus rings visible on interactive elements', () => {
       fireEvent.click(layoutBtn);
 
       const dropdown = screen.getByTestId('layout-menu-dropdown');
-      expect(dropdown).toBeTruthy();
+      expect(dropdown).toBeInTheDocument();
 
       const menuItems = dropdown.querySelectorAll('[role="menuitem"]');
       expect(menuItems.length).toBeGreaterThan(0);

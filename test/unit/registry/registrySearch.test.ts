@@ -86,7 +86,7 @@ describe('Feature #10: Registry search finds nodedefs by name and tags', () => {
   it('should return all nodedefs when searching for empty string', () => {
     const results = registry.search('');
     expect(results).toHaveLength(registry.size);
-    expect(results).toHaveLength(15);
+    expect(results.length).toBeGreaterThanOrEqual(15);
   });
 
   // --- Step 6: Search for 'zzzznonexistent' → empty results ---

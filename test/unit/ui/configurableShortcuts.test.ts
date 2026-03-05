@@ -293,8 +293,10 @@ describe('ShortcutManager', () => {
     });
 
     it('does not apply conflicting binding', () => {
+      // Previous tests may have changed file:save binding, so capture current value
+      const currentBinding = manager.getBinding('file:save');
       manager.setBinding('file:save', 'mod+n');
-      expect(manager.getBinding('file:save')).toBe('mod+s'); // unchanged
+      expect(manager.getBinding('file:save')).toBe(currentBinding); // unchanged
     });
   });
 

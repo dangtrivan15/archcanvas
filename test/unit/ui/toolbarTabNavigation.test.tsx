@@ -155,7 +155,7 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
     it('has role="toolbar"', () => {
       render(<Toolbar />);
       const toolbar = screen.getByRole('toolbar');
-      expect(toolbar).toBeTruthy();
+      expect(toolbar).toBeInTheDocument();
     });
 
     it('has aria-label "Main toolbar"', () => {
@@ -167,7 +167,7 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
     it('has data-testid="toolbar"', () => {
       render(<Toolbar />);
       const toolbar = screen.getByTestId('toolbar');
-      expect(toolbar).toBeTruthy();
+      expect(toolbar).toBeInTheDocument();
     });
   });
 
@@ -312,10 +312,10 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
 
     it('all 4 toolbar buttons exist in the DOM', () => {
       render(<Toolbar />);
-      expect(screen.getByTestId('file-menu-button')).toBeTruthy();
-      expect(screen.getByTestId('add-node-button')).toBeTruthy();
-      expect(screen.getByTestId('connect-nodes-button')).toBeTruthy();
-      expect(screen.getByTestId('layout-menu-button')).toBeTruthy();
+      expect(screen.getByTestId('file-menu-button')).toBeInTheDocument();
+      expect(screen.getByTestId('add-node-button')).toBeInTheDocument();
+      expect(screen.getByTestId('connect-nodes-button')).toBeInTheDocument();
+      expect(screen.getByTestId('layout-menu-button')).toBeInTheDocument();
     });
 
     it('no toolbar button has tabIndex=-1 preventing tab navigation', () => {
