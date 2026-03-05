@@ -685,6 +685,7 @@ export const archcanvas = $root.archcanvas = (() => {
          * @property {Array.<string>|null} [owners] Architecture owners
          * @property {Array.<archcanvas.INode>|null} [nodes] Architecture nodes
          * @property {Array.<archcanvas.IEdge>|null} [edges] Architecture edges
+         * @property {Array.<archcanvas.IAnnotation>|null} [annotations] Architecture annotations
          */
 
         /**
@@ -699,6 +700,7 @@ export const archcanvas = $root.archcanvas = (() => {
             this.owners = [];
             this.nodes = [];
             this.edges = [];
+            this.annotations = [];
             if (properties)
                 for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                     if (properties[keys[i]] != null)
@@ -746,6 +748,14 @@ export const archcanvas = $root.archcanvas = (() => {
         Architecture.prototype.edges = $util.emptyArray;
 
         /**
+         * Architecture annotations.
+         * @member {Array.<archcanvas.IAnnotation>} annotations
+         * @memberof archcanvas.Architecture
+         * @instance
+         */
+        Architecture.prototype.annotations = $util.emptyArray;
+
+        /**
          * Creates a new Architecture instance using the specified properties.
          * @function create
          * @memberof archcanvas.Architecture
@@ -782,6 +792,9 @@ export const archcanvas = $root.archcanvas = (() => {
             if (message.edges != null && message.edges.length)
                 for (let i = 0; i < message.edges.length; ++i)
                     $root.archcanvas.Edge.encode(message.edges[i], writer.uint32(/* id 5, wireType 2 =*/42).fork()).ldelim();
+            if (message.annotations != null && message.annotations.length)
+                for (let i = 0; i < message.annotations.length; ++i)
+                    $root.archcanvas.Annotation.encode(message.annotations[i], writer.uint32(/* id 6, wireType 2 =*/50).fork()).ldelim();
             return writer;
         };
 
@@ -842,6 +855,12 @@ export const archcanvas = $root.archcanvas = (() => {
                         if (!(message.edges && message.edges.length))
                             message.edges = [];
                         message.edges.push($root.archcanvas.Edge.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 6: {
+                        if (!(message.annotations && message.annotations.length))
+                            message.annotations = [];
+                        message.annotations.push($root.archcanvas.Annotation.decode(reader, reader.uint32()));
                         break;
                     }
                 default:
@@ -910,6 +929,15 @@ export const archcanvas = $root.archcanvas = (() => {
                         return "edges." + error;
                 }
             }
+            if (message.annotations != null && message.hasOwnProperty("annotations")) {
+                if (!Array.isArray(message.annotations))
+                    return "annotations: array expected";
+                for (let i = 0; i < message.annotations.length; ++i) {
+                    let error = $root.archcanvas.Annotation.verify(message.annotations[i]);
+                    if (error)
+                        return "annotations." + error;
+                }
+            }
             return null;
         };
 
@@ -956,6 +984,16 @@ export const archcanvas = $root.archcanvas = (() => {
                     message.edges[i] = $root.archcanvas.Edge.fromObject(object.edges[i]);
                 }
             }
+            if (object.annotations) {
+                if (!Array.isArray(object.annotations))
+                    throw TypeError(".archcanvas.Architecture.annotations: array expected");
+                message.annotations = [];
+                for (let i = 0; i < object.annotations.length; ++i) {
+                    if (typeof object.annotations[i] !== "object")
+                        throw TypeError(".archcanvas.Architecture.annotations: object expected");
+                    message.annotations[i] = $root.archcanvas.Annotation.fromObject(object.annotations[i]);
+                }
+            }
             return message;
         };
 
@@ -976,6 +1014,7 @@ export const archcanvas = $root.archcanvas = (() => {
                 object.owners = [];
                 object.nodes = [];
                 object.edges = [];
+                object.annotations = [];
             }
             if (options.defaults) {
                 object.name = "";
@@ -999,6 +1038,11 @@ export const archcanvas = $root.archcanvas = (() => {
                 object.edges = [];
                 for (let j = 0; j < message.edges.length; ++j)
                     object.edges[j] = $root.archcanvas.Edge.toObject(message.edges[j], options);
+            }
+            if (message.annotations && message.annotations.length) {
+                object.annotations = [];
+                for (let j = 0; j < message.annotations.length; ++j)
+                    object.annotations[j] = $root.archcanvas.Annotation.toObject(message.annotations[j], options);
             }
             return object;
         };
@@ -1030,6 +1074,640 @@ export const archcanvas = $root.archcanvas = (() => {
         };
 
         return Architecture;
+    })();
+
+    archcanvas.Annotation = (function() {
+
+        /**
+         * Properties of an Annotation.
+         * @memberof archcanvas
+         * @interface IAnnotation
+         * @property {string|null} [id] Annotation id
+         * @property {Array.<archcanvas.IAnnotationPath>|null} [paths] Annotation paths
+         * @property {string|null} [color] Annotation color
+         * @property {number|null} [strokeWidth] Annotation strokeWidth
+         * @property {string|null} [nodeId] Annotation nodeId
+         * @property {number|Long|null} [timestampMs] Annotation timestampMs
+         */
+
+        /**
+         * Constructs a new Annotation.
+         * @memberof archcanvas
+         * @classdesc Represents an Annotation.
+         * @implements IAnnotation
+         * @constructor
+         * @param {archcanvas.IAnnotation=} [properties] Properties to set
+         */
+        function Annotation(properties) {
+            this.paths = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * Annotation id.
+         * @member {string} id
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.id = "";
+
+        /**
+         * Annotation paths.
+         * @member {Array.<archcanvas.IAnnotationPath>} paths
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.paths = $util.emptyArray;
+
+        /**
+         * Annotation color.
+         * @member {string} color
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.color = "";
+
+        /**
+         * Annotation strokeWidth.
+         * @member {number} strokeWidth
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.strokeWidth = 0;
+
+        /**
+         * Annotation nodeId.
+         * @member {string} nodeId
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.nodeId = "";
+
+        /**
+         * Annotation timestampMs.
+         * @member {number|Long} timestampMs
+         * @memberof archcanvas.Annotation
+         * @instance
+         */
+        Annotation.prototype.timestampMs = $util.Long ? $util.Long.fromBits(0,0,true) : 0;
+
+        /**
+         * Creates a new Annotation instance using the specified properties.
+         * @function create
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {archcanvas.IAnnotation=} [properties] Properties to set
+         * @returns {archcanvas.Annotation} Annotation instance
+         */
+        Annotation.create = function create(properties) {
+            return new Annotation(properties);
+        };
+
+        /**
+         * Encodes the specified Annotation message. Does not implicitly {@link archcanvas.Annotation.verify|verify} messages.
+         * @function encode
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {archcanvas.IAnnotation} message Annotation message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Annotation.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.id != null && Object.hasOwnProperty.call(message, "id"))
+                writer.uint32(/* id 1, wireType 2 =*/10).string(message.id);
+            if (message.paths != null && message.paths.length)
+                for (let i = 0; i < message.paths.length; ++i)
+                    $root.archcanvas.AnnotationPath.encode(message.paths[i], writer.uint32(/* id 2, wireType 2 =*/18).fork()).ldelim();
+            if (message.color != null && Object.hasOwnProperty.call(message, "color"))
+                writer.uint32(/* id 3, wireType 2 =*/26).string(message.color);
+            if (message.strokeWidth != null && Object.hasOwnProperty.call(message, "strokeWidth"))
+                writer.uint32(/* id 4, wireType 1 =*/33).double(message.strokeWidth);
+            if (message.nodeId != null && Object.hasOwnProperty.call(message, "nodeId"))
+                writer.uint32(/* id 5, wireType 2 =*/42).string(message.nodeId);
+            if (message.timestampMs != null && Object.hasOwnProperty.call(message, "timestampMs"))
+                writer.uint32(/* id 6, wireType 0 =*/48).uint64(message.timestampMs);
+            return writer;
+        };
+
+        /**
+         * Encodes the specified Annotation message, length delimited. Does not implicitly {@link archcanvas.Annotation.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {archcanvas.IAnnotation} message Annotation message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        Annotation.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an Annotation message from the specified reader or buffer.
+         * @function decode
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {archcanvas.Annotation} Annotation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Annotation.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.archcanvas.Annotation();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        message.id = reader.string();
+                        break;
+                    }
+                case 2: {
+                        if (!(message.paths && message.paths.length))
+                            message.paths = [];
+                        message.paths.push($root.archcanvas.AnnotationPath.decode(reader, reader.uint32()));
+                        break;
+                    }
+                case 3: {
+                        message.color = reader.string();
+                        break;
+                    }
+                case 4: {
+                        message.strokeWidth = reader.double();
+                        break;
+                    }
+                case 5: {
+                        message.nodeId = reader.string();
+                        break;
+                    }
+                case 6: {
+                        message.timestampMs = reader.uint64();
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an Annotation message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {archcanvas.Annotation} Annotation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        Annotation.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an Annotation message.
+         * @function verify
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        Annotation.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.id != null && message.hasOwnProperty("id"))
+                if (!$util.isString(message.id))
+                    return "id: string expected";
+            if (message.paths != null && message.hasOwnProperty("paths")) {
+                if (!Array.isArray(message.paths))
+                    return "paths: array expected";
+                for (let i = 0; i < message.paths.length; ++i) {
+                    let error = $root.archcanvas.AnnotationPath.verify(message.paths[i]);
+                    if (error)
+                        return "paths." + error;
+                }
+            }
+            if (message.color != null && message.hasOwnProperty("color"))
+                if (!$util.isString(message.color))
+                    return "color: string expected";
+            if (message.strokeWidth != null && message.hasOwnProperty("strokeWidth"))
+                if (typeof message.strokeWidth !== "number")
+                    return "strokeWidth: number expected";
+            if (message.nodeId != null && message.hasOwnProperty("nodeId"))
+                if (!$util.isString(message.nodeId))
+                    return "nodeId: string expected";
+            if (message.timestampMs != null && message.hasOwnProperty("timestampMs"))
+                if (!$util.isInteger(message.timestampMs) && !(message.timestampMs && $util.isInteger(message.timestampMs.low) && $util.isInteger(message.timestampMs.high)))
+                    return "timestampMs: integer|Long expected";
+            return null;
+        };
+
+        /**
+         * Creates an Annotation message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {archcanvas.Annotation} Annotation
+         */
+        Annotation.fromObject = function fromObject(object) {
+            if (object instanceof $root.archcanvas.Annotation)
+                return object;
+            let message = new $root.archcanvas.Annotation();
+            if (object.id != null)
+                message.id = String(object.id);
+            if (object.paths) {
+                if (!Array.isArray(object.paths))
+                    throw TypeError(".archcanvas.Annotation.paths: array expected");
+                message.paths = [];
+                for (let i = 0; i < object.paths.length; ++i) {
+                    if (typeof object.paths[i] !== "object")
+                        throw TypeError(".archcanvas.Annotation.paths: object expected");
+                    message.paths[i] = $root.archcanvas.AnnotationPath.fromObject(object.paths[i]);
+                }
+            }
+            if (object.color != null)
+                message.color = String(object.color);
+            if (object.strokeWidth != null)
+                message.strokeWidth = Number(object.strokeWidth);
+            if (object.nodeId != null)
+                message.nodeId = String(object.nodeId);
+            if (object.timestampMs != null)
+                if ($util.Long)
+                    (message.timestampMs = $util.Long.fromValue(object.timestampMs)).unsigned = true;
+                else if (typeof object.timestampMs === "string")
+                    message.timestampMs = parseInt(object.timestampMs, 10);
+                else if (typeof object.timestampMs === "number")
+                    message.timestampMs = object.timestampMs;
+                else if (typeof object.timestampMs === "object")
+                    message.timestampMs = new $util.LongBits(object.timestampMs.low >>> 0, object.timestampMs.high >>> 0).toNumber(true);
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an Annotation message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {archcanvas.Annotation} message Annotation
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        Annotation.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults)
+                object.paths = [];
+            if (options.defaults) {
+                object.id = "";
+                object.color = "";
+                object.strokeWidth = 0;
+                object.nodeId = "";
+                if ($util.Long) {
+                    let long = new $util.Long(0, 0, true);
+                    object.timestampMs = options.longs === String ? long.toString() : options.longs === Number ? long.toNumber() : long;
+                } else
+                    object.timestampMs = options.longs === String ? "0" : 0;
+            }
+            if (message.id != null && message.hasOwnProperty("id"))
+                object.id = message.id;
+            if (message.paths && message.paths.length) {
+                object.paths = [];
+                for (let j = 0; j < message.paths.length; ++j)
+                    object.paths[j] = $root.archcanvas.AnnotationPath.toObject(message.paths[j], options);
+            }
+            if (message.color != null && message.hasOwnProperty("color"))
+                object.color = message.color;
+            if (message.strokeWidth != null && message.hasOwnProperty("strokeWidth"))
+                object.strokeWidth = options.json && !isFinite(message.strokeWidth) ? String(message.strokeWidth) : message.strokeWidth;
+            if (message.nodeId != null && message.hasOwnProperty("nodeId"))
+                object.nodeId = message.nodeId;
+            if (message.timestampMs != null && message.hasOwnProperty("timestampMs"))
+                if (typeof message.timestampMs === "number")
+                    object.timestampMs = options.longs === String ? String(message.timestampMs) : message.timestampMs;
+                else
+                    object.timestampMs = options.longs === String ? $util.Long.prototype.toString.call(message.timestampMs) : options.longs === Number ? new $util.LongBits(message.timestampMs.low >>> 0, message.timestampMs.high >>> 0).toNumber(true) : message.timestampMs;
+            return object;
+        };
+
+        /**
+         * Converts this Annotation to JSON.
+         * @function toJSON
+         * @memberof archcanvas.Annotation
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        Annotation.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for Annotation
+         * @function getTypeUrl
+         * @memberof archcanvas.Annotation
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        Annotation.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/archcanvas.Annotation";
+        };
+
+        return Annotation;
+    })();
+
+    archcanvas.AnnotationPath = (function() {
+
+        /**
+         * Properties of an AnnotationPath.
+         * @memberof archcanvas
+         * @interface IAnnotationPath
+         * @property {Array.<number>|null} [points] AnnotationPath points
+         * @property {Array.<number>|null} [pressures] AnnotationPath pressures
+         */
+
+        /**
+         * Constructs a new AnnotationPath.
+         * @memberof archcanvas
+         * @classdesc Represents an AnnotationPath.
+         * @implements IAnnotationPath
+         * @constructor
+         * @param {archcanvas.IAnnotationPath=} [properties] Properties to set
+         */
+        function AnnotationPath(properties) {
+            this.points = [];
+            this.pressures = [];
+            if (properties)
+                for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
+                    if (properties[keys[i]] != null)
+                        this[keys[i]] = properties[keys[i]];
+        }
+
+        /**
+         * AnnotationPath points.
+         * @member {Array.<number>} points
+         * @memberof archcanvas.AnnotationPath
+         * @instance
+         */
+        AnnotationPath.prototype.points = $util.emptyArray;
+
+        /**
+         * AnnotationPath pressures.
+         * @member {Array.<number>} pressures
+         * @memberof archcanvas.AnnotationPath
+         * @instance
+         */
+        AnnotationPath.prototype.pressures = $util.emptyArray;
+
+        /**
+         * Creates a new AnnotationPath instance using the specified properties.
+         * @function create
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {archcanvas.IAnnotationPath=} [properties] Properties to set
+         * @returns {archcanvas.AnnotationPath} AnnotationPath instance
+         */
+        AnnotationPath.create = function create(properties) {
+            return new AnnotationPath(properties);
+        };
+
+        /**
+         * Encodes the specified AnnotationPath message. Does not implicitly {@link archcanvas.AnnotationPath.verify|verify} messages.
+         * @function encode
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {archcanvas.IAnnotationPath} message AnnotationPath message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AnnotationPath.encode = function encode(message, writer) {
+            if (!writer)
+                writer = $Writer.create();
+            if (message.points != null && message.points.length) {
+                writer.uint32(/* id 1, wireType 2 =*/10).fork();
+                for (let i = 0; i < message.points.length; ++i)
+                    writer.double(message.points[i]);
+                writer.ldelim();
+            }
+            if (message.pressures != null && message.pressures.length) {
+                writer.uint32(/* id 2, wireType 2 =*/18).fork();
+                for (let i = 0; i < message.pressures.length; ++i)
+                    writer.double(message.pressures[i]);
+                writer.ldelim();
+            }
+            return writer;
+        };
+
+        /**
+         * Encodes the specified AnnotationPath message, length delimited. Does not implicitly {@link archcanvas.AnnotationPath.verify|verify} messages.
+         * @function encodeDelimited
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {archcanvas.IAnnotationPath} message AnnotationPath message or plain object to encode
+         * @param {$protobuf.Writer} [writer] Writer to encode to
+         * @returns {$protobuf.Writer} Writer
+         */
+        AnnotationPath.encodeDelimited = function encodeDelimited(message, writer) {
+            return this.encode(message, writer).ldelim();
+        };
+
+        /**
+         * Decodes an AnnotationPath message from the specified reader or buffer.
+         * @function decode
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @param {number} [length] Message length if known beforehand
+         * @returns {archcanvas.AnnotationPath} AnnotationPath
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AnnotationPath.decode = function decode(reader, length, error) {
+            if (!(reader instanceof $Reader))
+                reader = $Reader.create(reader);
+            let end = length === undefined ? reader.len : reader.pos + length, message = new $root.archcanvas.AnnotationPath();
+            while (reader.pos < end) {
+                let tag = reader.uint32();
+                if (tag === error)
+                    break;
+                switch (tag >>> 3) {
+                case 1: {
+                        if (!(message.points && message.points.length))
+                            message.points = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.points.push(reader.double());
+                        } else
+                            message.points.push(reader.double());
+                        break;
+                    }
+                case 2: {
+                        if (!(message.pressures && message.pressures.length))
+                            message.pressures = [];
+                        if ((tag & 7) === 2) {
+                            let end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2)
+                                message.pressures.push(reader.double());
+                        } else
+                            message.pressures.push(reader.double());
+                        break;
+                    }
+                default:
+                    reader.skipType(tag & 7);
+                    break;
+                }
+            }
+            return message;
+        };
+
+        /**
+         * Decodes an AnnotationPath message from the specified reader or buffer, length delimited.
+         * @function decodeDelimited
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {$protobuf.Reader|Uint8Array} reader Reader or buffer to decode from
+         * @returns {archcanvas.AnnotationPath} AnnotationPath
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        AnnotationPath.decodeDelimited = function decodeDelimited(reader) {
+            if (!(reader instanceof $Reader))
+                reader = new $Reader(reader);
+            return this.decode(reader, reader.uint32());
+        };
+
+        /**
+         * Verifies an AnnotationPath message.
+         * @function verify
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {Object.<string,*>} message Plain object to verify
+         * @returns {string|null} `null` if valid, otherwise the reason why it is not
+         */
+        AnnotationPath.verify = function verify(message) {
+            if (typeof message !== "object" || message === null)
+                return "object expected";
+            if (message.points != null && message.hasOwnProperty("points")) {
+                if (!Array.isArray(message.points))
+                    return "points: array expected";
+                for (let i = 0; i < message.points.length; ++i)
+                    if (typeof message.points[i] !== "number")
+                        return "points: number[] expected";
+            }
+            if (message.pressures != null && message.hasOwnProperty("pressures")) {
+                if (!Array.isArray(message.pressures))
+                    return "pressures: array expected";
+                for (let i = 0; i < message.pressures.length; ++i)
+                    if (typeof message.pressures[i] !== "number")
+                        return "pressures: number[] expected";
+            }
+            return null;
+        };
+
+        /**
+         * Creates an AnnotationPath message from a plain object. Also converts values to their respective internal types.
+         * @function fromObject
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {Object.<string,*>} object Plain object
+         * @returns {archcanvas.AnnotationPath} AnnotationPath
+         */
+        AnnotationPath.fromObject = function fromObject(object) {
+            if (object instanceof $root.archcanvas.AnnotationPath)
+                return object;
+            let message = new $root.archcanvas.AnnotationPath();
+            if (object.points) {
+                if (!Array.isArray(object.points))
+                    throw TypeError(".archcanvas.AnnotationPath.points: array expected");
+                message.points = [];
+                for (let i = 0; i < object.points.length; ++i)
+                    message.points[i] = Number(object.points[i]);
+            }
+            if (object.pressures) {
+                if (!Array.isArray(object.pressures))
+                    throw TypeError(".archcanvas.AnnotationPath.pressures: array expected");
+                message.pressures = [];
+                for (let i = 0; i < object.pressures.length; ++i)
+                    message.pressures[i] = Number(object.pressures[i]);
+            }
+            return message;
+        };
+
+        /**
+         * Creates a plain object from an AnnotationPath message. Also converts values to other types if specified.
+         * @function toObject
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {archcanvas.AnnotationPath} message AnnotationPath
+         * @param {$protobuf.IConversionOptions} [options] Conversion options
+         * @returns {Object.<string,*>} Plain object
+         */
+        AnnotationPath.toObject = function toObject(message, options) {
+            if (!options)
+                options = {};
+            let object = {};
+            if (options.arrays || options.defaults) {
+                object.points = [];
+                object.pressures = [];
+            }
+            if (message.points && message.points.length) {
+                object.points = [];
+                for (let j = 0; j < message.points.length; ++j)
+                    object.points[j] = options.json && !isFinite(message.points[j]) ? String(message.points[j]) : message.points[j];
+            }
+            if (message.pressures && message.pressures.length) {
+                object.pressures = [];
+                for (let j = 0; j < message.pressures.length; ++j)
+                    object.pressures[j] = options.json && !isFinite(message.pressures[j]) ? String(message.pressures[j]) : message.pressures[j];
+            }
+            return object;
+        };
+
+        /**
+         * Converts this AnnotationPath to JSON.
+         * @function toJSON
+         * @memberof archcanvas.AnnotationPath
+         * @instance
+         * @returns {Object.<string,*>} JSON object
+         */
+        AnnotationPath.prototype.toJSON = function toJSON() {
+            return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+        };
+
+        /**
+         * Gets the default type url for AnnotationPath
+         * @function getTypeUrl
+         * @memberof archcanvas.AnnotationPath
+         * @static
+         * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns {string} The default type url
+         */
+        AnnotationPath.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+            if (typeUrlPrefix === undefined) {
+                typeUrlPrefix = "type.googleapis.com";
+            }
+            return typeUrlPrefix + "/archcanvas.AnnotationPath";
+        };
+
+        return AnnotationPath;
     })();
 
     archcanvas.Node = (function() {

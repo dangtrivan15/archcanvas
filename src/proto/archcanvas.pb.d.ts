@@ -262,6 +262,9 @@ export namespace archcanvas {
 
         /** Architecture edges */
         edges?: (archcanvas.IEdge[]|null);
+
+        /** Architecture annotations */
+        annotations?: (archcanvas.IAnnotation[]|null);
     }
 
     /** Represents an Architecture. */
@@ -287,6 +290,9 @@ export namespace archcanvas {
 
         /** Architecture edges. */
         public edges: archcanvas.IEdge[];
+
+        /** Architecture annotations. */
+        public annotations: archcanvas.IAnnotation[];
 
         /**
          * Creates a new Architecture instance using the specified properties.
@@ -360,6 +366,236 @@ export namespace archcanvas {
 
         /**
          * Gets the default type url for Architecture
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an Annotation. */
+    interface IAnnotation {
+
+        /** Annotation id */
+        id?: (string|null);
+
+        /** Annotation paths */
+        paths?: (archcanvas.IAnnotationPath[]|null);
+
+        /** Annotation color */
+        color?: (string|null);
+
+        /** Annotation strokeWidth */
+        strokeWidth?: (number|null);
+
+        /** Annotation nodeId */
+        nodeId?: (string|null);
+
+        /** Annotation timestampMs */
+        timestampMs?: (number|Long|null);
+    }
+
+    /** Represents an Annotation. */
+    class Annotation implements IAnnotation {
+
+        /**
+         * Constructs a new Annotation.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: archcanvas.IAnnotation);
+
+        /** Annotation id. */
+        public id: string;
+
+        /** Annotation paths. */
+        public paths: archcanvas.IAnnotationPath[];
+
+        /** Annotation color. */
+        public color: string;
+
+        /** Annotation strokeWidth. */
+        public strokeWidth: number;
+
+        /** Annotation nodeId. */
+        public nodeId: string;
+
+        /** Annotation timestampMs. */
+        public timestampMs: (number|Long);
+
+        /**
+         * Creates a new Annotation instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns Annotation instance
+         */
+        public static create(properties?: archcanvas.IAnnotation): archcanvas.Annotation;
+
+        /**
+         * Encodes the specified Annotation message. Does not implicitly {@link archcanvas.Annotation.verify|verify} messages.
+         * @param message Annotation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: archcanvas.IAnnotation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified Annotation message, length delimited. Does not implicitly {@link archcanvas.Annotation.verify|verify} messages.
+         * @param message Annotation message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: archcanvas.IAnnotation, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an Annotation message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns Annotation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): archcanvas.Annotation;
+
+        /**
+         * Decodes an Annotation message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns Annotation
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): archcanvas.Annotation;
+
+        /**
+         * Verifies an Annotation message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an Annotation message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns Annotation
+         */
+        public static fromObject(object: { [k: string]: any }): archcanvas.Annotation;
+
+        /**
+         * Creates a plain object from an Annotation message. Also converts values to other types if specified.
+         * @param message Annotation
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: archcanvas.Annotation, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this Annotation to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for Annotation
+         * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+         * @returns The default type url
+         */
+        public static getTypeUrl(typeUrlPrefix?: string): string;
+    }
+
+    /** Properties of an AnnotationPath. */
+    interface IAnnotationPath {
+
+        /** AnnotationPath points */
+        points?: (number[]|null);
+
+        /** AnnotationPath pressures */
+        pressures?: (number[]|null);
+    }
+
+    /** Represents an AnnotationPath. */
+    class AnnotationPath implements IAnnotationPath {
+
+        /**
+         * Constructs a new AnnotationPath.
+         * @param [properties] Properties to set
+         */
+        constructor(properties?: archcanvas.IAnnotationPath);
+
+        /** AnnotationPath points. */
+        public points: number[];
+
+        /** AnnotationPath pressures. */
+        public pressures: number[];
+
+        /**
+         * Creates a new AnnotationPath instance using the specified properties.
+         * @param [properties] Properties to set
+         * @returns AnnotationPath instance
+         */
+        public static create(properties?: archcanvas.IAnnotationPath): archcanvas.AnnotationPath;
+
+        /**
+         * Encodes the specified AnnotationPath message. Does not implicitly {@link archcanvas.AnnotationPath.verify|verify} messages.
+         * @param message AnnotationPath message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encode(message: archcanvas.IAnnotationPath, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Encodes the specified AnnotationPath message, length delimited. Does not implicitly {@link archcanvas.AnnotationPath.verify|verify} messages.
+         * @param message AnnotationPath message or plain object to encode
+         * @param [writer] Writer to encode to
+         * @returns Writer
+         */
+        public static encodeDelimited(message: archcanvas.IAnnotationPath, writer?: $protobuf.Writer): $protobuf.Writer;
+
+        /**
+         * Decodes an AnnotationPath message from the specified reader or buffer.
+         * @param reader Reader or buffer to decode from
+         * @param [length] Message length if known beforehand
+         * @returns AnnotationPath
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decode(reader: ($protobuf.Reader|Uint8Array), length?: number): archcanvas.AnnotationPath;
+
+        /**
+         * Decodes an AnnotationPath message from the specified reader or buffer, length delimited.
+         * @param reader Reader or buffer to decode from
+         * @returns AnnotationPath
+         * @throws {Error} If the payload is not a reader or valid buffer
+         * @throws {$protobuf.util.ProtocolError} If required fields are missing
+         */
+        public static decodeDelimited(reader: ($protobuf.Reader|Uint8Array)): archcanvas.AnnotationPath;
+
+        /**
+         * Verifies an AnnotationPath message.
+         * @param message Plain object to verify
+         * @returns `null` if valid, otherwise the reason why it is not
+         */
+        public static verify(message: { [k: string]: any }): (string|null);
+
+        /**
+         * Creates an AnnotationPath message from a plain object. Also converts values to their respective internal types.
+         * @param object Plain object
+         * @returns AnnotationPath
+         */
+        public static fromObject(object: { [k: string]: any }): archcanvas.AnnotationPath;
+
+        /**
+         * Creates a plain object from an AnnotationPath message. Also converts values to other types if specified.
+         * @param message AnnotationPath
+         * @param [options] Conversion options
+         * @returns Plain object
+         */
+        public static toObject(message: archcanvas.AnnotationPath, options?: $protobuf.IConversionOptions): { [k: string]: any };
+
+        /**
+         * Converts this AnnotationPath to JSON.
+         * @returns JSON object
+         */
+        public toJSON(): { [k: string]: any };
+
+        /**
+         * Gets the default type url for AnnotationPath
          * @param [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
          * @returns The default type url
          */

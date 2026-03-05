@@ -3,7 +3,7 @@
  * Handles File System Access API with fallback, and proto-to-graph conversion.
  */
 
-import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState } from '@/types/graph';
+import type { ArchGraph, ArchNode, ArchEdge, Note, CodeRef, Position, EdgeType, NoteStatus, CodeRefRole, SavedCanvasState, Annotation, AnnotationPathData } from '@/types/graph';
 import type { AIConversation, AIMessage, AISuggestion } from '@/types/ai';
 import type { IArchCanvasFile } from '@/proto/archcanvas';
 import { archcanvas, Architecture } from '@/proto/archcanvas';
@@ -61,6 +61,7 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
         owners: arch.owners ? [...arch.owners] : [],
         nodes: (arch.nodes ?? []).map(protoNodeToNode),
         edges: (arch.edges ?? []).map(protoEdgeToEdge),
+        annotations: (arch.annotations ?? []).map(protoAnnotationToAnnotation),
       }
     : {
         name: 'Untitled Architecture',
@@ -68,6 +69,7 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
         owners: [],
         nodes: [],
         edges: [],
+        annotations: [],
       };
 
   // Extract canvas state if present
@@ -108,6 +110,7 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
               owners: arch.owners ? [...arch.owners] : [],
               nodes: (arch.nodes ?? []).map(protoNodeToNode),
               edges: (arch.edges ?? []).map(protoEdgeToEdge),
+              annotations: (arch.annotations ?? []).map(protoAnnotationToAnnotation),
             };
           } catch {
             // If snapshot decoding fails, create empty graph
@@ -117,6 +120,7 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
               owners: [],
               nodes: [],
               edges: [],
+              annotations: [],
             };
           }
         } else {
@@ -126,6 +130,7 @@ export function protoToGraphFull(file: IArchCanvasFile): ProtoToGraphResult {
             owners: [],
             nodes: [],
             edges: [],
+            annotations: [],
           };
         }
 
@@ -256,6 +261,20 @@ function protoNoteStatusToStatus(protoStatus: archcanvas.Note.NoteStatus | null 
   }
 }
 
+function protoAnnotationToAnnotation(protoAnn: archcanvas.IAnnotation): Annotation {
+  return {
+    id: protoAnn.id ?? '',
+    paths: (protoAnn.paths ?? []).map((p) => ({
+      points: p.points ? [...p.points] : [],
+      pressures: p.pressures ? [...p.pressures] : [],
+    })),
+    color: protoAnn.color ?? '#ff0000',
+    strokeWidth: protoAnn.strokeWidth ?? 3,
+    nodeId: protoAnn.nodeId || undefined,
+    timestampMs: Number(protoAnn.timestampMs ?? 0),
+  };
+}
+
 function protoValueMapToRecord(
   map: { [key: string]: archcanvas.IValue } | null | undefined,
 ): Record<string, string | number | boolean> {
@@ -325,6 +344,21 @@ function graphToArchitectureProto(graph: ArchGraph): archcanvas.IArchitecture {
     owners: [...graph.owners],
     nodes: graph.nodes.map(nodeToProtoNode),
     edges: graph.edges.map(edgeToProtoEdge),
+    annotations: (graph.annotations ?? []).map(annotationToProtoAnnotation),
+  };
+}
+
+function annotationToProtoAnnotation(ann: Annotation): archcanvas.IAnnotation {
+  return {
+    id: ann.id,
+    paths: ann.paths.map((p) => ({
+      points: [...p.points],
+      pressures: [...p.pressures],
+    })),
+    color: ann.color,
+    strokeWidth: ann.strokeWidth,
+    nodeId: ann.nodeId ?? '',
+    timestampMs: ann.timestampMs,
   };
 }
 

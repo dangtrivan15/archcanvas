@@ -83,6 +83,14 @@ export const StringList = archcanvas.StringList;
 export type StringList = archcanvas.StringList;
 export type IStringList = archcanvas.IStringList;
 
+export const Annotation = archcanvas.Annotation;
+export type Annotation = archcanvas.Annotation;
+export type IAnnotation = archcanvas.IAnnotation;
+
+export const AnnotationPath = archcanvas.AnnotationPath;
+export type AnnotationPath = archcanvas.AnnotationPath;
+export type IAnnotationPath = archcanvas.IAnnotationPath;
+
 // ─── Enums ──────────────────────────────────────────────────────
 
 export const EdgeType = archcanvas.Edge.EdgeType;

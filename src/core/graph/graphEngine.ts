@@ -21,6 +21,7 @@ export function createEmptyGraph(name?: string): ArchGraph {
     owners: [],
     nodes: [],
     edges: [],
+    annotations: [],
   };
 }
 
