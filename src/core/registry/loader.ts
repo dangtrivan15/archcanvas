@@ -49,6 +49,7 @@ import wafYaml from './builtins/core/security/waf.yaml?raw';
 import thirdPartyApiYaml from './builtins/core/integration/third-party-api.yaml?raw';
 import webhookYaml from './builtins/core/integration/webhook.yaml?raw';
 import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
+import mcpServerYaml from './builtins/core/integration/mcp-server.yaml?raw';
 
 // Client namespace
 import webAppYaml from './builtins/core/client/web-app.yaml?raw';
@@ -117,6 +118,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'integration/third-party-api.yaml', rawYaml: thirdPartyApiYaml, namespace: 'integration', name: 'third-party-api' },
   { filePath: 'integration/webhook.yaml', rawYaml: webhookYaml, namespace: 'integration', name: 'webhook' },
   { filePath: 'integration/etl-pipeline.yaml', rawYaml: etlPipelineYaml, namespace: 'integration', name: 'etl-pipeline' },
+  { filePath: 'integration/mcp-server.yaml', rawYaml: mcpServerYaml, namespace: 'integration', name: 'mcp-server' },
   // Client (3)
   { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
   { filePath: 'client/mobile-app.yaml', rawYaml: mobileAppYaml, namespace: 'client', name: 'mobile-app' },
