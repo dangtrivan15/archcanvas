@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { ChevronRight, X } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
@@ -61,9 +61,6 @@ export function App() {
   const setRightPanelWidth = useUIStore((s) => s.setRightPanelWidth);
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
-  const statusBarHeight = useUIStore((s) => s.statusBarHeight);
-  const setStatusBarHeight = useUIStore((s) => s.setStatusBarHeight);
-  const updateStatusBarHeightFromViewport = useUIStore((s) => s.updateStatusBarHeightFromViewport);
   const updateLeftPanelWidthFromViewport = useUIStore((s) => s.updateLeftPanelWidthFromViewport);
   const updateRightPanelWidthFromViewport = useUIStore((s) => s.updateRightPanelWidthFromViewport);
   const navigationPath = useNavigationStore((s) => s.path);
@@ -92,45 +89,6 @@ export function App() {
     setRightPanelWidth(rightPanelWidth + delta);
   }, [rightPanelWidth, setRightPanelWidth]);
 
-  // Status bar resize drag state
-  const [isStatusBarDragging, setIsStatusBarDragging] = useState(false);
-  const statusBarDragStartY = useRef(0);
-  const statusBarDragStartHeight = useRef(0);
-
-  const handleStatusBarResizeStart = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    statusBarDragStartY.current = e.clientY;
-    statusBarDragStartHeight.current = statusBarHeight;
-    setIsStatusBarDragging(true);
-  }, [statusBarHeight]);
-
-  useEffect(() => {
-    if (!isStatusBarDragging) return;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      // Dragging up (negative deltaY) increases height
-      const deltaY = statusBarDragStartY.current - e.clientY;
-      setStatusBarHeight(statusBarDragStartHeight.current + deltaY);
-    };
-
-    const handlePointerUp = () => {
-      setIsStatusBarDragging(false);
-    };
-
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'row-resize';
-
-    return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    };
-  }, [isStatusBarDragging, setStatusBarHeight]);
-
   // iPad external keyboard: capture-phase interception to suppress WKWebView defaults
   // Must be registered before useKeyboardShortcuts so capture fires first
   useIPadExternalKeyboard();
@@ -140,11 +98,6 @@ export function App() {
 
   // Responsive layout: auto-close panels when window is narrow
   useResponsiveLayout();
-
-  // Update status bar height when viewport changes (only if user hasn't customized)
-  useEffect(() => {
-    updateStatusBarHeightFromViewport(viewportHeight);
-  }, [viewportHeight, updateStatusBarHeightFromViewport]);
 
   // Update panel widths when viewport width changes (only if user hasn't customized)
   useEffect(() => {
@@ -347,18 +300,8 @@ export function App() {
         {/* Toast notifications */}
         <Toast />
 
-        {/* Status Bar Resize Handle - positioned between content area and status bar */}
-        <div
-          data-testid="status-bar-resize-handle"
-          className={`w-full h-2 cursor-row-resize shrink-0 transition-colors duration-150 ${isStatusBarDragging ? 'bg-blue-500' : 'hover:bg-blue-400'}`}
-          onPointerDown={handleStatusBarResizeStart}
-          role="separator"
-          aria-orientation="horizontal"
-          aria-label="Resize status bar"
-        />
-
         {/* Status Bar */}
-        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: `${statusBarHeight}px` }}>
+        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)' }}>
           <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
             {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) - always visible */}
             <ModeStatusBar />
