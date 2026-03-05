@@ -25,6 +25,21 @@ message Architecture {
   repeated string owners = 3;
   repeated Node nodes = 4;
   repeated Edge edges = 5;
+  repeated Annotation annotations = 6;
+}
+
+message Annotation {
+  string id = 1;
+  repeated AnnotationPath paths = 2;
+  string color = 3;
+  double stroke_width = 4;
+  string node_id = 5;
+  uint64 timestamp_ms = 6;
+}
+
+message AnnotationPath {
+  repeated double points = 1;
+  repeated double pressures = 2;
 }
 
 message Node {

@@ -10,6 +10,28 @@ export interface ArchGraph {
   owners: string[];
   nodes: ArchNode[];
   edges: ArchEdge[];
+  annotations: Annotation[];
+}
+
+export interface AnnotationPathData {
+  /** Flat array of x,y coordinate pairs: [x0,y0, x1,y1, ...] */
+  points: number[];
+  /** Pressure values (0-1) per point, matching points length/2 */
+  pressures: number[];
+}
+
+export interface Annotation {
+  id: string;
+  /** SVG path segments captured from pointer events */
+  paths: AnnotationPathData[];
+  /** CSS color string */
+  color: string;
+  /** Base stroke width in pixels */
+  strokeWidth: number;
+  /** If set, annotation is scoped to this node; otherwise global */
+  nodeId?: string;
+  /** When the annotation was created */
+  timestampMs: number;
 }
 
 export interface ArchNode {

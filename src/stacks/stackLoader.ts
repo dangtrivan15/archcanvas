@@ -139,5 +139,6 @@ export function instantiateStack(template: StackTemplate): ArchGraph {
     owners: [],
     nodes,
     edges,
+    annotations: [],
   };
 }

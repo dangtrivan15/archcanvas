@@ -81,6 +81,11 @@ export interface CoreStoreState {
   moveNodes: (moves: Array<{ nodeId: string; x: number; y: number }>, snapshotDescription?: string) => void;
   duplicateSelection: (nodeIds: string[]) => string[];
 
+  // Annotations
+  addAnnotation: (annotation: import('@/types/graph').Annotation) => void;
+  removeAnnotation: (annotationId: string) => void;
+  clearAnnotations: (nodeId?: string) => void;
+
   // Layout
   autoLayout: (direction: 'horizontal' | 'vertical', navigationPath?: string[]) => Promise<void>;
 
@@ -1123,6 +1128,37 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
 
     return newNodeIds;
+  },
+
+  // ─── Annotation Mutations ────────────────────────────────────
+
+  addAnnotation: (annotation) => {
+    const { graph } = get();
+    const updatedGraph: ArchGraph = {
+      ...graph,
+      annotations: [...(graph.annotations ?? []), annotation],
+    };
+    set({ graph: updatedGraph, isDirty: true });
+  },
+
+  removeAnnotation: (annotationId) => {
+    const { graph } = get();
+    const updatedGraph: ArchGraph = {
+      ...graph,
+      annotations: (graph.annotations ?? []).filter((a) => a.id !== annotationId),
+    };
+    set({ graph: updatedGraph, isDirty: true });
+  },
+
+  clearAnnotations: (nodeId?: string) => {
+    const { graph } = get();
+    const updatedGraph: ArchGraph = {
+      ...graph,
+      annotations: nodeId
+        ? (graph.annotations ?? []).filter((a) => a.nodeId !== nodeId)
+        : [],
+    };
+    set({ graph: updatedGraph, isDirty: true });
   },
 
   /**

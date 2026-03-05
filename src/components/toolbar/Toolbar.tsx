@@ -10,7 +10,7 @@
  * Uses fixed responsive sizing via CSS clamp() — no resize handles.
  */
 
-import { Keyboard, Settings } from 'lucide-react';
+import { Keyboard, Settings, PenTool } from 'lucide-react';
 import { FileMenu } from './FileMenu';
 import { AddNodeButton } from './AddNodeButton';
 import { ConnectNodesButton } from './ConnectNodesButton';
@@ -19,6 +19,7 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 import { PencilIndicator } from './PencilIndicator';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAnnotationStore } from '@/store/annotationStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
 
 export function Toolbar() {
@@ -26,6 +27,9 @@ export function Toolbar() {
   const isDirty = useCoreStore((s) => s.isDirty);
   const openShortcutsHelp = useUIStore((s) => s.openShortcutsHelp);
   const openSettingsDialog = useUIStore((s) => s.openSettingsDialog);
+  const isDrawingMode = useAnnotationStore((s) => s.isDrawingMode);
+  const enterDrawingMode = useAnnotationStore((s) => s.enterDrawingMode);
+  const exitDrawingMode = useAnnotationStore((s) => s.exitDrawingMode);
   const { isCompact } = useViewportSize();
 
   return (
@@ -51,6 +55,23 @@ export function Toolbar() {
       <AddNodeButton compact={isCompact} />
       <ConnectNodesButton compact={isCompact} />
       <LayoutMenu compact={isCompact} />
+
+      {/* Annotate button - toggles freeform drawing mode */}
+      <button
+        type="button"
+        onClick={() => isDrawingMode ? exitDrawingMode() : enterDrawingMode()}
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+          isDrawingMode
+            ? 'bg-[hsl(var(--pine))] text-white'
+            : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]'
+        } ${isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'}`}
+        title={isDrawingMode ? 'Exit annotation mode' : 'Annotate (draw on canvas)'}
+        aria-label={isDrawingMode ? 'Exit annotation mode' : 'Annotate'}
+        data-testid="annotate-button"
+      >
+        <PenTool className="w-4 h-4" />
+        {!isCompact && <span>{isDrawingMode ? 'Drawing' : 'Annotate'}</span>}
+      </button>
 
       {/* Divider - scales proportionally with toolbar height */}
       {!isCompact && <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />}
