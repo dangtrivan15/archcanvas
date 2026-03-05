@@ -14,6 +14,7 @@ import aiChatAppYaml from './ai-chat-app.yaml?raw';
 import serverlessEventDrivenYaml from './serverless-event-driven.yaml?raw';
 import microservicesPlatformYaml from './microservices-platform.yaml?raw';
 import mobileBackendYaml from './mobile-backend.yaml?raw';
+import mlPlatformYaml from './ml-platform.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -50,6 +51,7 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'serverless-event-driven', rawYaml: serverlessEventDrivenYaml },
   { name: 'microservices-platform', rawYaml: microservicesPlatformYaml },
   { name: 'mobile-backend', rawYaml: mobileBackendYaml },
+  { name: 'ml-platform', rawYaml: mlPlatformYaml },
 ];
 
 /**
