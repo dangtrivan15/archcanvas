@@ -10345,3 +10345,43 @@ Date: 2026-03-05
 #### Commit: 6332f12
 #### Feature #345 marked passing
 #### Progress: 422/426 features passing (99.1%)
+
+---
+
+## Session: Feature #346 - CLI analyze Command
+Date: 2026-03-05
+
+### Feature #346: CLI analyze Command - PASSING
+
+#### Implementation:
+- Created `src/cli/commands/analyze.ts`:
+  - Registers `archcanvas analyze <directory>` subcommand via Commander.js
+  - CLI flags: --output/-o (output .archc path), --name/-n (architecture name), --depth/-d (quick|standard|deep, default: standard), --dry-run (print inference without saving), --verbose (detailed logging)
+  - Validates directory exists and is a directory
+  - Validates depth is one of: quick, standard, deep
+  - Checks for ANTHROPIC_API_KEY / VITE_ANTHROPIC_API_KEY environment variable
+  - Creates AIMessageSender with Anthropic SDK when API key available
+  - Integrates with analyzeCodebase() pipeline from src/analyze/pipeline.ts
+  - Shows progress for each pipeline phase: Scanning, Detecting, Selecting, Analyzing, Building, Saving
+  - Dry-run mode: outputs JSON inference result to stdout
+  - Normal mode: prints summary with nodes/edges/codeRefs/output path/duration
+  - JSON format support (--format json) for both dry-run and normal modes
+  - Graceful error handling: directory not found, not a directory, invalid depth, AI client init failure
+- Registered in `src/cli/index.ts` as analyze subcommand
+- Created `test/unit/cli/cliAnalyze.test.ts` with 15 tests:
+  - Command registration: name, description, arguments, all 5 options with correct defaults
+  - Error handling: missing directory, file-not-directory
+  - Pipeline integration (structural-only, no AI key): dry-run JSON output, .archc file creation with magic bytes, progress messages, API key warning, summary output
+
+#### Verification:
+- TypeScript compilation: PASS (no errors in analyze.ts)
+- Vite build: PASS
+- 15/15 unit tests passing: PASS
+- Existing 57 CLI tests still passing (no regression): PASS
+- App loads in browser without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: b5f907b
+#### Feature #346 marked passing
+#### Progress: 424/426 features passing (99.5%)
