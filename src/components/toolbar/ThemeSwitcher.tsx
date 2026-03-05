@@ -55,7 +55,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
     setOpen((prev) => {
       if (!prev) {
         // Opening — set focus to current theme
-        const currentIdx = themeIds.indexOf(themeId as any);
+        const currentIdx = (themeIds as readonly string[]).indexOf(themeId);
         setFocusIndex(currentIdx >= 0 ? currentIdx : 0);
       } else {
         setFocusIndex(-1);
@@ -98,7 +98,8 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
         case ' ':
           e.preventDefault();
           if (focusIndex >= 0 && focusIndex < themeIds.length) {
-            selectTheme(themeIds[focusIndex]);
+            const id = themeIds[focusIndex];
+            if (id) selectTheme(id);
           }
           break;
         case 'Escape':
@@ -129,7 +130,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
         ref={buttonRef}
         type="button"
         onClick={toggle}
-        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target ${
           compact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title={`Theme: ${currentTheme?.name ?? 'Default'}`}
@@ -145,7 +146,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
             {SWATCH_KEYS.slice(0, 3).map((key) => (
               <span
                 key={key}
-                className="w-2.5 h-2.5 rounded-full border border-[hsl(var(--border))]"
+                className="w-2.5 h-2.5 rounded-full border border-border"
                 style={{ backgroundColor: `hsl(${currentTheme?.colors[key] ?? '0 0% 50%'})` }}
               />
             ))}
@@ -157,7 +158,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
       {open && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-1 w-64 bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-lg shadow-lg z-[60] py-1 overflow-hidden"
+          className="absolute right-0 top-full mt-1 w-64 bg-surface border border-border rounded-lg shadow-lg z-[60] py-1 overflow-hidden"
           role="listbox"
           aria-label="Select theme"
           data-testid="theme-switcher-dropdown"
@@ -177,10 +178,10 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                 onClick={() => selectTheme(id)}
                 className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors outline-none ${
                   isActive
-                    ? 'bg-[hsl(var(--highlight-med))] text-[hsl(var(--text))] font-medium'
+                    ? 'bg-highlight-med text-text font-medium'
                     : focusIndex === idx
-                      ? 'bg-[hsl(var(--highlight-low))] text-[hsl(var(--text))]'
-                      : 'text-[hsl(var(--text))] hover:bg-[hsl(var(--highlight-low))]'
+                      ? 'bg-highlight-low text-text'
+                      : 'text-text hover:bg-highlight-low'
                 }`}
                 data-testid={`theme-switcher-option-${id}`}
               >
@@ -189,7 +190,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                   {SWATCH_KEYS.map((key) => (
                     <span
                       key={key}
-                      className="w-4 h-4 rounded-full border border-[hsl(var(--border))]"
+                      className="w-4 h-4 rounded-full border border-border"
                       style={{ backgroundColor: `hsl(${t.colors[key]})` }}
                     />
                   ))}
@@ -199,7 +200,7 @@ export function ThemeSwitcher({ compact = false }: { compact?: boolean }) {
                 <span className="flex-1 text-left truncate">{t.name}</span>
 
                 {/* Active indicator */}
-                {isActive && <Check className="w-4 h-4 text-[hsl(var(--primary))] shrink-0" />}
+                {isActive && <Check className="w-4 h-4 text-primary shrink-0" />}
               </button>
             );
           })}

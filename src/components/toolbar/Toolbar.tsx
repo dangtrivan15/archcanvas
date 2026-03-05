@@ -35,7 +35,7 @@ export function Toolbar() {
 
   return (
     <header
-      className="border-b flex items-center gap-1 shrink-0 bg-[hsl(var(--background))] sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar"
+      className="border-b flex items-center gap-1 shrink-0 bg-background sticky top-0 z-50 safe-area-top safe-area-left safe-area-right touch-toolbar"
       style={{
         height: 'clamp(2.5rem, 3.5vh, 3.5rem)',
         padding: isCompact ? '0 0.5rem' : '0 0.75rem',
@@ -47,14 +47,14 @@ export function Toolbar() {
       {/* App branding */}
       <div className="flex items-center gap-2 ml-3 mr-2">
         <span
-          className={`font-bold tracking-tight text-[hsl(var(--foreground))] ${isCompact ? 'text-xs' : 'text-sm'}`}
+          className={`font-bold tracking-tight text-foreground ${isCompact ? 'text-xs' : 'text-sm'}`}
         >
           {isCompact ? 'AC' : 'ArchCanvas'}
         </span>
       </div>
 
       {/* Divider - scales proportionally with toolbar height */}
-      <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />
+      <div className="w-px h-3/5 bg-border mx-1" />
 
       {/* Menu buttons - pass compact prop for icon-only mode */}
       <FileMenu compact={isCompact} />
@@ -66,10 +66,10 @@ export function Toolbar() {
       <button
         type="button"
         onClick={() => (isDrawingMode ? exitDrawingMode() : enterDrawingMode())}
-        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target ${
           isDrawingMode
-            ? 'bg-[hsl(var(--pine))] text-white'
-            : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))]'
+            ? 'bg-pine text-white'
+            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
         } ${isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'}`}
         title={isDrawingMode ? 'Exit annotation mode' : 'Annotate (draw on canvas)'}
         aria-label={isDrawingMode ? 'Exit annotation mode' : 'Annotate'}
@@ -83,7 +83,7 @@ export function Toolbar() {
       <button
         type="button"
         onClick={openTemplateGallery}
-        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target ${
           isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title="Template Gallery"
@@ -96,15 +96,15 @@ export function Toolbar() {
 
       {/* Divider - scales proportionally with toolbar height */}
       {!isCompact && (
-        <div className="w-px bg-[hsl(var(--border))] mx-1" style={{ height: '60%' }} />
+        <div className="w-px h-3/5 bg-border mx-1" />
       )}
 
       {/* Filename display - hidden in compact mode */}
       {!isCompact && (
-        <div className="flex items-center gap-1 ml-2 text-sm text-[hsl(var(--muted-foreground))]">
+        <div className="flex items-center gap-1 ml-2 text-sm text-muted-foreground">
           <span data-testid="filename-display">{fileName}</span>
           {isDirty && (
-            <span className="text-[hsl(var(--foreground))] font-medium" title="Unsaved changes">
+            <span className="text-foreground font-medium" title="Unsaved changes">
               *
             </span>
           )}
@@ -114,7 +114,7 @@ export function Toolbar() {
       {/* Dirty indicator in compact mode (just the asterisk) */}
       {isCompact && isDirty && (
         <span
-          className="text-[hsl(var(--foreground))] font-medium text-sm ml-1"
+          className="text-foreground font-medium text-sm ml-1"
           title="Unsaved changes"
           data-testid="compact-dirty-indicator"
         >
@@ -135,7 +135,7 @@ export function Toolbar() {
       <button
         type="button"
         onClick={openSettingsDialog}
-        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target ${
           isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title="Settings"
@@ -149,7 +149,7 @@ export function Toolbar() {
       <button
         type="button"
         onClick={openShortcutsHelp}
-        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--accent))] rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target ${
+        className={`inline-flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target ${
           isCompact ? 'px-1.5 py-1' : 'px-2.5 py-1.5'
         }`}
         title="Keyboard shortcuts (?)"

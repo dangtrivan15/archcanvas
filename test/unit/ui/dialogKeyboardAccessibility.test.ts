@@ -106,7 +106,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
     });
 
     it('has focus ring styles on buttons', () => {
-      expect(source).toContain('focus:ring-2');
+      expect(source).toContain('focus-visible:ring-2');
     });
   });
 

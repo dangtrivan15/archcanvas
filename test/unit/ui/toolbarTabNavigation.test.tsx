@@ -281,7 +281,7 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
         screen.getByTestId('layout-menu-button'),
       ];
       buttons.forEach((btn) => {
-        expect(btn.className).toContain('focus-visible:ring-[hsl(var(--ring))]');
+        expect(btn.className).toContain('focus-visible:ring-ring');
       });
     });
   });

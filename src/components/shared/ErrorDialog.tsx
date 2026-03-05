@@ -65,7 +65,7 @@ export function ErrorDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
+        className="bg-surface text-foreground rounded-lg shadow-xl max-w-md w-full mx-4 p-6 compact-dialog-sheet"
         data-testid="error-dialog-content"
       >
         {/* Header */}
@@ -76,14 +76,14 @@ export function ErrorDialog() {
           <div>
             <h2
               id="error-dialog-title"
-              className="text-lg font-semibold text-gray-900"
+              className="text-lg font-semibold text-foreground"
               data-testid="error-dialog-title"
             >
               {info.title}
             </h2>
             <p
               id="error-dialog-message"
-              className="text-sm text-gray-500 mt-1"
+              className="text-sm text-muted-foreground mt-1"
               data-testid="error-dialog-message"
             >
               {info.message}
@@ -97,7 +97,7 @@ export function ErrorDialog() {
             ref={okRef}
             type="button"
             onClick={closeDialog}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-4 py-2 text-sm font-medium text-white bg-love border border-transparent rounded-md hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-love"
             data-testid="error-dialog-ok-button"
           >
             OK

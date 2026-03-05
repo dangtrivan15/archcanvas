@@ -137,14 +137,14 @@ export function ConnectionTypeDialog() {
     >
       <div
         ref={focusTrapRef}
-        className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 compact-dialog-sheet"
+        className="bg-surface text-foreground rounded-lg shadow-xl max-w-sm w-full mx-4 p-5 compact-dialog-sheet"
         data-testid="connection-dialog-content"
       >
         {/* Header */}
-        <h2 id="connection-dialog-title" className="text-lg font-semibold text-gray-900 mb-1">
+        <h2 id="connection-dialog-title" className="text-lg font-semibold text-foreground mb-1">
           Create Connection
         </h2>
-        <p className="text-sm text-gray-500 mb-4">Choose the connection type for this edge.</p>
+        <p className="text-sm text-muted-foreground mb-4">Choose the connection type for this edge.</p>
 
         {/* Edge type selection */}
         <div className="space-y-2 mb-4" data-testid="edge-type-options">
@@ -158,20 +158,20 @@ export function ConnectionTypeDialog() {
                 onClick={() => setSelectedType(option.type)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md border text-left transition-colors ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-iris bg-iris/10 ring-1 ring-iris'
+                    : 'border-border hover:border-muted-foreground/30 hover:bg-highlight-low'
                 }`}
                 data-testid={`edge-type-${option.type}`}
                 data-selected={isSelected}
               >
                 <IconComp className={`w-5 h-5 ${option.color} shrink-0`} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900">{option.label}</div>
-                  <div className="text-xs text-gray-500">{option.description}</div>
+                  <div className="text-sm font-medium text-foreground">{option.label}</div>
+                  <div className="text-xs text-muted-foreground">{option.description}</div>
                 </div>
                 {isSelected && (
-                  <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-white" />
+                  <div className="w-4 h-4 rounded-full bg-iris flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-surface" />
                   </div>
                 )}
               </button>
@@ -181,8 +181,8 @@ export function ConnectionTypeDialog() {
 
         {/* Optional label input */}
         <div className="mb-4">
-          <label htmlFor="edge-label" className="block text-sm font-medium text-gray-700 mb-1">
-            Label <span className="text-gray-400 font-normal">(optional)</span>
+          <label htmlFor="edge-label" className="block text-sm font-medium text-foreground mb-1">
+            Label <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
           <input
             id="edge-label"
@@ -190,7 +190,7 @@ export function ConnectionTypeDialog() {
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="e.g., REST API, events, data sync"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm bg-surface text-foreground border border-border rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris focus-visible:border-transparent"
             data-testid="edge-label-input"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -206,7 +206,7 @@ export function ConnectionTypeDialog() {
           <button
             type="button"
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-md hover:bg-highlight-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             data-testid="connection-cancel-button"
           >
             Cancel
@@ -215,7 +215,7 @@ export function ConnectionTypeDialog() {
             ref={confirmRef}
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-white bg-iris border border-transparent rounded-md hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-iris"
             data-testid="connection-confirm-button"
           >
             Create

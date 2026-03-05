@@ -58,7 +58,7 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--muted))] transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1 touch-target"
+        className="flex items-center justify-center gap-1 px-2 py-1.5 text-sm rounded hover:bg-muted transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 touch-target"
         data-testid="connect-nodes-button"
         title="Connect two nodes with an edge"
         disabled={!hasEnoughNodes}
@@ -69,21 +69,21 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
       {isOpen && hasEnoughNodes && (
         <div
-          className="absolute top-full left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 p-3 space-y-3"
+          className="absolute top-full left-0 mt-1 w-72 bg-surface text-foreground border border-border rounded-lg shadow-lg z-50 p-3 space-y-3"
           data-testid="connect-nodes-dropdown"
         >
-          <div className="text-sm font-medium text-gray-700">Create Edge</div>
+          <div className="text-sm font-medium text-foreground">Create Edge</div>
 
           {/* Source node selector */}
           <div>
-            <label htmlFor="edge-source-select" className="text-xs text-gray-500">
+            <label htmlFor="edge-source-select" className="text-xs text-muted-foreground">
               From Node
             </label>
             <select
               id="edge-source-select"
               value={sourceIdx}
               onChange={(e) => setSourceIdx(Number(e.target.value))}
-              className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"
+              className="w-full mt-0.5 text-sm border border-border bg-background text-foreground rounded px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="edge-source-select"
             >
               {nodes.map((node, i) => (
@@ -96,14 +96,14 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           {/* Target node selector */}
           <div>
-            <label htmlFor="edge-target-select" className="text-xs text-gray-500">
+            <label htmlFor="edge-target-select" className="text-xs text-muted-foreground">
               To Node
             </label>
             <select
               id="edge-target-select"
               value={targetIdx}
               onChange={(e) => setTargetIdx(Number(e.target.value))}
-              className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"
+              className="w-full mt-0.5 text-sm border border-border bg-background text-foreground rounded px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="edge-target-select"
             >
               {nodes.map((node, i) => (
@@ -116,14 +116,14 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           {/* Edge type selector */}
           <div>
-            <label htmlFor="edge-type-select" className="text-xs text-gray-500">
+            <label htmlFor="edge-type-select" className="text-xs text-muted-foreground">
               Edge Type
             </label>
             <select
               id="edge-type-select"
               value={edgeType}
               onChange={(e) => setEdgeType(e.target.value as 'sync' | 'async' | 'data-flow')}
-              className="w-full mt-0.5 text-sm border rounded px-2 py-1.5"
+              className="w-full mt-0.5 text-sm border border-border bg-background text-foreground rounded px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               data-testid="edge-type-select"
             >
               <option value="sync">Sync (solid line)</option>
@@ -134,7 +134,7 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
 
           <button
             onClick={handleConnect}
-            className="w-full py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 touch-target-row"
+            className="w-full py-1.5 text-sm bg-iris text-white rounded hover:opacity-90 touch-target-row"
             data-testid="create-edge-button"
           >
             Create Edge
