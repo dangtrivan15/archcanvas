@@ -8,7 +8,7 @@
  */
 
 import type { Theme } from './types';
-import { rosePine, rosePineMoon, rosePineDawn, THEME_PRESETS } from '../themes/rose-pine';
+import { rosePine, rosePineMoon, rosePineDawn, THEME_PRESETS } from './rose-pine';
 
 /** Re-export Rosé Pine themes for backward compatibility */
 export const rosePineTheme = rosePine;
