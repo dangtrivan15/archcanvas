@@ -10424,3 +10424,31 @@ Date: 2026-03-05
 #### Commit: 6868477
 #### Feature #348 marked passing
 #### Progress: 424/426 features passing (99.5%)
+
+---
+
+## Session: Feature #427 - Template Metadata and IndexedDB
+Date: 2026-03-05
+
+### Feature #427: Template Metadata and IndexedDB - PASSING
+
+#### Implementation:
+- Created src/templates/types.ts: TemplateMetadata and TemplateRecord interfaces
+- Created src/templates/registry.ts: Loads all 14 built-in templates with caching
+- Created src/templates/storage.ts: IndexedDB CRUD for user-imported templates
+- Created src/templates/index.ts: barrel exports
+- Installed fake-indexeddb for testing
+
+#### Tests: 20/20 passing
+- templateRegistry.test.ts (10 tests): loading, metadata, caching, IDs
+- templateStorage.test.ts (10 tests): save, get, list, upsert, delete, count, clear
+
+#### Verification:
+- Vitest: 20/20 tests passing
+- Vite build: PASS
+- App loads without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: 027d2d8
+#### Feature #427 marked passing
+#### Progress: 427/431 features passing (99.1%)
