@@ -10,7 +10,7 @@
  * Format: "H S% L%" (no hsl() wrapper) — consumed via hsl(var(--token)).
  */
 
-import type { Theme } from '../theme/types';
+import type { Theme } from './types';
 
 // ─────────────────────────────────────────────
 // Rosé Pine — default dark variant
