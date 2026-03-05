@@ -39,6 +39,7 @@ import cdnYaml from './builtins/core/network/cdn.yaml?raw';
 import loggingYaml from './builtins/core/observability/logging.yaml?raw';
 import monitoringYaml from './builtins/core/observability/monitoring.yaml?raw';
 import tracingYaml from './builtins/core/observability/tracing.yaml?raw';
+import llmMonitorYaml from './builtins/core/observability/llm-monitor.yaml?raw';
 
 // Security namespace
 import authProviderYaml from './builtins/core/security/auth-provider.yaml?raw';
@@ -110,6 +111,7 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
   { filePath: 'observability/logging.yaml', rawYaml: loggingYaml, namespace: 'observability', name: 'logging' },
   { filePath: 'observability/monitoring.yaml', rawYaml: monitoringYaml, namespace: 'observability', name: 'monitoring' },
   { filePath: 'observability/tracing.yaml', rawYaml: tracingYaml, namespace: 'observability', name: 'tracing' },
+  { filePath: 'observability/llm-monitor.yaml', rawYaml: llmMonitorYaml, namespace: 'observability', name: 'llm-monitor' },
   // Security (3)
   { filePath: 'security/auth-provider.yaml', rawYaml: authProviderYaml, namespace: 'security', name: 'auth-provider' },
   { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },

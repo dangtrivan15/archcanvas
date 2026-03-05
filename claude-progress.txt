@@ -9612,3 +9612,34 @@ Date: 2026-03-05
 
 #### Feature #406 marked passing
 #### Progress: 396/426 features passing (92.9%)
+
+---
+
+## Session: Feature #401 - Add ai/rag-pipeline node type
+Date: 2026-03-05
+
+### Feature #401: Add `ai/rag-pipeline` node type - PASSING
+
+#### Implementation:
+- YAML, loader registration, and icon mapping were already in place from a previous session
+- `src/core/registry/builtins/core/ai/rag-pipeline.yaml`:
+  - namespace: ai, name: rag-pipeline, displayName: RAG Pipeline
+  - shape: parallelogram, icon: GitMerge
+  - Args: chunkSize (number), chunkOverlap (number), topK (number), reranker (enum: none/Cohere/cross-encoder/Custom), retrievalStrategy (enum: similarity/MMR/hybrid)
+  - Ports: query (inbound), augmented-prompt (outbound), source-docs (outbound)
+  - Variants: Standard RAG, Advanced RAG, Hybrid RAG
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- GitMerge icon already in `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 8 entries including RAG Pipeline: PASS
+- Node renders on canvas with parallelogram shape: PASS
+- GitMerge icon displayed: PASS
+- Args shown: chunkSize=512, chunkOverlap=64, topK=5, +2 more: PASS
+- Inbound port handle (query) visible: PASS
+- Outbound port handles (augmented-prompt, source-docs) visible: PASS
+- Console: 39 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Feature #401 marked passing
+#### Progress: 396/426 features passing (92.9%)
