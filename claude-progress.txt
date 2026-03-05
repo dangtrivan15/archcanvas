@@ -9460,3 +9460,64 @@ Date: 2026-03-05
 
 #### Commit: 74ad69b
 #### Feature #402 marked passing
+
+---
+
+## Session: Feature #403 - Add ai/prompt-registry node type
+Date: 2026-03-05
+
+### Feature #403: Add `ai/prompt-registry` node type - PASSING
+
+#### Implementation:
+- YAML, loader registration, and icon mapping were already in place from a previous session
+- Created `src/core/registry/builtins/core/ai/prompt-registry.yaml`:
+  - namespace: ai, name: prompt-registry, displayName: Prompt Registry
+  - shape: rectangle, icon: FileText
+  - Args: versionStrategy (enum: semantic/incremental/git-hash), templateFormat (enum: mustache/jinja/f-string/handlebars), abTesting (boolean)
+  - Ports: prompt-fetch (inbound), rendered-prompt (outbound)
+  - Variants: LangSmith Hub, Promptfoo, Pezzo, Custom Registry
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+- FileText icon already in `src/components/nodes/GenericNode.tsx` iconMap
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 7 entries including Prompt Registry: PASS
+- Node renders on canvas with rectangle shape: PASS
+- FileText icon displayed: PASS
+- Args shown: versionStrategy=semantic, templateFormat=mustache, abTesting=false: PASS
+- Inbound port handle (prompt-fetch) visible: PASS
+- Outbound port handle (rendered-prompt) visible: PASS
+- Console: 36 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Commit: b921a35
+#### Feature #403 marked passing
+#### Progress: 393/426 features passing (92.3%)
+
+---
+
+## Session: Feature #404 - Add ai/model-serving node type
+Date: 2026-03-05
+
+### Feature #404: Add `ai/model-serving` node type - PASSING
+
+#### Implementation:
+- Created `src/core/registry/builtins/core/ai/model-serving.yaml`:
+  - namespace: ai, name: model-serving, displayName: Model Serving
+  - shape: rectangle, icon: Cpu
+  - Args: framework (enum: TorchServe/Triton/BentoML/SageMaker Endpoint/TFServing/Custom), gpuType (enum: none/T4/A10G/A100/H100), batchSize (number), autoscaling (boolean), minReplicas (number), maxReplicas (number)
+  - Ports: inference-request (inbound), inference-response (outbound)
+  - Variants: TorchServe, Triton Inference Server, BentoML, SageMaker Endpoint, TFServing
+- Registered in `src/core/registry/loader.ts` as built-in nodedef
+
+#### Verification:
+- Vite build: PASS
+- Node Types panel shows AI category with 7 entries including Model Serving: PASS
+- Node renders on canvas with rectangle shape: PASS
+- Cpu icon displayed: PASS
+- Args shown: framework=TorchServe, gpuType=none, batchSize=1, +3 more: PASS
+- Inbound port handle (inference-request) visible: PASS
+- Outbound port handle (inference-response) visible: PASS
+- Console: 36 built-in nodedefs loaded, 0 app errors (only pre-existing SSL/PWA): PASS
+
+#### Feature #404 marked passing
+#### Progress: 393/426 features passing (92.3%)
