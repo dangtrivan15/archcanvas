@@ -341,7 +341,7 @@ describe('Feature #209: Keyboard shortcut Ctrl+Z triggers undo', () => {
     useCoreStore.getState().addEdge({
       fromNode: node1!.id,
       toNode: node2!.id,
-      type: 'SYNC',
+      type: 'sync',
     });
     expect(useCoreStore.getState().edgeCount).toBe(1);
 

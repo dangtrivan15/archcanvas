@@ -43,6 +43,9 @@ vi.mock('@/store/uiStore', () => ({
       closeRightPanel: vi.fn(),
       setFileOperationLoading: vi.fn(),
       clearFileOperationLoading: vi.fn(),
+      showToast: vi.fn(),
+      openErrorDialog: vi.fn(),
+      rightPanelWidth: 320,
     }),
   },
 }));
@@ -177,7 +180,7 @@ describe('Feature #154: Dirty state clears after save', () => {
     useCoreStore.setState({ isDirty: false });
 
     useCoreStore.getState().suggest({
-      targetNodeId: node!.id,
+      nodeId: node!.id,
       content: 'AI suggestion',
       suggestionType: 'add-note',
     });
@@ -188,7 +191,7 @@ describe('Feature #154: Dirty state clears after save', () => {
     const store = useCoreStore.getState();
     const node = store.addNode({ type: 'compute/service', displayName: 'A' });
     const suggestion = useCoreStore.getState().suggest({
-      targetNodeId: node!.id,
+      nodeId: node!.id,
       content: 'AI suggestion',
       suggestionType: 'add-note',
     });

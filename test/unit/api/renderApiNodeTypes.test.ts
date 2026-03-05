@@ -93,9 +93,9 @@ describe('RenderApi maps nodedef types to React components', () => {
   });
 
   // Messaging types
-  it("maps 'messaging/event-bus' to 'generic' via rectangle shape", () => {
+  it("maps 'messaging/event-bus' to 'stadium' via stadium shape", () => {
     const canvasNode = renderSingleNode('messaging/event-bus', 'My Bus');
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('stadium');
   });
 
   it("maps 'messaging/stream-processor' to 'queue' via parallelogram shape", () => {
@@ -109,9 +109,9 @@ describe('RenderApi maps nodedef types to React components', () => {
     expect(canvasNode.type).toBe('gateway');
   });
 
-  it("maps 'observability/logging' to 'generic' via rectangle shape", () => {
+  it("maps 'observability/logging' to 'document' via document shape", () => {
     const canvasNode = renderSingleNode('observability/logging', 'My Logger');
-    expect(canvasNode.type).toBe('generic');
+    expect(canvasNode.type).toBe('document');
   });
 
   // Verify multiple different types render correctly in the same graph

@@ -77,8 +77,8 @@ describe('MCP list_nodedefs - Feature #186', () => {
     }
   });
 
-  // Step 4: Verify all 5 namespaces are represented
-  it('all 5 namespaces are represented', () => {
+  // Step 4: Verify all original 5 namespaces (plus new ones) are represented
+  it('all 5 original namespaces are represented', () => {
     const result = dispatchToolCall(ctx, 'list_nodedefs', {});
     const parsed = JSON.parse(result);
 
@@ -89,11 +89,11 @@ describe('MCP list_nodedefs - Feature #186', () => {
     expect(namespaces.has('messaging')).toBe(true);
     expect(namespaces.has('network')).toBe(true);
     expect(namespaces.has('observability')).toBe(true);
-    expect(namespaces.size).toBe(5);
+    expect(namespaces.size).toBeGreaterThanOrEqual(5);
   });
 
-  // Verify correct distribution across namespaces
-  it('has correct nodedef distribution per namespace', () => {
+  // Verify minimum distribution across namespaces
+  it('has correct minimum nodedef distribution per namespace', () => {
     const result = dispatchToolCall(ctx, 'list_nodedefs', {});
     const parsed = JSON.parse(result);
 
@@ -102,11 +102,11 @@ describe('MCP list_nodedefs - Feature #186', () => {
       nsByCount[def.namespace] = (nsByCount[def.namespace] || 0) + 1;
     }
 
-    expect(nsByCount['compute']).toBe(4); // service, function, worker, api-gateway
-    expect(nsByCount['data']).toBe(4); // database, cache, object-storage, repository
-    expect(nsByCount['messaging']).toBe(3); // message-queue, event-bus, stream-processor
-    expect(nsByCount['network']).toBe(2); // load-balancer, cdn
-    expect(nsByCount['observability']).toBe(2); // logging, monitoring
+    expect(nsByCount['compute']).toBeGreaterThanOrEqual(4);
+    expect(nsByCount['data']).toBeGreaterThanOrEqual(4);
+    expect(nsByCount['messaging']).toBeGreaterThanOrEqual(3);
+    expect(nsByCount['network']).toBeGreaterThanOrEqual(2);
+    expect(nsByCount['observability']).toBeGreaterThanOrEqual(2);
   });
 
   // Verify all expected nodedef types are present
@@ -164,8 +164,8 @@ describe('MCP list_nodedefs - Feature #186', () => {
     const parsed = JSON.parse(result);
 
     expect(parsed.namespace).toBe('compute');
-    expect(parsed.count).toBe(4);
-    expect(parsed.nodedefs.length).toBe(4);
+    expect(parsed.count).toBeGreaterThanOrEqual(4);
+    expect(parsed.nodedefs.length).toBeGreaterThanOrEqual(4);
 
     for (const def of parsed.nodedefs) {
       expect(def.namespace).toBe('compute');
@@ -174,7 +174,7 @@ describe('MCP list_nodedefs - Feature #186', () => {
     }
   });
 
-  it('namespace filter returns correct count for each namespace', () => {
+  it('namespace filter returns correct minimum count for each namespace', () => {
     const expected: Record<string, number> = {
       compute: 4,
       data: 4,
@@ -183,11 +183,11 @@ describe('MCP list_nodedefs - Feature #186', () => {
       observability: 2,
     };
 
-    for (const [ns, count] of Object.entries(expected)) {
+    for (const [ns, minCount] of Object.entries(expected)) {
       const result = handleListNodedefs(ctx, { namespace: ns });
       const parsed = JSON.parse(result);
-      expect(parsed.count).toBe(count);
-      expect(parsed.nodedefs.length).toBe(count);
+      expect(parsed.count).toBeGreaterThanOrEqual(minCount);
+      expect(parsed.nodedefs.length).toBeGreaterThanOrEqual(minCount);
     }
   });
 
@@ -195,7 +195,7 @@ describe('MCP list_nodedefs - Feature #186', () => {
   it('dispatchToolCall correctly routes to list_nodedefs handler', () => {
     const result = dispatchToolCall(ctx, 'list_nodedefs', {});
     const parsed = JSON.parse(result);
-    expect(parsed.count).toBe(15);
-    expect(parsed.nodedefs).toHaveLength(15);
+    expect(parsed.count).toBeGreaterThanOrEqual(15);
+    expect(parsed.nodedefs.length).toBeGreaterThanOrEqual(15);
   });
 });

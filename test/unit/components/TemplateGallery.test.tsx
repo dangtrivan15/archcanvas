@@ -38,27 +38,27 @@ const MOCK_IMPORTED_METADATA: TemplateMetadata = {
 describe('TemplateCard', () => {
   it('renders template name', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByText('SaaS Starter')).toBeTruthy();
+    expect(screen.getByText('SaaS Starter')).toBeInTheDocument();
   });
 
   it('renders template description', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByText('A production-ready SaaS architecture.')).toBeTruthy();
+    expect(screen.getByText('A production-ready SaaS architecture.')).toBeInTheDocument();
   });
 
   it('renders domain badge with category', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByText('saas')).toBeTruthy();
+    expect(screen.getByText('saas')).toBeInTheDocument();
   });
 
   it('renders node count', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByText('8 nodes')).toBeTruthy();
+    expect(screen.getByText('8 nodes')).toBeInTheDocument();
   });
 
   it('renders edge count', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByText('7 edges')).toBeTruthy();
+    expect(screen.getByText('7 edges')).toBeInTheDocument();
   });
 
   it('shows "Built-in" badge for builtin templates', () => {
@@ -73,7 +73,7 @@ describe('TemplateCard', () => {
 
   it('has correct test-id', () => {
     render(<TemplateCard metadata={MOCK_BUILTIN_METADATA} />);
-    expect(screen.getByTestId('template-card-test-saas')).toBeTruthy();
+    expect(screen.getByTestId('template-card-test-saas')).toBeInTheDocument();
   });
 
   it('calls onClick when clicked', () => {
@@ -87,7 +87,7 @@ describe('TemplateCard', () => {
     const meta = { ...MOCK_BUILTIN_METADATA, icon: 'UnknownIcon123' };
     // Should not throw
     const { container } = render(<TemplateCard metadata={meta} />);
-    expect(container.querySelector('svg')).toBeTruthy();
+    expect(container.querySelector('svg')).toBeInTheDocument();
   });
 });
 
@@ -217,59 +217,59 @@ describe('TemplateGallery', () => {
   it('renders the gallery dialog when open', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-dialog')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-dialog')).toBeInTheDocument();
     });
   });
 
   it('renders the heading "Template Gallery"', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByText('Template Gallery')).toBeTruthy();
+      expect(screen.getByText('Template Gallery')).toBeInTheDocument();
     });
   });
 
   it('renders template count', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByText('4 templates')).toBeTruthy();
+      expect(screen.getByText('4 templates')).toBeInTheDocument();
     });
   });
 
   it('renders the search input', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-search')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-search')).toBeInTheDocument();
     });
   });
 
   it('renders all category filter tabs', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-tab-all')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-general')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-ai-ml')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-cloud-native')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-enterprise')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-consumer')).toBeTruthy();
-      expect(screen.getByTestId('template-gallery-tab-data')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-tab-all')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-general')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-ai-ml')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-cloud-native')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-enterprise')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-consumer')).toBeInTheDocument();
+      expect(screen.getByTestId('template-gallery-tab-data')).toBeInTheDocument();
     });
   });
 
   it('renders template cards in a grid', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-grid')).toBeTruthy();
-      expect(screen.getByText('SaaS Starter')).toBeTruthy();
-      expect(screen.getByText('AI Chat App')).toBeTruthy();
-      expect(screen.getByText('Microservices Platform')).toBeTruthy();
-      expect(screen.getByText('Custom Import')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-grid')).toBeInTheDocument();
+      expect(screen.getByText('SaaS Starter')).toBeInTheDocument();
+      expect(screen.getByText('AI Chat App')).toBeInTheDocument();
+      expect(screen.getByText('Microservices Platform')).toBeInTheDocument();
+      expect(screen.getByText('Custom Import')).toBeInTheDocument();
     });
   });
 
   it('filters templates by search query', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-search')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-search')).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByTestId('template-gallery-search'), {
@@ -277,20 +277,20 @@ describe('TemplateGallery', () => {
     });
 
     // AI Chat App should remain, others should be filtered out
-    expect(screen.getByText('AI Chat App')).toBeTruthy();
+    expect(screen.getByText('AI Chat App')).toBeInTheDocument();
     expect(screen.queryByText('Microservices Platform')).toBeNull();
   });
 
   it('filters templates by category tab', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-tab-cloud-native')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-tab-cloud-native')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByTestId('template-gallery-tab-cloud-native'));
 
     // Only Microservices Platform should show
-    expect(screen.getByText('Microservices Platform')).toBeTruthy();
+    expect(screen.getByText('Microservices Platform')).toBeInTheDocument();
     expect(screen.queryByText('SaaS Starter')).toBeNull();
     expect(screen.queryByText('AI Chat App')).toBeNull();
   });
@@ -298,22 +298,22 @@ describe('TemplateGallery', () => {
   it('shows empty state when no templates match search', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-search')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-search')).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByTestId('template-gallery-search'), {
       target: { value: 'nonexistent_template_xyz' },
     });
 
-    expect(screen.getByTestId('template-gallery-empty')).toBeTruthy();
-    expect(screen.getByText(/No templates match/)).toBeTruthy();
-    expect(screen.getByTestId('template-gallery-clear-filters')).toBeTruthy();
+    expect(screen.getByTestId('template-gallery-empty')).toBeInTheDocument();
+    expect(screen.getByText(/No templates match/)).toBeInTheDocument();
+    expect(screen.getByTestId('template-gallery-clear-filters')).toBeInTheDocument();
   });
 
   it('shows visual distinction between built-in and imported templates', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-source-saas-starter')).toBeTruthy();
+      expect(screen.getByTestId('template-source-saas-starter')).toBeInTheDocument();
     });
 
     expect(screen.getByTestId('template-source-saas-starter').textContent).toBe('Built-in');
@@ -323,7 +323,7 @@ describe('TemplateGallery', () => {
   it('has close button', async () => {
     render(<TemplateGallery />);
     await waitFor(() => {
-      expect(screen.getByTestId('template-gallery-close')).toBeTruthy();
+      expect(screen.getByTestId('template-gallery-close')).toBeInTheDocument();
     });
   });
 });

@@ -36,3 +36,4 @@ src/proto/archcanvas.d.ts
 # Misc
 *.log
 coverage/
+.vite-cache/

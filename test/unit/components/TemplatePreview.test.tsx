@@ -112,37 +112,37 @@ describe('TemplatePreview', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByText('Test Template')).toBeTruthy();
+    expect(screen.getByText('Test Template')).toBeInTheDocument();
   });
 
   it('shows the overlay element', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-overlay')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-overlay')).toBeInTheDocument();
   });
 
   it('shows the dialog element', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-dialog')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-dialog')).toBeInTheDocument();
   });
 
   it('shows the sidebar with description', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-sidebar')).toBeTruthy();
-    expect(screen.getByText('A test template for preview testing')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-sidebar')).toBeInTheDocument();
+    expect(screen.getByText('A test template for preview testing')).toBeInTheDocument();
   });
 
   it('shows loading state initially', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-loading')).toBeTruthy();
-    expect(screen.getByText('Preparing preview...')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-loading')).toBeInTheDocument();
+    expect(screen.getByText('Preparing preview...')).toBeInTheDocument();
   });
 
   it('shows the canvas area after loading', async () => {
@@ -152,23 +152,23 @@ describe('TemplatePreview', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('template-preview-loading')).toBeNull();
     });
-    expect(screen.getByTestId('template-preview-canvas')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-canvas')).toBeInTheDocument();
   });
 
   it('displays node count and edge count badges', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByText('3 nodes')).toBeTruthy();
-    expect(screen.getByText('2 edges')).toBeTruthy();
+    expect(screen.getByText('3 nodes')).toBeInTheDocument();
+    expect(screen.getByText('2 edges')).toBeInTheDocument();
   });
 
   it('displays template tags', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-tag-test')).toBeTruthy();
-    expect(screen.getByTestId('template-preview-tag-starter')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-tag-test')).toBeInTheDocument();
+    expect(screen.getByTestId('template-preview-tag-starter')).toBeInTheDocument();
   });
 
   it('shows node type list after loading', async () => {
@@ -179,22 +179,22 @@ describe('TemplatePreview', () => {
       expect(screen.queryByTestId('template-preview-loading')).toBeNull();
     });
     // Should show node types from the parsed graph
-    expect(screen.getByText(/Node Types/)).toBeTruthy();
+    expect(screen.getByText(/Node Types/)).toBeInTheDocument();
   });
 
   it('renders Use Template button', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-use')).toBeTruthy();
-    expect(screen.getByText('Use Template')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-use')).toBeInTheDocument();
+    expect(screen.getByText('Use Template')).toBeInTheDocument();
   });
 
   it('renders Close button', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByTestId('template-preview-cancel')).toBeTruthy();
+    expect(screen.getByTestId('template-preview-cancel')).toBeInTheDocument();
   });
 
   it('calls onUseTemplate when Use Template is clicked', () => {
@@ -249,20 +249,20 @@ describe('TemplatePreview', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByText('Description')).toBeTruthy();
+    expect(screen.getByText('Description')).toBeInTheDocument();
   });
 
   it('shows Statistics heading in sidebar', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByText('Statistics')).toBeTruthy();
+    expect(screen.getByText('Statistics')).toBeInTheDocument();
   });
 
   it('shows Tags heading in sidebar', () => {
     render(
       <TemplatePreview record={TEST_RECORD} onUseTemplate={onUseTemplate} onClose={onClose} />,
     );
-    expect(screen.getByText('Tags')).toBeTruthy();
+    expect(screen.getByText('Tags')).toBeInTheDocument();
   });
 });

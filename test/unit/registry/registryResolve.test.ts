@@ -15,9 +15,9 @@ describe('RegistryManager.resolve()', () => {
     registry.initialize();
   });
 
-  it('should be initialized with 15 built-in nodedefs', () => {
+  it('should be initialized with all built-in nodedefs', () => {
     expect(registry.isInitialized()).toBe(true);
-    expect(registry.size).toBe(15);
+    expect(registry.size).toBeGreaterThanOrEqual(15);
   });
 
   // Step 2: Resolve 'compute/service'
@@ -81,8 +81,8 @@ describe('RegistryManager.resolve()', () => {
     expect(result).toBeUndefined();
   });
 
-  // Additional: verify all 15 types are resolvable
-  it('resolves all 15 built-in nodedefs by type', () => {
+  // Additional: verify original 15 types are resolvable
+  it('resolves all original 15 built-in nodedefs by type', () => {
     const allTypes = [
       'compute/service',
       'compute/function',

@@ -13,14 +13,17 @@ import {
   VERY_NARROW_BREAKPOINT,
 } from '@/hooks/useResponsiveLayout';
 
-// Helper to simulate window resize
+// Helper to simulate window resize (flushes debounce timer)
 function simulateResize(width: number) {
   Object.defineProperty(window, 'innerWidth', { value: width, writable: true, configurable: true });
   window.dispatchEvent(new Event('resize'));
+  // Flush the debounce timer (100ms) so the resize handler actually fires
+  vi.advanceTimersByTime(200);
 }
 
 describe('Responsive Layout', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     // Reset to wide window with default panel states
     Object.defineProperty(window, 'innerWidth', {
       value: 1280,
@@ -34,6 +37,7 @@ describe('Responsive Layout', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 

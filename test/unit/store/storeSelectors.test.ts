@@ -370,7 +370,7 @@ describe('Store Architecture Audit', () => {
       useCoreStore.getState().addEdge({
         fromNode: graph.nodes[0].id,
         toNode: graph.nodes[1].id,
-        type: 'SYNC',
+        type: 'sync',
       });
       expect(useCoreStore.getState().edgeCount).toBe(1);
     }

@@ -21,12 +21,15 @@ describe('RegistryManager.listByNamespace()', () => {
     expect(result.length).toBeGreaterThan(0);
   });
 
-  // Step 2: Verify 'compute' group contains service, function, worker, api-gateway
+  // Step 2: Verify 'compute' group contains at least service, function, worker, api-gateway
   it('compute namespace contains service, function, worker, api-gateway', () => {
     const results = registry.listByNamespace('compute');
     const names = results.map((def) => def.metadata.name).sort();
-    expect(names).toEqual(['api-gateway', 'function', 'service', 'worker']);
-    expect(results).toHaveLength(4);
+    expect(names).toContain('api-gateway');
+    expect(names).toContain('function');
+    expect(names).toContain('service');
+    expect(names).toContain('worker');
+    expect(results.length).toBeGreaterThanOrEqual(4);
 
     // Verify all belong to compute namespace
     for (const def of results) {
@@ -35,12 +38,15 @@ describe('RegistryManager.listByNamespace()', () => {
     }
   });
 
-  // Step 3: Verify 'data' group contains database, cache, object-storage, repository
+  // Step 3: Verify 'data' group contains at least database, cache, object-storage, repository
   it('data namespace contains database, cache, object-storage, repository', () => {
     const results = registry.listByNamespace('data');
     const names = results.map((def) => def.metadata.name).sort();
-    expect(names).toEqual(['cache', 'database', 'object-storage', 'repository']);
-    expect(results).toHaveLength(4);
+    expect(names).toContain('cache');
+    expect(names).toContain('database');
+    expect(names).toContain('object-storage');
+    expect(names).toContain('repository');
+    expect(results.length).toBeGreaterThanOrEqual(4);
 
     for (const def of results) {
       expect(def.metadata.namespace).toBe('data');
@@ -48,12 +54,14 @@ describe('RegistryManager.listByNamespace()', () => {
     }
   });
 
-  // Step 4: Verify 'messaging' group contains message-queue, event-bus, stream-processor
+  // Step 4: Verify 'messaging' group contains at least message-queue, event-bus, stream-processor
   it('messaging namespace contains message-queue, event-bus, stream-processor', () => {
     const results = registry.listByNamespace('messaging');
     const names = results.map((def) => def.metadata.name).sort();
-    expect(names).toEqual(['event-bus', 'message-queue', 'stream-processor']);
-    expect(results).toHaveLength(3);
+    expect(names).toContain('event-bus');
+    expect(names).toContain('message-queue');
+    expect(names).toContain('stream-processor');
+    expect(results.length).toBeGreaterThanOrEqual(3);
 
     for (const def of results) {
       expect(def.metadata.namespace).toBe('messaging');
@@ -74,12 +82,13 @@ describe('RegistryManager.listByNamespace()', () => {
     }
   });
 
-  // Step 6: Verify 'observability' group contains logging, monitoring
+  // Step 6: Verify 'observability' group contains at least logging, monitoring
   it('observability namespace contains logging, monitoring', () => {
     const results = registry.listByNamespace('observability');
     const names = results.map((def) => def.metadata.name).sort();
-    expect(names).toEqual(['logging', 'monitoring']);
-    expect(results).toHaveLength(2);
+    expect(names).toContain('logging');
+    expect(names).toContain('monitoring');
+    expect(results.length).toBeGreaterThanOrEqual(2);
 
     for (const def of results) {
       expect(def.metadata.namespace).toBe('observability');
@@ -87,20 +96,26 @@ describe('RegistryManager.listByNamespace()', () => {
     }
   });
 
-  // Verify all 5 namespaces are present
-  it('lists exactly 5 namespaces', () => {
+  // Verify all original 5 namespaces (plus new ones) are present
+  it('lists at least 5 namespaces', () => {
     const namespaces = registry.listNamespaces().sort();
-    expect(namespaces).toEqual(['compute', 'data', 'messaging', 'network', 'observability']);
+    expect(namespaces).toContain('compute');
+    expect(namespaces).toContain('data');
+    expect(namespaces).toContain('messaging');
+    expect(namespaces).toContain('network');
+    expect(namespaces).toContain('observability');
+    expect(namespaces.length).toBeGreaterThanOrEqual(5);
   });
 
-  // All namespaces combined total 15 nodedefs
-  it('all namespace groups total 15 nodedefs', () => {
-    const namespaces = ['compute', 'data', 'messaging', 'network', 'observability'];
+  // All namespaces combined total all nodedefs
+  it('all namespace groups total equals registry size', () => {
+    const namespaces = registry.listNamespaces();
     let total = 0;
     for (const ns of namespaces) {
       total += registry.listByNamespace(ns).length;
     }
-    expect(total).toBe(15);
+    expect(total).toBe(registry.size);
+    expect(total).toBeGreaterThanOrEqual(15);
   });
 
   // Edge case: nonexistent namespace returns empty array

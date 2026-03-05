@@ -27,8 +27,8 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
 
     it('handles Tab key to wrap focus from last to first element', () => {
       expect(hookSource).toContain("e.key !== 'Tab'");
-      expect(hookSource).toContain('last.focus()');
-      expect(hookSource).toContain('first.focus()');
+      expect(hookSource).toContain('last?.focus()');
+      expect(hookSource).toContain('first?.focus()');
     });
 
     it('handles Shift+Tab to wrap focus from first to last element', () => {

@@ -105,8 +105,8 @@ describe('NodeShell component', () => {
 
   it('renders SVG with path element', () => {
     render(<NodeShell shape="rectangle" width={200} height={100} />);
-    expect(screen.getByTestId('node-shell-svg')).toBeTruthy();
-    expect(screen.getByTestId('node-shell-path')).toBeTruthy();
+    expect(screen.getByTestId('node-shell-svg')).toBeInTheDocument();
+    expect(screen.getByTestId('node-shell-path')).toBeInTheDocument();
   });
 
   it('renders children inside foreignObject', () => {
@@ -115,13 +115,13 @@ describe('NodeShell component', () => {
         <span data-testid="inner-content">Hello World</span>
       </NodeShell>,
     );
-    expect(screen.getByTestId('inner-content')).toBeTruthy();
-    expect(screen.getByText('Hello World')).toBeTruthy();
+    expect(screen.getByTestId('inner-content')).toBeInTheDocument();
+    expect(screen.getByText('Hello World')).toBeInTheDocument();
   });
 
   it('renders cylinder lid for cylinder shape', () => {
     render(<NodeShell shape="cylinder" width={200} height={120} />);
-    expect(screen.getByTestId('node-shell-cylinder-lid')).toBeTruthy();
+    expect(screen.getByTestId('node-shell-cylinder-lid')).toBeInTheDocument();
   });
 
   it('does NOT render cylinder lid for non-cylinder shapes', () => {
@@ -129,14 +129,24 @@ describe('NodeShell component', () => {
     expect(screen.queryByTestId('node-shell-cylinder-lid')).toBeNull();
   });
 
-  it('renders selection ring when selected', () => {
-    render(<NodeShell shape="badge" width={200} height={100} selected />);
-    expect(screen.getByTestId('node-shell-selection-ring')).toBeTruthy();
+  it('applies selection styling when selected (thicker stroke)', () => {
+    const { container } = render(
+      <NodeShell shape="badge" width={200} height={100} selected />,
+    );
+    const path = container.querySelector('[data-testid="node-shell-path"]');
+    expect(path).toBeInTheDocument();
+    // Selected stroke width is baseStrokeWidth + 1 = 2.5
+    expect(path!.getAttribute('stroke-width')).toBe('2.5');
   });
 
-  it('does NOT render selection ring when not selected', () => {
-    render(<NodeShell shape="badge" width={200} height={100} selected={false} />);
-    expect(screen.queryByTestId('node-shell-selection-ring')).toBeNull();
+  it('applies default stroke when not selected', () => {
+    const { container } = render(
+      <NodeShell shape="badge" width={200} height={100} selected={false} />,
+    );
+    const path = container.querySelector('[data-testid="node-shell-path"]');
+    expect(path).toBeInTheDocument();
+    // Non-selected stroke width is baseStrokeWidth = 1.5
+    expect(path!.getAttribute('stroke-width')).toBe('1.5');
   });
 
   it('applies correct viewBox dimensions', () => {
@@ -153,7 +163,7 @@ describe('NodeShell component', () => {
         <div>Content for {shapeName}</div>
       </NodeShell>,
     );
-    expect(container.querySelector('[data-testid="node-shell-path"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="node-shell-path"]')).toBeInTheDocument();
   });
 
   it('applies custom width', () => {
@@ -168,7 +178,7 @@ describe('NodeShell component', () => {
         <p>Cloud content</p>
       </NodeShell>,
     );
-    expect(screen.getByTestId('node-shell-content')).toBeTruthy();
-    expect(screen.getByTestId('node-shell-foreign-object')).toBeTruthy();
+    expect(screen.getByTestId('node-shell-content')).toBeInTheDocument();
+    expect(screen.getByTestId('node-shell-foreign-object')).toBeInTheDocument();
   });
 });
