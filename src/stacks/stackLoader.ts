@@ -22,6 +22,7 @@ import fintechPaymentsYaml from './fintech-payments.yaml?raw';
 import healthcareSystemYaml from './healthcare-system.yaml?raw';
 import enterpriseCrmYaml from './enterprise-crm.yaml?raw';
 import internalDevPlatformYaml from './internal-developer-platform.yaml?raw';
+import iotPlatformYaml from './iot-platform.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -66,6 +67,7 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'healthcare-system', rawYaml: healthcareSystemYaml },
   { name: 'enterprise-crm', rawYaml: enterpriseCrmYaml },
   { name: 'internal-developer-platform', rawYaml: internalDevPlatformYaml },
+  { name: 'iot-platform', rawYaml: iotPlatformYaml },
 ];
 
 /**

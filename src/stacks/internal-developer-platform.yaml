@@ -1,0 +1,350 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: internal-developer-platform
+  displayName: Internal Developer Platform
+  description: Enterprise Internal Developer Platform (IDP) for platform engineering. React developer portal + Go CLI through Envoy service mesh ingress to Go microservices (Platform API, Deploy Service). Kubernetes workload runtime with Cloud Scheduler cron jobs. PostgreSQL service catalog, Redis build cache, S3 artifact storage. Kafka deploy events. GitHub webhooks and MCP server for AI-assisted ops. HashiCorp Vault secrets, Keycloak SSO. Full observability with Prometheus, Jaeger, and Loki.
+  icon: Wrench
+  tags:
+    - devops
+    - platform-engineering
+    - GitOps
+    - enterprise
+
+nodes:
+  - id: developer-portal
+    type: client/web-app
+    displayName: Developer Portal
+    args:
+      framework: React
+      rendering: SPA
+      hosting: Kubernetes Ingress
+    position:
+      x: 50
+      y: 50
+      width: 200
+      height: 100
+
+  - id: developer-cli
+    type: client/cli
+    displayName: Developer CLI
+    args:
+      language: Go
+      distribution: Homebrew
+      authMethod: OIDC Device Flow
+    position:
+      x: 50
+      y: 200
+      width: 200
+      height: 100
+
+  - id: service-mesh-ingress
+    type: compute/api-gateway
+    displayName: Envoy Service Mesh
+    args:
+      provider: Envoy
+      rateLimit: 10000
+      authMethod: mTLS
+    position:
+      x: 350
+      y: 125
+      width: 200
+      height: 100
+
+  - id: platform-api
+    type: compute/service
+    displayName: Platform API
+    args:
+      language: Go
+      framework: Gin
+      protocol: gRPC
+    position:
+      x: 650
+      y: 50
+      width: 200
+      height: 100
+
+  - id: deploy-service
+    type: compute/service
+    displayName: Deploy Service
+    args:
+      language: Go
+      framework: Gin
+      protocol: gRPC
+    position:
+      x: 650
+      y: 200
+      width: 200
+      height: 100
+
+  - id: kubernetes
+    type: compute/container
+    displayName: Kubernetes Runtime
+    args:
+      orchestrator: Kubernetes
+      version: "1.29"
+      namespace: workloads
+    position:
+      x: 950
+      y: 200
+      width: 200
+      height: 100
+
+  - id: cron-scheduler
+    type: compute/cron-job
+    displayName: Cloud Scheduler
+    args:
+      platform: Cloud Scheduler
+      schedule: "0 */6 * * *"
+      tasks: cleanup,rotation
+    position:
+      x: 350
+      y: 350
+      width: 200
+      height: 100
+
+  - id: database
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+      maxConnections: 200
+    position:
+      x: 950
+      y: 50
+      width: 200
+      height: 100
+
+  - id: build-cache
+    type: data/cache
+    displayName: Redis (Build Cache)
+    args:
+      engine: Redis
+      maxMemory: 2gb
+      evictionPolicy: allkeys-lru
+    position:
+      x: 950
+      y: 350
+      width: 200
+      height: 100
+
+  - id: artifact-storage
+    type: data/object-storage
+    displayName: S3 Artifacts
+    args:
+      provider: AWS S3
+      bucket: platform-artifacts
+      versioning: true
+    position:
+      x: 950
+      y: 500
+      width: 200
+      height: 100
+
+  - id: event-bus
+    type: messaging/event-bus
+    displayName: Kafka Deploy Events
+    args:
+      provider: Apache Kafka
+      partitions: 6
+      replicationFactor: 3
+    position:
+      x: 650
+      y: 350
+      width: 200
+      height: 100
+
+  - id: github-webhook
+    type: integration/webhook
+    displayName: GitHub Webhooks
+    args:
+      direction: inbound
+      source: GitHub/GitLab
+      events: push,pull_request,release
+    position:
+      x: 350
+      y: 500
+      width: 200
+      height: 100
+
+  - id: mcp-server
+    type: integration/mcp-server
+    displayName: MCP Server (AI Ops)
+    args:
+      transport: stdio
+      toolsCount: 12
+      resourcesCount: 5
+      auth: Bearer
+    position:
+      x: 350
+      y: 650
+      width: 200
+      height: 100
+
+  - id: vault
+    type: security/vault
+    displayName: HashiCorp Vault
+    args:
+      provider: HashiCorp Vault
+      engine: kv-v2
+      autoUnseal: true
+    position:
+      x: 1250
+      y: 50
+      width: 200
+      height: 100
+
+  - id: keycloak-sso
+    type: security/auth-provider
+    displayName: Keycloak SSO
+    args:
+      provider: Keycloak
+      protocol: OIDC
+      mfaEnabled: true
+    position:
+      x: 1250
+      y: 200
+      width: 200
+      height: 100
+
+  - id: monitoring
+    type: observability/monitoring
+    displayName: Prometheus/Grafana
+    args:
+      platform: Prometheus/Grafana
+      scrapeInterval: 15s
+      alertChannels: slack,pagerduty
+    position:
+      x: 1250
+      y: 350
+      width: 200
+      height: 100
+
+  - id: tracing
+    type: observability/tracing
+    displayName: Jaeger
+    args:
+      platform: Jaeger
+      samplingRate: 0.1
+      exportFormat: OTLP
+      retentionDays: 14
+    position:
+      x: 1250
+      y: 500
+      width: 200
+      height: 100
+
+  - id: logging
+    type: observability/logging
+    displayName: Loki/Grafana
+    args:
+      platform: Loki
+      retentionDays: 30
+      structured: true
+    position:
+      x: 1250
+      y: 650
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: developer-portal
+    toNode: service-mesh-ingress
+    type: sync
+    label: HTTPS
+
+  - fromNode: developer-cli
+    toNode: service-mesh-ingress
+    type: sync
+    label: gRPC
+
+  - fromNode: service-mesh-ingress
+    toNode: platform-api
+    type: sync
+    label: mTLS/gRPC
+
+  - fromNode: service-mesh-ingress
+    toNode: deploy-service
+    type: sync
+    label: mTLS/gRPC
+
+  - fromNode: deploy-service
+    toNode: kubernetes
+    type: sync
+    label: K8s API
+
+  - fromNode: deploy-service
+    toNode: event-bus
+    type: async
+    label: Deploy Events
+
+  - fromNode: platform-api
+    toNode: database
+    type: sync
+    label: SQL
+
+  - fromNode: platform-api
+    toNode: build-cache
+    type: sync
+    label: Cache R/W
+
+  - fromNode: deploy-service
+    toNode: artifact-storage
+    type: sync
+    label: Artifact Upload
+
+  - fromNode: github-webhook
+    toNode: deploy-service
+    type: async
+    label: Push/PR Events
+
+  - fromNode: mcp-server
+    toNode: platform-api
+    type: sync
+    label: AI Tool Calls
+
+  - fromNode: platform-api
+    toNode: vault
+    type: sync
+    label: Secrets
+
+  - fromNode: deploy-service
+    toNode: vault
+    type: sync
+    label: Secrets
+
+  - fromNode: cron-scheduler
+    toNode: platform-api
+    type: sync
+    label: Scheduled Tasks
+
+  - fromNode: platform-api
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: deploy-service
+    toNode: monitoring
+    type: async
+    label: Metrics
+
+  - fromNode: platform-api
+    toNode: tracing
+    type: async
+    label: Traces
+
+  - fromNode: deploy-service
+    toNode: tracing
+    type: async
+    label: Traces
+
+  - fromNode: platform-api
+    toNode: logging
+    type: async
+    label: Logs
+
+  - fromNode: deploy-service
+    toNode: logging
+    type: async
+    label: Logs
