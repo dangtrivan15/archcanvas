@@ -13,7 +13,9 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
-import { pickArchcFile, decodeArchcData, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown } from '@/core/storage/fileIO';
+import { pickArchcFile, decodeArchcData, saveArchcFile, saveArchcFileAs, deriveSummaryFileName, saveSummaryMarkdown, graphToProto } from '@/core/storage/fileIO';
+import { enqueueSave } from '@/core/sync/syncQueue';
+import { encode } from '@/core/storage/codec';
 import { decode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
@@ -391,6 +393,24 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = _getAIStateForSave();
+
+      // If offline, queue the save for background sync instead of writing directly
+      if (!navigator.onLine) {
+        try {
+          const protoFile = graphToProto(graph, canvasState, undefined, aiState, fileCreatedAtMs ?? undefined);
+          const binaryData = await encode(protoFile);
+          await enqueueSave(fileName, binaryData);
+          clearFileOperationLoading();
+          set({ isSaving: false });
+          useUIStore.getState().showToast('Offline — save queued for sync');
+          console.log('[CoreStore] Save queued for background sync (offline)');
+          return true;
+        } catch (queueErr) {
+          console.error('[CoreStore] Failed to queue offline save:', queueErr);
+          // Fall through to try normal save anyway
+        }
+      }
+
       await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
 
       // Only clear isDirty if the graph hasn't been modified during the async save
