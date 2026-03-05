@@ -10225,3 +10225,44 @@ Date: 2026-03-05
 - Console: Only pre-existing SSL/PWA errors, 0 app errors: PASS
 
 #### Feature #426 marked passing
+
+---
+
+## Session: Feature #344 - Inference Result to ArchCanvas Graph Builder
+Date: 2026-03-05
+
+### Feature #344: Inference Result to ArchCanvas Graph Builder - PASSING
+
+#### Implementation:
+- Created `src/analyze/graphBuilder.ts`:
+  - `buildGraph(inferenceResult, textApi, registry, options)` main function
+  - `resolveNodeType()` maps AI-inferred types to registry types with fallback synonyms
+  - Comprehensive TYPE_FALLBACK_MAP covering ~90 common synonyms (microservice→service, lambda→function, postgres→database, kafka→event-bus, etc.)
+  - Creates nodes via textApi.addNode() with resolved types and displayNames
+  - Creates child nodes recursively for hierarchical structures
+  - Creates edges via textApi.addEdge() mapping SYNC→sync, ASYNC→async, DATA_FLOW→data-flow
+  - Attaches code references via textApi.addCodeRef() mapping SOURCE→source, API_SPEC→api-spec, etc.
+  - Adds AI-generated description notes to nodes via textApi.addNote()
+  - Applies auto-layout using computeElkLayout from elkLayout.ts
+  - Returns BuildResult with nodesCreated, edgesCreated, codeRefsAttached, warnings[], nodeIdMap
+- Created `test/unit/analyze/graphBuilder.test.ts` with 31 tests covering:
+  - resolveNodeType: exact types, short names, synonyms, unknown types, case-insensitivity
+  - buildGraph: node creation, type mapping, edge creation, edge type mapping, code refs, role mapping
+  - Notes: description notes, disabling notes, custom author
+  - Hierarchy: child node creation
+  - Edge warnings: missing source/target nodes
+  - Architecture metadata: name and description
+  - Auto-layout: applied by default, skippable
+  - Fallback type mapping: unknown types, synonym types
+  - Return value: correct counts, empty results
+
+#### Verification:
+- Vitest: 31/31 tests passing
+- Vite build: PASS
+- App loads without errors: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: bbdb385
+#### Feature #344 marked passing
+#### Progress: 419/426 features passing (98.4%)
