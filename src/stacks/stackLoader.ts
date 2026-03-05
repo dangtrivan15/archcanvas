@@ -12,6 +12,8 @@ import { generateId } from '@/utils/idGenerator';
 import saasStarterYaml from './saas-starter.yaml?raw';
 import aiChatAppYaml from './ai-chat-app.yaml?raw';
 import serverlessEventDrivenYaml from './serverless-event-driven.yaml?raw';
+import microservicesPlatformYaml from './microservices-platform.yaml?raw';
+import mobileBackendYaml from './mobile-backend.yaml?raw';
 
 /**
  * A parsed stack template definition.
@@ -46,6 +48,8 @@ const STACK_SOURCES: Array<{ name: string; rawYaml: string }> = [
   { name: 'saas-starter', rawYaml: saasStarterYaml },
   { name: 'ai-chat-app', rawYaml: aiChatAppYaml },
   { name: 'serverless-event-driven', rawYaml: serverlessEventDrivenYaml },
+  { name: 'microservices-platform', rawYaml: microservicesPlatformYaml },
+  { name: 'mobile-backend', rawYaml: mobileBackendYaml },
 ];
 
 /**

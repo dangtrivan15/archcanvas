@@ -1,0 +1,160 @@
+kind: StackTemplate
+apiVersion: v1
+metadata:
+  name: mobile-backend
+  displayName: Mobile Backend
+  description: Firebase-flavored mobile backend stack with Flutter app, TypeScript service, Cloud Functions, Firebase Auth, PostgreSQL database, GCS object storage, FCM push notifications, and Cloudflare CDN.
+  icon: Smartphone
+  tags:
+    - mobile
+    - backend
+    - firebase
+    - flutter
+
+nodes:
+  - id: mobile-app
+    type: client/mobile-app
+    displayName: Flutter Mobile App
+    args:
+      framework: Flutter
+      platform: iOS/Android
+      stateManagement: Riverpod
+    position:
+      x: 50
+      y: 250
+      width: 200
+      height: 100
+
+  - id: cdn
+    type: network/cdn
+    displayName: Cloudflare CDN
+    args:
+      provider: Cloudflare
+      cacheStrategy: dynamic
+      wafEnabled: true
+    position:
+      x: 350
+      y: 250
+      width: 200
+      height: 100
+
+  - id: service
+    type: compute/service
+    displayName: TypeScript Service
+    args:
+      language: TypeScript
+      framework: Express
+      replicas: 2
+      port: 3000
+    position:
+      x: 650
+      y: 250
+      width: 200
+      height: 100
+
+  - id: cloud-functions
+    type: compute/function
+    displayName: Cloud Functions
+    args:
+      runtime: Node.js 20
+      memoryMB: 256
+      timeoutSec: 60
+      trigger: HTTP
+    position:
+      x: 950
+      y: 100
+      width: 200
+      height: 100
+
+  - id: auth-provider
+    type: security/auth-provider
+    displayName: Firebase Auth
+    args:
+      provider: Firebase Auth
+      mfaEnabled: true
+      sessionDuration: 3600
+    position:
+      x: 950
+      y: 250
+      width: 200
+      height: 100
+
+  - id: database
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+      maxConnections: 100
+    position:
+      x: 950
+      y: 400
+      width: 200
+      height: 100
+
+  - id: object-storage
+    type: data/object-storage
+    displayName: GCS Storage
+    args:
+      provider: Google Cloud Storage
+      versioning: true
+      encryption: AES-256
+    position:
+      x: 650
+      y: 450
+      width: 200
+      height: 100
+
+  - id: notification
+    type: messaging/notification
+    displayName: FCM Push Notifications
+    args:
+      provider: FCM
+      platform: iOS/Android
+      batchSize: 500
+    position:
+      x: 350
+      y: 450
+      width: 200
+      height: 100
+
+edges:
+  - fromNode: mobile-app
+    toNode: cdn
+    type: sync
+    label: API Request
+
+  - fromNode: cdn
+    toNode: service
+    type: sync
+    label: Forward Request
+
+  - fromNode: service
+    toNode: cloud-functions
+    type: sync
+    label: Invoke Function
+
+  - fromNode: service
+    toNode: auth-provider
+    type: sync
+    label: Authenticate
+
+  - fromNode: service
+    toNode: database
+    type: sync
+    label: Read/Write Data
+
+  - fromNode: service
+    toNode: object-storage
+    type: sync
+    label: Store Files
+
+  - fromNode: service
+    toNode: notification
+    type: async
+    label: Send Push
+
+  - fromNode: notification
+    toNode: mobile-app
+    type: async
+    label: Push Notification
