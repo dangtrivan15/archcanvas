@@ -212,6 +212,9 @@ export interface UIStoreState {
   // Template picker dialog
   templatePickerOpen: boolean;
 
+  // Template gallery panel
+  templateGalleryOpen: boolean;
+
   // File operation loading indicator
   fileOperationLoading: boolean;
   fileOperationMessage: string | null;
@@ -309,6 +312,10 @@ export interface UIStoreState {
   openTemplatePicker: () => void;
   closeTemplatePicker: () => void;
 
+  // Template gallery actions
+  openTemplateGallery: () => void;
+  closeTemplateGallery: () => void;
+
   // File operation loading actions
   setFileOperationLoading: (message: string) => void;
   clearFileOperationLoading: () => void;
@@ -380,6 +387,7 @@ export const useUIStore = create<UIStoreState>((set) => ({
   settingsDialogOpen: false,
 
   templatePickerOpen: false,
+  templateGalleryOpen: false,
 
   fileOperationLoading: false,
   fileOperationMessage: null,
@@ -527,6 +535,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeTemplatePicker: () =>
     set({ templatePickerOpen: false }),
+
+  openTemplateGallery: () =>
+    set({ templateGalleryOpen: true }),
+
+  closeTemplateGallery: () =>
+    set({ templateGalleryOpen: false }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
