@@ -10551,3 +10551,65 @@ Date: 2026-03-05
 
 #### Commit: 81fdb3a
 #### Feature #429 marked passing
+
+---
+
+## Session: Feature #430 - Use Template Action
+Date: 2026-03-05
+
+### Feature #430: Use Template Action - PASSING
+
+#### Implementation:
+- Created `src/components/shared/UseTemplateDialog.tsx`:
+  - Dialog with architecture name input (pre-filled with template name)
+  - Deep-clones template via instantiateStack (generates fresh ULIDs for all nodes/edges)
+  - Applies ELK auto-layout to position nodes
+  - Creates new ArchCanvasFile with populated architecture
+  - Checks isDirty and shows UnsavedChangesDialog before replacing
+  - Loads new architecture on canvas with fit-view
+  - Shows toast notification on success
+- Updated `src/components/shared/TemplateCard.tsx`:
+  - Added "Use" quick-action button (Play icon) visible on hover
+  - onUseTemplate callback prop
+  - Stops click propagation to avoid opening preview
+- Updated `src/components/shared/TemplateGallery.tsx` (concurrent with another agent):
+  - Added useTemplateRecord state for UseTemplateDialog
+  - handleUseTemplate function replaces direct template loading
+  - UseTemplateDialog rendered in gallery overlay
+  - TemplatePreview "Use Template" button wired to handleUseTemplate
+  - Escape key handler excludes dialog-open states
+- Created `test/unit/templates/useTemplate.test.ts` with 31 tests:
+  - Fresh ULID generation for nodes and edges
+  - Edge reference rewiring
+  - Node type/displayName/args preservation
+  - Edge label/type preservation
+  - Architecture name and description
+  - Empty annotations initialization
+  - Unique IDs across multiple instantiations
+  - Empty codeRefs/notes/properties/children
+  - ELK layout computation
+  - Non-overlapping positions
+  - Empty graph handling
+  - Architecture name customization and fallback
+  - All 14 built-in templates instantiate with valid unique IDs
+
+#### Verification:
+- Vite build: PASS
+- 31/31 unit tests: PASS
+- Template Gallery opens: PASS
+- "Use" quick-action button appears on hover: PASS
+- UseTemplateDialog shows with pre-filled name: PASS
+- Custom name applied to architecture: PASS
+- ELK auto-layout applied: PASS
+- Canvas shows correct nodes and edges: PASS
+- Status bar shows correct counts: PASS
+- Toast: "Created X from template": PASS
+- TemplatePreview -> Use Template -> dialog: PASS
+- Unsaved changes warning triggered when isDirty: PASS
+- Discard changes → loads new template: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 7dd3b4a
+#### Feature #430 marked passing
+#### Progress: 429/431 features passing (99.5%)
