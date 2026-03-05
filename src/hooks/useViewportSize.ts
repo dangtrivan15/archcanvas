@@ -10,7 +10,7 @@
  * Used for iPad Split View / Slide Over multitasking adaptation.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const COMPACT_BREAKPOINT = 600;
 export const REGULAR_BREAKPOINT = 1024;
@@ -27,6 +27,21 @@ export const REGULAR_BREAKPOINT = 1024;
  */
 export const ICON_RAIL_BREAKPOINT = 768;
 
+/**
+ * Minimum viable window size for Stage Manager (iPadOS 16+).
+ * Below these dimensions the app still renders but may show
+ * a simplified layout.
+ */
+export const MIN_VIABLE_WIDTH = 300;
+export const MIN_VIABLE_HEIGHT = 400;
+
+/**
+ * Debounce delay (ms) for resize events.
+ * Stage Manager allows freely resizable windows which fire rapid resize events;
+ * debouncing prevents layout thrashing during drag-resize.
+ */
+export const RESIZE_DEBOUNCE_MS = 100;
+
 export type ViewportBreakpoint = 'compact' | 'regular' | 'wide';
 
 export interface ViewportSize {
@@ -36,6 +51,8 @@ export interface ViewportSize {
   isCompact: boolean;
   isRegular: boolean;
   isWide: boolean;
+  /** True when the viewport is at or below the minimum viable size */
+  isMinimal: boolean;
 }
 
 function getBreakpoint(width: number): ViewportBreakpoint {
@@ -56,14 +73,25 @@ function getViewportSize(): ViewportSize {
     isCompact: breakpoint === 'compact',
     isRegular: breakpoint === 'regular',
     isWide: breakpoint === 'wide',
+    isMinimal: width <= MIN_VIABLE_WIDTH || height <= MIN_VIABLE_HEIGHT,
   };
 }
 
 export function useViewportSize(): ViewportSize {
   const [viewport, setViewport] = useState<ViewportSize>(getViewportSize);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleResize = useCallback(() => {
-    setViewport(getViewportSize());
+    // Debounce resize events to prevent layout thrashing during
+    // Stage Manager window dragging (iPadOS 16+) which fires
+    // rapid resize events for arbitrary window sizes.
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      setViewport(getViewportSize());
+    }, RESIZE_DEBOUNCE_MS);
   }, []);
 
   useEffect(() => {
@@ -78,12 +106,24 @@ export function useViewportSize(): ViewportSize {
     // Listen for orientation changes (portrait ↔ landscape) on iOS/iPad
     window.addEventListener('orientationchange', handleResize);
 
+    // Listen for screen change events (Stage Manager external display)
+    if (window.screen?.orientation) {
+      window.screen.orientation.addEventListener('change', handleResize);
+    }
+
     return () => {
       window.removeEventListener('resize', handleResize);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleResize);
       }
       window.removeEventListener('orientationchange', handleResize);
+      if (window.screen?.orientation) {
+        window.screen.orientation.removeEventListener('change', handleResize);
+      }
+      // Clean up any pending debounce timer
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
   }, [handleResize]);
 

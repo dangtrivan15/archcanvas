@@ -28,7 +28,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIPadExternalKeyboard } from '@/hooks/useIPadExternalKeyboard';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
-import { useViewportSize, ICON_RAIL_BREAKPOINT } from '@/hooks/useViewportSize';
+import { useViewportSize, ICON_RAIL_BREAKPOINT, MIN_VIABLE_WIDTH, MIN_VIABLE_HEIGHT } from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
@@ -71,7 +71,7 @@ export function App() {
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
-  const { isCompact, width: viewportWidth, height: viewportHeight } = useViewportSize();
+  const { isCompact, isMinimal, width: viewportWidth, height: viewportHeight } = useViewportSize();
 
   // Virtual keyboard detection for on-screen keyboard handling
   const { isKeyboardVisible, keyboardHeight } = useVirtualKeyboard();
@@ -162,7 +162,7 @@ export function App() {
 
   return (
     <FocusZoneProvider>
-      <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+      <div className="h-screen w-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]" style={{ minWidth: MIN_VIABLE_WIDTH, minHeight: MIN_VIABLE_HEIGHT }}>
         {/* Offline Status Banner */}
         <OfflineBanner />
 
@@ -303,8 +303,8 @@ export function App() {
         {/* Toast notifications */}
         <Toast />
 
-        {/* Status Bar */}
-        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)' }}>
+        {/* Status Bar - hidden in minimal Stage Manager windows to maximize canvas space */}
+        <footer className="border-t flex items-center shrink-0 safe-area-bottom safe-area-left safe-area-right overflow-hidden bg-[hsl(var(--background)/0.85)] backdrop-blur-sm" data-testid="status-bar" style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)', display: isMinimal ? 'none' : undefined }}>
           <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
             {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) - always visible */}
             <ModeStatusBar />
