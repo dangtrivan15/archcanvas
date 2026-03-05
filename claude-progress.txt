@@ -10504,3 +10504,50 @@ Date: 2026-03-05
 #### Commit: 8721646
 #### Feature #428 marked passing
 #### Progress: 428/431 features passing (99.3%)
+
+---
+
+## Session: Feature #429 - Template Preview
+Date: 2026-03-05
+
+### Feature #429: Template Preview - PASSING
+
+#### Implementation:
+- Created `src/components/shared/TemplatePreview.tsx`:
+  - Modal with read-only React Flow mini-canvas (panOnDrag=false, zoomOnScroll=false, nodesDraggable=false)
+  - ELK auto-layout applied to template nodes before rendering
+  - Minimal node-to-canvas conversion (archNodeToCanvas) without registry dependency
+  - Detail sidebar showing: description, statistics (node/edge counts), node type list with counts, domain tags
+  - "Use Template" and "Close" action buttons in footer
+  - Loading state with spinner while deserializing and laying out
+  - Escape key, X button, overlay click all close the preview
+- Updated `src/components/shared/TemplateGallery.tsx`:
+  - Card click opens TemplatePreview instead of directly loading template
+  - Preview's "Use Template" triggers UseTemplateDialog (from another agent's feature)
+  - Escape handler respects preview open state
+
+#### Tests:
+- Created `test/unit/components/TemplatePreview.test.tsx` with 20 tests:
+  - Renders template name, overlay, dialog, sidebar, description
+  - Shows loading state initially, canvas after loading
+  - Displays node/edge count badges, tags
+  - Shows node type list after loading
+  - Renders Use Template and Close buttons
+  - Callback tests: onUseTemplate, onClose (button, X, Escape, overlay click)
+  - Does not close on dialog content click
+  - Shows Description, Statistics, Tags headings
+
+#### Verification:
+- Vite build: PASS
+- 20/20 unit tests: PASS
+- 21/21 existing Gallery tests: PASS (no regressions)
+- Browser: Template Gallery opens: PASS
+- Browser: Click SaaS Starter card → preview shows with React Flow canvas, sidebar details: PASS
+- Browser: Close button returns to gallery: PASS
+- Browser: Click AI Chat App → preview shows different template: PASS
+- Browser: Use Template → opens UseTemplateDialog → confirms → loads template on canvas: PASS
+- Console: 0 app errors (only pre-existing SSL/PWA): PASS
+- No mock data patterns: PASS
+
+#### Commit: 81fdb3a
+#### Feature #429 marked passing
