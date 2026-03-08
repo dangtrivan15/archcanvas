@@ -12251,3 +12251,57 @@ Status: PASSING
 
 #### Commit: 08afdb1
 #### Feature #469 marked passing
+
+---
+
+## Session: Feature #477 - External agent initialization via MCP (waiting state + copyable prompt)
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #477: External Agent Initialization Dialog - PASSING
+
+#### Implementation:
+
+1. **buildExternalAgentPrompt()** (`src/ai/prompts/externalAgentPrompt.ts`):
+   - Generates a comprehensive, copyable prompt for external agents
+   - Includes project name, path, languages, frameworks in context section
+   - Documents all available MCP tools (query, create, modify)
+   - Provides step-by-step workflow (scan → init → nodes → edges → code refs → review)
+   - Includes edge type guidance (sync/async/data-flow) and node count targets
+   - buildPromptContextFromProject() helper creates context from manifest/directory handle
+
+2. **ExternalAgentDialog** (`src/components/shared/ExternalAgentDialog.tsx`):
+   - Full dialog with Bot icon header and instructions
+   - Copyable prompt displayed in pre block with Copy button (clipboard API + fallback)
+   - "Copied!" feedback with 2-second auto-reset
+   - "Waiting for agent..." status with spinning Loader2 icon
+   - Live node/edge counters using useCoreStore subscriptions (updates in real-time)
+   - Status changes to "Agent is building..." with CheckCircle when activity detected
+   - Done and Cancel buttons
+   - Escape key dismisses, focus trap enabled
+   - Fully accessible (ARIA attributes, keyboard navigation)
+
+3. **uiStore state** (`src/store/uiStore.ts`):
+   - ExternalAgentDialogInfo interface (prompt, onDone, onCancel)
+   - externalAgentDialogOpen / externalAgentDialogInfo state fields
+   - openExternalAgentDialog() / closeExternalAgentDialog() actions
+
+4. **App.tsx integration**:
+   - ExternalAgentDialogConnected wrapper reads from uiStore
+   - Rendered alongside other dialog overlays
+
+#### Tests: 24 tests (all passing)
+- `test/unit/ui/externalAgentDialog.test.ts`
+- Prompt builder: project name, path, MCP tools, workflow steps, edge types, languages, frameworks, init_architecture, guidelines, node count
+- buildPromptContextFromProject: manifest name, directory handle fallback, default fallback, hasSourceFiles passthrough
+- uiStore: initial state, open/close, prompt preservation, Done/Cancel callbacks
+- Graph monitoring: store shape, node count changes, edge count changes
+
+#### Verification:
+- TypeScript: 0 new errors in src/
+- Full test suite: 24/24 new tests PASS, no regressions (5 pre-existing failures unrelated)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Commit: 4d31481
+#### Feature #477 marked passing
