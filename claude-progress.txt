@@ -13245,3 +13245,57 @@ Feature #501: Wire canvas-ref git resolution into node rendering - PASSING
 
 New: repoCacheBrowser.ts, 15+29 tests. Modified: useChildGraph.ts, ContainerNode.tsx
 5449/5449 tests pass. Commit: 33c4281
+
+==================================================
+SESSION: 2026-03-08 - Feature #502
+==================================================
+
+## Feature #502: Update cache when canvas-ref tag/commit changes - PASSING
+
+### Summary:
+When a user edits a canvas-ref node's ref or repoUrl args, the old cached .archc
+entry is invalidated and a new fetch is triggered. The node shows a refreshing
+indicator during re-fetch and updates its preview when done.
+
+### Changes:
+
+1. **src/hooks/useChildGraph.ts**:
+   - Import browserCacheInvalidate from repoCacheBrowser
+   - Added prevRepoRef useRef to track previous repoUrl and ref values
+   - On arg change: detect via comparison, invalidate old cache entry
+   - Added refreshing field to ChildGraphState (true during re-fetch after arg change)
+   - Refreshing state keeps stale data visible while fetching new data
+   - All state transitions include refreshing: false when complete
+
+2. **src/components/nodes/ContainerNode.tsx**:
+   - Extract childRefreshing from useChildGraph return value
+   - Added translucent overlay with Loader2 spinner and "Refreshing…" text
+   - Overlay positioned absolutely over the preview area
+   - Only shown when childRefreshing is true
+
+3. **test/unit/hooks/useChildGraphCacheUpdate.test.ts** — 26 tests:
+   - Cache invalidation: removes specific ref, no-op on missing, case-insensitive
+   - Cache update flow: invalidate old + write new, repoUrl change, rapid changes
+   - useChildGraph source: imports, prev tracking, arg detection, invalidation call
+   - Refreshing state: exposed in type, set true on change, cleared on success/error
+   - ContainerNode: uses childRefreshing, renders overlay, absolute positioning
+   - Error handling: cache miss after invalidation, graceful error display
+
+### Feature steps covered:
+1. ✅ Listen for changes to canvas-ref node args (ref and repoUrl)
+2. ✅ On ref change: invalidate old cache entry for repo+old-ref
+3. ✅ Trigger new fetch for repo+new-ref
+4. ✅ Update cache with newly fetched main.archc
+5. ✅ Re-render node with updated architecture summary
+6. ✅ Show refreshing indicator during re-fetch
+7. ✅ Handle errors gracefully (new ref doesn't exist, etc.)
+
+### Verification:
+- 26/26 new tests pass
+- 243/243 hook tests pass (0 regressions)
+- 41/41 existing related tests pass (useChildGraphGit + containerNode)
+- Browser: App loads with 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns in production code
+
+#### Commit: 87a72ec
+#### Feature #502 marked passing
