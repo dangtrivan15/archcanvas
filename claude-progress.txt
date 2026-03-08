@@ -13063,3 +13063,23 @@ fallback URL patterns.
 
 #### Commit: ca21652
 #### Feature #499 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #495
+==================================================
+
+## Feature #495: Add composite node guidance to agentic prompt - PASSING
+
+### Summary:
+Added guidance on using meta/canvas-ref composite nodes to both agentic prompt files.
+
+### Changes:
+1. src/ai/prompts/initArchitecture.ts - Added Step 2.5 (Composite Subsystems), add_node docs
+2. src/ai/prompts/externalAgentPrompt.ts - Added workflow step, tool docs, guideline
+
+### Verification:
+- 59/59 prompt tests pass
+- Browser: App loads, zero app console errors
+
+#### Commit: f396a2c
+#### Feature #495 marked passing
