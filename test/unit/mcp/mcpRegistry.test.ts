@@ -135,9 +135,38 @@ describe('MCP Registry File Management', () => {
       await writeFile(join(dir, 'mcp-registry.json'), '{}', 'utf-8');
 
       const registry = await readRegistry();
+      expect(registry.global).toBe(false);
       expect(registry.projects).toEqual([]);
       expect(typeof registry.installed_at).toBe('string');
       expect(registry.version).toBe('0.1.0');
+    });
+
+    it('reads global=true from existing file', async () => {
+      const dir = join(testHomeDir, '.archcanvas');
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, 'mcp-registry.json'), JSON.stringify({
+        global: true,
+        projects: [],
+        installed_at: '2026-01-01T00:00:00.000Z',
+        version: '0.1.0',
+      }), 'utf-8');
+
+      const registry = await readRegistry();
+      expect(registry.global).toBe(true);
+    });
+
+    it('defaults global to false for non-boolean values', async () => {
+      const dir = join(testHomeDir, '.archcanvas');
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, 'mcp-registry.json'), JSON.stringify({
+        global: 'yes',
+        projects: [],
+        installed_at: '2026-01-01T00:00:00.000Z',
+        version: '0.1.0',
+      }), 'utf-8');
+
+      const registry = await readRegistry();
+      expect(registry.global).toBe(false);
     });
   });
 
