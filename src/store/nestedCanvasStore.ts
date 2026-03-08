@@ -55,6 +55,8 @@ export interface FileStackEntry {
   navigationPath: string[];
   /** The canvas viewport position and zoom at this level. */
   viewport: CanvasViewport;
+  /** Color of the container node that was dived into (for nesting frame tint). */
+  containerColor?: string;
 }
 
 // ─── Store ─────────────────────────────────────────────────────
@@ -84,7 +86,7 @@ export interface NestedCanvasStoreState {
    * @param graph - The decoded graph of the new file
    * @param containerNodeId - ID of the container node being dived into (for edge capture)
    */
-  pushFile: (filePath: string, graph: ArchGraph, containerNodeId?: string) => void;
+  pushFile: (filePath: string, graph: ArchGraph, containerNodeId?: string, containerColor?: string) => void;
 
   /**
    * Pop the most recent file from the stack and restore its state.
@@ -165,7 +167,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
   activeFilePath: null,
   parentEdgeIndicators: [],
 
-  pushFile: (filePath, graph, containerNodeId) => {
+  pushFile: (filePath, graph, containerNodeId, containerColor) => {
     const { graph: currentGraph } = useCoreStore.getState();
     const { path: currentNavPath } = useNavigationStore.getState();
     const { viewport: currentViewport } = useCanvasStore.getState();
@@ -181,6 +183,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
       graph: currentGraph,
       navigationPath: [...currentNavPath],
       viewport: { ...currentViewport },
+      containerColor: containerColor ?? undefined,
     };
 
     set((s) => ({

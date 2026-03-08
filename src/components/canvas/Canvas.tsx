@@ -63,6 +63,7 @@ import { AnnotationOverlay } from '@/components/canvas/AnnotationOverlay';
 import { AnnotationToolbar } from '@/components/canvas/AnnotationToolbar';
 import { TransitionOverlay } from '@/components/canvas/TransitionOverlay';
 import { ParentEdgeIndicators } from '@/components/canvas/ParentEdgeIndicators';
+import { NestingFrame } from '@/components/canvas/NestingFrame';
 import { useContainerDiveIn } from '@/hooks/useContainerDiveIn';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 
@@ -1301,6 +1302,9 @@ function CanvasInner() {
 
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
+
+      {/* Nesting frame inset effect - visual depth indicator for nested canvases */}
+      <NestingFrame />
 
       {/* Parent edge indicators - shown at canvas borders when inside nested canvas */}
       <ParentEdgeIndicators />

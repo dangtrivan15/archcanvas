@@ -11815,3 +11815,34 @@ Verified all feature steps are met:
 
 #### Feature #453 marked passing
 #### Project completion: 460/460 (100%)
+
+---
+
+## Session: Feature #461 - Use vite preview (production build) for E2E test server
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #461: Use vite preview (production build) for E2E test server - PASSING
+
+#### Changes:
+
+1. **playwright.config.ts**:
+   - Changed webServer.command from `npm run dev:ensure` to `npm run build && npx vite preview --port 5173`
+   - Set `reuseExistingServer: false` (was `!process.env.CI`) to ensure agents always get a clean build
+   - URL and ignoreHTTPSErrors unchanged (vite preview serves HTTPS via basicSsl plugin)
+
+2. **vite.config.ts**:
+   - Added `preview` section with `port: 5173` and `strictPort: true`
+   - Ensures vite preview uses same port as dev server for consistency
+
+#### Verification:
+- All 6 E2E tests pass against production build (54.0s)
+- No HMR websocket connections (vite preview is a static file server)
+- No file watchers active during test runs
+- Memory footprint stable (no OOM, no warnings)
+- All 4964 unit tests pass (0 failures)
+- reuseExistingServer: false confirmed (killed existing dev server, tests built fresh)
+
+#### Commit: 25a2f90
+#### Feature #461 marked passing
+#### Progress: 461/461 features passing (100%)
