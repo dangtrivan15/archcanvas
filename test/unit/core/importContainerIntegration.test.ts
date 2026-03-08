@@ -108,56 +108,44 @@ describe('Container node creation for templates', () => {
 
 // ── Manifest update tests ────────────────────────────────
 
-describe('Manifest update on container import', () => {
-  it('adds new file entry with nodeId-based path to manifest', () => {
-    const manifest = {
-      version: 1 as const,
+describe('Descriptor update on container import', () => {
+  it('adds new file entry with nodeId-based path to descriptor', () => {
+    const descriptor = {
       name: 'Test Project',
       rootFile: 'main.archc',
       files: [{ path: 'main.archc', displayName: 'Main Architecture' }],
-      links: [],
     };
 
     const nodeId = '01JABCDEF';
     const fileName = `${nodeId}.archc`;
     const displayName = 'SaaS Starter';
 
-    // Simulate the update logic from projectStore
-    const alreadyInManifest = manifest.files.some((f) => f.path === fileName);
-    expect(alreadyInManifest).toBe(false);
+    // Simulate the update logic from projectStore (no links in new descriptor)
+    const alreadyInDescriptor = descriptor.files.some((f) => f.path === fileName);
+    expect(alreadyInDescriptor).toBe(false);
 
     const updated = {
-      ...manifest,
-      files: [...manifest.files, { path: fileName, displayName }],
-      links: [
-        ...manifest.links,
-        { from: manifest.rootFile, to: fileName, label: 'imports' },
-      ],
+      ...descriptor,
+      files: [...descriptor.files, { path: fileName, displayName }],
     };
 
     expect(updated.files).toHaveLength(2);
     expect(updated.files[1]!.path).toBe('01JABCDEF.archc');
-    expect(updated.links).toHaveLength(1);
-    expect(updated.links[0]!.from).toBe('main.archc');
-    expect(updated.links[0]!.to).toBe('01JABCDEF.archc');
-    expect(updated.links[0]!.label).toBe('imports');
   });
 
-  it('does not duplicate file entry if already in manifest', () => {
+  it('does not duplicate file entry if already in descriptor', () => {
     const nodeId = '01JABCDEF';
-    const manifest = {
-      version: 1 as const,
+    const descriptor = {
       name: 'Test Project',
       rootFile: 'main.archc',
       files: [
         { path: 'main.archc', displayName: 'Main Architecture' },
         { path: `${nodeId}.archc`, displayName: 'SaaS Starter' },
       ],
-      links: [],
     };
 
     const fileName = `${nodeId}.archc`;
-    const alreadyInManifest = manifest.files.some((f) => f.path === fileName);
-    expect(alreadyInManifest).toBe(true);
+    const alreadyInDescriptor = descriptor.files.some((f) => f.path === fileName);
+    expect(alreadyInDescriptor).toBe(true);
   });
 });

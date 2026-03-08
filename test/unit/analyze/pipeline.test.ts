@@ -247,7 +247,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     expect(result.inferenceResult!.edges.length).toBe(1);
 
     // No .archc file should have been written
-    const defaultOutput = path.join(tmpDir, 'architecture.archc');
+    const defaultOutput = path.join(tmpDir, '.archcanvas', 'main.archc');
     expect(fs.existsSync(defaultOutput)).toBe(false);
   });
 
@@ -297,7 +297,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
       aiSender,
     });
 
-    const expectedPath = path.join(tmpDir, 'architecture.archc');
+    const expectedPath = path.join(tmpDir, '.archcanvas', 'main.archc');
     expect(result.outputPath).toBe(expectedPath);
     expect(fs.existsSync(expectedPath)).toBe(true);
   });

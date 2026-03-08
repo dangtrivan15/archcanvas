@@ -67,6 +67,7 @@ const mockLoadFile = vi.fn().mockResolvedValue({
   graph: { nodes: [], edges: [] },
   loadedAtMs: Date.now(),
 });
+const mockSaveChildArchc = vi.fn().mockResolvedValue(true);
 
 vi.mock('@/store/projectStore', () => ({
   useProjectStore: Object.assign(
@@ -76,6 +77,20 @@ vi.mock('@/store/projectStore', () => ({
         loadFile: mockLoadFile,
         getLoadedFile: () => undefined,
         loadedFiles: new Map(),
+        isProjectOpen: true,
+        saveChildArchc: mockSaveChildArchc,
+      }),
+    },
+  ),
+}));
+
+// Mock coreStore (needed for isDirty check in auto-save)
+vi.mock('@/store/coreStore', () => ({
+  useCoreStore: Object.assign(
+    () => ({}),
+    {
+      getState: () => ({
+        isDirty: false,
       }),
     },
   ),
@@ -317,12 +332,13 @@ describe('useContainerDiveIn', () => {
       expect(mockSetViewport).not.toHaveBeenCalled();
     });
 
-    it('should do instant popFile when diving out with reducedMotion', () => {
+    it('should do instant popFile when diving out with reducedMotion', async () => {
       mockGetDepth.mockReturnValue(1);
       const { result } = renderHook(() => useContainerDiveIn());
 
-      act(() => {
+      await act(async () => {
         result.current[1].diveOut(true);
+        await vi.advanceTimersByTimeAsync(100);
       });
 
       expect(mockPopFile).toHaveBeenCalled();
@@ -356,7 +372,7 @@ describe('useContainerDiveIn', () => {
       expect(result.current[0].isAnimating).toBe(false);
     });
 
-    it('should pop file on crossfadeInComplete during dive-out', () => {
+    it('should pop file on crossfadeInComplete during dive-out', async () => {
       mockGetDepth.mockReturnValue(1);
       const { result } = renderHook(() => useContainerDiveIn());
 
@@ -367,9 +383,10 @@ describe('useContainerDiveIn', () => {
       expect(result.current[0].phase).toBe('zoom-out-fade');
 
       // Simulate crossfade-in completion (overlay fully opaque)
-      act(() => {
+      // Now async because auto-save runs before popFile
+      await act(async () => {
         result.current[1].onCrossfadeInComplete();
-        vi.advanceTimersByTime(100);
+        await vi.advanceTimersByTimeAsync(100);
       });
 
       expect(mockPopFile).toHaveBeenCalled();
@@ -487,7 +504,7 @@ describe('Animation phase sequence', () => {
     ]);
   });
 
-  it('should follow correct phase sequence for dive-out: idle → zoom-out-fade → zoom-out → idle', () => {
+  it('should follow correct phase sequence for dive-out: idle → zoom-out-fade → zoom-out → idle', async () => {
     mockGetDepth.mockReturnValue(1);
     const { result } = renderHook(() => useContainerDiveIn());
     const phases: string[] = [];
@@ -500,10 +517,10 @@ describe('Animation phase sequence', () => {
     });
     phases.push(result.current[0].phase);
 
-    // Crossfade-in completes (overlay opaque) → zoom-out
-    act(() => {
+    // Crossfade-in completes (overlay opaque) → auto-save then zoom-out
+    await act(async () => {
       result.current[1].onCrossfadeInComplete();
-      vi.advanceTimersByTime(100);
+      await vi.advanceTimersByTimeAsync(100);
     });
     phases.push(result.current[0].phase);
 

@@ -1,18 +1,17 @@
 /**
- * Tests for Feature #469: Save main.archc on project save.
+ * Tests for Feature #472: Save child .archc files on modification.
  *
  * Validates:
- * - Serializing the current root ArchGraph to protobuf binary with magic bytes and checksum
- * - Writing to .archcanvas/main.archc via the stored directory handle
- * - Clearing the isDirty flag on successful save
- * - Handling write errors gracefully (permission denied, disk full, etc.)
- * - Updating the loadedFiles cache after save
- * - coreStore.saveFile() delegating to project save when a project is open
+ * - Saving the current graph to .archcanvas/{nodeId}.archc when inside a nested canvas
+ * - coreStore.saveFile() delegating to saveChildArchc when activeFilePath is set
+ * - Auto-saving on dive-out when dirty
+ * - Clearing isDirty on successful child save
+ * - Error handling for child file save failures
+ * - Cache updates after child file save
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
-import { ARCHCANVAS_MAIN_FILE } from '@/types/project';
 import { decode } from '@/core/storage/codec';
 
 // ── Shared mocks ──
@@ -28,7 +27,13 @@ const mocks = vi.hoisted(() => ({
   setGraph: vi.fn(),
   _setGraph: vi.fn(),
   coreSetState: vi.fn(),
+  coreIsDirty: { value: true },
+  coreGraph: { value: null as ReturnType<typeof createEmptyGraph> | null },
 }));
+
+const childGraph = createEmptyGraph('ChildCanvas');
+const testGraph = createEmptyGraph('SaveChildTestProject');
+mocks.coreGraph.value = childGraph;
 
 // ── Mock File System Access API handles ──
 
@@ -102,18 +107,20 @@ vi.mock('@/store/analysisStore', () => {
   return { useAnalysisStore };
 });
 
-const testGraph = createEmptyGraph('SaveTestProject');
-
 vi.mock('@/store/coreStore', () => {
   const store = {
     textApi: {
       setGraph: mocks.setGraph,
-      getGraph: vi.fn(() => testGraph),
+      getGraph: vi.fn(() => mocks.coreGraph.value),
     },
     _applyDecodedFile: mocks._applyDecodedFile,
     _setGraph: mocks._setGraph,
-    graph: testGraph,
-    isDirty: true,
+    get graph() {
+      return mocks.coreGraph.value;
+    },
+    get isDirty() {
+      return mocks.coreIsDirty.value;
+    },
     fileCreatedAtMs: 1700000000000,
   };
   const useCoreStore = Object.assign(
@@ -154,9 +161,9 @@ const { useProjectStore } = await import('@/store/projectStore');
 function setupOpenProject(overrides?: Record<string, unknown>) {
   useProjectStore.setState({
     manifest: {
-      name: 'SaveTestProject',
-      rootFile: ARCHCANVAS_MAIN_FILE,
-      files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'SaveTestProject' }],
+      name: 'SaveChildTestProject',
+      rootFile: 'main.archc',
+      files: [{ path: 'main.archc', displayName: 'SaveChildTestProject' }],
     },
     directoryHandle: mockDirHandle,
     archcanvasHandle: mockArchcanvasHandle,
@@ -169,10 +176,12 @@ function setupOpenProject(overrides?: Record<string, unknown>) {
 
 // ── Tests ──
 
-describe('Feature #469: Save main.archc on project save', () => {
+describe('Feature #472: Save child .archc files on modification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.writeArchcToFolder.mockResolvedValue(undefined);
+    mocks.coreGraph.value = childGraph;
+    mocks.coreIsDirty.value = true;
     useProjectStore.setState({
       manifest: null,
       directoryHandle: null,
@@ -184,19 +193,28 @@ describe('Feature #469: Save main.archc on project save', () => {
     });
   });
 
-  describe('saveMainArchc — successful save', () => {
-    it('serializes the graph to protobuf binary with magic bytes and checksum', async () => {
+  describe('saveChildArchc — successful save', () => {
+    it('writes the child graph to .archcanvas/{filePath}', async () => {
       setupOpenProject();
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const result = await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(result).toBe(true);
-      expect(mocks.writeArchcToFolder).toHaveBeenCalledTimes(1);
+      expect(mocks.writeArchcToFolder).toHaveBeenCalledWith(
+        mockArchcanvasHandle,
+        '01ABC.archc',
+        expect.any(Uint8Array),
+      );
+    });
 
-      // Verify the binary data has valid .archc format
+    it('produces valid .archc binary with magic bytes', async () => {
+      setupOpenProject();
+
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
+
       const [, , binaryData] = mocks.writeArchcToFolder.mock.calls[0]!;
       expect(binaryData).toBeInstanceOf(Uint8Array);
-      expect(binaryData.length).toBeGreaterThan(40); // At least header size
+      expect(binaryData.length).toBeGreaterThan(40);
 
       // Check magic bytes: ARCHC\0
       expect(binaryData[0]).toBe(0x41); // A
@@ -207,24 +225,21 @@ describe('Feature #469: Save main.archc on project save', () => {
       expect(binaryData[5]).toBe(0x00); // \0
     });
 
-    it('writes to .archcanvas/main.archc via the archcanvas directory handle', async () => {
+    it('produces a decodable .archc binary', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      expect(mocks.writeArchcToFolder).toHaveBeenCalledWith(
-        mockArchcanvasHandle,
-        ARCHCANVAS_MAIN_FILE,
-        expect.any(Uint8Array),
-      );
+      const [, , binaryData] = mocks.writeArchcToFolder.mock.calls[0]!;
+      const decoded = await decode(binaryData);
+      expect(decoded.architecture?.name).toBe('ChildCanvas');
     });
 
     it('clears isDirty flag on successful save', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      // Should call coreStore.setState to clear isDirty
       expect(mocks.coreSetState).toHaveBeenCalledWith(
         expect.objectContaining({ isDirty: false }),
       );
@@ -233,65 +248,68 @@ describe('Feature #469: Save main.archc on project save', () => {
     it('shows success toast after save', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      expect(mocks.showToast).toHaveBeenCalledWith('Project saved');
+      expect(mocks.showToast).toHaveBeenCalledWith('File saved');
     });
 
-    it('updates loadedFiles cache after save', async () => {
+    it('updates loadedFiles cache with saved graph', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      const cached = useProjectStore.getState().loadedFiles.get(ARCHCANVAS_MAIN_FILE);
+      const cached = useProjectStore.getState().loadedFiles.get('01ABC.archc');
       expect(cached).toBeDefined();
-      expect(cached!.path).toBe(ARCHCANVAS_MAIN_FILE);
-      expect(cached!.graph).toBe(testGraph);
+      expect(cached!.path).toBe('01ABC.archc');
+      expect(cached!.graph).toBe(childGraph);
       expect(cached!.loadedAtMs).toBeGreaterThan(0);
     });
 
-    it('produces a decodable .archc binary', async () => {
+    it('does not include canvas state in child file binary', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       const [, , binaryData] = mocks.writeArchcToFolder.mock.calls[0]!;
-      // Verify the binary can be decoded back
       const decoded = await decode(binaryData);
-      expect(decoded.architecture?.name).toBe('SaveTestProject');
+      // Child files should not have canvas state with panel layout
+      // The canvas state fields should be default/empty
+      const cs = decoded.canvasState;
+      if (cs) {
+        // panelLayout should be undefined or default (no explicit panel config)
+        expect(cs.panelLayout?.rightPanelOpen).toBeFalsy();
+      }
     });
 
-    it('includes SHA-256 checksum in the binary header', async () => {
+    it('does not include AI state in child file binary', async () => {
       setupOpenProject();
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       const [, , binaryData] = mocks.writeArchcToFolder.mock.calls[0]!;
-      // Checksum starts at offset 8 (after 6 magic + 2 version) and is 32 bytes
-      const checksum = binaryData.slice(8, 40);
-      // Checksum should not be all zeros (a valid SHA-256 of non-empty payload)
-      const allZeros = checksum.every((b: number) => b === 0);
-      expect(allZeros).toBe(false);
+      const decoded = await decode(binaryData);
+      // Child files should not have AI conversations
+      expect(decoded.aiState?.conversations?.length ?? 0).toBe(0);
     });
 
-    it('falls back to directoryHandle when archcanvasHandle is null (legacy)', async () => {
+    it('falls back to directoryHandle when archcanvasHandle is null', async () => {
       setupOpenProject({ archcanvasHandle: null });
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(mocks.writeArchcToFolder).toHaveBeenCalledWith(
-        mockDirHandle, // Falls back to root dir
-        ARCHCANVAS_MAIN_FILE,
+        mockDirHandle,
+        '01ABC.archc',
         expect.any(Uint8Array),
       );
     });
   });
 
-  describe('saveMainArchc — error handling', () => {
-    it('returns false and shows toast when no project is open', async () => {
-      // Don't set up project — use default state (no project open)
+  describe('saveChildArchc — error handling', () => {
+    it('returns false and shows toast when no project folder is open', async () => {
+      // Default state: no project open
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const result = await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(result).toBe(false);
       expect(mocks.showToast).toHaveBeenCalledWith(
@@ -300,28 +318,12 @@ describe('Feature #469: Save main.archc on project save', () => {
       expect(mocks.writeArchcToFolder).not.toHaveBeenCalled();
     });
 
-    it('returns false when manifest has no rootFile', async () => {
-      setupOpenProject();
-      useProjectStore.setState({
-        manifest: {
-          name: 'NoRoot',
-          rootFile: '',
-          files: [],
-        },
-      });
-
-      const result = await useProjectStore.getState().saveMainArchc();
-
-      expect(result).toBe(false);
-      expect(mocks.writeArchcToFolder).not.toHaveBeenCalled();
-    });
-
     it('handles permission denied error gracefully', async () => {
       setupOpenProject();
       const permError = new DOMException('Write permission denied', 'NotAllowedError');
       mocks.writeArchcToFolder.mockRejectedValueOnce(permError);
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const result = await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(result).toBe(false);
       expect(mocks.showToast).toHaveBeenCalledWith(
@@ -334,7 +336,7 @@ describe('Feature #469: Save main.archc on project save', () => {
       const quotaError = new DOMException('Quota exceeded', 'QuotaExceededError');
       mocks.writeArchcToFolder.mockRejectedValueOnce(quotaError);
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const result = await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(result).toBe(false);
       expect(mocks.showToast).toHaveBeenCalledWith(
@@ -344,13 +346,13 @@ describe('Feature #469: Save main.archc on project save', () => {
 
     it('handles generic write errors gracefully', async () => {
       setupOpenProject();
-      mocks.writeArchcToFolder.mockRejectedValueOnce(new Error('Network error'));
+      mocks.writeArchcToFolder.mockRejectedValueOnce(new Error('I/O error'));
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const result = await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
       expect(result).toBe(false);
       expect(mocks.showToast).toHaveBeenCalledWith(
-        expect.stringContaining('Network error'),
+        expect.stringContaining('I/O error'),
       );
     });
 
@@ -358,9 +360,8 @@ describe('Feature #469: Save main.archc on project save', () => {
       setupOpenProject();
       mocks.writeArchcToFolder.mockRejectedValueOnce(new Error('Write failed'));
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      // coreSetState should NOT have been called with isDirty: false
       const isDirtyCalls = mocks.coreSetState.mock.calls.filter(
         (call: unknown[]) => {
           const arg = call[0] as Record<string, unknown>;
@@ -371,32 +372,73 @@ describe('Feature #469: Save main.archc on project save', () => {
     });
   });
 
-  describe('saveMainArchc — canvas and AI state persistence', () => {
-    it('includes canvas state (viewport, panel layout) in saved binary', async () => {
+  describe('saveChildArchc — dirty state tracking', () => {
+    it('keeps isDirty true if graph changed during save', async () => {
       setupOpenProject();
+      // Simulate graph changing during async save
+      const originalGraph = childGraph;
+      const modifiedGraph = createEmptyGraph('Modified');
+      mocks.coreGraph.value = originalGraph;
+      mocks.writeArchcToFolder.mockImplementation(async () => {
+        // Graph changes during save
+        mocks.coreGraph.value = modifiedGraph;
+      });
 
-      await useProjectStore.getState().saveMainArchc();
+      await useProjectStore.getState().saveChildArchc('01ABC.archc');
 
-      const [, , binaryData] = mocks.writeArchcToFolder.mock.calls[0]!;
-      const decoded = await decode(binaryData);
-      // Canvas state should be present (protobuf message structure)
-      expect(decoded.canvasState).toBeDefined();
-      // Panel layout should be included
-      expect(decoded.canvasState?.panelLayout).toBeDefined();
-      expect(decoded.canvasState?.panelLayout?.rightPanelOpen).toBe(true);
-      expect(decoded.canvasState?.panelLayout?.rightPanelTab).toBe('details');
-      expect(decoded.canvasState?.panelLayout?.rightPanelWidth).toBe(320);
+      // Should detect graph changed and keep isDirty true
+      expect(mocks.coreSetState).toHaveBeenCalledWith(
+        expect.objectContaining({ isDirty: true }),
+      );
     });
   });
 
-  describe('coreStore.saveFile delegation', () => {
-    it('saveMainArchc returns true for successful project save', async () => {
-      setupOpenProject();
+  describe('activeFilePath tracking via nestedCanvasStore', () => {
+    it('activeFilePath is set when pushing a file onto the stack', async () => {
+      // nestedCanvasStore imports canvasStore which needs requestFitView, setViewport
+      // and navigationStore which needs zoomToRoot, zoomToLevel
+      vi.doMock('@/store/canvasStore', () => {
+        const store = {
+          viewport: { x: 0, y: 0, zoom: 1 },
+          selectedNodeId: null,
+          requestFitView: vi.fn(),
+          setViewport: vi.fn(),
+        };
+        const useCanvasStore = Object.assign(
+          (selector: (s: typeof store) => unknown) => selector(store),
+          { getState: () => store, setState: vi.fn() },
+        );
+        return { useCanvasStore };
+      });
+      vi.doMock('@/store/navigationStore', () => {
+        const store = {
+          path: [],
+          zoomToRoot: vi.fn(),
+          zoomToLevel: vi.fn(),
+        };
+        const useNavigationStore = Object.assign(
+          (selector: (s: typeof store) => unknown) => selector(store),
+          { getState: () => store, setState: vi.fn() },
+        );
+        return { useNavigationStore };
+      });
 
-      const result = await useProjectStore.getState().saveMainArchc();
+      const { useNestedCanvasStore } = await import('@/store/nestedCanvasStore');
 
-      expect(result).toBe(true);
-      expect(mocks.writeArchcToFolder).toHaveBeenCalledTimes(1);
+      // Initially at root
+      expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
+
+      // After pushing a file, activeFilePath should be set
+      useNestedCanvasStore.getState().pushFile('01ABC.archc', childGraph, 'node1');
+      expect(useNestedCanvasStore.getState().activeFilePath).toBe('01ABC.archc');
+
+      // After popping, should return to null (root)
+      useNestedCanvasStore.getState().popFile();
+      expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
+
+      // Clean up doMock
+      vi.doUnmock('@/store/canvasStore');
+      vi.doUnmock('@/store/navigationStore');
     });
   });
 });

@@ -113,7 +113,7 @@ describe('buildExternalAgentPrompt', () => {
 
 describe('buildPromptContextFromProject', () => {
   it('should use manifest name as project name', () => {
-    const manifest = { name: 'My Project', files: [], links: [], rootFile: '' };
+    const manifest = { name: 'My Project', files: [], rootFile: '' };
     const ctx = buildPromptContextFromProject(manifest, null, true);
     expect(ctx.projectName).toBe('My Project');
   });

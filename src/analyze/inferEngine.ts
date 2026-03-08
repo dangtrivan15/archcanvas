@@ -1,6 +1,16 @@
 /**
- * AI Architecture Inference Engine
+ * AI Architecture Inference Engine (DEPRECATED)
  *
+ * @deprecated This single-shot inference approach is superseded by the agentic
+ * loop engine (src/ai/agentLoop.ts) which lets Claude iteratively build the
+ * architecture graph using MCP tools. The agentic approach produces better
+ * results because Claude can inspect and refine its own work.
+ *
+ * This module is kept for backward compatibility with the legacy pipeline
+ * (src/analyze/pipeline.ts) and merge mode. New code should use the agentic
+ * loop via initWithAI (browser) or the CLI analyze command's agentic path.
+ *
+ * Original description:
  * Sends the project profile and key file contents to Claude with a carefully
  * designed prompt that asks it to infer the system architecture. Claude identifies
  * components (services, databases, queues, etc.), their relationships

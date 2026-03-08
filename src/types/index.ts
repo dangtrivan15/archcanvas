@@ -45,11 +45,10 @@ export type { AIConversation, AIMessage, AISuggestion, AIContext } from './ai';
 
 // Project types
 export type {
-  ProjectManifest,
-  ProjectFileEntry,
-  ProjectFileLink,
+  ProjectDescriptor,
+  ProjectFile,
 } from './project';
-export { PROJECT_MANIFEST_FILENAME, ARCHCANVAS_DIR_NAME, ARCHCANVAS_MAIN_FILE } from './project';
+export { ARCHCANVAS_DIR_NAME, ARCHCANVAS_MAIN_FILE } from './project';
 
 // NodeDef types
 export type {

@@ -6,7 +6,6 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { scanProjectFolder } from '@/core/project/scanner';
-import type { ProjectManifest } from '@/types/project';
 
 // ─── Mock FileSystemDirectoryHandle ─────────────────────────────
 
@@ -87,31 +86,20 @@ describe('scanProjectFolder', () => {
     expect(result.directoryHandle).toBe(dirHandle);
   });
 
-  it('should read and parse existing manifest', async () => {
-    const manifest: ProjectManifest = {
-      version: 1,
-      name: 'Existing Project',
-      rootFile: 'root.archc',
-      files: [
-        { path: 'root.archc', displayName: 'Root' },
-        { path: 'sub.archc', displayName: 'Sub' },
-      ],
-      links: [{ from: 'root.archc', to: 'sub.archc' }],
-    };
-
+  it('should ignore .archproject.json legacy manifest files', async () => {
     const dirHandle = createMockDirHandle('existing-project', [
-      createMockFileEntry('.archproject.json', JSON.stringify(manifest)),
+      createMockFileEntry('.archproject.json', '{"version":1}'),
       createMockFileEntry('root.archc'),
       createMockFileEntry('sub.archc'),
     ]);
 
     const result = await scanProjectFolder(dirHandle);
 
-    expect(result.manifestExisted).toBe(true);
-    expect(result.manifest.name).toBe('Existing Project');
-    expect(result.manifest.rootFile).toBe('root.archc');
+    // .archproject.json should be ignored — descriptor built from .archc files only
+    expect(result.manifestExisted).toBe(false);
+    expect(result.manifest.name).toBe('existing-project');
     expect(result.manifest.files).toHaveLength(2);
-    expect(result.manifest.links).toHaveLength(1);
+    expect(result.manifest.files.map((f) => f.path)).toEqual(['root.archc', 'sub.archc']);
   });
 
   it('should return isEmpty=true when no .archc files and no manifest found', async () => {
@@ -127,7 +115,6 @@ describe('scanProjectFolder', () => {
     expect(result.manifest.name).toBe('empty-project');
     expect(result.manifest.files).toHaveLength(0);
     expect(result.manifest.rootFile).toBe('');
-    expect(result.manifest.links).toHaveLength(0);
     expect(result.directoryHandle).toBe(dirHandle);
   });
 

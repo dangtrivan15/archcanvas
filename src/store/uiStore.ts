@@ -199,10 +199,16 @@ export interface EmptyProjectDialogInfo {
   folderName: string;
   /** Whether the folder contains recognizable source files */
   hasSourceFiles: boolean;
-  /** Callback when user chooses "Analyze Codebase" */
-  onAnalyze: () => void;
-  /** Callback when user chooses "Start Blank" */
-  onStartBlank: () => void;
+  /** Whether an API key is configured (determines AI path routing) */
+  hasApiKey: boolean;
+  /** Callback when user chooses "Use AI" (API key is available) */
+  onUseAI: () => void;
+  /** Callback when user chooses "Quick scan" */
+  onQuickScan: () => void;
+  /** Callback when user wants to configure an API key (opens Settings) */
+  onConfigureApiKey: () => void;
+  /** Callback when user wants to use an external agent (opens ExternalAgentDialog) */
+  onUseExternalAgent: () => void;
 }
 
 export interface ExternalAgentDialogInfo {
