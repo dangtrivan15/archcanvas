@@ -13236,3 +13236,12 @@ eviction support and manifest metadata.
 
 #### Commit: 5ff28a1
 #### Feature #500 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #501
+==================================================
+
+Feature #501: Wire canvas-ref git resolution into node rendering - PASSING
+
+New: repoCacheBrowser.ts, 15+29 tests. Modified: useChildGraph.ts, ContainerNode.tsx
+5449/5449 tests pass. Commit: 33c4281
