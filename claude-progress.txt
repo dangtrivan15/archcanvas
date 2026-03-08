@@ -11700,3 +11700,90 @@ Status: PASSING
 
 #### Commit: 82faaa5
 #### Feature #452 marked passing
+
+---
+
+## Session: Feature #455 - Keyboard and Gesture Navigation for Nested Canvas
+Date: 2026-03-08
+Status: PASSING
+
+### Changes:
+- Extended Escape handler in Canvas.tsx: zooms out within file first, then pops file stack
+- Added Ctrl+Shift+Home shortcut to jump directly to project root (popToRoot)
+- Added Enter key on container nodes to trigger dive-in animation
+- Added two-finger pinch-out gesture detection for mobile/tablet (spread > 1.5x triggers pop)
+- Registered Navigate Up (Pop File) and Navigate to Project Root in command palette
+- Added nav:nested-root to ShortcutManager (mod+shift+home binding)
+- Added nav:nested-root handler in useKeyboardShortcuts
+
+### Tests: 23 new tests (all passing)
+- test/unit/canvas/keyboardGestureNestedNav.test.ts
+
+### Verification:
+- TypeScript build: PASS
+- Full test suite: 4931/4931 PASS (0 failures)
+- Browser: App loads, command palette shows both new commands
+- Console: 0 app errors
+- No mock data patterns: PASS
+
+#### Commit: 6f649a8
+#### Feature #455 marked passing
+
+---
+
+## Session: Feature #457 - Import Tech Stack as Container Node
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #457: Import Tech Stack as Container Node - PASSING
+
+#### Implementation:
+
+1. **Import Mode Toggle in UseTemplateDialog** (`src/components/shared/UseTemplateDialog.tsx`):
+   - Added "As Container" / "Inline" toggle buttons with icons (FolderOpen / Layers)
+   - Container mode is default when project folder is open
+   - Inline mode is default when no project is open
+   - Warning shown when container mode selected but no project open
+   - Button text, label, and help text all adapt to selected mode
+   - Container mode: saves template graph as .archc file, creates container node with refSource
+   - Inline mode: replaces canvas with template graph (legacy behavior preserved)
+
+2. **Import Mode Toggle in TemplatePicker** (`src/components/shared/TemplatePicker.tsx`):
+   - Same dual-mode toggle at top of picker dialog
+   - Warning when container mode + no project folder
+   - Button text changes between "Import as Container" and "Create from Template"
+   - Container mode creates .archc file and adds container node to current canvas
+
+3. **writeArchcToFolder helper** (`src/core/project/scanner.ts`):
+   - New function to write binary .archc data to a project directory via File System Access API
+
+4. **saveTemplateAsFile action** (`src/store/projectStore.ts`):
+   - Encodes ArchGraph to .archc binary via graphToProto + encode
+   - Sanitizes filename from display name (lowercase, hyphens)
+   - Writes file to project directory
+   - Updates project manifest with new file entry and "imports" link
+   - Caches loaded graph in loadedFiles
+
+5. **Container node creation**:
+   - Creates meta/canvas-ref node type with refSource=file://./template-name.archc
+   - Args include filePath, nodeCount, and description
+   - Node added to current graph via engineAddNode (non-destructive)
+
+6. **Single-file fallback**:
+   - When container mode selected but no project folder open, shows toast and falls back to inline
+   - Warning text displayed in dialog
+
+#### Tests: 19 new tests (all passing)
+- `test/unit/ui/importAsContainer.test.tsx` (12 tests): UI toggle, mode defaults, warning, button text, container import, inline fallback, label changes, help text
+- `test/unit/core/importContainerIntegration.test.ts` (7 tests): writeArchcToFolder, filename sanitization, container node creation, manifest update, dedup
+
+#### Verification:
+- TypeScript check: 0 new errors (only pre-existing useContainerDiveIn.ts error)
+- Vite build: PASS
+- Full test suite: 4938/4938 PASS (0 failures)
+- Browser: UseTemplateDialog shows import mode toggle, container/inline modes work correctly
+- Console: 0 app errors
+- No mock data patterns: PASS
+
+#### Commit: c409e8f
+#### Feature #457 marked passing
