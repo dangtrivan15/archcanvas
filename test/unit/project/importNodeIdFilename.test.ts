@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { ProjectManifest } from '@/types/project';
+import type { ProjectDescriptor } from '@/types/project';
 
 // ── saveTemplateAsFile filename derivation ──────────────────
 
@@ -97,41 +97,33 @@ describe('Manifest uses nodeId-based filename', () => {
     const displayName = 'SaaS Starter';
     const fileName = `${nodeId}.archc`;
 
-    const manifest: ProjectManifest = {
-      version: 1,
+    const descriptor: ProjectDescriptor = {
       name: 'Test Project',
       rootFile: 'main.archc',
       files: [{ path: 'main.archc', displayName: 'Main Architecture' }],
-      links: [],
     };
 
-    // Simulate manifest update from saveTemplateAsFile
-    const updatedManifest = {
-      ...manifest,
-      files: [...manifest.files, { path: fileName, displayName }],
-      links: [
-        ...manifest.links,
-        { from: manifest.rootFile, to: fileName, label: 'imports' },
-      ],
+    // Simulate descriptor update from saveTemplateAsFile
+    const updatedDescriptor = {
+      ...descriptor,
+      files: [...descriptor.files, { path: fileName, displayName }],
     };
 
-    expect(updatedManifest.files[1]!.path).toBe('01JABCDEF.archc');
-    expect(updatedManifest.files[1]!.displayName).toBe('SaaS Starter');
-    expect(updatedManifest.links[0]!.to).toBe('01JABCDEF.archc');
+    expect(updatedDescriptor.files[1]!.path).toBe('01JABCDEF.archc');
+    expect(updatedDescriptor.files[1]!.displayName).toBe('SaaS Starter');
   });
 
-  it('link target uses nodeId.archc filename', () => {
+  it('file entry uses nodeId.archc filename', () => {
     const nodeId = '01HABCDE12345';
     const fileName = `${nodeId}.archc`;
 
-    const link = {
-      from: 'main.archc',
-      to: fileName,
-      label: 'imports',
+    const fileEntry = {
+      path: fileName,
+      displayName: 'SaaS Starter',
     };
 
-    expect(link.to).toBe('01HABCDE12345.archc');
-    expect(link.to).not.toContain('saas');
+    expect(fileEntry.path).toBe('01HABCDE12345.archc');
+    expect(fileEntry.path).not.toContain('saas');
   });
 });
 

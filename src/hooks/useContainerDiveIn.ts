@@ -17,6 +17,7 @@ import { useReactFlow } from '@xyflow/react';
 import type { TransitionPhase } from '@/components/canvas/TransitionOverlay';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useProjectStore } from '@/store/projectStore';
+import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import type { CanvasNode } from '@/types/canvas';
 
@@ -215,6 +216,30 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
     [transitionColor],
   );
 
+  // ─── Auto-save child file on dive-out ───────────────────────
+
+  /**
+   * If the current child canvas is dirty, auto-save it before navigating back.
+   * Returns a promise that resolves when the save completes (or immediately if clean).
+   */
+  const autoSaveChildIfDirty = useCallback(async () => {
+    const { isDirty } = useCoreStore.getState();
+    const nestedStore = useNestedCanvasStore.getState();
+    const activeFilePath = nestedStore.activeFilePath;
+
+    if (isDirty && activeFilePath) {
+      const projectState = useProjectStore.getState();
+      if (projectState.isProjectOpen) {
+        try {
+          await projectState.saveChildArchc(activeFilePath);
+        } catch (err) {
+          console.warn('[ContainerDiveIn] Auto-save on dive-out failed:', err);
+          // Don't block dive-out if save fails — user can manually save later
+        }
+      }
+    }
+  }, []);
+
   // ─── Dive Out ────────────────────────────────────────────────
 
   const diveOut = useCallback(
@@ -225,8 +250,12 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       if (nestedStore.getDepth() === 0) return; // already at root
 
       if (prefersReducedMotion) {
-        // Instant switch
-        nestedStore.popFile();
+        // Instant switch — auto-save then pop
+        setIsAnimating(true);
+        autoSaveChildIfDirty().then(() => {
+          nestedStore.popFile();
+          setIsAnimating(false);
+        });
         return;
       }
 
@@ -235,7 +264,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       pendingDiveOutRef.current = true;
       setPhase('zoom-out-fade');
     },
-    [isAnimating],
+    [isAnimating, autoSaveChildIfDirty],
   );
 
   // ─── Crossfade Callbacks ─────────────────────────────────────
@@ -253,17 +282,20 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
         }, 50);
       });
     } else if (pendingDiveOutRef.current) {
-      // Dive-out: at peak opacity, restore parent canvas
+      // Dive-out: at peak opacity, auto-save child if dirty, then restore parent canvas
       pendingDiveOutRef.current = false;
-      const nestedStore = useNestedCanvasStore.getState();
-      nestedStore.popFile();
 
-      // Brief delay to let React Flow render restored nodes
-      setTimeout(() => {
-        setPhase('zoom-out');
-      }, 50);
+      autoSaveChildIfDirty().then(() => {
+        const nestedStore = useNestedCanvasStore.getState();
+        nestedStore.popFile();
+
+        // Brief delay to let React Flow render restored nodes
+        setTimeout(() => {
+          setPhase('zoom-out');
+        }, 50);
+      });
     }
-  }, [performDiveInSwitch]);
+  }, [performDiveInSwitch, autoSaveChildIfDirty]);
 
   const onCrossfadeOutComplete = useCallback(() => {
     setPhase('idle');

@@ -1,60 +1,34 @@
 /**
- * Project manifest types for multi-file architecture projects.
+ * Project types for .archcanvas/ folder-based architecture projects.
  *
- * A project manifest (.archproject.json) describes a folder-based architecture
- * project where multiple .archc files reference each other. It lists all .archc
- * files in a folder, their relationships, and a root entry point.
+ * The old .archproject.json manifest system has been removed. Projects now
+ * use the .archcanvas/ folder convention exclusively. A ProjectDescriptor
+ * is an in-memory representation of the project state (not persisted as a
+ * separate file — the folder structure IS the manifest).
  */
 
 /**
- * Display metadata for a linked architecture file in the project.
+ * Describes a file discovered in the .archcanvas/ directory.
  */
-export interface ProjectFileEntry {
-  /** Relative path to the .archc file from the project root. */
+export interface ProjectFile {
+  /** Filename within .archcanvas/ (e.g., "main.archc", "01JABCDEF.archc"). */
   path: string;
   /** Human-readable display name for the file. */
   displayName: string;
-  /** Optional description of what this architecture file represents. */
-  description?: string;
 }
 
 /**
- * A relationship between two architecture files in the project.
- * Represents how one architecture references or depends on another.
+ * In-memory project descriptor derived from scanning the .archcanvas/ folder.
+ * NOT persisted to disk — the folder structure is the source of truth.
  */
-export interface ProjectFileLink {
-  /** Relative path of the source .archc file. */
-  from: string;
-  /** Relative path of the target .archc file. */
-  to: string;
-  /** Optional label describing the relationship (e.g., "imports", "depends on"). */
-  label?: string;
-}
-
-/**
- * Project manifest schema (.archproject.json).
- *
- * The single source of truth for a folder-based architecture project.
- * Lists all .archc files, their display metadata, relationships, and
- * designates a root entry point for the project graph.
- */
-export interface ProjectManifest {
-  /** Schema version for forward compatibility. */
-  version: 1;
-  /** Human-readable project name. */
+export interface ProjectDescriptor {
+  /** Human-readable project name (derived from the root folder name). */
   name: string;
-  /** Optional project description. */
-  description?: string;
-  /** Relative path to the root/entry-point .archc file. */
+  /** The root .archc file (typically "main.archc"). */
   rootFile: string;
-  /** All .archc files in the project. */
-  files: ProjectFileEntry[];
-  /** Relationships between architecture files. */
-  links: ProjectFileLink[];
+  /** All .archc files discovered in .archcanvas/. */
+  files: ProjectFile[];
 }
-
-/** The manifest filename used in project folders. */
-export const PROJECT_MANIFEST_FILENAME = '.archproject.json';
 
 /**
  * The subdirectory name used for ArchCanvas projects.

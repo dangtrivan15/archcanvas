@@ -271,7 +271,8 @@ export async function analyzeCodebase(
 
   const resolvedRoot = path.resolve(rootPath);
   const architectureName = options.architectureName ?? path.basename(resolvedRoot);
-  const outputPath = options.outputPath ?? path.join(resolvedRoot, 'architecture.archc');
+  // Default output: .archcanvas/main.archc (consistent with folder convention)
+  const outputPath = options.outputPath ?? path.join(resolvedRoot, '.archcanvas', 'main.archc');
 
   function emitProgress(
     phase: PipelinePhase,

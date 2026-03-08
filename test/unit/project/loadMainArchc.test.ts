@@ -20,7 +20,6 @@ import { ARCHCANVAS_MAIN_FILE } from '@/types/project';
 const mocks = vi.hoisted(() => ({
   readProjectFile: vi.fn(),
   writeArchcToFolder: vi.fn(),
-  writeManifestToFolder: vi.fn(),
   initArchcanvasDir: vi.fn(),
   showToast: vi.fn(),
   openEmptyProjectDialog: vi.fn(),
@@ -64,7 +63,6 @@ const mockDirHandle = {
 
 vi.mock('@/core/project/scanner', () => ({
   writeArchcToFolder: mocks.writeArchcToFolder,
-  writeManifestToFolder: mocks.writeManifestToFolder,
   scanProjectFolder: vi.fn(),
   readProjectFile: mocks.readProjectFile,
   initArchcanvasDir: mocks.initArchcanvasDir.mockImplementation(async (h: unknown) => h),
@@ -166,11 +164,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'TestProject',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'TestProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -193,11 +189,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'MyArch',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'MyArch' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -220,11 +214,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'CachedProject',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'CachedProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -248,11 +240,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'WithState',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'WithState' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -278,11 +268,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'LegacyProject',
           rootFile: 'architecture.archc',
           files: [{ path: 'architecture.archc', displayName: 'LegacyProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: null, // Legacy: no .archcanvas/ directory
@@ -306,11 +294,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: '', // No name
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: '' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -341,11 +327,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'CorruptedProject',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'CorruptedProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -369,11 +353,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'CorruptProject',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'CorruptProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -387,8 +369,10 @@ describe('Feature #468: Load main.archc as project root on open', () => {
       expect(mocks.openEmptyProjectDialog).toHaveBeenCalledWith(
         expect.objectContaining({
           folderName: 'CorruptProject',
-          onStartBlank: expect.any(Function),
-          onAnalyze: expect.any(Function),
+          onUseAI: expect.any(Function),
+          onQuickScan: expect.any(Function),
+          onConfigureApiKey: expect.any(Function),
+          onUseExternalAgent: expect.any(Function),
         }),
       );
     });
@@ -400,11 +384,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'MissingFile',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'MissingFile' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -428,11 +410,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'MissingProject',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'MissingProject' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -467,11 +447,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
     it('does nothing when manifest has empty rootFile', async () => {
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'EmptyRoot',
           rootFile: '',
           files: [],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -492,11 +470,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'UndoTest',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'UndoTest' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -524,11 +500,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'TinyFile',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'TinyFile' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -561,11 +535,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'HeaderOnly',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'HeaderOnly' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,
@@ -586,11 +558,9 @@ describe('Feature #468: Load main.archc as project root on open', () => {
 
       useProjectStore.setState({
         manifest: {
-          version: 1,
           name: 'RecreateTest',
           rootFile: ARCHCANVAS_MAIN_FILE,
           files: [{ path: ARCHCANVAS_MAIN_FILE, displayName: 'RecreateTest' }],
-          links: [],
         },
         directoryHandle: mockDirHandle,
         archcanvasHandle: mockArchcanvasHandle,

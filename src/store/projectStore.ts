@@ -33,7 +33,9 @@ import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
 import { encode } from '@/core/storage/codec';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { useUIStore } from './uiStore';
+import type { EmptyProjectDialogInfo } from './uiStore';
 import { useAnalysisStore } from './analysisStore';
+import { isAIConfigured } from '@/ai/config';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -96,6 +98,12 @@ export interface ProjectStoreState {
    */
   createBlankArchcFile: () => Promise<void>;
   /**
+   * Run the built-in AI agentic loop (API key path) on the current project folder.
+   * Uses the Anthropic SDK directly with initWithAI to iteratively build the graph.
+   * Shows progress dialog during execution. Saves result to .archcanvas/main.archc.
+   */
+  runBuiltInAI: () => Promise<void>;
+  /**
    * Run the codebase analysis pipeline on the current project folder.
    * Shows progress dialog, invokes the browser pipeline, and loads the result.
    */
@@ -113,6 +121,13 @@ export interface ProjectStoreState {
    * Returns true on success, false on failure.
    */
   saveMainArchc: () => Promise<boolean>;
+  /**
+   * Save the current graph to a child .archc file in .archcanvas/.
+   * Used when the user is inside a nested canvas (dive-in) and saves.
+   * The filePath is the bare filename (e.g., '01JABCDEF.archc') from refSource.
+   * Returns true on success, false on failure.
+   */
+  saveChildArchc: (filePath: string) => Promise<boolean>;
 }
 
 /**
@@ -171,18 +186,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     // If the project is empty, show the onboarding choice dialog
     if (result.isEmpty) {
       const { openEmptyProjectDialog } = useUIStore.getState();
-      openEmptyProjectDialog({
-        folderName: result.manifest.name,
-        hasSourceFiles: result.hasSourceFiles,
-        onAnalyze: () => {
-          useUIStore.getState().closeEmptyProjectDialog();
-          get().runAnalysisPipeline();
-        },
-        onStartBlank: () => {
-          useUIStore.getState().closeEmptyProjectDialog();
-          get().createBlankArchcFile();
-        },
-      });
+      openEmptyProjectDialog(
+        buildEmptyProjectDialogInfo(
+          result.manifest.name,
+          result.hasSourceFiles,
+          get,
+        ),
+      );
     } else if (result.manifest.rootFile) {
       // Auto-load the root file (main.archc) into the canvas
       await get().loadMainArchc();
@@ -411,18 +421,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       // Offer to recreate via the empty project dialog
       const { openEmptyProjectDialog } = useUIStore.getState();
-      openEmptyProjectDialog({
-        folderName: manifest.name,
-        hasSourceFiles: false,
-        onAnalyze: () => {
-          useUIStore.getState().closeEmptyProjectDialog();
-          get().runAnalysisPipeline();
-        },
-        onStartBlank: () => {
-          useUIStore.getState().closeEmptyProjectDialog();
-          get().createBlankArchcFile();
-        },
-      });
+      openEmptyProjectDialog(
+        buildEmptyProjectDialogInfo(manifest.name, false, get),
+      );
     }
   },
 
@@ -534,6 +535,199 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       useUIStore.getState().showToast(userMessage);
       return false;
+    }
+  },
+
+  saveChildArchc: async (filePath: string) => {
+    const state = get();
+    const filesDirHandle = getFilesDirHandle(state);
+
+    if (!filesDirHandle) {
+      console.error('[ProjectStore] Cannot save child: no project folder open');
+      useUIStore.getState().showToast('Cannot save: no project is open.');
+      return false;
+    }
+
+    try {
+      // Get the current graph from coreStore (this is the child's graph)
+      const { useCoreStore } = await import('./coreStore');
+      const coreStore = useCoreStore.getState();
+      const { graph, fileCreatedAtMs } = coreStore;
+
+      // Capture graph reference to detect concurrent modifications
+      const graphAtSaveStart = graph;
+
+      // Serialize the graph to protobuf binary with magic bytes and checksum
+      // Child files don't persist canvas state or AI state — just the graph
+      const protoFile = graphToProto(
+        graph,
+        undefined, // no canvas state for child files
+        undefined,
+        undefined, // no AI state for child files
+        fileCreatedAtMs ?? undefined,
+      );
+      const binaryData = await encode(protoFile);
+
+      // Write to .archcanvas/{filePath}
+      await writeArchcToFolder(filesDirHandle, filePath, binaryData);
+
+      // Update the cache with the saved graph
+      const entry: LoadedFileEntry = {
+        path: filePath,
+        graph,
+        loadedAtMs: Date.now(),
+      };
+      const newCache = new Map(get().loadedFiles);
+      newCache.set(filePath, entry);
+      set({ loadedFiles: newCache });
+
+      // Clear isDirty only if the graph hasn't changed during the async save
+      const graphChangedDuringSave = coreStore.graph !== graphAtSaveStart;
+      useCoreStore.setState({ isDirty: graphChangedDuringSave });
+
+      console.log(`[ProjectStore] Saved child file ${filePath} successfully`);
+      useUIStore.getState().showToast('File saved');
+      return true;
+    } catch (err) {
+      console.error(`[ProjectStore] Failed to save child ${filePath}:`, err);
+
+      const errorMsg =
+        err instanceof Error ? err.message : 'An unexpected error occurred';
+
+      let userMessage: string;
+      if (
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'SecurityError')
+      ) {
+        userMessage = `Permission denied: cannot write to ${filePath}. Please re-open the project folder to grant write access.`;
+      } else if (
+        err instanceof DOMException &&
+        err.name === 'QuotaExceededError'
+      ) {
+        userMessage = `Disk full: cannot save ${filePath}. Free up disk space and try again.`;
+      } else {
+        userMessage = `Could not save file: ${errorMsg}`;
+      }
+
+      useUIStore.getState().showToast(userMessage);
+      return false;
+    }
+  },
+
+  runBuiltInAI: async () => {
+    const { directoryHandle, manifest } = get();
+    if (!directoryHandle || !manifest) {
+      useUIStore.getState().showToast('No project folder is open.');
+      return;
+    }
+
+    // Open the progress dialog
+    const abortController = useAnalysisStore.getState().openDialog();
+
+    try {
+      const { initWithAI } = await import('@/ai/initWithAI');
+      const { getAnthropicApiKey, aiConfig } = await import('@/ai/config');
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const { useCoreStore } = await import('./coreStore');
+      const { TextApi } = await import('@/api/textApi');
+
+      const coreStore = useCoreStore.getState();
+      const registry = coreStore.registry;
+      if (!registry) {
+        throw new Error('Registry not initialized. Please wait for the app to fully load.');
+      }
+
+      const apiKey = getAnthropicApiKey();
+      if (!apiKey) {
+        throw new Error('No API key configured. Please add your Anthropic API key in Settings.');
+      }
+
+      const client = new Anthropic({
+        apiKey,
+        dangerouslyAllowBrowser: true,
+      });
+
+      // Create a fresh TextApi with empty graph for the AI to populate
+      const freshGraph = createEmptyGraph(manifest.name || 'Architecture');
+      const textApi = new TextApi(freshGraph, registry);
+
+      const result = await initWithAI({
+        directoryHandle,
+        client,
+        textApi,
+        registry,
+        architectureName: manifest.name || directoryHandle.name,
+        model: aiConfig.model,
+        maxTokens: aiConfig.maxTokens,
+        signal: abortController.signal,
+        onProgress: (event) => {
+          // Map InitWithAIProgress phases to PipelinePhase for the progress dialog
+          const phaseMap: Record<string, 'scanning' | 'detecting' | 'selecting' | 'inferring' | 'building' | 'saving' | 'complete'> = {
+            scanning: 'scanning',
+            detecting: 'detecting',
+            selecting: 'selecting',
+            prompting: 'inferring',
+            building: 'building',
+            complete: 'complete',
+            error: 'complete',
+          };
+          useAnalysisStore.getState().setProgress({
+            phase: phaseMap[event.phase] ?? 'building',
+            message: event.message,
+            percent: event.percent,
+          });
+        },
+      });
+
+      // Save the resulting graph to .archcanvas/main.archc
+      const archcanvasHandle = await initArchcanvasDir(directoryHandle);
+      const fileName = ARCHCANVAS_MAIN_FILE;
+
+      const protoFile = graphToProto(result.graph);
+      const binaryData = await encode(protoFile);
+      await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
+
+      // Update project state
+      const updatedManifest: ProjectDescriptor = {
+        ...manifest,
+        rootFile: fileName,
+        files: [{ path: fileName, displayName: result.graph.name || manifest.name }],
+      };
+
+      const entry: LoadedFileEntry = {
+        path: fileName,
+        graph: result.graph,
+        loadedAtMs: Date.now(),
+      };
+      const newCache = new Map(get().loadedFiles);
+      newCache.set(fileName, entry);
+
+      set({
+        manifest: updatedManifest,
+        archcanvasHandle,
+        loadedFiles: newCache,
+        isEmpty: false,
+      });
+
+      // Load the graph into the canvas
+      const coreTextApi = coreStore.textApi;
+      if (coreTextApi) {
+        coreTextApi.setGraph(result.graph);
+        coreStore._setGraph(result.graph);
+      }
+
+      useAnalysisStore.getState().markComplete();
+
+      if (result.warnings.length > 0) {
+        console.warn('[AI Init] Warnings:', result.warnings);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Pipeline aborted') {
+        return;
+      }
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      useAnalysisStore.getState().setError(errorMsg);
+      console.error('[AI Init] Failed:', err);
     }
   },
 
@@ -655,3 +849,58 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
   },
 }));
+
+// ── Helper: build EmptyProjectDialogInfo ──────────────────────────────────
+
+/**
+ * Build the EmptyProjectDialogInfo with all callbacks wired to the correct
+ * project store actions and UI store transitions.
+ */
+function buildEmptyProjectDialogInfo(
+  folderName: string,
+  hasSourceFiles: boolean,
+  get: () => ProjectStoreState,
+): EmptyProjectDialogInfo {
+  return {
+    folderName,
+    hasSourceFiles,
+    hasApiKey: isAIConfigured(),
+    onUseAI: () => {
+      useUIStore.getState().closeEmptyProjectDialog();
+      get().runBuiltInAI();
+    },
+    onQuickScan: () => {
+      useUIStore.getState().closeEmptyProjectDialog();
+      get().runAnalysisPipeline();
+    },
+    onConfigureApiKey: () => {
+      // Close the empty project dialog and open settings
+      useUIStore.getState().closeEmptyProjectDialog();
+      useUIStore.getState().openSettingsDialog();
+    },
+    onUseExternalAgent: () => {
+      useUIStore.getState().closeEmptyProjectDialog();
+      // Build the external agent prompt and open the dialog
+      import('@/ai/prompts/externalAgentPrompt').then(({ buildExternalAgentPrompt, buildPromptContextFromProject }) => {
+        const state = get();
+        const context = buildPromptContextFromProject(
+          state.manifest,
+          state.directoryHandle,
+          hasSourceFiles,
+        );
+        const prompt = buildExternalAgentPrompt(context);
+        useUIStore.getState().openExternalAgentDialog({
+          prompt,
+          onDone: () => {
+            useUIStore.getState().closeExternalAgentDialog();
+            // Save current graph to .archcanvas/main.archc after external agent finishes
+            get().saveMainArchc();
+          },
+          onCancel: () => {
+            useUIStore.getState().closeExternalAgentDialog();
+          },
+        });
+      });
+    },
+  };
+}

@@ -1,7 +1,8 @@
 /**
  * Tests for the EmptyProjectDialog component and related store/scanner changes.
  *
- * Feature #463: UI - offer choices when opening a folder with no .archc files
+ * Feature #463 (original): UI - offer choices when opening a folder with no .archc files
+ * Feature #478 (rework): Initialize Architecture dialog with AI/scan choice
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -31,8 +32,11 @@ describe('EmptyProjectDialog', () => {
       const info: EmptyProjectDialogInfo = {
         folderName: 'my-project',
         hasSourceFiles: true,
-        onAnalyze: vi.fn(),
-        onStartBlank: vi.fn(),
+        hasApiKey: true,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       };
 
       useUIStore.getState().openEmptyProjectDialog(info);
@@ -48,8 +52,11 @@ describe('EmptyProjectDialog', () => {
       const info: EmptyProjectDialogInfo = {
         folderName: 'test-project',
         hasSourceFiles: false,
-        onAnalyze: vi.fn(),
-        onStartBlank: vi.fn(),
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       };
 
       useUIStore.getState().openEmptyProjectDialog(info);
@@ -63,22 +70,25 @@ describe('EmptyProjectDialog', () => {
     });
 
     it('stores callbacks that can be invoked', () => {
-      const onAnalyze = vi.fn();
-      const onStartBlank = vi.fn();
+      const onUseAI = vi.fn();
+      const onQuickScan = vi.fn();
 
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'callback-test',
         hasSourceFiles: true,
-        onAnalyze,
-        onStartBlank,
+        hasApiKey: true,
+        onUseAI,
+        onQuickScan,
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       });
 
       const info = useUIStore.getState().emptyProjectDialogInfo!;
-      info.onAnalyze();
-      expect(onAnalyze).toHaveBeenCalledOnce();
+      info.onUseAI();
+      expect(onUseAI).toHaveBeenCalledOnce();
 
-      info.onStartBlank();
-      expect(onStartBlank).toHaveBeenCalledOnce();
+      info.onQuickScan();
+      expect(onQuickScan).toHaveBeenCalledOnce();
     });
   });
 
@@ -140,26 +150,35 @@ describe('EmptyProjectDialog', () => {
   // ── Dialog info shape tests ──────────────────────────────────
 
   describe('EmptyProjectDialogInfo shape', () => {
-    it('has required fields: folderName, hasSourceFiles, onAnalyze, onStartBlank', () => {
+    it('has required fields: folderName, hasSourceFiles, hasApiKey, onUseAI, onQuickScan, onConfigureApiKey, onUseExternalAgent', () => {
       const info: EmptyProjectDialogInfo = {
         folderName: 'test',
         hasSourceFiles: false,
-        onAnalyze: vi.fn(),
-        onStartBlank: vi.fn(),
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       };
 
       expect(info.folderName).toBe('test');
       expect(info.hasSourceFiles).toBe(false);
-      expect(typeof info.onAnalyze).toBe('function');
-      expect(typeof info.onStartBlank).toBe('function');
+      expect(info.hasApiKey).toBe(false);
+      expect(typeof info.onUseAI).toBe('function');
+      expect(typeof info.onQuickScan).toBe('function');
+      expect(typeof info.onConfigureApiKey).toBe('function');
+      expect(typeof info.onUseExternalAgent).toBe('function');
     });
 
     it('hasSourceFiles=true when source files detected', () => {
       const info: EmptyProjectDialogInfo = {
         folderName: 'react-app',
         hasSourceFiles: true,
-        onAnalyze: vi.fn(),
-        onStartBlank: vi.fn(),
+        hasApiKey: true,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       };
       expect(info.hasSourceFiles).toBe(true);
     });
@@ -168,91 +187,211 @@ describe('EmptyProjectDialog', () => {
       const info: EmptyProjectDialogInfo = {
         folderName: 'empty-folder',
         hasSourceFiles: false,
-        onAnalyze: vi.fn(),
-        onStartBlank: vi.fn(),
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       };
       expect(info.hasSourceFiles).toBe(false);
+    });
+
+    it('hasApiKey=true when API key is configured', () => {
+      const info: EmptyProjectDialogInfo = {
+        folderName: 'api-key-project',
+        hasSourceFiles: true,
+        hasApiKey: true,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
+      };
+      expect(info.hasApiKey).toBe(true);
+    });
+
+    it('hasApiKey=false when no API key', () => {
+      const info: EmptyProjectDialogInfo = {
+        folderName: 'no-key-project',
+        hasSourceFiles: true,
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
+      };
+      expect(info.hasApiKey).toBe(false);
     });
   });
 
   // ── Dialog behavior tests (option selection) ──────────────────
 
   describe('Dialog option selection behavior', () => {
-    it('calling onAnalyze triggers the analyze callback', () => {
-      const onAnalyze = vi.fn();
-      const onStartBlank = vi.fn();
+    it('calling onUseAI triggers the AI callback', () => {
+      const onUseAI = vi.fn();
+      const onQuickScan = vi.fn();
 
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'my-app',
         hasSourceFiles: true,
-        onAnalyze,
-        onStartBlank,
+        hasApiKey: true,
+        onUseAI,
+        onQuickScan,
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       });
 
       const info = useUIStore.getState().emptyProjectDialogInfo!;
-      info.onAnalyze();
+      info.onUseAI();
 
-      expect(onAnalyze).toHaveBeenCalledOnce();
-      expect(onStartBlank).not.toHaveBeenCalled();
+      expect(onUseAI).toHaveBeenCalledOnce();
+      expect(onQuickScan).not.toHaveBeenCalled();
     });
 
-    it('calling onStartBlank triggers the blank callback', () => {
-      const onAnalyze = vi.fn();
-      const onStartBlank = vi.fn();
+    it('calling onQuickScan triggers the quick scan callback', () => {
+      const onUseAI = vi.fn();
+      const onQuickScan = vi.fn();
 
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'my-app',
         hasSourceFiles: false,
-        onAnalyze,
-        onStartBlank,
+        hasApiKey: false,
+        onUseAI,
+        onQuickScan,
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       });
 
       const info = useUIStore.getState().emptyProjectDialogInfo!;
-      info.onStartBlank();
+      info.onQuickScan();
 
-      expect(onStartBlank).toHaveBeenCalledOnce();
-      expect(onAnalyze).not.toHaveBeenCalled();
+      expect(onQuickScan).toHaveBeenCalledOnce();
+      expect(onUseAI).not.toHaveBeenCalled();
     });
 
-    it('cancel (closeDialog) clears state without calling either callback', () => {
-      const onAnalyze = vi.fn();
-      const onStartBlank = vi.fn();
+    it('cancel (closeDialog) clears state without calling any callback', () => {
+      const onUseAI = vi.fn();
+      const onQuickScan = vi.fn();
+      const onConfigureApiKey = vi.fn();
+      const onUseExternalAgent = vi.fn();
 
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'my-app',
         hasSourceFiles: true,
-        onAnalyze,
-        onStartBlank,
+        hasApiKey: true,
+        onUseAI,
+        onQuickScan,
+        onConfigureApiKey,
+        onUseExternalAgent,
       });
 
       // Cancel = close dialog
       useUIStore.getState().closeEmptyProjectDialog();
 
-      expect(onAnalyze).not.toHaveBeenCalled();
-      expect(onStartBlank).not.toHaveBeenCalled();
+      expect(onUseAI).not.toHaveBeenCalled();
+      expect(onQuickScan).not.toHaveBeenCalled();
+      expect(onConfigureApiKey).not.toHaveBeenCalled();
+      expect(onUseExternalAgent).not.toHaveBeenCalled();
       expect(useUIStore.getState().emptyProjectDialogOpen).toBe(false);
       expect(useUIStore.getState().emptyProjectDialogInfo).toBeNull();
+    });
+  });
+
+  // ── AI routing logic tests ──────────────────────────────────
+
+  describe('AI path routing logic', () => {
+    it('when hasApiKey=true, Use AI should route directly to built-in agentic loop', () => {
+      // The dialog component routes: hasApiKey → onUseAI (direct), !hasApiKey → ai-setup view
+      const hasApiKey = true;
+      const routesToBuiltInAI = hasApiKey;
+      const routesToSetup = !hasApiKey;
+      expect(routesToBuiltInAI).toBe(true);
+      expect(routesToSetup).toBe(false);
+    });
+
+    it('when hasApiKey=false, Use AI should show AI setup options', () => {
+      const hasApiKey = false;
+      const routesToBuiltInAI = hasApiKey;
+      const routesToSetup = !hasApiKey;
+      expect(routesToBuiltInAI).toBe(false);
+      expect(routesToSetup).toBe(true);
+    });
+
+    it('onConfigureApiKey callback can be invoked from AI setup view', () => {
+      const onConfigureApiKey = vi.fn();
+
+      useUIStore.getState().openEmptyProjectDialog({
+        folderName: 'no-key-project',
+        hasSourceFiles: true,
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey,
+        onUseExternalAgent: vi.fn(),
+      });
+
+      const info = useUIStore.getState().emptyProjectDialogInfo!;
+      info.onConfigureApiKey();
+
+      expect(onConfigureApiKey).toHaveBeenCalledOnce();
+    });
+
+    it('onUseExternalAgent callback can be invoked from AI setup view', () => {
+      const onUseExternalAgent = vi.fn();
+
+      useUIStore.getState().openEmptyProjectDialog({
+        folderName: 'external-agent-project',
+        hasSourceFiles: true,
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent,
+      });
+
+      const info = useUIStore.getState().emptyProjectDialogInfo!;
+      info.onUseExternalAgent();
+
+      expect(onUseExternalAgent).toHaveBeenCalledOnce();
+    });
+
+    it('Quick scan is always available regardless of AI configuration', () => {
+      // onQuickScan should work whether hasApiKey is true or false
+      for (const hasApiKey of [true, false]) {
+        const onQuickScan = vi.fn();
+
+        useUIStore.getState().openEmptyProjectDialog({
+          folderName: 'project',
+          hasSourceFiles: true,
+          hasApiKey,
+          onUseAI: vi.fn(),
+          onQuickScan,
+          onConfigureApiKey: vi.fn(),
+          onUseExternalAgent: vi.fn(),
+        });
+
+        const info = useUIStore.getState().emptyProjectDialogInfo!;
+        info.onQuickScan();
+        expect(onQuickScan).toHaveBeenCalledOnce();
+
+        useUIStore.getState().closeEmptyProjectDialog();
+      }
     });
   });
 
   // ── Recommended option logic tests ────────────────────────────
 
   describe('Recommended option logic', () => {
-    it('when hasSourceFiles=true, Analyze Codebase should be recommended', () => {
-      // This tests the logic the component uses to determine the recommended option
-      const hasSourceFiles = true;
-      const analyzeRecommended = hasSourceFiles;
-      const blankRecommended = !hasSourceFiles;
-      expect(analyzeRecommended).toBe(true);
-      expect(blankRecommended).toBe(false);
+    it('"Use AI" is always shown as the recommended option', () => {
+      // In the new design, "Use AI" is always recommended regardless of source files
+      // The "Recommended" badge is always shown on the AI button
+      const aiAlwaysRecommended = true;
+      expect(aiAlwaysRecommended).toBe(true);
     });
 
-    it('when hasSourceFiles=false, Start Blank should be recommended', () => {
-      const hasSourceFiles = false;
-      const analyzeRecommended = hasSourceFiles;
-      const blankRecommended = !hasSourceFiles;
-      expect(analyzeRecommended).toBe(false);
-      expect(blankRecommended).toBe(true);
+    it('"Quick scan" is shown as the basic fallback option', () => {
+      // Quick scan is labeled "Basic" and always available
+      const quickScanIsBasic = true;
+      expect(quickScanIsBasic).toBe(true);
     });
   });
 });

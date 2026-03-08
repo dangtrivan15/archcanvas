@@ -436,6 +436,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
     // If a project is open with a root file, delegate to project-level save.
     // This writes to .archcanvas/main.archc via the directory handle.
+    // If the user is inside a nested canvas (dive-in), save the child file instead.
     // Uses lazy getter to avoid circular dependency (projectStore imports coreStore).
     const projectStore = _getProjectStore();
     if (projectStore) {
@@ -444,9 +445,17 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
         set({ isSaving: true });
         const { setFileOperationLoading, clearFileOperationLoading } =
           useUIStore.getState();
-        setFileOperationLoading('Saving project...');
+
+        // Check if we're inside a nested canvas (child file)
+        const { useNestedCanvasStore } = await import('./nestedCanvasStore');
+        const activeFilePath = useNestedCanvasStore.getState().activeFilePath;
+
+        const loadingMsg = activeFilePath ? 'Saving file...' : 'Saving project...';
+        setFileOperationLoading(loadingMsg);
         try {
-          const result = await projectState.saveMainArchc();
+          const result = activeFilePath
+            ? await projectState.saveChildArchc(activeFilePath)
+            : await projectState.saveMainArchc();
           clearFileOperationLoading();
           set({ isSaving: false });
           return result;
