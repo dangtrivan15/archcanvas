@@ -13176,3 +13176,63 @@ Added consistent depth guidance, thoroughness instructions, and composite node
 
 #### Commit: 1245531
 #### Feature #497 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #500
+==================================================
+
+## Feature #500: Implement global cache for remote .archc files - PASSING
+
+### Summary:
+Implemented a global cache at ~/.archcanvas/cache/ for storing fetched .archc files
+from git repositories. Cache is keyed by repo URL (SHA-256 hash) + ref, with LRU
+eviction support and manifest metadata.
+
+### New Files:
+
+1. **src/core/git/repoCache.ts** — Cache module:
+   - `hashRepoUrl()` — SHA-256 hash (16 hex chars) for filesystem-safe directory names
+   - Path helpers: getCacheDir, getRepoCacheDir, getRefCacheDir, getCachedArchcPath, getManifestPath
+   - `ensureCacheDir()` — idempotent cache directory creation
+   - `cacheLookup()` — check if cached .archc exists, updates lastAccessedAt on hit
+   - `cacheWrite()` — store fetched .archc with manifest.json metadata
+   - `cacheInvalidate()` — remove specific repo+ref entry
+   - `cacheInvalidateRepo()` — remove all entries for a repo URL
+   - `cacheOnRefChange()` — delete old ref, check if new ref is cached
+   - `cacheList()` — scan all entries sorted by last access (oldest first)
+   - `cacheTotalSize()` — sum of all cached file sizes
+   - `cacheEvict()` — LRU eviction by maxEntries or maxSizeBytes
+   - `cacheClear()` — remove entire cache directory
+
+2. **test/unit/core/repoCache.test.ts** — 42 tests:
+   - hashRepoUrl: deterministic, normalized, unique
+   - Path helpers: correct structure, slash sanitization
+   - ensureCacheDir: creation and idempotency
+   - cacheWrite: directory creation, manifest writing, file size, overwrite
+   - cacheLookup: miss, hit with data+manifest, lastAccessedAt update, malformed manifest
+   - cacheInvalidate: specific ref, preserves other refs, no-op on missing
+   - cacheInvalidateRepo: removes all refs, no-op on missing
+   - cacheOnRefChange: invalidates old + checks new
+   - cacheList: empty, multiple entries, manifest data, LRU sort order
+   - cacheTotalSize: empty and sum
+   - cacheEvict: by maxEntries, by maxSizeBytes, no-op when under limit
+   - cacheClear: removes all, returns count, empty cache
+   - manifest.json: all fields present, valid ISO 8601, formatted JSON
+
+### Feature steps covered:
+1. ✅ Cache directory structure: ~/.archcanvas/cache/<repo-url-hash>/<ref>/main.archc
+2. ✅ Cache lookup: given repo URL + ref, check if cached .archc exists
+3. ✅ Cache write: store fetched .archc after successful download
+4. ✅ Cache invalidation: when ref changes, delete old cached entry and re-fetch
+5. ✅ Cache metadata in manifest.json (fetch timestamp, repo URL, ref, file size)
+6. ✅ Cache directory creation on first use
+7. ✅ Cache size management (LRU eviction by count or size, manual clear)
+
+### Verification:
+- 42/42 new tests pass
+- 76/76 repo-related tests pass (repoFetcher + repoCache, 0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 5ff28a1
+#### Feature #500 marked passing
