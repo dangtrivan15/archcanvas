@@ -11995,3 +11995,61 @@ feature #463 session. Tests were written and verified:
 #### Commit: d6a36e9
 #### Feature #465 marked passing
 #### Progress: 464/466 features passing (99.6%)
+
+---
+
+## Session: Feature #464 - UI: integrate analyzeCodebase pipeline into web project open flow
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #464: Integrate analyzeCodebase pipeline into web project open flow - PASSING
+
+#### Changes:
+
+1. **projectStore.ts** (`src/store/projectStore.ts`):
+   - Replaced `onAnalyze` stub (was showing "not yet available" toast) with actual pipeline invocation
+   - Added `runAnalysisPipeline()` action that orchestrates the full flow:
+     - Opens AnalysisProgressDialog via analysisStore
+     - Dynamically imports browserPipeline, AI client, and config
+     - Creates browser-compatible AIMessageSender wrapping ai/client.ts (non-streaming)
+     - Creates fresh TextApi with empty graph for pipeline to populate
+     - Passes directoryHandle, textApi, registry, aiSender, progress callback, abort signal
+     - On success: saves .archc, updates manifest, caches graph, loads into canvas
+     - On abort: silently returns (no error shown)
+     - On error: sets error in analysisStore for dialog display
+
+2. **App.tsx** (`src/App.tsx`):
+   - Added `AnalysisProgressDialogConnected` component that wires analysisStore to AnalysisProgressDialog
+   - Renders alongside other overlay dialogs
+
+3. **Pre-existing files committed** (created in prior sessions but untracked):
+   - `src/analyze/browserPipeline.ts` - Browser pipeline orchestrator
+   - `src/analyze/browserScanner.ts` - File System Access API scanner
+   - `src/analyze/browserFileSelector.ts` - Browser file content reader
+   - `src/store/analysisStore.ts` - Progress/error/cancel state management
+   - `src/components/shared/AnalysisProgressDialog.tsx` - Progress UI with phase steps
+
+#### Tests: 18 new tests (all passing)
+- `test/unit/ui/analysisPipelineIntegration.test.ts`
+- runAnalysisPipeline: opens dialog, passes progress events, loads graph on success
+- Manifest update with generated file, isEmpty cleared
+- Error handling: sets error state, pipeline failure display
+- Abort handling: no error shown on user cancellation
+- Signal passing: abort signal forwarded to pipeline
+- AI sender: created when API key present, undefined when absent
+- No project: shows toast, doesn't invoke pipeline
+- Cache: generated graph stored in loadedFiles
+- Architecture name: uses folder/manifest name
+- Analysis store: open/cancel/close/progress/complete lifecycle
+- onAnalyze callback: closes empty project dialog, starts pipeline
+
+#### Verification:
+- TypeScript: 0 errors in src/
+- Vite build: PASS
+- Full test suite: 5021/5021 PASS (0 failures)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns in src/: PASS
+
+#### Commit: 983d6c5
+#### Feature #464 marked passing
+#### Progress: 464/466 features passing (99.6%)
