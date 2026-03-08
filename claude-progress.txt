@@ -11301,3 +11301,57 @@ Status: PASSING
 ### Tag: post-cleanup-v2026-03-05
 ### Feature #446 marked passing
 ### Progress: 446/446 features passing (100%) - PROJECT COMPLETE!
+
+---
+
+## Session: Feature #447 - Architecture Project Manifest
+Date: 2026-03-08
+
+### Feature #447: Architecture Project Manifest - PASSING
+
+#### Implementation:
+
+1. **Project manifest schema** (`src/types/project.ts`):
+   - `ProjectManifest` interface with version, name, description, rootFile, files[], links[]
+   - `ProjectFileEntry` with path, displayName, optional description
+   - `ProjectFileLink` with from, to, optional label
+   - `PROJECT_MANIFEST_FILENAME = '.archproject.json'`
+
+2. **Manifest parser/creator** (`src/core/project/manifest.ts`):
+   - `parseManifest()` - validates and parses raw JSON with descriptive error messages
+   - `serializeManifest()` - pretty-prints manifest to JSON
+   - `createManifest()` - builds manifest from discovered .archc file paths
+
+3. **Folder scanner** (`src/core/project/scanner.ts`):
+   - `scanProjectFolder()` - iterates directory handle entries, reads existing manifest or auto-generates from .archc files
+   - `readProjectFile()` - reads specific .archc file from project directory
+   - `writeManifestToFolder()` - saves manifest to project directory
+
+4. **Project store** (`src/store/projectStore.ts`):
+   - New Zustand store with manifest, directoryHandle, loadedFiles cache
+   - `openProjectFolder()` - shows directory picker, scans, loads manifest
+   - `closeProject()` - clears all project state
+   - `loadFile()` - reads and decodes .archc file with caching
+
+5. **File menu integration** (`src/components/toolbar/FileMenu.tsx`):
+   - Added "Open Project Folder..." menu item with FolderOpenDot icon
+   - Shows toast on success/error
+
+6. **Barrel exports updated**:
+   - `src/types/index.ts` - project types
+   - `src/store/index.ts` - projectStore
+   - `src/core/index.ts` - project module
+   - `src/core/project/index.ts` - new barrel
+
+#### Tests: 33 new tests (all passing)
+- `test/unit/core/projectManifest.test.ts` (27 tests): parse, serialize, create, validation errors
+- `test/unit/core/projectScanner.test.ts` (6 tests): folder scanning with mock directory handles
+
+#### Verification:
+- TypeScript check: 0 errors in src/
+- Vite build: PASS
+- Full test suite: 4730/4730 PASS (0 failures)
+- No mock data patterns: PASS
+
+#### Commit: c2d1255
+#### Feature #447 marked passing
