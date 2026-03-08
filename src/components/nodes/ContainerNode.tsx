@@ -11,6 +11,9 @@
  * - Entire preview surface is clickable to trigger dive-in animation
  * - Child file name display with node count badge
  * - Support for refSource pattern 'file://./relative-path.archc'
+ * - Git repository references: shows repo name, ref/tag, node count, description
+ * - Visual indicator distinguishing git-referenced nodes from local file references
+ * - Error state display when remote fetch fails
  *
  * Maps to: meta/canvas-ref
  */
@@ -25,14 +28,21 @@ import {
   colorGlowShadow,
 } from '@/utils/nodeColors';
 import { useInlineEdit } from '@/hooks/useInlineEdit';
-import { useChildGraph } from '@/hooks/useChildGraph';
+import { useChildGraph, extractRepoName } from '@/hooks/useChildGraph';
 import { useCanvasStore } from '@/store/canvasStore';
 import { iconMap, DefaultNodeIcon } from './iconMap';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeBadges } from './NodeBadges';
 import { GenericPortHandles } from './NodePortHandles';
 import { MiniCanvasPreview } from './MiniCanvasPreview';
-import { FolderOpen, ChevronRight, Layers } from 'lucide-react';
+import {
+  FolderOpen,
+  ChevronRight,
+  Layers,
+  GitBranch,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 /** Default container color - a teal/cyan tone for canvas references */
 const CONTAINER_DEFAULT_COLOR = '#0EA5E9';
@@ -75,7 +85,7 @@ function PreviewSkeleton({ width, height, color }: { width: number; height: numb
       data-testid="preview-skeleton"
     >
       <div className="flex flex-col items-center gap-1">
-        <Layers className="w-5 h-5" style={{ color: `${color}50` }} />
+        <Loader2 className="w-5 h-5 animate-spin" style={{ color: `${color}50` }} />
         <span className="text-[9px] text-muted-foreground opacity-50">Loading preview…</span>
       </div>
     </div>
@@ -120,6 +130,39 @@ function LodPreviewFallback({
   );
 }
 
+/**
+ * Error state display when remote fetch fails.
+ */
+function ErrorPreview({
+  width,
+  height,
+  color,
+  error,
+}: {
+  width: number;
+  height: number;
+  color: string;
+  error: string;
+}) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center gap-1 rounded-md"
+      style={{
+        width,
+        height,
+        backgroundColor: '#FEF2F2',
+        border: '1px solid #FECACA',
+      }}
+      data-testid="preview-error"
+    >
+      <AlertCircle className="w-4 h-4 text-red-500" />
+      <span className="text-[9px] text-red-600 text-center px-2 leading-tight max-w-full truncate">
+        {error.length > 60 ? error.slice(0, 57) + '...' : error}
+      </span>
+    </div>
+  );
+}
+
 function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
   const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
@@ -129,10 +172,19 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
 
   const inlineEdit = useInlineEdit(nodeData.archNodeId, nodeData.displayName);
 
+  // Detect source type: repoUrl vs filePath
+  const repoUrlArg = nodeData.args?.repoUrl as string | undefined;
+  const refArg = nodeData.args?.ref as string | undefined;
+  const filePathArg = nodeData.args?.filePath as string | undefined;
+  const descriptionArg = nodeData.args?.description as string | undefined;
+  const isGitRef = Boolean(repoUrlArg && repoUrlArg.trim());
+
   // Load child graph lazily for the mini-preview
-  const { graph: childGraph, loading: childLoading } = useChildGraph(
+  const { graph: childGraph, loading: childLoading, error: childError, sourceType } = useChildGraph(
     nodeData.refSource,
-    nodeData.args?.filePath as string | undefined,
+    filePathArg,
+    repoUrlArg,
+    refArg,
   );
 
   // Get parent canvas zoom for LOD decision
@@ -144,14 +196,19 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
     [nodeData.color, nodeData.nodedefType],
   );
 
-  // Extract file name from refSource
-  const childFileName = useMemo(
-    () => extractFileName(nodeData.refSource, nodeData.args?.filePath as string | undefined),
-    [nodeData.refSource, nodeData.args?.filePath],
-  );
+  // Extract display name: repo name for git refs, file name for local
+  const childFileName = useMemo(() => {
+    if (isGitRef && repoUrlArg) {
+      return extractRepoName(repoUrlArg);
+    }
+    return extractFileName(nodeData.refSource, filePathArg);
+  }, [isGitRef, repoUrlArg, nodeData.refSource, filePathArg]);
 
   // Node count: from loaded graph if available, otherwise from args
   const nodeCount = childGraph ? childGraph.nodes.length : ((nodeData.args?.nodeCount as number) || 0);
+
+  // Brief description: from loaded graph or args
+  const briefDescription = childGraph?.description || descriptionArg || '';
 
   // Determine if we should show LOD fallback vs full preview
   const isLodMode = parentZoom < LOD_ZOOM_THRESHOLD;
@@ -237,6 +294,7 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
       data-node-color={effectiveColor}
       data-node-shape="container"
       data-ref-source={nodeData.refSource || undefined}
+      data-source-type={sourceType || undefined}
     >
       {/* Color accent strip (top edge) - thicker for container nodes */}
       <div
@@ -286,16 +344,64 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
 
       {/* Container body - shows nested canvas info + preview */}
       <div className="px-3 py-2.5" data-testid="container-body">
-        {/* File reference */}
+        {/* Source reference: git icon+badge for remote, folder icon for local */}
         <div
           className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2"
           data-testid="container-file-ref"
         >
-          <FolderOpen className="w-3.5 h-3.5 shrink-0" style={{ color: effectiveColor }} />
-          <span className="truncate font-mono" title={nodeData.refSource || (nodeData.args?.filePath as string) || ''}>
+          {isGitRef ? (
+            <GitBranch className="w-3.5 h-3.5 shrink-0" style={{ color: effectiveColor }} data-testid="git-ref-icon" />
+          ) : (
+            <FolderOpen className="w-3.5 h-3.5 shrink-0" style={{ color: effectiveColor }} />
+          )}
+          <span className="truncate font-mono" title={repoUrlArg || nodeData.refSource || filePathArg || ''}>
             {childFileName}
           </span>
+          {/* Git badge indicator */}
+          {isGitRef && (
+            <span
+              className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full text-[9px] font-semibold leading-4"
+              style={{
+                backgroundColor: '#8B5CF620',
+                color: '#8B5CF6',
+                border: '1px solid #8B5CF630',
+              }}
+              data-testid="git-badge"
+            >
+              git
+            </span>
+          )}
         </div>
+
+        {/* Git ref/tag display */}
+        {isGitRef && refArg && (
+          <div
+            className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2"
+            data-testid="container-git-ref"
+          >
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0 rounded text-[10px] font-mono leading-4"
+              style={{
+                backgroundColor: `${effectiveColor}12`,
+                color: effectiveColor,
+                border: `1px solid ${effectiveColor}20`,
+              }}
+            >
+              {refArg}
+            </span>
+          </div>
+        )}
+
+        {/* Brief description from architecture */}
+        {briefDescription && (
+          <div
+            className="text-[10px] text-muted-foreground mb-2 leading-tight line-clamp-2"
+            data-testid="container-description"
+            title={briefDescription}
+          >
+            {briefDescription}
+          </div>
+        )}
 
         {/* Node count badge */}
         {nodeCount > 0 && (
@@ -339,6 +445,13 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
               width={PREVIEW_WIDTH}
               height={PREVIEW_HEIGHT}
               color={effectiveColor}
+            />
+          ) : childError ? (
+            <ErrorPreview
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              color={effectiveColor}
+              error={childError}
             />
           ) : childGraph && childGraph.nodes.length > 0 ? (
             <MiniCanvasPreview
