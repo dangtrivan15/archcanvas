@@ -323,7 +323,7 @@ describe('Feature #465: Start Blank .archc file creation', () => {
   });
 
   describe('Start Blank button integration', () => {
-    it('onStartBlank callback triggers createBlankArchcFile', async () => {
+    it('createBlankArchcFile can be invoked directly', async () => {
       const { useProjectStore } = await import('@/store/projectStore');
       useProjectStore.setState({
         directoryHandle: mockDirHandle,
@@ -343,12 +343,12 @@ describe('Feature #465: Start Blank .archc file creation', () => {
       expect(mocks.showToast).toHaveBeenCalled();
     });
 
-    it('dialog closes before createBlankArchcFile is called', () => {
+    it('dialog closes before action is called (pattern used by onQuickScan/onUseAI)', () => {
       const closeDialog = vi.fn();
-      const createBlank = vi.fn();
-      const onStartBlank = () => { closeDialog(); createBlank(); };
-      onStartBlank();
-      expect(closeDialog).toHaveBeenCalledBefore(createBlank);
+      const action = vi.fn();
+      const callback = () => { closeDialog(); action(); };
+      callback();
+      expect(closeDialog).toHaveBeenCalledBefore(action);
     });
   });
 });

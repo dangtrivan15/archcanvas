@@ -552,8 +552,8 @@ describe('Feature #468: Load main.archc as project root on open', () => {
     });
   });
 
-  describe('integration: onStartBlank callback from error dialog recreates file', () => {
-    it('onStartBlank callback from error dialog triggers createBlankArchcFile', async () => {
+  describe('integration: callbacks from error dialog', () => {
+    it('error dialog provides valid AI and scan callbacks', async () => {
       mocks.readProjectFile.mockRejectedValueOnce(new Error('File not found'));
 
       useProjectStore.setState({
@@ -574,12 +574,16 @@ describe('Feature #468: Load main.archc as project root on open', () => {
       expect(mocks.openEmptyProjectDialog).toHaveBeenCalledTimes(1);
       const dialogInfo = mocks.openEmptyProjectDialog.mock.calls[0]![0]! as {
         folderName: string;
-        onStartBlank: () => void;
-        onAnalyze: () => void;
+        onUseAI: () => void;
+        onQuickScan: () => void;
+        onConfigureApiKey: () => void;
+        onUseExternalAgent: () => void;
       };
       expect(dialogInfo.folderName).toBe('RecreateTest');
-      expect(typeof dialogInfo.onStartBlank).toBe('function');
-      expect(typeof dialogInfo.onAnalyze).toBe('function');
+      expect(typeof dialogInfo.onUseAI).toBe('function');
+      expect(typeof dialogInfo.onQuickScan).toBe('function');
+      expect(typeof dialogInfo.onConfigureApiKey).toBe('function');
+      expect(typeof dialogInfo.onUseExternalAgent).toBe('function');
     });
   });
 

@@ -489,7 +489,7 @@ describe('Analysis Pipeline Integration', () => {
     });
   });
 
-  describe('onAnalyze callback integration', () => {
+  describe('onQuickScan callback integration', () => {
     it('should close the empty project dialog and start pipeline', async () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
@@ -505,23 +505,26 @@ describe('Analysis Pipeline Integration', () => {
         duration: 1000,
       });
 
-      // Simulate what happens when user clicks "Analyze Codebase"
+      // Simulate what happens when user clicks "Quick scan"
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'test-project',
         hasSourceFiles: true,
-        onAnalyze: () => {
+        hasApiKey: false,
+        onUseAI: vi.fn(),
+        onQuickScan: () => {
           useUIStore.getState().closeEmptyProjectDialog();
           useProjectStore.getState().runAnalysisPipeline();
         },
-        onStartBlank: vi.fn(),
+        onConfigureApiKey: vi.fn(),
+        onUseExternalAgent: vi.fn(),
       });
 
       // Verify dialog is open
       expect(useUIStore.getState().emptyProjectDialogOpen).toBe(true);
 
-      // Trigger the onAnalyze callback
+      // Trigger the onQuickScan callback
       const info = useUIStore.getState().emptyProjectDialogInfo;
-      info?.onAnalyze();
+      info?.onQuickScan();
 
       // Empty project dialog should be closed
       expect(useUIStore.getState().emptyProjectDialogOpen).toBe(false);
