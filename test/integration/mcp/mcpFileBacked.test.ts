@@ -322,4 +322,77 @@ describe('MCP Integration: File-Backed Mode', () => {
     expect(svc?.notes).toHaveLength(1);
     expect(svc?.notes[0].content).toBe('Integration test note');
   });
+
+  // ─── Step 5: MCP startup with non-existent --file ───
+
+  it('non-existent --file: creates parent directory and .archc file with empty graph', async () => {
+    // Simulate what the MCP command does when --file points to a non-existent path
+    const nestedDir = path.join(tmpDir, 'deeply', 'nested', 'dir');
+    const nonExistentFile = path.join(nestedDir, 'new-project.archc');
+
+    // Verify path does not exist
+    expect(fs.existsSync(nonExistentFile)).toBe(false);
+    expect(fs.existsSync(nestedDir)).toBe(false);
+
+    // Replicate the MCP startup logic for non-existent file:
+    // 1. Create parent directory
+    fs.mkdirSync(path.dirname(nonExistentFile), { recursive: true });
+    // 2. Create new GraphContext and save
+    const graphContext = GraphContext.createNew('Untitled Architecture');
+    await graphContext.saveAs(nonExistentFile);
+
+    // Verify directory was created
+    expect(fs.existsSync(nestedDir)).toBe(true);
+
+    // Verify .archc file was created
+    expect(fs.existsSync(nonExistentFile)).toBe(true);
+
+    // Verify file is loadable and contains empty graph
+    const reloaded = await GraphContext.loadFromFile(nonExistentFile);
+    const graph = reloaded.getGraph();
+    expect(graph.name).toBe('Untitled Architecture');
+    expect(graph.nodes).toHaveLength(0);
+    expect(graph.edges).toHaveLength(0);
+
+    // Verify the server context works (can add nodes)
+    const registry = new RegistryManager();
+    registry.initialize();
+    const ctx: ToolHandlerContext = {
+      textApi: reloaded.textApi,
+      registry,
+      graphContext: reloaded,
+    };
+
+    const addResult = JSON.parse(
+      dispatchToolCall(ctx, 'add_node', {
+        type: 'compute/service',
+        displayName: 'PostStartupNode',
+      }),
+    );
+    expect(addResult.success).toBe(true);
+
+    // Save and verify persistence
+    await autoSave(ctx);
+    const final = await GraphContext.loadFromFile(nonExistentFile);
+    expect(final.getGraph().nodes).toHaveLength(1);
+    expect(final.getGraph().nodes[0].displayName).toBe('PostStartupNode');
+  });
+
+  it('non-existent --file: handles existing parent directory gracefully', async () => {
+    // When parent dir already exists but file doesn't
+    const existingDir = path.join(tmpDir, 'existing-dir');
+    fs.mkdirSync(existingDir, { recursive: true });
+    const newFile = path.join(existingDir, 'brand-new.archc');
+
+    expect(fs.existsSync(newFile)).toBe(false);
+
+    // mkdirSync with recursive:true is idempotent
+    fs.mkdirSync(path.dirname(newFile), { recursive: true });
+    const graphContext = GraphContext.createNew('Untitled Architecture');
+    await graphContext.saveAs(newFile);
+
+    expect(fs.existsSync(newFile)).toBe(true);
+    const reloaded = await GraphContext.loadFromFile(newFile);
+    expect(reloaded.getGraph().nodes).toHaveLength(0);
+  });
 });
