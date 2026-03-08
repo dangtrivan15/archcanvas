@@ -12125,3 +12125,46 @@ changes (UseTemplateDialog, TemplatePicker, projectStore, tests) but left them u
 #### Commit: 40e472c
 #### Feature #470 marked passing
 #### Progress: 469/479 features passing (97.9%)
+
+---
+
+## Session: Feature #471 - Resolve refSource files from .archcanvas folder
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #471: Resolve refSource files from .archcanvas folder - PASSING
+
+#### Changes:
+
+1. **useContainerDiveIn.ts** (`src/hooks/useContainerDiveIn.ts`):
+   - Removed `file://` and `./` prefix stripping logic from `diveIn()`
+   - refSource is now treated as a bare filename (e.g., `01JABCDEF.archc`)
+   - Passed directly to `projectStore.loadFile()` which resolves from `.archcanvas/`
+   - Updated error handling: "Referenced file not found" errors shown as-is in toast
+   - Updated JSDoc to document bare filename convention
+
+2. **projectStore.ts** (`src/store/projectStore.ts`):
+   - `loadFile()` now catches `NotFoundError` from File System Access API
+   - Throws descriptive `"Referenced file not found: <path>"` error for missing files
+   - Other errors (corruption, permissions) re-thrown as-is
+
+3. **Tests** (`test/unit/navigation/resolveRefSource.test.ts`):
+   - 11 new tests covering bare filename resolution, missing file handling
+   - Bare filename passed directly to loadFile (no transformation)
+   - file:// and ./ prefixes no longer stripped (backward-incompatible by design)
+   - ULID-based filenames work correctly
+   - Missing files show correct toast message
+   - Generic errors show "Failed to open canvas" prefix
+
+4. **Updated existing tests** (`test/unit/hooks/useContainerDiveIn.test.ts`):
+   - All `file://./child.archc` references changed to `child.archc` (bare filenames)
+   - All 19 existing tests still pass
+
+#### Verification:
+- Full test suite: 5142/5142 PASS (0 failures)
+- TypeScript: 0 new errors in src/ (only pre-existing)
+- Browser: App loads, zero app console errors
+- No mock data patterns: PASS
+
+#### Commit: b4509bb
+#### Feature #471 marked passing
