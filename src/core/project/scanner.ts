@@ -21,6 +21,8 @@ export interface ScanResult {
   directoryHandle: FileSystemDirectoryHandle;
   /** Whether the manifest was read from an existing .archproject.json file. */
   manifestExisted: boolean;
+  /** Whether the folder contained no .archc files and no manifest (empty project). */
+  isEmpty: boolean;
 }
 
 /**
@@ -31,8 +33,7 @@ export interface ScanResult {
  * 3. Otherwise, collects all .archc file paths and creates a manifest.
  *
  * @param dirHandle - FileSystemDirectoryHandle from showDirectoryPicker()
- * @returns ScanResult with manifest and directory handle
- * @throws Error if no .archc files are found and no manifest exists
+ * @returns ScanResult with manifest and directory handle (isEmpty=true if no .archc files found)
  */
 export async function scanProjectFolder(
   dirHandle: FileSystemDirectoryHandle,
@@ -61,27 +62,39 @@ export async function scanProjectFolder(
       manifest,
       directoryHandle: dirHandle,
       manifestExisted: true,
+      isEmpty: false,
     };
   }
 
-  // No manifest — build one from discovered .archc files
+  const projectName = dirHandle.name || 'Untitled Project';
+
+  // No manifest and no .archc files — return empty project result
   if (archcFiles.length === 0) {
-    throw new Error(
-      'No .archc files found in the selected folder. ' +
-        'Please select a folder containing .archc architecture files.',
-    );
+    const emptyManifest: ProjectManifest = {
+      version: 1,
+      name: projectName,
+      rootFile: '',
+      files: [],
+      links: [],
+    };
+    return {
+      manifest: emptyManifest,
+      directoryHandle: dirHandle,
+      manifestExisted: false,
+      isEmpty: true,
+    };
   }
 
   // Sort alphabetically for consistent ordering
   archcFiles.sort();
 
-  const projectName = dirHandle.name || 'Untitled Project';
   const manifest = createManifest(projectName, archcFiles);
 
   return {
     manifest,
     directoryHandle: dirHandle,
     manifestExisted: false,
+    isEmpty: false,
   };
 }
 
