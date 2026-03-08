@@ -11620,3 +11620,27 @@ Status: PASSING
 
 #### Feature #451 marked passing
 #### Progress: 451/458 features passing
+
+---
+
+## Session: Feature #460 - E2E Memory Safety Config
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #460: E2E memory safety: sequential workers and Chromium memory flags
+
+#### Changes to playwright.config.ts:
+1. Set `workers: 1` (was CI-only) - enforces sequential test execution always
+2. Set `fullyParallel: false` (was true) - prevents parallel memory pressure
+3. Added `--disable-dev-shm-usage` to Chromium launchOptions.args - prevents /dev/shm exhaustion in CI/Docker
+4. Added `--no-sandbox` conditionally only when `process.env.CI` is set
+
+#### Verification:
+- All 6 E2E tests pass with 1 worker (32.6s total)
+- No memory warnings or OOM errors in output
+- All 4877 unit tests pass (0 failures)
+- Sequential execution confirmed ("Running 6 tests using 1 worker")
+
+#### Commit: 786481c
+#### Feature #460 marked passing
+#### Progress: 454/460 features passing (98.7%)
