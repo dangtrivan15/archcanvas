@@ -361,10 +361,30 @@ export function createProgram(): Command {
         registry.initialize();
 
         if (filePath) {
-          graphContext = await GraphContext.loadFromFile(filePath);
-          textApi = graphContext.textApi;
-          if (!opts.quiet) {
-            console.error(`[MCP] Loaded architecture from: ${filePath}`);
+          // Check if the .archc file exists
+          const fs = await import('node:fs');
+          const pathModule = await import('node:path');
+          const resolvedPath = pathModule.resolve(filePath);
+
+          if (fs.existsSync(resolvedPath)) {
+            // File exists — load it
+            graphContext = await GraphContext.loadFromFile(resolvedPath);
+            textApi = graphContext.textApi;
+            if (!opts.quiet) {
+              console.error(`[MCP] Loaded architecture from: ${resolvedPath}`);
+            }
+          } else {
+            // File doesn't exist — create empty graph, will save to this path on first mutation
+            // Ensure parent directory exists
+            const dir = pathModule.dirname(resolvedPath);
+            fs.mkdirSync(dir, { recursive: true });
+
+            graphContext = GraphContext.createNew('Untitled Architecture');
+            await graphContext.saveAs(resolvedPath);
+            textApi = graphContext.textApi;
+            if (!opts.quiet) {
+              console.error(`[MCP] Created new architecture at: ${resolvedPath}`);
+            }
           }
         } else {
           const graph = createEmptyGraph('Untitled Architecture');
