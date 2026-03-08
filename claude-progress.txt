@@ -11883,3 +11883,115 @@ Status: PASSING
 #### Commit: 9623634
 #### Feature #462 marked passing
 #### Progress: 462/465 features passing (99.4%)
+
+---
+
+## Session: Feature #463 - UI: offer choices when opening a folder with no .archc files
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #463: Empty Project Onboarding Dialog - PASSING
+
+#### Implementation:
+
+1. **Scanner enhancement** (`src/core/project/scanner.ts`):
+   - Added `SOURCE_FILE_EXTENSIONS` set with 30+ common source file extensions
+   - Scanner now detects source files and `src/`-like directories during empty project scan
+   - New `hasSourceFiles` field in `ScanResult` (populated when `isEmpty=true`)
+
+2. **UI Store** (`src/store/uiStore.ts`):
+   - Added `EmptyProjectDialogInfo` interface with folderName, hasSourceFiles, onAnalyze, onStartBlank
+   - Added `emptyProjectDialogOpen`, `emptyProjectDialogInfo` state fields
+   - Added `openEmptyProjectDialog()`, `closeEmptyProjectDialog()` actions
+
+3. **EmptyProjectDialog** (`src/components/shared/EmptyProjectDialog.tsx`):
+   - Two-option dialog: "Analyze Codebase" and "Start Blank"
+   - Highlights recommended option based on `hasSourceFiles`
+   - "Recommended" badge shown on appropriate option
+   - Cancel button and Escape key to dismiss
+   - Focus trap, backdrop click to close, ARIA attributes
+   - Follows existing dialog patterns (ErrorDialog, DeleteConfirmationDialog)
+
+4. **projectStore changes** (`src/store/projectStore.ts`):
+   - `openProjectFolder()` shows EmptyProjectDialog when `isEmpty=true`
+   - New `createBlankArchcFile()` action: creates empty .archc, sets as root, updates manifest, loads into core store
+   - "Analyze Codebase" shows toast (pipeline not yet available)
+
+5. **App integration** (`src/App.tsx`):
+   - EmptyProjectDialog rendered alongside other dialog overlays
+
+#### Tests: 21 new tests (all passing)
+- `test/unit/ui/emptyProjectDialog.test.ts`
+- uiStore state: initial state, open/close, callbacks
+- SOURCE_FILE_EXTENSIONS: TS, JS, Python, Go, Java, Rust, C/C++, Vue/Svelte, non-source exclusions
+- Dialog info shape: required fields, hasSourceFiles variants
+- Option selection: analyze callback, blank callback, cancel behavior
+- Recommended option logic: hasSourceFiles=true → Analyze, hasSourceFiles=false → Blank
+
+#### Verification:
+- TypeScript: 0 errors in src/
+- Vite build: PASS
+- Full test suite: 4987/4987 PASS (0 failures)
+- Browser: App loads, zero console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Commit: 3e321cb
+#### Feature #463 marked passing
+#### Progress: 463/465 features passing (99.6%)
+
+---
+
+## Session: Feature #466 - Fix init.sh to use idempotent dev server script
+Date: 2026-03-08
+Status: PASSING
+
+### Changes:
+- Replaced `npm run dev` (foreground, spawns new process every time) with `npm run dev:ensure` (idempotent, background)
+- Updated banner text: "App is available at" (was "will be"), https URL (was http), "Stop with: npm run dev:stop" (was "Press Ctrl+C")
+- Moved banner AFTER dev:ensure so it only shows once server is confirmed running
+
+### Verification:
+- init.sh end-to-end: installs deps, generates proto types, starts dev server ✓
+- Running init.sh twice: second run detects existing server, exits immediately without spawning duplicate ✓
+- npm run dev:stop: correctly stops the server ✓
+
+### Commit: 25c20ea
+### Feature #466 marked passing
+
+---
+
+## Session: Feature #465 - UI: 'Start Blank' creates and opens a new .archc in the selected folder
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Feature #465 was already fully implemented in projectStore.createBlankArchcFile() from the
+feature #463 session. Tests were written and verified:
+
+1. **createBlankArchcFile()** in projectStore.ts:
+   - Creates empty graph with project name
+   - Encodes to .archc binary (magic bytes, format version, SHA-256 checksum)
+   - Writes file via writeArchcToFolder (File System Access API)
+   - Generates .archproject.json manifest with rootFile set
+   - Updates projectStore state (isEmpty=false, manifest, loadedFiles cache)
+   - Loads graph into coreStore so canvas displays it
+   - Shows success toast with project name
+
+2. **EmptyProjectDialog wiring**:
+   - "Start Blank" button calls closeEmptyProjectDialog() then createBlankArchcFile()
+   - Dialog closes before file creation begins
+
+### Tests: 16 tests (all passing)
+- test/unit/project/startBlank.test.ts
+- Binary format: magic bytes, format version, checksum, decode roundtrip, header size, timestamps
+- Store: file written, manifest updated, state changes, canvas loaded, toast shown, error on no folder
+- Integration: graph name from manifest, default name fallback, button triggers flow, dialog close order
+
+### Verification:
+- Full test suite: 5003/5003 PASS (0 failures)
+- Browser: App loads, zero app console errors
+- No mock data patterns: PASS
+
+#### Commit: d6a36e9
+#### Feature #465 marked passing
+#### Progress: 464/466 features passing (99.6%)
