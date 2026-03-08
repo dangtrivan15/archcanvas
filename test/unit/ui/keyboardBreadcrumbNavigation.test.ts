@@ -249,18 +249,23 @@ describe('Source Code Verification', () => {
     expect(source).toContain('navigationPath.length > 0');
   });
 
-  it('App.tsx shows breadcrumb in status bar', async () => {
+  it('ModeStatusBar shows breadcrumb in status bar', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/App.tsx', 'utf-8');
-    expect(source).toContain('data-testid="breadcrumb"');
+    const source = fs.readFileSync(
+      'src/components/canvas/ModeStatusBar.tsx',
+      'utf-8',
+    );
+    expect(source).toContain('data-testid="mode-breadcrumb"');
     expect(source).toContain('Root');
-    expect(source).toContain("parts.join(' > ')");
     expect(source).toContain('navigationPath.length > 0');
   });
 
-  it('App.tsx imports findNode for breadcrumb name resolution', async () => {
+  it('ModeStatusBar imports findNode for breadcrumb name resolution', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/App.tsx', 'utf-8');
+    const source = fs.readFileSync(
+      'src/components/canvas/ModeStatusBar.tsx',
+      'utf-8',
+    );
     expect(source).toContain("import { findNode } from '@/core/graph/graphEngine'");
     expect(source).toContain("import { useNavigationStore } from '@/store/navigationStore'");
   });
