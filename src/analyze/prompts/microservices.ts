@@ -48,6 +48,9 @@ Guidelines:
 - Always identify the API gateway or load balancer if present.
 - Look for docker-compose.yml or Kubernetes manifests to understand service topology.
 - Check for proto files (gRPC), OpenAPI specs, or GraphQL schemas for service contracts.
+- Be **thorough**: Model per-service internals — handlers, sagas, repositories, and domain logic as child nodes. Also model infrastructure components (service mesh, observability, CI/CD) as dedicated nodes. A typical microservices system produces 15-50+ nodes. Prefer completeness over brevity.
+- Use **parent-child relationships** (parentId) to decompose each service into its internal components (e.g., order-service → order-handler, order-saga, order-repository).
+- Use **meta/canvas-ref** nodes for complex subsystems maintained by separate teams or living in separate repositories. Provide args \`{ repoUrl, ref }\` for cross-repo references or \`{ filePath }\` for local sub-architecture files.
 - Respond ONLY with valid JSON matching the specified schema.`,
 
   analysisSteps: [
@@ -74,13 +77,20 @@ ${MICROSERVICES_FEW_SHOT.output}
 
 ## Microservices-Specific Instructions
 1. **Service boundaries**: Each directory with its own Dockerfile, go.mod, or package.json is likely a separate service.
-2. **API Gateway**: Look for Kong, Nginx, Envoy, AWS API Gateway, or custom gateway configs.
-3. **Message brokers**: Identify Kafka, RabbitMQ, SQS, NATS, or Redis Pub/Sub usage.
-4. **Databases**: Each service may have its own database. Look for migrations, schema files, or ORM configs per service.
-5. **Service discovery**: Check for Consul, etcd, or Kubernetes service definitions.
-6. **Observability**: Identify logging (ELK, Loki), monitoring (Prometheus, Datadog), and tracing (Jaeger, Zipkin) components.
-7. **CI/CD**: Check for pipeline configs that deploy services independently.
-8. **Edge types**: Use SYNC for HTTP/gRPC calls between services, ASYNC for message queue communication, DATA_FLOW for database reads/writes.
+2. **Per-service internals**: Model each service's internal architecture — handlers, domain logic, sagas, repositories — as **children** of the service node using parentId.
+3. **API Gateway**: Look for Kong, Nginx, Envoy, AWS API Gateway, or custom gateway configs.
+4. **Message brokers**: Identify Kafka, RabbitMQ, SQS, NATS, or Redis Pub/Sub usage.
+5. **Databases**: Each service may have its own database. Look for migrations, schema files, or ORM configs per service.
+6. **Service discovery**: Check for Consul, etcd, or Kubernetes service definitions.
+7. **Observability**: Identify logging (ELK, Loki), monitoring (Prometheus, Datadog), and tracing (Jaeger, Zipkin) as dedicated nodes.
+8. **CI/CD**: Check for pipeline configs that deploy services independently.
+9. **Edge types**: Use SYNC for HTTP/gRPC calls between services, ASYNC for message queue communication, DATA_FLOW for database reads/writes.
+10. **Composite subsystems**: Use **meta/canvas-ref** for services owned by separate teams or living in separate git repos. Reference them with \`{ repoUrl, ref }\` args.
+
+## Depth Guidelines
+- Model **all architecturally significant components**, including per-service internals and infrastructure. A typical microservices system has 15-50+ nodes.
+- Use **parentId** to nest internal components under their owning service.
+- Prefer completeness over brevity, but don't create dummy or placeholder nodes.
 
 Respond with a JSON object matching this schema:
 ${STANDARD_RESPONSE_SCHEMA.schemaText}
