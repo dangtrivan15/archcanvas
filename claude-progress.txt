@@ -11484,3 +11484,40 @@ Status: PASSING
 
 ### Commit: ce098c8
 ### Feature #458 marked passing
+
+---
+
+## Session: Feature #459 - Migrate E2E tests to @playwright/test
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #459: Migrate E2E tests to @playwright/test with shared Vite server and browser
+
+#### Assessment:
+The migration was mostly complete from prior sessions. The playwright.config.ts, .spec.ts files,
+and package.json script were already in place. However, 2 of 6 tests were failing:
+
+1. feature-129-suggestion-accept: Timeout because test tried to fill note-author-input without
+   first clicking "Add Note" button to open the inline editor
+2. feature-129-suggestion-dismiss: No suggestion-actions found because AI API key is empty,
+   so no AI suggestions could be generated
+
+#### Fixes Applied:
+1. **Fixed note editor flow**: Added click on "Add Note" button before filling form fields,
+   and added click on "Save" button to submit the note
+2. **Mocked Anthropic API**: Added Playwright `page.route()` interception to mock the
+   Anthropic streaming SSE response, eliminating dependency on a real API key
+3. **Added missing Apply step**: Tests now click the "Apply" button on AI responses to
+   create pending suggestion notes before testing Accept/Dismiss
+
+#### Verification:
+- All 6 E2E tests PASS (was 4/6 before fixes)
+- Single Vite dev server on port 5173 (webServer config with reuseExistingServer)
+- Single Chromium browser instance with isolated contexts per test
+- No hardcoded BASE_URL in any test files
+- package.json test:e2e script uses `playwright test`
+- Old .mjs standalone scripts already cleaned up
+
+#### Commit: c089c7c
+#### Feature #459 marked passing
+#### Progress: 452/459 features passing (98.5%)
