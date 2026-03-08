@@ -434,6 +434,30 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       return false;
     }
 
+    // If a project is open with a root file, delegate to project-level save.
+    // This writes to .archcanvas/main.archc via the directory handle.
+    // Uses lazy getter to avoid circular dependency (projectStore imports coreStore).
+    const projectStore = _getProjectStore();
+    if (projectStore) {
+      const projectState = projectStore.getState();
+      if (projectState.isProjectOpen && projectState.manifest?.rootFile) {
+        set({ isSaving: true });
+        const { setFileOperationLoading, clearFileOperationLoading } =
+          useUIStore.getState();
+        setFileOperationLoading('Saving project...');
+        try {
+          const result = await projectState.saveMainArchc();
+          clearFileOperationLoading();
+          set({ isSaving: false });
+          return result;
+        } catch (err) {
+          clearFileOperationLoading();
+          set({ isSaving: false });
+          return false;
+        }
+      }
+    }
+
     const { graph, fileHandle, fileCreatedAtMs, fileName, exportApi } = get();
     // Capture graph reference to detect concurrent modifications (e.g., undo during save)
     const graphAtSaveStart = graph;
@@ -1367,4 +1391,27 @@ function _getAIStateForSave() {
   const conversations = aiStoreState.conversations;
   if (conversations.length === 0) return undefined;
   return { conversations };
+}
+
+/**
+ * Lazy getter for the project store to avoid circular dependency.
+ * projectStore imports coreStore, so we can't import projectStore statically.
+ * Instead we resolve it lazily on first use (after both modules have initialized).
+ */
+let _projectStoreRef: typeof import('./projectStore') | null = null;
+let _projectStoreResolved = false;
+
+function _getProjectStore() {
+  if (!_projectStoreResolved) {
+    try {
+      // Use require-like dynamic resolution via import cache.
+      // By the time saveFile is called, projectStore module is already loaded.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _projectStoreRef = require('./projectStore');
+    } catch {
+      _projectStoreRef = null;
+    }
+    _projectStoreResolved = true;
+  }
+  return _projectStoreRef ? _projectStoreRef.useProjectStore : null;
 }
