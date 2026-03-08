@@ -11787,3 +11787,31 @@ Status: PASSING
 
 #### Commit: c409e8f
 #### Feature #457 marked passing
+
+---
+
+## Session: Feature #453 - Canvas Narrowing Inset Effect
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Feature #453 was already fully implemented in a previous session but not marked as passing.
+Verified all feature steps are met:
+
+1. **NestingFrame overlay component** (`src/components/canvas/NestingFrame.tsx`): Renders concentric border frames around canvas based on nesting depth
+2. **Background tint from parent node color**: Uses `containerColor` from fileStack entries, falls back to slate-500
+3. **Frame thickness**: Base 4px per level, max total inset ~48px with depth 12 cap (`MAX_DEPTH_CAP = 12`)
+4. **Parent edge indicators on innermost frame**: ParentEdgeIndicators (z-index 40) renders over NestingFrame (z-index 35)
+5. **Animation**: `nestingFrameSlideIn` CSS keyframe animation (300ms ease-out) with staggered delays per frame
+6. **Configurable in settings**: `nestingFrameEnabled` and `nestingFrameThickness` in uiStore with persistence
+7. **Visual regression tests**: 26 tests in `test/unit/canvas/nestingFrame.test.ts` - all passing
+
+### Verification:
+- Unit tests: 26/26 PASS
+- TypeScript: 0 new errors (only pre-existing test file errors)
+- Browser: App loads at root level, NestingFrame correctly hidden (depth 0), zero console errors
+- No mock data patterns: PASS
+- Component properly integrated in Canvas.tsx (imported and rendered)
+
+#### Feature #453 marked passing
+#### Project completion: 460/460 (100%)
