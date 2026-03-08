@@ -11575,3 +11575,48 @@ Date: 2026-03-08
 
 #### Commit: 0479de7
 #### Feature #456 marked passing
+
+---
+
+## Session: Feature #451 - Zoom-Into-Bounds Animation
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #451: Zoom-Into-Bounds Animation - PASSING
+
+#### Implementation (verified existing):
+
+1. **useContainerDiveIn hook** (`src/hooks/useContainerDiveIn.ts`):
+   - `calculateNodeFillViewport()`: Computes viewport to center+zoom node with padding
+   - `diveIn()`: Multi-phase animation: zoom-in (350ms) → crossfade-in (150ms) → file switch → crossfade-out (150ms)
+   - `diveOut()`: Reverse animation: zoom-out-fade → pop file → zoom-out → idle
+   - `prefersReducedMotion` support: instant switch, no animations
+   - Uses React Flow's `setViewport()` with duration for smooth zoom
+   - Uses `TransitionOverlay` for crossfade between canvases
+
+2. **Canvas.tsx integration**:
+   - Listens for `archcanvas:container-dive-in` custom events
+   - Escape key handler for diving out when nested (capture phase)
+   - TransitionOverlay component rendered with phase/color from diveState
+   - Guards: won't trigger during delete dialog, connect mode, placement mode, or text input
+
+3. **TransitionOverlay** (`src/components/canvas/TransitionOverlay.tsx`):
+   - Phases: idle, zoom-in, crossfade-in, crossfade-out, zoom-out-fade, zoom-out
+   - CSS opacity transitions with configurable duration (default 150ms)
+   - Radial gradient + backdrop blur visual effect
+   - Callbacks for phase completion (onCrossfadeInComplete, onCrossfadeOutComplete)
+
+4. **Tests** (`test/unit/hooks/useContainerDiveIn.test.ts`):
+   - 19 tests covering: initial state, diveIn, diveOut, phase sequences,
+     viewport calculation, reduced motion, edge cases
+   - All tests passing
+
+#### Verification:
+- Full test suite: 4877/4877 PASS (0 failures)
+- TypeScript build: PASS (zero errors in src/)
+- Vite production build: PASS
+- No mock data patterns in production code
+- Browser verification: Chrome not available at expected path (environment issue)
+
+#### Feature #451 marked passing
+#### Progress: 451/458 features passing
