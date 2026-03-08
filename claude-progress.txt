@@ -11846,3 +11846,40 @@ Status: PASSING
 #### Commit: 25a2f90
 #### Feature #461 marked passing
 #### Progress: 461/461 features passing (100%)
+
+---
+
+## Session: Feature #462 - Scanner: graceful handling of empty folders (no .archc files)
+Date: 2026-03-08
+Status: PASSING
+
+### Changes:
+
+1. **scanner.ts** (`src/core/project/scanner.ts`):
+   - Added `isEmpty: boolean` field to `ScanResult` interface
+   - Removed the `throw new Error('No .archc files found...')` when `archcFiles.length === 0` and no manifest
+   - Instead returns a placeholder manifest with directory name as project name, empty files/links, empty rootFile
+   - All return paths now include `isEmpty` (true for empty folders, false otherwise)
+   - Updated JSDoc to reflect new behavior
+
+2. **projectStore.ts** (`src/store/projectStore.ts`):
+   - Added `isEmpty: boolean` to `ProjectStoreState` interface
+   - `openProjectFolder()` now passes `result.isEmpty` to state
+   - `closeProject()` resets `isEmpty` to false
+   - Initial state sets `isEmpty: false`
+
+3. **Tests** (`test/unit/core/projectScanner.test.ts`):
+   - Updated existing "should throw" test → now verifies isEmpty=true with correct manifest shape
+   - Added: "should return isEmpty=true for a completely empty folder"
+   - Added: "should return isEmpty=false when .archc files exist"
+   - All 8 tests passing
+
+### Verification:
+- TypeScript: 0 errors in src/
+- Full test suite: 4966/4966 PASS (0 failures)
+- Browser: App loads, zero app-related console errors
+- No mock data patterns: N/A (logic-only change, no UI data)
+
+#### Commit: 9623634
+#### Feature #462 marked passing
+#### Progress: 462/465 features passing (99.4%)
