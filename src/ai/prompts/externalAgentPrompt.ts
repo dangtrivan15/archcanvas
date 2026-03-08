@@ -78,9 +78,12 @@ export function buildExternalAgentPrompt(context: ExternalAgentPromptContext): s
   sections.push(`2. **Initialize** the architecture with \`init_architecture\` (name: "${context.projectName}")`);
   sections.push(`3. **Identify** all architecturally significant components: services, databases, APIs, clients, queues, etc.`);
   sections.push(`4. **Create nodes** using \`add_node\` with appropriate types (e.g., compute/service, storage/database)`);
-  sections.push(`5. **Connect nodes** using \`add_edge\` with correct types (sync, async, data-flow) and labels`);
-  sections.push(`6. **Attach code references** using \`add_code_ref\` for key implementation files`);
-  sections.push(`7. **Review** the graph with \`describe\` and refine as needed`);
+  sections.push(
+    `5. **Identify composite subsystems** — if a subsystem has 5+ components, is a separate bounded context, or is maintained by a different team, use \`meta/canvas-ref\` to reference a separate architecture canvas (only when complexity warrants it)`,
+  );
+  sections.push(`6. **Connect nodes** using \`add_edge\` with correct types (sync, async, data-flow) and labels`);
+  sections.push(`7. **Attach code references** using \`add_code_ref\` for key implementation files`);
+  sections.push(`8. **Review** the graph with \`describe\` and refine as needed`);
 
   // Available tools summary
   sections.push('');
@@ -94,7 +97,9 @@ export function buildExternalAgentPrompt(context: ExternalAgentPromptContext): s
   sections.push('');
   sections.push(`### Create`);
   sections.push(`- \`init_architecture\` — Initialize with name and description`);
-  sections.push(`- \`add_node\` — Create a node (type, displayName, optional parentId)`);
+  sections.push(
+    `- \`add_node\` — Create a node (type, displayName, optional parentId, optional args). Use type "meta/canvas-ref" for composite subsystems with args { filePath } or { repoUrl, ref }`,
+  );
   sections.push(`- \`add_edge\` — Connect nodes (fromNode, toNode, type, label)`);
   sections.push(`- \`add_code_ref\` — Link source file to node (nodeId, path, role)`);
   sections.push(`- \`add_note\` — Add a note to a node or edge`);
@@ -114,7 +119,12 @@ export function buildExternalAgentPrompt(context: ExternalAgentPromptContext): s
   sections.push(`- **Label edges** with protocols (REST, gRPC, Kafka, SQL, etc.)`);
   sections.push(`- Model **data stores** as separate nodes (databases, caches, queues)`);
   sections.push(`- Use **parent-child nesting** for sub-components within a service`);
-  sections.push(`- Be **thorough** — model every meaningful component (typically 15-50+ nodes). Prefer completeness over brevity, but avoid dummy nodes`);
+  sections.push(
+    `- Use **meta/canvas-ref** for subsystems that warrant their own architecture file (5+ components, separate bounded context, different team). Children = internal decomposition in same file; canvas-ref = separate architectural boundary`,
+  );
+  sections.push(
+    `- Be **thorough** — model every meaningful component (typically 15-50+ nodes). Prefer completeness over brevity, but avoid dummy nodes`,
+  );
 
   return sections.join('\n');
 }
