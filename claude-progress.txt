@@ -12445,3 +12445,39 @@ as part of the manifest removal commit. This session completed the work by:
 
 #### Commit: 354bad1
 #### Feature #478 marked passing
+
+---
+
+## Session: Feature #486 - MCP project registry file management
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #486: MCP project registry file management - PASSING
+
+#### Implementation:
+
+1. **src/mcp/registry.ts** - New module for managing ~/.archcanvas/mcp-registry.json:
+   - `McpRegistry` interface: { global, projects, installed_at, version }
+   - `getRegistryDir()` / `getRegistryPath()` - path helpers
+   - `ensureRegistryDir()` - creates ~/.archcanvas/ if needed
+   - `readRegistry()` - reads file with graceful fallback to defaults (never throws)
+   - `writeRegistry()` - atomic write via temp file + rename
+   - `addProject()` - adds project path with deduplication
+   - `removeProject()` - removes project path (no-op if absent)
+
+2. **test/unit/mcp/mcpRegistry.test.ts** - 22 tests:
+   - Path helpers return correct paths
+   - Directory creation (new and existing)
+   - Read: defaults on missing file, existing file, malformed JSON, non-string filtering, missing fields
+   - Write: creates dir and file, formatted JSON, overwrites, no temp file leaks
+   - Add: empty registry, dedup, multiple projects, persistence
+   - Remove: existing path, non-existent path, persistence
+   - Round-trip: full registry survives read/write, multiple add/remove cycles
+
+#### Verification:
+- All 22 tests pass
+- TypeScript: 0 errors
+- No mock data patterns
+
+#### Commit: c8717ce
+#### Feature #486 marked passing

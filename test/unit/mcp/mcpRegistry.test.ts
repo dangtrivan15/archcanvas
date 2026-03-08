@@ -31,6 +31,7 @@ import {
   writeRegistry,
   addProject,
   removeProject,
+  setGlobal,
   type McpRegistry,
 } from '@/mcp/registry';
 
@@ -79,6 +80,7 @@ describe('MCP Registry File Management', () => {
   describe('readRegistry', () => {
     it('returns defaults when file does not exist', async () => {
       const registry = await readRegistry();
+      expect(registry.global).toBe(false);
       expect(registry.projects).toEqual([]);
       expect(registry.version).toBe('0.1.0');
       expect(typeof registry.installed_at).toBe('string');
@@ -271,12 +273,57 @@ describe('MCP Registry File Management', () => {
     });
   });
 
+  // --- setGlobal ---
+
+  describe('setGlobal', () => {
+    it('sets global flag to true', async () => {
+      const result = await setGlobal(true);
+      expect(result.global).toBe(true);
+    });
+
+    it('clears global flag to false', async () => {
+      await setGlobal(true);
+      const result = await setGlobal(false);
+      expect(result.global).toBe(false);
+    });
+
+    it('persists global flag to disk', async () => {
+      await setGlobal(true);
+
+      const content = await readFile(getRegistryPath(), 'utf-8');
+      const parsed = JSON.parse(content);
+      expect(parsed.global).toBe(true);
+    });
+
+    it('preserves existing projects when setting global', async () => {
+      await addProject('/home/user/project');
+      const result = await setGlobal(true);
+
+      expect(result.global).toBe(true);
+      expect(result.projects).toEqual(['/home/user/project']);
+    });
+
+    it('preserves installed_at and version when toggling global', async () => {
+      const original: McpRegistry = {
+        global: false,
+        projects: [],
+        installed_at: '2026-01-01T00:00:00.000Z',
+        version: '0.5.0',
+      };
+      await writeRegistry(original);
+
+      const result = await setGlobal(true);
+      expect(result.installed_at).toBe('2026-01-01T00:00:00.000Z');
+      expect(result.version).toBe('0.5.0');
+    });
+  });
+
   // --- Round-trip ---
 
   describe('round-trip', () => {
-    it('survives read/write round-trip', async () => {
+    it('survives read/write round-trip with all fields including global', async () => {
       const original: McpRegistry = {
-        global: false,
+        global: true,
         projects: ['/project/alpha', '/project/beta', '/project/gamma'],
         installed_at: '2026-06-15T08:30:00.000Z',
         version: '1.2.3',
@@ -285,9 +332,7 @@ describe('MCP Registry File Management', () => {
       await writeRegistry(original);
       const loaded = await readRegistry();
 
-      expect(loaded.projects).toEqual(original.projects);
-      expect(loaded.installed_at).toBe(original.installed_at);
-      expect(loaded.version).toBe(original.version);
+      expect(loaded).toEqual(original);
     });
 
     it('survives multiple add/remove cycles', async () => {
@@ -300,6 +345,19 @@ describe('MCP Registry File Management', () => {
 
       const registry = await readRegistry();
       expect(registry.projects).toEqual(['/c', '/d']);
+    });
+
+    it('survives combined project and global mutations', async () => {
+      await addProject('/first');
+      await setGlobal(true);
+      await addProject('/second');
+      await removeProject('/first');
+      await setGlobal(false);
+      await setGlobal(true);
+
+      const final = await readRegistry();
+      expect(final.global).toBe(true);
+      expect(final.projects).toEqual(['/second']);
     });
   });
 });
