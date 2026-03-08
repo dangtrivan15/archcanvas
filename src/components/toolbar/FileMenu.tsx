@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   File,
   FolderOpen,
+  FolderOpenDot,
   Save,
   Download,
   ChevronDown,
@@ -21,6 +22,7 @@ import {
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useProjectStore } from '@/store/projectStore';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 
 export function FileMenu({ compact = false }: { compact?: boolean }) {
@@ -41,6 +43,8 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
   const autosaveOnBlur = useUIStore((s) => s.autosaveOnBlur);
   const setAutosaveOnBlur = useUIStore((s) => s.setAutosaveOnBlur);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
+  const openProjectFolder = useProjectStore((s) => s.openProjectFolder);
+  const showToast = useUIStore((s) => s.showToast);
   const { formatBinding } = usePlatformModifier();
 
   // Close on click outside
@@ -86,6 +90,20 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
   const handleOpen = async () => {
     setIsOpen(false);
     await openFile();
+  };
+
+  const handleOpenProject = async () => {
+    setIsOpen(false);
+    try {
+      await openProjectFolder();
+      showToast('Project folder opened');
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('browser does not support')) {
+        showToast(err.message);
+      } else if (err instanceof Error) {
+        showToast(`Failed to open project: ${err.message}`);
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -153,6 +171,15 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
             <span className="ml-auto text-xs text-muted-foreground">
               {formatBinding('mod+o')}
             </span>
+          </button>
+          <button
+            onClick={handleOpenProject}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted transition-colors text-left touch-target-row"
+            role="menuitem"
+            data-testid="open-project-folder-button"
+          >
+            <FolderOpenDot className="w-4 h-4" />
+            <span>Open Project Folder...</span>
           </button>
           <div className="h-px bg-border my-1" />
           <button

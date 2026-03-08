@@ -42,5 +42,8 @@ export type { PencilStoreState, PencilTilt } from './pencilStore';
 export { useAnnotationStore, ANNOTATION_COLORS } from './annotationStore';
 export type { AnnotationStoreState } from './annotationStore';
 
+export { useProjectStore } from './projectStore';
+export type { ProjectStoreState, LoadedFileEntry } from './projectStore';
+
 // Centralized selectors for granular subscriptions
 export * from './selectors';
