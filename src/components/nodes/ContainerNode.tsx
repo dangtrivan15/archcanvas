@@ -4,15 +4,18 @@
  * Represents a child .archc file as a visually distinct container on the parent canvas.
  * Features:
  * - Layered/nested visual treatment with rounded border and layered shadow
- * - Child file name display
- * - Node count badge showing how many nodes the child canvas contains
- * - "Dive in" affordance icon indicating the node can be opened
+ * - Live miniature SVG preview of the child graph (non-interactive)
+ * - Lazy-loaded child graph data via Cross-File Loader Service
+ * - Skeleton loading placeholder while child graph is loading
+ * - LOD fallback: colored rectangle + node count badge at low zoom
+ * - Entire preview surface is clickable to trigger dive-in animation
+ * - Child file name display with node count badge
  * - Support for refSource pattern 'file://./relative-path.archc'
  *
  * Maps to: meta/canvas-ref
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 import {
@@ -22,14 +25,24 @@ import {
   colorGlowShadow,
 } from '@/utils/nodeColors';
 import { useInlineEdit } from '@/hooks/useInlineEdit';
+import { useChildGraph } from '@/hooks/useChildGraph';
+import { useCanvasStore } from '@/store/canvasStore';
 import { iconMap, DefaultNodeIcon } from './iconMap';
 import { NodeIconBadge } from './NodeIconBadge';
 import { NodeBadges } from './NodeBadges';
 import { GenericPortHandles } from './NodePortHandles';
+import { MiniCanvasPreview } from './MiniCanvasPreview';
 import { FolderOpen, ChevronRight, Layers } from 'lucide-react';
 
 /** Default container color - a teal/cyan tone for canvas references */
 const CONTAINER_DEFAULT_COLOR = '#0EA5E9';
+
+/** Preview area dimensions */
+const PREVIEW_WIDTH = 260;
+const PREVIEW_HEIGHT = 120;
+
+/** Below this parent zoom level, replace full preview with LOD fallback */
+const LOD_ZOOM_THRESHOLD = 0.35;
 
 /**
  * Extract a display-friendly file name from a refSource or filePath arg.
@@ -46,6 +59,67 @@ function extractFileName(refSource?: string, filePathArg?: string): string {
   return basename.replace(/\.archc$/, '') || 'Untitled Canvas';
 }
 
+/**
+ * Loading skeleton placeholder shown while child graph is being loaded.
+ */
+function PreviewSkeleton({ width, height, color }: { width: number; height: number; color: string }) {
+  return (
+    <div
+      className="flex items-center justify-center rounded-md animate-pulse"
+      style={{
+        width,
+        height,
+        backgroundColor: `${color}10`,
+        border: `1px dashed ${color}30`,
+      }}
+      data-testid="preview-skeleton"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <Layers className="w-5 h-5" style={{ color: `${color}50` }} />
+        <span className="text-[9px] text-muted-foreground opacity-50">Loading preview…</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * LOD (Level of Detail) fallback for low zoom levels.
+ * Shows a simple colored rectangle with a node count badge.
+ */
+function LodPreviewFallback({
+  width,
+  height,
+  color,
+  nodeCount,
+}: {
+  width: number;
+  height: number;
+  color: string;
+  nodeCount: number;
+}) {
+  return (
+    <div
+      className="flex items-center justify-center rounded-md"
+      style={{
+        width,
+        height,
+        backgroundColor: `${color}18`,
+        border: `1px solid ${color}30`,
+      }}
+      data-testid="preview-lod-fallback"
+    >
+      {nodeCount > 0 && (
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{ backgroundColor: `${color}25`, color }}
+        >
+          {nodeCount} node{nodeCount !== 1 ? 's' : ''}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
   const nodeData: CanvasNodeData = data;
   const Icon = iconMap[nodeData.icon] ?? DefaultNodeIcon;
@@ -54,6 +128,15 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
   const outboundPorts = nodeData.ports?.outbound ?? [];
 
   const inlineEdit = useInlineEdit(nodeData.archNodeId, nodeData.displayName);
+
+  // Load child graph lazily for the mini-preview
+  const { graph: childGraph, loading: childLoading } = useChildGraph(
+    nodeData.refSource,
+    nodeData.args?.filePath as string | undefined,
+  );
+
+  // Get parent canvas zoom for LOD decision
+  const parentZoom = useCanvasStore((s) => s.viewport.zoom);
 
   // Container nodes get a distinctive color
   const effectiveColor = useMemo(
@@ -67,8 +150,22 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
     [nodeData.refSource, nodeData.args?.filePath],
   );
 
-  // Node count from args
-  const nodeCount = (nodeData.args?.nodeCount as number) || 0;
+  // Node count: from loaded graph if available, otherwise from args
+  const nodeCount = childGraph ? childGraph.nodes.length : ((nodeData.args?.nodeCount as number) || 0);
+
+  // Determine if we should show LOD fallback vs full preview
+  const isLodMode = parentZoom < LOD_ZOOM_THRESHOLD;
+
+  // Click handler for dive-in (the entire preview surface triggers navigation)
+  const handleDiveIn = useCallback(() => {
+    // Dispatch a custom event that Canvas.tsx can listen for
+    // This is the same pattern used by other node interactions
+    const event = new CustomEvent('archcanvas:container-dive-in', {
+      detail: { nodeId: nodeData.archNodeId, refSource: nodeData.refSource },
+      bubbles: true,
+    });
+    document.dispatchEvent(event);
+  }, [nodeData.archNodeId, nodeData.refSource]);
 
   // Style computations
   const headerBgStyle = useMemo(
@@ -187,7 +284,7 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
         </div>
       </div>
 
-      {/* Container body - shows nested canvas info */}
+      {/* Container body - shows nested canvas info + preview */}
       <div className="px-3 py-2.5" data-testid="container-body">
         {/* File reference */}
         <div
@@ -213,7 +310,55 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
           </div>
         )}
 
-        {/* Dive-in affordance */}
+        {/* Live Mini-Preview or LOD Fallback — entire area is clickable for dive-in */}
+        <div
+          className="mb-2 cursor-pointer rounded-md overflow-hidden"
+          style={{ border: `1px solid ${effectiveColor}20` }}
+          onClick={handleDiveIn}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleDiveIn();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Open ${childFileName} canvas`}
+          title="Click to dive into nested canvas"
+          data-testid="container-preview-area"
+        >
+          {isLodMode ? (
+            <LodPreviewFallback
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              color={effectiveColor}
+              nodeCount={nodeCount}
+            />
+          ) : childLoading ? (
+            <PreviewSkeleton
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              color={effectiveColor}
+            />
+          ) : childGraph && childGraph.nodes.length > 0 ? (
+            <MiniCanvasPreview
+              nodes={childGraph.nodes}
+              edges={childGraph.edges}
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              showLabels={parentZoom > 0.6}
+            />
+          ) : (
+            <LodPreviewFallback
+              width={PREVIEW_WIDTH}
+              height={PREVIEW_HEIGHT}
+              color={effectiveColor}
+              nodeCount={nodeCount}
+            />
+          )}
+        </div>
+
+        {/* Dive-in affordance button */}
         <div
           className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors"
           style={{
@@ -221,6 +366,7 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
             color: effectiveColor,
             border: `1px solid ${effectiveColor}30`,
           }}
+          onClick={handleDiveIn}
           data-testid="container-dive-in"
           title="Open nested canvas"
         >

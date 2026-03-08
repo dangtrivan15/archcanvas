@@ -61,6 +61,9 @@ import { usePencilInput } from '@/hooks/usePencilInput';
 import { useStageManagerResize } from '@/hooks/useStageManagerResize';
 import { AnnotationOverlay } from '@/components/canvas/AnnotationOverlay';
 import { AnnotationToolbar } from '@/components/canvas/AnnotationToolbar';
+import { TransitionOverlay } from '@/components/canvas/TransitionOverlay';
+import { useContainerDiveIn } from '@/hooks/useContainerDiveIn';
+import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 
 export function Canvas() {
   return (
@@ -132,6 +135,10 @@ function CanvasInner() {
   const viewportZoom = useCanvasStore((s) => s.viewport.zoom);
   const nodeCountWarningShownRef = useRef(false);
 
+  // Container dive-in/out animation (nested canvas navigation)
+  const [diveState, diveActions] = useContainerDiveIn();
+  const nestedDepth = useNestedCanvasStore((s) => s.fileStack.length);
+
   // File drag & drop
   const loadFromDroppedFile = useCoreStore((s) => s.loadFromDroppedFile);
   const [isDragOverWithFiles, setIsDragOverWithFiles] = useState(false);
@@ -201,6 +208,41 @@ function CanvasInner() {
   // Use local state for React Flow, synced from the store
   const [rfNodes, setRfNodes] = useState<CanvasNode[]>(rendered.nodes);
   const [rfEdges, setRfEdges] = useState<CanvasEdge[]>(rendered.edges);
+
+  // Listen for container dive-in events (dispatched by ContainerNode)
+  useEffect(() => {
+    const handleDiveIn = (event: Event) => {
+      const { nodeId, refSource } = (event as CustomEvent).detail ?? {};
+      if (nodeId && refSource) {
+        diveActions.diveIn(nodeId, refSource, rfNodes, perf.prefersReducedMotion);
+      }
+    };
+    document.addEventListener('archcanvas:container-dive-in', handleDiveIn);
+    return () => document.removeEventListener('archcanvas:container-dive-in', handleDiveIn);
+  }, [diveActions, rfNodes, perf.prefersReducedMotion]);
+
+  // Escape key handler for diving out of nested canvas
+  useEffect(() => {
+    const handleEscapeDiveOut = (e: KeyboardEvent) => {
+      // Only handle Escape when we're nested and not in another modal/dialog
+      if (
+        e.key === 'Escape' &&
+        nestedDepth > 0 &&
+        !diveState.isAnimating &&
+        !deleteDialogOpen &&
+        !connectStep &&
+        !placementMode &&
+        !isActiveElementTextInput()
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        diveActions.diveOut(perf.prefersReducedMotion);
+      }
+    };
+    // Use capture phase so we can intercept before other Escape handlers
+    document.addEventListener('keydown', handleEscapeDiveOut, true);
+    return () => document.removeEventListener('keydown', handleEscapeDiveOut, true);
+  }, [nestedDepth, diveState.isAnimating, diveActions, perf.prefersReducedMotion, deleteDialogOpen, connectStep, placementMode]);
 
   // Monitor node count for performance warnings
   useEffect(() => {
@@ -1326,6 +1368,14 @@ function CanvasInner() {
 
       {/* Annotation toolbar — color picker, eraser, undo, clear (visible in drawing mode) */}
       <AnnotationToolbar />
+
+      {/* Transition overlay — crossfade animation for container dive-in/out */}
+      <TransitionOverlay
+        phase={diveState.phase}
+        color={diveState.transitionColor}
+        onCrossfadeInComplete={diveActions.onCrossfadeInComplete}
+        onCrossfadeOutComplete={diveActions.onCrossfadeOutComplete}
+      />
     </div>
   );
 }

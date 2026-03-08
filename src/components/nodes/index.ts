@@ -20,3 +20,4 @@ export {
 export { NodeIconBadge } from './NodeIconBadge';
 export { NodeArgsTable } from './NodeArgsTable';
 export { NodeBadges } from './NodeBadges';
+export { MiniCanvasPreview, type MiniCanvasPreviewProps } from './MiniCanvasPreview';
