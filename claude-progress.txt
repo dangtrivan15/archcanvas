@@ -12332,3 +12332,49 @@ SESSION: 2026-03-08 - Feature #479
 
 #### Commit: c9465a8
 #### Feature #479 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #472
+==================================================
+
+## What was accomplished:
+- Implemented Feature #472: Save child .archc files on modification
+
+### Key changes:
+
+1. **projectStore.ts** — Added `saveChildArchc(filePath)` action:
+   - Serializes current graph to protobuf binary (magic bytes + checksum)
+   - Writes to .archcanvas/{filePath} via directory handle
+   - Updates loadedFiles cache
+   - Clears isDirty on success
+   - Child files don't include canvas state or AI state (graph only)
+   - Full error handling (permission denied, disk full, generic errors)
+
+2. **coreStore.ts** — Modified `saveFile()`:
+   - Checks `nestedCanvasStore.activeFilePath` to determine if inside nested canvas
+   - Delegates to `saveChildArchc(activeFilePath)` when nested, `saveMainArchc()` when at root
+   - Dynamic import of nestedCanvasStore avoids circular dependency
+
+3. **useContainerDiveIn.ts** — Added auto-save on dive-out:
+   - New `autoSaveChildIfDirty()` helper runs before `popFile()` on dive-out
+   - Works for both animated and reduced-motion paths
+   - Save failures don't block navigation (logged as warning)
+
+4. **test/unit/project/saveChildArchc.test.ts** — 16 new tests:
+   - Successful save: writes binary, magic bytes, decodable, isDirty clear, cache update
+   - No canvas/AI state in child files
+   - Error handling: no project, permission denied, disk full, generic errors
+   - Dirty state tracking: graph change during save detection
+   - activeFilePath tracking via nestedCanvasStore push/pop
+
+5. **test/unit/hooks/useContainerDiveIn.test.ts** — Updated 3 tests:
+   - Made dive-out tests async to handle auto-save promise
+   - Added coreStore mock for isDirty check
+
+### Verification:
+- 51 tests pass (16 new + 35 updated, 0 regressions)
+- Full unit test suite: 5079/5081 pass (2 pre-existing failures in loadMainArchc)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: N/A (file save is a write operation)
+
+#### Feature #472 marked passing
