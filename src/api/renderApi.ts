@@ -66,10 +66,16 @@ export class RenderApi {
     // Note count excludes pending suggestions (they have their own badge)
     const regularNoteCount = node.notes.length - pendingSuggestionCount;
 
-    // Determine component type - ref nodes get 'ref' type, others based on shape metadata or namespace
-    const nodeType = node.refSource
-      ? 'ref'
-      : this.getNodeComponentType(node.type, nodeDef?.metadata.shape);
+    // Determine component type:
+    // - .archc refSource nodes get 'container' type (nested canvas)
+    // - Other refSource nodes get 'ref' type
+    // - Others based on shape metadata or namespace
+    const isArchcRef = node.refSource?.endsWith('.archc') ?? false;
+    const nodeType = isArchcRef
+      ? 'container'
+      : node.refSource
+        ? 'ref'
+        : this.getNodeComponentType(node.type, nodeDef?.metadata.shape);
 
     const data: CanvasNodeData = {
       archNodeId: node.id,
@@ -136,6 +142,7 @@ export class RenderApi {
     stadium: 'stadium',
     document: 'document',
     badge: 'generic',
+    container: 'container',
   };
 
   /**
@@ -181,6 +188,11 @@ export class RenderApi {
       case 'observability': {
         const name = type.split('/')[1];
         if (name === 'logging') return 'logging';
+        return 'generic';
+      }
+      case 'meta': {
+        const name = type.split('/')[1];
+        if (name === 'canvas-ref') return 'container';
         return 'generic';
       }
       default:

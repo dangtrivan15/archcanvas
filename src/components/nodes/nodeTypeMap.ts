@@ -10,6 +10,7 @@ import { ParallelogramNode } from './ParallelogramNode';
 import { CloudNode } from './CloudNode';
 import { StadiumNode } from './StadiumNode';
 import { DocumentNode } from './DocumentNode';
+import { ContainerNode } from './ContainerNode';
 
 export const nodeTypes = {
   generic: GenericNode,
@@ -29,4 +30,5 @@ export const nodeTypes = {
   stadium: StadiumNode,
   document: DocumentNode,
   ref: GenericNode,
+  container: ContainerNode,
 };

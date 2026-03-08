@@ -55,6 +55,7 @@ export const nodeDefShapeSchema = z.enum([
   'stadium',
   'document',
   'badge',
+  'container',
 ]);
 
 export const nodeDefMetadataSchema = z.object({

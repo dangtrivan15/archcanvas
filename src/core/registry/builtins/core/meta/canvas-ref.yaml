@@ -1,0 +1,47 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: canvas-ref
+  namespace: meta
+  version: "1.0.0"
+  displayName: Architecture Canvas
+  description: A container node representing a child .archc file as a nested canvas. Shows the child file's name and a visual affordance indicating it can be opened to reveal its internal architecture.
+  icon: FolderOpen
+  tags:
+    - meta
+    - canvas
+    - nested
+    - container
+  shape: container
+spec:
+  args:
+    - name: filePath
+      type: string
+      required: true
+      description: Relative path to the child .archc file (e.g., ./child-system.archc)
+      default: ""
+    - name: nodeCount
+      type: number
+      description: Number of nodes in the referenced canvas
+      default: 0
+    - name: description
+      type: string
+      description: Short description of the child architecture
+      default: ""
+  ports:
+    - name: in
+      direction: inbound
+      protocol:
+        - archc-ref
+      description: Incoming architecture references
+    - name: out
+      direction: outbound
+      protocol:
+        - archc-ref
+      description: Outgoing architecture references
+  ai:
+    context: "This is a container node representing a nested architecture canvas. It references a child .archc file that contains a sub-architecture."
+    reviewHints:
+      - Verify the referenced .archc file exists
+      - Check that the nested architecture is well-defined
+      - Consider the boundary between parent and child architectures
