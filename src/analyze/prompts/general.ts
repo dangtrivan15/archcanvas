@@ -25,6 +25,9 @@ Guidelines:
 - Map each component to the most specific ArchCanvas node type available.
 - Use kebab-case for node IDs (e.g., "user-service", "order-db").
 - Include code references linking nodes to the source files that implement them.
+- Be **thorough**: Model every architecturally significant component — not just top-level services, but internal sub-components, middleware layers, and infrastructure. A typical project produces 15-50+ nodes across multiple levels. Prefer completeness over brevity, but don't create dummy or placeholder nodes.
+- Use **parent-child relationships** (parentId) to decompose complex components into their internal parts (e.g., an API service with route groups, middleware, and handlers as children).
+- Use **meta/canvas-ref** nodes for composite subsystems that warrant their own architecture file — e.g., subsystems with 5+ components, separate bounded contexts, or components maintained by a different team. Provide args \`{ filePath }\` for local references or \`{ repoUrl, ref }\` for remote git repositories.
 - Respond ONLY with valid JSON matching the specified schema. No markdown, no explanations outside the JSON.`,
 
   analysisSteps: [
@@ -49,8 +52,13 @@ Here is an example of the expected output format:
 **Expected Output:**
 ${WEB_APP_FEW_SHOT.output}
 
+## Depth & Thoroughness Guidelines
+- **Model all significant components**, not just top-level ones. Break down services into sub-components (route groups, middleware, handlers) using parentId.
+- A typical analysis produces **15-50+ nodes**. Prefer completeness over brevity.
+- For composite subsystems (5+ components, separate bounded contexts, different teams), use **meta/canvas-ref** to reference a separate architecture canvas.
+
 ## Instructions
-Identify all major architectural components and their relationships in the provided codebase.
+Identify all architecturally significant components and their relationships in the provided codebase.
 Use the node types listed above. Respond with a JSON object matching this schema:
 ${STANDARD_RESPONSE_SCHEMA.schemaText}
 

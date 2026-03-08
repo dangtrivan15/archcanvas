@@ -470,4 +470,112 @@ describe('Prompt Template System', () => {
       expect(uniqueIds.size).toBe(ids.length);
     });
   });
+
+  describe('Depth guidance in legacy templates', () => {
+    it('general template system prompt includes thoroughness guidance', () => {
+      expect(generalTemplate.systemPrompt).toContain('thorough');
+      expect(generalTemplate.systemPrompt).toContain('completeness over brevity');
+    });
+
+    it('general template system prompt includes parent-child guidance', () => {
+      expect(generalTemplate.systemPrompt).toContain('parentId');
+      expect(generalTemplate.systemPrompt).toContain('parent-child');
+    });
+
+    it('general template system prompt includes canvas-ref guidance', () => {
+      expect(generalTemplate.systemPrompt).toContain('meta/canvas-ref');
+    });
+
+    it('general template user prompt includes depth guidelines section', () => {
+      const prompt = generalTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('Depth & Thoroughness Guidelines');
+      expect(prompt).toContain('15-50+ nodes');
+      expect(prompt).toContain('meta/canvas-ref');
+    });
+
+    it('webApp template system prompt includes web-specific depth guidance', () => {
+      expect(webAppTemplate.systemPrompt).toContain('thorough');
+      expect(webAppTemplate.systemPrompt).toContain('route groups');
+      expect(webAppTemplate.systemPrompt).toContain('middleware layers');
+      expect(webAppTemplate.systemPrompt).toContain('parentId');
+    });
+
+    it('webApp template system prompt includes canvas-ref guidance', () => {
+      expect(webAppTemplate.systemPrompt).toContain('meta/canvas-ref');
+    });
+
+    it('webApp template user prompt includes depth guidelines section', () => {
+      const prompt = webAppTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('Depth Guidelines');
+      expect(prompt).toContain('15-50+ nodes');
+      expect(prompt).toContain('parentId');
+    });
+
+    it('webApp template user prompt mentions modeling children under backend', () => {
+      const prompt = webAppTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('children');
+      expect(prompt).toContain('route groups');
+    });
+
+    it('microservices template system prompt includes per-service internal guidance', () => {
+      expect(microservicesTemplate.systemPrompt).toContain('thorough');
+      expect(microservicesTemplate.systemPrompt).toContain('per-service internals');
+      expect(microservicesTemplate.systemPrompt).toContain('parentId');
+    });
+
+    it('microservices template system prompt includes canvas-ref guidance', () => {
+      expect(microservicesTemplate.systemPrompt).toContain('meta/canvas-ref');
+    });
+
+    it('microservices template user prompt includes depth guidelines section', () => {
+      const prompt = microservicesTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('Depth Guidelines');
+      expect(prompt).toContain('15-50+ nodes');
+      expect(prompt).toContain('parentId');
+    });
+
+    it('microservices template user prompt mentions per-service internals', () => {
+      const prompt = microservicesTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('Per-service internals');
+      expect(prompt).toContain('children');
+    });
+
+    it('dataPipeline template system prompt includes pipeline stage depth guidance', () => {
+      expect(dataPipelineTemplate.systemPrompt).toContain('thorough');
+      expect(dataPipelineTemplate.systemPrompt).toContain('individual pipeline stages');
+      expect(dataPipelineTemplate.systemPrompt).toContain('parentId');
+    });
+
+    it('dataPipeline template system prompt includes canvas-ref guidance', () => {
+      expect(dataPipelineTemplate.systemPrompt).toContain('meta/canvas-ref');
+    });
+
+    it('dataPipeline template user prompt includes depth guidelines section', () => {
+      const prompt = dataPipelineTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('Depth Guidelines');
+      expect(prompt).toContain('15-50+ nodes');
+      expect(prompt).toContain('parentId');
+    });
+
+    it('dataPipeline template user prompt mentions modeling individual stages', () => {
+      const prompt = dataPipelineTemplate.analysisSteps[0].userPrompt;
+      expect(prompt).toContain('individual stages');
+      expect(prompt).toContain('children');
+    });
+
+    it('all templates include composite node guidance where appropriate', () => {
+      const templates = [
+        generalTemplate,
+        webAppTemplate,
+        microservicesTemplate,
+        dataPipelineTemplate,
+      ];
+      for (const t of templates) {
+        expect(t.systemPrompt).toContain('meta/canvas-ref');
+        expect(t.systemPrompt).toContain('parentId');
+        const prompt = t.analysisSteps[0].userPrompt;
+        expect(prompt).toContain('meta/canvas-ref');
+      }
+    });
+  });
 });
