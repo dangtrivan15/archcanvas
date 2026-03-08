@@ -16,6 +16,7 @@ import { useProjectStore } from '@/store/projectStore';
 import {
   browserCacheLookup,
   browserCacheWrite,
+  browserCacheInvalidate,
 } from '@/core/git/repoCacheBrowser';
 
 /** Source type indicator for the loaded graph. */
@@ -30,6 +31,8 @@ export interface ChildGraphState {
   error: string | null;
   /** Whether this is a local or git-referenced graph */
   sourceType: GraphSourceType;
+  /** Whether the graph is being refreshed after an arg change (has stale data) */
+  refreshing: boolean;
 }
 
 /**
@@ -90,6 +93,7 @@ export function useChildGraph(
     loading: false,
     error: null,
     sourceType: null,
+    refreshing: false,
   });
 
   const isProjectOpen = useProjectStore((s) => s.isProjectOpen);
@@ -98,6 +102,9 @@ export function useChildGraph(
 
   // Track the current request to avoid stale updates
   const requestIdRef = useRef(0);
+
+  // Track previous repoUrl and ref to detect changes and invalidate old cache
+  const prevRepoRef = useRef<{ repoUrl?: string; ref?: string }>({});
 
   const filePath = extractFilePath(refSource, filePathArg as string | undefined);
   const hasRepoUrl = Boolean(repoUrlArg && repoUrlArg.trim());
@@ -108,6 +115,22 @@ export function useChildGraph(
       const repoUrl = repoUrlArg.trim();
       const ref = (refArg || 'main').trim();
 
+      // Detect if repoUrl or ref changed from previous render
+      const prev = prevRepoRef.current;
+      const prevRepoUrl = prev.repoUrl?.trim();
+      const prevRef = (prev.ref || 'main').trim();
+      const argsChanged =
+        prevRepoUrl !== undefined &&
+        (prevRepoUrl !== repoUrl || prevRef !== ref);
+
+      // Invalidate old cache entry when args change
+      if (argsChanged && prevRepoUrl) {
+        browserCacheInvalidate(prevRepoUrl, prevRef);
+      }
+
+      // Update previous values for next comparison
+      prevRepoRef.current = { repoUrl: repoUrlArg, ref: refArg };
+
       // Check browser cache first
       const cacheResult = browserCacheLookup(repoUrl, ref);
       if (cacheResult.hit && cacheResult.entry) {
@@ -116,13 +139,32 @@ export function useChildGraph(
           loading: false,
           error: null,
           sourceType: 'git',
+          refreshing: false,
         });
         return;
       }
 
       // Cache miss: fetch from remote
       const requestId = ++requestIdRef.current;
-      setState((prev) => ({ ...prev, loading: true, error: null, sourceType: 'git' }));
+
+      // If args changed and we have a previous graph, show refreshing state
+      // (keep displaying stale data while fetching new)
+      if (argsChanged) {
+        setState((prev) => ({
+          ...prev,
+          refreshing: true,
+          error: null,
+          sourceType: 'git',
+        }));
+      } else {
+        setState((prev) => ({
+          ...prev,
+          loading: true,
+          error: null,
+          sourceType: 'git',
+          refreshing: false,
+        }));
+      }
 
       // Dynamic import to avoid bundling repoFetcher in main chunk
       import('@/core/git/repoFetcher')
@@ -136,6 +178,7 @@ export function useChildGraph(
               loading: false,
               error: null,
               sourceType: 'git',
+              refreshing: false,
             });
           }
         })
@@ -147,6 +190,7 @@ export function useChildGraph(
               loading: false,
               error: message,
               sourceType: 'git',
+              refreshing: false,
             });
           }
         });
@@ -156,26 +200,26 @@ export function useChildGraph(
 
     // ── Local file path ──
     if (!filePath || !isProjectOpen) {
-      setState({ graph: null, loading: false, error: null, sourceType: null });
+      setState({ graph: null, loading: false, error: null, sourceType: null, refreshing: false });
       return;
     }
 
     // Check if already cached
     const cached = getLoadedFile(filePath);
     if (cached) {
-      setState({ graph: cached.graph, loading: false, error: null, sourceType: 'local' });
+      setState({ graph: cached.graph, loading: false, error: null, sourceType: 'local', refreshing: false });
       return;
     }
 
     // Start loading
     const requestId = ++requestIdRef.current;
-    setState((prev) => ({ ...prev, loading: true, error: null, sourceType: 'local' }));
+    setState((prev) => ({ ...prev, loading: true, error: null, sourceType: 'local', refreshing: false }));
 
     loadFile(filePath)
       .then((entry) => {
         // Only update if this is still the latest request
         if (requestIdRef.current === requestId) {
-          setState({ graph: entry.graph, loading: false, error: null, sourceType: 'local' });
+          setState({ graph: entry.graph, loading: false, error: null, sourceType: 'local', refreshing: false });
         }
       })
       .catch((err) => {
@@ -185,6 +229,7 @@ export function useChildGraph(
             loading: false,
             error: err instanceof Error ? err.message : 'Failed to load child graph',
             sourceType: 'local',
+            refreshing: false,
           });
         }
       });

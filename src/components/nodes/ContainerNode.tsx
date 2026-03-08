@@ -180,7 +180,7 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
   const isGitRef = Boolean(repoUrlArg && repoUrlArg.trim());
 
   // Load child graph lazily for the mini-preview
-  const { graph: childGraph, loading: childLoading, error: childError, sourceType } = useChildGraph(
+  const { graph: childGraph, loading: childLoading, error: childError, sourceType, refreshing: childRefreshing } = useChildGraph(
     nodeData.refSource,
     filePathArg,
     repoUrlArg,
@@ -418,7 +418,7 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
 
         {/* Live Mini-Preview or LOD Fallback — entire area is clickable for dive-in */}
         <div
-          className="mb-2 cursor-pointer rounded-md overflow-hidden"
+          className="mb-2 cursor-pointer rounded-md overflow-hidden relative"
           style={{ border: `1px solid ${effectiveColor}20` }}
           onClick={handleDiveIn}
           onKeyDown={(e) => {
@@ -433,6 +433,21 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
           title="Click to dive into nested canvas"
           data-testid="container-preview-area"
         >
+          {/* Refreshing overlay — shown when re-fetching after arg change */}
+          {childRefreshing && (
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-md"
+              style={{ backgroundColor: 'rgba(255,255,255,0.7)' }}
+              data-testid="preview-refreshing"
+            >
+              <div className="flex flex-col items-center gap-1">
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: effectiveColor }} />
+                <span className="text-[9px] font-medium" style={{ color: effectiveColor }}>
+                  Refreshing…
+                </span>
+              </div>
+            </div>
+          )}
           {isLodMode ? (
             <LodPreviewFallback
               width={PREVIEW_WIDTH}
