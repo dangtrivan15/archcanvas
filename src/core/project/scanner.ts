@@ -12,6 +12,31 @@ import { PROJECT_MANIFEST_FILENAME } from '@/types/project';
 import { parseManifest, createManifest, serializeManifest } from './manifest';
 
 /**
+ * Common source file extensions to detect whether a folder contains code.
+ */
+export const SOURCE_FILE_EXTENSIONS = new Set([
+  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
+  '.py', '.pyw',
+  '.go',
+  '.java', '.kt', '.kts',
+  '.rs',
+  '.c', '.cpp', '.cc', '.cxx', '.h', '.hpp',
+  '.cs',
+  '.rb',
+  '.php',
+  '.swift',
+  '.scala',
+  '.dart',
+  '.vue', '.svelte',
+  '.lua',
+  '.zig',
+  '.ex', '.exs',
+  '.hs',
+  '.ml', '.mli',
+  '.clj', '.cljs',
+]);
+
+/**
  * Result of scanning a project folder.
  */
 export interface ScanResult {
@@ -23,6 +48,8 @@ export interface ScanResult {
   manifestExisted: boolean;
   /** Whether the folder contained no .archc files and no manifest (empty project). */
   isEmpty: boolean;
+  /** Whether the folder contains recognizable source files (only populated when isEmpty=true). */
+  hasSourceFiles: boolean;
 }
 
 /**
@@ -40,6 +67,7 @@ export async function scanProjectFolder(
 ): Promise<ScanResult> {
   const archcFiles: string[] = [];
   let manifestHandle: FileSystemFileHandle | null = null;
+  let hasSourceFiles = false;
 
   // Iterate directory entries (non-recursive, top-level only)
   for await (const entry of dirHandle.values()) {
@@ -48,6 +76,21 @@ export async function scanProjectFolder(
         manifestHandle = entry;
       } else if (entry.name.endsWith('.archc')) {
         archcFiles.push(entry.name);
+      } else {
+        // Check for source file extensions
+        const dotIndex = entry.name.lastIndexOf('.');
+        if (dotIndex > 0) {
+          const ext = entry.name.slice(dotIndex).toLowerCase();
+          if (SOURCE_FILE_EXTENSIONS.has(ext)) {
+            hasSourceFiles = true;
+          }
+        }
+      }
+    } else if (entry.kind === 'directory') {
+      // Common source directories indicate a code project
+      const srcDirs = new Set(['src', 'lib', 'app', 'pkg', 'cmd', 'internal', 'components', 'pages']);
+      if (srcDirs.has(entry.name.toLowerCase())) {
+        hasSourceFiles = true;
       }
     }
   }
@@ -63,6 +106,7 @@ export async function scanProjectFolder(
       directoryHandle: dirHandle,
       manifestExisted: true,
       isEmpty: false,
+      hasSourceFiles: false,
     };
   }
 
@@ -82,6 +126,7 @@ export async function scanProjectFolder(
       directoryHandle: dirHandle,
       manifestExisted: false,
       isEmpty: true,
+      hasSourceFiles,
     };
   }
 
@@ -95,6 +140,7 @@ export async function scanProjectFolder(
     directoryHandle: dirHandle,
     manifestExisted: false,
     isEmpty: false,
+    hasSourceFiles: false,
   };
 }
 

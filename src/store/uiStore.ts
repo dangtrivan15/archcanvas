@@ -194,6 +194,17 @@ export interface IntegrityWarningDialogInfo {
   onProceed: () => void;
 }
 
+export interface EmptyProjectDialogInfo {
+  /** Name of the project folder */
+  folderName: string;
+  /** Whether the folder contains recognizable source files */
+  hasSourceFiles: boolean;
+  /** Callback when user chooses "Analyze Codebase" */
+  onAnalyze: () => void;
+  /** Callback when user chooses "Start Blank" */
+  onStartBlank: () => void;
+}
+
 /** Default and min/max panel widths in pixels */
 export const LEFT_PANEL_MIN_WIDTH = 180;
 export const LEFT_PANEL_MAX_WIDTH = 400;
@@ -304,6 +315,10 @@ export interface UIStoreState {
 
   // Settings dialog (API key, preferences)
   settingsDialogOpen: boolean;
+
+  // Empty project onboarding dialog
+  emptyProjectDialogOpen: boolean;
+  emptyProjectDialogInfo: EmptyProjectDialogInfo | null;
 
   // Template picker dialog
   templatePickerOpen: boolean;
@@ -418,6 +433,10 @@ export interface UIStoreState {
   openSettingsDialog: () => void;
   closeSettingsDialog: () => void;
 
+  // Empty project dialog actions
+  openEmptyProjectDialog: (info: EmptyProjectDialogInfo) => void;
+  closeEmptyProjectDialog: () => void;
+
   // Template picker actions
   openTemplatePicker: () => void;
   closeTemplatePicker: () => void;
@@ -503,6 +522,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   shortcutSettingsOpen: false,
 
   settingsDialogOpen: false,
+
+  emptyProjectDialogOpen: false,
+  emptyProjectDialogInfo: null,
 
   templatePickerOpen: false,
   templateGalleryOpen: false,
@@ -687,6 +709,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
   openSettingsDialog: () => set({ settingsDialogOpen: true }),
 
   closeSettingsDialog: () => set({ settingsDialogOpen: false }),
+
+  openEmptyProjectDialog: (info) =>
+    set({ emptyProjectDialogOpen: true, emptyProjectDialogInfo: info }),
+
+  closeEmptyProjectDialog: () =>
+    set({ emptyProjectDialogOpen: false, emptyProjectDialogInfo: null }),
 
   openTemplatePicker: () => set({ templatePickerOpen: true }),
 
