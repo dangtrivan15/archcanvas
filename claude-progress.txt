@@ -12515,3 +12515,43 @@ agent (feature #486, commit c8717ce). This session completed the feature by:
 
 #### Commit: 38214cc
 #### Feature #480 marked passing
+
+---
+
+## Session: Feature #481 - Merge-aware .mcp.json writer
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #481: Merge-aware .mcp.json writer - PASSING
+
+#### Summary:
+Implemented a utility module (`src/mcp/mcpJson.ts`) that writes/merges/removes
+the archcanvas MCP server entry in `.mcp.json` files. Handles all edge cases
+including malformed files, idempotent overwrites, and clean file deletion.
+
+#### New Files:
+
+1. **src/mcp/mcpJson.ts** — Core utility (193 lines):
+   - `buildArchcanvasEntry(archcFilePath)` — builds the server config object
+   - `writeMcpJson(mcpJsonPath, archcFilePath)` — creates/merges archcanvas entry
+   - `removeMcpJson(mcpJsonPath)` — removes archcanvas entry, deletes file if empty
+   - `McpJsonMalformedError` — custom error for malformed files
+   - `ARCHCANVAS_SERVER_KEY` — constant for the server key name
+   - Atomic writes via temp file + rename pattern
+   - Backs up malformed files before overwriting
+
+2. **test/unit/mcp/mcpJson.test.ts** — 21 tests covering all feature steps:
+   - Write: new file creation, merge with existing servers, preserve entries,
+     idempotent overwrite, malformed file backup, parent dir creation
+   - Remove: archcanvas-only key removal, file deletion when empty, preserve
+     other servers, no-op cases, malformed file handling
+   - Round-trip: write+remove cycles, multiple writes idempotency
+
+#### Verification:
+- 21/21 new tests pass
+- 243/243 MCP tests pass (17 test files, 0 regressions)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns in production code
+
+#### Commit: d69a1dd
+#### Feature #481 marked passing
