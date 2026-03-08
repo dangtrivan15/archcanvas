@@ -12680,3 +12680,45 @@ are covered by the existing implementation in src/cli/commands/mcpUninstall.ts a
 - No code changes needed - implementation was already complete
 
 #### Feature #488 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #484
+==================================================
+
+## Feature #484: npm postinstall global MCP registration - PASSING
+
+### Summary:
+Added a postinstall script to package.json that automatically registers the
+archcanvas MCP server in ~/.mcp.json when installed globally via `npm install -g archcanvas`.
+
+### New Files:
+
+1. **scripts/postinstall.mjs** — Postinstall hook script:
+   - Checks `npm_config_global` env var to detect global install
+   - If global: spawns `node dist/cli/index.js mcp install --global` via child_process
+   - If local: exits silently (no-op)
+   - All errors caught and logged as warnings (never blocks npm install)
+   - Provides manual registration instructions on failure
+
+2. **test/unit/cli/postinstall.test.ts** — 13 tests:
+   - package.json config: postinstall script defined, postinstall.mjs in files array
+   - Local install: skips when npm_config_global not set, skips when "false"
+   - Global install: doesn't exit non-zero, prints warning on failure
+   - Script structure: checks env var, try/catch, console.warn, manual instructions,
+     CLI args, dist/cli/index.js reference
+
+### Changes to existing files:
+
+1. **package.json**:
+   - Added `"postinstall": "node scripts/postinstall.mjs"` to scripts
+   - Added `"scripts/postinstall.mjs"` to files array for npm publish
+
+### Verification:
+- 13/13 new tests pass
+- 29/29 existing MCP install/uninstall tests pass (no regressions)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns in production code
+
+#### Commit: bdc9308
+#### Feature #484 marked passing
+#### Progress: 487/488 features passing (99.8%)
