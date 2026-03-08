@@ -12911,3 +12911,69 @@ Added 2 integration tests to cover that scenario.
 #### Commit: de5fb0c
 #### Feature #492 marked passing
 #### Progress: 492/492 features passing (100%)
+
+==================================================
+SESSION: 2026-03-08 - Feature #494
+==================================================
+
+## Feature #494: Sync NODE_TYPE_REGISTRY_TEXT with actual node definitions - PASSING
+
+### Summary:
+Added 5 missing node types to the static NODE_TYPE_REGISTRY_TEXT in shared.ts
+that existed as YAML definitions but were not included in the prompt text.
+
+### Changes to src/analyze/prompts/shared.ts:
+
+1. Added to ### AI section:
+   - ai/agent: An autonomous AI agent with tool use capabilities
+   - ai/rag-pipeline: A Retrieval-Augmented Generation orchestrator
+   - ai/prompt-registry: A versioned prompt/template store for managing and serving prompt templates
+
+2. Added to ### Observability section:
+   - observability/llm-monitor: An LLM-specific observability platform for tracking token usage, latency, and evaluation metrics
+
+3. Added new ### Meta section:
+   - meta/canvas-ref: A container node representing a nested .archc canvas or git repo reference
+
+### Verification:
+- All 32 prompt template tests pass
+- All 35 init architecture prompt tests pass
+- Descriptions match corresponding YAML files in src/core/registry/builtins/core/
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- Registry loads 42 built-in nodedefs
+
+#### Commit: 4b8c964
+#### Feature #494 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #498
+==================================================
+
+## Feature #498: Extend canvas-ref node def to support git repo references - PASSING
+
+### Summary:
+Extended the meta/canvas-ref YAML node definition to support referencing remote
+git repositories in addition to local file paths.
+
+### Changes:
+
+1. **src/core/registry/builtins/core/meta/canvas-ref.yaml**:
+   - Added `repoUrl` arg (type: string, required: false) for git repository URLs
+   - Added `ref` arg (type: string, required: false) for git tag or commit SHA
+   - Changed `filePath` from required: true to required: false (alternative to repoUrl)
+   - Updated description to mention both local file and git repo capabilities
+   - Updated ai.context to explain git repo resolution and main.archc convention
+   - Added 3 new reviewHints for repo accessibility, version pinning, mutual exclusivity
+   - Added "Git Repository Reference" variant with example repoUrl and ref args
+
+2. **test/unit/ui/containerNode.test.ts**:
+   - Updated filePath required assertion from true to false
+
+### Verification:
+- 12/12 containerNode tests pass
+- 1002/1002 core tests pass
+- Browser: App loads with 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns
+
+#### Commit: 5b015ff
+#### Feature #498 marked passing
