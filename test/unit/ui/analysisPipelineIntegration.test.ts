@@ -64,6 +64,7 @@ vi.mock('@/core/project/scanner', () => ({
   readProjectFile: vi.fn(),
   writeArchcToFolder: vi.fn().mockResolvedValue(undefined),
   writeManifestToFolder: vi.fn().mockResolvedValue(undefined),
+  initArchcanvasDir: vi.fn().mockImplementation(async (dirHandle: unknown) => dirHandle),
 }));
 
 vi.mock('@/core/storage/fileIO', () => ({
@@ -242,9 +243,9 @@ describe('Analysis Pipeline Integration', () => {
       expect(writeManifestToFolder).toHaveBeenCalledWith(
         dirHandle,
         expect.objectContaining({
-          rootFile: 'architecture.archc',
+          rootFile: 'main.archc',
           files: expect.arrayContaining([
-            expect.objectContaining({ path: 'architecture.archc' }),
+            expect.objectContaining({ path: 'main.archc' }),
           ]),
         }),
       );
@@ -401,7 +402,7 @@ describe('Analysis Pipeline Integration', () => {
 
       await useProjectStore.getState().runAnalysisPipeline();
 
-      const cached = useProjectStore.getState().loadedFiles.get('architecture.archc');
+      const cached = useProjectStore.getState().loadedFiles.get('main.archc');
       expect(cached).toBeDefined();
       expect(cached?.graph).toEqual(mockResultGraph);
     });

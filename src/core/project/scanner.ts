@@ -1,14 +1,22 @@
 /**
  * Project folder scanner — discovers .archc files and reads/builds manifests.
  *
- * Uses the File System Access API's directory handle to iterate files
- * in a user-selected folder. If an .archproject.json manifest exists,
- * it is read and validated. Otherwise, a manifest is built from the
- * discovered .archc files.
+ * Uses the File System Access API's directory handle to scan a user-selected
+ * folder. Checks for a .archcanvas/ subdirectory:
+ * - If .archcanvas/ exists, scans it for .archc files (main.archc is the root).
+ * - If .archcanvas/ does not exist, returns an empty project result so the UI
+ *   can prompt the user to create a new project.
+ *
+ * For backward compatibility, also detects the legacy .archproject.json manifest
+ * and .archc files at the root level (flat layout).
  */
 
 import type { ProjectManifest } from '@/types/project';
-import { PROJECT_MANIFEST_FILENAME } from '@/types/project';
+import {
+  PROJECT_MANIFEST_FILENAME,
+  ARCHCANVAS_DIR_NAME,
+  ARCHCANVAS_MAIN_FILE,
+} from '@/types/project';
 import { parseManifest, createManifest, serializeManifest } from './manifest';
 
 /**
@@ -42,27 +50,115 @@ export const SOURCE_FILE_EXTENSIONS = new Set([
 export interface ScanResult {
   /** The parsed or generated project manifest. */
   manifest: ProjectManifest;
-  /** The directory handle for the project folder (for reading files). */
+  /** The root directory handle selected by the user. */
   directoryHandle: FileSystemDirectoryHandle;
-  /** Whether the manifest was read from an existing .archproject.json file. */
+  /**
+   * The .archcanvas/ subdirectory handle for file operations.
+   * If present, all .archc reads/writes should use this handle.
+   * Falls back to directoryHandle for legacy flat layouts.
+   */
+  archcanvasHandle: FileSystemDirectoryHandle | null;
+  /** Whether the manifest was read from an existing file. */
   manifestExisted: boolean;
-  /** Whether the folder contained no .archc files and no manifest (empty project). */
+  /** Whether the folder contained no .archc files and no .archcanvas/ dir (empty project). */
   isEmpty: boolean;
   /** Whether the folder contains recognizable source files (only populated when isEmpty=true). */
   hasSourceFiles: boolean;
 }
 
 /**
- * Scan a directory handle for .archc files and read or build a manifest.
+ * Scan a directory handle for an ArchCanvas project.
  *
- * 1. Iterates all entries in the directory.
- * 2. If .archproject.json exists, reads and validates it.
- * 3. Otherwise, collects all .archc file paths and creates a manifest.
+ * Detection order:
+ * 1. Look for .archcanvas/ subdirectory (new convention).
+ * 2. Fall back to .archproject.json manifest (legacy).
+ * 3. Fall back to loose .archc files at root (legacy).
+ * 4. If none found, return isEmpty=true.
  *
  * @param dirHandle - FileSystemDirectoryHandle from showDirectoryPicker()
- * @returns ScanResult with manifest and directory handle (isEmpty=true if no .archc files found)
+ * @returns ScanResult with manifest and directory handles
  */
 export async function scanProjectFolder(
+  dirHandle: FileSystemDirectoryHandle,
+): Promise<ScanResult> {
+  // ── 1. Check for .archcanvas/ subdirectory ───────────────────────
+  let archcanvasHandle: FileSystemDirectoryHandle | null = null;
+  try {
+    archcanvasHandle = await dirHandle.getDirectoryHandle(ARCHCANVAS_DIR_NAME);
+  } catch {
+    // Directory doesn't exist — continue to legacy detection
+  }
+
+  if (archcanvasHandle) {
+    return scanArchcanvasDir(dirHandle, archcanvasHandle);
+  }
+
+  // ── 2. Legacy: scan root for .archproject.json and .archc files ──
+  return scanLegacyProject(dirHandle);
+}
+
+/**
+ * Scan the .archcanvas/ subdirectory for .archc files.
+ * Uses main.archc as the root entry point.
+ */
+async function scanArchcanvasDir(
+  rootHandle: FileSystemDirectoryHandle,
+  archcanvasHandle: FileSystemDirectoryHandle,
+): Promise<ScanResult> {
+  const archcFiles: string[] = [];
+
+  for await (const entry of archcanvasHandle.values()) {
+    if (entry.kind === 'file' && entry.name.endsWith('.archc')) {
+      archcFiles.push(entry.name);
+    }
+  }
+
+  const projectName = rootHandle.name || 'Untitled Project';
+
+  if (archcFiles.length === 0) {
+    // .archcanvas/ exists but is empty — treat as empty project
+    const emptyManifest: ProjectManifest = {
+      version: 1,
+      name: projectName,
+      rootFile: '',
+      files: [],
+      links: [],
+    };
+    return {
+      manifest: emptyManifest,
+      directoryHandle: rootHandle,
+      archcanvasHandle,
+      manifestExisted: false,
+      isEmpty: true,
+      hasSourceFiles: false,
+    };
+  }
+
+  // Sort for consistent ordering
+  archcFiles.sort();
+
+  // Use main.archc as root if it exists, otherwise first file
+  const rootFile = archcFiles.includes(ARCHCANVAS_MAIN_FILE)
+    ? ARCHCANVAS_MAIN_FILE
+    : archcFiles[0]!;
+
+  const manifest = createManifest(projectName, archcFiles, rootFile);
+
+  return {
+    manifest,
+    directoryHandle: rootHandle,
+    archcanvasHandle,
+    manifestExisted: true, // .archcanvas/ dir serves as the "manifest"
+    isEmpty: false,
+    hasSourceFiles: false,
+  };
+}
+
+/**
+ * Legacy scanner: looks for .archproject.json and loose .archc files
+ * at the root level of the selected directory.
+ */
+async function scanLegacyProject(
   dirHandle: FileSystemDirectoryHandle,
 ): Promise<ScanResult> {
   const archcFiles: string[] = [];
@@ -104,6 +200,7 @@ export async function scanProjectFolder(
     return {
       manifest,
       directoryHandle: dirHandle,
+      archcanvasHandle: null,
       manifestExisted: true,
       isEmpty: false,
       hasSourceFiles: false,
@@ -124,6 +221,7 @@ export async function scanProjectFolder(
     return {
       manifest: emptyManifest,
       directoryHandle: dirHandle,
+      archcanvasHandle: null,
       manifestExisted: false,
       isEmpty: true,
       hasSourceFiles,
@@ -138,6 +236,7 @@ export async function scanProjectFolder(
   return {
     manifest,
     directoryHandle: dirHandle,
+    archcanvasHandle: null,
     manifestExisted: false,
     isEmpty: false,
     hasSourceFiles: false,
@@ -147,8 +246,8 @@ export async function scanProjectFolder(
 /**
  * Read a specific .archc file from the project directory.
  *
- * @param dirHandle - The project directory handle
- * @param relativePath - Relative path to the .archc file (from the manifest)
+ * @param dirHandle - The directory handle to read from (.archcanvas/ or project root)
+ * @param relativePath - Relative path to the .archc file
  * @returns Raw binary data of the .archc file
  * @throws Error if the file cannot be found or read
  */
@@ -183,10 +282,10 @@ export async function writeManifestToFolder(
 }
 
 /**
- * Write a binary .archc file to the project directory.
+ * Write a binary .archc file to a directory.
  *
- * @param dirHandle - The project directory handle
- * @param fileName - File name (e.g., "my-stack.archc")
+ * @param dirHandle - The directory handle (.archcanvas/ or project root)
+ * @param fileName - File name (e.g., "main.archc")
  * @param data - Raw binary .archc data
  */
 export async function writeArchcToFolder(
@@ -198,4 +297,17 @@ export async function writeArchcToFolder(
   const writable = await fileHandle.createWritable();
   await writable.write(data);
   await writable.close();
+}
+
+/**
+ * Initialize the .archcanvas/ subdirectory inside a user-selected folder.
+ * Creates the directory if it doesn't exist.
+ *
+ * @param dirHandle - The root directory handle from showDirectoryPicker()
+ * @returns The FileSystemDirectoryHandle for the .archcanvas/ directory
+ */
+export async function initArchcanvasDir(
+  dirHandle: FileSystemDirectoryHandle,
+): Promise<FileSystemDirectoryHandle> {
+  return dirHandle.getDirectoryHandle(ARCHCANVAS_DIR_NAME, { create: true });
 }

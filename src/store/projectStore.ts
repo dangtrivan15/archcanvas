@@ -1,13 +1,14 @@
 /**
  * Project store — manages the state of a folder-based architecture project.
  *
- * Stores the project manifest, the base directory handle, and a cache
- * of loaded .archc file data. This enables the nested canvas feature to
- * know which files exist and how they link together.
+ * Stores the project manifest, directory handles, and a cache of loaded .archc
+ * file data. Supports the .archcanvas/ folder convention where all .archc files
+ * live inside a .archcanvas/ subdirectory of the user's project folder.
  *
  * State:
- * - `manifest`: The parsed .archproject.json manifest (null when no project is open)
- * - `directoryHandle`: The FileSystemDirectoryHandle for the project folder
+ * - `manifest`: The project manifest (null when no project is open)
+ * - `directoryHandle`: The FileSystemDirectoryHandle for the user-selected folder
+ * - `archcanvasHandle`: The .archcanvas/ subdirectory handle (for file operations)
  * - `loadedFiles`: Cache of decoded file data keyed by relative path
  * - `isProjectOpen`: Derived boolean for quick checks
  *
@@ -20,12 +21,14 @@
 
 import { create } from 'zustand';
 import type { ProjectManifest, ProjectFileEntry } from '@/types/project';
+import { ARCHCANVAS_MAIN_FILE } from '@/types/project';
 import type { ArchGraph } from '@/types/graph';
 import {
   scanProjectFolder,
   readProjectFile,
   writeArchcToFolder,
   writeManifestToFolder,
+  initArchcanvasDir,
 } from '@/core/project/scanner';
 import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
 import { encode } from '@/core/storage/codec';
@@ -48,14 +51,20 @@ export interface LoadedFileEntry {
 export interface ProjectStoreState {
   /** The current project manifest (null if no project is open). */
   manifest: ProjectManifest | null;
-  /** Directory handle for the project folder. */
+  /** Directory handle for the user-selected project folder. */
   directoryHandle: FileSystemDirectoryHandle | null;
-  /** Whether the manifest was loaded from an existing .archproject.json file. */
+  /**
+   * The .archcanvas/ subdirectory handle for file operations.
+   * All .archc reads/writes go through this handle when available.
+   * Falls back to directoryHandle for legacy flat layouts.
+   */
+  archcanvasHandle: FileSystemDirectoryHandle | null;
+  /** Whether the manifest was loaded from an existing source. */
   manifestExisted: boolean;
   /** Cache of loaded .archc file data, keyed by relative path. */
   loadedFiles: Map<string, LoadedFileEntry>;
 
-  /** Whether the project folder is empty (no .archc files and no manifest). */
+  /** Whether the project folder is empty (no .archc files and no .archcanvas/ dir). */
   isEmpty: boolean;
 
   // ── Derived ──
@@ -80,7 +89,8 @@ export interface ProjectStoreState {
     displayName: string,
   ) => Promise<string>;
   /**
-   * Create a blank .archc file in the project folder, set it as root, and load it.
+   * Create a blank .archc file in the .archcanvas/ directory, set it as root, and load it.
+   * Creates the .archcanvas/ directory if it doesn't exist.
    * Used by the empty project dialog "Start Blank" option.
    */
   createBlankArchcFile: () => Promise<void>;
@@ -91,9 +101,18 @@ export interface ProjectStoreState {
   runAnalysisPipeline: () => Promise<void>;
 }
 
+/**
+ * Get the effective directory handle for file operations.
+ * Prefers .archcanvas/ handle, falls back to root directory handle.
+ */
+function getFilesDirHandle(state: ProjectStoreState): FileSystemDirectoryHandle | null {
+  return state.archcanvasHandle ?? state.directoryHandle;
+}
+
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   manifest: null,
   directoryHandle: null,
+  archcanvasHandle: null,
   manifestExisted: false,
   loadedFiles: new Map(),
   isEmpty: false,
@@ -121,13 +140,14 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       throw err;
     }
 
-    // Scan the folder for .archc files and manifest
+    // Scan the folder for .archcanvas/ dir, .archc files, and manifest
     const result = await scanProjectFolder(dirHandle);
 
     // Set project state (even for empty projects, so the store has the dir handle)
     set({
       manifest: result.manifest,
       directoryHandle: result.directoryHandle,
+      archcanvasHandle: result.archcanvasHandle,
       manifestExisted: result.manifestExisted,
       loadedFiles: new Map(),
       isProjectOpen: true,
@@ -156,6 +176,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({
       manifest: null,
       directoryHandle: null,
+      archcanvasHandle: null,
       manifestExisted: false,
       loadedFiles: new Map(),
       isEmpty: false,
@@ -164,8 +185,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   loadFile: async (relativePath: string) => {
-    const { directoryHandle, loadedFiles } = get();
-    if (!directoryHandle) {
+    const state = get();
+    const filesDirHandle = getFilesDirHandle(state);
+    const { loadedFiles } = state;
+    if (!filesDirHandle) {
       throw new Error('No project folder is open');
     }
 
@@ -173,8 +196,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const cached = loadedFiles.get(relativePath);
     if (cached) return cached;
 
-    // Read and decode the file
-    const data = await readProjectFile(directoryHandle, relativePath);
+    // Read and decode the file from .archcanvas/ (or root for legacy)
+    const data = await readProjectFile(filesDirHandle, relativePath);
     const { graph } = await decodeArchcData(data);
 
     const entry: LoadedFileEntry = {
@@ -196,9 +219,17 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   saveTemplateAsFile: async (graph: ArchGraph, displayName: string) => {
-    const { directoryHandle, manifest } = get();
+    const state = get();
+    const { directoryHandle, manifest } = state;
     if (!directoryHandle || !manifest) {
       throw new Error('No project folder is open');
+    }
+
+    // Ensure .archcanvas/ directory exists
+    let archcanvasHandle = state.archcanvasHandle;
+    if (!archcanvasHandle) {
+      archcanvasHandle = await initArchcanvasDir(directoryHandle);
+      set({ archcanvasHandle });
     }
 
     // Sanitize filename: lowercase, replace spaces/special chars with hyphens
@@ -212,8 +243,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const protoFile = graphToProto(graph);
     const binaryData = await encode(protoFile);
 
-    // Write file to project folder
-    await writeArchcToFolder(directoryHandle, fileName, binaryData);
+    // Write file to .archcanvas/ directory
+    await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
 
     // Update manifest to include the new file
     const fileEntry: ProjectFileEntry = {
@@ -238,9 +269,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
           ],
         };
 
-    // Write updated manifest
+    // Write updated manifest to .archcanvas/ (legacy compat: also to root if no archcanvas)
     if (!alreadyInManifest) {
-      await writeManifestToFolder(directoryHandle, updatedManifest);
+      await writeManifestToFolder(archcanvasHandle, updatedManifest);
       set({ manifest: updatedManifest });
     }
 
@@ -264,7 +295,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
 
     const projectName = manifest.name || 'Untitled Architecture';
-    const fileName = 'architecture.archc';
+    const fileName = ARCHCANVAS_MAIN_FILE; // 'main.archc'
+
+    // Ensure .archcanvas/ directory exists (creates it if needed)
+    const archcanvasHandle = await initArchcanvasDir(directoryHandle);
 
     // Create an empty graph with the project name
     const graph = createEmptyGraph(projectName);
@@ -273,8 +307,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const protoFile = graphToProto(graph);
     const binaryData = await encode(protoFile);
 
-    // Write file to project folder
-    await writeArchcToFolder(directoryHandle, fileName, binaryData);
+    // Write file to .archcanvas/ directory
+    await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
 
     // Update manifest with the new root file
     const updatedManifest: ProjectManifest = {
@@ -283,7 +317,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       files: [{ path: fileName, displayName: projectName }],
     };
 
-    await writeManifestToFolder(directoryHandle, updatedManifest);
+    // Write manifest inside .archcanvas/
+    await writeManifestToFolder(archcanvasHandle, updatedManifest);
 
     // Cache the loaded graph
     const entry: LoadedFileEntry = {
@@ -296,6 +331,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
     set({
       manifest: updatedManifest,
+      archcanvasHandle,
       loadedFiles: newCache,
       isEmpty: false,
     });
@@ -380,15 +416,18 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         signal: abortController.signal,
       });
 
+      // Ensure .archcanvas/ directory exists
+      const archcanvasHandle = await initArchcanvasDir(directoryHandle);
+      const fileName = ARCHCANVAS_MAIN_FILE;
+
       // Update manifest with the generated file
-      const fileName = 'architecture.archc';
       const updatedManifest: ProjectManifest = {
         ...manifest,
         rootFile: fileName,
         files: [{ path: fileName, displayName: result.graph.name || manifest.name }],
       };
 
-      await writeManifestToFolder(directoryHandle, updatedManifest);
+      await writeManifestToFolder(archcanvasHandle, updatedManifest);
 
       // Cache the loaded graph
       const entry: LoadedFileEntry = {
@@ -401,6 +440,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       set({
         manifest: updatedManifest,
+        archcanvasHandle,
         loadedFiles: newCache,
         isEmpty: false,
       });

@@ -49,6 +49,7 @@ vi.mock('@/core/project/scanner', () => ({
   writeManifestToFolder: mocks.writeManifestToFolder,
   scanProjectFolder: vi.fn(),
   readProjectFile: vi.fn(),
+  initArchcanvasDir: vi.fn().mockImplementation(async (dirHandle: unknown) => dirHandle),
   SOURCE_FILE_EXTENSIONS: new Set(['.ts', '.js']),
 }));
 
@@ -218,7 +219,7 @@ describe('Feature #465: Start Blank .archc file creation', () => {
       expect(mocks.writeArchcToFolder).toHaveBeenCalledOnce();
       expect(mocks.writeArchcToFolder).toHaveBeenCalledWith(
         mockDirHandle,
-        'architecture.archc',
+        'main.archc',
         expect.any(Uint8Array),
       );
 
@@ -250,9 +251,9 @@ describe('Feature #465: Start Blank .archc file creation', () => {
       // Verify manifest was written
       expect(mocks.writeManifestToFolder).toHaveBeenCalledOnce();
       const writtenManifest = mocks.writeManifestToFolder.mock.calls[0]![1];
-      expect(writtenManifest.rootFile).toBe('architecture.archc');
+      expect(writtenManifest.rootFile).toBe('main.archc');
       expect(writtenManifest.files).toEqual([
-        { path: 'architecture.archc', displayName: 'test-folder' },
+        { path: 'main.archc', displayName: 'test-folder' },
       ]);
     });
 
@@ -278,10 +279,10 @@ describe('Feature #465: Start Blank .archc file creation', () => {
 
       const state = useProjectStore.getState();
       expect(state.isEmpty).toBe(false);
-      expect(state.manifest?.rootFile).toBe('architecture.archc');
-      expect(state.loadedFiles.has('architecture.archc')).toBe(true);
+      expect(state.manifest?.rootFile).toBe('main.archc');
+      expect(state.loadedFiles.has('main.archc')).toBe(true);
 
-      const cached = state.loadedFiles.get('architecture.archc')!;
+      const cached = state.loadedFiles.get('main.archc')!;
       expect(cached.graph.name).toBe('state-test');
       expect(cached.graph.nodes).toEqual([]);
       expect(cached.graph.edges).toEqual([]);
@@ -380,7 +381,7 @@ describe('Feature #465: Start Blank .archc file creation', () => {
 
       const cached = useProjectStore
         .getState()
-        .loadedFiles.get('architecture.archc')!;
+        .loadedFiles.get('main.archc')!;
       expect(cached.graph.name).toBe('Custom Project Name');
     });
 
@@ -406,7 +407,7 @@ describe('Feature #465: Start Blank .archc file creation', () => {
 
       const cached = useProjectStore
         .getState()
-        .loadedFiles.get('architecture.archc')!;
+        .loadedFiles.get('main.archc')!;
       expect(cached.graph.name).toBe('Untitled Architecture');
     });
   });
