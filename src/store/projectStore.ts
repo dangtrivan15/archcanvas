@@ -183,6 +183,19 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       isEmpty: result.isEmpty,
     });
 
+    // Auto-register MCP config in .mcp.json (fire-and-forget, non-blocking)
+    import('@/mcp/mcpJsonBrowser').then(({ autoRegisterMcpConfig }) => {
+      autoRegisterMcpConfig(dirHandle).then((mcpResult) => {
+        if (mcpResult?.written) {
+          useUIStore.getState().showToast(
+            mcpResult.created
+              ? 'MCP config written to .mcp.json'
+              : 'MCP config added to .mcp.json',
+          );
+        }
+      });
+    });
+
     // If the project is empty, show the onboarding choice dialog
     if (result.isEmpty) {
       const { openEmptyProjectDialog } = useUIStore.getState();
