@@ -11521,3 +11521,57 @@ and package.json script were already in place. However, 2 of 6 tests were failin
 #### Commit: c089c7c
 #### Feature #459 marked passing
 #### Progress: 452/459 features passing (98.5%)
+
+---
+
+## Session: Feature #456 - Container Node Live Mini-Preview
+Date: 2026-03-08
+
+### Feature #456: Container Node Live Mini-Preview - PASSING
+
+#### Implementation (verified existing + committed):
+
+1. **MiniCanvasPreview** (`src/components/nodes/MiniCanvasPreview.tsx`):
+   - Pure SVG component (no nested React Flow) for performance
+   - Renders simplified node rectangles colored by type
+   - Renders edge lines styled by type (sync/async/data-flow)
+   - Automatic bounding box scaling with padding to fit container
+   - Conditional label display based on scale/zoom
+   - Label truncation for long names
+   - Empty state handling
+   - Wrapped in React.memo for caching
+
+2. **useChildGraph hook** (`src/hooks/useChildGraph.ts`):
+   - Lazily loads child .archc graph data via projectStore
+   - Returns { graph, loading, error } states
+   - Handles stale request cancellation
+   - Caches via projectStore.getLoadedFile
+
+3. **ContainerNode updates** (`src/components/nodes/ContainerNode.tsx`):
+   - Integrates useChildGraph for lazy loading
+   - Shows PreviewSkeleton while loading
+   - Shows MiniCanvasPreview when graph loaded
+   - Shows LodPreviewFallback at zoom < 0.35
+   - Entire preview area clickable for dive-in (keyboard accessible)
+   - Custom event dispatch for container-dive-in
+
+4. **Supporting components**:
+   - TransitionOverlay, useContainerDiveIn, depth indicator in status bar
+
+#### Tests: 47 tests (all passing)
+- MiniCanvasPreview: bounding box, center map, scaling, empty state, edge filtering, edge colors/dash patterns, label truncation
+- LOD: zoom threshold behavior, label visibility
+- useChildGraph: file path extraction from various formats
+- ContainerNode integration: nodeCount derivation, LOD/skeleton/preview switching
+- Dive-in: event structure, naming convention
+- Scaling edge cases: single node, overlapping, zero dimensions, max scale clamping
+- File name extraction: refSource parsing, nested paths, fallbacks
+
+#### Verification:
+- Full test suite: 4877/4877 PASS (0 failures)
+- Vite build: PASS
+- Browser verification: App loads, template loads (8 nodes, 7 edges), zero console errors
+- No mock data patterns in src/: PASS
+
+#### Commit: 0479de7
+#### Feature #456 marked passing
