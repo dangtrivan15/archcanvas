@@ -41,8 +41,6 @@ import {
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
-import { useNavigationStore } from '@/store/navigationStore';
-import { findNode } from '@/core/graph/graphEngine';
 import { initializeApiKey } from '@/ai/config';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
@@ -96,8 +94,6 @@ export function App() {
   const { syncStatus, pendingCount } = useBackgroundSync();
   const updateLeftPanelWidthFromViewport = useUIStore((s) => s.updateLeftPanelWidthFromViewport);
   const updateRightPanelWidthFromViewport = useUIStore((s) => s.updateRightPanelWidthFromViewport);
-  const navigationPath = useNavigationStore((s) => s.path);
-  const graph = useCoreStore((s) => s.graph);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
@@ -357,24 +353,23 @@ export function App() {
           data-testid="status-bar"
           style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)', display: isMinimal ? 'none' : undefined }}
         >
-          <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
-            {/* Mode Status Bar (mode badge, breadcrumb, zoom, selection) - always visible */}
+          <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2 justify-end">
+            {/* Breadcrumb navigation (from ModeStatusBar) */}
             <ModeStatusBar />
             {/* Essential: dirty indicator - always visible */}
-            <span className="mx-1 text-gray-300">|</span>
             <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
             {/* Non-essential items: hidden in compact mode via CSS */}
-            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 self-center status-bar-compact-hide" />
             <span data-testid="node-count" className="status-bar-compact-hide">
               Nodes: {nodeCount}
             </span>
-            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 self-center status-bar-compact-hide" />
             <span data-testid="edge-count" className="status-bar-compact-hide">
               Edges: {edgeCount}
             </span>
             {(selectedNodeIds.length > 1 || selectedEdgeIds.length > 1) && (
               <>
-                <span className="mx-1 text-gray-300">|</span>
+                <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 self-center" />
                 <span data-testid="selection-count" className="text-blue-500 font-medium">
                   Selected:{' '}
                   {selectedNodeIds.length > 0
@@ -385,7 +380,7 @@ export function App() {
             )}
             {autosaveStatusMessage && (
               <>
-                <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+                <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 self-center status-bar-compact-hide" />
                 <span
                   data-testid="autosave-status"
                   className="text-green-600 status-bar-compact-hide"
@@ -395,32 +390,13 @@ export function App() {
               </>
             )}
             <SyncStatusIndicator syncStatus={syncStatus} pendingCount={pendingCount} />
-            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
+            <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 self-center status-bar-compact-hide" />
             <span data-testid="zoom-level" className="status-bar-compact-hide">
               Zoom: {Math.round(zoom * 100)}%
             </span>
-            <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
             <span className="status-bar-compact-hide">
               <CachedFilesIndicator />
             </span>
-            {navigationPath.length > 0 && (
-              <>
-                <span className="mx-1 text-gray-300 status-bar-compact-hide">|</span>
-                <span
-                  data-testid="breadcrumb"
-                  className="text-blue-600 font-medium status-bar-compact-hide"
-                >
-                  {(() => {
-                    const parts = ['Root'];
-                    for (const nodeId of navigationPath) {
-                      const node = findNode(graph, nodeId);
-                      parts.push(node ? node.displayName : nodeId);
-                    }
-                    return parts.join(' > ');
-                  })()}
-                </span>
-              </>
-            )}
           </div>
         </footer>
       </div>

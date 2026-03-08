@@ -1,62 +1,14 @@
 /**
- * ModeStatusBar - Persistent canvas status bar showing current mode,
- * zoom level, selection count, breadcrumb path, and context hint.
- * Minimal like VS Code status bar.
- *
- * Also displays cross-file nesting depth when navigating into nested
- * .archc files via the nestedCanvasStore file stack.
+ * ModeStatusBar - Breadcrumb navigation section of the status bar.
+ * Shows cross-file nesting depth and within-file fractal zoom path.
+ * Only renders breadcrumbs when navigated into a node (hidden at root level).
  */
 
 import { useMemo } from 'react';
-import { useUIStore } from '@/store/uiStore';
-import { useCanvasStore } from '@/store/canvasStore';
 import { useCoreStore } from '@/store/coreStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { findNode } from '@/core/graph/graphEngine';
-
-/** Canvas interaction modes derived from UI state */
-export type CanvasMode = 'NORMAL' | 'CONNECT' | 'EDIT';
-
-/** Mode badge color config */
-const MODE_CONFIG: Record<CanvasMode, { label: string; bg: string; text: string; hint: string }> = {
-  NORMAL: {
-    label: 'NORMAL',
-    bg: 'bg-gray-500',
-    text: 'text-white',
-    hint: 'C to connect · F2 to edit · / to search',
-  },
-  CONNECT: {
-    label: 'CONNECT',
-    bg: 'bg-blue-500',
-    text: 'text-white',
-    hint: 'Click target node · Esc to cancel',
-  },
-  EDIT: {
-    label: 'EDIT',
-    bg: 'bg-green-500',
-    text: 'text-white',
-    hint: 'Enter to confirm · Esc to cancel',
-  },
-};
-
-/**
- * Derive the current canvas mode from UI state.
- */
-export function deriveCanvasMode(state: {
-  connectStep: string | null;
-  connectSource: string | null;
-  inlineEditNodeId: string | null;
-  placementMode: boolean;
-}): CanvasMode {
-  if (state.connectStep !== null || state.connectSource !== null) {
-    return 'CONNECT';
-  }
-  if (state.inlineEditNodeId !== null || state.placementMode) {
-    return 'EDIT';
-  }
-  return 'NORMAL';
-}
 
 /**
  * Extract a display-friendly label from a file path.
@@ -75,17 +27,6 @@ export function filePathToLabel(filePath: string): string {
 }
 
 export function ModeStatusBar() {
-  // UI state for mode derivation
-  const connectStep = useUIStore((s) => s.connectStep);
-  const connectSource = useUIStore((s) => s.connectSource);
-  const inlineEditNodeId = useUIStore((s) => s.inlineEditNodeId);
-  const placementMode = useUIStore((s) => s.placementMode);
-
-  // Canvas state
-  const zoom = useCanvasStore((s) => s.viewport.zoom);
-  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
-  const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
-
   // Navigation path (within-file fractal zoom)
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);
@@ -99,13 +40,6 @@ export function ModeStatusBar() {
   const popToRoot = useNestedCanvasStore((s) => s.popToRoot);
 
   const fileDepth = fileStack.length;
-
-  // Derive mode
-  const mode = deriveCanvasMode({ connectStep, connectSource, inlineEditNodeId, placementMode });
-  const config = MODE_CONFIG[mode];
-
-  // Selection count
-  const selectionCount = selectedNodeIds.length + selectedEdgeIds.length;
 
   // File-level breadcrumb segments (cross-file navigation)
   const fileBreadcrumbs = useMemo(() => {
@@ -172,15 +106,6 @@ export function ModeStatusBar() {
       className="flex items-center px-2 gap-2 text-xs select-none"
       style={{ height: '100%', pointerEvents: 'auto' }}
     >
-      {/* Left: Mode badge */}
-      <div
-        data-testid="mode-badge"
-        data-mode={mode}
-        className={`${config.bg} ${config.text} px-2 py-0.5 rounded font-semibold text-[10px] leading-tight tracking-wider transition-all duration-200 ease-in-out`}
-      >
-        {config.label}
-      </div>
-
       {/* Depth badge (only shown when depth > 0) */}
       {fileDepth > 0 && (
         <div
@@ -210,7 +135,7 @@ export function ModeStatusBar() {
       {/* Center: Breadcrumb path (file-level + within-file) */}
       <div
         data-testid="mode-breadcrumb"
-        className="flex-1 flex items-center gap-1 min-w-0 text-[hsl(var(--muted-foreground))] overflow-hidden"
+        className="flex items-center gap-1 min-w-0 text-[hsl(var(--muted-foreground))] overflow-hidden"
       >
         {/* File-level breadcrumb segments */}
         {fileBreadcrumbs.map((segment, i) => {
@@ -238,8 +163,8 @@ export function ModeStatusBar() {
           <span className="text-gray-400 mx-0.5">—</span>
         )}
 
-        {/* Within-file breadcrumb segments */}
-        {breadcrumbParts.map((part, i) => (
+        {/* Within-file breadcrumb segments (only shown when navigated into a node) */}
+        {navigationPath.length > 0 && breadcrumbParts.map((part, i) => (
           <span key={`nav-${i}`} className="flex items-center gap-1 shrink-0">
             {i > 0 && <span className="text-gray-400">›</span>}
             <button
@@ -258,36 +183,7 @@ export function ModeStatusBar() {
             </button>
           </span>
         ))}
-
-        {/* When at root (no file nesting), show standard breadcrumbs only */}
-        {fileBreadcrumbs.length === 0 &&
-          breadcrumbParts.length === 0 && (
-            <span className="opacity-50">Root</span>
-          )}
       </div>
-
-      {/* Right: Context hint */}
-      <span
-        data-testid="context-hint"
-        className="text-[hsl(var(--muted-foreground))] text-[10px] opacity-70 shrink-0 hidden sm:inline"
-      >
-        {config.hint}
-      </span>
-
-      {/* Right: Zoom level */}
-      <span
-        data-testid="mode-zoom"
-        className="text-[hsl(var(--muted-foreground))] shrink-0 tabular-nums"
-      >
-        {Math.round(zoom * 100)}%
-      </span>
-
-      {/* Right: Selection count */}
-      {selectionCount > 0 && (
-        <span data-testid="mode-selection-count" className="text-blue-500 font-medium shrink-0">
-          {selectionCount} {selectionCount === 1 ? 'node' : 'nodes'}
-        </span>
-      )}
     </div>
   );
 }

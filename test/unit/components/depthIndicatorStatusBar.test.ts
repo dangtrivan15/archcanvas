@@ -53,9 +53,9 @@ describe('ModeStatusBar depth indicator integration', () => {
     expect(typeof mod.ModeStatusBar).toBe('function');
   });
 
-  it('exports deriveCanvasMode as a named export', async () => {
+  it('does not export deriveCanvasMode (mode badge removed)', async () => {
     const mod = await import('@/components/canvas/ModeStatusBar');
-    expect(typeof mod.deriveCanvasMode).toBe('function');
+    expect((mod as Record<string, unknown>).deriveCanvasMode).toBeUndefined();
   });
 });
 

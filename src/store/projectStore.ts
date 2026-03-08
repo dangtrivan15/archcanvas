@@ -81,12 +81,14 @@ export interface ProjectStoreState {
   /** Get a cached loaded file entry (returns undefined if not loaded). */
   getLoadedFile: (relativePath: string) => LoadedFileEntry | undefined;
   /**
-   * Save an ArchGraph as a new .archc file in the project folder and update the manifest.
-   * Returns the relative file path (e.g., "my-stack.archc").
+   * Save an ArchGraph as a new .archc file in the .archcanvas/ folder.
+   * The filename is derived from the container node's ULID: {nodeId}.archc.
+   * Returns the filename (e.g., "01JABCDEF.archc").
    */
   saveTemplateAsFile: (
     graph: ArchGraph,
     displayName: string,
+    nodeId: string,
   ) => Promise<string>;
   /**
    * Create a blank .archc file in the .archcanvas/ directory, set it as root, and load it.
@@ -99,6 +101,12 @@ export interface ProjectStoreState {
    * Shows progress dialog, invokes the browser pipeline, and loads the result.
    */
   runAnalysisPipeline: () => Promise<void>;
+  /**
+   * Load main.archc from the .archcanvas/ directory (or root for legacy),
+   * decode it, and apply it as the active canvas in coreStore.
+   * Handles corrupted/empty files with error toast and offers to recreate.
+   */
+  loadMainArchc: () => Promise<void>;
 }
 
 /**
@@ -169,6 +177,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
           get().createBlankArchcFile();
         },
       });
+    } else if (result.manifest.rootFile) {
+      // Auto-load the root file (main.archc) into the canvas
+      await get().loadMainArchc();
     }
   },
 
@@ -218,7 +229,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     return get().loadedFiles.get(relativePath);
   },
 
-  saveTemplateAsFile: async (graph: ArchGraph, displayName: string) => {
+  saveTemplateAsFile: async (graph: ArchGraph, displayName: string, nodeId: string) => {
     const state = get();
     const { directoryHandle, manifest } = state;
     if (!directoryHandle || !manifest) {
@@ -232,12 +243,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ archcanvasHandle });
     }
 
-    // Sanitize filename: lowercase, replace spaces/special chars with hyphens
-    const baseName = displayName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-    const fileName = `${baseName}.archc`;
+    // Use the container node's ULID as the filename
+    const fileName = `${nodeId}.archc`;
 
     // Encode graph to .archc binary
     const protoFile = graphToProto(graph);
@@ -345,6 +352,79 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
 
     useUIStore.getState().showToast(`Created new architecture in ${projectName}`);
+  },
+
+  loadMainArchc: async () => {
+    const state = get();
+    const { manifest } = state;
+    const filesDirHandle = getFilesDirHandle(state);
+
+    if (!filesDirHandle || !manifest || !manifest.rootFile) {
+      return;
+    }
+
+    const rootFile = manifest.rootFile;
+
+    try {
+      // Read the binary data from the directory handle
+      const data = await readProjectFile(filesDirHandle, rootFile);
+
+      // Decode the .archc file (magic bytes, protobuf payload)
+      const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
+
+      // Cache the loaded file
+      const entry: LoadedFileEntry = {
+        path: rootFile,
+        graph,
+        loadedAtMs: Date.now(),
+      };
+      const newCache = new Map(get().loadedFiles);
+      newCache.set(rootFile, entry);
+      set({ loadedFiles: newCache });
+
+      // Apply to coreStore: set as active canvas + initialize undo history
+      const { useCoreStore } = await import('./coreStore');
+      const coreStore = useCoreStore.getState();
+      coreStore._applyDecodedFile(
+        graph,
+        manifest.name || rootFile,
+        null,
+        canvasState,
+        aiState,
+        createdAtMs,
+      );
+    } catch (err) {
+      console.error(`[ProjectStore] Failed to load ${rootFile}:`, err);
+
+      // Dynamically import error types to check instance
+      const { CodecError, IntegrityError } = await import('@/core/storage/codec');
+
+      const isCorrupted = err instanceof CodecError || err instanceof IntegrityError;
+      const errorDetail = isCorrupted
+        ? 'file is corrupted or invalid'
+        : err instanceof Error
+          ? err.message
+          : String(err);
+
+      useUIStore.getState().showToast(
+        `Failed to load ${rootFile}: ${errorDetail}. You can recreate it with "Start Blank".`,
+      );
+
+      // Offer to recreate via the empty project dialog
+      const { openEmptyProjectDialog } = useUIStore.getState();
+      openEmptyProjectDialog({
+        folderName: manifest.name,
+        hasSourceFiles: false,
+        onAnalyze: () => {
+          useUIStore.getState().closeEmptyProjectDialog();
+          get().runAnalysisPipeline();
+        },
+        onStartBlank: () => {
+          useUIStore.getState().closeEmptyProjectDialog();
+          get().createBlankArchcFile();
+        },
+      });
+    }
   },
 
   runAnalysisPipeline: async () => {

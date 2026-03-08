@@ -157,20 +157,22 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
           console.warn('[UseTemplate] ELK layout failed, using template positions:', err);
         }
 
-        // Save as .archc file in the project folder
-        const fileName = await saveTemplateAsFile(graph, archName.trim() || displayName);
-
-        // Create a container node on the current canvas referencing the new file
+        // Create the container node FIRST to obtain its ULID
         const containerNode = createNode({
           type: 'meta/canvas-ref',
           displayName: archName.trim() || displayName,
           args: {
-            filePath: fileName,
             nodeCount: graph.nodes.length,
             description: graph.description || `Imported from template: ${template.metadata.name}`,
           },
         });
-        containerNode.refSource = `file://./${fileName}`;
+
+        // Save as .archc file named after the container node's ID
+        const fileName = await saveTemplateAsFile(graph, archName.trim() || displayName, containerNode.id);
+
+        // Set refSource to bare filename and update filePath arg
+        containerNode.refSource = fileName;
+        containerNode.args = { ...containerNode.args, filePath: fileName };
 
         // Add the container node to the current graph
         const currentGraph = textApi.getGraph();
