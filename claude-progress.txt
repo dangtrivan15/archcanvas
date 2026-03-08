@@ -12722,3 +12722,55 @@ archcanvas MCP server in ~/.mcp.json when installed globally via `npm install -g
 #### Commit: bdc9308
 #### Feature #484 marked passing
 #### Progress: 487/488 features passing (99.8%)
+
+---
+
+## Session: Feature #485 - Web app: auto-register MCP on project open
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+When user opens a project directory via File System Access API, automatically
+writes .mcp.json with archcanvas MCP server config using merge-aware logic.
+
+### New Files:
+
+1. **src/mcp/mcpJsonBrowser.ts** - Browser-compatible MCP JSON writer:
+   - `buildArchcanvasEntryBrowser()` - builds default entry with .archcanvas/main.archc
+   - `autoRegisterMcpConfig(dirHandle)` - main entry point, never throws
+   - Reads existing .mcp.json via FileSystemDirectoryHandle
+   - Skips if archcanvas entry already present
+   - Merges with existing servers without overwriting
+   - Handles malformed JSON, permission denied, generic errors gracefully
+   - Returns null on error (never blocks project open)
+
+2. **test/unit/mcp/mcpJsonBrowser.test.ts** - 13 tests:
+   - buildArchcanvasEntryBrowser shape
+   - Create .mcp.json when not exists
+   - Skip when already present
+   - Merge with other servers
+   - Preserve top-level keys
+   - Malformed JSON overwrite
+   - Non-object JSON handling
+   - Missing mcpServers key
+   - Permission denied handling
+   - Generic error handling
+   - Formatted JSON output
+   - Idempotent repeated calls
+   - Non-blocking contract
+
+### Modified Files:
+
+- **src/store/projectStore.ts** - Added fire-and-forget call to autoRegisterMcpConfig()
+  in openProjectFolder(), with toast notification on success
+
+### Verification:
+- All 13 new tests pass
+- Full test suite: 5292/5292 PASS (0 failures)
+- TypeScript: 0 new errors
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns: PASS
+
+#### Commit: 47679b4
+#### Feature #485 marked passing
+#### Progress: 486/488 features passing (99.6%)
