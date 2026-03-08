@@ -10,10 +10,12 @@
     "dist/cli/**",
     "dist/core/registry/builtins/**",
     "proto/**",
+    "scripts/postinstall.mjs",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "postinstall": "node scripts/postinstall.mjs",
     "cli": "npx tsx src/cli/index.ts",
     "dev": "vite",
     "build": "tsc -b tsconfig.build.json && vite build",
