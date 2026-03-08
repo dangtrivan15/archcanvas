@@ -12053,3 +12053,49 @@ Status: PASSING
 #### Commit: 983d6c5
 #### Feature #464 marked passing
 #### Progress: 464/466 features passing (99.6%)
+
+---
+
+## Session: Feature #468 - Load main.archc as project root on open
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #468: Load main.archc as project root on open - PASSING
+
+#### Implementation (continued from previous agent's work):
+
+1. **loadMainArchc() action** (`src/store/projectStore.ts`):
+   - Reads binary data from archcanvasHandle (or directoryHandle for legacy)
+   - Decodes .archc file via decodeArchcData (magic bytes, protobuf payload)
+   - Caches loaded file in loadedFiles map
+   - Applies graph to coreStore via _applyDecodedFile (sets canvas + initializes undo)
+   - Error handling: shows toast for corrupted/missing files, opens EmptyProjectDialog to offer recreate
+
+2. **Auto-load on project open** (`openProjectFolder`):
+   - When project has rootFile in manifest, automatically calls loadMainArchc()
+
+3. **saveTemplateAsFile refactor**:
+   - Changed filename from sanitized display name to node ULID ({nodeId}.archc)
+
+4. **Other changes from previous agent** (committed together):
+   - ModeStatusBar simplification
+   - agentLoop.ts and zodToAnthropicTools.ts new files
+   - Import container integration test updates
+
+#### Tests: 17 tests (all passing)
+- test/unit/project/loadMainArchc.test.ts
+- Successful loading: reads from archcanvasHandle, decodes binary, caches file, passes state to _applyDecodedFile
+- Legacy fallback: uses directoryHandle when archcanvasHandle is null
+- Name fallback: uses rootFile path when manifest name is empty
+- Error handling: corrupted data shows toast, missing file shows toast, offers recreate dialog
+- Edge cases: no manifest, empty rootFile, tiny file, header-only file
+- Undo history: _applyDecodedFile called with correct graph for undo initialization
+
+#### Verification:
+- Full test suite: all passing (17/17 new tests, no regressions)
+- TypeScript: 0 new errors in src/
+- Browser: App loads, zero app console errors
+- No mock data patterns: PASS
+
+#### Commit: 5ff965d
+#### Feature #468 marked passing
