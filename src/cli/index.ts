@@ -20,6 +20,8 @@ import { registerExportCommand } from '@/cli/commands/export';
 import { registerMutateCommands } from '@/cli/commands/mutate';
 import { registerAnalyzeCommand } from '@/cli/commands/analyze';
 import { registerBackupPushCommand } from '@/cli/commands/backupPush';
+import { registerMcpInstallCommand } from '@/cli/commands/mcpInstall';
+import { registerMcpUninstallCommand } from '@/cli/commands/mcpUninstall';
 
 // ─── Version ──────────────────────────────────────────────────
 
@@ -332,9 +334,9 @@ export function createProgram(): Command {
 
   // ─── mcp ─────────────────────────────────────────────────────
 
-  program
+  const mcpCmd = program
     .command('mcp')
-    .description('Start an MCP (Model Context Protocol) server')
+    .description('MCP (Model Context Protocol) server commands')
     .option('--transport <type>', 'Transport: stdio or sse', 'stdio')
     .option('--file <path>', 'Load an .archc file for persistent file-backed mode')
     .option('-f <path>', 'Alias for --file')
@@ -387,6 +389,12 @@ export function createProgram(): Command {
         });
       }),
     );
+
+  // ─── mcp install ────────────────────────────────────────────
+  registerMcpInstallCommand(mcpCmd);
+
+  // ─── mcp uninstall ─────────────────────────────────────────
+  registerMcpUninstallCommand(mcpCmd);
 
   return program;
 }

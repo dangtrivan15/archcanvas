@@ -106,6 +106,25 @@ async function backupMalformed(filePath: string, rawContent: string): Promise<st
 }
 
 /**
+ * Write a custom MCP server entry into a .mcp.json file under the archcanvas key.
+ *
+ * - If the file doesn't exist, creates it with the entry.
+ * - If the file exists with other servers, merges without disturbing them.
+ * - If the archcanvas entry already exists, overwrites it (idempotent).
+ * - If the file is malformed JSON, backs it up and creates a fresh file.
+ *
+ * @param mcpJsonPath - Absolute path to the .mcp.json file
+ * @param entry - The MCP server entry to write
+ * @returns Object with info about what happened
+ */
+export async function writeMcpJsonEntry(
+  mcpJsonPath: string,
+  entry: McpServerEntry,
+): Promise<{ created: boolean; merged: boolean; backedUp: string | null }> {
+  return _writeMcpJsonImpl(mcpJsonPath, entry);
+}
+
+/**
  * Write the archcanvas MCP server entry into a .mcp.json file.
  *
  * - If the file doesn't exist, creates it with the archcanvas entry.
@@ -121,8 +140,16 @@ export async function writeMcpJson(
   mcpJsonPath: string,
   archcFilePath: string,
 ): Promise<{ created: boolean; merged: boolean; backedUp: string | null }> {
-  const fs = await import('node:fs/promises');
   const entry = buildArchcanvasEntry(archcFilePath);
+  return _writeMcpJsonImpl(mcpJsonPath, entry);
+}
+
+/** Shared implementation for writeMcpJson and writeMcpJsonEntry */
+async function _writeMcpJsonImpl(
+  mcpJsonPath: string,
+  entry: McpServerEntry,
+): Promise<{ created: boolean; merged: boolean; backedUp: string | null }> {
+  const fs = await import('node:fs/promises');
 
   let content: McpJsonFile;
   let created = false;
