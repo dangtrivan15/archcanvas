@@ -52,6 +52,9 @@ export interface ProjectStoreState {
   /** Cache of loaded .archc file data, keyed by relative path. */
   loadedFiles: Map<string, LoadedFileEntry>;
 
+  /** Whether the project folder is empty (no .archc files and no manifest). */
+  isEmpty: boolean;
+
   // ── Derived ──
   /** Whether a project is currently open. */
   isProjectOpen: boolean;
@@ -80,6 +83,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   directoryHandle: null,
   manifestExisted: false,
   loadedFiles: new Map(),
+  isEmpty: false,
   isProjectOpen: false,
 
   openProjectFolder: async () => {
@@ -113,6 +117,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       manifestExisted: result.manifestExisted,
       loadedFiles: new Map(),
       isProjectOpen: true,
+      isEmpty: result.isEmpty,
     });
   },
 
@@ -122,6 +127,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       directoryHandle: null,
       manifestExisted: false,
       loadedFiles: new Map(),
+      isEmpty: false,
       isProjectOpen: false,
     });
   },

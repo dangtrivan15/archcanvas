@@ -114,15 +114,42 @@ describe('scanProjectFolder', () => {
     expect(result.manifest.links).toHaveLength(1);
   });
 
-  it('should throw when no .archc files and no manifest found', async () => {
+  it('should return isEmpty=true when no .archc files and no manifest found', async () => {
     const dirHandle = createMockDirHandle('empty-project', [
       createMockFileEntry('README.md'),
       createMockFileEntry('notes.txt'),
     ]);
 
-    await expect(scanProjectFolder(dirHandle)).rejects.toThrow(
-      'No .archc files found',
-    );
+    const result = await scanProjectFolder(dirHandle);
+
+    expect(result.isEmpty).toBe(true);
+    expect(result.manifestExisted).toBe(false);
+    expect(result.manifest.name).toBe('empty-project');
+    expect(result.manifest.files).toHaveLength(0);
+    expect(result.manifest.rootFile).toBe('');
+    expect(result.manifest.links).toHaveLength(0);
+    expect(result.directoryHandle).toBe(dirHandle);
+  });
+
+  it('should return isEmpty=true for a completely empty folder', async () => {
+    const dirHandle = createMockDirHandle('bare-folder', []);
+
+    const result = await scanProjectFolder(dirHandle);
+
+    expect(result.isEmpty).toBe(true);
+    expect(result.manifest.name).toBe('bare-folder');
+    expect(result.manifest.files).toHaveLength(0);
+  });
+
+  it('should return isEmpty=false when .archc files exist', async () => {
+    const dirHandle = createMockDirHandle('project', [
+      createMockFileEntry('main.archc'),
+    ]);
+
+    const result = await scanProjectFolder(dirHandle);
+
+    expect(result.isEmpty).toBe(false);
+    expect(result.manifest.files).toHaveLength(1);
   });
 
   it('should ignore directory entries', async () => {
