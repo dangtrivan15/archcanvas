@@ -13010,3 +13010,56 @@ the artificial "5-20 nodes" cap and encourage thorough, complete architecture mo
 
 #### Commit: 24f12cb
 #### Feature #493 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #499
+==================================================
+
+## Feature #499: Implement git repo fetcher and .archc resolver - PASSING
+
+### Summary:
+Created a new module that fetches a git repository's main.archc file at a specific
+tag/commit ref, parses it using the existing protobuf codec, and returns the
+architecture data. Supports public repos on GitHub, GitLab, and unknown hosts via
+fallback URL patterns.
+
+### New Files:
+
+1. **src/core/git/repoFetcher.ts** — Git repo fetcher module:
+   - `parseRepoUrl()` — parses HTTPS/SSH git URLs into platform/owner/repo
+   - `fetchRepoArchc()` — main API: fetches and decodes main.archc from remote repo
+   - GitHub strategy: Uses GitHub Contents API with raw binary response
+   - GitLab strategy: Uses GitLab Repository Files API
+   - Unknown host fallback: Tries common raw URL patterns (Gitea, cgit)
+   - Error hierarchy: RepoFetchError > RepoNotFoundError, RefNotFoundError,
+     ArchcNotFoundError, RepoNotPublicError
+   - Dependency-injectable fetch function for testability
+   - Configurable timeout (default 30s)
+
+2. **test/unit/core/repoFetcher.test.ts** — 34 tests:
+   - URL parsing: GitHub/GitLab HTTPS, SSH, .git suffix, trailing slash, unknown hosts
+   - Validation: empty/whitespace URL and ref
+   - GitHub success: fetch + parse, ref query param
+   - GitHub errors: repo not found, ref not found, archc not found, 403, 500
+   - GitLab: correct API endpoint, repo not found, 403
+   - Unknown host fallback: raw URL patterns, all-fail error
+   - .archc parsing: invalid binary, multi-node graphs, raw data return
+   - Error types: inheritance, names, stored properties
+
+### Feature steps covered:
+1. ✅ Repo fetcher module accepting URL + ref
+2. ✅ GitHub API fetching (Contents API)
+3. ✅ Fallback via raw URL patterns for non-GitHub repos
+4. ✅ Validates main.archc exists at repo root
+5. ✅ Parses fetched .archc using existing protobuf deserialization
+6. ✅ Returns parsed architecture data for caching
+7. ✅ Handles all error cases: repo/ref/file not found, not public
+
+### Verification:
+- 34/34 new tests pass
+- 1036/1036 core tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns in production code
+
+#### Commit: ca21652
+#### Feature #499 marked passing
