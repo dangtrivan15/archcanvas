@@ -6,6 +6,18 @@ allowed-tools: Bash(playwright-cli:*)
 
 # Browser Automation with playwright-cli
 
+## Prerequisites — Dev Server
+
+Before using playwright-cli for testing the ArchCanvas app, you MUST ensure the dev server is running:
+
+```bash
+npm run dev:ensure   # Idempotent — safe to call multiple times, starts server only if not already running
+```
+
+Do NOT run `npm run dev` directly — it spawns a new Vite process every time and causes OOM when multiple agents are working.
+
+When done with browser testing, do NOT stop the dev server — other agents may be using it.
+
 ## Quick start
 
 ```bash
