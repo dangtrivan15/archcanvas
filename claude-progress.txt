@@ -12378,3 +12378,70 @@ SESSION: 2026-03-08 - Feature #472
 - No mock data patterns: N/A (file save is a write operation)
 
 #### Feature #472 marked passing
+
+---
+
+## Session: Feature #478 - Initialize Architecture dialog with AI/scan choice
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #478: Initialize Architecture dialog with AI/scan choice - PASSING
+
+#### Summary:
+The previous agent (feature #479) had already implemented most of the dialog rework
+as part of the manifest removal commit. This session completed the work by:
+
+1. Fixing remaining test files that still referenced the old API (onAnalyze/onStartBlank)
+2. Fixing the pipeline test for .archcanvas/main.archc default output path
+3. Verifying all 5199 tests pass with zero console errors
+
+#### Changes in this session:
+
+1. **test/unit/project/loadMainArchc.test.ts**:
+   - Updated `onStartBlank`/`onAnalyze` references to `onUseAI`/`onQuickScan`/`onConfigureApiKey`/`onUseExternalAgent`
+   - Updated integration test to verify new callback structure
+
+2. **test/unit/project/startBlank.test.ts**:
+   - Updated test descriptions and callback names from old to new API
+
+3. **test/unit/ui/analysisPipelineIntegration.test.ts**:
+   - Updated from `onAnalyze` callback test to `onQuickScan` callback test
+   - Updated EmptyProjectDialogInfo usage with new fields
+
+4. **test/unit/analyze/pipeline.test.ts** (pre-existing fix):
+   - Fixed default output path expectation from `architecture.archc` to `.archcanvas/main.archc`
+
+#### Already implemented by previous agent (feature #479 commit c9465a8):
+
+1. **EmptyProjectDialog.tsx**: Reworked with two views:
+   - Choose view: "Use AI (recommended)" and "Quick scan (basic)"
+   - AI Setup view: "Configure API Key", "Use External Agent", "Fall back to Quick Scan"
+   - Multi-step navigation with back button and Escape key handling
+
+2. **uiStore.ts**: Updated EmptyProjectDialogInfo interface:
+   - Added hasApiKey, onUseAI, onQuickScan, onConfigureApiKey, onUseExternalAgent
+   - Removed onAnalyze, onStartBlank
+
+3. **projectStore.ts**: Added routing logic:
+   - `runBuiltInAI()` action using initWithAI with Anthropic SDK
+   - `buildEmptyProjectDialogInfo()` helper with all callbacks wired
+   - API key detection via isAIConfigured()
+   - External agent prompt generation via buildExternalAgentPrompt
+   - Settings dialog integration for API key configuration
+
+4. **emptyProjectDialog.test.ts**: Rewritten with 28 tests covering:
+   - Store state management (open/close/callbacks)
+   - Source file extension detection
+   - Dialog info shape with new fields
+   - Option selection behavior (onUseAI, onQuickScan, cancel)
+   - AI routing logic (hasApiKey=true → direct, hasApiKey=false → setup view)
+   - Callback isolation tests
+
+#### Verification:
+- Full test suite: 5199/5199 PASS (0 failures)
+- TypeScript: 0 new errors in src/ (only pre-existing)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Commit: 354bad1
+#### Feature #478 marked passing
