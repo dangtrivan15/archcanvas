@@ -12305,3 +12305,30 @@ Status: PASSING
 
 #### Commit: 4d31481
 #### Feature #477 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #479
+==================================================
+
+## What was accomplished:
+- Implemented Feature #479: Remove .archproject.json manifest and old analyze flow
+
+### Key changes:
+
+1. **Deleted `src/core/project/manifest.ts`** — removed parseManifest, serializeManifest, createManifest
+2. **Rewrote `src/core/project/scanner.ts`** — replaced manifest imports with ProjectDescriptor/ProjectFile, added buildDescriptor() helper
+3. **Rewrote `src/cli/commands/analyze.ts`** — restructured into runAgenticAnalysis(), runLegacyPipeline(), handleMergeMode(); default output .archcanvas/main.archc; agentic path uses runAgentLoop
+4. **Updated `src/analyze/pipeline.ts`** — default output changed to .archcanvas/main.archc
+5. **Deprecated `src/analyze/inferEngine.ts`** — added @deprecated JSDoc notice
+6. **Updated types, stores, components, and 10+ test files**
+
+### Tests: 21 new tests in test/unit/core/removeManifest.test.ts
+
+### Verification:
+- TypeScript: 0 errors
+- Full test suite: 5192 tests passing
+- Vite build: succeeds
+- Browser: App loads correctly
+
+#### Commit: c9465a8
+#### Feature #479 marked passing
