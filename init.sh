@@ -85,15 +85,14 @@ fi
 echo ""
 echo -e "${YELLOW}Starting Vite development server...${NC}"
 echo ""
+npm run dev:ensure
+
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  App will be available at:               ║${NC}"
-echo -e "${GREEN}║  ${BLUE}http://localhost:5173${GREEN}                  ║${NC}"
+echo -e "${GREEN}║  App is available at:                    ║${NC}"
+echo -e "${GREEN}║  ${BLUE}https://localhost:5173${GREEN}                 ║${NC}"
 echo -e "${GREEN}║                                          ║${NC}"
-echo -e "${GREEN}║  Press Ctrl+C to stop the server         ║${NC}"
+echo -e "${GREEN}║  Stop with: npm run dev:stop             ║${NC}"
 echo -e "${GREEN}║                                          ║${NC}"
 echo -e "${GREEN}║  Recommended: Chrome/Edge browser        ║${NC}"
 echo -e "${GREEN}║  (for File System Access API support)    ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
-echo ""
-
-npm run dev
