@@ -129,20 +129,22 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
         console.warn('[TemplatePicker] ELK layout failed, using template positions:', err);
       }
 
-      // Save as .archc file in the project folder
-      const fileName = await saveTemplateAsFile(graph, displayName);
-
-      // Create a container node on the current canvas
+      // Create the container node FIRST to obtain its ULID
       const containerNode = createNode({
         type: 'meta/canvas-ref',
         displayName,
         args: {
-          filePath: fileName,
           nodeCount: graph.nodes.length,
           description: template.metadata.description,
         },
       });
-      containerNode.refSource = `file://./${fileName}`;
+
+      // Save as .archc file named after the container node's ID
+      const fileName = await saveTemplateAsFile(graph, displayName, containerNode.id);
+
+      // Set refSource to bare filename and update filePath arg
+      containerNode.refSource = fileName;
+      containerNode.args = { ...containerNode.args, filePath: fileName };
 
       const currentGraph = textApi.getGraph();
       const updatedGraph = engineAddNode(currentGraph, containerNode);

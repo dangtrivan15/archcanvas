@@ -42,38 +42,39 @@ describe('writeArchcToFolder', () => {
   });
 });
 
-// ── Filename sanitization tests ─────────────────────────
+// ── NodeId-based filename tests ─────────────────────────
 
-describe('Template filename sanitization', () => {
-  it('converts display names to valid filenames', () => {
-    // This logic is in projectStore.saveTemplateAsFile
-    const sanitize = (name: string) => {
-      const baseName = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      return `${baseName}.archc`;
-    };
+describe('Template filename from nodeId', () => {
+  it('uses nodeId as filename instead of sanitized display name', () => {
+    // saveTemplateAsFile now takes a nodeId and uses it directly
+    const deriveFilename = (nodeId: string) => `${nodeId}.archc`;
 
-    expect(sanitize('SaaS Starter')).toBe('saas-starter.archc');
-    expect(sanitize('AI/ML Platform')).toBe('ai-ml-platform.archc');
-    expect(sanitize('My  Cool   Project')).toBe('my-cool-project.archc');
-    expect(sanitize('  Leading Spaces  ')).toBe('leading-spaces.archc');
-    expect(sanitize('Special@#$Characters!')).toBe('special-characters.archc');
-    expect(sanitize('simple')).toBe('simple.archc');
+    expect(deriveFilename('01JABCDEF')).toBe('01JABCDEF.archc');
+    expect(deriveFilename('01H1234567890ABCDEFGHIJ')).toBe('01H1234567890ABCDEFGHIJ.archc');
+  });
+
+  it('filename does not depend on display name at all', () => {
+    const nodeId = '01JABCDEF';
+    const fileName = `${nodeId}.archc`;
+
+    // No matter the display name, filename is always based on nodeId
+    expect(fileName).not.toContain('saas');
+    expect(fileName).not.toContain('starter');
+    expect(fileName).toBe('01JABCDEF.archc');
   });
 });
 
 // ── Container node creation tests ────────────────────────
 
 describe('Container node creation for templates', () => {
-  it('creates a node with correct type and refSource', () => {
-    // Simulate what UseTemplateDialog does
-    const fileName = 'saas-starter.archc';
+  it('creates a node with correct type and bare refSource', () => {
+    // Simulate what UseTemplateDialog does: create node first, then set refSource
+    const nodeId = '01JABCDEF';
+    const fileName = `${nodeId}.archc`;
     const displayName = 'SaaS Starter';
 
     const node = {
-      id: 'test-id',
+      id: nodeId,
       type: 'meta/canvas-ref',
       displayName,
       args: {
@@ -86,18 +87,20 @@ describe('Container node creation for templates', () => {
       properties: {},
       position: { x: 0, y: 0, width: 200, height: 100 },
       children: [],
-      refSource: `file://./${fileName}`,
+      refSource: fileName, // bare filename, no file:// prefix
     };
 
     expect(node.type).toBe('meta/canvas-ref');
-    expect(node.refSource).toBe('file://./saas-starter.archc');
-    expect(node.args.filePath).toBe('saas-starter.archc');
+    expect(node.refSource).toBe('01JABCDEF.archc');
+    expect(node.args.filePath).toBe('01JABCDEF.archc');
     expect(node.args.nodeCount).toBe(5);
     expect(node.displayName).toBe('SaaS Starter');
+    // filename matches the node's own ID
+    expect(node.refSource).toBe(`${node.id}.archc`);
   });
 
   it('refSource ends with .archc so RenderApi maps to container type', () => {
-    const refSource = 'file://./my-template.archc';
+    const refSource = '01JABCDEF.archc';
     const isArchcRef = refSource.endsWith('.archc');
     expect(isArchcRef).toBe(true);
   });
@@ -106,7 +109,7 @@ describe('Container node creation for templates', () => {
 // ── Manifest update tests ────────────────────────────────
 
 describe('Manifest update on container import', () => {
-  it('adds new file entry to manifest', () => {
+  it('adds new file entry with nodeId-based path to manifest', () => {
     const manifest = {
       version: 1 as const,
       name: 'Test Project',
@@ -115,7 +118,8 @@ describe('Manifest update on container import', () => {
       links: [],
     };
 
-    const fileName = 'saas-starter.archc';
+    const nodeId = '01JABCDEF';
+    const fileName = `${nodeId}.archc`;
     const displayName = 'SaaS Starter';
 
     // Simulate the update logic from projectStore
@@ -132,26 +136,27 @@ describe('Manifest update on container import', () => {
     };
 
     expect(updated.files).toHaveLength(2);
-    expect(updated.files[1]!.path).toBe('saas-starter.archc');
+    expect(updated.files[1]!.path).toBe('01JABCDEF.archc');
     expect(updated.links).toHaveLength(1);
     expect(updated.links[0]!.from).toBe('main.archc');
-    expect(updated.links[0]!.to).toBe('saas-starter.archc');
+    expect(updated.links[0]!.to).toBe('01JABCDEF.archc');
     expect(updated.links[0]!.label).toBe('imports');
   });
 
   it('does not duplicate file entry if already in manifest', () => {
+    const nodeId = '01JABCDEF';
     const manifest = {
       version: 1 as const,
       name: 'Test Project',
       rootFile: 'main.archc',
       files: [
         { path: 'main.archc', displayName: 'Main Architecture' },
-        { path: 'saas-starter.archc', displayName: 'SaaS Starter' },
+        { path: `${nodeId}.archc`, displayName: 'SaaS Starter' },
       ],
       links: [],
     };
 
-    const fileName = 'saas-starter.archc';
+    const fileName = `${nodeId}.archc`;
     const alreadyInManifest = manifest.files.some((f) => f.path === fileName);
     expect(alreadyInManifest).toBe(true);
   });

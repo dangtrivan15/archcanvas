@@ -251,7 +251,7 @@ describe('UseTemplateDialog - Import Modes', () => {
     expect(screen.getByTestId('use-template-confirm').textContent).toBe('Use Template');
   });
 
-  it('calls saveTemplateAsFile and creates container node in container mode', async () => {
+  it('creates container node FIRST then calls saveTemplateAsFile with nodeId', async () => {
     mocks.isProjectOpen.value = true;
 
     const onClose = vi.fn();
@@ -263,12 +263,19 @@ describe('UseTemplateDialog - Import Modes', () => {
       expect(mocks.saveTemplateAsFile).toHaveBeenCalled();
     });
 
-    // Verify container node was created
+    // Verify container node was created FIRST (createNode called before saveTemplateAsFile)
     expect(mocks.createNode).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'meta/canvas-ref',
         displayName: 'SaaS Starter',
       }),
+    );
+
+    // Verify saveTemplateAsFile was called with the node's ID as third argument
+    expect(mocks.saveTemplateAsFile).toHaveBeenCalledWith(
+      expect.anything(), // graph
+      expect.any(String), // displayName
+      'container-id', // nodeId (from the mock createNode)
     );
 
     // Verify addNode was called to add the container to the current graph
