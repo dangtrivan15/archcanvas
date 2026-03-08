@@ -11443,3 +11443,20 @@ Status: PASSING
 - No mock data patterns in production code
 
 #### Feature #450 marked passing
+
+---
+
+## Session: Feature #454 - Depth Indicator in Status Bar
+Date: 2026-03-08
+Status: PASSING
+
+The feature was already fully implemented in ModeStatusBar.tsx. Verified all requirements:
+- nestedCanvasStore integration (fileStack, activeFilePath, popFile, popToRoot)
+- File-level breadcrumbs rendered as clickable segments
+- Depth badge (D:N format) with layered SVG icon, hidden at depth 0
+- Click navigation calls popFile()/popToRoot()
+- Distinct styling for file vs nav breadcrumbs
+- 25/25 component tests passing
+- Zero console errors, no mock data patterns
+
+Feature #454 marked passing
