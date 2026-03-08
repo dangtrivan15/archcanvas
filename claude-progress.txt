@@ -13128,3 +13128,51 @@ richer architectures with more nodes, parent-child relationships, and canvas-ref
 
 #### Commit: 1de6804
 #### Feature #496 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #497
+==================================================
+
+## Feature #497: Add depth guidance to legacy prompt templates - PASSING
+
+### Summary:
+Added consistent depth guidance, thoroughness instructions, and composite node
+(meta/canvas-ref) guidance to all 4 legacy prompt templates.
+
+### Changes:
+
+1. **src/analyze/prompts/general.ts**:
+   - System prompt: Added thoroughness (15-50+ nodes), parent-child (parentId), and canvas-ref guidance
+   - User prompt: Added "Depth & Thoroughness Guidelines" section, changed "major" to "all architecturally significant"
+
+2. **src/analyze/prompts/webApp.ts**:
+   - System prompt: Added web-specific depth guidance (model route groups, middleware layers, not just "frontend"/"backend"), parentId, canvas-ref
+   - User prompt: Added "Depth Guidelines" section, expanded instructions to model children under backend/frontend, added composite subsystems step
+
+3. **src/analyze/prompts/microservices.ts**:
+   - System prompt: Added per-service internals guidance (handlers, sagas, repositories), parentId, canvas-ref for cross-repo references
+   - User prompt: Added "Depth Guidelines" section, expanded instructions with per-service internals step and composite subsystems step
+
+4. **src/analyze/prompts/dataPipeline.ts**:
+   - System prompt: Added individual pipeline stages guidance, parentId for stage decomposition, canvas-ref for sub-pipelines
+   - User prompt: Added "Depth Guidelines" section, expanded instructions to model individual stages as children, added composite sub-pipelines step
+
+5. **test/unit/analyze/prompts/promptTemplates.test.ts**:
+   - Added 17 new tests in "Depth guidance in legacy templates" describe block
+   - Tests verify: thoroughness text, parentId, canvas-ref, depth guidelines sections, domain-specific guidance
+
+### Feature steps covered:
+1. ✅ general.ts: thoroughness + all significant components guidance
+2. ✅ webApp.ts: web-specific depth (route groups, middleware layers)
+3. ✅ microservices.ts: per-service internals + infrastructure components
+4. ✅ dataPipeline.ts: individual pipeline stages, not just orchestrator
+5. ✅ All templates: composite node (canvas-ref) guidance
+
+### Verification:
+- 49/49 prompt template tests pass (32 existing + 17 new)
+- 313/313 analyze tests pass (0 regressions)
+- Browser: App loads with title "ArchCanvas", zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns in production code
+
+#### Commit: 1245531
+#### Feature #497 marked passing
