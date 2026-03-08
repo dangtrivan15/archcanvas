@@ -12837,3 +12837,44 @@ entry instead of skipping when already present.
 #### Commit: a8a01c2
 #### Feature #490 marked passing
 #### Progress: 490/490 features passing (100%)
+
+==================================================
+SESSION: 2026-03-08 - Feature #491
+==================================================
+
+## Feature #491: Fix CLI entry point _isDirectRun symlink detection - PASSING
+
+### Summary:
+The _isDirectRun guard in src/cli/index.ts compared import.meta.url (real file path)
+against process.argv[1] (potentially a symlink path). Through npm link, these never
+match, so main() never executes and all CLI commands produce zero output.
+
+### Fix:
+- Added `import { realpathSync } from 'node:fs'`
+- Wrapped detection in IIFE with try/catch
+- Uses `realpathSync(process.argv[1])` to resolve symlinks before comparison
+- Falls back to old endsWith comparison if realpathSync throws
+
+### Changes:
+
+1. **src/cli/index.ts** - Replaced lines 411-414:
+   - Old: `import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'))`
+   - New: `realpathSync(process.argv[1])` → `new URL('file://' + resolved)` → compare
+
+2. **test/unit/cli/cliEntryPoint.test.ts** - Added 5 new tests:
+   - Uses realpathSync from node:fs
+   - Calls realpathSync on process.argv[1]
+   - Converts to file:// URL
+   - Has fallback when realpathSync throws
+   - Does not run main() when imported by vitest
+
+### Verification:
+- 361/361 CLI tests pass (5 new, 356 existing)
+- Built CLI: `node dist/cli/index.js --help` produces help output
+- Built CLI: `archcanvas mcp --file` responds to JSON-RPC initialize
+- Built CLI: `archcanvas init` creates .archc file
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA)
+
+#### Commit: 71e214b
+#### Feature #491 marked passing
+#### Progress: 491/491 features passing (100%)
