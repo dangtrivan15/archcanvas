@@ -12555,3 +12555,45 @@ including malformed files, idempotent overwrites, and clean file deletion.
 
 #### Commit: d69a1dd
 #### Feature #481 marked passing
+
+---
+
+## Session: Feature #482 - CLI: archcanvas mcp install
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Continued from previous killed agent's partial work. The agent had already implemented
+the core files (mcpInstall.ts, mcpUninstall.ts, mcpJson.ts changes, index.ts registration,
+and test files) but left them uncommitted.
+
+### What was done this session:
+1. Reviewed all uncommitted changes from the previous agent
+2. Removed conflicting test file (mcpInstallCommand.test.ts) that tested a different API
+3. Verified all 11 tests pass in mcpInstall.test.ts covering all 8 feature steps
+4. Verified 568/568 CLI+MCP tests pass with zero regressions
+5. Verified app still loads correctly (via previous screenshot - no new console errors)
+6. No mock data patterns found
+
+### Implementation (from previous agent):
+
+1. **src/cli/commands/mcpInstall.ts** - New CLI command:
+   - buildInstallEntry() returns {command: 'archcanvas', args: ['mcp']}
+   - resolveMcpJsonPath(global) returns CWD or ~/.mcp.json
+   - registerMcpInstallCommand() registers 'install' subcommand on mcp parent
+   - Calls writeMcpJsonEntry + addProject/setGlobal for registry
+
+2. **src/mcp/mcpJson.ts** - Added writeMcpJsonEntry():
+   - Accepts custom McpServerEntry (not just archcFilePath)
+   - Refactored writeMcpJson to use shared _writeMcpJsonImpl
+
+3. **src/cli/index.ts** - Registered install/uninstall subcommands on mcp command
+
+4. **test/unit/cli/mcpInstall.test.ts** - 11 tests:
+   - buildInstallEntry helper, resolveMcpJsonPath (local + global)
+   - Integration: creates .mcp.json, correct config, merge preservation
+   - Registry update with project path, confirmation message
+   - Idempotent install, --global writes ~/.mcp.json, global registry flag
+
+#### Commit: 16f4a34
+#### Feature #482 marked passing
