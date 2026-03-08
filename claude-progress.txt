@@ -11644,3 +11644,59 @@ Status: PASSING
 #### Commit: 786481c
 #### Feature #460 marked passing
 #### Progress: 454/460 features passing (98.7%)
+
+---
+
+## Session: Feature #452 - Parent Edge Border Indicators
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #452: Parent Edge Border Indicators - PASSING
+
+#### Implementation:
+
+1. **ParentEdgeIndicator type** (`src/store/nestedCanvasStore.ts`):
+   - New interface: edge, connectedNodeName, connectedNodeId, direction (incoming/outgoing)
+   - `buildParentEdgeIndicators()` function scans parent graph edges for container connections
+   - `parentEdgeIndicators` state field in nestedCanvasStore
+
+2. **Store changes** (`src/store/nestedCanvasStore.ts`):
+   - `pushFile()` now accepts optional `containerNodeId` parameter
+   - When provided, captures parent edges connecting to that container node
+   - Indicators cleared on `popFile()`, `popToRoot()`, and `reset()`
+
+3. **useContainerDiveIn hook** (`src/hooks/useContainerDiveIn.ts`):
+   - Updated to pass `archNodeId` (container node ID) through to `pushFile()`
+   - Both animated and instant dive-in paths forward the containerNodeId
+
+4. **ParentEdgeIndicators component** (`src/components/canvas/ParentEdgeIndicators.tsx`):
+   - Fixed-position overlay (z-40, pointer-events-none container)
+   - Incoming edges rendered as pills on LEFT border
+   - Outgoing edges rendered as pills on RIGHT border
+   - Each pill shows: direction arrow, edge type icon (sync/async/data-flow), node name, edge label
+   - Color-coded borders per edge type (blue=sync, amber=async, green=data-flow)
+   - Click calls popFile() then requestCenterOnNode() to navigate and center
+   - Keyboard accessible (Enter/Space), truncates long names, aria-labels
+   - React.memo wrapped for performance
+   - Hidden when depth=0 or no indicators
+
+5. **Canvas integration** (`src/components/canvas/Canvas.tsx`):
+   - Added ParentEdgeIndicators after NavigationBreadcrumb
+   - Renders as overlay that doesn't interfere with canvas interactions
+
+#### Tests: 19 new tests (all passing)
+- Store: captures edges, identifies incoming/outgoing, excludes unrelated edges
+- Store: clears on pop/popToRoot/reset, fallback name for missing nodes
+- Component: correct data shape, split by direction, edge labels preserved
+- Navigation: popFile restores parent, requestCenterOnNode available
+- Edge cases: no edges, only incoming, only outgoing, multiple edges same nodes
+
+#### Verification:
+- Full test suite: 4938/4938 PASS (0 failures)
+- TypeScript: 0 errors in src/
+- Vite build: PASS
+- Browser: App loads, zero console errors, indicators hidden at root level
+- No mock data patterns: PASS
+
+#### Commit: 82faaa5
+#### Feature #452 marked passing
