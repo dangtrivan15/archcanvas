@@ -12878,3 +12878,36 @@ match, so main() never executes and all CLI commands produce zero output.
 #### Commit: 71e214b
 #### Feature #491 marked passing
 #### Progress: 491/491 features passing (100%)
+
+==================================================
+SESSION: 2026-03-08 - Feature #492
+==================================================
+
+## Feature #492: Test coverage for MCP config and CLI startup fixes - PASSING
+
+### Summary:
+Verified that all 7 feature steps already had test coverage from previous agent sessions
+(features #490, #491), with one gap: MCP server startup with non-existent --file path.
+Added 2 integration tests to cover that scenario.
+
+### Already covered (steps 1-5):
+1. mcpJson.test.ts: 21 tests using `command: 'archcanvas', args: ['mcp', '--file', ...]`
+2. mcpJsonBrowser.test.ts: 13 tests including overwrite behavior
+3. mcpInstall.test.ts: 11 tests verifying new command format
+4. mcpUninstall.test.ts: 18 tests working with new format
+5. cliEntryPoint.test.ts: 5 tests for _isDirectRun symlink resolution
+
+### Added (step 6):
+- test/integration/mcp/mcpFileBacked.test.ts: 2 new tests
+  - "non-existent --file: creates parent directory and .archc file with empty graph"
+  - "non-existent --file: handles existing parent directory gracefully"
+
+### Step 7 (full suite): All 136 tests pass across 6 test files
+
+### Verification:
+- 136/136 tests pass
+- No regressions
+
+#### Commit: de5fb0c
+#### Feature #492 marked passing
+#### Progress: 492/492 features passing (100%)
