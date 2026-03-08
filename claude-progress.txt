@@ -11460,3 +11460,27 @@ The feature was already fully implemented in ModeStatusBar.tsx. Verified all req
 - Zero console errors, no mock data patterns
 
 Feature #454 marked passing
+
+---
+
+## Session: Feature #458 - Convert E2E Scripts to @playwright/test Format
+Date: 2026-03-08
+Status: PASSING
+
+### Changes:
+- Converted 3 standalone .mjs E2E scripts to @playwright/test .spec.ts format
+- Removed hardcoded BASE_URL, tests use baseURL from playwright.config.ts
+- Fixed HTTPS mismatch in playwright.config.ts (Vite uses basicSsl plugin)
+- Added ignoreHTTPSErrors for self-signed cert compatibility
+- Updated ensure-dev-server.sh health check to use HTTPS
+- Deleted old .mjs files
+
+### Verification:
+- npx playwright test --list: 6 tests in 3 files discovered
+- npx playwright test: 4/6 pass (drag-drop all pass; AI tests need API key)
+- Unit tests: 4858/4858 pass (0 failures)
+- No hardcoded port numbers in test files
+- No old .mjs files remain
+
+### Commit: ce098c8
+### Feature #458 marked passing
