@@ -12481,3 +12481,37 @@ Status: PASSING
 
 #### Commit: c8717ce
 #### Feature #486 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #480
+==================================================
+
+## Feature #480: MCP registry file management - PASSING
+
+### Summary:
+The core MCP registry module (src/mcp/registry.ts) was already implemented by a previous
+agent (feature #486, commit c8717ce). This session completed the feature by:
+
+1. Verified the `global` boolean field exists in McpRegistry interface
+2. Verified `setGlobal()` function works correctly
+3. Added 8 new tests covering:
+   - setGlobal(true) and setGlobal(false)
+   - Global flag persistence to disk
+   - Preserving existing projects when setting global
+   - Preserving installed_at/version when toggling global
+   - Reading global=true from existing file
+   - Defaulting global to false for non-boolean values
+   - Round-trip with combined project and global mutations
+4. Updated existing tests to verify global field in defaults and round-trips
+
+### Tests: 30 tests (all passing)
+- test/unit/mcp/mcpRegistry.test.ts
+- Directory creation (2), Path helpers (2), Read (8), Write (4), Add (4), Remove (3), SetGlobal (5), Round-trip (3)
+
+### Verification:
+- Full test suite: 30/30 PASS
+- TypeScript: 0 new errors
+- No mock data patterns: N/A (file I/O module)
+
+#### Commit: 38214cc
+#### Feature #480 marked passing
