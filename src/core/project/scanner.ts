@@ -120,3 +120,21 @@ export async function writeManifestToFolder(
   await writable.write(serializeManifest(manifest));
   await writable.close();
 }
+
+/**
+ * Write a binary .archc file to the project directory.
+ *
+ * @param dirHandle - The project directory handle
+ * @param fileName - File name (e.g., "my-stack.archc")
+ * @param data - Raw binary .archc data
+ */
+export async function writeArchcToFolder(
+  dirHandle: FileSystemDirectoryHandle,
+  fileName: string,
+  data: Uint8Array,
+): Promise<void> {
+  const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(data);
+  await writable.close();
+}
