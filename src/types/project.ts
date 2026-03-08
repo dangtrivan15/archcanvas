@@ -55,3 +55,13 @@ export interface ProjectManifest {
 
 /** The manifest filename used in project folders. */
 export const PROJECT_MANIFEST_FILENAME = '.archproject.json';
+
+/**
+ * The subdirectory name used for ArchCanvas projects.
+ * When present inside a user-selected folder, indicates that the folder
+ * contains an ArchCanvas project. All .archc files live inside this directory.
+ */
+export const ARCHCANVAS_DIR_NAME = '.archcanvas';
+
+/** The default root .archc file name inside the .archcanvas/ directory. */
+export const ARCHCANVAS_MAIN_FILE = 'main.archc';

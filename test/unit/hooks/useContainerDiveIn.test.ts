@@ -258,7 +258,7 @@ describe('useContainerDiveIn', () => {
       });
 
       // Should have loaded the file and called pushFile
-      expect(mockLoadFile).toHaveBeenCalledWith('./child.archc');
+      expect(mockLoadFile).toHaveBeenCalledWith('child.archc');
       expect(mockPushFile).toHaveBeenCalled();
       expect(result.current[0].phase).toBe('crossfade-out');
     });
@@ -310,7 +310,7 @@ describe('useContainerDiveIn', () => {
 
       // Should NOT go through zoom-in phase
       // Should have directly loaded file and pushed
-      expect(mockLoadFile).toHaveBeenCalledWith('./child.archc');
+      expect(mockLoadFile).toHaveBeenCalledWith('child.archc');
       expect(mockPushFile).toHaveBeenCalled();
 
       // Should not have called setViewport (no zoom animation)
