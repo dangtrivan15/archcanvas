@@ -113,7 +113,7 @@ function makeContainerNode(overrides: Partial<CanvasNode> = {}): CanvasNode {
       displayName: 'Child System',
       nodedefType: 'meta/canvas-ref',
       color: '#0EA5E9',
-      refSource: 'file://./child-system.archc',
+      refSource: 'child-system.archc',
       hasChildren: false,
       noteCount: 0,
       pendingSuggestionCount: 0,
@@ -150,7 +150,7 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       expect(result.current[0].phase).toBe('zoom-in');
@@ -165,7 +165,7 @@ describe('useContainerDiveIn', () => {
           displayName: 'Test',
           nodedefType: 'meta/canvas-ref',
           color: '#FF6B6B',
-          refSource: 'file://./child.archc',
+          refSource: 'child.archc',
           hasChildren: false,
           noteCount: 0,
           pendingSuggestionCount: 0,
@@ -174,7 +174,7 @@ describe('useContainerDiveIn', () => {
       });
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       expect(result.current[0].transitionColor).toBe('#FF6B6B');
@@ -185,7 +185,7 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       expect(mockSetViewport).toHaveBeenCalledWith(
@@ -203,7 +203,7 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       expect(result.current[0].phase).toBe('zoom-in');
@@ -221,14 +221,14 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       mockSetViewport.mockClear();
 
       // Try to start another dive-in while animating
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       // Should not have called setViewport again
@@ -240,7 +240,7 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       act(() => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+        result.current[1].diveIn('node-1', 'child.archc', [node], false);
       });
 
       // Advance to crossfade-in phase
@@ -290,7 +290,7 @@ describe('useContainerDiveIn', () => {
       const { result } = renderHook(() => useContainerDiveIn());
 
       act(() => {
-        result.current[1].diveIn('nonexistent-node', 'file://./child.archc', [], false);
+        result.current[1].diveIn('nonexistent-node', 'child.archc', [], false);
       });
 
       expect(result.current[0].phase).toBe('idle');
@@ -304,7 +304,7 @@ describe('useContainerDiveIn', () => {
       const node = makeContainerNode();
 
       await act(async () => {
-        result.current[1].diveIn('node-1', 'file://./child.archc', [node], true);
+        result.current[1].diveIn('node-1', 'child.archc', [node], true);
         await vi.advanceTimersByTimeAsync(100);
       });
 
@@ -412,7 +412,7 @@ describe('calculateNodeFillViewport (via diveIn)', () => {
     });
 
     act(() => {
-      result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+      result.current[1].diveIn('node-1', 'child.archc', [node], false);
     });
 
     // Check that setViewport was called with a viewport that would zoom into the node
@@ -455,7 +455,7 @@ describe('Animation phase sequence', () => {
 
     // Start dive-in
     act(() => {
-      result.current[1].diveIn('node-1', 'file://./child.archc', [node], false);
+      result.current[1].diveIn('node-1', 'child.archc', [node], false);
     });
     phases.push(result.current[0].phase);
 

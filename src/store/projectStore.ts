@@ -215,7 +215,16 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     if (cached) return cached;
 
     // Read and decode the file from .archcanvas/ (or root for legacy)
-    const data = await readProjectFile(filesDirHandle, relativePath);
+    let data: Uint8Array;
+    try {
+      data = await readProjectFile(filesDirHandle, relativePath);
+    } catch (err) {
+      // File System Access API throws NotFoundError when file doesn't exist
+      if (err instanceof DOMException && err.name === 'NotFoundError') {
+        throw new Error(`Referenced file not found: ${relativePath}`);
+      }
+      throw err;
+    }
     const { graph } = await decodeArchcData(data);
 
     const entry: LoadedFileEntry = {
