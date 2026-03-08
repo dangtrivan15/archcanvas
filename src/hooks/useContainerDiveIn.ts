@@ -17,6 +17,7 @@ import { useReactFlow } from '@xyflow/react';
 import type { TransitionPhase } from '@/components/canvas/TransitionOverlay';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useProjectStore } from '@/store/projectStore';
+import { useUIStore } from '@/store/uiStore';
 import type { CanvasNode } from '@/types/canvas';
 
 // ─── Animation timing constants ────────────────────────────────
@@ -140,8 +141,9 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       const color = targetNode.data?.color || '#0EA5E9';
       setTransitionColor(color);
 
-      // Extract the file path from refSource (strip 'file://' prefix)
-      const filePath = refSource.replace(/^file:\/\//, '');
+      // Extract the file path from refSource (strip 'file://' and './' prefixes)
+      // getFileHandle() requires a bare filename — no './' or path separators
+      const filePath = refSource.replace(/^file:\/\//, '').replace(/^\.\//, '');
 
       // Save for crossfade callback (nodeId is the archNodeId of the container)
       pendingDiveInRef.current = { refSource: filePath, nodeId, archNodeId: nodeId };
@@ -203,6 +205,8 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
         }
       } catch (err) {
         console.error('[ContainerDiveIn] Failed to load child file:', filePath, err);
+        const message = err instanceof Error ? err.message : String(err);
+        useUIStore.getState().showToast(`Failed to open canvas: ${message}`);
       }
     },
     [transitionColor],

@@ -156,7 +156,9 @@ export async function readProjectFile(
   dirHandle: FileSystemDirectoryHandle,
   relativePath: string,
 ): Promise<Uint8Array> {
-  const fileHandle = await dirHandle.getFileHandle(relativePath);
+  // Normalize path: strip leading './' — getFileHandle only accepts bare filenames
+  const normalized = relativePath.replace(/^\.\//, '');
+  const fileHandle = await dirHandle.getFileHandle(normalized);
   const file = await fileHandle.getFile();
   const buffer = await file.arrayBuffer();
   return new Uint8Array(buffer);
