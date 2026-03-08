@@ -18,12 +18,27 @@
  */
 
 import { create } from 'zustand';
-import type { ArchGraph, CanvasViewport } from '@/types/graph';
+import type { ArchGraph, ArchEdge, CanvasViewport } from '@/types/graph';
 import { useNavigationStore } from './navigationStore';
 import { useCanvasStore } from './canvasStore';
 import { useCoreStore } from './coreStore';
 
 // ─── Types ─────────────────────────────────────────────────────
+
+/**
+ * Describes a parent edge that connects to the container node the user dived into.
+ * Used to render "portal" indicators at the canvas borders.
+ */
+export interface ParentEdgeIndicator {
+  /** The edge from the parent graph. */
+  edge: ArchEdge;
+  /** Display name of the node on the other end (in the parent graph). */
+  connectedNodeName: string;
+  /** ID of the connected node in the parent graph (for centering after pop). */
+  connectedNodeId: string;
+  /** Whether this edge goes INTO the container ('incoming') or OUT of it ('outgoing'). */
+  direction: 'incoming' | 'outgoing';
+}
 
 /**
  * A single entry in the file navigation stack.
@@ -63,11 +78,13 @@ export interface NestedCanvasStoreState {
    *
    * Saves the current graph, navigation path, and viewport as a FileStackEntry,
    * then applies the new file's graph to coreStore and resets navigation to root.
+   * Also captures parent edges connecting to the container node for border indicators.
    *
    * @param filePath - Relative path of the new .archc file to navigate into
    * @param graph - The decoded graph of the new file
+   * @param containerNodeId - ID of the container node being dived into (for edge capture)
    */
-  pushFile: (filePath: string, graph: ArchGraph) => void;
+  pushFile: (filePath: string, graph: ArchGraph, containerNodeId?: string) => void;
 
   /**
    * Pop the most recent file from the stack and restore its state.
@@ -96,19 +113,67 @@ export interface NestedCanvasStoreState {
   popToRoot: () => FileStackEntry | null;
 
   /**
+   * Parent edge indicators for the current nested level.
+   * When the user is inside a nested canvas, these represent the parent's
+   * edges that connect to the container node, rendered as clickable border indicators.
+   */
+  parentEdgeIndicators: ParentEdgeIndicator[];
+
+  /**
    * Clear all nested navigation state (used when opening a new file or project).
    */
   reset: () => void;
 }
 
+/**
+ * Build parent edge indicators by finding edges in the parent graph
+ * that connect to the given container node.
+ */
+function buildParentEdgeIndicators(
+  parentGraph: ArchGraph,
+  containerNodeId: string,
+): ParentEdgeIndicator[] {
+  const indicators: ParentEdgeIndicator[] = [];
+
+  for (const edge of parentGraph.edges) {
+    if (edge.toNode === containerNodeId) {
+      // Edge goes INTO the container node
+      const sourceNode = parentGraph.nodes.find((n) => n.id === edge.fromNode);
+      indicators.push({
+        edge,
+        connectedNodeName: sourceNode?.displayName ?? edge.fromNode,
+        connectedNodeId: edge.fromNode,
+        direction: 'incoming',
+      });
+    } else if (edge.fromNode === containerNodeId) {
+      // Edge goes OUT of the container node
+      const targetNode = parentGraph.nodes.find((n) => n.id === edge.toNode);
+      indicators.push({
+        edge,
+        connectedNodeName: targetNode?.displayName ?? edge.toNode,
+        connectedNodeId: edge.toNode,
+        direction: 'outgoing',
+      });
+    }
+  }
+
+  return indicators;
+}
+
 export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) => ({
   fileStack: [],
   activeFilePath: null,
+  parentEdgeIndicators: [],
 
-  pushFile: (filePath, graph) => {
+  pushFile: (filePath, graph, containerNodeId) => {
     const { graph: currentGraph } = useCoreStore.getState();
     const { path: currentNavPath } = useNavigationStore.getState();
     const { viewport: currentViewport } = useCanvasStore.getState();
+
+    // Capture parent edges connecting to the container node
+    const indicators = containerNodeId
+      ? buildParentEdgeIndicators(currentGraph, containerNodeId)
+      : [];
 
     // Save current state onto the stack
     const entry: FileStackEntry = {
@@ -121,6 +186,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     set((s) => ({
       fileStack: [...s.fileStack, entry],
       activeFilePath: filePath,
+      parentEdgeIndicators: indicators,
     }));
 
     // Switch coreStore to the new file's graph
@@ -141,9 +207,13 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     const restored = fileStack[fileStack.length - 1]!;
     const newStack = fileStack.slice(0, -1);
 
+    // When popping back, rebuild indicators from the grandparent level if applicable
+    // (i.e., if we're still nested after this pop, show the parent-of-parent's edges)
+    // For simplicity, clear indicators when returning to a level
     set({
       fileStack: newStack,
       activeFilePath: restored.filePath === '__root__' ? null : restored.filePath,
+      parentEdgeIndicators: [],
     });
 
     // Restore the graph
@@ -172,6 +242,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     set({
       fileStack: [],
       activeFilePath: null,
+      parentEdgeIndicators: [],
     });
 
     // Restore root graph
@@ -190,6 +261,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     set({
       fileStack: [],
       activeFilePath: null,
+      parentEdgeIndicators: [],
     });
   },
 }));

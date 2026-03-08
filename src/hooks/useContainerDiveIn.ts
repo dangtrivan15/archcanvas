@@ -115,6 +115,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
   const pendingDiveInRef = useRef<{
     refSource: string;
     nodeId: string;
+    archNodeId: string;
   } | null>(null);
   const pendingDiveOutRef = useRef<boolean>(false);
   const savedViewportBeforeDiveRef = useRef<{ x: number; y: number; zoom: number } | null>(null);
@@ -142,13 +143,13 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       // Extract the file path from refSource (strip 'file://' prefix)
       const filePath = refSource.replace(/^file:\/\//, '');
 
-      // Save for crossfade callback
-      pendingDiveInRef.current = { refSource: filePath, nodeId };
+      // Save for crossfade callback (nodeId is the archNodeId of the container)
+      pendingDiveInRef.current = { refSource: filePath, nodeId, archNodeId: nodeId };
 
       if (prefersReducedMotion) {
         // Instant switch - no animation
         setIsAnimating(true);
-        performDiveInSwitch(filePath).then(() => {
+        performDiveInSwitch(filePath, nodeId).then(() => {
           setIsAnimating(false);
         });
         return;
@@ -187,7 +188,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
   // ─── Dive In: File Switch (called at crossfade peak) ──────────
 
   const performDiveInSwitch = useCallback(
-    async (filePath: string) => {
+    async (filePath: string, containerNodeId?: string) => {
       const projectStore = useProjectStore.getState();
       const nestedStore = useNestedCanvasStore.getState();
 
@@ -196,7 +197,8 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
         const loaded = await projectStore.loadFile(filePath);
         if (loaded && loaded.graph) {
           // Push current state + switch to child graph
-          nestedStore.pushFile(filePath, loaded.graph);
+          // containerNodeId enables parent edge indicator capture
+          nestedStore.pushFile(filePath, loaded.graph, containerNodeId);
         }
       } catch (err) {
         console.error('[ContainerDiveIn] Failed to load child file:', filePath, err);
@@ -233,10 +235,10 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
   const onCrossfadeInComplete = useCallback(() => {
     if (pendingDiveInRef.current) {
       // Dive-in: at peak opacity, swap the canvas
-      const { refSource } = pendingDiveInRef.current;
+      const { refSource, archNodeId } = pendingDiveInRef.current;
       pendingDiveInRef.current = null;
 
-      performDiveInSwitch(refSource).then(() => {
+      performDiveInSwitch(refSource, archNodeId).then(() => {
         // Brief delay to let React Flow render new nodes before fading out
         setTimeout(() => {
           setPhase('crossfade-out');

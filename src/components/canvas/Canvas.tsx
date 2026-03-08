@@ -62,6 +62,7 @@ import { useStageManagerResize } from '@/hooks/useStageManagerResize';
 import { AnnotationOverlay } from '@/components/canvas/AnnotationOverlay';
 import { AnnotationToolbar } from '@/components/canvas/AnnotationToolbar';
 import { TransitionOverlay } from '@/components/canvas/TransitionOverlay';
+import { ParentEdgeIndicators } from '@/components/canvas/ParentEdgeIndicators';
 import { useContainerDiveIn } from '@/hooks/useContainerDiveIn';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 
@@ -222,9 +223,10 @@ function CanvasInner() {
   }, [diveActions, rfNodes, perf.prefersReducedMotion]);
 
   // Escape key handler for diving out of nested canvas
+  // When inside a nested file: if nav path is non-empty, zoom out within the file first;
+  // if nav path is empty (at root of nested file), pop the file stack.
   useEffect(() => {
     const handleEscapeDiveOut = (e: KeyboardEvent) => {
-      // Only handle Escape when we're nested and not in another modal/dialog
       if (
         e.key === 'Escape' &&
         nestedDepth > 0 &&
@@ -236,13 +238,123 @@ function CanvasInner() {
       ) {
         e.preventDefault();
         e.stopPropagation();
-        diveActions.diveOut(perf.prefersReducedMotion);
+        // If we have a navigation path within the nested file, zoom out first
+        if (navigationPath.length > 0) {
+          zoomOut();
+        } else {
+          // At root of nested file → pop back to parent file
+          diveActions.diveOut(perf.prefersReducedMotion);
+        }
       }
     };
     // Use capture phase so we can intercept before other Escape handlers
     document.addEventListener('keydown', handleEscapeDiveOut, true);
     return () => document.removeEventListener('keydown', handleEscapeDiveOut, true);
-  }, [nestedDepth, diveState.isAnimating, diveActions, perf.prefersReducedMotion, deleteDialogOpen, connectStep, placementMode]);
+  }, [nestedDepth, navigationPath, diveState.isAnimating, diveActions, perf.prefersReducedMotion, deleteDialogOpen, connectStep, placementMode, zoomOut]);
+
+  // Ctrl+Shift+Home: jump directly to project root (pop entire file stack)
+  useEffect(() => {
+    const handleJumpToRoot = (e: KeyboardEvent) => {
+      if (
+        e.key === 'Home' &&
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        nestedDepth > 0 &&
+        !diveState.isAnimating &&
+        !isActiveElementTextInput()
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        useNestedCanvasStore.getState().popToRoot();
+      }
+    };
+    document.addEventListener('keydown', handleJumpToRoot, true);
+    return () => document.removeEventListener('keydown', handleJumpToRoot, true);
+  }, [nestedDepth, diveState.isAnimating]);
+
+  // Enter key on selected container node: trigger dive-in
+  useEffect(() => {
+    const handleEnterDiveIn = (e: KeyboardEvent) => {
+      if (
+        e.key === 'Enter' &&
+        !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey &&
+        selectedNodeId &&
+        !diveState.isAnimating &&
+        !deleteDialogOpen &&
+        !connectStep &&
+        !placementMode &&
+        !isActiveElementTextInput()
+      ) {
+        // Check if the selected node is a container node with a refSource
+        const targetNode = rfNodes.find((n) => n.id === selectedNodeId);
+        if (targetNode?.data?.refSource) {
+          e.preventDefault();
+          e.stopPropagation();
+          diveActions.diveIn(
+            selectedNodeId,
+            targetNode.data.refSource as string,
+            rfNodes,
+            perf.prefersReducedMotion,
+          );
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEnterDiveIn, true);
+    return () => document.removeEventListener('keydown', handleEnterDiveIn, true);
+  }, [selectedNodeId, rfNodes, diveState.isAnimating, diveActions, perf.prefersReducedMotion, deleteDialogOpen, connectStep, placementMode]);
+
+  // Two-finger pinch-out gesture: pop file stack when spreading beyond threshold
+  useEffect(() => {
+    if (nestedDepth === 0) return;
+
+    let initialDistance: number | null = null;
+    const PINCH_OUT_THRESHOLD = 1.5; // Spread to 1.5x initial distance to trigger
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[1]!.clientX - e.touches[0]!.clientX;
+        const dy = e.touches[1]!.clientY - e.touches[0]!.clientY;
+        initialDistance = Math.hypot(dx, dy);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialDistance !== null && !diveState.isAnimating) {
+        const dx = e.touches[1]!.clientX - e.touches[0]!.clientX;
+        const dy = e.touches[1]!.clientY - e.touches[0]!.clientY;
+        const currentDistance = Math.hypot(dx, dy);
+        const ratio = currentDistance / initialDistance;
+
+        if (ratio > PINCH_OUT_THRESHOLD) {
+          initialDistance = null; // Prevent repeated triggers
+          if (navigationPath.length > 0) {
+            zoomOut();
+          } else {
+            diveActions.diveOut(perf.prefersReducedMotion);
+          }
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      initialDistance = null;
+    };
+
+    const canvasEl = document.querySelector('[data-testid="canvas"]');
+    if (canvasEl) {
+      canvasEl.addEventListener('touchstart', handleTouchStart as EventListener, { passive: true });
+      canvasEl.addEventListener('touchmove', handleTouchMove as EventListener, { passive: true });
+      canvasEl.addEventListener('touchend', handleTouchEnd as EventListener);
+    }
+
+    return () => {
+      if (canvasEl) {
+        canvasEl.removeEventListener('touchstart', handleTouchStart as EventListener);
+        canvasEl.removeEventListener('touchmove', handleTouchMove as EventListener);
+        canvasEl.removeEventListener('touchend', handleTouchEnd as EventListener);
+      }
+    };
+  }, [nestedDepth, navigationPath, diveState.isAnimating, diveActions, perf.prefersReducedMotion, zoomOut]);
 
   // Monitor node count for performance warnings
   useEffect(() => {
@@ -1189,6 +1301,9 @@ function CanvasInner() {
 
       {/* Navigation Breadcrumb - shown at top of canvas */}
       <NavigationBreadcrumb />
+
+      {/* Parent edge indicators - shown at canvas borders when inside nested canvas */}
+      <ParentEdgeIndicators />
 
       {/* Connect mode indicator */}
       {connectStep && (
