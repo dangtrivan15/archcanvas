@@ -11355,3 +11355,50 @@ Date: 2026-03-08
 
 #### Commit: c2d1255
 #### Feature #447 marked passing
+
+---
+
+## Session: Feature #448 - Container Node Type (archc-ref)
+Date: 2026-03-08
+
+### Feature #448: Container Node Type (archc-ref) - PASSING
+
+#### Implementation (pre-existing, verified):
+
+1. **NodeDef YAML** (`src/core/registry/builtins/core/meta/canvas-ref.yaml`):
+   - kind: NodeDef, namespace: meta, name: canvas-ref
+   - Args: filePath (string, required), nodeCount (number), description (string)
+   - Ports: inbound/outbound with archc-ref protocol
+   - Shape: container, Icon: FolderOpen
+
+2. **ContainerNode component** (`src/components/nodes/ContainerNode.tsx`):
+   - Layered shadow effect (stacked canvas appearance)
+   - File name extraction from refSource pattern (file://./path.archc)
+   - Node count badge with Layers icon
+   - "Open Canvas" dive-in affordance button with ChevronRight
+   - Color-tinted header with gradient
+   - Hover lift animation
+   - Inline editing support
+   - Port handles and badges
+
+3. **Registration**:
+   - nodeTypeMap: container → ContainerNode
+   - lodNodeTypeMap: container → SimplifiedNode
+   - iconMap: FolderOpen registered
+   - loader.ts: canvas-ref YAML imported and loaded
+   - renderApi.ts: .archc refSource → 'container' type, shape mapping
+
+4. **Tests**: 12 tests in test/unit/ui/containerNode.test.ts (all passing)
+   - nodeTypeMap/lodNodeTypeMap registration
+   - FolderOpen icon registration
+   - NodeDef resolution (name, namespace, args, ports)
+   - RenderApi mapping (meta/canvas-ref → container, .archc refSource → container, non-.archc → ref)
+
+#### Verification:
+- Full test suite: 4798/4798 PASS (0 failures)
+- Browser: ContainerNode renders correctly with all visual elements
+- Console: 0 app errors (only pre-existing SSL/PWA warnings)
+- Feature #448 marked passing
+
+#### Commit: 0216596
+#### Progress: 449/457 features passing
