@@ -205,6 +205,15 @@ export interface EmptyProjectDialogInfo {
   onStartBlank: () => void;
 }
 
+export interface ExternalAgentDialogInfo {
+  /** The copyable prompt for the external agent */
+  prompt: string;
+  /** Called when the user clicks "Done" */
+  onDone: () => void;
+  /** Called when the user clicks "Cancel" */
+  onCancel: () => void;
+}
+
 /** Default and min/max panel widths in pixels */
 export const LEFT_PANEL_MIN_WIDTH = 180;
 export const LEFT_PANEL_MAX_WIDTH = 400;
@@ -319,6 +328,10 @@ export interface UIStoreState {
   // Empty project onboarding dialog
   emptyProjectDialogOpen: boolean;
   emptyProjectDialogInfo: EmptyProjectDialogInfo | null;
+
+  // External agent dialog (waiting for MCP agent)
+  externalAgentDialogOpen: boolean;
+  externalAgentDialogInfo: ExternalAgentDialogInfo | null;
 
   // Template picker dialog
   templatePickerOpen: boolean;
@@ -437,6 +450,10 @@ export interface UIStoreState {
   openEmptyProjectDialog: (info: EmptyProjectDialogInfo) => void;
   closeEmptyProjectDialog: () => void;
 
+  // External agent dialog actions
+  openExternalAgentDialog: (info: ExternalAgentDialogInfo) => void;
+  closeExternalAgentDialog: () => void;
+
   // Template picker actions
   openTemplatePicker: () => void;
   closeTemplatePicker: () => void;
@@ -525,6 +542,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   emptyProjectDialogOpen: false,
   emptyProjectDialogInfo: null,
+
+  externalAgentDialogOpen: false,
+  externalAgentDialogInfo: null,
 
   templatePickerOpen: false,
   templateGalleryOpen: false,
@@ -715,6 +735,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeEmptyProjectDialog: () =>
     set({ emptyProjectDialogOpen: false, emptyProjectDialogInfo: null }),
+
+  openExternalAgentDialog: (info) =>
+    set({ externalAgentDialogOpen: true, externalAgentDialogInfo: info }),
+
+  closeExternalAgentDialog: () =>
+    set({ externalAgentDialogOpen: false, externalAgentDialogInfo: null }),
 
   openTemplatePicker: () => set({ templatePickerOpen: true }),
 

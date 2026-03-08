@@ -16,6 +16,7 @@ import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { EmptyProjectDialog } from '@/components/shared/EmptyProjectDialog';
 import { AnalysisProgressDialog } from '@/components/shared/AnalysisProgressDialog';
+import { ExternalAgentDialog } from '@/components/shared/ExternalAgentDialog';
 import { useAnalysisStore } from '@/store/analysisStore';
 import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
@@ -65,6 +66,27 @@ function AnalysisProgressDialogConnected() {
       error={error}
       onCancel={cancel}
       onClose={closeDialog}
+    />
+  );
+}
+
+/**
+ * Connected wrapper for ExternalAgentDialog that reads from the uiStore.
+ */
+function ExternalAgentDialogConnected() {
+  const dialogOpen = useUIStore((s) => s.externalAgentDialogOpen);
+  const dialogInfo = useUIStore((s) => s.externalAgentDialogInfo);
+
+  if (!dialogInfo) {
+    return <ExternalAgentDialog open={false} prompt="" onDone={() => {}} onCancel={() => {}} />;
+  }
+
+  return (
+    <ExternalAgentDialog
+      open={dialogOpen}
+      prompt={dialogInfo.prompt}
+      onDone={dialogInfo.onDone}
+      onCancel={dialogInfo.onCancel}
     />
   );
 }
@@ -316,6 +338,9 @@ export function App() {
 
         {/* Analysis Progress Dialog (overlay) */}
         <AnalysisProgressDialogConnected />
+
+        {/* External Agent Dialog (overlay) */}
+        <ExternalAgentDialogConnected />
 
         {/* Keyboard Shortcuts Help Panel (overlay) */}
         <ShortcutsHelpPanel />
