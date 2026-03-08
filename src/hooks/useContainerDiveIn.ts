@@ -42,7 +42,7 @@ export interface ContainerDiveInActions {
   /**
    * Initiate a dive-in animation targeting the given container node.
    * @param nodeId - The archNodeId of the container node
-   * @param refSource - The file reference (e.g., 'file://./child.archc')
+   * @param refSource - Bare filename in .archcanvas/ folder (e.g., '01JABCDEF.archc')
    * @param rfNodes - Current React Flow nodes (to find node position/dimensions)
    * @param prefersReducedMotion - Skip animations if true
    */
@@ -141,9 +141,9 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       const color = targetNode.data?.color || '#0EA5E9';
       setTransitionColor(color);
 
-      // Extract the file path from refSource (strip 'file://' and './' prefixes)
-      // getFileHandle() requires a bare filename — no './' or path separators
-      const filePath = refSource.replace(/^file:\/\//, '').replace(/^\.\//, '');
+      // refSource is a bare filename (e.g. '01JABCDEF.archc')
+      // resolved from the .archcanvas/ folder by projectStore.loadFile()
+      const filePath = refSource;
 
       // Save for crossfade callback (nodeId is the archNodeId of the container)
       pendingDiveInRef.current = { refSource: filePath, nodeId, archNodeId: nodeId };
@@ -206,7 +206,10 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       } catch (err) {
         console.error('[ContainerDiveIn] Failed to load child file:', filePath, err);
         const message = err instanceof Error ? err.message : String(err);
-        useUIStore.getState().showToast(`Failed to open canvas: ${message}`);
+        // Show user-friendly toast; loadFile throws 'Referenced file not found: ...' for missing files
+        useUIStore.getState().showToast(message.startsWith('Referenced file not found')
+          ? message
+          : `Failed to open canvas: ${message}`);
       }
     },
     [transitionColor],
