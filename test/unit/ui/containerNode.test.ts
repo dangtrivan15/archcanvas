@@ -73,7 +73,7 @@ describe('Container NodeDef registration', () => {
     const filePathArg = def!.spec.args.find((a: { name: string }) => a.name === 'filePath');
     expect(filePathArg).toBeDefined();
     expect(filePathArg!.type).toBe('string');
-    expect(filePathArg!.required).toBe(true);
+    expect(filePathArg!.required).toBe(false);
   });
 
   it('meta/canvas-ref has nodeCount arg defined', () => {
