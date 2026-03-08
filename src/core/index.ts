@@ -17,3 +17,4 @@ export * from './registry';
 export * from './shortcuts';
 export * from './storage';
 export * from './sync';
+export * from './project';

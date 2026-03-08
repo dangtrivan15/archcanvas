@@ -43,6 +43,14 @@ export type {
 // AI types
 export type { AIConversation, AIMessage, AISuggestion, AIContext } from './ai';
 
+// Project types
+export type {
+  ProjectManifest,
+  ProjectFileEntry,
+  ProjectFileLink,
+} from './project';
+export { PROJECT_MANIFEST_FILENAME } from './project';
+
 // NodeDef types
 export type {
   NodeDef,
