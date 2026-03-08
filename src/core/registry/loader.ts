@@ -58,6 +58,9 @@ import webAppYaml from './builtins/core/client/web-app.yaml?raw';
 import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
 import cliYaml from './builtins/core/client/cli.yaml?raw';
 
+// Meta namespace
+import canvasRefYaml from './builtins/core/meta/canvas-ref.yaml?raw';
+
 // AI namespace
 import llmProviderYaml from './builtins/core/ai/llm-provider.yaml?raw';
 import embeddingServiceYaml from './builtins/core/ai/embedding-service.yaml?raw';
@@ -286,6 +289,13 @@ export const YAML_SOURCES: YamlNodeDefSource[] = [
     name: 'model-serving',
   },
   { filePath: 'ai/guardrails.yaml', rawYaml: guardrailsYaml, namespace: 'ai', name: 'guardrails' },
+  // Meta (1)
+  {
+    filePath: 'meta/canvas-ref.yaml',
+    rawYaml: canvasRefYaml,
+    namespace: 'meta',
+    name: 'canvas-ref',
+  },
 ];
 
 /**

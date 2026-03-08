@@ -23,4 +23,5 @@ export const lodNodeTypes: Record<string, typeof SimplifiedNode> = {
   stadium: SimplifiedNode,
   document: SimplifiedNode,
   ref: SimplifiedNode,
+  container: SimplifiedNode,
 };

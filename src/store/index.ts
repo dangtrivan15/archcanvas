@@ -45,5 +45,8 @@ export type { AnnotationStoreState } from './annotationStore';
 export { useProjectStore } from './projectStore';
 export type { ProjectStoreState, LoadedFileEntry } from './projectStore';
 
+export { useNestedCanvasStore } from './nestedCanvasStore';
+export type { NestedCanvasStoreState, FileStackEntry } from './nestedCanvasStore';
+
 // Centralized selectors for granular subscriptions
 export * from './selectors';
