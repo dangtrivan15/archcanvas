@@ -1,9 +1,11 @@
 /**
  * Template Picker Dialog - lets users choose a predefined stack template
- * to instantiate as a new architecture.
+ * to instantiate as a new architecture. Supports two import modes:
+ * - "Import as Container" (default when project folder is open)
+ * - "Import Inline" (legacy, replaces current canvas)
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   X,
   Rocket,
@@ -22,12 +24,17 @@ import {
   ShoppingCart,
   Landmark,
   Radio,
+  FolderOpen,
 } from 'lucide-react';
 import { getAvailableStacks, instantiateStack, type StackTemplate } from '@/stacks/stackLoader';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useProjectStore } from '@/store/projectStore';
+import { computeElkLayout } from '@/core/layout/elkLayout';
+import { createNode, addNode as engineAddNode } from '@/core/graph/graphEngine';
+import type { ImportMode } from './UseTemplateDialog';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Rocket,
@@ -58,6 +65,7 @@ export function TemplatePicker() {
 
 function TemplatePickerContent({ onClose }: { onClose: () => void }) {
   const [selectedStack, setSelectedStack] = useState<StackTemplate | null>(null);
+  const [importMode, setImportMode] = useState<ImportMode>('container');
   const stacks = getAvailableStacks();
   const textApi = useCoreStore((s) => s.textApi);
   const undoManager = useCoreStore((s) => s.undoManager);
@@ -65,35 +73,116 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
   const showToast = useUIStore((s) => s.showToast);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
 
-  const handleInstantiate = (template: StackTemplate) => {
-    if (!textApi || !undoManager) return;
+  const isProjectOpen = useProjectStore((s) => s.isProjectOpen);
+  const saveTemplateAsFile = useProjectStore((s) => s.saveTemplateAsFile);
 
-    const graph = instantiateStack(template);
+  const handleInstantiateInline = useCallback(
+    (template: StackTemplate) => {
+      if (!textApi || !undoManager) return;
 
-    // Apply the instantiated graph
-    textApi.setGraph(graph);
-    undoManager.clear();
-    undoManager.snapshot('Load stack template', graph);
+      const graph = instantiateStack(template);
 
-    useCoreStore.setState({
-      graph,
-      isDirty: true,
-      fileName: template.metadata.displayName,
-      fileHandle: null,
-      fileCreatedAtMs: null,
-      nodeCount: graph.nodes.length,
-      edgeCount: graph.edges.length,
-      canUndo: false,
-      canRedo: false,
-    });
+      // Apply the instantiated graph
+      textApi.setGraph(graph);
+      undoManager.clear();
+      undoManager.snapshot('Load stack template', graph);
 
-    // Reset navigation and fit view
-    zoomToRoot();
-    requestFitView();
+      useCoreStore.setState({
+        graph,
+        isDirty: true,
+        fileName: template.metadata.displayName,
+        fileHandle: null,
+        fileCreatedAtMs: null,
+        nodeCount: graph.nodes.length,
+        edgeCount: graph.edges.length,
+        canUndo: false,
+        canRedo: false,
+      });
 
-    showToast(`Loaded "${template.metadata.displayName}" template`);
-    onClose();
-  };
+      // Reset navigation and fit view
+      zoomToRoot();
+      requestFitView();
+
+      showToast(`Loaded "${template.metadata.displayName}" template`);
+      onClose();
+    },
+    [textApi, undoManager, zoomToRoot, requestFitView, showToast, onClose],
+  );
+
+  const handleInstantiateAsContainer = useCallback(
+    async (template: StackTemplate) => {
+      if (!textApi || !undoManager) return;
+
+      const graph = instantiateStack(template);
+      const displayName = template.metadata.displayName;
+
+      // Apply ELK auto-layout to the template graph
+      try {
+        const layoutResult = await computeElkLayout(graph.nodes, graph.edges, 'horizontal');
+        for (const node of graph.nodes) {
+          const pos = layoutResult.positions.get(node.id);
+          if (pos) {
+            node.position = { ...node.position, x: pos.x, y: pos.y };
+          }
+        }
+      } catch (err) {
+        console.warn('[TemplatePicker] ELK layout failed, using template positions:', err);
+      }
+
+      // Save as .archc file in the project folder
+      const fileName = await saveTemplateAsFile(graph, displayName);
+
+      // Create a container node on the current canvas
+      const containerNode = createNode({
+        type: 'meta/canvas-ref',
+        displayName,
+        args: {
+          filePath: fileName,
+          nodeCount: graph.nodes.length,
+          description: template.metadata.description,
+        },
+      });
+      containerNode.refSource = `file://./${fileName}`;
+
+      const currentGraph = textApi.getGraph();
+      const updatedGraph = engineAddNode(currentGraph, containerNode);
+      textApi.setGraph(updatedGraph);
+
+      undoManager.snapshot('Import template as container: ' + displayName, updatedGraph);
+
+      useCoreStore.setState({
+        graph: updatedGraph,
+        isDirty: true,
+        nodeCount: updatedGraph.nodes.length,
+        edgeCount: updatedGraph.edges.length,
+      });
+
+      requestFitView();
+      showToast(`Imported "${displayName}" as container node`);
+      onClose();
+    },
+    [textApi, undoManager, saveTemplateAsFile, requestFitView, showToast, onClose],
+  );
+
+  const handleCreate = useCallback(() => {
+    if (!selectedStack) return;
+
+    if (importMode === 'container' && isProjectOpen) {
+      handleInstantiateAsContainer(selectedStack);
+    } else {
+      if (importMode === 'container' && !isProjectOpen) {
+        showToast('No project folder open — importing inline instead');
+      }
+      handleInstantiateInline(selectedStack);
+    }
+  }, [
+    selectedStack,
+    importMode,
+    isProjectOpen,
+    handleInstantiateAsContainer,
+    handleInstantiateInline,
+    showToast,
+  ]);
 
   return (
     <div
@@ -115,6 +204,43 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Import Mode Toggle */}
+        <div className="px-4 pt-3 pb-2">
+          <div className="flex gap-2" data-testid="picker-import-mode-toggle">
+            <button
+              type="button"
+              onClick={() => setImportMode('container')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border transition-colors ${
+                importMode === 'container'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                  : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-blue-300'
+              }`}
+              data-testid="picker-mode-container"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              As Container
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportMode('inline')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border transition-colors ${
+                importMode === 'inline'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                  : 'border-[hsl(var(--border))] text-[hsl(var(--muted-foreground))] hover:border-blue-300'
+              }`}
+              data-testid="picker-mode-inline"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Inline
+            </button>
+          </div>
+          {importMode === 'container' && !isProjectOpen && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              No project folder open. Will fall back to inline import.
+            </p>
+          )}
         </div>
 
         {/* Template list */}
@@ -223,7 +349,7 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <button
-            onClick={() => selectedStack && handleInstantiate(selectedStack)}
+            onClick={handleCreate}
             disabled={!selectedStack}
             className={`flex items-center gap-2 px-4 py-2 text-sm rounded-md transition-colors ${
               selectedStack
@@ -232,8 +358,17 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
             }`}
             data-testid="template-picker-create"
           >
-            <Rocket className="w-4 h-4" />
-            Create from Template
+            {importMode === 'container' && isProjectOpen ? (
+              <>
+                <FolderOpen className="w-4 h-4" />
+                Import as Container
+              </>
+            ) : (
+              <>
+                <Rocket className="w-4 h-4" />
+                Create from Template
+              </>
+            )}
           </button>
         </div>
       </div>

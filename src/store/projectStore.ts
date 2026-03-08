@@ -19,10 +19,16 @@
  */
 
 import { create } from 'zustand';
-import type { ProjectManifest } from '@/types/project';
+import type { ProjectManifest, ProjectFileEntry } from '@/types/project';
 import type { ArchGraph } from '@/types/graph';
-import { scanProjectFolder, readProjectFile } from '@/core/project/scanner';
-import { decodeArchcData } from '@/core/storage/fileIO';
+import {
+  scanProjectFolder,
+  readProjectFile,
+  writeArchcToFolder,
+  writeManifestToFolder,
+} from '@/core/project/scanner';
+import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
+import { encode } from '@/core/storage/codec';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -59,6 +65,14 @@ export interface ProjectStoreState {
   loadFile: (relativePath: string) => Promise<LoadedFileEntry>;
   /** Get a cached loaded file entry (returns undefined if not loaded). */
   getLoadedFile: (relativePath: string) => LoadedFileEntry | undefined;
+  /**
+   * Save an ArchGraph as a new .archc file in the project folder and update the manifest.
+   * Returns the relative file path (e.g., "my-stack.archc").
+   */
+  saveTemplateAsFile: (
+    graph: ArchGraph,
+    displayName: string,
+  ) => Promise<string>;
 }
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
@@ -142,5 +156,67 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   getLoadedFile: (relativePath: string) => {
     return get().loadedFiles.get(relativePath);
+  },
+
+  saveTemplateAsFile: async (graph: ArchGraph, displayName: string) => {
+    const { directoryHandle, manifest } = get();
+    if (!directoryHandle || !manifest) {
+      throw new Error('No project folder is open');
+    }
+
+    // Sanitize filename: lowercase, replace spaces/special chars with hyphens
+    const baseName = displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const fileName = `${baseName}.archc`;
+
+    // Encode graph to .archc binary
+    const protoFile = graphToProto(graph);
+    const binaryData = await encode(protoFile);
+
+    // Write file to project folder
+    await writeArchcToFolder(directoryHandle, fileName, binaryData);
+
+    // Update manifest to include the new file
+    const fileEntry: ProjectFileEntry = {
+      path: fileName,
+      displayName,
+    };
+
+    // Check if already in manifest
+    const alreadyInManifest = manifest.files.some((f) => f.path === fileName);
+    const updatedManifest: typeof manifest = alreadyInManifest
+      ? manifest
+      : {
+          ...manifest,
+          files: [...manifest.files, fileEntry],
+          links: [
+            ...manifest.links,
+            {
+              from: manifest.rootFile,
+              to: fileName,
+              label: 'imports',
+            },
+          ],
+        };
+
+    // Write updated manifest
+    if (!alreadyInManifest) {
+      await writeManifestToFolder(directoryHandle, updatedManifest);
+      set({ manifest: updatedManifest });
+    }
+
+    // Cache the loaded graph
+    const entry: LoadedFileEntry = {
+      path: fileName,
+      graph,
+      loadedAtMs: Date.now(),
+    };
+    const newCache = new Map(get().loadedFiles);
+    newCache.set(fileName, entry);
+    set({ loadedFiles: newCache });
+
+    return fileName;
   },
 }));
