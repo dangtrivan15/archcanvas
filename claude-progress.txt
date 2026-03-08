@@ -12977,3 +12977,36 @@ git repositories in addition to local file paths.
 
 #### Commit: 5b015ff
 #### Feature #498 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #493
+==================================================
+
+## Feature #493: Remove hard node count limit and encourage thoroughness - PASSING
+
+### Summary:
+Updated AI prompts in initArchitecture.ts and externalAgentPrompt.ts to remove
+the artificial "5-20 nodes" cap and encourage thorough, complete architecture modeling.
+
+### Changes:
+
+1. **src/ai/prompts/initArchitecture.ts**:
+   - Step 2: Changed "List the major components" to "Identify ALL architecturally significant components"
+   - Step 3: Replaced "Aim for 5-20 nodes" with "Model every architecturally significant component. Be thorough — a typical project produces 15-50+ nodes across multiple levels. Prefer completeness over brevity."
+   - Guidelines: Replaced "Be concise: Don't over-model" with "Be thorough: Model every meaningful component — prefer completeness over brevity, but don't create dummy or placeholder nodes"
+
+2. **src/ai/prompts/externalAgentPrompt.ts**:
+   - Workflow step 3: Changed "major components" to "all architecturally significant components"
+   - Guidelines: Replaced "Aim for 5-20 nodes" with thoroughness guidance (15-50+ nodes)
+
+3. **test/unit/ui/externalAgentDialog.test.ts**:
+   - Updated test assertion from checking "5-20 nodes" to checking "thorough" and "completeness over brevity"
+
+### Verification:
+- 59/59 relevant tests pass (35 initArchitecture + 24 externalAgentDialog)
+- Browser: App loads, 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+- No remaining "5-20 nodes" references in src/
+- Prompt size reasonable (~13KB)
+
+#### Commit: 24f12cb
+#### Feature #493 marked passing
