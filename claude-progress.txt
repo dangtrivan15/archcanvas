@@ -12099,3 +12099,29 @@ Status: PASSING
 
 #### Commit: 5ff965d
 #### Feature #468 marked passing
+
+---
+
+## Session: Feature #470 - Import stack as nodeId.archc in .archcanvas folder
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Continued work from a previous killed agent. The agent had already implemented the core
+changes (UseTemplateDialog, TemplatePicker, projectStore, tests) but left them uncommitted.
+
+### Key changes:
+- saveTemplateAsFile now takes nodeId param, uses nodeId.archc filename
+- Container node created FIRST to obtain ULID before saving file
+- refSource set to bare filename (no file:// prefix)
+- Added loadMainArchc action for auto-loading root file on project open
+- Fixed keyboardBreadcrumbNavigation test to check ModeStatusBar instead of App.tsx
+
+### Verification:
+- Full test suite: 5110/5110 PASS (0 failures)
+- Browser: App loads, zero app console errors
+- No mock data patterns: PASS
+
+#### Commit: 40e472c
+#### Feature #470 marked passing
+#### Progress: 469/479 features passing (97.9%)
