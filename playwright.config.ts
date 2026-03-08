@@ -27,9 +27,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev:ensure',
+    command: 'npm run build && npx vite preview --port 5173',
     url: 'https://localhost:5173',
     ignoreHTTPSErrors: true,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 });
