@@ -198,13 +198,14 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
         if (loaded && loaded.graph) {
           // Push current state + switch to child graph
           // containerNodeId enables parent edge indicator capture
-          nestedStore.pushFile(filePath, loaded.graph, containerNodeId);
+          // Pass the transition color for nesting frame tint
+          nestedStore.pushFile(filePath, loaded.graph, containerNodeId, transitionColor);
         }
       } catch (err) {
         console.error('[ContainerDiveIn] Failed to load child file:', filePath, err);
       }
     },
-    [],
+    [transitionColor],
   );
 
   // ─── Dive Out ────────────────────────────────────────────────

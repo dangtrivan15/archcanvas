@@ -324,6 +324,10 @@ export interface UIStoreState {
   // Haptic feedback (iPad)
   hapticFeedbackEnabled: boolean;
 
+  // Nesting frame inset effect
+  nestingFrameEnabled: boolean;
+  nestingFrameThickness: number; // px per level (default 4)
+
   // Autosave on focus change
   autosaveOnBlur: boolean;
   autosaveStatusMessage: string | null;
@@ -437,6 +441,10 @@ export interface UIStoreState {
   // Haptic feedback actions
   setHapticFeedbackEnabled: (enabled: boolean) => void;
 
+  // Nesting frame actions
+  setNestingFrameEnabled: (enabled: boolean) => void;
+  setNestingFrameThickness: (px: number) => void;
+
   // Autosave actions
   setAutosaveOnBlur: (enabled: boolean) => void;
   setAutosaveStatusMessage: (message: string | null) => void;
@@ -507,6 +515,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   inlineEditNodeId: null,
 
   hapticFeedbackEnabled: readPersistedHapticFeedback(),
+
+  nestingFrameEnabled: true,
+  nestingFrameThickness: 4,
 
   autosaveOnBlur: true,
   autosaveStatusMessage: null,
@@ -704,6 +715,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   },
 
   setAutosaveOnBlur: (enabled) => set({ autosaveOnBlur: enabled }),
+
+  setNestingFrameEnabled: (enabled: boolean) => set({ nestingFrameEnabled: enabled }),
+  setNestingFrameThickness: (px: number) => set({ nestingFrameThickness: Math.max(1, Math.min(12, px)) }),
 
   setAutosaveStatusMessage: (message) => set({ autosaveStatusMessage: message }),
 
