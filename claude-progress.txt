@@ -11402,3 +11402,44 @@ Date: 2026-03-08
 
 #### Commit: 0216596
 #### Progress: 449/457 features passing
+
+---
+
+## Session: Feature #450 - Cross-File Navigation Stack
+Date: 2026-03-08
+Status: PASSING
+
+### Feature #450: Cross-File Navigation Stack - PASSING
+
+#### Implementation (verified existing from prior commit):
+
+1. **nestedCanvasStore** (`src/store/nestedCanvasStore.ts`):
+   - `FileStackEntry` interface: filePath, graph, navigationPath, viewport
+   - `fileStack: FileStackEntry[]` - stack of saved file states
+   - `activeFilePath: string | null` - currently active file
+   - `pushFile(filePath, graph)` - saves current state, switches to new graph
+   - `popFile()` - restores previous file's graph, navigation path, viewport
+   - `popToRoot()` - returns directly to root from any depth
+   - `getDepth()` - returns fileStack.length (0 = root)
+   - `getStackEntry(index)` - access specific stack level
+   - `reset()` - clear all navigation state
+
+2. **Store integration**:
+   - Uses coreStore._setGraph() to swap active graph on push/pop
+   - Uses navigationStore.zoomToRoot()/zoomToLevel() for path management
+   - Uses canvasStore.setViewport()/requestFitView() for viewport restoration
+   - Barrel export updated in src/store/index.ts
+
+3. **Tests** (`test/unit/store/nestedCanvasStore.test.ts`):
+   - 28 tests covering: initial state, pushFile, popFile, getDepth,
+     getStackEntry, popToRoot, reset, combined file+nav paths, viewport restoration
+   - All tests passing
+
+#### Verification:
+- Full test suite: 4798/4798 PASS (0 failures)
+- TypeScript build: PASS (zero errors)
+- Vite production build: PASS
+- Browser verification: App loads, zero console errors
+- No mock data patterns in production code
+
+#### Feature #450 marked passing
