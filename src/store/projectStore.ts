@@ -1,33 +1,32 @@
 /**
  * Project store — manages the state of a folder-based architecture project.
  *
- * Stores the project manifest, directory handles, and a cache of loaded .archc
+ * Stores the project descriptor, directory handles, and a cache of loaded .archc
  * file data. Supports the .archcanvas/ folder convention where all .archc files
  * live inside a .archcanvas/ subdirectory of the user's project folder.
  *
  * State:
- * - `manifest`: The project manifest (null when no project is open)
+ * - `manifest`: The project descriptor (null when no project is open)
  * - `directoryHandle`: The FileSystemDirectoryHandle for the user-selected folder
  * - `archcanvasHandle`: The .archcanvas/ subdirectory handle (for file operations)
  * - `loadedFiles`: Cache of decoded file data keyed by relative path
  * - `isProjectOpen`: Derived boolean for quick checks
  *
  * Actions:
- * - `openProjectFolder()`: Show directory picker, scan folder, load manifest
+ * - `openProjectFolder()`: Show directory picker, scan folder, load descriptor
  * - `closeProject()`: Clear all project state
  * - `loadFile(path)`: Read and decode a specific .archc file from the project
  * - `getLoadedFile(path)`: Get a cached file entry
  */
 
 import { create } from 'zustand';
-import type { ProjectManifest, ProjectFileEntry } from '@/types/project';
+import type { ProjectDescriptor, ProjectFile } from '@/types/project';
 import { ARCHCANVAS_MAIN_FILE } from '@/types/project';
 import type { ArchGraph } from '@/types/graph';
 import {
   scanProjectFolder,
   readProjectFile,
   writeArchcToFolder,
-  writeManifestToFolder,
   initArchcanvasDir,
 } from '@/core/project/scanner';
 import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
@@ -49,8 +48,8 @@ export interface LoadedFileEntry {
 }
 
 export interface ProjectStoreState {
-  /** The current project manifest (null if no project is open). */
-  manifest: ProjectManifest | null;
+  /** The current project descriptor (null if no project is open). */
+  manifest: ProjectDescriptor | null;
   /** Directory handle for the user-selected project folder. */
   directoryHandle: FileSystemDirectoryHandle | null;
   /**
@@ -59,7 +58,7 @@ export interface ProjectStoreState {
    * Falls back to directoryHandle for legacy flat layouts.
    */
   archcanvasHandle: FileSystemDirectoryHandle | null;
-  /** Whether the manifest was loaded from an existing source. */
+  /** Whether the descriptor was derived from an existing .archcanvas/ dir. */
   manifestExisted: boolean;
   /** Cache of loaded .archc file data, keyed by relative path. */
   loadedFiles: Map<string, LoadedFileEntry>;
@@ -155,7 +154,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       throw err;
     }
 
-    // Scan the folder for .archcanvas/ dir, .archc files, and manifest
+    // Scan the folder for .archcanvas/ dir and .archc files
     const result = await scanProjectFolder(dirHandle);
 
     // Set project state (even for empty projects, so the store has the dir handle)
@@ -269,32 +268,19 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     // Write file to .archcanvas/ directory
     await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
 
-    // Update manifest to include the new file
-    const fileEntry: ProjectFileEntry = {
+    // Update in-memory descriptor to include the new file
+    const fileEntry: ProjectFile = {
       path: fileName,
       displayName,
     };
 
-    // Check if already in manifest
-    const alreadyInManifest = manifest.files.some((f) => f.path === fileName);
-    const updatedManifest: typeof manifest = alreadyInManifest
-      ? manifest
-      : {
-          ...manifest,
-          files: [...manifest.files, fileEntry],
-          links: [
-            ...manifest.links,
-            {
-              from: manifest.rootFile,
-              to: fileName,
-              label: 'imports',
-            },
-          ],
-        };
-
-    // Write updated manifest to .archcanvas/ (legacy compat: also to root if no archcanvas)
-    if (!alreadyInManifest) {
-      await writeManifestToFolder(archcanvasHandle, updatedManifest);
+    // Check if already in descriptor
+    const alreadyInDescriptor = manifest.files.some((f) => f.path === fileName);
+    if (!alreadyInDescriptor) {
+      const updatedManifest: ProjectDescriptor = {
+        ...manifest,
+        files: [...manifest.files, fileEntry],
+      };
       set({ manifest: updatedManifest });
     }
 
@@ -333,15 +319,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     // Write file to .archcanvas/ directory
     await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
 
-    // Update manifest with the new root file
-    const updatedManifest: ProjectManifest = {
+    // Update in-memory descriptor with the new root file
+    const updatedManifest: ProjectDescriptor = {
       ...manifest,
       rootFile: fileName,
       files: [{ path: fileName, displayName: projectName }],
     };
-
-    // Write manifest inside .archcanvas/
-    await writeManifestToFolder(archcanvasHandle, updatedManifest);
 
     // Cache the loaded graph
     const entry: LoadedFileEntry = {
@@ -599,7 +582,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
                 messages: options.messages,
                 system: options.system,
                 maxTokens: options.maxTokens ?? 8192,
-                stream: false, // Use non-streaming for analysis (simpler, more reliable)
+                stream: false,
                 signal: options.signal,
               });
             },
@@ -627,14 +610,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       const archcanvasHandle = await initArchcanvasDir(directoryHandle);
       const fileName = ARCHCANVAS_MAIN_FILE;
 
-      // Update manifest with the generated file
-      const updatedManifest: ProjectManifest = {
+      // Update in-memory descriptor with the generated file
+      const updatedManifest: ProjectDescriptor = {
         ...manifest,
         rootFile: fileName,
         files: [{ path: fileName, displayName: result.graph.name || manifest.name }],
       };
-
-      await writeManifestToFolder(archcanvasHandle, updatedManifest);
 
       // Cache the loaded graph
       const entry: LoadedFileEntry = {

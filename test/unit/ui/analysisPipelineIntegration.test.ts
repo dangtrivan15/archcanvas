@@ -63,7 +63,6 @@ vi.mock('@/core/project/scanner', () => ({
   scanProjectFolder: vi.fn(),
   readProjectFile: vi.fn(),
   writeArchcToFolder: vi.fn().mockResolvedValue(undefined),
-  writeManifestToFolder: vi.fn().mockResolvedValue(undefined),
   initArchcanvasDir: vi.fn().mockImplementation(async (dirHandle: unknown) => dirHandle),
 }));
 
@@ -139,7 +138,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -164,7 +163,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       const progressEvents: Array<{ phase: string; percent: number }> = [];
@@ -204,7 +203,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -222,11 +221,11 @@ describe('Analysis Pipeline Integration', () => {
       expect(mockSetGraph).toHaveBeenCalledWith(mockResultGraph);
     });
 
-    it('should update the project manifest with the generated file', async () => {
+    it('should update the project descriptor with the generated file', async () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -239,26 +238,24 @@ describe('Analysis Pipeline Integration', () => {
 
       await useProjectStore.getState().runAnalysisPipeline();
 
-      const { writeManifestToFolder } = await import('@/core/project/scanner');
-      expect(writeManifestToFolder).toHaveBeenCalledWith(
-        dirHandle,
-        expect.objectContaining({
-          rootFile: 'main.archc',
-          files: expect.arrayContaining([
-            expect.objectContaining({ path: 'main.archc' }),
-          ]),
-        }),
+      // Verify in-memory descriptor was updated
+      const state = useProjectStore.getState();
+      expect(state.manifest?.rootFile).toBe('main.archc');
+      expect(state.manifest?.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: 'main.archc' }),
+        ]),
       );
 
       // isEmpty should be cleared
-      expect(useProjectStore.getState().isEmpty).toBe(false);
+      expect(state.isEmpty).toBe(false);
     });
 
     it('should set error state when pipeline fails', async () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockRejectedValue(new Error('Scan failed: permission denied'));
@@ -274,7 +271,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockRejectedValue(new Error('Pipeline aborted'));
@@ -290,7 +287,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -315,7 +312,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -342,7 +339,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       // Clear the API key
@@ -388,7 +385,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
         loadedFiles: new Map(),
       });
 
@@ -411,7 +408,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle('my-awesome-project');
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'my-awesome-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'my-awesome-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
@@ -497,7 +494,7 @@ describe('Analysis Pipeline Integration', () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [], links: [] },
+        manifest: { name: 'test-project', rootFile: '', files: [] },
       });
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
