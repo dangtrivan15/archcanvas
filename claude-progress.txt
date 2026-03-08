@@ -12774,3 +12774,36 @@ writes .mcp.json with archcanvas MCP server config using merge-aware logic.
 #### Commit: 47679b4
 #### Feature #485 marked passing
 #### Progress: 486/488 features passing (99.6%)
+
+==================================================
+SESSION: 2026-03-08 - Feature #489
+==================================================
+
+## Feature #489: Fix mcpJsonBrowser imports node:path via mcpJson.ts - PASSING
+
+### Summary:
+Fixed a bug where the browser MCP auto-registration silently failed because
+mcpJsonBrowser.ts imported from mcpJson.ts which has a top-level
+`import { dirname } from 'node:path'`. Vite externalizes node:path for browser
+builds, causing the import to throw.
+
+### Root Cause:
+Shared constants (ARCHCANVAS_SERVER_KEY) and types (McpServerEntry, McpJsonFile)
+were co-located with Node.js-only code in mcpJson.ts.
+
+### Fix:
+1. Created `src/mcp/mcpJsonShared.ts` — browser-safe module with shared constants/types
+2. Updated `src/mcp/mcpJson.ts` — imports from mcpJsonShared, re-exports for backward compat
+3. Updated `src/mcp/mcpJsonBrowser.ts` — imports from mcpJsonShared instead of mcpJson
+4. Updated `src/store/projectStore.ts` — added .catch() to dynamic import for error logging
+
+### Verification:
+- 34/34 MCP JSON tests pass (mcpJson + mcpJsonBrowser)
+- 356/356 CLI tests pass (no regressions)
+- TypeScript: 0 new errors in source files
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns in production code
+
+#### Commit: 79602ed
+#### Feature #489 marked passing
+#### Progress: 489/489 features passing (100%)
