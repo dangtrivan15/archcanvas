@@ -8,8 +8,8 @@
  * when the user opens a project directory.
  */
 
-import { ARCHCANVAS_SERVER_KEY } from './mcpJson';
-import type { McpServerEntry, McpJsonFile } from './mcpJson';
+import { ARCHCANVAS_SERVER_KEY } from './mcpJsonShared';
+import type { McpServerEntry, McpJsonFile } from './mcpJsonShared';
 
 export { ARCHCANVAS_SERVER_KEY };
 export type { McpServerEntry, McpJsonFile };

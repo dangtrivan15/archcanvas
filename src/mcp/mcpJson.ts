@@ -12,21 +12,12 @@
 
 import { dirname } from 'node:path';
 
-/** The key used for the archcanvas MCP server entry */
-export const ARCHCANVAS_SERVER_KEY = 'archcanvas';
+// Re-export shared types/constants for backward compatibility
+export { ARCHCANVAS_SERVER_KEY } from './mcpJsonShared';
+export type { McpServerEntry, McpJsonFile } from './mcpJsonShared';
 
-/** Shape of a single MCP server entry */
-export interface McpServerEntry {
-  command: string;
-  args: string[];
-  [key: string]: unknown;
-}
-
-/** Shape of a .mcp.json file */
-export interface McpJsonFile {
-  mcpServers: Record<string, McpServerEntry>;
-  [key: string]: unknown;
-}
+import { ARCHCANVAS_SERVER_KEY } from './mcpJsonShared';
+import type { McpServerEntry, McpJsonFile } from './mcpJsonShared';
 
 /**
  * Build the archcanvas server entry for .mcp.json.

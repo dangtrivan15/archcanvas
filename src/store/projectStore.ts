@@ -194,6 +194,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
           );
         }
       });
+    }).catch((err) => {
+      console.warn('[MCP] Failed to auto-register MCP config:', err);
     });
 
     // If the project is empty, show the onboarding choice dialog
