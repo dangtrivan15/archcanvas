@@ -12227,3 +12227,27 @@ engine with codebase analysis to provide in-app AI-powered project initializatio
 - No mock data patterns: PASS
 
 #### Feature #476 marked passing
+
+---
+
+## Session: Feature #469 - Save main.archc on project save
+Date: 2026-03-08
+Status: PASSING
+
+### Changes:
+- Added saveMainArchc() to projectStore: serializes graph to protobuf binary, writes to .archcanvas/main.archc
+- coreStore.saveFile() delegates to project save when project is open
+- Lazy getter pattern avoids circular dependency between stores
+- Graceful error handling for permission denied, disk full, generic errors
+- Clears isDirty on success, preserves on failure
+
+### Tests: 16 new tests (all passing)
+- test/unit/project/saveMainArchc.test.ts
+
+### Verification:
+- Full test suite: 5142/5142 PASS (0 failures)
+- Vite build: PASS
+- Browser: zero app console errors
+
+#### Commit: 08afdb1
+#### Feature #469 marked passing
