@@ -25,7 +25,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # --- Helpers ---
 
 is_port_responding() {
-  curl -sf -o /dev/null -w '' "http://localhost:${PORT}" 2>/dev/null
+  curl -ksf -o /dev/null -w '' "https://localhost:${PORT}" 2>/dev/null
 }
 
 find_vite_pid() {
