@@ -13083,3 +13083,48 @@ Added guidance on using meta/canvas-ref composite nodes to both agentic prompt f
 
 #### Commit: f396a2c
 #### Feature #495 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #496
+==================================================
+
+## Feature #496: Improve few-shot examples with deeper, richer architectures - PASSING
+
+### Summary:
+Updated all three few-shot examples in src/analyze/prompts/shared.ts to use
+richer architectures with more nodes, parent-child relationships, and canvas-ref.
+
+### Changes to src/analyze/prompts/shared.ts:
+
+1. **WEB_APP_FEW_SHOT** (was 4 nodes → now 11 nodes):
+   - react-frontend with 2 children (dashboard-page, settings-page)
+   - express-api with 3 children (auth-routes, user-routes, middleware-stack)
+   - Added auth-provider (security/auth-provider) and job-worker (compute/worker)
+   - 7 edges including async job queue patterns
+
+2. **MICROSERVICES_FEW_SHOT** (was 5 nodes → now 13 nodes):
+   - order-service with 2 children (order-handler, order-saga)
+   - Added payments-subsystem as meta/canvas-ref with repoUrl + ref
+   - Added notification-service, inventory-db, redis-cache, monitoring, tracing
+   - 11 edges showing sync, async, and data-flow patterns
+
+3. **DATA_PIPELINE_FEW_SHOT** (was 4 nodes → now 13 nodes):
+   - etl-pipeline with 3 children (extractor, transformer, loader)
+   - Added source-db, third-party-apis, kafka-stream, metabase, pipeline-monitor
+   - 8 edges showing data flow through the full pipeline
+
+### Feature steps verified:
+1. ✅ WEB_APP: 11 nodes including children under express-api
+2. ✅ MICROSERVICES: 13 nodes with canvas-ref and children
+3. ✅ DATA_PIPELINE: 13 nodes with children showing ETL stages
+4. ✅ All examples demonstrate parent-child relationships
+5. ✅ All examples parse as valid JSON and match STANDARD_RESPONSE_SCHEMA
+
+### Verification:
+- 32/32 prompt template tests pass
+- 296/296 analyze tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns in production code
+
+#### Commit: 1de6804
+#### Feature #496 marked passing
