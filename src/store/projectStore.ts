@@ -107,6 +107,13 @@ export interface ProjectStoreState {
    * Handles corrupted/empty files with error toast and offers to recreate.
    */
   loadMainArchc: () => Promise<void>;
+  /**
+   * Save the current root graph back to .archcanvas/main.archc.
+   * Serializes the graph to protobuf binary with magic bytes and checksum,
+   * writes the file via the stored directory handle, and clears isDirty.
+   * Returns true on success, false on failure.
+   */
+  saveMainArchc: () => Promise<boolean>;
 }
 
 /**
@@ -424,6 +431,117 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
           get().createBlankArchcFile();
         },
       });
+    }
+  },
+
+  saveMainArchc: async () => {
+    const state = get();
+    const { manifest } = state;
+    const filesDirHandle = getFilesDirHandle(state);
+
+    if (!filesDirHandle || !manifest || !manifest.rootFile) {
+      console.error('[ProjectStore] Cannot save: no project or root file configured');
+      useUIStore.getState().showToast('Cannot save: no project is open.');
+      return false;
+    }
+
+    const rootFile = manifest.rootFile;
+
+    try {
+      // Get the current graph and canvas/AI state from coreStore
+      const { useCoreStore } = await import('./coreStore');
+      const coreStore = useCoreStore.getState();
+      const { graph, fileCreatedAtMs } = coreStore;
+
+      // Capture graph reference to detect concurrent modifications
+      const graphAtSaveStart = graph;
+
+      // Collect canvas state and AI state for persistence
+      const canvasStoreModule = await import('@/store/canvasStore');
+      const uiState = useUIStore.getState();
+      const aiStoreModule = await import('@/store/aiStore');
+
+      const canvasStoreState = canvasStoreModule.useCanvasStore.getState();
+      const canvasState = {
+        viewport: canvasStoreState.viewport,
+        selectedNodeIds: canvasStoreState.selectedNodeId
+          ? [canvasStoreState.selectedNodeId]
+          : [],
+        navigationPath: [] as string[],
+        panelLayout: {
+          rightPanelOpen: uiState.rightPanelOpen ?? false,
+          rightPanelTab: (uiState.rightPanelTab as string) ?? '',
+          rightPanelWidth: uiState.rightPanelWidth ?? 320,
+        },
+      };
+
+      const aiStoreState = aiStoreModule.useAIStore.getState();
+      const aiState =
+        aiStoreState.conversations.length > 0
+          ? { conversations: aiStoreState.conversations }
+          : undefined;
+
+      // Serialize the graph to protobuf binary with magic bytes and checksum
+      const protoFile = graphToProto(
+        graph,
+        canvasState,
+        undefined,
+        aiState,
+        fileCreatedAtMs ?? undefined,
+      );
+      const binaryData = await encode(protoFile);
+
+      // Write to .archcanvas/main.archc (or root dir for legacy)
+      await writeArchcToFolder(filesDirHandle, rootFile, binaryData);
+
+      // Update the cache with the saved graph
+      const entry: LoadedFileEntry = {
+        path: rootFile,
+        graph,
+        loadedAtMs: Date.now(),
+      };
+      const newCache = new Map(get().loadedFiles);
+      newCache.set(rootFile, entry);
+      set({ loadedFiles: newCache });
+
+      // Clear isDirty only if the graph hasn't changed during the async save
+      const graphChangedDuringSave = coreStore.graph !== graphAtSaveStart;
+      if (!fileCreatedAtMs) {
+        useCoreStore.setState({
+          isDirty: graphChangedDuringSave,
+          fileCreatedAtMs: Date.now(),
+        });
+      } else {
+        useCoreStore.setState({ isDirty: graphChangedDuringSave });
+      }
+
+      console.log(`[ProjectStore] Saved ${rootFile} successfully`);
+      useUIStore.getState().showToast('Project saved');
+      return true;
+    } catch (err) {
+      console.error(`[ProjectStore] Failed to save ${rootFile}:`, err);
+
+      const errorMsg =
+        err instanceof Error ? err.message : 'An unexpected error occurred';
+
+      // Provide specific messages for common errors
+      let userMessage: string;
+      if (
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'SecurityError')
+      ) {
+        userMessage = `Permission denied: cannot write to ${rootFile}. Please re-open the project folder to grant write access.`;
+      } else if (
+        err instanceof DOMException &&
+        err.name === 'QuotaExceededError'
+      ) {
+        userMessage = `Disk full: cannot save ${rootFile}. Free up disk space and try again.`;
+      } else {
+        userMessage = `Could not save project: ${errorMsg}`;
+      }
+
+      useUIStore.getState().showToast(userMessage);
+      return false;
     }
   },
 
