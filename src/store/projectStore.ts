@@ -29,6 +29,8 @@ import {
 } from '@/core/project/scanner';
 import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
 import { encode } from '@/core/storage/codec';
+import { createEmptyGraph } from '@/core/graph/graphEngine';
+import { useUIStore } from './uiStore';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -76,6 +78,11 @@ export interface ProjectStoreState {
     graph: ArchGraph,
     displayName: string,
   ) => Promise<string>;
+  /**
+   * Create a blank .archc file in the project folder, set it as root, and load it.
+   * Used by the empty project dialog "Start Blank" option.
+   */
+  createBlankArchcFile: () => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
@@ -111,6 +118,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     // Scan the folder for .archc files and manifest
     const result = await scanProjectFolder(dirHandle);
 
+    // Set project state (even for empty projects, so the store has the dir handle)
     set({
       manifest: result.manifest,
       directoryHandle: result.directoryHandle,
@@ -119,6 +127,26 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       isProjectOpen: true,
       isEmpty: result.isEmpty,
     });
+
+    // If the project is empty, show the onboarding choice dialog
+    if (result.isEmpty) {
+      const { openEmptyProjectDialog } = useUIStore.getState();
+      openEmptyProjectDialog({
+        folderName: result.manifest.name,
+        hasSourceFiles: result.hasSourceFiles,
+        onAnalyze: () => {
+          // Trigger the analysis pipeline (future feature)
+          useUIStore.getState().closeEmptyProjectDialog();
+          useUIStore.getState().showToast(
+            'Codebase analysis is not yet available. Please use "Start Blank" instead.',
+          );
+        },
+        onStartBlank: () => {
+          useUIStore.getState().closeEmptyProjectDialog();
+          get().createBlankArchcFile();
+        },
+      });
+    }
   },
 
   closeProject: () => {
@@ -224,5 +252,59 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({ loadedFiles: newCache });
 
     return fileName;
+  },
+
+  createBlankArchcFile: async () => {
+    const { directoryHandle, manifest } = get();
+    if (!directoryHandle || !manifest) {
+      throw new Error('No project folder is open');
+    }
+
+    const projectName = manifest.name || 'Untitled Architecture';
+    const fileName = 'architecture.archc';
+
+    // Create an empty graph with the project name
+    const graph = createEmptyGraph(projectName);
+
+    // Encode to .archc binary
+    const protoFile = graphToProto(graph);
+    const binaryData = await encode(protoFile);
+
+    // Write file to project folder
+    await writeArchcToFolder(directoryHandle, fileName, binaryData);
+
+    // Update manifest with the new root file
+    const updatedManifest: ProjectManifest = {
+      ...manifest,
+      rootFile: fileName,
+      files: [{ path: fileName, displayName: projectName }],
+    };
+
+    await writeManifestToFolder(directoryHandle, updatedManifest);
+
+    // Cache the loaded graph
+    const entry: LoadedFileEntry = {
+      path: fileName,
+      graph,
+      loadedAtMs: Date.now(),
+    };
+    const newCache = new Map(get().loadedFiles);
+    newCache.set(fileName, entry);
+
+    set({
+      manifest: updatedManifest,
+      loadedFiles: newCache,
+      isEmpty: false,
+    });
+
+    // Load the graph into the core store so the canvas shows it
+    const { useCoreStore } = await import('./coreStore');
+    const coreStore = useCoreStore.getState();
+    if (coreStore.textApi) {
+      coreStore.textApi.setGraph(graph);
+      coreStore._setGraph(graph);
+    }
+
+    useUIStore.getState().showToast(`Created ${fileName} in project folder`);
   },
 }));

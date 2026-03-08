@@ -14,6 +14,7 @@ import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
 import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
+import { EmptyProjectDialog } from '@/components/shared/EmptyProjectDialog';
 import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
@@ -290,6 +291,9 @@ export function App() {
 
         {/* Integrity Warning Dialog (overlay) */}
         <IntegrityWarningDialog />
+
+        {/* Empty Project Onboarding Dialog (overlay) */}
+        <EmptyProjectDialog />
 
         {/* Keyboard Shortcuts Help Panel (overlay) */}
         <ShortcutsHelpPanel />
