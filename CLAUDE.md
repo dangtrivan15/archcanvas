@@ -179,3 +179,22 @@ You: Done! I've added "S3 Sync Integration" to your backlog. It's now visible on
 4. Search the codebase to find relevant information before answering
 5. When creating features, confirm what was created
 6. If you're unsure about details, ask for clarification
+## Dev Server
+
+**IMPORTANT: Always use the idempotent dev server launcher instead of starting vite directly.**
+
+```bash
+# Start dev server (idempotent — safe to call multiple times, only starts if not running)
+./scripts/ensure-dev-server.sh
+
+# Stop dev server
+./scripts/ensure-dev-server.sh --stop
+```
+
+**Do NOT run these directly:**
+- `npm run dev` — spawns a new Vite process every time
+- `npx vite` — spawns a new Vite process every time
+
+**Why:** Vite auto-increments ports when the default is taken. Multiple agents each running `npm run dev` creates duplicate dev servers (~200MB each), wasting memory and eventually causing OOM. The script checks if a server is already running on port 5173 and exits immediately if so.
+
+When done with your task, do NOT stop the dev server — other agents may be using it.
