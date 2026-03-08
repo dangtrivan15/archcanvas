@@ -45,6 +45,7 @@ Map each component to one of these built-in node types (namespace/name):
   - observability/logging: A logging aggregation system (ELK, CloudWatch)
   - observability/monitoring: A monitoring/metrics system (Prometheus, Datadog)
   - observability/tracing: A distributed tracing system (Jaeger, Zipkin)
+  - observability/llm-monitor: An LLM-specific observability platform for tracking token usage, latency, and evaluation metrics
 
 ### Security
   - security/auth-provider: An identity/auth provider (Auth0, Keycloak)
@@ -68,6 +69,12 @@ Map each component to one of these built-in node types (namespace/name):
   - ai/vector-store: A vector database (Pinecone, Qdrant)
   - ai/model-serving: A model serving endpoint
   - ai/guardrails: An AI guardrails/safety layer
+  - ai/agent: An autonomous AI agent with tool use capabilities
+  - ai/rag-pipeline: A Retrieval-Augmented Generation orchestrator
+  - ai/prompt-registry: A versioned prompt/template store for managing and serving prompt templates
+
+### Meta
+  - meta/canvas-ref: A container node representing a nested .archc canvas or git repo reference
 `;
 
 /** Standard response schema for the final inference result */
