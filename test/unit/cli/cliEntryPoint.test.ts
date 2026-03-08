@@ -363,6 +363,37 @@ describe('CLI Entry Point', () => {
     });
   });
 
+  // ─── Symlink-safe _isDirectRun guard ─────────────────────────
+
+  describe('_isDirectRun symlink detection', () => {
+    const entrySource = fs.readFileSync(path.resolve('src/cli/index.ts'), 'utf-8');
+
+    it('uses realpathSync from node:fs to resolve symlinks', () => {
+      expect(entrySource).toContain("import { realpathSync } from 'node:fs'");
+    });
+
+    it('calls realpathSync on process.argv[1]', () => {
+      expect(entrySource).toContain('realpathSync(process.argv[1])');
+    });
+
+    it('converts resolved path to file:// URL for comparison', () => {
+      expect(entrySource).toMatch(/new URL\(\s*['"]file:\/\/['"]\s*\+\s*realpathSync/);
+    });
+
+    it('has a fallback when realpathSync throws', () => {
+      // The catch block falls back to the old endsWith comparison
+      expect(entrySource).toContain('catch');
+      expect(entrySource).toContain("process.argv[1].replace(/\\\\/g, '/')");
+    });
+
+    it('does not run main() when imported by vitest', () => {
+      // If _isDirectRun incorrectly resolved to true, importing the module
+      // would call main() and try to parse process.argv, causing Commander
+      // to error. The fact that createProgram import succeeded means the guard works.
+      expect(typeof createProgram).toBe('function');
+    });
+  });
+
   // ─── Shebang & Entry Point ─────────────────────────────────
 
   describe('Entry point file', () => {
