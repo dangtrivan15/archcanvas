@@ -93,6 +93,9 @@ one other node via an edge.
   - Parameters: type (string, e.g., "compute/service"), displayName (string),
     parentId (string, optional — for nesting), args (object, optional)
   - Returns: the created node with its generated ID
+  - For composite subsystems, use type "meta/canvas-ref" with args:
+    { filePath: "./subsystem.archc" } for local references, or
+    { repoUrl: "https://github.com/org/repo.git", ref: "v1.0.0" } for remote git repos
 
 - **add_edge**: Connect two nodes
   - Parameters: fromNode (string — node ID), toNode (string — node ID),
@@ -158,10 +161,22 @@ Follow these steps in order. After each step, verify your work with the \`descri
 - Sketch out the connections between components
 - Plan parent-child relationships for nested components
 
+### Step 2.5: Identify Composite Subsystems (Canvas References)
+- Look for subsystems that warrant their own separate architecture canvas
+- Use **meta/canvas-ref** nodes when a subsystem:
+  - Has **5+ internal components** that form a cohesive unit
+  - Represents a **separate bounded context** (e.g., a microservice with its own domain)
+  - Is **maintained by a different team** or has an independent release cycle
+  - Already has (or should have) its **own .archc file** or git repository
+- **children vs canvas-ref**: Use \`parentId\` (children) for internal decomposition within the same architecture file. Use \`meta/canvas-ref\` when the subsystem deserves its own architecture file — it represents a true architectural boundary.
+- canvas-ref args: \`filePath\` for local .archc references, or \`repoUrl\` + \`ref\` for remote git repositories
+- **Only use canvas-ref when complexity warrants it** — not every analysis needs composite nodes. A simple project with a single team and domain should use flat or nested nodes instead.
+
 ### Step 3: Create Nodes (Top-Down)
 - Start with the highest-level components (entry points, main services)
 - Use \`add_node\` for each component with the correct type from the registry
 - For composite systems, use parentId to nest child components
+- For subsystems identified in Step 2.5, use \`add_node\` with type \`meta/canvas-ref\` and appropriate args (filePath or repoUrl)
 - Model every architecturally significant component. Be thorough — a typical project produces 15-50+ nodes across multiple levels. Prefer completeness over brevity.
 
 ### Step 4: Establish Edges
