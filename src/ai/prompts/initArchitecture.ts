@@ -153,7 +153,7 @@ Follow these steps in order. After each step, verify your work with the \`descri
 - Note the primary languages, frameworks, and infrastructure
 
 ### Step 2: Plan the Architecture
-- List the major components/services you've identified
+- Identify ALL architecturally significant components, not just the top-level ones
 - Determine which node type best fits each component
 - Sketch out the connections between components
 - Plan parent-child relationships for nested components
@@ -162,7 +162,7 @@ Follow these steps in order. After each step, verify your work with the \`descri
 - Start with the highest-level components (entry points, main services)
 - Use \`add_node\` for each component with the correct type from the registry
 - For composite systems, use parentId to nest child components
-- Aim for 5-20 nodes for a typical project (more for complex microservices)
+- Model every architecturally significant component. Be thorough — a typical project produces 15-50+ nodes across multiple levels. Prefer completeness over brevity.
 
 ### Step 4: Establish Edges
 - Connect related nodes with \`add_edge\`
@@ -186,7 +186,7 @@ Follow these steps in order. After each step, verify your work with the \`descri
 - **Be specific**: Use concrete names ("User Auth Service") not vague ones ("Service 1")
 - **Be connected**: No orphan nodes — everything connects to something
 - **Be accurate**: Match node types to actual component roles
-- **Be concise**: Don't over-model — focus on architecturally significant components
+- **Be thorough**: Model every meaningful component — prefer completeness over brevity, but don't create dummy or placeholder nodes
 - **Be hierarchical**: Use parent-child nesting for sub-components within a service
 - **Capture data stores**: Always model databases, caches, and message queues as separate nodes
 - **Label edges**: Include protocol or method in edge labels (HTTP, gRPC, SQL, Kafka, etc.)

@@ -76,7 +76,7 @@ export function buildExternalAgentPrompt(context: ExternalAgentPromptContext): s
   sections.push('');
   sections.push(`1. **Scan** the project directory structure and identify key files`);
   sections.push(`2. **Initialize** the architecture with \`init_architecture\` (name: "${context.projectName}")`);
-  sections.push(`3. **Identify** major components: services, databases, APIs, clients, queues, etc.`);
+  sections.push(`3. **Identify** all architecturally significant components: services, databases, APIs, clients, queues, etc.`);
   sections.push(`4. **Create nodes** using \`add_node\` with appropriate types (e.g., compute/service, storage/database)`);
   sections.push(`5. **Connect nodes** using \`add_edge\` with correct types (sync, async, data-flow) and labels`);
   sections.push(`6. **Attach code references** using \`add_code_ref\` for key implementation files`);
@@ -114,7 +114,7 @@ export function buildExternalAgentPrompt(context: ExternalAgentPromptContext): s
   sections.push(`- **Label edges** with protocols (REST, gRPC, Kafka, SQL, etc.)`);
   sections.push(`- Model **data stores** as separate nodes (databases, caches, queues)`);
   sections.push(`- Use **parent-child nesting** for sub-components within a service`);
-  sections.push(`- Aim for **5-20 nodes** for a typical project`);
+  sections.push(`- Be **thorough** — model every meaningful component (typically 15-50+ nodes). Prefer completeness over brevity, but avoid dummy nodes`);
 
   return sections.join('\n');
 }

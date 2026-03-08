@@ -103,9 +103,10 @@ describe('buildExternalAgentPrompt', () => {
     expect(prompt).toContain('every node should have at least one edge');
   });
 
-  it('should include node count guidance', () => {
+  it('should include thoroughness guidance', () => {
     const prompt = buildExternalAgentPrompt(baseContext);
-    expect(prompt).toContain('5-20 nodes');
+    expect(prompt).toContain('thorough');
+    expect(prompt).toContain('completeness over brevity');
   });
 });
 
