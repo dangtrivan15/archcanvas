@@ -127,6 +127,14 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'node:add-gateway', label: 'Quick Add Gateway', category: 'Node', defaultBinding: 'g' },
   { id: 'node:add-cache', label: 'Quick Add Cache', category: 'Node', defaultBinding: 'a' },
 
+  // Nested Canvas Navigation
+  {
+    id: 'nav:nested-root',
+    label: 'Jump to Project Root',
+    category: 'Navigation',
+    defaultBinding: 'mod+shift+home',
+  },
+
   // Edge Operations
   { id: 'edge:cycle-type', label: 'Cycle Edge Type', category: 'Edge', defaultBinding: 't' },
 ];

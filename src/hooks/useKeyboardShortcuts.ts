@@ -13,6 +13,7 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
@@ -237,6 +238,17 @@ export function useKeyboardShortcuts() {
             if (coreState.renderApi && coreState.graph) {
               const { edges } = coreState.renderApi.render(coreState.graph, navPath);
               selectEdges(edges.map((e) => e.id));
+            }
+          }
+          break;
+
+        // Nested canvas: jump to project root (pop entire file stack)
+        case 'nav:nested-root':
+          e.preventDefault();
+          {
+            const nestedStore = useNestedCanvasStore.getState();
+            if (nestedStore.getDepth() > 0) {
+              nestedStore.popToRoot();
             }
           }
           break;
