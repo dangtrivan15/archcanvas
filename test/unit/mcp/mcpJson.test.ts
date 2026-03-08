@@ -52,8 +52,8 @@ describe('Merge-aware .mcp.json writer', () => {
     it('returns the correct server entry shape', () => {
       const entry = buildArchcanvasEntry('/path/to/main.archc');
       expect(entry).toEqual({
-        command: 'npx',
-        args: ['archcanvas-mcp', '/path/to/main.archc'],
+        command: 'archcanvas',
+        args: ['mcp', '--file', '/path/to/main.archc'],
       });
     });
   });
@@ -71,8 +71,8 @@ describe('Merge-aware .mcp.json writer', () => {
       const data = (await readJson(mcpPath())) as { mcpServers: Record<string, unknown> };
       expect(data.mcpServers).toBeDefined();
       expect(data.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual({
-        command: 'npx',
-        args: ['archcanvas-mcp', '/project/main.archc'],
+        command: 'archcanvas',
+        args: ['mcp', '--file', '/project/main.archc'],
       });
     });
 
@@ -99,8 +99,8 @@ describe('Merge-aware .mcp.json writer', () => {
         args: ['other-server.js'],
       });
       expect(data.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual({
-        command: 'npx',
-        args: ['archcanvas-mcp', '/project/main.archc'],
+        command: 'archcanvas',
+        args: ['mcp', '--file', '/project/main.archc'],
       });
     });
 
@@ -128,8 +128,8 @@ describe('Merge-aware .mcp.json writer', () => {
       const existing = {
         mcpServers: {
           [ARCHCANVAS_SERVER_KEY]: {
-            command: 'npx',
-            args: ['archcanvas-mcp', '/old/path.archc'],
+            command: 'archcanvas',
+            args: ['mcp', '--file', '/old/path.archc'],
           },
         },
       };
@@ -141,8 +141,8 @@ describe('Merge-aware .mcp.json writer', () => {
 
       const data = (await readJson(mcpPath())) as { mcpServers: Record<string, unknown> };
       expect(data.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual({
-        command: 'npx',
-        args: ['archcanvas-mcp', '/new/path.archc'],
+        command: 'archcanvas',
+        args: ['mcp', '--file', '/new/path.archc'],
       });
     });
 
@@ -225,7 +225,7 @@ describe('Merge-aware .mcp.json writer', () => {
     it('removes only the archcanvas key from mcpServers', async () => {
       const existing = {
         mcpServers: {
-          [ARCHCANVAS_SERVER_KEY]: { command: 'npx', args: ['archcanvas-mcp', '/f.archc'] },
+          [ARCHCANVAS_SERVER_KEY]: { command: 'archcanvas', args: ['mcp', '--file', '/f.archc'] },
           'other-server': { command: 'node', args: ['other.js'] },
         },
       };
@@ -244,7 +244,7 @@ describe('Merge-aware .mcp.json writer', () => {
     it('deletes the .mcp.json file entirely if no other servers remain after removal', async () => {
       const existing = {
         mcpServers: {
-          [ARCHCANVAS_SERVER_KEY]: { command: 'npx', args: ['archcanvas-mcp', '/f.archc'] },
+          [ARCHCANVAS_SERVER_KEY]: { command: 'archcanvas', args: ['mcp', '--file', '/f.archc'] },
         },
       };
       await writeFile(mcpPath(), JSON.stringify(existing, null, 2), 'utf-8');
@@ -259,7 +259,7 @@ describe('Merge-aware .mcp.json writer', () => {
     it('leaves the .mcp.json file intact if other servers remain after removal', async () => {
       const existing = {
         mcpServers: {
-          [ARCHCANVAS_SERVER_KEY]: { command: 'npx', args: ['archcanvas-mcp', '/f.archc'] },
+          [ARCHCANVAS_SERVER_KEY]: { command: 'archcanvas', args: ['mcp', '--file', '/f.archc'] },
           'keep-me': { command: 'keep', args: [] },
         },
       };
@@ -314,7 +314,7 @@ describe('Merge-aware .mcp.json writer', () => {
     it('keeps file if other top-level keys exist even with empty mcpServers', async () => {
       const existing = {
         mcpServers: {
-          [ARCHCANVAS_SERVER_KEY]: { command: 'npx', args: ['archcanvas-mcp', '/f.archc'] },
+          [ARCHCANVAS_SERVER_KEY]: { command: 'archcanvas', args: ['mcp', '--file', '/f.archc'] },
         },
         customConfig: { setting: true },
       };
@@ -373,8 +373,8 @@ describe('Merge-aware .mcp.json writer', () => {
 
       const data = (await readJson(mcpPath())) as { mcpServers: Record<string, unknown> };
       expect(data.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual({
-        command: 'npx',
-        args: ['archcanvas-mcp', '/third.archc'],
+        command: 'archcanvas',
+        args: ['mcp', '--file', '/third.archc'],
       });
       // Only one server entry
       expect(Object.keys(data.mcpServers)).toHaveLength(1);

@@ -27,8 +27,8 @@ import type { McpServerEntry, McpJsonFile } from './mcpJsonShared';
  */
 export function buildArchcanvasEntry(archcFilePath: string): McpServerEntry {
   return {
-    command: 'npx',
-    args: ['archcanvas-mcp', archcFilePath],
+    command: 'archcanvas',
+    args: ['mcp', '--file', archcFilePath],
   };
 }
 
