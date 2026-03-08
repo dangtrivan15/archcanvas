@@ -93,10 +93,10 @@ describe('mcpJsonBrowser', () => {
   });
 
   describe('buildArchcanvasEntryBrowser', () => {
-    it('returns entry with npx command and archcanvas-mcp args', () => {
+    it('returns entry with archcanvas command and mcp --file args', () => {
       const entry = buildArchcanvasEntryBrowser();
-      expect(entry.command).toBe('npx');
-      expect(entry.args).toEqual(['archcanvas-mcp', '.archcanvas/main.archc']);
+      expect(entry.command).toBe('archcanvas');
+      expect(entry.args).toEqual(['mcp', '--file', '.archcanvas/main.archc']);
     });
   });
 
@@ -116,7 +116,7 @@ describe('mcpJsonBrowser', () => {
       });
     });
 
-    it('skips when archcanvas entry already exists', async () => {
+    it('overwrites existing archcanvas entry to keep config up-to-date', async () => {
       const existingContent = {
         mcpServers: {
           [ARCHCANVAS_SERVER_KEY]: { command: 'npx', args: ['archcanvas-mcp', 'old.archc'] },
@@ -128,10 +128,10 @@ describe('mcpJsonBrowser', () => {
 
       const result = await autoRegisterMcpConfig(dirHandle);
 
-      expect(result).toEqual({ written: false, created: false, merged: false });
-      // File should not have been overwritten
-      const written = readWrittenMcpJson(dirHandle);
-      expect((written as { mcpServers: Record<string, { args: string[] }> }).mcpServers[ARCHCANVAS_SERVER_KEY].args).toEqual(['archcanvas-mcp', 'old.archc']);
+      expect(result).toEqual({ written: true, created: false, merged: false });
+      // File should have been overwritten with new entry
+      const written = readWrittenMcpJson(dirHandle) as { mcpServers: Record<string, { command: string; args: string[] }> };
+      expect(written.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual(buildArchcanvasEntryBrowser());
     });
 
     it('merges with existing servers without overwriting them', async () => {
@@ -214,7 +214,7 @@ describe('mcpJsonBrowser', () => {
 
       const result = await autoRegisterMcpConfig(dirHandle);
 
-      expect(result).toEqual({ written: true, created: false, merged: true });
+      expect(result).toEqual({ written: true, created: false, merged: false });
 
       const written = readWrittenMcpJson(dirHandle) as { mcpServers: Record<string, unknown>; someOtherField: boolean };
       expect(written.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual(buildArchcanvasEntryBrowser());
@@ -272,7 +272,7 @@ describe('mcpJsonBrowser', () => {
       expect(raw).toContain('  ');
     });
 
-    it('is idempotent on repeated calls', async () => {
+    it('always overwrites archcanvas entry on repeated calls', async () => {
       const dirHandle = createMockDirHandle();
 
       // First call creates the file
@@ -280,13 +280,19 @@ describe('mcpJsonBrowser', () => {
       expect(result1?.written).toBe(true);
       expect(result1?.created).toBe(true);
 
-      // Second call skips (already present)
+      // Second call overwrites (keeps config up-to-date)
       const result2 = await autoRegisterMcpConfig(dirHandle);
-      expect(result2?.written).toBe(false);
+      expect(result2?.written).toBe(true);
+      expect(result2?.created).toBe(false);
 
-      // Third call also skips
+      // Third call also overwrites
       const result3 = await autoRegisterMcpConfig(dirHandle);
-      expect(result3?.written).toBe(false);
+      expect(result3?.written).toBe(true);
+      expect(result3?.created).toBe(false);
+
+      // Final content should be correct
+      const written = readWrittenMcpJson(dirHandle) as { mcpServers: Record<string, unknown> };
+      expect(written.mcpServers[ARCHCANVAS_SERVER_KEY]).toEqual(buildArchcanvasEntryBrowser());
     });
   });
 

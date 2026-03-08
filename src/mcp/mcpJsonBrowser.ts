@@ -23,8 +23,8 @@ const MCP_JSON_FILENAME = '.mcp.json';
  */
 export function buildArchcanvasEntryBrowser(): McpServerEntry {
   return {
-    command: 'npx',
-    args: ['archcanvas-mcp', '.archcanvas/main.archc'],
+    command: 'archcanvas',
+    args: ['mcp', '--file', '.archcanvas/main.archc'],
   };
 }
 
@@ -102,7 +102,7 @@ export interface AutoRegisterResult {
  * project directory. This is the main entry point called by projectStore.
  *
  * - If .mcp.json doesn't exist, creates it with the archcanvas entry.
- * - If .mcp.json exists and already has the archcanvas entry, skips (no-op).
+ * - If .mcp.json exists and already has the archcanvas entry, overwrites it (keeps config up-to-date).
  * - If .mcp.json exists with other servers, merges without overwriting them.
  * - Handles errors gracefully: logs warnings, never throws.
  *
@@ -116,15 +116,13 @@ export async function autoRegisterMcpConfig(
     const existing = await readMcpJsonFromDir(dirHandle);
 
     if (existing !== null) {
-      // Check if archcanvas entry already exists — skip if so
-      if (ARCHCANVAS_SERVER_KEY in existing.content.mcpServers) {
-        return { written: false, created: false, merged: false };
-      }
-
-      // Merge: add archcanvas entry alongside existing servers
+      // Always overwrite the archcanvas entry so config stays up-to-date
       existing.content.mcpServers[ARCHCANVAS_SERVER_KEY] = buildArchcanvasEntryBrowser();
       await writeMcpJsonToDir(dirHandle, existing.content);
-      return { written: true, created: false, merged: true };
+      const hadOtherServers = Object.keys(existing.content.mcpServers).some(
+        (k) => k !== ARCHCANVAS_SERVER_KEY,
+      );
+      return { written: true, created: false, merged: hadOtherServers };
     }
 
     // File doesn't exist — create new
