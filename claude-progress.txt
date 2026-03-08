@@ -12597,3 +12597,41 @@ and test files) but left them uncommitted.
 
 #### Commit: 16f4a34
 #### Feature #482 marked passing
+
+==================================================
+SESSION: 2026-03-08 - Feature #483
+==================================================
+
+## Feature #483: CLI: archcanvas mcp uninstall - PASSING
+
+### Summary:
+The previous agent (feature #482) had already implemented the full mcpUninstall.ts
+module and committed it alongside the mcp install command. It also committed a test
+file for this feature. This session verified the implementation by:
+
+1. Reviewing mcpUninstall.ts implementation (mcpUninstall(), formatUninstallSummary(), 
+   registerMcpUninstallCommand())
+2. Verifying all 18 tests pass covering all 8 feature steps
+3. Verifying 261 MCP-related tests pass with no regressions
+4. Browser verification: app loads, zero app console errors (only pre-existing SSL/PWA)
+5. No mock data patterns in production code
+
+### Feature steps verified:
+1. ✅ Read ~/.archcanvas/mcp-registry.json to get list of tracked projects
+2. ✅ For each tracked project path, remove archcanvas entry from .mcp.json
+3. ✅ If global flag is set, remove archcanvas entry from ~/.mcp.json
+4. ✅ Skip silently if a tracked project directory no longer exists
+5. ✅ Skip silently if a tracked .mcp.json is missing or unreadable
+6. ✅ Delete ~/.archcanvas/mcp-registry.json after cleanup
+7. ✅ Print summary of what was cleaned (N projects cleaned, M skipped)
+8. ✅ Running uninstall with no registry is a no-op (no error)
+
+### Tests: 18 tests (all passing)
+- test/unit/cli/mcpUninstall.test.ts
+
+### Verification:
+- All 261 MCP-related tests pass
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA)
+- No mock data patterns: PASS
+
+#### Feature #483 marked passing
