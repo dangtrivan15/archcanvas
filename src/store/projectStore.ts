@@ -31,6 +31,7 @@ import { decodeArchcData, graphToProto } from '@/core/storage/fileIO';
 import { encode } from '@/core/storage/codec';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { useUIStore } from './uiStore';
+import { useAnalysisStore } from './analysisStore';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -83,6 +84,11 @@ export interface ProjectStoreState {
    * Used by the empty project dialog "Start Blank" option.
    */
   createBlankArchcFile: () => Promise<void>;
+  /**
+   * Run the codebase analysis pipeline on the current project folder.
+   * Shows progress dialog, invokes the browser pipeline, and loads the result.
+   */
+  runAnalysisPipeline: () => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
@@ -135,11 +141,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         folderName: result.manifest.name,
         hasSourceFiles: result.hasSourceFiles,
         onAnalyze: () => {
-          // Trigger the analysis pipeline (future feature)
           useUIStore.getState().closeEmptyProjectDialog();
-          useUIStore.getState().showToast(
-            'Codebase analysis is not yet available. Please use "Start Blank" instead.',
-          );
+          get().runAnalysisPipeline();
         },
         onStartBlank: () => {
           useUIStore.getState().closeEmptyProjectDialog();
@@ -305,6 +308,122 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       coreStore._setGraph(graph);
     }
 
-    useUIStore.getState().showToast(`Created ${fileName} in project folder`);
+    useUIStore.getState().showToast(`Created new architecture in ${projectName}`);
+  },
+
+  runAnalysisPipeline: async () => {
+    const { directoryHandle, manifest } = get();
+    if (!directoryHandle || !manifest) {
+      useUIStore.getState().showToast('No project folder is open.');
+      return;
+    }
+
+    // Open the progress dialog and get an AbortController
+    const abortController = useAnalysisStore.getState().openDialog();
+
+    try {
+      // Dynamically import pipeline and AI client to avoid circular deps
+      const { analyzeCodebaseBrowser } = await import('@/analyze/browserPipeline');
+      const { sendMessage } = await import('@/ai/client');
+      const { getAnthropicApiKey } = await import('@/ai/config');
+      const { useCoreStore } = await import('./coreStore');
+
+      const coreStore = useCoreStore.getState();
+      const textApi = coreStore.textApi;
+      const registry = coreStore.registry;
+
+      if (!textApi || !registry) {
+        throw new Error('Core engines not initialized. Please wait for the app to fully load.');
+      }
+
+      // Build an AIMessageSender wrapping the browser AI client
+      const apiKey = getAnthropicApiKey();
+      const aiSender = apiKey
+        ? {
+            async sendMessage(options: {
+              messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+              system?: string;
+              maxTokens?: number;
+              stream?: boolean;
+              onChunk?: (text: string) => void;
+              signal?: AbortSignal;
+            }): Promise<{
+              content: string;
+              stopReason: string | null;
+              usage: { inputTokens: number; outputTokens: number };
+            }> {
+              return sendMessage({
+                messages: options.messages,
+                system: options.system,
+                maxTokens: options.maxTokens ?? 8192,
+                stream: false, // Use non-streaming for analysis (simpler, more reliable)
+                signal: options.signal,
+              });
+            },
+          }
+        : undefined;
+
+      // Create a fresh TextApi with empty graph for the pipeline to populate
+      const { TextApi } = await import('@/api/textApi');
+      const freshGraph = createEmptyGraph(manifest.name || 'Architecture');
+      const pipelineTextApi = new TextApi(freshGraph, registry);
+
+      // Run the browser pipeline
+      const result = await analyzeCodebaseBrowser(directoryHandle, {
+        textApi: pipelineTextApi,
+        registry,
+        aiSender,
+        architectureName: manifest.name || directoryHandle.name,
+        onProgress: (event) => {
+          useAnalysisStore.getState().setProgress(event);
+        },
+        signal: abortController.signal,
+      });
+
+      // Update manifest with the generated file
+      const fileName = 'architecture.archc';
+      const updatedManifest: ProjectManifest = {
+        ...manifest,
+        rootFile: fileName,
+        files: [{ path: fileName, displayName: result.graph.name || manifest.name }],
+      };
+
+      await writeManifestToFolder(directoryHandle, updatedManifest);
+
+      // Cache the loaded graph
+      const entry: LoadedFileEntry = {
+        path: fileName,
+        graph: result.graph,
+        loadedAtMs: Date.now(),
+      };
+      const newCache = new Map(get().loadedFiles);
+      newCache.set(fileName, entry);
+
+      set({
+        manifest: updatedManifest,
+        loadedFiles: newCache,
+        isEmpty: false,
+      });
+
+      // Load the generated graph into the canvas
+      textApi.setGraph(result.graph);
+      coreStore._setGraph(result.graph);
+
+      // Mark analysis as complete
+      useAnalysisStore.getState().markComplete();
+
+      // Show warnings if any
+      if (result.warnings.length > 0) {
+        console.warn('[Analysis] Warnings:', result.warnings);
+      }
+    } catch (err) {
+      // Don't show error if user cancelled
+      if (err instanceof Error && err.message === 'Pipeline aborted') {
+        return;
+      }
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      useAnalysisStore.getState().setError(errorMsg);
+      console.error('[Analysis] Pipeline failed:', err);
+    }
   },
 }));

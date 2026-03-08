@@ -15,6 +15,8 @@ import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
 import { EmptyProjectDialog } from '@/components/shared/EmptyProjectDialog';
+import { AnalysisProgressDialog } from '@/components/shared/AnalysisProgressDialog';
+import { useAnalysisStore } from '@/store/analysisStore';
 import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
@@ -47,6 +49,27 @@ import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
 import { SyncStatusIndicator } from '@/components/shared/SyncStatusIndicator';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
+
+/**
+ * Connected wrapper for AnalysisProgressDialog that reads from the analysisStore.
+ */
+function AnalysisProgressDialogConnected() {
+  const dialogOpen = useAnalysisStore((s) => s.dialogOpen);
+  const progress = useAnalysisStore((s) => s.progress);
+  const error = useAnalysisStore((s) => s.error);
+  const cancel = useAnalysisStore((s) => s.cancel);
+  const closeDialog = useAnalysisStore((s) => s.closeDialog);
+
+  return (
+    <AnalysisProgressDialog
+      open={dialogOpen}
+      progress={progress}
+      error={error}
+      onCancel={cancel}
+      onClose={closeDialog}
+    />
+  );
+}
 
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
@@ -294,6 +317,9 @@ export function App() {
 
         {/* Empty Project Onboarding Dialog (overlay) */}
         <EmptyProjectDialog />
+
+        {/* Analysis Progress Dialog (overlay) */}
+        <AnalysisProgressDialogConnected />
 
         {/* Keyboard Shortcuts Help Panel (overlay) */}
         <ShortcutsHelpPanel />
