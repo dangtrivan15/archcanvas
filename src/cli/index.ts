@@ -407,11 +407,24 @@ async function main(): Promise<void> {
 }
 
 // Only run main() when this file is the entry point (not when imported by tests/modules).
-// Check if process.argv[1] resolves to this file. In test runners (vitest), it won't.
-const _isDirectRun =
-  typeof process !== 'undefined' &&
-  process.argv[1] &&
-  import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+// Resolve symlinks via realpathSync so `npm link` works (process.argv[1] may be a symlink
+// while import.meta.url points to the real file).
+import { realpathSync } from 'node:fs';
+const _isDirectRun = (() => {
+  if (typeof process === 'undefined' || !process.argv[1]) return false;
+  try {
+    const resolved = new URL(
+      'file://' + realpathSync(process.argv[1]),
+    ).href;
+    return (
+      import.meta.url === resolved ||
+      import.meta.url.endsWith(resolved.split('/').pop()!)
+    );
+  } catch {
+    // If realpathSync fails (e.g. file doesn't exist), fall back to direct comparison
+    return import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+  }
+})();
 
 if (_isDirectRun) {
   main().catch((err: unknown) => {
