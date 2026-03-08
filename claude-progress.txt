@@ -12807,3 +12807,33 @@ were co-located with Node.js-only code in mcpJson.ts.
 #### Commit: 79602ed
 #### Feature #489 marked passing
 #### Progress: 489/489 features passing (100%)
+
+==================================================
+SESSION: 2026-03-08 - Feature #490
+==================================================
+
+## Feature #490: Fix .mcp.json entry to use `archcanvas mcp` CLI command - PASSING
+
+### Summary:
+The .mcp.json writer was generating `{ command: 'npx', args: ['archcanvas-mcp', ...] }`
+but `archcanvas-mcp` doesn't exist. Changed to use `{ command: 'archcanvas', args: ['mcp', '--file', path] }`
+which matches the actual CLI. Also changed browser writer to always overwrite the archcanvas
+entry instead of skipping when already present.
+
+### Changes:
+
+1. **src/mcp/mcpJson.ts** - `buildArchcanvasEntry()` now returns `{ command: 'archcanvas', args: ['mcp', '--file', archcFilePath] }`
+2. **src/mcp/mcpJsonBrowser.ts** - `buildArchcanvasEntryBrowser()` updated similarly
+3. **src/mcp/mcpJsonBrowser.ts** - `autoRegisterMcpConfig()` always overwrites archcanvas entry (no skip)
+4. **test/unit/mcp/mcpJson.test.ts** - Updated 21 tests to expect new command format
+5. **test/unit/mcp/mcpJsonBrowser.test.ts** - Updated 13 tests for new format + overwrite behavior
+
+### Verification:
+- 34/34 MCP JSON tests pass (mcpJson + mcpJsonBrowser)
+- 256/256 total MCP tests pass (no regressions)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns in production code
+
+#### Commit: a8a01c2
+#### Feature #490 marked passing
+#### Progress: 490/490 features passing (100%)
