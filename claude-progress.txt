@@ -12635,3 +12635,28 @@ file for this feature. This session verified the implementation by:
 - No mock data patterns: PASS
 
 #### Feature #483 marked passing
+
+---
+
+## Session: Feature #487 - CLI: archcanvas mcp install (project scope only)
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Feature #487 was already fully implemented by feature #482 (commit 16f4a34). The existing
+`archcanvas mcp install` command (without --global) covers all 6 feature steps:
+
+1. Creates .mcp.json in CWD ✓
+2. Config contains mcpServers.archcanvas with command/args ✓
+3. Merges without overwriting other servers ✓
+4. Updates mcp-registry.json with project path ✓
+5. Prints confirmation message ✓
+6. Idempotent on repeated runs ✓
+
+### Verification:
+- All 11 tests in mcpInstall.test.ts pass (including 6 project-scope tests)
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No new code changes needed
+
+#### Feature #487 marked passing
+#### Progress: 485/488 features passing (99.4%)
