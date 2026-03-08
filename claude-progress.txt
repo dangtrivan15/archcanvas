@@ -12168,3 +12168,62 @@ Status: PASSING
 
 #### Commit: b4509bb
 #### Feature #471 marked passing
+
+---
+
+## Session: Feature #476 - Built-in AI initialization flow (API key path)
+Date: 2026-03-08
+Status: PASSING
+
+### Summary:
+Created `src/ai/initWithAI.ts` — the orchestration module that wires the agentic loop
+engine with codebase analysis to provide in-app AI-powered project initialization.
+
+### What was built:
+
+1. **initWithAI() function** (`src/ai/initWithAI.ts`):
+   - Full orchestration: scan → detect → select → prompt → agentic loop → result
+   - Phase 1 (Scanning): Uses scanDirectoryBrowser to traverse project files via File System Access API
+   - Phase 2 (Detecting): Uses detectProject to identify project type, languages, frameworks
+   - Phase 3 (Selecting): Uses selectKeyFilesBrowser to choose architecturally significant files
+   - Phase 4 (Prompting + Building): Builds system/user prompts via initArchitecture.ts,
+     wires MCP tool handlers to TextApi, runs runAgentLoop so Claude iteratively builds the graph
+   - Emits InitWithAIProgress events throughout all phases for UI consumption
+   - Returns InitWithAIResult with graph, stats, projectProfile, toolCalls, warnings
+
+2. **Tool registry construction** (buildToolRegistry):
+   - Filters TOOL_DEFINITIONS to INIT_TOOL_NAMES (16 tools for architecture init)
+   - Excludes save, file_info, analyze_codebase (not relevant in-browser)
+   - Wires each tool handler to dispatchToolCall with ToolHandlerContext
+
+3. **Progress tracking**:
+   - Tracks nodesCreated, edgesCreated, codeRefsLinked from tool calls
+   - Emits building progress with tool call details
+   - Forwards onToolCall callback to caller
+
+4. **Error handling**:
+   - Scan/detect/select errors wrapped with phase context
+   - Tool call errors collected as warnings
+   - Max iteration guard adds warning about incomplete graph
+   - AbortSignal checked at each phase boundary and passed to agentic loop
+
+### Tests: 21 tests (all passing)
+- test/unit/ai/initWithAI.test.ts
+- Orchestration: full flow, project metadata, registry, agent loop options
+- Progress: phase order, monotonic percentages, building events per tool call
+- Tool calls: onToolCall callback, tool call log, error warnings
+- Max iterations: warning message
+- Abort: signal propagation, immediate abort
+- Errors: scan failure, detection failure, file selection failure
+- Tool registry: excludes save/file_info/analyze_codebase, wires to dispatchToolCall
+- Directory listing: builds tree from scan result
+- Defaults: folder name as architecture name, code ref counting
+
+### Verification:
+- TypeScript: 0 errors in src/
+- Full test suite: 5142/5142 PASS (0 failures)
+- Vite build: PASS
+- Browser: App loads, zero app console errors (only pre-existing SSL/PWA warnings)
+- No mock data patterns: PASS
+
+#### Feature #476 marked passing
