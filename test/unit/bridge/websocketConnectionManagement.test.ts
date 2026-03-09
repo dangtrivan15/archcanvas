@@ -3,7 +3,7 @@
  *
  * Tests that:
  * 1. Terminal panel connects to bridge WebSocket on mount
- * 2. If bridge server is not running, show error: 'Bridge server not running. Start it with npm run bridge'
+ * 2. If bridge server is not running, show error: 'Bridge not available. Restart the dev server with npm run dev'
  * 3. If WebSocket disconnects, show message and attempt reconnect
  * 4. Verify reconnect restores the terminal session if Claude Code is still running
  * 5. Verify clean error states (no infinite reconnect loops)
@@ -100,10 +100,10 @@ describe('Feature #541: WebSocket connection management between browser and brid
       }
     });
 
-    it('connect() uses DEFAULT_BRIDGE_URL when no URL provided', () => {
+    it('connect() uses getBridgeUrl() when no URL provided', () => {
       const source = fs.readFileSync('src/store/terminalStore.ts', 'utf-8');
-      expect(source).toContain('DEFAULT_BRIDGE_URL');
-      expect(source).toContain('url ?? DEFAULT_BRIDGE_URL');
+      expect(source).toContain('getBridgeUrl');
+      expect(source).toContain('url ?? getBridgeUrl()');
     });
 
     it('DEFAULT_BRIDGE_URL is a valid WebSocket URL', () => {
@@ -125,26 +125,26 @@ describe('Feature #541: WebSocket connection management between browser and brid
 
   // ─── Step 2: Bridge not running shows error ───
 
-  describe('Step 2: Bridge not running shows error with npm run bridge instruction', () => {
+  describe('Step 2: Bridge not running shows error with npm run dev instruction', () => {
     it('BRIDGE_ERROR_MESSAGES.bridge_not_running contains the correct message', () => {
       const msg = BRIDGE_ERROR_MESSAGES.bridge_not_running;
-      expect(msg.message).toBe('Bridge server not running. Start it with npm run bridge');
+      expect(msg.message).toBe('Bridge not available. Restart the dev server with npm run dev');
     });
 
-    it('error message includes npm run bridge instruction', () => {
+    it('error message includes npm run dev instruction', () => {
       const msg = BRIDGE_ERROR_MESSAGES.bridge_not_running;
-      expect(msg.message).toContain('npm run bridge');
+      expect(msg.message).toContain('npm run dev');
     });
 
-    it('action message includes npm run bridge', () => {
+    it('action message includes npm run dev', () => {
       const msg = BRIDGE_ERROR_MESSAGES.bridge_not_running;
-      expect(msg.action).toContain('npm run bridge');
+      expect(msg.action).toContain('npm run dev');
     });
 
     it('classifyError for ECONNREFUSED produces bridge_not_running', () => {
       const error = classifyError(new Error('connect ECONNREFUSED 127.0.0.1:3001'));
       expect(error.type).toBe('bridge_not_running');
-      expect(error.message).toContain('npm run bridge');
+      expect(error.message).toContain('npm run dev');
     });
 
     it('classifyError for connection refused produces bridge_not_running', () => {
@@ -160,14 +160,14 @@ describe('Feature #541: WebSocket connection management between browser and brid
     it('classifyError for WebSocket connection failure produces bridge_not_running', () => {
       const error = classifyError(new Error(`WebSocket connection to ${DEFAULT_BRIDGE_URL} failed`));
       expect(error.type).toBe('bridge_not_running');
-      expect(error.actionMessage).toContain('npm run bridge');
+      expect(error.actionMessage).toContain('npm run dev');
     });
 
     it('terminalStore onError callback sets currentError and adds error line', () => {
       const bridgeError: BridgeError = {
         type: 'bridge_not_running',
-        message: 'Bridge server not running. Start it with npm run bridge',
-        actionMessage: 'Run: npm run bridge',
+        message: 'Bridge not available. Restart the dev server with npm run dev',
+        actionMessage: 'Restart: npm run dev',
       };
 
       // Simulate the onError callback behavior
@@ -176,7 +176,7 @@ describe('Feature #541: WebSocket connection management between browser and brid
 
       const state = getStoreState();
       expect(state.currentError).toEqual(bridgeError);
-      const errorLine = state.lines.find(l => l.type === 'error' && l.content.includes('npm run bridge'));
+      const errorLine = state.lines.find(l => l.type === 'error' && l.content.includes('npm run dev'));
       expect(errorLine).toBeDefined();
     });
 

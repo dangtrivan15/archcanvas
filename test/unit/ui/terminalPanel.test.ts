@@ -53,13 +53,13 @@ describe('Terminal Panel - Error State Display', () => {
   describe('Feature Step 1: Bridge not running shows actionable message', () => {
     it('bridge_not_running error message tells user to start bridge server', () => {
       const msg = BRIDGE_ERROR_MESSAGES.bridge_not_running;
-      expect(msg.action).toBe('Run: npm run bridge');
+      expect(msg.action).toBe('Restart: npm run dev');
     });
 
     it('classifyError for connection failure produces bridge_not_running', () => {
-      const error = classifyError(new Error('WebSocket connection to ws://localhost:3100 failed'));
+      const error = classifyError(new Error('WebSocket connection to wss://localhost:5173/bridge failed'));
       expect(error.type).toBe('bridge_not_running');
-      expect(error.actionMessage).toContain('npm run bridge');
+      expect(error.actionMessage).toContain('npm run dev');
     });
 
     it('terminal panel renders error banner with data-error-type attribute', () => {

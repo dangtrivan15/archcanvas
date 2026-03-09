@@ -122,13 +122,18 @@ describe('Step 2: MCP config points to the current .archc file path', () => {
     expect(BRIDGE_SOURCE).toContain('handleConnection(ws, archcFile');
   });
 
-  it('should support ARCHCANVAS_FILE env variable for file path', () => {
-    expect(BRIDGE_SOURCE).toContain("process.env['ARCHCANVAS_FILE']");
+  it('should support ARCHCANVAS_FILE env variable via Vite plugin config', () => {
+    // ARCHCANVAS_FILE is now read in vite.config.ts and passed to the plugin
+    const viteConfigSource = readFileSync(resolve('vite.config.ts'), 'utf-8');
+    expect(viteConfigSource).toContain('process.env.ARCHCANVAS_FILE');
+    expect(viteConfigSource).toContain('viteBridgePlugin(');
   });
 
-  it('should support --file / -f CLI flags for file path', () => {
-    expect(BRIDGE_SOURCE).toContain("'--file'");
-    expect(BRIDGE_SOURCE).toContain("'-f'");
+  it('should support archcFile option passed via Vite plugin', () => {
+    // The Vite plugin accepts archcFile in its options and passes to handleConnection
+    const pluginSource = readFileSync(resolve('src/bridge/viteBridgePlugin.ts'), 'utf-8');
+    expect(pluginSource).toContain('archcFile');
+    expect(pluginSource).toContain('handleConnection(ws, archcFile');
   });
 });
 
@@ -410,16 +415,15 @@ describe('Integration: MCP server creates with all architecture tools', () => {
 // ─── End-to-end: Full pipeline from bridge to MCP to file sync ──
 
 describe('End-to-end: Full pipeline from bridge → MCP → file sync', () => {
-  it('bridge server accepts --file option and passes to connection handler', () => {
-    // CLI parsing
-    expect(BRIDGE_SOURCE).toContain("'--file'");
-    expect(BRIDGE_SOURCE).toContain("'-f'");
+  it('Vite plugin accepts archcFile option and passes to connection handler', () => {
+    // archcFile is now configured via the Vite plugin, not CLI flags
+    const pluginSource = readFileSync(resolve('src/bridge/viteBridgePlugin.ts'), 'utf-8');
     // Options interface
-    expect(BRIDGE_SOURCE).toContain('archcFile?: string');
-    // Passed to createBridgeServer
-    expect(BRIDGE_SOURCE).toContain('const { cors, archcFile } = options');
+    expect(pluginSource).toContain('archcFile?: string');
     // Passed to handleConnection
-    expect(BRIDGE_SOURCE).toContain('handleConnection(ws, archcFile');
+    expect(pluginSource).toContain('handleConnection(ws, archcFile');
+    // Bridge server still has handleConnection that accepts archcFile
+    expect(BRIDGE_SOURCE).toContain('export function handleConnection');
   });
 
   it('handleConnection passes archcFile to spawnClaudeCode', () => {

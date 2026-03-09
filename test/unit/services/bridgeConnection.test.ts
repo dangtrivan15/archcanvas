@@ -11,6 +11,8 @@ import {
   MAX_RECONNECT_ATTEMPTS,
   INITIAL_RECONNECT_DELAY,
   DEFAULT_BRIDGE_URL,
+  getBridgeUrl,
+  BRIDGE_WS_PATH,
   type BridgeErrorType,
   type BridgeError,
   type BridgeMessage,
@@ -36,8 +38,8 @@ describe('Bridge Connection Service', () => {
       }
     });
 
-    it('bridge_not_running message mentions npm run bridge', () => {
-      expect(BRIDGE_ERROR_MESSAGES.bridge_not_running.action).toContain('npm run bridge');
+    it('bridge_not_running message mentions npm run dev', () => {
+      expect(BRIDGE_ERROR_MESSAGES.bridge_not_running.action).toContain('npm run dev');
     });
 
     it('claude_not_installed message mentions install instructions', () => {
@@ -69,13 +71,30 @@ describe('Bridge Connection Service', () => {
     it('DEFAULT_BRIDGE_URL is a valid WebSocket URL', () => {
       expect(DEFAULT_BRIDGE_URL).toMatch(/^wss?:\/\//);
     });
+
+    it('getBridgeUrl() returns a valid WebSocket URL', () => {
+      const url = getBridgeUrl();
+      expect(url).toMatch(/^wss?:\/\//);
+      expect(url).toContain(BRIDGE_WS_PATH);
+    });
+
+    it('BRIDGE_WS_PATH is /bridge', () => {
+      expect(BRIDGE_WS_PATH).toBe('/bridge');
+    });
+
+    it('getBridgeUrl() derives URL from window.location when available', () => {
+      // In test environment, window.location should be available (jsdom)
+      // or fallback should return a valid URL
+      const url = getBridgeUrl();
+      expect(url).toMatch(/^wss?:\/\/.+\/bridge$/);
+    });
   });
 
   describe('classifyError', () => {
     it('classifies ECONNREFUSED as bridge_not_running', () => {
       const result = classifyError(new Error('connect ECONNREFUSED 127.0.0.1:3100'));
       expect(result.type).toBe('bridge_not_running');
-      expect(result.actionMessage).toContain('npm run bridge');
+      expect(result.actionMessage).toContain('npm run dev');
     });
 
     it('classifies connection refused as bridge_not_running', () => {
@@ -84,7 +103,7 @@ describe('Bridge Connection Service', () => {
     });
 
     it('classifies WebSocket connection failure as bridge_not_running', () => {
-      const result = classifyError(new Error('WebSocket connection to ws://localhost:3100 failed'));
+      const result = classifyError(new Error('WebSocket connection to wss://localhost:5173/bridge failed'));
       expect(result.type).toBe('bridge_not_running');
     });
 

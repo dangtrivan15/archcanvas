@@ -1,9 +1,9 @@
 /**
- * Bridge Server npm Script and Startup Tests
+ * Bridge Server Vite Plugin Integration Tests
  *
- * Feature #543: Add npm script and startup instructions for bridge server.
- * Verifies the npm run bridge script, concurrent operation with Vite,
- * WebSocket URL logging on startup, and dev workflow integration.
+ * Feature #549: Integrate bridge server into Vite dev server as plugin.
+ * Verifies the Vite plugin setup, WebSocket path, health endpoint,
+ * removal of standalone bridge script, and dev workflow integration.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -14,238 +14,268 @@ import { resolve } from 'node:path';
 
 const PACKAGE_JSON_PATH = resolve('package.json');
 const BRIDGE_SERVER_PATH = resolve('src/bridge/server.ts');
+const VITE_PLUGIN_PATH = resolve('src/bridge/viteBridgePlugin.ts');
+const VITE_CONFIG_PATH = resolve('vite.config.ts');
+const BRIDGE_CONNECTION_PATH = resolve('src/services/bridgeConnection.ts');
 const BRIDGE_SOURCE = readFileSync(BRIDGE_SERVER_PATH, 'utf-8');
+const VITE_PLUGIN_SOURCE = readFileSync(VITE_PLUGIN_PATH, 'utf-8');
+const VITE_CONFIG_SOURCE = readFileSync(VITE_CONFIG_PATH, 'utf-8');
+const BRIDGE_CONNECTION_SOURCE = readFileSync(BRIDGE_CONNECTION_PATH, 'utf-8');
 const PKG = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf-8'));
 
-// ─── Step 1: 'bridge' script in package.json ─────────────────
+// ─── Step 1: Vite plugin creates WebSocket on dev server ─────
 
-describe('Step 1: Add bridge script to package.json', () => {
-  it('should have a "bridge" script in package.json', () => {
-    expect(PKG.scripts).toBeDefined();
-    expect(PKG.scripts.bridge).toBeDefined();
-    expect(typeof PKG.scripts.bridge).toBe('string');
+describe('Step 1: Vite plugin (viteBridgePlugin) sets up WebSocket on the Vite dev server', () => {
+  it('viteBridgePlugin.ts file exists', () => {
+    expect(existsSync(VITE_PLUGIN_PATH)).toBe(true);
   });
 
-  it('bridge script should invoke the bridge server entry point', () => {
-    const script = PKG.scripts.bridge as string;
-    // Should reference src/bridge/server.ts (via tsx or similar)
-    expect(script).toContain('src/bridge/server.ts');
+  it('exports a viteBridgePlugin function', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('export function viteBridgePlugin');
   });
 
-  it('bridge script should use tsx for TypeScript execution', () => {
-    const script = PKG.scripts.bridge as string;
-    expect(script).toContain('tsx');
+  it('plugin returns a Vite Plugin object with name archcanvas-bridge', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("name: 'archcanvas-bridge'");
   });
 
-  it('bridge script should be runnable with npm run bridge', () => {
-    // The script key must be exactly "bridge" for `npm run bridge`
-    expect('bridge' in PKG.scripts).toBe(true);
+  it('plugin only applies during serve (dev mode)', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("apply: 'serve'");
   });
 
-  it('bridge server source file should exist', () => {
-    expect(existsSync(BRIDGE_SERVER_PATH)).toBe(true);
-  });
-});
-
-// ─── Step 2: npm run bridge starts the bridge server ─────────
-
-describe('Step 2: npm run bridge starts the bridge server', () => {
-  it('bridge server should have a main() CLI entry point', () => {
-    expect(BRIDGE_SOURCE).toContain('async function main()');
+  it('plugin uses configureServer hook', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('configureServer(server');
   });
 
-  it('should parse --port flag from CLI arguments', () => {
-    expect(BRIDGE_SOURCE).toContain("'--port'");
-    expect(BRIDGE_SOURCE).toContain("'-p'");
+  it('plugin creates WebSocketServer in noServer mode', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('noServer: true');
   });
 
-  it('should parse --host flag from CLI arguments', () => {
-    expect(BRIDGE_SOURCE).toContain("'--host'");
+  it('plugin handles HTTP upgrade for /bridge path', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("on('upgrade'");
+    expect(VITE_PLUGIN_SOURCE).toContain('BRIDGE_WS_PATH');
+    expect(VITE_PLUGIN_SOURCE).toContain('handleUpgrade');
   });
 
-  it('should parse --file flag from CLI arguments', () => {
-    expect(BRIDGE_SOURCE).toContain("'--file'");
-    expect(BRIDGE_SOURCE).toContain("'-f'");
-  });
-
-  it('should call startBridgeServer from main()', () => {
-    expect(BRIDGE_SOURCE).toContain('await startBridgeServer(');
-  });
-
-  it('should default to port 3001', () => {
-    expect(BRIDGE_SOURCE).toContain("'3001'");
-  });
-
-  it('should support BRIDGE_PORT environment variable', () => {
-    expect(BRIDGE_SOURCE).toContain("BRIDGE_PORT");
-  });
-
-  it('should have error handling in main()', () => {
-    expect(BRIDGE_SOURCE).toContain('.catch(');
-    expect(BRIDGE_SOURCE).toContain('process.exit(1)');
+  it('exports BRIDGE_WS_PATH constant as /bridge', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("BRIDGE_WS_PATH = '/bridge'");
   });
 });
 
-// ─── Step 3: Bridge and Vite can run concurrently ────────────
+// ─── Step 2: PTY/Claude Code spawning in plugin configureServer hook ─────
 
-describe('Step 3: Bridge server and Vite dev server can run concurrently', () => {
-  it('bridge server defaults to port 3001 (different from Vite 5173)', () => {
-    // Bridge uses 3001, Vite uses 5173 - no port conflict
-    expect(BRIDGE_SOURCE).toContain("'3001'");
-    // Vite config uses 5173 (or default)
-    const viteConfig = readFileSync(resolve('vite.config.ts'), 'utf-8');
-    // Vite default port is 5173 or explicitly set
-    expect(viteConfig).toBeTruthy();
-    // Bridge port must not be 5173
-    const bridgeDefaultPort = "3001";
-    expect(bridgeDefaultPort).not.toBe('5173');
+describe('Step 2: Move PTY/Claude Code spawning logic into the plugin configureServer hook', () => {
+  it('plugin imports handleConnection from server module', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("import");
+    expect(VITE_PLUGIN_SOURCE).toContain('handleConnection');
+    expect(VITE_PLUGIN_SOURCE).toContain("from './server'");
   });
 
-  it('bridge script is separate from dev script', () => {
-    expect(PKG.scripts.bridge).not.toBe(PKG.scripts.dev);
+  it('plugin imports detectClaudeCode from server module', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('detectClaudeCode');
   });
 
-  it('bridge server uses its own HTTP server (not Vite)', () => {
-    expect(BRIDGE_SOURCE).toContain("import { createServer");
-    expect(BRIDGE_SOURCE).toContain("from 'node:http'");
+  it('plugin detects Claude Code on server startup', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('claudeDetection = detectClaudeCode()');
   });
 
-  it('bridge server binds to localhost by default', () => {
-    expect(BRIDGE_SOURCE).toContain("let host = 'localhost'");
+  it('plugin passes detection result to handleConnection', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('handleConnection(ws, archcFile, claudeDetection');
   });
 
-  it('bridge and dev scripts can be run in separate terminals', () => {
-    // Both scripts exist and are independent
+  it('plugin logs Claude Code detection result', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('[Bridge] Claude Code detected');
+    expect(VITE_PLUGIN_SOURCE).toContain('[Bridge] WARNING');
+  });
+
+  it('server.ts exports handleConnection', () => {
+    expect(BRIDGE_SOURCE).toContain('export function handleConnection');
+  });
+
+  it('server.ts exports detectClaudeCode', () => {
+    expect(BRIDGE_SOURCE).toContain('export function detectClaudeCode');
+  });
+});
+
+// ─── Step 3: Terminal panel connects to Vite server WebSocket path ─────
+
+describe('Step 3: Update terminal panel WebSocket URL to derive from window.location', () => {
+  it('bridgeConnection exports getBridgeUrl function', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('export function getBridgeUrl()');
+  });
+
+  it('getBridgeUrl derives protocol from window.location.protocol', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("window.location.protocol === 'https:'");
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("'wss:'");
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("'ws:'");
+  });
+
+  it('getBridgeUrl derives host from window.location.host', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('window.location.host');
+  });
+
+  it('getBridgeUrl appends BRIDGE_WS_PATH', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('BRIDGE_WS_PATH');
+  });
+
+  it('getBridgeUrl has fallback for non-browser environments', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("typeof window !== 'undefined'");
+  });
+
+  it('BRIDGE_WS_PATH is /bridge', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("BRIDGE_WS_PATH = '/bridge'");
+  });
+
+  it('no hardcoded localhost:3100 or localhost:5173 in bridge WebSocket URL', () => {
+    // DEFAULT_BRIDGE_URL is now derived from getBridgeUrl(), not hardcoded
+    expect(BRIDGE_CONNECTION_SOURCE).not.toMatch(/DEFAULT_BRIDGE_URL\s*=\s*'wss?:\/\/localhost:\d+/);
+  });
+});
+
+// ─── Step 4: Standalone bridge entry point removed ─────
+
+describe('Step 4: Remove the standalone bridge server entry point', () => {
+  it('server.ts no longer has a main() CLI entry point function', () => {
+    expect(BRIDGE_SOURCE).not.toContain('async function main()');
+  });
+
+  it('server.ts no longer has shebang line', () => {
+    expect(BRIDGE_SOURCE.startsWith('#!/usr/bin/env node')).toBe(false);
+  });
+
+  it('server.ts no longer has _isDirectRun check', () => {
+    expect(BRIDGE_SOURCE).not.toContain('_isDirectRun');
+  });
+
+  it('server.ts contains note about Vite plugin migration', () => {
+    expect(BRIDGE_SOURCE).toContain('viteBridgePlugin');
+  });
+
+  it('server.ts still exports core functions for the plugin', () => {
+    expect(BRIDGE_SOURCE).toContain('export function detectClaudeCode');
+    expect(BRIDGE_SOURCE).toContain('export function createBridgeServer');
+    expect(BRIDGE_SOURCE).toContain('export function handleConnection');
+  });
+});
+
+// ─── Step 5: npm run bridge script removed ─────
+
+describe('Step 5: Remove npm run bridge script from package.json', () => {
+  it('package.json does not have a "bridge" script', () => {
+    expect(PKG.scripts.bridge).toBeUndefined();
+  });
+
+  it('dev script still exists and uses vite', () => {
     expect(PKG.scripts.dev).toBeDefined();
-    expect(PKG.scripts.bridge).toBeDefined();
-    // dev uses vite, bridge uses tsx - different processes
     expect(PKG.scripts.dev).toContain('vite');
-    expect(PKG.scripts.bridge).toContain('tsx');
   });
 
-  it('bridge server port is configurable to avoid conflicts', () => {
-    expect(BRIDGE_SOURCE).toContain("'--port'");
-    expect(BRIDGE_SOURCE).toContain("BRIDGE_PORT");
-  });
-});
-
-// ─── Step 4: Bridge server logs WebSocket URL on startup ─────
-
-describe('Step 4: Bridge server logs its WebSocket URL on startup', () => {
-  it('should log the WebSocket URL in startup banner', () => {
-    expect(BRIDGE_SOURCE).toContain('WebSocket:');
-    expect(BRIDGE_SOURCE).toContain('ws://');
-  });
-
-  it('should log the server URL', () => {
-    expect(BRIDGE_SOURCE).toContain('URL:');
-    expect(BRIDGE_SOURCE).toContain('http://');
-  });
-
-  it('should log the health endpoint URL', () => {
-    expect(BRIDGE_SOURCE).toContain('Health:');
-    expect(BRIDGE_SOURCE).toContain('/health');
-  });
-
-  it('should log the .archc file path', () => {
-    expect(BRIDGE_SOURCE).toContain('File:');
-  });
-
-  it('should log Claude Code status', () => {
-    expect(BRIDGE_SOURCE).toContain('Claude:');
-  });
-
-  it('should include the port in the WebSocket URL', () => {
-    // The WebSocket URL is constructed with the configured port
-    expect(BRIDGE_SOURCE).toMatch(/ws:\/\/\$\{.*host.*\}:\$\{.*port.*\}\/ws/);
-  });
-
-  it('should print the server name in banner', () => {
-    expect(BRIDGE_SOURCE).toContain('ArchCanvas Bridge Server');
-  });
-
-  it('should log helpful instructions', () => {
-    expect(BRIDGE_SOURCE).toContain('Press Ctrl+C to stop');
-  });
-});
-
-// ─── Step 5: dev:ensure pattern integration ──────────────────
-
-describe('Step 5: Add bridge server to dev:ensure pattern if applicable', () => {
-  it('dev:ensure script exists in package.json', () => {
+  it('dev:ensure script still exists', () => {
     expect(PKG.scripts['dev:ensure']).toBeDefined();
   });
+});
 
-  it('dev:ensure script uses ensure-dev-server.sh', () => {
-    expect(PKG.scripts['dev:ensure']).toContain('ensure-dev-server.sh');
+// ─── Step 6: npm run dev automatically starts bridge ─────
+
+describe('Step 6: npm run dev starts with bridge automatically available', () => {
+  it('vite.config.ts imports viteBridgePlugin', () => {
+    expect(VITE_CONFIG_SOURCE).toContain("import { viteBridgePlugin }");
+    expect(VITE_CONFIG_SOURCE).toContain("from './src/bridge/viteBridgePlugin'");
   });
 
-  it('ensure-dev-server.sh exists', () => {
-    expect(existsSync(resolve('scripts/ensure-dev-server.sh'))).toBe(true);
+  it('vite.config.ts includes viteBridgePlugin in plugins array', () => {
+    expect(VITE_CONFIG_SOURCE).toContain('viteBridgePlugin(');
   });
 
-  it('bridge server has its own graceful shutdown (SIGINT/SIGTERM)', () => {
-    expect(BRIDGE_SOURCE).toContain("process.on('SIGINT'");
-    expect(BRIDGE_SOURCE).toContain("process.on('SIGTERM'");
-    expect(BRIDGE_SOURCE).toContain('Shutting down');
+  it('vite.config.ts passes ARCHCANVAS_FILE env var to plugin', () => {
+    expect(VITE_CONFIG_SOURCE).toContain('process.env.ARCHCANVAS_FILE');
   });
 
-  it('bridge server has a --help flag for startup instructions', () => {
-    expect(BRIDGE_SOURCE).toContain("'--help'");
-    expect(BRIDGE_SOURCE).toContain("'-h'");
-    expect(BRIDGE_SOURCE).toContain('Usage:');
-    expect(BRIDGE_SOURCE).toContain('npm run bridge');
-  });
-
-  it('bridge server help includes all CLI options', () => {
-    expect(BRIDGE_SOURCE).toContain('--port');
-    expect(BRIDGE_SOURCE).toContain('--host');
-    expect(BRIDGE_SOURCE).toContain('--file');
-    expect(BRIDGE_SOURCE).toContain('--no-cors');
-  });
-
-  it('bridge server help mentions WebSocket protocol', () => {
-    expect(BRIDGE_SOURCE).toContain('WebSocket Protocol');
-    expect(BRIDGE_SOURCE).toContain('ws://host:port/ws');
-  });
-
-  it('bridge server help mentions environment variables', () => {
-    expect(BRIDGE_SOURCE).toContain('BRIDGE_PORT');
-    expect(BRIDGE_SOURCE).toContain('ARCHCANVAS_FILE');
+  it('plugin is excluded during test mode', () => {
+    // Both basicSsl and viteBridgePlugin are excluded during test
+    expect(VITE_CONFIG_SOURCE).toContain("process.env.NODE_ENV !== 'test'");
   });
 });
 
-// ─── Integration: Complete npm script workflow ───────────────
+// ─── Step 7: Terminal panel connects without manual bridge startup ─────
 
-describe('Integration: Bridge server npm script completeness', () => {
-  it('bridge script is in the scripts section (not bin or other)', () => {
-    expect(PKG.scripts.bridge).toBeDefined();
+describe('Step 7: Terminal panel connects without manual bridge startup', () => {
+  it('terminal store uses getBridgeUrl which derives URL from window.location', () => {
+    const terminalStoreSource = readFileSync(resolve('src/store/terminalStore.ts'), 'utf-8');
+    expect(terminalStoreSource).toContain('getBridgeUrl');
   });
 
-  it('bridge server exports startBridgeServer for programmatic use', () => {
-    expect(BRIDGE_SOURCE).toContain('export async function startBridgeServer');
+  it('bridge connection derives URL dynamically (no hardcoded localhost URL)', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('getBridgeUrl');
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('window.location.host');
+  });
+});
+
+// ─── Step 8: Capacitor dev mode compatibility ─────
+
+describe('Step 8: Capacitor dev mode (dev:ios) also has bridge available', () => {
+  it('dev:ios script exists and uses cap run', () => {
+    expect(PKG.scripts['dev:ios']).toBeDefined();
+    expect(PKG.scripts['dev:ios']).toContain('cap run');
   });
 
-  it('bridge server exports createBridgeServer for testing', () => {
-    expect(BRIDGE_SOURCE).toContain('export function createBridgeServer');
+  it('plugin applies only during serve mode (vite dev)', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("apply: 'serve'");
   });
 
-  it('bridge server main only runs when executed directly', () => {
-    // Prevents side effects when imported in tests
-    expect(BRIDGE_SOURCE).toContain('_isDirectRun');
-    expect(BRIDGE_SOURCE).toContain('if (_isDirectRun)');
+  it('Vite config has port 5173 for consistency across modes', () => {
+    expect(VITE_CONFIG_SOURCE).toContain('port: 5173');
+  });
+});
+
+// ─── Step 9: Updated error message for bridge unavailable ─────
+
+describe('Step 9: Updated error message suggests restarting dev server', () => {
+  it('bridge_not_running message says to restart dev server', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain('Restart the dev server with npm run dev');
   });
 
-  it('bridge server has proper shebang for direct execution', () => {
-    expect(BRIDGE_SOURCE.startsWith('#!/usr/bin/env node')).toBe(true);
+  it('bridge_not_running action says Restart: npm run dev', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).toContain("action: 'Restart: npm run dev'");
   });
 
-  it('WebSocket server listens on /ws path', () => {
-    expect(BRIDGE_SOURCE).toContain("path: '/ws'");
+  it('error message does not reference npm run bridge', () => {
+    expect(BRIDGE_CONNECTION_SOURCE).not.toContain('npm run bridge');
+  });
+});
+
+// ─── Integration: Plugin health endpoint and WebSocket ─────
+
+describe('Integration: Vite bridge plugin completeness', () => {
+  it('plugin adds /bridge/health middleware endpoint', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('/bridge/health');
+    expect(VITE_PLUGIN_SOURCE).toContain('application/json');
   });
 
-  it('health endpoint returns JSON status', () => {
-    expect(BRIDGE_SOURCE).toContain("'/health'");
-    expect(BRIDGE_SOURCE).toContain("'Content-Type': 'application/json'");
+  it('health endpoint returns status, archcFile, uptime, and claude info', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain("status: 'ok'");
+    expect(VITE_PLUGIN_SOURCE).toContain('archcFile');
+    expect(VITE_PLUGIN_SOURCE).toContain('uptime');
+    expect(VITE_PLUGIN_SOURCE).toContain('claude:');
+  });
+
+  it('plugin logs WebSocket endpoint URL when server starts', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('[Bridge] WebSocket endpoint');
+  });
+
+  it('plugin logs health check URL when server starts', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('[Bridge] Health check');
+  });
+
+  it('plugin supports enabled option to disable bridge', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('enabled');
+    expect(VITE_PLUGIN_SOURCE).toContain('if (!enabled) return');
+  });
+
+  it('plugin supports archcFile option', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('archcFile');
+  });
+
+  it('plugin exports ViteBridgePluginOptions interface', () => {
+    expect(VITE_PLUGIN_SOURCE).toContain('export interface ViteBridgePluginOptions');
   });
 });

@@ -16,7 +16,7 @@ import type {
 } from '@/services/bridgeConnection';
 import {
   createBridgeConnection,
-  DEFAULT_BRIDGE_URL,
+  getBridgeUrl,
 } from '@/services/bridgeConnection';
 import type { Terminal } from '@xterm/xterm';
 
@@ -75,7 +75,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   awaitingRestart: false,
 
   connect: (url?: string) => {
-    const bridgeUrl = url ?? DEFAULT_BRIDGE_URL;
+    const bridgeUrl = url ?? getBridgeUrl();
 
     // Disconnect existing connection
     if (bridgeConnection) {

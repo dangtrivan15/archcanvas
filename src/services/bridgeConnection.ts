@@ -42,8 +42,8 @@ export interface BridgeMessage {
 /** User-facing error messages for each error type */
 export const BRIDGE_ERROR_MESSAGES: Record<BridgeErrorType, { message: string; action: string }> = {
   bridge_not_running: {
-    message: 'Bridge server not running. Start it with npm run bridge',
-    action: 'Run: npm run bridge',
+    message: 'Bridge not available. Restart the dev server with npm run dev',
+    action: 'Restart: npm run dev',
   },
   claude_not_installed: {
     message: 'Claude Code is not installed',
@@ -73,8 +73,26 @@ export const MAX_RECONNECT_ATTEMPTS = 5;
 /** Initial reconnect delay in ms (doubles each attempt) */
 export const INITIAL_RECONNECT_DELAY = 1000;
 
-/** Default bridge server URL */
-export const DEFAULT_BRIDGE_URL = 'ws://localhost:3100';
+/** Bridge WebSocket path on the dev server */
+export const BRIDGE_WS_PATH = '/bridge';
+
+/**
+ * Derives the bridge WebSocket URL from window.location.host.
+ * Uses wss:// if the page is served over HTTPS, ws:// if HTTP.
+ * This ensures the bridge works when the browser connects from a different host
+ * (e.g., iPad via Capacitor dev connecting to Mac's LAN IP).
+ */
+export function getBridgeUrl(): string {
+  if (typeof window !== 'undefined' && window.location) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${BRIDGE_WS_PATH}`;
+  }
+  // Fallback for non-browser environments (e.g., tests)
+  return `ws://localhost:5173${BRIDGE_WS_PATH}`;
+}
+
+/** @deprecated Use getBridgeUrl() instead - kept for backward compatibility in tests */
+export const DEFAULT_BRIDGE_URL = getBridgeUrl();
 
 export interface BridgeConnectionCallbacks {
   onStatusChange: (status: BridgeConnectionStatus) => void;
