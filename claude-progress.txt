@@ -14069,3 +14069,41 @@ The right panel now has 4 tabs: Properties, Notes, Code Refs, Terminal.
 
 #### Commit: 5b92553
 #### Feature #532 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #510
+==================================================
+
+## Feature #510: Skip auto-layout when nodes have user-set positions - PASSING
+
+### Summary:
+Verified that the existing position detection logic correctly skips auto-layout
+when nodes have meaningful saved positions (not all 0,0). The needsAutoLayout()
+function in positionDetection.ts returns false when any node has a non-zero position,
+and both trigger points (file open in coreStore.ts and zoom-in in Canvas.tsx) guard
+on this function.
+
+### New Test File:
+- test/unit/core/skipAutoLayoutWithPositions.test.ts - 14 tests:
+  - Step 1: Nodes with user-set positions not flagged for auto-layout
+  - Step 2: classifyNodePositions identifies all as positioned
+  - Step 3: Children with user-set positions do not trigger zoom-in auto-layout
+  - Step 4: Deeply nested children with positions not re-laid-out
+  - Step 5: Manual layout via context menu and Ctrl+Shift+L still works
+
+### Browser Verification:
+- layout-test.archc (4 nodes with scattered positions): No auto-layout triggered
+- nested-layout-test.archc (7 nodes): No auto-layout on file open
+- Zoomed into Backend Server: Children at saved positions, no auto-layout
+- Manual Auto-Layout (Horizontal) via Layout menu: Works correctly
+- Contrast: no-positions-test.archc (nodes at 0,0): Auto-layout correctly triggers
+- Zero console errors across all tests
+
+### Verification:
+- 14/14 new tests pass
+- 5485/5485 total tests pass (0 regressions)
+- No mock data patterns in production code
+
+#### Commit: 68b659d
+#### Feature #510 marked passing
+#### Current stats: 521/546 passing (95.4%)
