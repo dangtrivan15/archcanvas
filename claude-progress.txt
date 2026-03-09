@@ -15157,3 +15157,29 @@ browser terminal panel and bridge server. Two key changes:
 #### Commit: 6d26ec1
 #### Feature #541 marked passing
 #### Current stats: 544/546 passing (99.6%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #3 (Re-verification)
+==================================================
+
+## Feature #3: Binary codec roundtrip preserves data integrity - ALREADY PASSING
+
+### Summary:
+Re-verified existing codec roundtrip tests. All 11 tests pass covering:
+- Magic bytes verification (ARCHC\0)
+- Format version uint16 big-endian after magic bytes
+- Full roundtrip: architecture name, nodes, edges, canvas state preserved
+- SHA-256 checksum present in decoded header (32 bytes)
+- Corruption detection: modifying payload byte triggers IntegrityError
+
+### Test File:
+- **test/unit/storage/codec.roundtrip.test.ts** — 11 tests, all passing
+
+### Browser Verification:
+- App loads with 42 nodedefs, zero console errors (0 Errors, 0 Warnings)
+- No mock data patterns in production code
+
+### Status:
+- Feature was already marked passing
+- 11/11 tests pass
+- No changes needed
