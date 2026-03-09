@@ -48,6 +48,8 @@ import { NodePalette } from '@/components/canvas/NodePalette';
 import { calculateDeletionImpact } from '@/core/graph/deletionImpact';
 import { findNode } from '@/core/graph/graphEngine';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
+import { getNodesAtLevel } from '@/core/graph/graphQuery';
+import { needsAutoLayout } from '@/core/layout/positionDetection';
 import {
   findNearestNode,
   findTopLeftNode,
@@ -85,6 +87,7 @@ function CanvasInner() {
   } = useReactFlow();
   const graph = useCoreStore((s) => s.graph);
   const renderApi = useCoreStore((s) => s.renderApi);
+  const autoLayout = useCoreStore((s) => s.autoLayout);
   const addNode = useCoreStore((s) => s.addNode);
   const moveNode = useCoreStore((s) => s.moveNode);
   const moveNodes = useCoreStore((s) => s.moveNodes);
@@ -160,6 +163,33 @@ function CanvasInner() {
     y: number;
     edgeId: string;
   } | null>(null);
+
+  // Auto-layout when zooming into a parent whose children lack positions
+  const prevNavigationPathRef = useRef(navigationPath);
+  useEffect(() => {
+    const prevPath = prevNavigationPathRef.current;
+    prevNavigationPathRef.current = navigationPath;
+
+    // Only trigger on zoom-in (path grew longer)
+    if (navigationPath.length <= prevPath.length) return;
+    if (graph.nodes.length === 0) return;
+
+    const nodesAtLevel = getNodesAtLevel(graph, navigationPath);
+    if (nodesAtLevel.length > 0 && needsAutoLayout(nodesAtLevel)) {
+      console.log('[Canvas] Children lack positions — triggering auto-layout on zoom-in');
+      // Defer to allow React to render the new level first
+      setTimeout(() => {
+        autoLayout('horizontal', navigationPath)
+          .then(() => {
+            useCanvasStore.getState().requestFitView();
+            console.log('[Canvas] Auto-layout on zoom-in complete');
+          })
+          .catch((err) => {
+            console.warn('[Canvas] Auto-layout on zoom-in failed:', err);
+          });
+      }, 0);
+    }
+  }, [navigationPath, graph, autoLayout]);
 
   // Watch for fitView requests from other components (e.g., LayoutMenu)
   useEffect(() => {
