@@ -13730,3 +13730,49 @@ On subsequent zoom-ins, saved positions are reused (no re-layout).
 
 #### Commit: ea18060
 #### Feature #508 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #504
+==================================================
+
+## Feature #504: Layout menu and Ctrl+Shift+L shortcut work inside child views - PASSING
+
+### Summary:
+Added the missing Ctrl+Shift+L keyboard shortcut for auto-layout and verified that
+both the Layout menu and the shortcut work correctly inside child views (when zoomed
+into a parent node), not just at root level.
+
+### Changes:
+
+1. **src/core/shortcuts/shortcutManager.ts**:
+   - Added `layout:auto` shortcut action with `mod+shift+l` default binding
+
+2. **src/hooks/useKeyboardShortcuts.ts**:
+   - Added `autoLayout` from coreStore
+   - Added `layout:auto` case handler that triggers horizontal auto-layout with current navigationPath
+   - Added `autoLayout` to useCallback dependency array
+
+3. **src/components/toolbar/LayoutMenu.tsx**:
+   - Moved Ctrl+Shift+L shortcut hint from "Fit View" to "Auto-Layout (Horizontal)"
+   - Changed Fit View shortcut hint to show Ctrl+0 (its actual binding)
+
+4. **src/config/keyboardShortcuts.ts**:
+   - Added `auto-layout` entry to KEYBOARD_SHORTCUTS array (View category)
+   - Added `auto-layout: 'layout:auto'` to HELP_TO_ACTION_MAP
+
+### Feature steps verified:
+1. ✅ Open a file and zoom into a parent node (Backend Server with 4 children)
+2. ✅ Click Layout menu and select horizontal layout — works in child view
+3. ✅ Click Layout menu and select vertical layout — works in child view
+4. ✅ Press Ctrl+Shift+L — auto-layout triggers (console confirmed)
+5. ✅ Zoom back to root and verify layout still works at root level
+
+### Verification:
+- 69/69 shortcut tests pass (0 regressions)
+- 44/44 layout-related tests pass (0 regressions)
+- Browser: Horizontal/vertical layout work at child level, Ctrl+Shift+L triggers auto-layout
+- Zero console errors
+- No mock data patterns in production code
+
+#### Commit: dc2ea37
+#### Feature #504 marked passing
