@@ -28,6 +28,7 @@ import {
   saveSummaryMarkdown,
   graphToProto,
 } from '@/core/storage/fileIO';
+import { getFileLastModified } from '@/core/platform/fileSystemAdapter';
 import { enqueueSave } from '@/core/sync/syncQueue';
 import { encode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
@@ -304,18 +305,16 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
 
     // Capture the file's lastModified timestamp for external change polling.
-    // This uses getFile() which is lightweight and only reads metadata.
-    if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-      (fileHandle as FileSystemFileHandle)
-        .getFile()
-        .then((file) => {
-          set({ fileLastModifiedMs: file.lastModified });
-          console.log(`[CoreStore] Captured file lastModified: ${file.lastModified}`);
-        })
-        .catch((err) => {
-          console.warn('[CoreStore] Could not read file lastModified:', err);
-        });
-    }
+    getFileLastModified(fileHandle)
+      .then((lastModified) => {
+        if (lastModified !== null) {
+          set({ fileLastModifiedMs: lastModified });
+          console.log(`[CoreStore] Captured file lastModified: ${lastModified}`);
+        }
+      })
+      .catch((err) => {
+        console.warn('[CoreStore] Could not read file lastModified:', err);
+      });
 
     if (canvasState) {
       useCanvasStore.getState().setViewport(canvasState.viewport);
@@ -557,13 +556,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
 
       // Refresh lastModified timestamp after save so polling doesn't false-alarm
-      if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-        try {
-          const savedFile = await (fileHandle as FileSystemFileHandle).getFile();
-          set({ fileLastModifiedMs: savedFile.lastModified });
-        } catch {
-          // Non-critical: polling will catch up on next cycle
-        }
+      const savedLastModified = await getFileLastModified(fileHandle);
+      if (savedLastModified !== null) {
+        set({ fileLastModifiedMs: savedLastModified });
       }
 
       // Only clear isDirty if the graph hasn't been modified during the async save
@@ -659,16 +654,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
 
       // Read lastModified from the new file handle for polling
-      let newLastModifiedMs: number | null = null;
-      const newHandle = result.fileHandle as FileSystemFileHandle | undefined;
-      if (newHandle && typeof newHandle.getFile === 'function') {
-        try {
-          const savedFile = await newHandle.getFile();
-          newLastModifiedMs = savedFile.lastModified;
-        } catch {
-          // Non-critical
-        }
-      }
+      const newLastModifiedMs = await getFileLastModified(result.fileHandle);
 
       set({
         isDirty: graphChangedDuringSave,

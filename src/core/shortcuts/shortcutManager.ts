@@ -13,8 +13,9 @@
  */
 
 import { getCurrentPlatform, isCmdPlatform, formatBindingDisplay } from '@/core/input';
+import { preferences } from '@/core/platform/preferencesAdapter';
 
-const STORAGE_KEY = 'archcanvas:keyboard-shortcuts';
+const PREFERENCES_KEY = 'keyboard-shortcuts';
 
 export interface KeyBinding {
   /** Raw binding string (e.g., "mod+s") */
@@ -344,11 +345,11 @@ export class ShortcutManager {
   }
 
   /**
-   * Load user overrides from localStorage.
+   * Load user overrides from platform preferences (sync for store init).
    */
   private loadFromStorage(): void {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = preferences.getSync(PREFERENCES_KEY);
       if (stored) {
         const overrides = JSON.parse(stored) as ShortcutConfig;
         for (const [actionId, binding] of Object.entries(overrides)) {
@@ -360,13 +361,13 @@ export class ShortcutManager {
         this.rebuildParsedBindings();
       }
     } catch {
-      // If localStorage is unavailable or data is corrupt, use defaults
+      // If storage is unavailable or data is corrupt, use defaults
       console.warn('[ShortcutManager] Failed to load shortcuts from storage, using defaults');
     }
   }
 
   /**
-   * Save current overrides to localStorage.
+   * Save current overrides to platform preferences.
    */
   private saveToStorage(): void {
     const overrides: ShortcutConfig = {};
@@ -375,14 +376,14 @@ export class ShortcutManager {
         overrides[action.id] = this.config[action.id] ?? action.defaultBinding;
       }
     }
-    try {
-      if (Object.keys(overrides).length === 0) {
-        localStorage.removeItem(STORAGE_KEY);
-      } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-      }
-    } catch {
-      console.warn('[ShortcutManager] Failed to save shortcuts to storage');
+    if (Object.keys(overrides).length === 0) {
+      preferences.remove(PREFERENCES_KEY).catch(() => {
+        console.warn('[ShortcutManager] Failed to remove shortcuts from storage');
+      });
+    } else {
+      preferences.set(PREFERENCES_KEY, JSON.stringify(overrides)).catch(() => {
+        console.warn('[ShortcutManager] Failed to save shortcuts to storage');
+      });
     }
   }
 

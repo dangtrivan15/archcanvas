@@ -32,7 +32,7 @@ export function detectPlatform(): Platform {
   // iPad detection (iPadOS 13+ reports as Mac in navigator.platform)
   if (
     /ipad/i.test(platform) ||
-    (/mac/i.test(platform) && 'ontouchstart' in window && navigator.maxTouchPoints > 1)
+    (/mac/i.test(platform) && typeof window !== 'undefined' && 'ontouchstart' in window && navigator.maxTouchPoints > 1)
   ) {
     return 'ipad';
   }

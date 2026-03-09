@@ -189,8 +189,8 @@ describe('Terminal Panel - Error State Display', () => {
       expect(lines[99].content).toBe('Line 99');
     });
 
-    it('terminal panel has clipboard copy with error fallback', () => {
-      expect(terminalPanelSource).toContain('navigator.clipboard.writeText');
+    it('terminal panel has clipboard copy via platform adapter', () => {
+      expect(terminalPanelSource).toContain('getClipboardAdapter().copyText');
       expect(terminalPanelSource).toContain('.catch(');
     });
   });

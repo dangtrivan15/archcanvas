@@ -123,8 +123,8 @@ describe('External file modification detection (Feature #519)', () => {
     });
 
     it('saveFile updates fileLastModifiedMs after writing', () => {
-      // The save flow reads lastModified from the file after writing
-      expect(storeSource).toContain('fileLastModifiedMs: savedFile.lastModified');
+      // The save flow reads lastModified via platform adapter after writing
+      expect(storeSource).toContain('fileLastModifiedMs: savedLastModified');
     });
 
     it('saveFile sets isSaving to true before writing', () => {
@@ -156,13 +156,14 @@ describe('External file modification detection (Feature #519)', () => {
   });
 
   describe('timestamp comparison flow', () => {
-    it('open file sets fileLastModifiedMs via getFile()', () => {
+    it('open file sets fileLastModifiedMs via platform adapter', () => {
       const storeSource = fs.readFileSync(
         path.resolve(__dirname, '../../../src/store/coreStore.ts'),
         'utf-8',
       );
-      // _applyDecodedFile captures lastModified
-      expect(storeSource).toContain('set({ fileLastModifiedMs: file.lastModified })');
+      // _applyDecodedFile captures lastModified via getFileLastModified utility
+      expect(storeSource).toContain('getFileLastModified(fileHandle)');
+      expect(storeSource).toContain('set({ fileLastModifiedMs: lastModified })');
     });
 
     it('save updates last-known timestamp to prevent false detection', () => {
@@ -170,9 +171,9 @@ describe('External file modification detection (Feature #519)', () => {
         path.resolve(__dirname, '../../../src/store/coreStore.ts'),
         'utf-8',
       );
-      // Save reads back the file's lastModified after writing
-      expect(storeSource).toContain('savedFile.lastModified');
-      expect(storeSource).toContain('fileLastModifiedMs: savedFile.lastModified');
+      // Save reads back lastModified via platform adapter after writing
+      expect(storeSource).toContain('getFileLastModified(fileHandle)');
+      expect(storeSource).toContain('fileLastModifiedMs: savedLastModified');
     });
 
     it('polling compares current timestamp against stored value', () => {
