@@ -14560,3 +14560,40 @@ not on every individual write.
 
 #### Commit: 19c1b4c
 #### Feature #529 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #522
+==================================================
+
+## Feature #522: Show toast notification on auto-reload - PASSING
+
+### Summary:
+Added a toast notification ("File updated externally. Reloaded.") that appears
+when a file is auto-reloaded due to external modification with no local changes
+(isDirty=false). The toast uses the existing showToast system with default 4s
+auto-dismiss, role="status", aria-live="polite" for non-blocking accessibility.
+
+### Modified Files:
+1. **src/hooks/useFilePolling.ts**:
+   - Added FILE_RELOADED_MESSAGE constant
+   - Added showToast(FILE_RELOADED_MESSAGE) call after successful auto-reload
+
+2. **src/hooks/index.ts**: Added FILE_RELOADED_MESSAGE to barrel export
+
+### New Test File:
+- **test/unit/hooks/useFilePollingAutoReloadToast.test.ts** — 20 tests:
+  - Step 1: FILE_RELOADED_MESSAGE constant defined, exported, barrel exported
+  - Step 2: showToast called with correct message after _applyDecodedFile
+  - Step 3: Toast auto-dismisses (default 4000ms timer)
+  - Step 4: Toast doesn't block interaction (role=status, aria-live=polite, fixed position)
+  - Step 5: No toast on error fallback path
+  - Step 6: Integration with uiStore showToast/clearToast system
+
+### Verification:
+- 20/20 new tests pass
+- 159/159 file polling tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: bf63fc8
+#### Feature #522 marked passing
