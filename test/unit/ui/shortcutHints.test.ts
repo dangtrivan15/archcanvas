@@ -53,9 +53,9 @@ describe('ShortcutHints', () => {
       expect(COMPONENT_SRC).toContain('aria-label="Keyboard shortcut hints"');
     });
 
-    it('uses localStorage for persistence', () => {
-      expect(COMPONENT_SRC).toContain('localStorage.getItem(STORAGE_KEY)');
-      expect(COMPONENT_SRC).toContain('localStorage.setItem(STORAGE_KEY');
+    it('uses preferences adapter for persistence', () => {
+      expect(COMPONENT_SRC).toContain('preferences.getSync(PREFERENCES_KEY)');
+      expect(COMPONENT_SRC).toContain('preferences.set(PREFERENCES_KEY');
     });
 
     it('handles H key for toggle', () => {

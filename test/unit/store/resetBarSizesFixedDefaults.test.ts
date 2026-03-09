@@ -1,8 +1,7 @@
+// @vitest-environment happy-dom
 /**
  * Feature #322: Settings dialog includes option to reset toolbar and status bar heights to defaults.
  * Tests that resetBarSizesToFixedDefaults sets toolbar=48 and status bar=24 and clears persisted storage.
- *
- * @vitest-environment happy-dom
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import {

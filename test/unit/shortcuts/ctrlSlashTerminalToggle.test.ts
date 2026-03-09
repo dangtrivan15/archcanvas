@@ -4,7 +4,7 @@
  * Verifies that Ctrl+/ (Cmd+/ on Mac) toggles the right panel on the Terminal tab.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -187,6 +187,8 @@ describe('Feature #542: Ctrl+/ shortcut opens Claude Code terminal panel', () =>
       const { parseBinding, eventMatchesBinding } = await import(
         '@/core/shortcuts/shortcutManager'
       );
+      const { _setPlatformForTesting } = await import('@/core/input/platformDetector');
+      _setPlatformForTesting('windows');
       const binding = parseBinding('mod+/');
 
       // Create a mock keyboard event matching Ctrl+/ (Windows/Linux)
@@ -199,6 +201,7 @@ describe('Feature #542: Ctrl+/ shortcut opens Claude Code terminal panel', () =>
       } as KeyboardEvent;
 
       const matches = eventMatchesBinding(event, binding);
+      _setPlatformForTesting('unknown');
       expect(matches).toBe(true);
     });
 
@@ -232,9 +235,12 @@ describe('Feature #542: Ctrl+/ shortcut opens Claude Code terminal panel', () =>
       const { getShortcutManager, resetShortcutManager } = await import(
         '@/core/shortcuts/shortcutManager'
       );
+      const { _setPlatformForTesting } = await import('@/core/input/platformDetector');
+      _setPlatformForTesting('windows');
       resetShortcutManager();
       const manager = getShortcutManager();
       const conflict = manager.findConflict('panel:terminal', 'mod+/');
+      _setPlatformForTesting('unknown');
       expect(conflict).toBeUndefined();
     });
   });

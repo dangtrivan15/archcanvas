@@ -97,5 +97,22 @@ export async function remove(key: string): Promise<void> {
   }
 }
 
+/**
+ * Synchronously get a value by key from platform storage.
+ * On web: reads from localStorage directly (fast, no await needed).
+ * On native: returns null (use async `get()` for native; hydrate after mount).
+ *
+ * This exists for store initialization where sync access is required.
+ */
+export function getSync(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const namespacedKey = `${NAMESPACE}${key}`;
+  try {
+    return localStorage.getItem(namespacedKey);
+  } catch {
+    return null;
+  }
+}
+
 /** Convenience wrapper */
-export const preferences = { get, set, remove } as const;
+export const preferences = { get, getSync, set, remove } as const;

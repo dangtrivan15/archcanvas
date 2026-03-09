@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { getClipboardAdapter } from '@/core/platform/clipboardAdapter';
 
 // ── Props ────────────────────────────────────────────────────────────────────
 
@@ -70,35 +71,20 @@ export function ExternalAgentDialog({
 
   const hasActivity = nodeCount > 0 || edgeCount > 0;
 
-  // Handle copy to clipboard
+  // Handle copy to clipboard via platform adapter
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(prompt);
-      setCopied(true);
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-      copyTimeoutRef.current = setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      await getClipboardAdapter().copyText(prompt);
     } catch {
-      // Fallback: create a temporary textarea
-      const textarea = document.createElement('textarea');
-      textarea.value = prompt;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      setCopied(true);
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-      copyTimeoutRef.current = setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      // Adapter handles fallbacks internally; ignore residual errors
     }
+    setCopied(true);
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   }, [prompt]);
 
   // Clean up timeout on unmount

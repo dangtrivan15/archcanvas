@@ -10,7 +10,7 @@ export { isNative, isWeb, isIOS, getPlatformType } from './platformBridge';
 
 // File system
 export type { PickFileResult, SaveFileResult, SaveFileAsResult, FileSystemAdapter } from './fileSystemAdapter';
-export { getFileSystemAdapter, _resetFileSystemAdapter } from './fileSystemAdapter';
+export { getFileSystemAdapter, getFileLastModified, _resetFileSystemAdapter } from './fileSystemAdapter';
 export { WebFileSystemAdapter } from './webFileSystemAdapter';
 export { NativeFileSystemAdapter } from './nativeFileSystemAdapter';
 export { NodeFileSystemAdapter, NodeFileSystemError } from './nodeFileSystemAdapter';

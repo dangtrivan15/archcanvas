@@ -47,12 +47,10 @@ export function computeDefaultStatusBarHeight(viewportHeight?: number): number {
   return Math.max(STATUS_BAR_DEFAULT_FLOOR, Math.min(STATUS_BAR_DEFAULT_CEILING, raw));
 }
 
-const NAMESPACE = 'archcanvas:';
-
 /**
- * Read persisted toolbar & status bar heights from localStorage.
+ * Read persisted toolbar & status bar heights from platform preferences.
  * Returns partial state with only the fields that were persisted.
- * Used internally during store initialization.
+ * Uses synchronous read for store initialization.
  */
 function readPersistedHeights(): {
   toolbarHeight?: number;
@@ -63,7 +61,7 @@ function readPersistedHeights(): {
   const result: ReturnType<typeof readPersistedHeights> = {};
   if (typeof window === 'undefined') return result;
   try {
-    const tb = localStorage.getItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
+    const tb = preferences.getSync(TOOLBAR_HEIGHT_STORAGE_KEY);
     if (tb !== null) {
       const v = Number(tb);
       if (!isNaN(v) && v >= TOOLBAR_MIN_HEIGHT && v <= TOOLBAR_MAX_HEIGHT) {
@@ -71,7 +69,7 @@ function readPersistedHeights(): {
         result.toolbarHeightCustomized = true;
       }
     }
-    const sb = localStorage.getItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
+    const sb = preferences.getSync(STATUS_BAR_HEIGHT_STORAGE_KEY);
     if (sb !== null) {
       const v = Number(sb);
       if (!isNaN(v) && v >= STATUS_BAR_MIN_HEIGHT && v <= STATUS_BAR_MAX_HEIGHT) {
@@ -100,13 +98,13 @@ export async function loadPersistedHeights(): Promise<void> {
 }
 
 /**
- * Synchronously read the persisted haptic feedback preference from localStorage.
+ * Synchronously read the persisted haptic feedback preference.
  * Returns null if not found. Defaults to true (enabled).
  */
 function readPersistedHapticFeedback(): boolean {
   if (typeof window === 'undefined') return true;
   try {
-    const raw = localStorage.getItem(`archcanvas:${HAPTIC_FEEDBACK_STORAGE_KEY}`);
+    const raw = preferences.getSync(HAPTIC_FEEDBACK_STORAGE_KEY);
     if (raw === null) return true; // default enabled
     return raw !== 'false';
   } catch {
@@ -126,7 +124,7 @@ function persistHapticFeedback(enabled: boolean): void {
 function readPersistedTheme(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem(`archcanvas:${THEME_STORAGE_KEY}`);
+    return preferences.getSync(THEME_STORAGE_KEY);
   } catch {
     return null;
   }
@@ -665,12 +663,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
     }),
 
   resetBarSizes: () => {
-    try {
-      localStorage.removeItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
-      localStorage.removeItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
-    } catch {
-      /* ignore */
-    }
+    preferences.remove(TOOLBAR_HEIGHT_STORAGE_KEY).catch(() => {});
+    preferences.remove(STATUS_BAR_HEIGHT_STORAGE_KEY).catch(() => {});
     set({
       leftPanelWidth: computeDefaultLeftPanelWidth(),
       leftPanelWidthCustomized: false,
@@ -685,21 +679,13 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   setToolbarHeight: (height) => {
     const clamped = Math.max(TOOLBAR_MIN_HEIGHT, Math.min(TOOLBAR_MAX_HEIGHT, height));
-    try {
-      localStorage.setItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`, String(clamped));
-    } catch {
-      /* ignore */
-    }
+    preferences.set(TOOLBAR_HEIGHT_STORAGE_KEY, String(clamped)).catch(() => {});
     set({ toolbarHeight: clamped, toolbarHeightCustomized: true });
   },
 
   setStatusBarHeight: (height) => {
     const clamped = Math.max(STATUS_BAR_MIN_HEIGHT, Math.min(STATUS_BAR_MAX_HEIGHT, height));
-    try {
-      localStorage.setItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`, String(clamped));
-    } catch {
-      /* ignore */
-    }
+    preferences.set(STATUS_BAR_HEIGHT_STORAGE_KEY, String(clamped)).catch(() => {});
     set({ statusBarHeight: clamped, statusBarHeightCustomized: true });
   },
 
@@ -716,12 +702,8 @@ export const useUIStore = create<UIStoreState>((set) => ({
     }),
 
   resetBarSizesToFixedDefaults: () => {
-    try {
-      localStorage.removeItem(`${NAMESPACE}${TOOLBAR_HEIGHT_STORAGE_KEY}`);
-      localStorage.removeItem(`${NAMESPACE}${STATUS_BAR_HEIGHT_STORAGE_KEY}`);
-    } catch {
-      /* ignore */
-    }
+    preferences.remove(TOOLBAR_HEIGHT_STORAGE_KEY).catch(() => {});
+    preferences.remove(STATUS_BAR_HEIGHT_STORAGE_KEY).catch(() => {});
     set({
       toolbarHeight: TOOLBAR_DEFAULT_HEIGHT,
       toolbarHeightCustomized: false,

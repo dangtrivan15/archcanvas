@@ -149,9 +149,9 @@ describe('useFilePolling', () => {
     it('saveFile path in coreStore reads lastModified after save', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
-      // After saveArchcFile, should refresh lastModified
+      // After saveArchcFile, should refresh lastModified via platform adapter
       expect(source).toContain('Refresh lastModified timestamp after save');
-      expect(source).toContain('savedFile.lastModified');
+      expect(source).toContain('getFileLastModified(fileHandle)');
     });
 
     it('saveFileAs path captures lastModified from new handle', async () => {
@@ -233,8 +233,8 @@ describe('useFilePolling', () => {
       // Verify _applyDecodedFile sets fileHandle and captures fileLastModifiedMs async
       const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
       expect(storeSource).toContain('fileHandle');
-      // The async block after _applyDecodedFile captures lastModified
-      expect(storeSource).toContain('set({ fileLastModifiedMs: file.lastModified })');
+      // The async block after _applyDecodedFile captures lastModified via platform adapter
+      expect(storeSource).toContain('set({ fileLastModifiedMs: lastModified })');
     });
 
     it('Step 3: polling stops when new file created (handle + timestamp cleared)', async () => {
@@ -281,9 +281,8 @@ describe('useFilePolling', () => {
       const fs = await import('fs');
       const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
 
-      // _applyDecodedFile accepts a fileHandle parameter and calls getFile() on it
-      expect(storeSource).toContain('(fileHandle as FileSystemFileHandle)');
-      expect(storeSource).toContain('.getFile()');
+      // _applyDecodedFile captures lastModified via platform adapter utility
+      expect(storeSource).toContain('getFileLastModified(fileHandle)');
 
       // The hook uses both fileHandle and fileLastModifiedMs as dependencies
       const hookSource = fs.readFileSync('src/hooks/useFilePolling.ts', 'utf-8');

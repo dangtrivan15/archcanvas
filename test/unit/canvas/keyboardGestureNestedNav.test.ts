@@ -159,7 +159,9 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       expect(binding.key).toBe('home');
     });
 
-    it('should match Ctrl+Shift+Home keyboard event', () => {
+    it('should match Ctrl+Shift+Home keyboard event', async () => {
+      const { _setPlatformForTesting } = await import('@/core/input/platformDetector');
+      _setPlatformForTesting('windows');
       const binding = parseBinding('mod+shift+home');
       // Create a mock keyboard event (KeyboardEvent may not be available in Node env)
       const event = {
@@ -169,7 +171,9 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
         metaKey: false,
         altKey: false,
       } as unknown as KeyboardEvent;
-      expect(eventMatchesBinding(event, binding)).toBe(true);
+      const result = eventMatchesBinding(event, binding);
+      _setPlatformForTesting('unknown');
+      expect(result).toBe(true);
     });
 
     it('should not match Home without modifiers', () => {

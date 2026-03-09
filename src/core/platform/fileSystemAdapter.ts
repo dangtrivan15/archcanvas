@@ -118,3 +118,27 @@ export async function getFileSystemAdapter(): Promise<FileSystemAdapter> {
 export function _resetFileSystemAdapter(): void {
   _adapter = null;
 }
+
+/**
+ * Get the last-modified timestamp of a file via its opaque handle.
+ * Works with FileSystemFileHandle on web; returns null for other handle types.
+ *
+ * This centralizes the FileSystemFileHandle type cast so consumers
+ * don't need to reference browser-specific types directly.
+ */
+export async function getFileLastModified(handle: unknown): Promise<number | null> {
+  if (
+    handle &&
+    typeof handle === 'object' &&
+    'getFile' in handle &&
+    typeof (handle as Record<string, unknown>).getFile === 'function'
+  ) {
+    try {
+      const file = await (handle as FileSystemFileHandle).getFile();
+      return file.lastModified;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}

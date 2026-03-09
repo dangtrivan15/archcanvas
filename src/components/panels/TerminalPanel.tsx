@@ -30,6 +30,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { useTerminalStore } from '@/store/terminalStore';
+import { getClipboardAdapter } from '@/core/platform/clipboardAdapter';
 import { useTheme } from '@/theme/ThemeProvider';
 import type { Theme } from '@/theme/types';
 import type { BridgeConnectionStatus, BridgeErrorType } from '@/services/bridgeConnection';
@@ -342,7 +343,7 @@ export function TerminalPanel() {
   const handleCopyError = useCallback(() => {
     if (currentError) {
       const text = `${currentError.message}\n${currentError.details ?? ''}\n\nAction: ${currentError.actionMessage}`;
-      navigator.clipboard.writeText(text).catch(() => {
+      getClipboardAdapter().copyText(text).catch(() => {
         // Clipboard access may fail in some contexts
       });
     }

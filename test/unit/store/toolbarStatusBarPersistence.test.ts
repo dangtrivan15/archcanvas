@@ -1,8 +1,7 @@
+// @vitest-environment happy-dom
 /**
  * Tests for Feature #321: Toolbar and status bar heights persist across sessions.
  * Verifies that custom heights are saved to localStorage and restored on store re-init.
- *
- * @vitest-environment happy-dom
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {

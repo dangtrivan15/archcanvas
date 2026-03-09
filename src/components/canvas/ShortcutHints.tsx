@@ -9,8 +9,9 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { formatBindingDisplay } from '@/core/input';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
+import { preferences } from '@/core/platform/preferencesAdapter';
 
-const STORAGE_KEY = 'archcanvas:hints-visible';
+const PREFERENCES_KEY = 'hints-visible';
 
 interface HintItem {
   key: string; // display key (e.g., "⌘K")
@@ -57,10 +58,10 @@ export function ShortcutHints() {
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
 
-  // Visibility state persisted in localStorage
+  // Visibility state persisted via platform preferences
   const [visible, setVisible] = useState(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = preferences.getSync(PREFERENCES_KEY);
       return stored !== 'false'; // default visible
     } catch {
       return true;
@@ -71,11 +72,7 @@ export function ShortcutHints() {
   const toggleHints = useCallback(() => {
     setVisible((prev) => {
       const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, String(next));
-      } catch {
-        /* ignore */
-      }
+      preferences.set(PREFERENCES_KEY, String(next)).catch(() => {});
       return next;
     });
   }, []);
