@@ -293,6 +293,19 @@ export function useKeyboardShortcuts() {
           }
           break;
 
+        // Toggle Terminal Panel (Ctrl+/ / Cmd+/)
+        case 'panel:terminal':
+          e.preventDefault();
+          {
+            const uiState = useUIStore.getState();
+            if (uiState.rightPanelOpen && uiState.rightPanelTab === 'terminal') {
+              uiState.closeRightPanel();
+            } else {
+              uiState.openRightPanel('terminal');
+            }
+          }
+          break;
+
         // Auto-Layout (Ctrl+Shift+L / Cmd+Shift+L)
         case 'layout:auto':
           e.preventDefault();

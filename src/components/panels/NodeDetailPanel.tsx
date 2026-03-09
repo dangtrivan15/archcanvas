@@ -67,9 +67,28 @@ export function NodeDetailPanel() {
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
 
-  const [activeTab, setActiveTab] = useState<Tab>('properties');
+  const rightPanelTab = useUIStore((s) => s.rightPanelTab);
+  const setRightPanelTab = useUIStore((s) => s.setRightPanelTab);
+
+  const [activeTab, setActiveTabLocal] = useState<Tab>('properties');
   const [noteContent, setNoteContent] = useState('');
   const [noteAuthor, setNoteAuthor] = useState('developer');
+
+  // Sync local activeTab with uiStore's rightPanelTab when it changes externally
+  useEffect(() => {
+    if (rightPanelTab && rightPanelTab !== activeTab) {
+      setActiveTabLocal(rightPanelTab as Tab);
+    }
+  }, [rightPanelTab]);
+
+  // Wrapper to sync both local state and uiStore when user clicks a tab
+  const setActiveTab = useCallback(
+    (tab: Tab) => {
+      setActiveTabLocal(tab);
+      setRightPanelTab(tab);
+    },
+    [setRightPanelTab],
+  );
 
   const node = useMemo(() => {
     if (!selectedNodeId) return null;
@@ -101,6 +120,25 @@ export function NodeDetailPanel() {
       setActiveTab('properties');
     }
   }, [pendingRenameNodeId, selectedNodeId]);
+
+  // If no node selected but terminal tab requested, show terminal only
+  if (!node && activeTab === 'terminal') {
+    return (
+      <div className="h-full flex flex-col" data-testid="node-detail-panel">
+        <div className="flex items-center justify-between px-3 py-2 border-b bg-surface">
+          <div className="text-sm font-medium text-text">Terminal</div>
+          <button
+            onClick={closeRightPanel}
+            className="p-1 rounded hover:bg-highlight-low text-muted-foreground touch-target"
+            title="Close panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <TerminalPanel />
+      </div>
+    );
+  }
 
   if (!node) {
     return (
