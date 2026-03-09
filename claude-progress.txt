@@ -15183,3 +15183,29 @@ Re-verified existing codec roundtrip tests. All 11 tests pass covering:
 - Feature was already marked passing
 - 11/11 tests pass
 - No changes needed
+
+==================================================
+SESSION: 2026-03-09 - Feature #542
+==================================================
+
+## Feature #542: Ctrl+/ shortcut opens Claude Code terminal panel - PASSING
+
+### Summary:
+Added Ctrl+/ (Cmd+/ on Mac) keyboard shortcut to toggle the right panel
+on the Terminal tab. Opens terminal when closed, closes when already open.
+
+### Modified Files:
+1. src/core/shortcuts/shortcutManager.ts: Added panel:terminal action
+2. src/hooks/useKeyboardShortcuts.ts: Added handler for panel:terminal
+3. src/config/keyboardShortcuts.ts: Added help entry and mapping
+4. src/components/panels/NodeDetailPanel.tsx: Synced tab state with uiStore
+
+### Verification:
+- 32/32 new tests pass
+- 6199/6199 total tests pass (0 regressions)
+- 272/272 test files pass
+- Browser verified: Ctrl+/ toggles terminal panel, shortcut in help panel
+
+#### Commit: 7c4c741
+#### Feature #542 marked passing
+#### Current stats: 546/546 passing (100%)
