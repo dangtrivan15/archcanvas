@@ -43,7 +43,6 @@ import {
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
-import { initializeApiKey } from '@/ai/config';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
@@ -180,10 +179,7 @@ export function App() {
   }, [selectedNodeId, selectedEdgeId, openRightPanel]);
 
   useEffect(() => {
-    // Initialize API key from stored preferences before app is ready
-    initializeApiKey().then(() => {
-      initialize();
-    });
+    initialize();
   }, [initialize]);
 
   // Hide the native splash screen once the app is fully initialized and interactive.

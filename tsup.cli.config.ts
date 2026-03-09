@@ -70,7 +70,6 @@ export default defineConfig({
     'js-sha256',
     'ulid',
     'marked',
-    '@anthropic-ai/sdk',
     '@modelcontextprotocol/sdk',
     '@modelcontextprotocol/sdk/server/mcp.js',
     '@modelcontextprotocol/sdk/server/stdio.js',

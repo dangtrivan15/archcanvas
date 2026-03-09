@@ -305,61 +305,28 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
   });
 
   describe('source code verification', () => {
-    it('AIChatTab has cleanup useEffect that aborts on unmount', async () => {
+    // AI client (src/ai/client.ts) has been removed along with the Anthropic SDK.
+    // The source code verification tests for AI client internals are no longer applicable.
+
+    // The following tests verified abort controller patterns in AIChatTab
+    // that were part of the Anthropic SDK streaming implementation.
+    // Since the SDK has been removed and AIChatTab now uses placeholder responses,
+    // these patterns are no longer present. The tests are updated to reflect the
+    // current simplified implementation.
+
+    it('AIChatTab manages isStreaming state', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
-      // Verify cleanup effect exists
-      expect(source).toContain('abortControllerRef.current?.abort()');
-      // Verify it's in a useEffect return (cleanup)
-      expect(source).toMatch(
-        /useEffect\(\(\)\s*=>\s*\{[\s\S]*?return\s*\(\)\s*=>\s*\{[\s\S]*?abortControllerRef\.current\?\.abort\(\)/,
-      );
-    });
-
-    it('AIChatTab catches AbortError and returns early', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
-
-      // Verify AbortError is caught
-      expect(source).toContain("(error as Error).name === 'AbortError'");
-      // Verify streaming message is cleared on abort
-      expect(source).toMatch(/AbortError[\s\S]*?setStreamingMessage\(null\)/);
-    });
-
-    it('AIChatTab has finally block that resets isStreaming', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
-
-      // Verify finally block resets state
-      expect(source).toContain('abortControllerRef.current = null');
-      expect(source).toContain('setIsStreaming(false)');
-      // Both should be in a finally block
-      expect(source).toMatch(/finally\s*\{[\s\S]*?setIsStreaming\(false\)/);
-    });
-
-    it('AI client passes AbortSignal to fetch', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/ai/client.ts', 'utf-8');
-
-      // Verify signal is passed to fetch options
-      expect(source).toMatch(/fetch\(url,\s*\{[\s\S]*?signal/);
-    });
-
-    it('AI client streaming handler releases reader in finally block', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/ai/client.ts', 'utf-8');
-
-      // Verify reader cleanup
-      expect(source).toContain('reader.releaseLock()');
-      expect(source).toMatch(/finally\s*\{[\s\S]*?reader\.releaseLock\(\)/);
+      // Verify isStreaming state management still exists
+      expect(source).toContain('setIsStreaming');
     });
 
     it('user messages are persisted BEFORE streaming begins', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
-      // In handleSend, persistMessage('user', trimmed) is called before sendWithAI
+      // In handleSend, persistMessage('user', trimmed) is called before sendWithPlaceholder
       const handleSendMatch = source.match(
         /persistMessage\('user',\s*trimmed\)[\s\S]*?sendWith(?:AI|Placeholder)/,
       );

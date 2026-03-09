@@ -85,17 +85,8 @@ export function registerAnalyzeCommand(program: Command): void {
         }
         const analysisDepth = cmdOpts.depth as AnalysisDepth;
 
-        // ─── Check for AI API key ─────────────────────────────────
-        const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY;
-
-        if (!apiKey) {
-          if (!opts.quiet) {
-            console.error(
-              'Warning: ANTHROPIC_API_KEY / VITE_ANTHROPIC_API_KEY not set. ' +
-                'AI inference will be skipped; using structural-only analysis.',
-            );
-          }
-        }
+        // AI API key no longer used (Anthropic SDK removed)
+        const apiKey: string | undefined = undefined;
 
         // ─── Resolve output path ─────────────────────────────────
         // Default: .archcanvas/main.archc inside the analyzed directory
@@ -113,22 +104,7 @@ export function registerAnalyzeCommand(program: Command): void {
             return;
           }
 
-          // ─── Try agentic loop when API key is available ─────────
-          if (apiKey && !cmdOpts.dryRun) {
-            const agenticResult = await runAgenticAnalysis(
-              resolvedDir,
-              outputPath,
-              apiKey,
-              cmdOpts,
-              opts,
-              fs,
-              path,
-            );
-            if (agenticResult) return; // Success — exit
-            // If agentic analysis failed, fall through to legacy pipeline
-          }
-
-          // ─── Legacy pipeline (structural fallback or dry-run) ───
+          // ─── Structural pipeline ───
           await runLegacyPipeline(resolvedDir, outputPath, analysisDepth, apiKey, cmdOpts, opts);
         } finally {
           restore();
@@ -139,273 +115,22 @@ export function registerAnalyzeCommand(program: Command): void {
 
 // ── Agentic Loop Analysis ────────────────────────────────────────────────────
 
-/**
- * Run the agentic loop analysis: scan → detect → select → prompt → agent loop → save.
- * Returns true on success, false if setup/initialization fails (caller should fallback).
- * Throws on pipeline-level errors.
- */
-async function runAgenticAnalysis(
-  resolvedDir: string,
-  outputPath: string,
-  apiKey: string,
-  cmdOpts: AnalyzeCommandOptions,
-  opts: GlobalOptions,
-  fsModule: typeof import('node:fs'),
-  pathModule: typeof import('node:path'),
-): Promise<boolean> {
-  const startTime = Date.now();
+// Agentic analysis removed (Anthropic SDK has been removed).
 
-  try {
-    const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const client = new Anthropic({ apiKey });
-
-    // Import analysis modules
-    const { scanDirectory } = await import('@/analyze/scanner');
-    const { detectProject } = await import('@/analyze/detector');
-    const { selectKeyFiles } = await import('@/analyze/fileSelector');
-    const { buildSystemPrompt, buildUserPrompt } = await import(
-      '@/ai/prompts/initArchitecture'
-    );
-    const { runAgentLoop } = await import('@/ai/agentLoop');
-    const { TOOL_DEFINITIONS, dispatchToolCall } = await import('@/mcp/index');
-    const { GraphContext } = await import('@/cli/context');
-
-    const architectureName = cmdOpts.name ?? pathModule.basename(resolvedDir);
-
-    // Phase 1: Scan
-    if (!opts.quiet) console.error('[5%] Scanning files...');
-    const scanResult = await scanDirectory(resolvedDir, { maxFiles: 10000, maxDepth: 10 });
-    if (!opts.quiet) {
-      console.error(
-        `[15%] Scan complete: ${scanResult.totalFiles} files, ${scanResult.totalDirs} directories`,
-      );
-    }
-
-    // Phase 2: Detect
-    if (!opts.quiet) console.error('[20%] Detecting project type...');
-    const projectProfile = detectProject(scanResult);
-    if (!opts.quiet) {
-      console.error(
-        `[30%] Detection complete: ${projectProfile.projectType} project, ` +
-          `${projectProfile.languages.length} languages, ${projectProfile.frameworks.length} frameworks`,
-      );
-    }
-
-    // Phase 3: Select key files
-    if (!opts.quiet) console.error('[35%] Selecting key files...');
-    const keyFiles = selectKeyFiles(scanResult, projectProfile, {
-      maxLinesPerFile: 500,
-      totalTokenBudget: 100_000,
-      rootDir: resolvedDir,
-    });
-    if (!opts.quiet) {
-      console.error(
-        `[45%] Selected ${keyFiles.files.length} key files (~${keyFiles.totalTokenEstimate} tokens)`,
-      );
-    }
-
-    // Phase 4: Build agentic context
-    if (!opts.quiet) console.error('[50%] Building agentic architecture...');
-
-    // Create a fresh graph context
-    const ctx = GraphContext.createNew(architectureName);
-    const { textApi, registry } = ctx;
-
-    // Build prompts
-    const systemPrompt = buildSystemPrompt(registry);
-    const userPrompt = buildUserPrompt({
-      name: architectureName,
-      directoryListing: buildDirectoryTree(scanResult),
-      keyFiles: keyFiles.files.map((f) => ({ path: f.path, content: f.content })),
-      languages: projectProfile.languages.map((l) => ({
-        name: l.name,
-        percentage: l.percentage,
-      })),
-      frameworks: projectProfile.frameworks.map((f) => f.name),
-      infraSignals: projectProfile.infraSignals.map((s) => s.type),
-    });
-
-    // Build tool registry for the agentic loop
-    // Cast RegistryManagerCore → RegistryManager (dispatchToolCall only uses
-    // methods from RegistryManagerCore, so this is safe)
-    const toolRegistry = buildCliToolRegistry(
-      TOOL_DEFINITIONS,
-      dispatchToolCall,
-      textApi,
-      registry as unknown as import('@/core/registry/registryManager').RegistryManager,
-    );
-
-    // Phase 5: Run agentic loop
-    const depth = cmdOpts.depth ?? 'standard';
-    const maxIter = depth === 'deep' ? 80 : depth === 'quick' ? 20 : 50;
-
-    let toolCallCount = 0;
-    const loopResult = await runAgentLoop({
-      systemPrompt,
-      userPrompt,
-      client,
-      toolRegistry,
-      maxIterations: maxIter,
-      onToolCall: (log) => {
-        toolCallCount++;
-        if (cmdOpts.verbose) {
-          console.error(
-            `       [tool] ${log.name}(${JSON.stringify(log.input).slice(0, 100)}) → ${log.isError ? 'ERROR' : 'ok'}`,
-          );
-        } else if (!opts.quiet && toolCallCount % 5 === 0) {
-          // Show progress every 5 tool calls
-          console.error(`[${Math.min(50 + toolCallCount, 90)}%] Building graph (${toolCallCount} tool calls)...`);
-        }
-      },
-    });
-
-    const graph = textApi.getGraph();
-    const nodeCount = countNodes(graph);
-    const edgeCount = graph.edges.length;
-    const codeRefCount = countCodeRefs(graph);
-
-    if (!opts.quiet) {
-      console.error(
-        `[92%] Agentic loop complete: ${loopResult.iterations} iterations, ${loopResult.toolCalls.length} tool calls`,
-      );
-    }
-
-    if (loopResult.hitMaxIterations) {
-      if (!opts.quiet) {
-        console.error('  Warning: hit max iteration limit — graph may be incomplete');
-      }
-    }
-
-    // Phase 6: Save
-    if (!opts.quiet) console.error(`[95%] Saving to ${outputPath}...`);
-
-    // Ensure .archcanvas/ directory exists
-    const outputDir = pathModule.dirname(outputPath);
-    if (!fsModule.existsSync(outputDir)) {
-      fsModule.mkdirSync(outputDir, { recursive: true });
-    }
-
-    ctx.textApi.setGraph(graph);
-    ctx.markModified();
-    await ctx.saveAs(outputPath);
-
-    // Generate sidecar
-    try {
-      await ctx.saveSidecar();
-    } catch {
-      // Sidecar generation is optional
-    }
-
-    const duration = Date.now() - startTime;
-
-    // ─── Output results ──────────────────────────────────────
-    if (opts.format === 'json') {
-      console.log(
-        JSON.stringify(
-          {
-            mode: 'agentic',
-            outputPath,
-            stats: { nodes: nodeCount, edges: edgeCount, codeRefs: codeRefCount },
-            projectProfile: {
-              projectType: projectProfile.projectType,
-              languages: projectProfile.languages.map((l) => l.name),
-              frameworks: projectProfile.frameworks.map((f) => f.name),
-            },
-            agentLoop: {
-              iterations: loopResult.iterations,
-              toolCalls: loopResult.toolCalls.length,
-              hitMaxIterations: loopResult.hitMaxIterations,
-            },
-            warnings: loopResult.hitMaxIterations
-              ? ['Hit max iteration limit — graph may be incomplete']
-              : [],
-            duration,
-          },
-          null,
-          2,
-        ),
-      );
-    } else if (!opts.quiet) {
-      console.error('');
-      console.error('=== Analysis Complete (agentic) ===');
-      console.error(`  Nodes created:     ${nodeCount}`);
-      console.error(`  Edges created:     ${edgeCount}`);
-      console.error(`  Code refs linked:  ${codeRefCount}`);
-      console.error(`  Tool calls:        ${loopResult.toolCalls.length}`);
-      console.error(`  Iterations:        ${loopResult.iterations}`);
-      console.error(`  Output file:       ${outputPath}`);
-      console.error(`  Duration:          ${(duration / 1000).toFixed(1)}s`);
-    }
-
-    return true;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (!opts.quiet) {
-      console.error(`Warning: Agentic analysis failed: ${msg}`);
-      console.error('Falling back to structural-only analysis.');
-    }
-    return false;
-  }
-}
-
-// ── Legacy Pipeline (structural fallback / dry-run) ──────────────────────────
+// ── Structural Pipeline ──────────────────────────────────────────────────────
 
 async function runLegacyPipeline(
   resolvedDir: string,
   outputPath: string,
   analysisDepth: AnalysisDepth,
-  apiKey: string | undefined,
+  _apiKey: string | undefined,
   cmdOpts: AnalyzeCommandOptions,
   opts: GlobalOptions,
 ): Promise<void> {
   const { analyzeCodebase } = await import('@/analyze/pipeline');
 
-  // Build AI sender for legacy single-shot inference (used in dry-run and no-API-key modes)
-  let aiSender: import('@/analyze/inferEngine').AIMessageSender | undefined;
-
-  if (apiKey) {
-    try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey });
-
-      aiSender = {
-        async sendMessage(options: {
-          messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-          system?: string;
-          maxTokens?: number;
-          stream?: boolean;
-          onChunk?: (text: string) => void;
-          signal?: AbortSignal;
-        }): Promise<{
-          content: string;
-          stopReason: string | null;
-          usage: { inputTokens: number; outputTokens: number };
-        }> {
-          const response = await client.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: options.maxTokens ?? 8192,
-            system: options.system ?? '',
-            messages: options.messages,
-          });
-          const textBlock = response.content.find((b) => b.type === 'text');
-          return {
-            content: textBlock ? textBlock.text : '',
-            stopReason: response.stop_reason,
-            usage: {
-              inputTokens: response.usage.input_tokens,
-              outputTokens: response.usage.output_tokens,
-            },
-          };
-        },
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!opts.quiet) {
-        console.error(`Warning: Failed to initialize AI client: ${msg}`);
-        console.error('Falling back to structural-only analysis.');
-      }
-    }
-  }
+  // AI sender removed (Anthropic SDK has been removed)
+  const aiSender = undefined;
 
   // Progress reporting
   const phaseLabels: Record<string, string> = {
@@ -530,50 +255,15 @@ async function handleMergeMode(
   resolvedDir: string,
   outputPath: string,
   analysisDepth: AnalysisDepth,
-  apiKey: string | undefined,
+  _apiKey: string | undefined,
   cmdOpts: AnalyzeCommandOptions,
   opts: GlobalOptions,
   fsModule: typeof import('node:fs'),
 ): Promise<void> {
   const { analyzeCodebase } = await import('@/analyze/pipeline');
 
-  // Build AI sender for merge mode inference
-  let aiSender: import('@/analyze/inferEngine').AIMessageSender | undefined;
-  if (apiKey) {
-    try {
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey });
-      aiSender = {
-        async sendMessage(options: {
-          messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-          system?: string;
-          maxTokens?: number;
-        }): Promise<{
-          content: string;
-          stopReason: string | null;
-          usage: { inputTokens: number; outputTokens: number };
-        }> {
-          const response = await client.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: options.maxTokens ?? 8192,
-            system: options.system ?? '',
-            messages: options.messages,
-          });
-          const textBlock = response.content.find((b) => b.type === 'text');
-          return {
-            content: textBlock ? textBlock.text : '',
-            stopReason: response.stop_reason,
-            usage: {
-              inputTokens: response.usage.input_tokens,
-              outputTokens: response.usage.output_tokens,
-            },
-          };
-        },
-      };
-    } catch {
-      // Fall through to pipeline without AI
-    }
-  }
+  // AI sender removed (Anthropic SDK has been removed)
+  const aiSender = undefined;
 
   const result = await analyzeCodebase(resolvedDir, {
     outputPath,
@@ -670,124 +360,5 @@ async function handleMergeMode(
   }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Tools relevant for CLI analysis (same set as initWithAI) */
-const INIT_TOOL_NAMES = new Set([
-  'init_architecture',
-  'add_node',
-  'add_edge',
-  'add_note',
-  'add_code_ref',
-  'update_node',
-  'update_edge',
-  'remove_node',
-  'remove_edge',
-  'remove_note',
-  'describe',
-  'search',
-  'get_edges',
-  'list_nodedefs',
-  'export_markdown',
-  'export_mermaid',
-]);
-
-/**
- * Build a tool registry for the CLI agentic loop.
- * Wires each tool's handler to dispatchToolCall with the current TextApi + registry.
- */
-function buildCliToolRegistry(
-  toolDefinitions: Record<string, { description: string; inputSchema: Record<string, import('zod').ZodTypeAny> }>,
-  dispatchToolCallFn: typeof import('@/mcp/handlers').dispatchToolCall,
-  textApi: import('@/api/textApi').TextApi,
-  registry: import('@/core/registry/registryManager').RegistryManager,
-): import('@/ai/agentLoop').ToolRegistry {
-  const toolRegistry: import('@/ai/agentLoop').ToolRegistry = new Map();
-
-  const ctx = { textApi, registry } as import('@/mcp/handlers').ToolHandlerContext;
-
-  for (const [name, def] of Object.entries(toolDefinitions)) {
-    if (!INIT_TOOL_NAMES.has(name)) continue;
-
-    toolRegistry.set(name, {
-      description: def.description,
-      inputSchema: def.inputSchema,
-      handler: (input: Record<string, unknown>) => {
-        return dispatchToolCallFn(ctx, name, input);
-      },
-    });
-  }
-
-  return toolRegistry;
-}
-
-/**
- * Build a simple directory tree string from scan results.
- */
-function buildDirectoryTree(scanResult: import('@/analyze/scanner').ScanResult): string {
-  const lines: string[] = [];
-  let count = 0;
-  const maxEntries = 200;
-
-  function walk(dir: import('@/analyze/scanner').DirectoryEntry, depth: number) {
-    if (count >= maxEntries) return;
-
-    for (const subDir of dir.directories) {
-      if (count >= maxEntries) break;
-      count++;
-      const indent = '  '.repeat(depth);
-      lines.push(`${indent}${subDir.name}/`);
-      walk(subDir, depth + 1);
-    }
-
-    for (const file of dir.files) {
-      if (count >= maxEntries) break;
-      count++;
-      const indent = '  '.repeat(depth);
-      lines.push(`${indent}${file.name}`);
-    }
-  }
-
-  const root = scanResult.fileTree?.root;
-  if (!root) {
-    return '(no directory listing available)';
-  }
-
-  walk(root, 0);
-
-  if (count >= maxEntries) {
-    lines.push(`  ... (truncated, ${scanResult.totalFiles} total files)`);
-  }
-
-  return lines.join('\n');
-}
-
-/**
- * Count nodes recursively in a graph.
- */
-function countNodes(graph: import('@/types/graph').ArchGraph): number {
-  let count = 0;
-  const walk = (nodes: import('@/types/graph').ArchNode[]) => {
-    for (const node of nodes) {
-      count++;
-      if (node.children) walk(node.children);
-    }
-  };
-  walk(graph.nodes);
-  return count;
-}
-
-/**
- * Count code refs recursively in a graph.
- */
-function countCodeRefs(graph: import('@/types/graph').ArchGraph): number {
-  let count = 0;
-  const walk = (nodes: import('@/types/graph').ArchNode[]) => {
-    for (const node of nodes) {
-      count += node.codeRefs?.length ?? 0;
-      if (node.children) walk(node.children);
-    }
-  };
-  walk(graph.nodes);
-  return count;
-}
+// Agentic analysis helpers (INIT_TOOL_NAMES, buildCliToolRegistry, etc.)
+// have been removed along with the Anthropic SDK.
