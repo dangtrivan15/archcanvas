@@ -14019,3 +14019,53 @@ all related imports. The ? key ShortcutsHelpPanel remains functional (separate f
 #### Commit: 7c90003
 #### Feature #546 marked passing
 #### Current stats: 520/546 passing (95.2%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #532
+==================================================
+
+## Feature #532: Remove AI Chat panel component from right panel - PASSING
+
+### Summary:
+Removed the AIChatTab component and the AI Chat tab from the right panel.
+The right panel now has 4 tabs: Properties, Notes, Code Refs, Terminal.
+
+### Deleted Files:
+- **src/components/panels/AIChatTab.tsx** — AI chat interface component (305 lines)
+
+### Modified Source Files:
+1. **src/components/panels/NodeDetailPanel.tsx**:
+   - Removed AIChatTab import
+   - Removed MessageSquare icon import (was used for AI Chat tab)
+   - Removed 'aichat' from Tab type union
+   - Removed AI Chat tab from tab list
+   - Removed aichat tab content rendering block
+   - Updated docstring
+
+2. **src/utils/constants.ts**:
+   - Removed 'aichat' from RIGHT_PANEL_TABS array
+
+### Modified Test Files:
+3. **test/unit/ai/streamingPanelClose.test.ts**:
+   - Removed source code verification tests that read AIChatTab.tsx
+
+4. **test/unit/ui/formFieldLabels.test.ts**:
+   - Removed AI chat input aria-label test
+   - Removed AIChatTab textarea count check from all-textareas test
+
+### Feature steps covered:
+1. ✅ Removed src/components/panels/AIChatTab.tsx
+2. ✅ Updated NodeDetailPanel.tsx to remove AI Chat tab
+3. ✅ Right panel shows 4 tabs: Properties, Notes, Code Refs, Terminal
+4. ✅ All AI chat-related code was self-contained in AIChatTab.tsx (now deleted)
+5. ✅ Tab switching works correctly across all remaining tabs
+6. ✅ Ctrl+/ shortcut is unbound (no binding found in codebase)
+
+### Verification:
+- 5471/5471 tests pass (0 regressions)
+- Browser: Right panel shows 4 tabs, no AI Chat, tab switching works
+- Zero console errors
+- No mock data patterns in production code
+
+#### Commit: 5b92553
+#### Feature #532 marked passing
