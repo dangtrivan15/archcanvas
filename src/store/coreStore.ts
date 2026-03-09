@@ -1,10 +1,21 @@
 /**
- * Core Zustand store - bridges the core engine to React.
- * Manages graph state, isDirty, fileHandle, and engine instances.
+ * Core store compatibility facade.
+ *
+ * This module now delegates to the domain stores (engineStore, graphStore,
+ * fileStore, historyStore). It provides backward-compatible access so that
+ * existing consumers continue to work during the migration.
+ *
+ * The CoreStoreState interface and useCoreStore hook aggregate state from
+ * all domain stores into a single selector-compatible object.
+ *
+ * @deprecated Import from the specific domain store instead:
+ *   - useEngineStore for: initialized, registry, textApi, renderApi, exportApi, undoManager, initialize
+ *   - useGraphStore for: graph, isDirty, nodeCount, edgeCount, addNode, removeNode, updateNode, addEdge, updateEdge, removeEdge, addNote, removeNote, updateNote, addCodeRef, updateNodeColor, moveNode, moveNodes, duplicateSelection, addAnnotation, removeAnnotation, clearAnnotations, autoLayout, _setGraph
+ *   - useFileStore for: fileName, fileHandle, fileCreatedAtMs, fileLastModifiedMs, fileExternallyModified, isSaving, newFile, openFile, saveFile, saveFileAs, loadFromUrl, loadFromDroppedFile, acknowledgeExternalModification, _applyDecodedFile
+ *   - useHistoryStore for: canUndo, canRedo, undo, redo
  */
 
-import { create } from 'zustand';
-import type { ArchGraph, ArchNode, ArchEdge, Note, PropertyMap } from '@/types/graph';
+import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
 import type {
   AddNodeParams,
   AddEdgeParams,
@@ -12,99 +23,45 @@ import type {
   AddCodeRefParams,
   UpdateNodeParams,
 } from '@/types/api';
-import { RegistryManager } from '@/core/registry/registryManager';
-import { createEmptyGraph, moveNode as engineMoveNode } from '@/core/graph/graphEngine';
-import { countAllNodes } from '@/core/graph/graphQuery';
-import { UndoManager } from '@/core/history/undoManager';
-import { TextApi } from '@/api/textApi';
-import { RenderApi } from '@/api/renderApi';
-import { ExportApi } from '@/api/exportApi';
-import {
-  pickArchcFile,
-  decodeArchcData,
-  saveArchcFile,
-  saveArchcFileAs,
-  deriveSummaryFileName,
-  saveSummaryMarkdown,
-  graphToProto,
-} from '@/core/storage/fileIO';
-import { enqueueSave } from '@/core/sync/syncQueue';
-import { encode, CodecError, IntegrityError } from '@/core/storage/codec';
-import { useCanvasStore } from '@/store/canvasStore';
-import { useUIStore } from '@/store/uiStore';
-import { haptics } from '@/hooks/useHaptics';
-import { applyElkLayout } from '@/core/layout/elkLayout';
-import { needsAutoLayout } from '@/core/layout/positionDetection';
-import { useNavigationStore } from '@/store/navigationStore';
+import type { RegistryManager } from '@/core/registry/registryManager';
+import type { TextApi } from '@/api/textApi';
+import type { RenderApi } from '@/api/renderApi';
+import type { ExportApi } from '@/api/exportApi';
+import type { UndoManager } from '@/core/history/undoManager';
+import { useEngineStore } from './engineStore';
+import { useGraphStore } from './graphStore';
+import { useFileStore } from './fileStore';
+import { useHistoryStore } from './historyStore';
+import { initEventSubscriptions } from '@/events/appEvents';
 
 /**
- * Core store state - the central Zustand store bridging the core engine to React.
- *
- * Manages:
- * - **Graph state**: Current architecture graph, dirty flag, file metadata
- * - **Engine instances**: Registry, TextApi, RenderApi, ExportApi, UndoManager
- * - **File operations**: New, Open, Save, Save As, Load from URL/dropped file
- * - **Graph mutations**: CRUD on nodes, edges, notes, code refs, annotations
- * - **Undo/redo**: Snapshot-based history via UndoManager
- * - **Auto-layout**: ELK-based automatic node positioning
+ * @deprecated Use the specific domain store types instead.
  */
 export interface CoreStoreState {
-  /** The current architecture graph (nodes, edges, annotations) */
   graph: ArchGraph;
-  /** Whether the graph has unsaved changes since last save/open */
   isDirty: boolean;
-  /** Display name of the current file (shown in title bar) */
   fileName: string;
-  /** Whether core engines (registry, APIs, undo) have been initialized */
   initialized: boolean;
-
-  /** Node type registry (resolves NodeDef YAML definitions) */
   registry: RegistryManager | null;
-  /** Text API instance for querying/mutating architecture data */
   textApi: TextApi | null;
-  /** Render API instance for graph-to-React-Flow transformation */
   renderApi: RenderApi | null;
-  /** Export API instance for markdown/mermaid/PNG/SVG generation */
   exportApi: ExportApi | null;
-  /** Undo manager instance for snapshot-based history */
   undoManager: UndoManager | null;
-
-  /** Total node count including nested children (derived, updated on mutations) */
   nodeCount: number;
-  /** Total edge count (derived, updated on mutations) */
   edgeCount: number;
-
-  /** Guard flag preventing concurrent saves from double-click or rapid Ctrl+S */
   isSaving: boolean;
-
-  // Initialization
   initialize: () => void;
-
-  // File handle (for save-in-place)
-  // On web: FileSystemFileHandle; on native iOS: string path
   fileHandle: unknown;
-
-  // File header timestamp (preserved across re-saves)
   fileCreatedAtMs: number | null;
-
-  // Last-modified timestamp of the opened file (for external change detection)
   fileLastModifiedMs: number | null;
-
-  // Flag: true when external modification has been detected by file polling
   fileExternallyModified: boolean;
-
-  // Acknowledge external modification (clears the flag without reloading)
   acknowledgeExternalModification: () => void;
-
-  // File operations
   newFile: () => void;
   openFile: () => Promise<boolean>;
   saveFile: () => Promise<boolean>;
   saveFileAs: () => Promise<boolean>;
   loadFromUrl: (url: string, fileName?: string) => Promise<boolean>;
   loadFromDroppedFile: (file: File) => Promise<boolean>;
-
-  // Graph mutations
   addNode: (params: AddNodeParams) => ArchNode | undefined;
   removeNode: (nodeId: string) => void;
   updateNode: (nodeId: string, params: UpdateNodeParams) => void;
@@ -126,25 +83,15 @@ export interface CoreStoreState {
     snapshotDescription?: string,
   ) => void;
   duplicateSelection: (nodeIds: string[]) => string[];
-
-  // Annotations
   addAnnotation: (annotation: import('@/types/graph').Annotation) => void;
   removeAnnotation: (annotationId: string) => void;
   clearAnnotations: (nodeId?: string) => void;
-
-  // Layout
   autoLayout: (direction: 'horizontal' | 'vertical', navigationPath?: string[]) => Promise<void>;
-
-  // Undo/redo
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
-
-  // Internal: set the graph (used by other stores)
   _setGraph: (graph: ArchGraph) => void;
-
-  // Internal: apply decoded file data to the store
   _applyDecodedFile: (
     graph: ArchGraph,
     fileName: string,
@@ -155,1315 +102,328 @@ export interface CoreStoreState {
   ) => void;
 }
 
-export const useCoreStore = create<CoreStoreState>((set, get) => ({
-  // Initial state
-  graph: createEmptyGraph(),
-  isDirty: false,
-  fileName: 'Untitled Architecture',
-  initialized: false,
-
-  // Engine instances (null until initialized)
-  registry: null,
-  textApi: null,
-  renderApi: null,
-  exportApi: null,
-  undoManager: null,
-
-  // File handle
-  fileHandle: null,
-
-  // File header timestamp
-  fileCreatedAtMs: null,
-
-  // Last-modified timestamp (for polling external changes)
-  fileLastModifiedMs: null,
-
-  // External modification flag
-  fileExternallyModified: false,
-
-  // Acknowledge external modification (clears the flag)
-  acknowledgeExternalModification: () => {
-    set({ fileExternallyModified: false });
-  },
-
-  // Computed
-  nodeCount: 0,
-  edgeCount: 0,
-
-  // Save guard
-  isSaving: false,
-
-  // Undo/redo state
-  canUndo: false,
-  canRedo: false,
-
-  /**
-   * Initialize all core engines and wire them together.
-   */
-  initialize: () => {
-    const state = get();
-    if (state.initialized) {
-      return;
-    }
-
-    console.log('[CoreStore] Initializing engines...');
-
-    // 1. Initialize Registry
-    const registry = new RegistryManager();
-    registry.initialize();
-
-    // 2. Create empty graph
-    const graph = createEmptyGraph();
-
-    // 3. Initialize APIs
-    const textApi = new TextApi(graph, registry);
-    const renderApi = new RenderApi(registry);
-    const exportApi = new ExportApi();
-
-    // 4. Initialize Undo Manager
-    const undoManager = new UndoManager();
-
-    // 5. Take initial snapshot
-    undoManager.snapshot('Initial state', graph);
-
-    set({
-      initialized: true,
-      registry,
-      textApi,
-      renderApi,
-      exportApi,
-      undoManager,
-      graph,
-      nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
-    });
-
-    console.log('[CoreStore] All engines initialized successfully');
-  },
-
-  /**
-   * Create a new empty file.
-   */
-  newFile: () => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    const graph = createEmptyGraph();
-    textApi.setGraph(graph);
-    undoManager.clear();
-    undoManager.snapshot('New file', graph);
-
-    set({
-      graph,
-      isDirty: false,
-      fileName: 'Untitled Architecture',
-      fileHandle: null,
-      fileCreatedAtMs: null,
-      fileLastModifiedMs: null,
-      fileExternallyModified: false,
-      nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
-    });
-  },
-
-  /**
-   * Internal helper: apply decoded file data to the store.
-   * Shared by openFile and loadFromUrl.
-   */
-  _applyDecodedFile: (
-    graph: import('@/types/graph').ArchGraph,
-    fileName: string,
-    fileHandle: unknown,
-    canvasState?: import('@/types/graph').SavedCanvasState,
-    _aiState?: import('@/core/storage/fileIO').AIStateData,
-    createdAtMs?: number,
-  ) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.setGraph(graph);
-    undoManager.clear();
-    undoManager.snapshot('Open file', graph);
-
-    set({
-      graph,
-      isDirty: false,
-      fileName,
-      fileHandle,
-      fileCreatedAtMs: createdAtMs ?? null,
-      fileLastModifiedMs: null,
-      fileExternallyModified: false,
-      nodeCount: countAllNodes(graph),
-      edgeCount: graph.edges.length,
-      canUndo: false,
-      canRedo: false,
-    });
-
-    // Capture the file's lastModified timestamp for external change polling.
-    // This uses getFile() which is lightweight and only reads metadata.
-    if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-      (fileHandle as FileSystemFileHandle)
-        .getFile()
-        .then((file) => {
-          set({ fileLastModifiedMs: file.lastModified });
-          console.log(`[CoreStore] Captured file lastModified: ${file.lastModified}`);
-        })
-        .catch((err) => {
-          console.warn('[CoreStore] Could not read file lastModified:', err);
-        });
-    }
-
-    if (canvasState) {
-      useCanvasStore.getState().setViewport(canvasState.viewport);
-      if (canvasState.panelLayout) {
-        const uiActions = useUIStore.getState();
-        if (canvasState.panelLayout.rightPanelOpen) {
-          uiActions.openRightPanel();
-        } else {
-          uiActions.closeRightPanel();
-        }
-      }
-    }
-
-    // AI state from file is ignored — AI store has been removed.
-    // Proto compatibility is maintained: aiState is still decoded/encoded by fileIO
-    // but no longer loaded into a Zustand store.
-
-    // Request fit view so the canvas adjusts to show all nodes
-    useCanvasStore.getState().requestFitView();
-
-    console.log(
-      `[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`,
-    );
-
-    // Auto-layout if root nodes lack saved positions (all at 0,0)
-    if (graph.nodes.length > 0 && needsAutoLayout(graph.nodes)) {
-      console.log('[CoreStore] Root nodes lack positions — triggering auto-layout');
-      // Use setTimeout to allow React to render first, then apply layout
-      setTimeout(() => {
-        get()
-          .autoLayout('horizontal', [])
-          .then(() => {
-            // After auto-layout, the file is not really "dirty" from the user's perspective
-            // since this is just initial arrangement. But we keep isDirty=true so it saves
-            // the positions on next save.
-            useCanvasStore.getState().requestFitView();
-            console.log('[CoreStore] Auto-layout on file open complete');
-          })
-          .catch((err) => {
-            console.warn('[CoreStore] Auto-layout on file open failed:', err);
-          });
-      }, 0);
-    }
-  },
-
-  /**
-   * Open a .archc file and load its graph into the store.
-   * If checksum mismatch is detected (IntegrityError), shows a warning dialog
-   * that lets the user choose to proceed anyway or cancel.
-   */
-  openFile: async () => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return false;
-
-    try {
-      // Step 1: Pick the file (user selects from file picker)
-      const picked = await pickArchcFile();
-      if (!picked) return false; // User cancelled
-
-      // Show loading indicator while decoding
-      const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
-      setFileOperationLoading('Opening file...');
-
-      try {
-        // Step 2: Decode the file data
-        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(picked.data);
-
-        // Step 3: Apply to store
-        get()._applyDecodedFile(
-          graph,
-          picked.fileName,
-          picked.fileHandle ?? null,
-          canvasState,
-          aiState,
-          createdAtMs,
-        );
-        clearFileOperationLoading();
-        return true;
-      } catch (decodeErr) {
-        clearFileOperationLoading();
-        if (decodeErr instanceof IntegrityError) {
-          // Show warning dialog with option to proceed or cancel
-          console.warn('[CoreStore] File integrity check failed:', decodeErr.message);
-          const { openIntegrityWarningDialog } = useUIStore.getState();
-          openIntegrityWarningDialog({
-            message:
-              "The file's integrity checksum does not match its contents. " +
-              'The file may have been corrupted or modified outside of ArchCanvas. ' +
-              'Opening it anyway may result in unexpected behavior.',
-            onProceed: async () => {
-              try {
-                setFileOperationLoading('Opening file...');
-                // Retry decoding with checksum verification skipped
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
-                  picked.data,
-                  { skipChecksumVerification: true },
-                );
-                get()._applyDecodedFile(
-                  graph,
-                  picked.fileName,
-                  picked.fileHandle ?? null,
-                  canvasState,
-                  aiState,
-                  createdAtMs,
-                );
-                clearFileOperationLoading();
-                console.log(`[CoreStore] Opened file with skipped checksum: ${picked.fileName}`);
-              } catch (retryErr) {
-                clearFileOperationLoading();
-                console.error(
-                  '[CoreStore] Failed to open file even with skipped checksum:',
-                  retryErr,
-                );
-                const { openErrorDialog } = useUIStore.getState();
-                openErrorDialog({
-                  title: 'Failed to Open File',
-                  message:
-                    retryErr instanceof Error
-                      ? retryErr.message
-                      : 'Failed to decode the file contents.',
-                });
-              }
-            },
-          });
-          return false;
-        }
-        // Re-throw non-integrity errors
-        throw decodeErr;
-      }
-    } catch (err) {
-      // Clear loading on error
-      useUIStore.getState().clearFileOperationLoading();
-      console.error('[CoreStore] Failed to open file:', err);
-
-      // Show user-friendly error dialog
-      const { openErrorDialog } = useUIStore.getState();
-      if (err instanceof CodecError) {
-        openErrorDialog({
-          title: 'Invalid File Format',
-          message:
-            err.message ||
-            'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
-        });
-      } else {
-        openErrorDialog({
-          title: 'Failed to Open File',
-          message:
-            err instanceof Error
-              ? err.message
-              : 'An unexpected error occurred while opening the file.',
-        });
-      }
-
-      return false;
-    }
-  },
-
-  /**
-   * Save the current graph to the opened file (save in-place).
-   * If no file handle exists (new file), falls back to Save As.
-   * Includes canvas state (viewport, panel layout) in the saved file.
-   */
-  saveFile: async () => {
-    // Guard against concurrent saves (double-click, rapid Ctrl+S)
-    if (get().isSaving) {
-      console.log('[CoreStore] Save already in progress, ignoring duplicate request');
-      return false;
-    }
-
-    // If a project is open with a root file, delegate to project-level save.
-    // This writes to .archcanvas/main.archc via the directory handle.
-    // If the user is inside a nested canvas (dive-in), save the child file instead.
-    // Uses lazy getter to avoid circular dependency (projectStore imports coreStore).
-    const projectStore = _getProjectStore();
-    if (projectStore) {
-      const projectState = projectStore.getState();
-      if (projectState.isProjectOpen && projectState.manifest?.rootFile) {
-        set({ isSaving: true });
-        const { setFileOperationLoading, clearFileOperationLoading } =
-          useUIStore.getState();
-
-        // Check if we're inside a nested canvas (child file)
-        const { useNestedCanvasStore } = await import('./nestedCanvasStore');
-        const activeFilePath = useNestedCanvasStore.getState().activeFilePath;
-
-        const loadingMsg = activeFilePath ? 'Saving file...' : 'Saving project...';
-        setFileOperationLoading(loadingMsg);
-        try {
-          const result = activeFilePath
-            ? await projectState.saveChildArchc(activeFilePath)
-            : await projectState.saveMainArchc();
-          clearFileOperationLoading();
-          set({ isSaving: false });
-          return result;
-        } catch (err) {
-          clearFileOperationLoading();
-          set({ isSaving: false });
-          return false;
-        }
-      }
-    }
-
-    const { graph, fileHandle, fileCreatedAtMs, fileName, exportApi } = get();
-    // Capture graph reference to detect concurrent modifications (e.g., undo during save)
-    const graphAtSaveStart = graph;
-
-    // If no file handle, fall back to Save As
-    if (!fileHandle) {
-      return get().saveFileAs();
-    }
-
-    set({ isSaving: true });
-    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
-    setFileOperationLoading('Saving file...');
-
-    try {
-      const canvasState = _getCanvasStateForSave();
-      const aiState = undefined;
-
-      // If offline, queue the save for background sync instead of writing directly
-      if (!navigator.onLine) {
-        try {
-          const protoFile = graphToProto(
-            graph,
-            canvasState,
-            undefined,
-            aiState,
-            fileCreatedAtMs ?? undefined,
-          );
-          const binaryData = await encode(protoFile);
-          await enqueueSave(fileName, binaryData);
-          clearFileOperationLoading();
-          set({ isSaving: false });
-          useUIStore.getState().showToast('Offline — save queued for sync');
-          console.log('[CoreStore] Save queued for background sync (offline)');
-          return true;
-        } catch (queueErr) {
-          console.error('[CoreStore] Failed to queue offline save:', queueErr);
-          // Fall through to try normal save anyway
-        }
-      }
-
-      await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
-
-      // Refresh lastModified timestamp after save so polling doesn't false-alarm
-      if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-        try {
-          const savedFile = await (fileHandle as FileSystemFileHandle).getFile();
-          set({ fileLastModifiedMs: savedFile.lastModified });
-        } catch {
-          // Non-critical: polling will catch up on next cycle
-        }
-      }
-
-      // Only clear isDirty if the graph hasn't been modified during the async save
-      // (e.g., by undo/redo or other mutations). If the graph changed, keep isDirty true
-      // so the user knows in-memory state differs from the saved file.
-      const graphChangedDuringSave = get().graph !== graphAtSaveStart;
-      if (!fileCreatedAtMs) {
-        set({ isDirty: graphChangedDuringSave, fileCreatedAtMs: Date.now() });
-      } else {
-        set({ isDirty: graphChangedDuringSave });
-      }
-
-      // Auto-generate .summary.md sidecar file
-      if (exportApi) {
-        try {
-          const summaryContent = exportApi.generateSummaryWithMermaid(graph);
-          const summaryFileName = deriveSummaryFileName(fileName);
-          await saveSummaryMarkdown(summaryContent, summaryFileName);
-        } catch (summaryErr) {
-          console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
-        }
-      }
-
-      clearFileOperationLoading();
-      set({ isSaving: false });
-
-      // Show toast — if no file handle, the file was downloaded via browser fallback
-      if (!get().fileHandle) {
-        useUIStore.getState().showToast("File downloaded to your browser's download folder");
-      } else {
-        useUIStore.getState().showToast('File saved');
-      }
-
-      console.log('[CoreStore] File saved successfully');
-      return true;
-    } catch (err) {
-      clearFileOperationLoading();
-      set({ isSaving: false });
-      console.error('[CoreStore] Failed to save file:', err);
-      const { openErrorDialog } = useUIStore.getState();
-      openErrorDialog({
-        title: 'Save Failed',
-        message:
-          err instanceof Error
-            ? `Could not save the file: ${err.message}`
-            : 'An unexpected error occurred while saving the file. Please try again.',
-      });
-      return false;
-    }
-  },
-
-  /**
-   * Save the current graph to a new file location (Save As).
-   * Opens a file save picker dialog.
-   * Includes canvas state (viewport, panel layout) in the saved file.
-   */
-  saveFileAs: async () => {
-    // Guard against concurrent saves (double-click, rapid Ctrl+S)
-    if (get().isSaving) {
-      console.log('[CoreStore] Save already in progress, ignoring duplicate request');
-      return false;
-    }
-
-    const { graph, fileName, fileCreatedAtMs, exportApi } = get();
-    // Capture graph reference to detect concurrent modifications (e.g., undo during save)
-    const graphAtSaveStart = graph;
-
-    set({ isSaving: true });
-
-    try {
-      const canvasState = _getCanvasStateForSave();
-      const aiState = undefined;
-      const result = await saveArchcFileAs(
-        graph,
-        fileName,
-        canvasState,
-        aiState,
-        fileCreatedAtMs ?? undefined,
-      );
-      if (!result) {
-        // User cancelled the picker
-        set({ isSaving: false });
-        return false;
-      }
-
-      // Show loading after user selects save location
-      const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
-      setFileOperationLoading('Saving file...');
-
-      // Only clear isDirty if the graph hasn't been modified during the async save
-      // (e.g., by undo/redo or other mutations). If the graph changed, keep isDirty true.
-      const graphChangedDuringSave = get().graph !== graphAtSaveStart;
-      const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
-
-      // Read lastModified from the new file handle for polling
-      let newLastModifiedMs: number | null = null;
-      const newHandle = result.fileHandle as FileSystemFileHandle | undefined;
-      if (newHandle && typeof newHandle.getFile === 'function') {
-        try {
-          const savedFile = await newHandle.getFile();
-          newLastModifiedMs = savedFile.lastModified;
-        } catch {
-          // Non-critical
-        }
-      }
-
-      set({
-        isDirty: graphChangedDuringSave,
-        fileName: result.fileName,
-        fileHandle: result.fileHandle ?? null,
-        fileCreatedAtMs: newCreatedAtMs,
-        fileLastModifiedMs: newLastModifiedMs,
-      });
-
-      // Auto-generate .summary.md sidecar file
-      if (exportApi) {
-        try {
-          const summaryContent = exportApi.generateSummaryWithMermaid(graph);
-          const summaryFileName = deriveSummaryFileName(result.fileName);
-          await saveSummaryMarkdown(summaryContent, summaryFileName);
-        } catch (summaryErr) {
-          console.warn('[CoreStore] Failed to generate summary sidecar:', summaryErr);
-        }
-      }
-
-      clearFileOperationLoading();
-      set({ isSaving: false });
-
-      // Show toast — if no file handle returned, it was a browser download fallback
-      if (!result.fileHandle) {
-        useUIStore
-          .getState()
-          .showToast(`"${result.fileName}" downloaded to your browser's download folder`);
-      } else {
-        useUIStore.getState().showToast(`Saved as "${result.fileName}"`);
-      }
-
-      console.log(`[CoreStore] File saved as: ${result.fileName}`);
-      return true;
-    } catch (err) {
-      set({ isSaving: false });
-      useUIStore.getState().clearFileOperationLoading();
-      console.error('[CoreStore] Failed to save file as:', err);
-      const { openErrorDialog } = useUIStore.getState();
-      openErrorDialog({
-        title: 'Save Failed',
-        message:
-          err instanceof Error
-            ? `Could not save the file: ${err.message}`
-            : 'An unexpected error occurred while saving the file. Please try again.',
-      });
-      return false;
-    }
-  },
-
-  /**
-   * Load a .archc file from a URL (for testing and development).
-   * If checksum mismatch is detected, shows a warning dialog with proceed/cancel options.
-   */
-  loadFromUrl: async (url: string, displayName?: string) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return false;
-
-    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
-    setFileOperationLoading('Loading file...');
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        clearFileOperationLoading();
-        console.error(`[CoreStore] Failed to fetch file from ${url}: ${response.status}`);
-        return false;
-      }
-
-      const buffer = await response.arrayBuffer();
-      const data = new Uint8Array(buffer);
-      const fileName = displayName ?? url.split('/').pop() ?? 'Loaded File';
-
-      try {
-        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
-        get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
-        clearFileOperationLoading();
-        return true;
-      } catch (decodeErr) {
-        clearFileOperationLoading();
-        if (decodeErr instanceof IntegrityError) {
-          // Show warning dialog with option to proceed or cancel
-          console.warn('[CoreStore] File integrity check failed:', decodeErr.message);
-          const { openIntegrityWarningDialog } = useUIStore.getState();
-          openIntegrityWarningDialog({
-            message:
-              "The file's integrity checksum does not match its contents. " +
-              'The file may have been corrupted or modified outside of ArchCanvas. ' +
-              'Opening it anyway may result in unexpected behavior.',
-            onProceed: async () => {
-              try {
-                setFileOperationLoading('Loading file...');
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data, {
-                  skipChecksumVerification: true,
-                });
-                get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
-                clearFileOperationLoading();
-                console.log(`[CoreStore] Loaded file from URL with skipped checksum: ${fileName}`);
-              } catch (retryErr) {
-                clearFileOperationLoading();
-                console.error(
-                  '[CoreStore] Failed to load file even with skipped checksum:',
-                  retryErr,
-                );
-                const { openErrorDialog } = useUIStore.getState();
-                openErrorDialog({
-                  title: 'Failed to Open File',
-                  message:
-                    retryErr instanceof Error
-                      ? retryErr.message
-                      : 'Failed to decode the file contents.',
-                });
-              }
-            },
-          });
-          return false;
-        }
-        throw decodeErr;
-      }
-    } catch (err) {
-      clearFileOperationLoading();
-      console.error('[CoreStore] Failed to load file from URL:', err);
-
-      const { openErrorDialog } = useUIStore.getState();
-      if (err instanceof CodecError) {
-        openErrorDialog({
-          title: 'Invalid File Format',
-          message:
-            err.message ||
-            'The file could not be opened because it is not a valid ArchCanvas file or uses an unsupported format.',
-        });
-      } else {
-        openErrorDialog({
-          title: 'Failed to Open File',
-          message:
-            err instanceof Error
-              ? err.message
-              : 'An unexpected error occurred while opening the file.',
-        });
-      }
-
-      return false;
-    }
-  },
-
-  /**
-   * Load a .archc file from a dropped File object (drag & drop from Files app or desktop).
-   * Validates file extension and decodes the binary data.
-   */
-  loadFromDroppedFile: async (file: File) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return false;
-
-    // Validate file extension
-    if (!file.name.toLowerCase().endsWith('.archc')) {
-      const { openErrorDialog } = useUIStore.getState();
-      openErrorDialog({
-        title: 'Unsupported File Type',
-        message: `"${file.name}" is not an ArchCanvas file. Only .archc files can be opened.`,
-      });
-      return false;
-    }
-
-    const { setFileOperationLoading, clearFileOperationLoading } = useUIStore.getState();
-    setFileOperationLoading('Opening dropped file...');
-
-    try {
-      const buffer = await file.arrayBuffer();
-      const data = new Uint8Array(buffer);
-      const fileName = file.name.replace(/\.archc$/i, '');
-
-      try {
-        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
-        get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
-        clearFileOperationLoading();
-        console.log(`[CoreStore] Loaded dropped file: ${fileName}`);
-        return true;
-      } catch (decodeErr) {
-        clearFileOperationLoading();
-        if (decodeErr instanceof IntegrityError) {
-          console.warn('[CoreStore] Dropped file integrity check failed:', decodeErr.message);
-          const { openIntegrityWarningDialog } = useUIStore.getState();
-          openIntegrityWarningDialog({
-            message:
-              "The dropped file's integrity checksum does not match its contents. " +
-              'The file may have been corrupted or modified outside of ArchCanvas. ' +
-              'Opening it anyway may result in unexpected behavior.',
-            onProceed: async () => {
-              try {
-                setFileOperationLoading('Opening dropped file...');
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data, {
-                  skipChecksumVerification: true,
-                });
-                get()._applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
-                clearFileOperationLoading();
-                console.log(`[CoreStore] Loaded dropped file with skipped checksum: ${fileName}`);
-              } catch (retryErr) {
-                clearFileOperationLoading();
-                console.error(
-                  '[CoreStore] Failed to load dropped file even with skipped checksum:',
-                  retryErr,
-                );
-                const { openErrorDialog } = useUIStore.getState();
-                openErrorDialog({
-                  title: 'Failed to Open File',
-                  message:
-                    retryErr instanceof Error
-                      ? retryErr.message
-                      : 'Failed to decode the dropped file.',
-                });
-              }
-            },
-          });
-          return false;
-        }
-        throw decodeErr;
-      }
-    } catch (err) {
-      clearFileOperationLoading();
-      console.error('[CoreStore] Failed to load dropped file:', err);
-
-      const { openErrorDialog } = useUIStore.getState();
-      if (err instanceof CodecError) {
-        openErrorDialog({
-          title: 'Invalid File Format',
-          message:
-            err.message ||
-            'The dropped file could not be opened because it is not a valid ArchCanvas file.',
-        });
-      } else {
-        openErrorDialog({
-          title: 'Failed to Open File',
-          message:
-            err instanceof Error
-              ? err.message
-              : 'An unexpected error occurred while opening the dropped file.',
-        });
-      }
-
-      return false;
-    }
-  },
-
-  /**
-   * Add a node to the graph.
-   * Automatically pre-fills default arg values from the nodedef when no explicit args are provided.
-   */
-  addNode: (params) => {
-    const { textApi, undoManager, registry } = get();
-    if (!textApi || !undoManager) return undefined;
-
-    // Pre-fill default values from nodedef for args not explicitly provided
-    if (registry) {
-      const nodeDef = registry.resolve(params.type);
-      if (nodeDef && nodeDef.spec.args.length > 0) {
-        const defaults: PropertyMap = {};
-        for (const argDef of nodeDef.spec.args) {
-          if (argDef.default !== undefined) {
-            defaults[argDef.name] = argDef.default;
-          }
-        }
-        // Merge: explicit args override defaults
-        params = { ...params, args: { ...defaults, ...params.args } };
-      }
-    }
-
-    const node = textApi.addNode(params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Add node', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      nodeCount: countAllNodes(updatedGraph),
-      edgeCount: updatedGraph.edges.length,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-
-    // Trigger auto-layout to incorporate the new node into the existing arrangement
-    const navigationPath = useNavigationStore.getState().path;
-    setTimeout(() => {
-      get()
-        .autoLayout('horizontal', navigationPath)
-        .then(() => {
-          useCanvasStore.getState().requestFitView();
-          console.log('[CoreStore] Auto-layout after addNode complete');
-        })
-        .catch((err: unknown) => {
-          console.warn('[CoreStore] Auto-layout after addNode failed:', err);
-        });
-    }, 0);
-
-    return node;
-  },
-
-  /**
-   * Remove a node from the graph.
-   */
-  removeNode: (nodeId) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.removeNode(nodeId);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Remove node', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      nodeCount: countAllNodes(updatedGraph),
-      edgeCount: updatedGraph.edges.length,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Update a node's properties.
-   */
-  updateNode: (nodeId, params) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.updateNode(nodeId, params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Update node', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Add an edge to the graph.
-   */
-  addEdge: (params) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return undefined;
-
-    const edge = textApi.addEdge(params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Add edge', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      edgeCount: updatedGraph.edges.length,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-
-    return edge;
-  },
-
-  /**
-   * Update an edge's type, label, or properties.
-   */
-  updateEdge: (edgeId, updates, snapshotDescription) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.updateEdge(edgeId, updates);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot(snapshotDescription || 'Update edge', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Remove an edge from the graph.
-   */
-  removeEdge: (edgeId) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.removeEdge(edgeId);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Remove edge', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      edgeCount: updatedGraph.edges.length,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Add a note to a node or edge.
-   */
-  addNote: (params) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return undefined;
-
-    const note = textApi.addNote(params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Add note', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-
-    return note;
-  },
-
-  /**
-   * Remove a note from a node.
-   */
-  removeNote: (nodeId, noteId) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.removeNote(nodeId, noteId);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Remove note', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Update a note's content.
-   */
-  updateNote: (nodeId, noteId, content) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.updateNote(nodeId, noteId, content);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Edit note', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Add a code reference to a node.
-   */
-  addCodeRef: (params) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.addCodeRef(params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Add code reference', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-
-  /**
-   * Update a node's custom color (stored in position.color).
-   * Pass undefined to clear the custom color (reverts to type default).
-   */
-  updateNodeColor: (nodeId, color) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.updateNodeColor(nodeId, color);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('Update node color', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Move a node to a new position.
-   */
-  moveNode: (nodeId, x, y) => {
-    const { textApi, graph } = get();
-    if (!textApi) return;
-
-    // Don't snapshot on move (too frequent), just update position
-    const updatedGraph = engineMoveNode(graph, nodeId, x, y);
-    textApi.setGraph(updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-    });
-  },
-
-  /**
-   * Move multiple nodes at once with a single undo snapshot.
-   * Used for keyboard bulk movement (Alt+Arrow).
-   * Coordinates are clamped to prevent negative values.
-   */
-  moveNodes: (moves, snapshotDescription) => {
-    const { textApi, undoManager, graph } = get();
-    if (!textApi || !undoManager || moves.length === 0) return;
-
-    let currentGraph = graph;
-    for (const { nodeId, x, y } of moves) {
-      // Clamp to prevent negative coordinates
-      const clampedX = Math.max(0, x);
-      const clampedY = Math.max(0, y);
-      currentGraph = engineMoveNode(currentGraph, nodeId, clampedX, clampedY);
-    }
-    textApi.setGraph(currentGraph);
-
-    const desc = snapshotDescription || `Move ${moves.length} node(s)`;
-    undoManager.snapshot(desc, currentGraph);
-
-    set({
-      graph: currentGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
-
-  /**
-   * Duplicate selected node(s). Returns array of newly created node IDs.
-   * - Single node: deep clone with new ID, offset +50px, ' (copy)' suffix
-   * - Multi-node: preserve relative positions, duplicate internal edges
-   */
-  duplicateSelection: (nodeIds) => {
-    const { textApi, undoManager, graph } = get();
-    if (!textApi || !undoManager || nodeIds.length === 0) return [];
-
-    const OFFSET = 50;
-    const nodeIdSet = new Set(nodeIds);
-
-    // Find all source nodes (recursive search)
-    function findNode(nodes: ArchNode[], id: string): ArchNode | undefined {
-      for (const node of nodes) {
-        if (node.id === id) return node;
-        if (node.children.length > 0) {
-          const found = findNode(node.children, id);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    }
-
-    const sourceNodes: ArchNode[] = [];
-    for (const id of nodeIds) {
-      const node = findNode(graph.nodes, id);
-      if (node) sourceNodes.push(node);
-    }
-    if (sourceNodes.length === 0) return [];
-
-    // Map old IDs to new IDs for edge rewiring
-    const idMap = new Map<string, string>();
-    const newNodeIds: string[] = [];
-
-    // Create duplicates
-    for (const node of sourceNodes) {
-      const newNode = textApi.addNode({
-        type: node.type,
-        displayName: `${node.displayName} (copy)`,
-        position: {
-          x: node.position.x + OFFSET,
-          y: node.position.y + OFFSET,
-        },
-        args: { ...node.args },
-      });
-      if (newNode) {
-        idMap.set(node.id, newNode.id);
-        newNodeIds.push(newNode.id);
-      }
-    }
-
-    // Duplicate internal edges (edges where both endpoints are in the selection)
-    if (nodeIds.length > 1) {
-      for (const edge of graph.edges) {
-        if (nodeIdSet.has(edge.fromNode) && nodeIdSet.has(edge.toNode)) {
-          const newFromId = idMap.get(edge.fromNode);
-          const newToId = idMap.get(edge.toNode);
-          if (newFromId && newToId) {
-            textApi.addEdge({
-              fromNode: newFromId,
-              toNode: newToId,
-              type: edge.type,
-              label: edge.label,
-            });
-          }
-        }
-      }
-    }
-
-    const updatedGraph = textApi.getGraph();
-    const count = newNodeIds.length;
-    undoManager.snapshot(`Duplicate ${count} node${count === 1 ? '' : 's'}`, updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      nodeCount: countAllNodes(updatedGraph),
-      edgeCount: updatedGraph.edges.length,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-
-    return newNodeIds;
-  },
-
-  // ─── Annotation Mutations ────────────────────────────────────
-
-  addAnnotation: (annotation) => {
-    const { graph } = get();
-    const updatedGraph: ArchGraph = {
-      ...graph,
-      annotations: [...(graph.annotations ?? []), annotation],
-    };
-    set({ graph: updatedGraph, isDirty: true });
-  },
-
-  removeAnnotation: (annotationId) => {
-    const { graph } = get();
-    const updatedGraph: ArchGraph = {
-      ...graph,
-      annotations: (graph.annotations ?? []).filter((a) => a.id !== annotationId),
-    };
-    set({ graph: updatedGraph, isDirty: true });
-  },
-
-  clearAnnotations: (nodeId?: string) => {
-    const { graph } = get();
-    const updatedGraph: ArchGraph = {
-      ...graph,
-      annotations: nodeId ? (graph.annotations ?? []).filter((a) => a.nodeId !== nodeId) : [],
-    };
-    set({ graph: updatedGraph, isDirty: true });
-  },
-
-  /**
-   * Auto-layout nodes using the ELK layered algorithm.
-   * Uses spacing configuration from canvasStore.
-   */
-  autoLayout: async (direction, navigationPath = []) => {
-    const { textApi, undoManager, graph } = get();
-    if (!textApi || !undoManager) return;
-
-    try {
-      // Get layout spacing from canvas store
-      const { layoutSpacing } = useCanvasStore.getState();
-      const spacing = {
-        nodeSpacing: layoutSpacing.nodeSpacing,
-        layerSpacing: layoutSpacing.layerSpacing,
-      };
-
-      const updatedGraph = await applyElkLayout(graph, direction, navigationPath, spacing);
-      textApi.setGraph(updatedGraph);
-      undoManager.snapshot('Auto-layout', updatedGraph);
-
-      set({
-        graph: updatedGraph,
-        isDirty: true,
-        canUndo: undoManager.canUndo,
-        canRedo: undoManager.canRedo,
-      });
-
-      console.log('[CoreStore] Auto-layout applied:', direction, 'spacing:', spacing);
-    } catch (error) {
-      console.error('[CoreStore] Auto-layout failed:', error);
-    }
-  },
-
-  /**
-   * Undo the last action.
-   */
-  undo: () => {
-    const { undoManager, textApi } = get();
-    if (!undoManager || !textApi) return;
-
-    const previousGraph = undoManager.undo();
-    if (previousGraph) {
-      textApi.setGraph(previousGraph);
-      set({
-        graph: previousGraph,
-        isDirty: true,
-        nodeCount: countAllNodes(previousGraph),
-        edgeCount: previousGraph.edges.length,
-        canUndo: undoManager.canUndo,
-        canRedo: undoManager.canRedo,
-      });
-      haptics.impact('Light');
-    }
-  },
-
-  /**
-   * Redo the last undone action.
-   */
-  redo: () => {
-    const { undoManager, textApi } = get();
-    if (!undoManager || !textApi) return;
-
-    const nextGraph = undoManager.redo();
-    if (nextGraph) {
-      textApi.setGraph(nextGraph);
-      set({
-        graph: nextGraph,
-        isDirty: true,
-        nodeCount: countAllNodes(nextGraph),
-        edgeCount: nextGraph.edges.length,
-        canUndo: undoManager.canUndo,
-        canRedo: undoManager.canRedo,
-      });
-      haptics.impact('Light');
-    }
-  },
-
-  /**
-   * Internal: directly set the graph state.
-   */
-  _setGraph: (graph) => {
-    const { textApi } = get();
-    if (textApi) {
-      textApi.setGraph(graph);
-    }
-    set({
-      graph,
-      nodeCount: countAllNodes(graph),
-      edgeCount: graph.edges.length,
-    });
-  },
-}));
+// Event subscriptions are now auto-initialized on appEvents module load.
+// initEventSubscriptions() is safe to call multiple times (idempotent).
 
 /**
- * Gather canvas state from external stores for saving.
+ * Cached state object — mimics Zustand's persistent state reference.
+ *
+ * A real Zustand store's getState() always returns the same mutable object,
+ * so vi.spyOn(store.getState(), 'fn') works because subsequent getState()
+ * calls return the same reference with the spy still attached.
+ *
+ * We use stable wrapper functions for all actions. The wrappers are set once
+ * and never replaced, so a spy on them persists across getState() calls.
+ * Data properties (primitives/objects) are updated in-place each call.
  */
-function _getCanvasStateForSave() {
-  const canvasStoreState = useCanvasStore.getState();
-  const uiStoreState = useUIStore.getState();
+let _cachedState: CoreStoreState | null = null;
 
+/** One-time setup of stable action wrappers that delegate to domain stores. */
+function _createCachedState(): CoreStoreState {
   return {
-    viewport: canvasStoreState.viewport,
-    selectedNodeIds: canvasStoreState.selectedNodeId ? [canvasStoreState.selectedNodeId] : [],
-    navigationPath: [] as string[],
-    panelLayout: {
-      rightPanelOpen: uiStoreState.rightPanelOpen ?? false,
-      rightPanelTab: (uiStoreState.rightPanelTab as string) ?? '',
-      rightPanelWidth: uiStoreState.rightPanelWidth ?? 320,
+    // === Data properties (updated each _getState call) ===
+    initialized: false,
+    registry: null,
+    textApi: null,
+    renderApi: null,
+    exportApi: null,
+    undoManager: null,
+    graph: { name: '', description: '', owners: [], nodes: [], edges: [], annotations: [] } as ArchGraph,
+    isDirty: false,
+    nodeCount: 0,
+    edgeCount: 0,
+    fileName: 'Untitled',
+    fileHandle: null,
+    fileCreatedAtMs: null,
+    fileLastModifiedMs: null,
+    fileExternallyModified: false,
+    isSaving: false,
+    canUndo: false,
+    canRedo: false,
+
+    // === Stable action wrappers (never replaced, so spies persist) ===
+    initialize: () => {
+      useEngineStore.getState().initialize();
+      initEventSubscriptions();
+      const freshEngine = useEngineStore.getState();
+      if (freshEngine.textApi) {
+        const initialGraph = freshEngine.textApi.getGraph();
+        useGraphStore.setState({
+          graph: initialGraph,
+          nodeCount: 0,
+          edgeCount: 0,
+        });
+      }
     },
+    addNode: (...args) => useGraphStore.getState().addNode(...args),
+    removeNode: (...args) => useGraphStore.getState().removeNode(...args),
+    updateNode: (...args) => useGraphStore.getState().updateNode(...args),
+    addEdge: (...args) => useGraphStore.getState().addEdge(...args),
+    updateEdge: (...args) => useGraphStore.getState().updateEdge(...args),
+    removeEdge: (...args) => useGraphStore.getState().removeEdge(...args),
+    addNote: (...args) => useGraphStore.getState().addNote(...args),
+    removeNote: (...args) => useGraphStore.getState().removeNote(...args),
+    updateNote: (...args) => useGraphStore.getState().updateNote(...args),
+    addCodeRef: (...args) => useGraphStore.getState().addCodeRef(...args),
+    updateNodeColor: (...args) => useGraphStore.getState().updateNodeColor(...args),
+    moveNode: (...args) => useGraphStore.getState().moveNode(...args),
+    moveNodes: (...args) => useGraphStore.getState().moveNodes(...args),
+    duplicateSelection: (...args) => useGraphStore.getState().duplicateSelection(...args),
+    addAnnotation: (...args) => useGraphStore.getState().addAnnotation(...args),
+    removeAnnotation: (...args) => useGraphStore.getState().removeAnnotation(...args),
+    clearAnnotations: (...args) => useGraphStore.getState().clearAnnotations(...args),
+    autoLayout: (...args) => useGraphStore.getState().autoLayout(...args),
+    _setGraph: (...args) => useGraphStore.getState()._setGraph(...args),
+    acknowledgeExternalModification: () => useFileStore.getState().acknowledgeExternalModification(),
+    newFile: () => useFileStore.getState().newFile(),
+    openFile: () => useFileStore.getState().openFile(),
+    saveFile: () => useFileStore.getState().saveFile(),
+    saveFileAs: () => useFileStore.getState().saveFileAs(),
+    loadFromUrl: (...args) => useFileStore.getState().loadFromUrl(...args),
+    loadFromDroppedFile: (...args) => useFileStore.getState().loadFromDroppedFile(...args),
+    _applyDecodedFile: (...args) => useFileStore.getState()._applyDecodedFile(...args),
+    undo: () => useHistoryStore.getState().undo(),
+    redo: () => useHistoryStore.getState().redo(),
   };
 }
 
-// AI store has been removed — aiState is always undefined for saves.
-// Proto compatibility: graphToProto handles undefined aiState gracefully.
+/**
+ * Assemble a CoreStoreState snapshot from all domain stores.
+ * Returns the same object reference each time (data properties mutated in-place,
+ * action wrappers are stable).
+ */
+function _getState(): CoreStoreState {
+  if (!_cachedState) {
+    _cachedState = _createCachedState();
+  }
+
+  const engine = useEngineStore.getState();
+  const graph = useGraphStore.getState();
+  const file = useFileStore.getState();
+  const history = useHistoryStore.getState();
+
+  // Update data properties in-place
+  _cachedState.initialized = engine.initialized;
+  _cachedState.registry = engine.registry;
+  _cachedState.textApi = engine.textApi;
+  _cachedState.renderApi = engine.renderApi;
+  _cachedState.exportApi = engine.exportApi;
+  _cachedState.undoManager = engine.undoManager;
+
+  _cachedState.graph = graph.graph;
+  _cachedState.isDirty = graph.isDirty;
+  _cachedState.nodeCount = graph.nodeCount;
+  _cachedState.edgeCount = graph.edgeCount;
+
+  _cachedState.fileName = file.fileName;
+  _cachedState.fileHandle = file.fileHandle;
+  _cachedState.fileCreatedAtMs = file.fileCreatedAtMs;
+  _cachedState.fileLastModifiedMs = file.fileLastModifiedMs;
+  _cachedState.fileExternallyModified = file.fileExternallyModified;
+  _cachedState.isSaving = file.isSaving;
+
+  _cachedState.canUndo = history.canUndo;
+  _cachedState.canRedo = history.canRedo;
+
+  // Action wrappers remain stable — never overwritten
+  return _cachedState;
+}
 
 /**
- * Lazy getter for the project store to avoid circular dependency.
- * projectStore imports coreStore, so we can't import projectStore statically.
- * Instead we resolve it lazily on first use (after both modules have initialized).
+ * Compatibility facade for useCoreStore.
+ *
+ * Supports both:
+ * - `useCoreStore.getState()` for imperative access
+ * - `useCoreStore(selector)` for React hook usage (selector gets a snapshot)
+ * - `useCoreStore.setState(partial)` for imperative state updates
+ *
+ * @deprecated Import from the specific domain store instead.
  */
-let _projectStoreRef: typeof import('./projectStore') | null = null;
-let _projectStoreResolved = false;
+export const useCoreStore: {
+  /** Get the current aggregated state snapshot. */
+  getState: () => CoreStoreState;
+  /** Get the initial state (for resetting in tests). */
+  getInitialState: () => CoreStoreState;
+  /** Set state on the appropriate domain store. */
+  setState: (partial: Partial<CoreStoreState>) => void;
+  /** React hook: subscribe to state via selector. */
+  <T>(selector: (state: CoreStoreState) => T): T;
+} = Object.assign(
+  // The callable function (React hook simulation)
+  function useCoreStoreHook<T>(selector: (state: CoreStoreState) => T): T {
+    // For React component usage, we need to subscribe to all underlying stores.
+    // Each underlying store is a proper Zustand store, so their individual hooks
+    // handle React subscriptions. We call their hooks and merge the results.
+    //
+    // IMPORTANT: This must call all hooks unconditionally (React rules of hooks).
+    const engineState = useEngineStore();
+    const graphState = useGraphStore();
+    const fileState = useFileStore();
+    const historyState = useHistoryStore();
 
-function _getProjectStore() {
-  if (!_projectStoreResolved) {
-    try {
-      // Use require-like dynamic resolution via import cache.
-      // By the time saveFile is called, projectStore module is already loaded.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      _projectStoreRef = require('./projectStore');
-    } catch {
-      _projectStoreRef = null;
-    }
-    _projectStoreResolved = true;
-  }
-  return _projectStoreRef ? _projectStoreRef.useProjectStore : null;
-}
+    const merged: CoreStoreState = {
+      initialized: engineState.initialized,
+      registry: engineState.registry,
+      textApi: engineState.textApi,
+      renderApi: engineState.renderApi,
+      exportApi: engineState.exportApi,
+      undoManager: engineState.undoManager,
+      initialize: () => {
+        engineState.initialize();
+        initEventSubscriptions();
+        const freshEngine = useEngineStore.getState();
+        if (freshEngine.textApi) {
+          const initialGraph = freshEngine.textApi.getGraph();
+          useGraphStore.setState({
+            graph: initialGraph,
+            nodeCount: 0,
+            edgeCount: 0,
+          });
+        }
+      },
+
+      graph: graphState.graph,
+      isDirty: graphState.isDirty,
+      nodeCount: graphState.nodeCount,
+      edgeCount: graphState.edgeCount,
+      addNode: graphState.addNode,
+      removeNode: graphState.removeNode,
+      updateNode: graphState.updateNode,
+      addEdge: graphState.addEdge,
+      updateEdge: graphState.updateEdge,
+      removeEdge: graphState.removeEdge,
+      addNote: graphState.addNote,
+      removeNote: graphState.removeNote,
+      updateNote: graphState.updateNote,
+      addCodeRef: graphState.addCodeRef,
+      updateNodeColor: graphState.updateNodeColor,
+      moveNode: graphState.moveNode,
+      moveNodes: graphState.moveNodes,
+      duplicateSelection: graphState.duplicateSelection,
+      addAnnotation: graphState.addAnnotation,
+      removeAnnotation: graphState.removeAnnotation,
+      clearAnnotations: graphState.clearAnnotations,
+      autoLayout: graphState.autoLayout,
+      _setGraph: graphState._setGraph,
+
+      fileName: fileState.fileName,
+      fileHandle: fileState.fileHandle,
+      fileCreatedAtMs: fileState.fileCreatedAtMs,
+      fileLastModifiedMs: fileState.fileLastModifiedMs,
+      fileExternallyModified: fileState.fileExternallyModified,
+      isSaving: fileState.isSaving,
+      acknowledgeExternalModification: fileState.acknowledgeExternalModification,
+      newFile: fileState.newFile,
+      openFile: fileState.openFile,
+      saveFile: fileState.saveFile,
+      saveFileAs: fileState.saveFileAs,
+      loadFromUrl: fileState.loadFromUrl,
+      loadFromDroppedFile: fileState.loadFromDroppedFile,
+      _applyDecodedFile: fileState._applyDecodedFile,
+
+      canUndo: historyState.canUndo,
+      canRedo: historyState.canRedo,
+      undo: historyState.undo,
+      redo: historyState.redo,
+    };
+
+    return selector(merged);
+  },
+  {
+    getState: _getState,
+    getInitialState: (): CoreStoreState => {
+      // Assemble initial state from all domain stores' initial states
+      const engine = useEngineStore.getInitialState();
+      const graph = useGraphStore.getInitialState();
+      const file = useFileStore.getInitialState();
+      const history = useHistoryStore.getInitialState();
+
+      return {
+        initialized: engine.initialized,
+        registry: engine.registry,
+        textApi: engine.textApi,
+        renderApi: engine.renderApi,
+        exportApi: engine.exportApi,
+        undoManager: engine.undoManager,
+        initialize: _getState().initialize,
+
+        graph: graph.graph,
+        isDirty: graph.isDirty,
+        nodeCount: graph.nodeCount,
+        edgeCount: graph.edgeCount,
+        addNode: graph.addNode,
+        removeNode: graph.removeNode,
+        updateNode: graph.updateNode,
+        addEdge: graph.addEdge,
+        updateEdge: graph.updateEdge,
+        removeEdge: graph.removeEdge,
+        addNote: graph.addNote,
+        removeNote: graph.removeNote,
+        updateNote: graph.updateNote,
+        addCodeRef: graph.addCodeRef,
+        updateNodeColor: graph.updateNodeColor,
+        moveNode: graph.moveNode,
+        moveNodes: graph.moveNodes,
+        duplicateSelection: graph.duplicateSelection,
+        addAnnotation: graph.addAnnotation,
+        removeAnnotation: graph.removeAnnotation,
+        clearAnnotations: graph.clearAnnotations,
+        autoLayout: graph.autoLayout,
+        _setGraph: graph._setGraph,
+
+        fileName: file.fileName,
+        fileHandle: file.fileHandle,
+        fileCreatedAtMs: file.fileCreatedAtMs,
+        fileLastModifiedMs: file.fileLastModifiedMs,
+        fileExternallyModified: file.fileExternallyModified,
+        isSaving: file.isSaving,
+        acknowledgeExternalModification: file.acknowledgeExternalModification,
+        newFile: file.newFile,
+        openFile: file.openFile,
+        saveFile: file.saveFile,
+        saveFileAs: file.saveFileAs,
+        loadFromUrl: file.loadFromUrl,
+        loadFromDroppedFile: file.loadFromDroppedFile,
+        _applyDecodedFile: file._applyDecodedFile,
+
+        canUndo: history.canUndo,
+        canRedo: history.canRedo,
+        undo: history.undo,
+        redo: history.redo,
+      };
+    },
+    setState: (partial: Partial<CoreStoreState>) => {
+      // Route partial state updates to the correct domain store
+      const graphFields: (keyof import('./graphStore').GraphStoreState)[] = [
+        'graph', 'isDirty', 'nodeCount', 'edgeCount',
+      ];
+      const fileFields: (keyof import('./fileStore').FileStoreState)[] = [
+        'fileName', 'fileHandle', 'fileCreatedAtMs', 'fileLastModifiedMs',
+        'fileExternallyModified', 'isSaving',
+      ];
+      const historyFields: (keyof import('./historyStore').HistoryStoreState)[] = [
+        'canUndo', 'canRedo',
+      ];
+      const engineFields: (keyof import('./engineStore').EngineStoreState)[] = [
+        'initialized', 'registry', 'textApi', 'renderApi', 'exportApi', 'undoManager',
+      ];
+
+      const graphPatch: Record<string, unknown> = {};
+      const filePatch: Record<string, unknown> = {};
+      const historyPatch: Record<string, unknown> = {};
+      const enginePatch: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(partial)) {
+        if (graphFields.includes(key as any)) graphPatch[key] = value;
+        else if (fileFields.includes(key as any)) filePatch[key] = value;
+        else if (historyFields.includes(key as any)) historyPatch[key] = value;
+        else if (engineFields.includes(key as any)) enginePatch[key] = value;
+      }
+
+      if (Object.keys(graphPatch).length > 0) useGraphStore.setState(graphPatch as any);
+      if (Object.keys(filePatch).length > 0) useFileStore.setState(filePatch as any);
+      if (Object.keys(historyPatch).length > 0) useHistoryStore.setState(historyPatch as any);
+      if (Object.keys(enginePatch).length > 0) useEngineStore.setState(enginePatch as any);
+    },
+  },
+);

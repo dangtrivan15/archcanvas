@@ -366,12 +366,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       isEmpty: false,
     });
 
-    // Load the graph into the core store so the canvas shows it
+    // Load the graph into the store so the canvas shows it
     const { useCoreStore } = await import('./coreStore');
-    const coreStore = useCoreStore.getState();
-    if (coreStore.textApi) {
-      coreStore.textApi.setGraph(graph);
-      coreStore._setGraph(graph);
+    const coreState = useCoreStore.getState();
+    if (coreState.textApi) {
+      coreState.textApi.setGraph(graph);
+      coreState._setGraph(graph);
     }
 
     useUIStore.getState().showToast(`Created new architecture in ${projectName}`);
@@ -405,10 +405,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       newCache.set(rootFile, entry);
       set({ loadedFiles: newCache });
 
-      // Apply to coreStore: set as active canvas + initialize undo history
+      // Apply to stores: set as active canvas + initialize undo history
       const { useCoreStore } = await import('./coreStore');
-      const coreStore = useCoreStore.getState();
-      coreStore._applyDecodedFile(
+      useCoreStore.getState()._applyDecodedFile(
         graph,
         manifest.name || rootFile,
         null,
@@ -457,8 +456,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     try {
       // Get the current graph and canvas/AI state from coreStore
       const { useCoreStore } = await import('./coreStore');
-      const coreStore = useCoreStore.getState();
-      const { graph, fileCreatedAtMs } = coreStore;
+      const coreState = useCoreStore.getState();
+      const graph = coreState.graph;
+      const fileCreatedAtMs = coreState.fileCreatedAtMs;
 
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
@@ -505,14 +505,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ loadedFiles: newCache });
 
       // Clear isDirty only if the graph hasn't changed during the async save
-      const graphChangedDuringSave = coreStore.graph !== graphAtSaveStart;
+      const graphChangedDuringSave = useCoreStore.getState().graph !== graphAtSaveStart;
+      useCoreStore.setState({ isDirty: graphChangedDuringSave });
       if (!fileCreatedAtMs) {
-        useCoreStore.setState({
-          isDirty: graphChangedDuringSave,
-          fileCreatedAtMs: Date.now(),
-        });
-      } else {
-        useCoreStore.setState({ isDirty: graphChangedDuringSave });
+        useCoreStore.setState({ fileCreatedAtMs: Date.now() });
       }
 
       console.log(`[ProjectStore] Saved ${rootFile} successfully`);
@@ -558,8 +554,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     try {
       // Get the current graph from coreStore (this is the child's graph)
       const { useCoreStore } = await import('./coreStore');
-      const coreStore = useCoreStore.getState();
-      const { graph, fileCreatedAtMs } = coreStore;
+      const coreState = useCoreStore.getState();
+      const graph = coreState.graph;
+      const fileCreatedAtMs = coreState.fileCreatedAtMs;
 
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
@@ -589,7 +586,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ loadedFiles: newCache });
 
       // Clear isDirty only if the graph hasn't changed during the async save
-      const graphChangedDuringSave = coreStore.graph !== graphAtSaveStart;
+      const graphChangedDuringSave = useCoreStore.getState().graph !== graphAtSaveStart;
       useCoreStore.setState({ isDirty: graphChangedDuringSave });
 
       console.log(`[ProjectStore] Saved child file ${filePath} successfully`);
@@ -640,9 +637,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       const { analyzeCodebaseBrowser } = await import('@/analyze/browserPipeline');
       const { useCoreStore } = await import('./coreStore');
 
-      const coreStore = useCoreStore.getState();
-      const textApi = coreStore.textApi;
-      const registry = coreStore.registry;
+      const coreState = useCoreStore.getState();
+      const textApi = coreState.textApi;
+      const registry = coreState.registry;
 
       if (!textApi || !registry) {
         throw new Error('Core engines not initialized. Please wait for the app to fully load.');
@@ -697,7 +694,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       // Load the generated graph into the canvas
       textApi.setGraph(result.graph);
-      coreStore._setGraph(result.graph);
+      useCoreStore.getState()._setGraph(result.graph);
 
       // Mark analysis as complete
       useAnalysisStore.getState().markComplete();

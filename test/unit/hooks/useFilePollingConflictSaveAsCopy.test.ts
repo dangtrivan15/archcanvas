@@ -22,14 +22,14 @@ const CONFLICT_DIALOG_PATH = path.resolve(
   __dirname,
   '../../../src/components/shared/ConflictDialog.tsx',
 );
-const CORE_STORE_PATH = path.resolve(
+const FILE_STORE_PATH = path.resolve(
   __dirname,
-  '../../../src/store/coreStore.ts',
+  '../../../src/store/fileStore.ts',
 );
 
 const useFilePollingSource = fs.readFileSync(USE_FILE_POLLING_PATH, 'utf-8');
 const conflictDialogSource = fs.readFileSync(CONFLICT_DIALOG_PATH, 'utf-8');
-const coreStoreSource = fs.readFileSync(CORE_STORE_PATH, 'utf-8');
+const coreStoreSource = fs.readFileSync(FILE_STORE_PATH, 'utf-8');
 
 describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
   let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
@@ -205,9 +205,9 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
 
   describe('Step 6: Copy file contains local changes (saveFileAs saves current graph state)', () => {
     it('saveFileAs saves the current in-memory graph (with local changes)', () => {
-      // saveFileAs uses get().graph which is the current dirty graph
+      // saveFileAs reads the graph from graphStore (the current dirty graph)
       expect(coreStoreSource).toMatch(
-        /saveFileAs[\s\S]*?const\s*\{[^}]*graph[^}]*\}\s*=\s*get\(\)/,
+        /saveFileAs[\s\S]*?useGraphStore\.getState\(\)\.graph/,
       );
     });
 
@@ -249,7 +249,7 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
 
     it('saveFileAs shows error dialog on save failure', () => {
       expect(coreStoreSource).toMatch(
-        /saveFileAs[\s\S]*?openErrorDialog/,
+        /saveFileAs[\s\S]*?error:show/,
       );
     });
   });

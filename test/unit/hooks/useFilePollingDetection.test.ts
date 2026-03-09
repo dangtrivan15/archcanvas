@@ -117,7 +117,7 @@ describe('External file modification detection (Feature #519)', () => {
 
     beforeEach(() => {
       storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
     });
@@ -158,7 +158,7 @@ describe('External file modification detection (Feature #519)', () => {
   describe('timestamp comparison flow', () => {
     it('open file sets fileLastModifiedMs via getFile()', () => {
       const storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
       // _applyDecodedFile captures lastModified
@@ -167,7 +167,7 @@ describe('External file modification detection (Feature #519)', () => {
 
     it('save updates last-known timestamp to prevent false detection', () => {
       const storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
       // Save reads back the file's lastModified after writing

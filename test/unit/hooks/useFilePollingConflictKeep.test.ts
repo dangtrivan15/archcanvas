@@ -23,7 +23,7 @@ const USE_FILE_POLLING_PATH = path.resolve(
 );
 const CORE_STORE_PATH = path.resolve(
   __dirname,
-  '../../../src/store/coreStore.ts',
+  '../../../src/store/fileStore.ts',
 );
 
 describe('Feature #526: Keep your version dismisses notification', () => {

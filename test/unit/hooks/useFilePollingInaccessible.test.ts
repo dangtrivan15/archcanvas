@@ -159,7 +159,7 @@ describe('Feature #528: Handle file deleted or moved externally during polling',
   describe('saveFileAs remains functional without fileHandle', () => {
     it('Step 5: saveFileAs in coreStore does not require existing fileHandle', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // saveFileAs opens a new file picker — it doesn't rely on existing fileHandle
       expect(source).toContain('saveArchcFileAs');
