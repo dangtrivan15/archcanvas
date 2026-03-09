@@ -13603,3 +13603,54 @@ correctly stops/starts based on whether a file is open (fileHandle + fileLastMod
 - No mock data patterns in production code
 
 #### Feature #520 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #519
+==================================================
+
+## Feature #519: Detect external file modification by timestamp comparison - PASSING
+
+### Summary:
+Added a `fileExternallyModified` boolean flag to coreStore that gets set when
+the file polling detects a timestamp mismatch (external modification). Includes
+false-positive prevention via `isSaving` guard and proper flag lifecycle management.
+
+### Changes:
+
+1. **src/store/coreStore.ts**:
+   - Added `fileExternallyModified: boolean` state (initialized to false)
+   - Added `acknowledgeExternalModification()` action to clear flag
+   - Flag cleared in `newFile()` and `_applyDecodedFile()` resets
+   - Interface updated with new state and action
+
+2. **src/hooks/useFilePolling.ts**:
+   - Added `isSaving` guard: skips detection while web app is saving (prevents false positives)
+   - Changed setState to atomically set both `fileLastModifiedMs` and `fileExternallyModified: true`
+   - Captures `previousModified` from state before updating
+   - Updated JSDoc with false-positive prevention docs
+
+3. **test/unit/hooks/useFilePollingDetection.test.ts** — 26 new tests:
+   - State initialization, set, clear via newFile/_applyDecodedFile/acknowledge
+   - Source analysis: fileExternallyModified flag, isSaving guard, atomic setState
+   - Save flow prevents false positives (source verification)
+   - Timestamp comparison flow end-to-end
+   - Dynamic state transitions: detect→acknowledge, save→no false positive
+
+4. **test/unit/hooks/useFilePolling.test.ts**:
+   - Updated source assertion for timestamp update (now uses atomic setState)
+
+### Feature steps covered:
+1. ✅ Open a .archc file and note its last-modified time (fileLastModifiedMs set)
+2. ✅ Save from web app — fileLastModifiedMs updated, no false positive (isSaving guard)
+3. ✅ External modification detected → fileExternallyModified = true
+4. ✅ Timestamp mismatch detection via polling comparison
+5. ✅ No false positives when web app saves (isSaving guard + timestamp refresh)
+
+### Verification:
+- 26/26 new tests pass
+- 54/54 total polling tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: abf57a8
+#### Feature #519 marked passing
