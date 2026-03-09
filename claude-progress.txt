@@ -13299,3 +13299,43 @@ indicator during re-fetch and updates its preview when done.
 
 #### Commit: 87a72ec
 #### Feature #502 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #506
+==================================================
+
+## Feature #506: Detect nodes with missing or default positions - PASSING
+
+### Summary:
+Created a position detection utility module that identifies when nodes at a
+navigation level have missing/default positions (all at 0,0), used to decide
+whether auto-layout should trigger automatically.
+
+### New Files:
+
+1. **src/core/layout/positionDetection.ts** — Position detection utilities:
+   - `hasDefaultPosition(node)` — checks if a single node is at (0,0)
+   - `needsAutoLayout(nodes)` — returns true when ALL nodes have default positions
+   - `classifyNodePositions(nodes)` — separates nodes into positioned/unpositioned arrays
+
+2. **test/unit/core/positionDetection.test.ts** — 19 tests:
+   - hasDefaultPosition: (0,0), non-zero x, non-zero y, both non-zero, negative, width/height/color irrelevant
+   - needsAutoLayout: empty array, all at origin, single at origin, varied positions, mixed, partial, small non-zero, children ignored
+   - classifyNodePositions: empty, all unpositioned, all positioned, mixed, reference preservation
+
+### Modified Files:
+- **src/core/layout/index.ts** — Added barrel exports for new functions
+
+### Feature steps covered:
+1. ✅ Load file where nodes have position (0,0) → system identifies as missing/default
+2. ✅ System identifies these nodes as having missing/default positions
+3. ✅ Load file where nodes have varied positions (100,200 and 300,400)
+4. ✅ System identifies these nodes as having valid saved positions
+
+### Verification:
+- 19/19 new tests pass
+- 1112/1112 core tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero app console errors (only pre-existing SSL/PWA)
+
+#### Commit: a96c46e
+#### Feature #506 marked passing
