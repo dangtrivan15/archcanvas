@@ -13654,3 +13654,28 @@ false-positive prevention via `isSaving` guard and proper flag lifecycle managem
 
 #### Commit: abf57a8
 #### Feature #519 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #507
+==================================================
+
+## Feature #507: Auto-layout triggers on file open when root nodes lack positions - PASSING
+
+### Summary:
+When opening a .archc file where all root-level nodes have default positions (0,0),
+the ELK auto-layout now runs automatically to arrange them into a readable graph.
+Files with custom positions are not affected.
+
+### Changes:
+1. src/store/coreStore.ts: Imported needsAutoLayout, added auto-layout trigger in _applyDecodedFile
+2. test/unit/core/autoLayoutOnFileOpen.test.ts: 15 tests covering all feature steps
+3. examples/create-no-positions-test.mjs: Test file generator for nodes at (0,0)
+
+### Verification:
+- 15/15 new tests pass
+- 5573/5573 total tests pass (0 regressions)
+- Browser verified: auto-layout triggers for no-positions file, NOT for custom-positions file
+- Zero console errors
+
+#### Commit: 796efcb
+#### Feature #507 marked passing
