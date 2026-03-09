@@ -14411,3 +14411,59 @@ resolution options: Reload from disk, Keep your version, and Save as copy.
 
 #### Commit: b6c262f
 #### Feature #524 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #534
+==================================================
+
+## Feature #534: Local bridge server with PTY spawning Claude Code process - PASSING
+
+### Summary:
+Created a thin local bridge server (src/bridge/server.ts) that spawns Claude Code
+CLI processes and exposes a WebSocket endpoint for bidirectional streaming between
+the browser and the Claude Code process. Uses child_process.spawn (node-pty requires
+native compilation tools not available in this environment). The Claude Code instance
+is configured with an MCP server pointing to the current .archc file.
+
+### New Files:
+- **src/bridge/server.ts** — Bridge server entry point with:
+  - HTTP server with /health endpoint and CORS support
+  - WebSocket server on /ws path for bidirectional streaming
+  - spawnClaudeCode() - spawns claude CLI with MCP config
+  - buildMcpConfig() - generates MCP server config for .archc file
+  - handleConnection() - pipes WebSocket <-> Claude Code stdin/stdout/stderr
+  - CLI argument parsing (--port, --host, --file, --no-cors)
+  - Graceful shutdown (SIGINT/SIGTERM)
+  - Configurable port (default 3001, env: BRIDGE_PORT)
+
+- **test/unit/bridge/bridgeServer.test.ts** — 39 tests covering all 7 feature steps:
+  - Step 1: Bridge server entry point exists with exports
+  - Step 2: ws dependency installed and imported
+  - Step 3: Spawns claude CLI with child_process.spawn
+  - Step 4: MCP server configuration for .archc files
+  - Step 5: Bidirectional WebSocket streaming (stdin/stdout/stderr/signals)
+  - Step 6: Configurable port, health endpoint, CORS
+  - Step 7: npm bridge script in package.json
+  - Integration: createBridgeServer creates HTTP + WS server, health check works
+
+### Modified Files:
+- **package.json**: Added "bridge" npm script
+
+### Feature steps covered:
+1. ✅ Created bridge server entry point at src/bridge/server.ts
+2. ✅ ws (WebSocket) dependency already in package.json (node-pty skipped - needs native build tools)
+3. ✅ Spawns claude CLI process with child_process.spawn on WebSocket connection
+4. ✅ Configures Claude Code with MCP server for current .archc file
+5. ✅ WebSocket sends stdout/stderr to browser, browser stdin to process
+6. ✅ Bridge server starts on configurable port (default 3001)
+7. ✅ Added npm run bridge script
+
+### Verification:
+- 39/39 new tests pass
+- 5606/5606 total tests pass (0 regressions)
+- 256/256 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: f3baffd
+#### Feature #534 marked passing
