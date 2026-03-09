@@ -15111,3 +15111,49 @@ same MCP configuration.
 
 #### Commit: 7c74ff1
 #### Feature #540 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #541
+==================================================
+
+## Feature #541: WebSocket connection management between browser and bridge - PASSING
+
+### Summary:
+Implemented and verified WebSocket connection lifecycle management between the
+browser terminal panel and bridge server. Two key changes:
+
+1. **Auto-connect on mount**: Added useEffect in TerminalPanel that auto-connects
+   to the bridge WebSocket when the panel mounts (if currently disconnected).
+2. **Updated error message**: Changed bridge_not_running message to match spec:
+   "Bridge server not running. Start it with npm run bridge"
+
+### Modified Files:
+1. **src/components/panels/TerminalPanel.tsx**: Added auto-connect useEffect on mount
+2. **src/services/bridgeConnection.ts**: Updated bridge_not_running error message
+3. **test/unit/ui/terminalPanel.test.ts**: Updated test for new error message
+
+### New Test File:
+- **test/unit/bridge/websocketConnectionManagement.test.ts** — 55 tests:
+  - Step 1: Auto-connect on mount (7 tests)
+  - Step 2: Bridge not running error message (10 tests)
+  - Step 3: Disconnect + reconnect with exponential backoff (9 tests)
+  - Step 4: Reconnect restores session (7 tests)
+  - Step 5: Clean error states, no infinite loops (12 tests)
+  - Integration: Full connection lifecycle (10 tests)
+
+### Feature steps covered:
+1. ✅ Terminal panel connects to bridge WebSocket on mount
+2. ✅ If bridge not running, show error: 'Bridge server not running. Start it with npm run bridge'
+3. ✅ If WebSocket disconnects, show message and attempt reconnect
+4. ✅ Reconnect restores the terminal session if Claude Code still running
+5. ✅ Clean error states (no infinite reconnect loops)
+
+### Verification:
+- 55/55 new tests pass
+- 480/480 bridge+terminal tests pass (0 regressions)
+- Browser: App loads with zero console errors
+- No mock data patterns in production code
+
+#### Commit: 6d26ec1
+#### Feature #541 marked passing
+#### Current stats: 544/546 passing (99.6%)
