@@ -40,6 +40,10 @@ export interface TerminalState {
   // xterm.js instance reference (set by TerminalPanel component)
   xtermInstance: Terminal | null;
 
+  // Process restart state
+  /** True when Claude Code exited and we're waiting for user to press Enter to restart */
+  awaitingRestart: boolean;
+
   // Actions
   connect: (url?: string) => void;
   disconnect: () => void;
@@ -51,6 +55,8 @@ export interface TerminalState {
   writeToXterm: (data: string) => void;
   /** Gracefully shut down: disconnect bridge and clean up state */
   cleanup: () => void;
+  /** Restart the Claude Code session after exit */
+  restartSession: () => void;
 }
 
 /** Maximum lines to keep in terminal buffer */
@@ -66,6 +72,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   maxReconnectAttempts: 0,
   lines: [],
   xtermInstance: null,
+  awaitingRestart: false,
 
   connect: (url?: string) => {
     const bridgeUrl = url ?? DEFAULT_BRIDGE_URL;
@@ -96,6 +103,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
           state.addLine('error', message.data);
         } else if (message.type === 'exit') {
           state.addLine('system', `Process exited with code ${message.code ?? 0}`);
+          // Show restart prompt and enter awaiting-restart mode
+          const exitMsg = `\r\n\x1b[33mClaude Code exited. Press Enter to restart.\x1b[0m\r\n`;
+          state.writeToXterm(exitMsg);
+          set({ awaitingRestart: true });
         }
       },
       onError: (error: BridgeError) => {
@@ -122,6 +133,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   },
 
   sendInput: (input: string) => {
+    // If awaiting restart and user presses Enter, restart the session
+    if (get().awaitingRestart && (input === '\r' || input === '\n')) {
+      get().restartSession();
+      return;
+    }
     if (bridgeConnection) {
       bridgeConnection.send(input);
     }
@@ -167,6 +183,26 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     }
   },
 
+  restartSession: () => {
+    const state = get();
+    // Clear awaiting restart flag
+    set({ awaitingRestart: false });
+    // Clear the xterm display for a clean start
+    if (state.xtermInstance) {
+      state.xtermInstance.clear();
+      state.xtermInstance.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
+    }
+    // Clear line-based output
+    set({ lines: [] });
+    // Disconnect existing connection if any
+    if (bridgeConnection) {
+      bridgeConnection.disconnect();
+      bridgeConnection = null;
+    }
+    // Reconnect — this spawns a new Claude Code process with the same MCP config
+    state.connect();
+  },
+
   cleanup: () => {
     // Gracefully disconnect the bridge connection (sends close frame → server kills process)
     if (bridgeConnection) {
@@ -178,6 +214,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       currentError: null,
       reconnectAttempt: 0,
       maxReconnectAttempts: 0,
+      awaitingRestart: false,
     });
   },
 }));

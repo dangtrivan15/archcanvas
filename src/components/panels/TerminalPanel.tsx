@@ -176,6 +176,15 @@ export function TerminalPanel() {
   const fitAddonRef = useRef<FitAddon | null>(null);
   const terminalContainerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-connect to bridge server on mount
+  useEffect(() => {
+    // Only auto-connect if currently disconnected (not already connecting/connected)
+    const state = useTerminalStore.getState();
+    if (state.connectionStatus === 'disconnected') {
+      connect();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- auto-connect once on mount
+
   // Graceful cleanup on panel unmount (tab closed, navigated away)
   useEffect(() => {
     return () => {
@@ -233,8 +242,14 @@ export function TerminalPanel() {
     }
 
     // Forward typed input to bridge server via sendInput
+    // Also handles Enter-to-restart when Claude Code process has exited
     terminal.onData((data: string) => {
-      const { sendInput: send, connectionStatus: status } = useTerminalStore.getState();
+      const { sendInput: send, connectionStatus: status, awaitingRestart } = useTerminalStore.getState();
+      if (awaitingRestart) {
+        // sendInput will detect Enter and trigger restartSession
+        send(data);
+        return;
+      }
       if (status === 'connected') {
         send(data);
       }
