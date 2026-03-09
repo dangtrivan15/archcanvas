@@ -3,14 +3,13 @@
  * Shows context indicator with focused node name and neighbor count,
  * message history, text input, and send button.
  * Uses placeholder responses (Anthropic SDK has been removed).
- * Messages are persisted via AI store → .archc file.
+ * Messages are kept in local React state (AI Zustand store has been removed).
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Send, Bot, User, Info, Loader2, Sparkles, Check } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useAIStore } from '@/store/aiStore';
 import { findNode } from '@/core/graph/graphEngine';
 
 interface ChatMessage {
@@ -25,22 +24,8 @@ export function AIChatTab() {
   const graph = useCoreStore((s) => s.graph);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
 
-  // Persisted messages from AI store (select raw conversations to avoid infinite re-render)
-  const conversations = useAIStore((s) => s.conversations);
-  const addStoreMessage = useAIStore((s) => s.addMessage);
-  const addStoreMessageToNode = useAIStore((s) => s.addMessageToNode);
-
-  // Derive store messages from conversations - scoped to selected node
-  const storeMessages = useMemo(() => {
-    if (selectedNodeId) {
-      // Show node-scoped conversation when a node is selected
-      const nodeConv = conversations.find((c) => c.scopedToNodeId === selectedNodeId);
-      return nodeConv?.messages ?? [];
-    }
-    // Fall back to global conversation when no node is selected
-    const globalConv = conversations.find((c) => !c.scopedToNodeId);
-    return globalConv?.messages ?? [];
-  }, [conversations, selectedNodeId]);
+  // Messages are now local React state (AI store removed)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   // Local UI state for streaming
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
@@ -49,20 +34,13 @@ export function AIChatTab() {
   const [appliedMessageIds, setAppliedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Derive display messages: persisted + any in-progress streaming message
+  // Derive display messages: local messages + any in-progress streaming message
   const messages: ChatMessage[] = useMemo(() => {
-    const persisted: ChatMessage[] = storeMessages.map((m) => ({
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      timestamp: m.timestampMs,
-      isStreaming: false,
-    }));
     if (streamingMessage) {
-      return [...persisted, streamingMessage];
+      return [...chatMessages, streamingMessage];
     }
-    return persisted;
-  }, [storeMessages, streamingMessage]);
+    return chatMessages;
+  }, [chatMessages, streamingMessage]);
 
   // Get the focused node
   const node = useMemo(() => {
@@ -89,8 +67,9 @@ export function AIChatTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Clear streaming state and applied tracking when switching nodes
+  // Clear messages and streaming state when switching nodes
   useEffect(() => {
+    setChatMessages([]);
     setStreamingMessage(null);
     setInputValue('');
     setAppliedMessageIds(new Set());
@@ -112,15 +91,19 @@ export function AIChatTab() {
     [selectedNodeId, suggest],
   );
 
-  /** Persist a message to the correct conversation (node-scoped or global) */
-  const persistMessage = useCallback(
-    (role: 'user' | 'assistant', content: string) => {
-      if (selectedNodeId) {
-        return addStoreMessageToNode(selectedNodeId, role, content);
-      }
-      return addStoreMessage(role, content);
+  /** Add a message to local state */
+  const addMessage = useCallback(
+    (role: 'user' | 'assistant', content: string): ChatMessage => {
+      const msg: ChatMessage = {
+        id: `msg-${Date.now()}-${role}`,
+        role,
+        content,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev, msg]);
+      return msg;
     },
-    [selectedNodeId, addStoreMessage, addStoreMessageToNode],
+    [],
   );
 
   /**
@@ -149,8 +132,8 @@ export function AIChatTab() {
         charIndex += 2; // Reveal 2 chars at a time for visible streaming effect
         if (charIndex >= fullResponse.length) {
           clearInterval(interval);
-          // Persist the completed assistant message to the store (node-scoped or global)
-          persistMessage('assistant', fullResponse);
+          // Add the completed assistant message to local state
+          addMessage('assistant', fullResponse);
           setStreamingMessage(null);
           setIsStreaming(false);
         } else {
@@ -160,21 +143,21 @@ export function AIChatTab() {
         }
       }, 20);
     },
-    [node, persistMessage],
+    [node, addMessage],
   );
 
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed || isStreaming) return;
 
-    // Persist user message to the AI store (node-scoped or global)
-    persistMessage('user', trimmed);
+    // Add user message to local state
+    addMessage('user', trimmed);
 
     setInputValue('');
     setIsStreaming(true);
 
     sendWithPlaceholder(trimmed);
-  }, [inputValue, isStreaming, sendWithPlaceholder, persistMessage]);
+  }, [inputValue, isStreaming, sendWithPlaceholder, addMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

@@ -463,10 +463,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
 
-      // Collect canvas state and AI state for persistence
+      // Collect canvas state for persistence (AI store removed — aiState is undefined)
       const canvasStoreModule = await import('@/store/canvasStore');
       const uiState = useUIStore.getState();
-      const aiStoreModule = await import('@/store/aiStore');
 
       const canvasStoreState = canvasStoreModule.useCanvasStore.getState();
       const canvasState = {
@@ -482,18 +481,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         },
       };
 
-      const aiStoreState = aiStoreModule.useAIStore.getState();
-      const aiState =
-        aiStoreState.conversations.length > 0
-          ? { conversations: aiStoreState.conversations }
-          : undefined;
-
       // Serialize the graph to protobuf binary with magic bytes and checksum
       const protoFile = graphToProto(
         graph,
         canvasState,
         undefined,
-        aiState,
+        undefined,
         fileCreatedAtMs ?? undefined,
       );
       const binaryData = await encode(protoFile);

@@ -7,7 +7,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
-import { useAIStore } from '@/store/aiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useAnnotationStore } from '@/store/annotationStore';
 import {
@@ -41,9 +40,6 @@ import {
   selectToastMessage,
   selectIsConnectMode,
   selectHasOpenDialog,
-  // AI
-  selectConversations,
-  selectHasConversations,
   // Navigation
   selectNavigationPath,
   selectIsAtRoot,
@@ -97,7 +93,6 @@ describe('Zustand Store Selectors', () => {
       templatePickerOpen: false,
       templateGalleryOpen: false,
     });
-    useAIStore.setState({ conversations: [] });
     useNavigationStore.setState({ path: [] });
     useAnnotationStore.setState({
       isDrawingMode: false,
@@ -235,21 +230,6 @@ describe('Zustand Store Selectors', () => {
     it('selectHasOpenDialog returns true when command palette is open', () => {
       useUIStore.getState().openCommandPalette();
       expect(selectHasOpenDialog(useUIStore.getState())).toBe(true);
-    });
-  });
-
-  describe('AI Store Selectors', () => {
-    it('selectConversations returns empty array initially', () => {
-      expect(selectConversations(useAIStore.getState())).toEqual([]);
-    });
-
-    it('selectHasConversations returns false initially', () => {
-      expect(selectHasConversations(useAIStore.getState())).toBe(false);
-    });
-
-    it('selectHasConversations returns true after adding message', () => {
-      useAIStore.getState().addMessage('user', 'hello');
-      expect(selectHasConversations(useAIStore.getState())).toBe(true);
     });
   });
 

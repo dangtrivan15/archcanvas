@@ -16,7 +16,6 @@
 import type { CoreStoreState } from './coreStore';
 import type { CanvasStoreState } from './canvasStore';
 import type { UIStoreState } from './uiStore';
-import type { AIStoreState } from './aiStore';
 import type { NavigationStoreState } from './navigationStore';
 import type { AnnotationStoreState } from './annotationStore';
 // ─── Core Store Selectors ─────────────────────────────────────
@@ -141,14 +140,6 @@ export const selectHasOpenDialog = (s: UIStoreState) =>
   s.settingsDialogOpen ||
   s.templatePickerOpen ||
   s.templateGalleryOpen;
-
-// ─── AI Store Selectors ───────────────────────────────────────
-
-/** Select all AI conversations */
-export const selectConversations = (s: AIStoreState) => s.conversations;
-
-/** Derived: whether any conversations exist */
-export const selectHasConversations = (s: AIStoreState) => s.conversations.length > 0;
 
 // ─── Navigation Store Selectors ───────────────────────────────
 
