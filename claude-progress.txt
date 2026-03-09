@@ -15051,3 +15051,63 @@ in all exit scenarios.
 #### Commit: 03a41a8
 #### Feature #539 marked passing
 #### Current stats: 542/546 passing (99.3%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #540
+==================================================
+
+## Feature #540: Reconnect or restart Claude Code if process dies - PASSING
+
+### Summary:
+Added restart-on-crash functionality for Claude Code sessions. When the Claude
+Code process exits (crash, external kill, or normal exit), the terminal shows
+a yellow prompt "Claude Code exited. Press Enter to restart." and waits for user
+input. Pressing Enter clears the terminal and spawns a fresh session with the
+same MCP configuration.
+
+### Modified Files:
+1. **src/store/terminalStore.ts**:
+   - Added `awaitingRestart` boolean state (starts false)
+   - Added `restartSession` action: clears awaitingRestart, clears xterm screen,
+     resets lines, disconnects bridge, reconnects with same URL
+   - Modified `onMessage` handler for 'exit': writes yellow restart prompt to
+     xterm and sets awaitingRestart = true
+   - Modified `sendInput`: intercepts Enter key when awaitingRestart to trigger
+     restartSession instead of sending to bridge
+   - Modified `cleanup`: also resets awaitingRestart to false
+   - (From previous agent) Added `cleanup()` action for graceful shutdown
+
+2. **src/components/panels/TerminalPanel.tsx**:
+   - Updated `terminal.onData` handler to check awaitingRestart and forward
+     input to sendInput (which handles the restart logic)
+
+3. **src/bridge/server.ts** (from previous agent's partial work):
+   - Better WebSocket close logging with code and reason
+   - Force-kill timer cleanup on graceful process exit
+   - Active connection count in log messages
+
+### New Test File:
+- **test/unit/bridge/reconnectOnCrash.test.ts** — 36 tests:
+  - Step 1: Process exit detection (5 tests)
+  - Step 2: Exit message and restart prompt (5 tests)
+  - Step 3: Enter key triggers restart (8 tests)
+  - Step 4: MCP access to same .archc file (6 tests)
+  - Step 5: Clean terminal after restart (5 tests)
+  - Integration: Store behavior (7 tests)
+
+### Feature steps covered:
+1. ✅ Kill the claude process externally while terminal is open
+2. ✅ Verify terminal shows exit message with restart prompt
+3. ✅ Press Enter — verify new Claude Code process spawns
+4. ✅ Verify the new session has MCP access to the same .archc file
+5. ✅ Verify terminal output is clean after restart (no garbled state)
+
+### Verification:
+- 36/36 new tests pass
+- 6112/6112 total tests pass (0 regressions)
+- 270/270 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 7c74ff1
+#### Feature #540 marked passing
