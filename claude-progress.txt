@@ -15246,3 +15246,51 @@ architecture (choose/ai-setup) was simplified to a single view.
 
 #### Commit: 2427015
 #### Feature #547 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #548
+==================================================
+
+## Feature #548: Simplify EmptyProjectDialog to 2 options: Use Claude Code and Quick Scan - PASSING
+
+### Summary:
+Verified and confirmed that the EmptyProjectDialog has been simplified to show only
+two options: "Use Claude Code" (recommended) and "Quick Scan" (basic). All removed
+fields and components are confirmed absent.
+
+### Changes Verified (implemented in commit 2427015):
+1. **src/components/shared/EmptyProjectDialog.tsx**:
+   - Removed AISetupView component and 'ai-setup' DialogView state
+   - Removed useState, ArrowLeft, Bot imports (no longer needed)
+   - Simplified to single view with "Use Claude Code" and "Quick Scan" buttons
+   - "Use Claude Code" button directly calls onUseAI (no hasApiKey check)
+   - Button label changed from "Use AI" to "Use Claude Code"
+   - Description updated to mention "Open Claude Code" instead of "Let AI"
+
+2. **src/store/uiStore.ts**:
+   - Removed hasApiKey from EmptyProjectDialogInfo
+   - Removed onConfigureApiKey from EmptyProjectDialogInfo
+   - Removed onUseExternalAgent from EmptyProjectDialogInfo
+
+3. **src/store/projectStore.ts**:
+   - Removed hasApiKey: false from buildEmptyProjectDialogInfo
+   - Removed onUseExternalAgent callback
+   - Changed onUseAI to call openRightPanel('terminal') instead of runBuiltInAI()
+
+4. **test/unit/ui/emptyProjectDialog.test.ts**:
+   - Removed all references to hasApiKey, onConfigureApiKey, onUseExternalAgent
+   - Removed AI routing logic tests (no longer applicable)
+   - Added test for simplified interface (no removed fields present)
+   - Updated dialog info shape tests
+
+5. **test/unit/ui/analysisPipelineIntegration.test.ts**: Removed old callback references
+6. **test/unit/project/loadMainArchc.test.ts**: Removed old callback references
+
+### Verification:
+- 6103/6103 unit tests pass (0 regressions)
+- 268/268 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors (0 Errors, 0 Warnings)
+- TypeScript compilation: no new errors
+- No mock data patterns in production code
+
+#### Feature #548 marked passing
