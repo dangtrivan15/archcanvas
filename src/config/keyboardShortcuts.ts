@@ -173,6 +173,13 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     macKeys: '?',
     winKeys: '?',
   },
+  {
+    id: 'toggle-terminal',
+    category: 'Canvas',
+    description: 'Toggle terminal panel',
+    macKeys: '⌘ /',
+    winKeys: 'Ctrl+/',
+  },
 
   // === Navigation ===
   {
@@ -297,6 +304,7 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'command-palette': 'canvas:command-palette',
   deselect: 'canvas:deselect',
   'shortcuts-help': 'canvas:shortcuts-help',
+  'toggle-terminal': 'panel:terminal',
   'view-zoom-in': 'view:zoom-in',
   'view-zoom-out': 'view:zoom-out',
   'view-fit-all': 'view:fit-all',

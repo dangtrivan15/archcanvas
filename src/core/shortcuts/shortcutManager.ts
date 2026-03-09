@@ -145,6 +145,14 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
     category: 'View',
     defaultBinding: 'mod+shift+l',
   },
+
+  // Panel
+  {
+    id: 'panel:terminal',
+    label: 'Toggle Terminal Panel',
+    category: 'Canvas',
+    defaultBinding: 'mod+/',
+  },
 ];
 
 /**
