@@ -1,8 +1,11 @@
 /**
- * TerminalPanel - Terminal interface for bridge server connection.
+ * TerminalPanel - xterm.js-based terminal interface for bridge server connection.
  *
- * Displays bridge connection status, terminal output, and error states
- * with clear, actionable error messages for each failure scenario:
+ * Uses xterm.js for proper terminal emulation with character-by-character streaming.
+ * Displays bridge connection status and error states with clear, actionable messages.
+ * The terminal connects to the local bridge server via WebSocket for streaming I/O.
+ *
+ * Error scenarios handled:
  * - Bridge server not running
  * - Claude Code not installed
  * - Claude Code auth expired
@@ -11,6 +14,9 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import '@xterm/xterm/css/xterm.css';
 import {
   Terminal as TerminalIcon,
   AlertCircle,
@@ -22,7 +28,6 @@ import {
   Wifi,
   WifiOff,
   Copy,
-  ArrowDownCircle,
 } from 'lucide-react';
 import { useTerminalStore } from '@/store/terminalStore';
 import type { BridgeConnectionStatus, BridgeErrorType } from '@/services/bridgeConnection';
@@ -81,15 +86,112 @@ export function TerminalPanel() {
   const lines = useTerminalStore((s) => s.lines);
   const connect = useTerminalStore((s) => s.connect);
   const disconnect = useTerminalStore((s) => s.disconnect);
+  const sendInput = useTerminalStore((s) => s.sendInput);
   const clearTerminal = useTerminalStore((s) => s.clearTerminal);
   const clearError = useTerminalStore((s) => s.clearError);
 
+  // xterm.js refs
+  const xtermContainerRef = useRef<HTMLDivElement>(null);
+  const xtermRef = useRef<Terminal | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const terminalContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new lines appear
+  // Initialize xterm.js terminal
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!xtermContainerRef.current) return;
+
+    const terminal = new Terminal({
+      cursorBlink: true,
+      fontSize: 13,
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      theme: {
+        background: '#111827', // gray-900
+        foreground: '#e5e7eb', // gray-200
+        cursor: '#60a5fa',     // blue-400
+        selectionBackground: '#374151', // gray-700
+      },
+      scrollback: 5000,
+      convertEol: true,
+      allowProposedApi: true,
+    });
+
+    const fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+
+    terminal.open(xtermContainerRef.current);
+
+    // Initial fit
+    try {
+      fitAddon.fit();
+    } catch {
+      // Container may not have dimensions yet
+    }
+
+    // Forward typed input to bridge server via sendInput
+    terminal.onData((data: string) => {
+      const { sendInput: send, connectionStatus: status } = useTerminalStore.getState();
+      if (status === 'connected') {
+        send(data);
+      }
+    });
+
+    xtermRef.current = terminal;
+    fitAddonRef.current = fitAddon;
+
+    // Store xterm instance in terminal store for direct writes
+    useTerminalStore.getState().setXtermInstance(terminal);
+
+    return () => {
+      useTerminalStore.getState().setXtermInstance(null);
+      terminal.dispose();
+      xtermRef.current = null;
+      fitAddonRef.current = null;
+    };
+  }, []);
+
+  // Handle panel resize with ResizeObserver + FitAddon
+  useEffect(() => {
+    const container = xtermContainerRef.current;
+    if (!container || !fitAddonRef.current) return;
+
+    const observer = new ResizeObserver(() => {
+      try {
+        fitAddonRef.current?.fit();
+      } catch {
+        // Ignore fit errors during layout transitions
+      }
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Write new lines to xterm terminal (for system/status/error messages)
+  useEffect(() => {
+    const terminal = xtermRef.current;
+    if (!terminal || lines.length === 0) return;
+
+    // Only write the latest line to avoid duplicates
+    const lastLine = lines[lines.length - 1];
+    if (!lastLine) return;
+
+    // Use ANSI color codes for different line types
+    const ANSI_COLORS: Record<string, string> = {
+      output: '',          // default foreground
+      error: '\x1b[31m',   // red
+      status: '\x1b[32m',  // green
+      system: '\x1b[34m',  // blue
+    };
+    const ANSI_RESET = '\x1b[0m';
+
+    const prefix = lastLine.type === 'system' ? '[system] '
+      : lastLine.type === 'error' ? '[error] '
+      : lastLine.type === 'status' ? '[status] '
+      : '';
+
+    const color = ANSI_COLORS[lastLine.type] ?? '';
+    terminal.writeln(`${color}${prefix}${lastLine.content}${ANSI_RESET}`);
   }, [lines]);
 
   const handleConnect = useCallback(() => {
@@ -104,6 +206,11 @@ export function TerminalPanel() {
     clearError();
     connect();
   }, [clearError, connect]);
+
+  const handleClearTerminal = useCallback(() => {
+    clearTerminal();
+    xtermRef.current?.clear();
+  }, [clearTerminal]);
 
   const handleCopyError = useCallback(() => {
     if (currentError) {
@@ -164,7 +271,7 @@ export function TerminalPanel() {
             </button>
           )}
           <button
-            onClick={clearTerminal}
+            onClick={handleClearTerminal}
             className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             title="Clear terminal"
             data-testid="terminal-clear-btn"
@@ -239,65 +346,39 @@ export function TerminalPanel() {
         </div>
       )}
 
-      {/* Terminal output area */}
+      {/* xterm.js terminal container */}
       <div
         ref={terminalContainerRef}
-        className="flex-1 overflow-y-auto bg-gray-900 p-2 font-mono text-xs min-h-0"
+        className="flex-1 overflow-hidden bg-gray-900 min-h-0 relative"
         data-testid="terminal-output"
       >
-        {lines.length === 0 ? (
+        {/* xterm.js mount point */}
+        <div
+          ref={xtermContainerRef}
+          className="w-full h-full"
+          data-testid="xterm-container"
+        />
+
+        {/* Empty state overlay (shown when disconnected and no output) */}
+        {connectionStatus === 'disconnected' && lines.length === 0 && (
           <div
-            className="flex flex-col items-center justify-center h-full text-gray-500"
+            className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-900"
             data-testid="terminal-empty-state"
           >
             <TerminalIcon className="w-8 h-8 mb-2 opacity-50" />
             <p className="text-sm">No terminal output</p>
-            <p className="text-xs mt-1">
-              {connectionStatus === 'disconnected'
-                ? 'Click Connect to start a bridge session'
-                : 'Waiting for output...'}
-            </p>
-            {connectionStatus === 'disconnected' && (
-              <button
-                onClick={handleConnect}
-                className="mt-3 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors flex items-center gap-1.5"
-                data-testid="terminal-connect-empty-btn"
-              >
-                <Wifi className="w-3 h-3" />
-                Connect to Bridge
-              </button>
-            )}
+            <p className="text-xs mt-1">Click Connect to start a bridge session</p>
+            <button
+              onClick={handleConnect}
+              className="mt-3 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+              data-testid="terminal-connect-empty-btn"
+            >
+              <Wifi className="w-3 h-3" />
+              Connect to Bridge
+            </button>
           </div>
-        ) : (
-          <>
-            {lines.map((line) => (
-              <div
-                key={line.id}
-                className={`${LINE_COLORS[line.type] ?? 'text-gray-200'} leading-5 whitespace-pre-wrap break-all`}
-                data-testid={`terminal-line-${line.type}`}
-              >
-                {line.type === 'system' && <span className="text-gray-500">[system] </span>}
-                {line.type === 'error' && <span className="text-red-600">[error] </span>}
-                {line.type === 'status' && <span className="text-green-600">[status] </span>}
-                {line.content}
-              </div>
-            ))}
-            <div ref={terminalEndRef} />
-          </>
         )}
       </div>
-
-      {/* Scroll-to-bottom button (shown when not at bottom) */}
-      {lines.length > 20 && (
-        <button
-          onClick={() => terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          className="absolute bottom-2 right-4 p-1 rounded-full bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors shadow-lg"
-          title="Scroll to bottom"
-          data-testid="terminal-scroll-bottom-btn"
-        >
-          <ArrowDownCircle className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 }
