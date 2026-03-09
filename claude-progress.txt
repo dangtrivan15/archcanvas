@@ -14724,3 +14724,36 @@ works at both root level and inside parent nodes (zoomed-in children).
 
 #### Commit: 6d46284
 #### Feature #513 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #526
+==================================================
+
+## Feature #526: Conflict resolution: Keep your version dismisses notification - PASSING
+
+### Summary:
+Verified that clicking "Keep your version" in the conflict dialog correctly:
+1. Dismisses the conflict dialog (closeConflictDialog sets open=false, info=null)
+2. Calls acknowledgeExternalModification (clears fileExternallyModified flag)
+3. Preserves all local changes intact (graph, nodes, edges, positions unchanged)
+4. Keeps isDirty=true (user still has unsaved changes)
+5. Allows polling to continue (future external changes trigger new conflict dialog)
+
+### New Test File:
+- **test/unit/hooks/useFilePollingConflictKeep.test.ts** — 20 tests:
+  - Step 1: Conflict dialog appears when isDirty and external modification detected
+  - Step 2: "Keep your version" dismisses dialog, does NOT reload/save
+  - Step 3: Local changes (graph, nodes, edges, positions) preserved
+  - Step 4: isDirty remains true after Keep
+  - Step 5: Polling continues, new conflicts can be detected
+  - Integration: Full flow dirty → conflict → keep → still dirty → new conflict
+
+### Verification:
+- 20/20 new tests pass
+- 5737/5737 total tests pass (0 regressions)
+- 262/262 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 9c659a7
+#### Feature #526 marked passing
