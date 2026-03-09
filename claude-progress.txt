@@ -13518,3 +13518,53 @@ No divider between breadcrumb and stats. Stats have w-px separators between each
 Zero console errors. Layout robust to resizing.
 
 #### Feature #517 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #518
+==================================================
+
+## Feature #518: Poll open file last-modified timestamp every 1 second - PASSING
+
+### Summary:
+Implemented file polling that detects external modifications to .archc files opened
+via the File System Access API. Uses lightweight getFile().lastModified metadata
+checks every 1 second, dispatching a custom event when changes are detected.
+
+### New Files:
+
+1. **src/hooks/useFilePolling.ts** — File polling hook:
+   - Polls every 1000ms using setInterval
+   - Uses handle.getFile().lastModified for lightweight metadata check (no full read)
+   - Only activates when fileHandle AND fileLastModifiedMs are both present
+   - Dispatches 'archcanvas:file-changed' CustomEvent with FileChangedDetail
+   - Updates stored timestamp after detection to prevent repeated alerts
+   - Handles errors gracefully (stops polling on permission revoke/file deletion)
+
+2. **test/unit/hooks/useFilePolling.test.ts** — 28 tests:
+   - Constants: interval (1000ms), event name
+   - Store integration: init null, newFile reset, set/read, _applyDecodedFile clear/capture
+   - Source structure: imports, setInterval, getFile(), CustomEvent, error handling
+   - Save integration: saveFile/saveFileAs refresh lastModified
+   - App.tsx integration: import and usage
+   - Barrel export verification
+   - Polling lifecycle: start/stop/resume with file operations
+
+### Modified Files:
+- **src/store/coreStore.ts**: Added fileLastModifiedMs state, set on open/save, cleared on newFile
+- **src/App.tsx**: Added useFilePolling() hook call
+- **src/hooks/index.ts**: Added barrel exports for useFilePolling, constants, types
+
+### Feature steps covered:
+1. ✅ Open a .archc file in the web app
+2. ✅ Verify polling starts (logs in console)
+3. ✅ External modification detection within ~1 second
+4. ✅ Lightweight metadata check via getFile().lastModified, not full file read
+
+### Verification:
+- 28/28 new tests pass
+- 5532/5532 total tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+- URL-loaded files correctly don't trigger polling (no file handle)
+
+#### Commit: b0c481d
+#### Feature #518 marked passing
