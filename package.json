@@ -39,7 +39,6 @@
     "dev:ios": "CAPACITOR_DEV=true npx cap run ios --livereload --external",
     "cap:build:ios": "npx vite build && npx cap sync ios",
     "build:ios": "npx vite build && npx cap sync ios",
-    "bridge": "npx tsx src/bridge/server.ts",
     "build:release": "npm run build && npx cap sync ios"
   },
   "dependencies": {

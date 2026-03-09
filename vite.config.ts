@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { VitePWA } from 'vite-plugin-pwa';
+import { viteBridgePlugin } from './src/bridge/viteBridgePlugin';
 import path from 'path';
 
 export default defineConfig({
@@ -10,6 +11,11 @@ export default defineConfig({
     // Enable HTTPS with a self-signed cert in dev mode.
     // Required for File System Access API and Web Crypto on non-localhost.
     ...(process.env.NODE_ENV !== 'test' ? [basicSsl()] : []),
+    // Integrate the Claude Code bridge server into the Vite dev server.
+    // WebSocket endpoint available at ws://<host>:<port>/bridge
+    ...(process.env.NODE_ENV !== 'test' ? [viteBridgePlugin({
+      archcFile: process.env.ARCHCANVAS_FILE,
+    })] : []),
     VitePWA({
       registerType: 'autoUpdate',
       // Include service worker in dev mode for testing

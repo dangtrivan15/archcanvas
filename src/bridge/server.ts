@@ -1,23 +1,15 @@
-#!/usr/bin/env node
 /**
- * ArchCanvas Bridge Server
+ * ArchCanvas Bridge Server - Core Module
  *
- * A thin local server that spawns a Claude Code CLI process and exposes a
- * WebSocket endpoint for bidirectional streaming between the browser and the
- * Claude Code process. The Claude Code instance is configured with an MCP
- * server pointing to the current .archc file so it can read/modify the
- * architecture.
+ * Core logic for spawning Claude Code CLI processes and managing WebSocket
+ * connections for bidirectional streaming. This module is used by the Vite
+ * bridge plugin (viteBridgePlugin.ts) to integrate into the dev server.
  *
  * Architecture:
- *   Browser <--WebSocket--> BridgeServer <--stdin/stdout--> Claude Code CLI
+ *   Browser <--WebSocket--> Vite Plugin <--stdin/stdout--> Claude Code CLI
  *
- * Usage:
- *   npx tsx src/bridge/server.ts [options]
- *   npm run bridge -- --file myarch.archc --port 3001
- *
- * Environment:
- *   BRIDGE_PORT  – Server port (default: 3001)
- *   ARCHCANVAS_FILE – Path to .archc file
+ * The bridge is automatically started when running `npm run dev`.
+ * Connect via ws://<host>:<port>/bridge (URL derived from window.location)
  */
 
 import { createServer, type Server as HttpServer } from 'node:http';
@@ -187,7 +179,7 @@ function spawnClaudeCode(archcFile?: string): ChildProcess {
  * Handle a single WebSocket connection.
  * Checks if Claude Code is installed, then spawns a process and pipes data bidirectionally.
  */
-function handleConnection(ws: WebSocket, archcFile?: string, detectionResult?: ClaudeDetectionResult): void {
+export function handleConnection(ws: WebSocket, archcFile?: string, detectionResult?: ClaudeDetectionResult): void {
   // Check Claude Code availability before spawning
   const detection = detectionResult ?? detectClaudeCode();
   if (!detection.found) {
@@ -444,100 +436,7 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<H
   });
 }
 
-// ─── CLI Entry Point ─────────────────────────────────────────
-
-async function main(): Promise<void> {
-  // Parse arguments
-  const args = process.argv.slice(2);
-  let port = parseInt(process.env['BRIDGE_PORT'] ?? '3001', 10);
-  let host = 'localhost';
-  let archcFile: string | undefined;
-  let cors = true;
-
-  for (let i = 0; i < args.length; i++) {
-    switch (args[i]) {
-      case '--port':
-      case '-p':
-        port = parseInt(args[++i] ?? '3001', 10);
-        break;
-      case '--host':
-        host = args[++i] ?? 'localhost';
-        break;
-      case '--file':
-      case '-f':
-        archcFile = args[++i];
-        break;
-      case '--no-cors':
-        cors = false;
-        break;
-      case '--help':
-      case '-h':
-        process.stdout.write(`
-ArchCanvas Bridge Server
-
-Spawns Claude Code processes with MCP access to .archc files.
-Exposes a WebSocket endpoint for bidirectional streaming.
-
-Usage:
-  npx tsx src/bridge/server.ts [options]
-  npm run bridge [-- options]
-
-Options:
-  -p, --port <port>    Server port (default: 3001, env: BRIDGE_PORT)
-  -h, --host <host>    Server host (default: localhost)
-  -f, --file <path>    Path to .archc file for MCP server
-  --no-cors            Disable CORS headers
-  --help               Show this help message
-
-Environment:
-  BRIDGE_PORT          Server port (overridden by --port)
-  ARCHCANVAS_FILE      Path to .archc file (overridden by --file)
-
-WebSocket Protocol:
-  Connect to ws://host:port/ws
-
-  Browser -> Server (JSON):
-    { "type": "stdin", "data": "user input text" }
-    { "type": "signal", "signal": "SIGINT" }
-    { "type": "resize", "cols": 80, "rows": 24 }
-
-  Server -> Browser (JSON):
-    { "type": "ready" }
-    { "type": "stdout", "data": "output text" }
-    { "type": "stderr", "data": "error text" }
-    { "type": "exit", "code": 0 }
-    { "type": "error", "message": "description" }
-`);
-        process.exit(0);
-    }
-  }
-
-  // Allow ARCHCANVAS_FILE env var as fallback
-  if (!archcFile && process.env['ARCHCANVAS_FILE']) {
-    archcFile = process.env['ARCHCANVAS_FILE'];
-  }
-
-  await startBridgeServer({ port, host, archcFile, cors });
-}
-
-// Only run main() when this file is executed directly
-const _isDirectRun = (() => {
-  if (typeof process === 'undefined' || !process.argv[1]) return false;
-  try {
-    const resolved = new URL('file://' + realpathSync(process.argv[1])).href;
-    return (
-      import.meta.url === resolved ||
-      import.meta.url.endsWith(resolved.split('/').pop()!)
-    );
-  } catch {
-    return import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
-  }
-})();
-
-if (_isDirectRun) {
-  main().catch((err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`Fatal: ${message}\n`);
-    process.exit(1);
-  });
-}
+// NOTE: The standalone CLI entry point has been removed.
+// The bridge server is now integrated into the Vite dev server as a plugin.
+// See src/bridge/viteBridgePlugin.ts for the Vite plugin.
+// Use `npm run dev` to start the dev server with the bridge automatically available.
