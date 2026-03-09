@@ -13466,3 +13466,43 @@ breadcrumb always visible (showing "Root" even at root level).
 
 #### Commit: 3fe48e0
 #### Feature #515 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #516
+==================================================
+
+## Feature #516: Breadcrumb styled as highlighted pill with bold text and colored background - PASSING
+
+### Summary:
+Styled the breadcrumb path in the status bar as a visually prominent pill/chip
+with bold text, colored background, and good contrast in both dark and standard modes.
+
+### Changes (built on top of feature #515 layout changes):
+
+1. **src/components/canvas/ModeStatusBar.tsx**:
+   - Added pill styling to mode-breadcrumb div: `rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200`
+   - Bold font-weight (`font-bold`) and 13px font size for prominence over other status bar text
+   - Padding `px-2.5 py-0.5` for pill shape
+   - Updated separator colors from gray-400 to blue-400 to match pill theme
+   - Updated hover states for breadcrumb buttons to match color scheme
+   - File-level breadcrumbs: purple-700/purple-300 for active file, purple-600/purple-300 hover
+   - Within-file breadcrumbs: blue-600/blue-100 hover
+
+2. **src/App.tsx**:
+   - Split status bar layout: breadcrumb flush-left, stats flush-right
+   - Added flex-1 spacer between breadcrumb and stats
+
+### Feature steps verified:
+1. ✅ Opened file, breadcrumb visible in status bar with pill styling
+2. ✅ Breadcrumb text is bold (font-bold class)
+3. ✅ Breadcrumb has colored background pill shape (rounded-full, bg-blue-100/bg-blue-900)
+4. ✅ Breadcrumb font is more prominent (13px vs 12px default)
+5. ✅ Good contrast: blue-800 on blue-100 (standard), blue-200 on blue-900/50 (dark)
+6. ✅ Zoomed into Backend Server, "Root > Backend Server" pill styling consistent
+
+### Verification:
+- 50/50 related breadcrumb tests pass
+- Zero console errors
+- Browser verified in dark mode with screenshots
+
+#### Feature #516 marked passing
