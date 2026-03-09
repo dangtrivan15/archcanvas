@@ -9,3 +9,9 @@ export {
   computeElkLayout,
   applyElkLayout,
 } from './elkLayout';
+
+export {
+  hasDefaultPosition,
+  needsAutoLayout,
+  classifyNodePositions,
+} from './positionDetection';
