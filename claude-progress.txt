@@ -13933,3 +13933,48 @@ by fileIO but no longer loaded into a Zustand store.
 
 #### Commit: 0783614
 #### Feature #531 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #505
+==================================================
+
+## Feature #505: Layout respects edges between currently visible nodes - PASSING
+
+### Summary:
+Verified that the existing ELK layout implementation correctly respects edges between
+visible nodes at any navigation level. The `applyElkLayout` function filters edges to
+the current navigation level and passes them to ELK's layered algorithm, which uses
+edge direction to determine node ordering (sources left, targets right for horizontal).
+
+### Implementation (already existed):
+- `elkLayout.ts`: `applyElkLayout` filters edges via `nodeIds.has(e.fromNode) && nodeIds.has(e.toNode)`
+- `elkLayout.ts`: `computeElkLayout` maps edges to ELK format with sources/targets
+- ELK layered algorithm (`elk.algorithm: 'layered'`) uses edges for node ordering
+- `graphQuery.ts`: `getEdgesAtLevel` provides level-aware edge filtering
+
+### New Test File:
+- **test/unit/core/layoutRespectsEdges.test.ts** — 14 tests:
+  - Step 1: getEdgesAtLevel returns child-level edges, excludes cross-level edges
+  - Step 2: getNodesAtLevel retrieves children when zoomed in
+  - Step 3: Source code verification of edge filtering and ELK configuration
+  - Step 4: Horizontal layout places sources left, targets right (linear chain, diamond graph)
+  - Step 4: Vertical layout places sources above targets
+  - Step 4: Child-level edges produce directional layout via applyElkLayout
+  - Step 5: No overlaps in horizontal layout, vertical layout, and nested children
+
+### Browser Verification:
+- Loaded nested-layout-test.archc (7 nodes, 5 edges)
+- Zoomed into Backend Server (breadcrumb: Root > Backend Server)
+- Triggered auto-layout (horizontal)
+- Auth Controller (left) → Auth Service (middle) → User Repository (right) ✓
+- User Controller (left) → User Repository (right) ✓
+- No overlapping nodes ✓
+- Zero console errors, zero warnings
+
+### Verification:
+- 14/14 new tests pass
+- 5485/5485 total tests pass (0 regressions)
+- No mock data patterns in production code
+
+#### Feature #505 marked passing
+#### Current stats: 518/545 passing (95.0%)
