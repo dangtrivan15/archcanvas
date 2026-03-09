@@ -101,12 +101,7 @@ describe('Feature #224: Form fields have associated labels', () => {
     });
   });
 
-  describe('AI chat input', () => {
-    it('chat message textarea has aria-label', () => {
-      const source = readSource('components/panels/AIChatTab.tsx');
-      expect(source).toContain('aria-label="Chat message"');
-    });
-  });
+  // AI chat input tests removed — AIChatTab component was removed (feature #532)
 
   describe('Toolbar inputs', () => {
     it('custom node name input has aria-label', () => {
@@ -221,11 +216,7 @@ describe('Feature #224: Form fields have associated labels', () => {
     });
 
     it('all textareas in the app have corresponding labels', () => {
-      // AIChatTab: 1 textarea with aria-label="Chat message"
-      const aiSource = readSource('components/panels/AIChatTab.tsx');
-      const aiTextareaCount = (aiSource.match(/<textarea\b/g) || []).length;
-      expect(aiTextareaCount).toBe(1);
-      expect(aiSource).toContain('aria-label="Chat message"');
+      // AIChatTab has been removed (feature #532)
 
       // NodeDetailPanel: 2 textareas - note-content (with id) and edit note (with aria-label)
       const ndpSource = readSource('components/panels/NodeDetailPanel.tsx');

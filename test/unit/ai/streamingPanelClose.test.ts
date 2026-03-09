@@ -187,33 +187,5 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
     });
   });
 
-  describe('source code verification', () => {
-    // AI client (src/ai/client.ts) has been removed along with the Anthropic SDK.
-    // The source code verification tests for AI client internals are no longer applicable.
-
-    // The following tests verified abort controller patterns in AIChatTab
-    // that were part of the Anthropic SDK streaming implementation.
-    // Since the SDK has been removed and AIChatTab now uses placeholder responses,
-    // these patterns are no longer present. The tests are updated to reflect the
-    // current simplified implementation.
-
-    it('AIChatTab manages isStreaming state', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
-
-      // Verify isStreaming state management still exists
-      expect(source).toContain('setIsStreaming');
-    });
-
-    it('user messages are added BEFORE streaming begins', async () => {
-      const fs = await import('fs');
-      const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
-
-      // In handleSend, addMessage('user', trimmed) is called before sendWithPlaceholder
-      const handleSendMatch = source.match(
-        /addMessage\('user',\s*trimmed\)[\s\S]*?sendWith(?:AI|Placeholder)/,
-      );
-      expect(handleSendMatch).not.toBeNull();
-    });
-  });
+  // Source code verification tests for AIChatTab removed — component deleted (feature #532).
 });

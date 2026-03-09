@@ -1,6 +1,6 @@
 /**
  * NodeDetailPanel - shows selected node details in the right panel.
- * Tabs: Properties, Notes, Code Refs, AI Chat.
+ * Tabs: Properties, Notes, Code Refs, Terminal.
  * Used to verify node data (id, type, displayName, args, notes, codeRefs, children).
  */
 
@@ -10,7 +10,6 @@ import {
   Plus,
   Trash2,
   Pencil,
-  MessageSquare,
   FileCode,
   Settings,
   StickyNote,
@@ -33,7 +32,6 @@ import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
-import { AIChatTab } from './AIChatTab';
 import { TerminalPanel } from './TerminalPanel';
 import type { NodeDef, ArgDef } from '@/types/nodedef';
 import { formatRelativeTime } from '@/utils/formatRelativeTime';
@@ -60,7 +58,7 @@ function renderMarkdown(content: string): string {
   return sanitizeHtml(html);
 }
 
-type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat' | 'terminal';
+type Tab = 'properties' | 'notes' | 'coderefs' | 'terminal';
 
 export function NodeDetailPanel() {
   const graph = useCoreStore((s) => s.graph);
@@ -140,7 +138,6 @@ export function NodeDetailPanel() {
           { key: 'properties' as Tab, icon: Settings, label: 'Properties' },
           { key: 'notes' as Tab, icon: StickyNote, label: 'Notes' },
           { key: 'coderefs' as Tab, icon: FileCode, label: 'Code Refs' },
-          { key: 'aichat' as Tab, icon: MessageSquare, label: 'AI Chat' },
           { key: 'terminal' as Tab, icon: Terminal, label: 'Terminal' },
         ].map(({ key, icon: Icon, label }) => (
           <button
@@ -164,10 +161,6 @@ export function NodeDetailPanel() {
       {activeTab === 'terminal' ? (
         <div className="flex-1 overflow-hidden min-h-0">
           <TerminalPanel />
-        </div>
-      ) : activeTab === 'aichat' ? (
-        <div className="flex-1 overflow-hidden min-h-0">
-          <AIChatTab />
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto p-3">
