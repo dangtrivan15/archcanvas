@@ -341,9 +341,11 @@ describe('Terminal Panel - Error State Display', () => {
       expect(terminalPanelSource).toContain('AlertCircle');
     });
 
-    it('terminal output area has dark background (terminal-like)', () => {
-      expect(terminalPanelSource).toContain('bg-gray-900');
-      expect(terminalPanelSource).toContain('font-mono');
+    it('terminal output area has theme-aware background', () => {
+      // Terminal uses bg-background (theme token) instead of hardcoded bg-gray-900
+      expect(terminalPanelSource).toContain('bg-background');
+      // Font is configured via TERMINAL_FONT_FAMILY constant passed to xterm.js
+      expect(terminalPanelSource).toContain('TERMINAL_FONT_FAMILY');
     });
   });
 });

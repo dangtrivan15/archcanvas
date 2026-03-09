@@ -13,7 +13,7 @@
  * - PTY spawn failure
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -30,7 +30,87 @@ import {
   Copy,
 } from 'lucide-react';
 import { useTerminalStore } from '@/store/terminalStore';
+import { useTheme } from '@/theme/ThemeProvider';
+import type { Theme } from '@/theme/types';
 import type { BridgeConnectionStatus, BridgeErrorType } from '@/services/bridgeConnection';
+import type { ITheme } from '@xterm/xterm';
+
+/**
+ * Convert an HSL string (e.g. "240 10% 3.9%") to a hex color string.
+ * Theme colors are stored as bare HSL values without the hsl() wrapper.
+ */
+export function hslToHex(hslStr: string): string {
+  const parts = hslStr.trim().split(/\s+/);
+  if (parts.length < 3) return '#000000';
+
+  const h = parseFloat(parts[0] ?? '0') / 360;
+  const s = parseFloat(parts[1] ?? '0') / 100;
+  const l = parseFloat(parts[2] ?? '0') / 100;
+
+  if (s === 0) {
+    const val = Math.round(l * 255);
+    const hex = val.toString(16).padStart(2, '0');
+    return `#${hex}${hex}${hex}`;
+  }
+
+  const hue2rgb = (p: number, q: number, t: number): number => {
+    let tt = t;
+    if (tt < 0) tt += 1;
+    if (tt > 1) tt -= 1;
+    if (tt < 1 / 6) return p + (q - p) * 6 * tt;
+    if (tt < 1 / 2) return q;
+    if (tt < 2 / 3) return p + (q - p) * (2 / 3 - tt) * 6;
+    return p;
+  };
+
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+
+  const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+  const g = Math.round(hue2rgb(p, q, h) * 255);
+  const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
+ * Build an xterm.js ITheme from the current ArchCanvas theme.
+ * Maps semantic theme tokens to xterm terminal colors.
+ */
+export function buildXtermTheme(theme: Theme): ITheme {
+  const colors = theme.colors;
+  return {
+    background: hslToHex(colors.background),
+    foreground: hslToHex(colors.text),
+    cursor: hslToHex(colors.iris),
+    cursorAccent: hslToHex(colors.background),
+    selectionBackground: hslToHex(colors['highlight-med']),
+    selectionForeground: hslToHex(colors.text),
+    // ANSI standard colors — mapped to theme semantic colors
+    black: hslToHex(colors.overlay),
+    red: hslToHex(colors.love),
+    green: hslToHex(colors.pine),
+    yellow: hslToHex(colors.gold),
+    blue: hslToHex(colors.foam),
+    magenta: hslToHex(colors.iris),
+    cyan: hslToHex(colors.foam),
+    white: hslToHex(colors.text),
+    // Bright variants — slightly brighter using highlight colors
+    brightBlack: hslToHex(colors.subtle),
+    brightRed: hslToHex(colors.love),
+    brightGreen: hslToHex(colors.pine),
+    brightYellow: hslToHex(colors.gold),
+    brightBlue: hslToHex(colors.foam),
+    brightMagenta: hslToHex(colors.iris),
+    brightCyan: hslToHex(colors.foam),
+    brightWhite: hslToHex(colors.text),
+    // Extended colors
+    selectionInactiveBackground: hslToHex(colors['highlight-low']),
+  };
+}
+
+/** Monospace font stack — consistent with app's code font */
+export const TERMINAL_FONT_FAMILY = 'Menlo, Monaco, "Cascadia Code", "Fira Code", "Courier New", monospace';
 
 /** Status indicator colors */
 const STATUS_COLORS: Record<BridgeConnectionStatus, string> = {
@@ -70,13 +150,6 @@ const ERROR_COLORS: Record<BridgeErrorType, string> = {
   unknown: 'border-gray-200 bg-gray-50 text-gray-800 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200',
 };
 
-/** Line type colors for terminal output */
-const LINE_COLORS: Record<string, string> = {
-  output: 'text-gray-200',
-  error: 'text-red-400',
-  status: 'text-green-400',
-  system: 'text-blue-400',
-};
 
 export function TerminalPanel() {
   const connectionStatus = useTerminalStore((s) => s.connectionStatus);
@@ -86,16 +159,51 @@ export function TerminalPanel() {
   const lines = useTerminalStore((s) => s.lines);
   const connect = useTerminalStore((s) => s.connect);
   const disconnect = useTerminalStore((s) => s.disconnect);
-  const sendInput = useTerminalStore((s) => s.sendInput);
   const clearTerminal = useTerminalStore((s) => s.clearTerminal);
   const clearError = useTerminalStore((s) => s.clearError);
+
+  // Get current theme for xterm styling
+  const { theme } = useTheme();
+
+  // Memoize the xterm theme to avoid unnecessary re-renders
+  const xtermTheme = useMemo(() => buildXtermTheme(theme), [theme]);
+
+  const cleanup = useTerminalStore((s) => s.cleanup);
 
   // xterm.js refs
   const xtermContainerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const terminalEndRef = useRef<HTMLDivElement>(null);
   const terminalContainerRef = useRef<HTMLDivElement>(null);
+
+  // Graceful cleanup on panel unmount (tab closed, navigated away)
+  useEffect(() => {
+    return () => {
+      // When the TerminalPanel unmounts, gracefully disconnect the bridge
+      // so the server can terminate the Claude Code process
+      const state = useTerminalStore.getState();
+      if (state.connectionStatus === 'connected' || state.connectionStatus === 'connecting' || state.connectionStatus === 'reconnecting') {
+        state.cleanup();
+      }
+    };
+  }, []);
+
+  // Handle browser tab close / page unload — terminate session gracefully
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Use cleanup to send WebSocket close frame before the page unloads
+      // The bridge server's ws.on('close') handler will then SIGTERM the process
+      const state = useTerminalStore.getState();
+      if (state.connectionStatus === 'connected' || state.connectionStatus === 'connecting' || state.connectionStatus === 'reconnecting') {
+        state.cleanup();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   // Initialize xterm.js terminal
   useEffect(() => {
@@ -103,14 +211,10 @@ export function TerminalPanel() {
 
     const terminal = new Terminal({
       cursorBlink: true,
+      cursorStyle: 'bar',
       fontSize: 13,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-      theme: {
-        background: '#111827', // gray-900
-        foreground: '#e5e7eb', // gray-200
-        cursor: '#60a5fa',     // blue-400
-        selectionBackground: '#374151', // gray-700
-      },
+      fontFamily: TERMINAL_FONT_FAMILY,
+      theme: xtermTheme,
       scrollback: 5000,
       convertEol: true,
       allowProposedApi: true,
@@ -148,7 +252,15 @@ export function TerminalPanel() {
       xtermRef.current = null;
       fitAddonRef.current = null;
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally init once
+
+  // Update xterm theme when app theme changes
+  useEffect(() => {
+    const terminal = xtermRef.current;
+    if (terminal) {
+      terminal.options.theme = xtermTheme;
+    }
+  }, [xtermTheme]);
 
   // Handle panel resize with ResizeObserver + FitAddon
   useEffect(() => {
@@ -228,19 +340,19 @@ export function TerminalPanel() {
     <div className="flex flex-col h-full" data-testid="terminal-panel">
       {/* Header with connection status */}
       <div
-        className="px-3 py-2 border-b flex items-center justify-between bg-gray-50 dark:bg-gray-900"
+        className="px-3 py-2 border-b flex items-center justify-between bg-surface"
         data-testid="terminal-header"
       >
         <div className="flex items-center gap-2">
-          <TerminalIcon className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Terminal</span>
+          <TerminalIcon className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-text">Terminal</span>
           <div className="flex items-center gap-1.5">
             <div
               className={`w-2 h-2 rounded-full ${STATUS_COLORS[connectionStatus]}`}
               data-testid="terminal-status-indicator"
             />
             <span
-              className="text-xs text-gray-500 dark:text-gray-400"
+              className="text-xs text-muted-foreground"
               data-testid="terminal-status-label"
             >
               {STATUS_LABELS[connectionStatus]}
@@ -253,30 +365,30 @@ export function TerminalPanel() {
           {!isConnected && !isConnecting && (
             <button
               onClick={handleConnect}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 rounded hover:bg-highlight-low transition-colors"
               title="Connect to bridge server"
               data-testid="terminal-connect-btn"
             >
-              <Plug className="w-3.5 h-3.5 text-gray-500" />
+              <Plug className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           )}
           {(isConnected || isConnecting) && (
             <button
               onClick={handleDisconnect}
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1 rounded hover:bg-highlight-low transition-colors"
               title="Disconnect from bridge server"
               data-testid="terminal-disconnect-btn"
             >
-              <PlugZap className="w-3.5 h-3.5 text-red-500" />
+              <PlugZap className="w-3.5 h-3.5 text-love" />
             </button>
           )}
           <button
             onClick={handleClearTerminal}
-            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="p-1 rounded hover:bg-highlight-low transition-colors"
             title="Clear terminal"
             data-testid="terminal-clear-btn"
           >
-            <Trash2 className="w-3.5 h-3.5 text-gray-500" />
+            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
         </div>
       </div>
@@ -349,7 +461,7 @@ export function TerminalPanel() {
       {/* xterm.js terminal container */}
       <div
         ref={terminalContainerRef}
-        className="flex-1 overflow-hidden bg-gray-900 min-h-0 relative"
+        className="flex-1 overflow-hidden bg-background min-h-0 relative"
         data-testid="terminal-output"
       >
         {/* xterm.js mount point */}
@@ -362,7 +474,7 @@ export function TerminalPanel() {
         {/* Empty state overlay (shown when disconnected and no output) */}
         {connectionStatus === 'disconnected' && lines.length === 0 && (
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-900"
+            className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-background"
             data-testid="terminal-empty-state"
           >
             <TerminalIcon className="w-8 h-8 mb-2 opacity-50" />
@@ -370,7 +482,7 @@ export function TerminalPanel() {
             <p className="text-xs mt-1">Click Connect to start a bridge session</p>
             <button
               onClick={handleConnect}
-              className="mt-3 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+              className="mt-3 px-3 py-1.5 rounded bg-iris text-background text-xs hover:opacity-90 transition-colors flex items-center gap-1.5"
               data-testid="terminal-connect-empty-btn"
             >
               <Wifi className="w-3 h-3" />
