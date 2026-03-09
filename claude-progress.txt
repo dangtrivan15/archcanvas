@@ -13376,3 +13376,53 @@ arranges only the children of that parent, respecting edges between them.
   - applyPositionsToNodes() recursively applies positions at the correct hierarchy level
 
 #### Feature #503 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #511
+==================================================
+
+## Feature #511: Drag-to-move updates stored position at any navigation level - PASSING
+
+### Summary:
+Verified that the existing implementation correctly handles drag-to-move at any
+navigation level. The graphEngine.moveNode() uses moveNodeInList() which recursively
+searches through nested children to find and update node positions. Combined with
+the navigation system (getNodesAtLevel + RenderApi.render), positions persist
+correctly through zoom-in/zoom-out cycles.
+
+### Code Analysis:
+- onNodeDragStop (Canvas.tsx:478) calls moveNode(id, x, y)
+- coreStore.moveNode calls engineMoveNode which recursively searches children
+- moveNodeInList recursively maps through node tree, updating position when ID matches
+- getNodesAtLevel traverses the navigation path to retrieve children from updated graph
+- When zooming out and back in, rendered nodes are recalculated from the graph store
+
+### New Files:
+- **test/unit/core/dragMoveNestedPosition.test.ts** — 10 tests:
+  - Child position preserved after zoom-out and zoom-in
+  - Grandchild position preserved at level 2
+  - Sibling positions unaffected during drag
+  - Parent position unaffected when child is dragged
+  - Root-level siblings unaffected by nested child drag
+  - Root-level drag works correctly
+  - Child positions preserved when parent is moved
+  - Multiple sequential drags at different levels
+  - Position consistency between findNode and getNodesAtLevel
+  - Deep nesting (4+ levels) position persistence
+
+### Browser Verification:
+- Loaded nested.archc example (7 nodes, 4 levels of nesting)
+- Zoomed into Platform node (breadcrumb: Root > Platform)
+- Dragged Frontend node from top-right to bottom-center position
+- Zoomed out to root, then zoomed back into Platform
+- Frontend node remained at the dragged position ✓
+- Zero console errors, zero JS warnings
+- No mock data patterns in production code
+
+### Verification:
+- 10/10 new tests pass
+- 1122/1122 core tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+
+#### Commit: ad73bfe
+#### Feature #511 marked passing
