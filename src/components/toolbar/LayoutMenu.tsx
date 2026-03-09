@@ -138,6 +138,9 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
           >
             <ArrowRightFromLine className="w-4 h-4" />
             <span>Auto-Layout (Horizontal)</span>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {formatBinding('mod+shift+l')}
+            </span>
           </button>
           <button
             onClick={handleAutoLayoutVertical}
@@ -254,7 +257,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
             <Maximize className="w-4 h-4" />
             <span>Fit View</span>
             <span className="ml-auto text-xs text-muted-foreground">
-              {formatBinding('mod+shift+l')}
+              {formatBinding('mod+0')}
             </span>
           </button>
         </div>

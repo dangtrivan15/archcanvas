@@ -137,6 +137,14 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
 
   // Edge Operations
   { id: 'edge:cycle-type', label: 'Cycle Edge Type', category: 'Edge', defaultBinding: 't' },
+
+  // Layout
+  {
+    id: 'layout:auto',
+    label: 'Auto-Layout (Horizontal)',
+    category: 'View',
+    defaultBinding: 'mod+shift+l',
+  },
 ];
 
 /**

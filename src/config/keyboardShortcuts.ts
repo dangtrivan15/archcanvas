@@ -142,6 +142,15 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     winKeys: 'Ctrl+1',
   },
 
+  // === Layout ===
+  {
+    id: 'auto-layout',
+    category: 'View',
+    description: 'Auto-Layout (Horizontal)',
+    macKeys: '⌘ ⇧ L',
+    winKeys: 'Ctrl+Shift+L',
+  },
+
   // === Canvas ===
   {
     id: 'command-palette',
@@ -284,6 +293,7 @@ const HELP_TO_ACTION_MAP: Record<string, string> = {
   'select-all': 'select:all',
   'select-all-edges': 'select:all-edges',
   duplicate: 'edit:duplicate',
+  'auto-layout': 'layout:auto',
   'command-palette': 'canvas:command-palette',
   deselect: 'canvas:deselect',
   'shortcuts-help': 'canvas:shortcuts-help',
