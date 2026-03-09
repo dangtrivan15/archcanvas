@@ -368,7 +368,7 @@ describe('Feature #308: File-Backed MCP Server', () => {
 
       // Delete the file to cause I/O error on save
       fs.unlinkSync(filePath);
-      fs.rmdirSync(path.dirname(filePath), { recursive: true } as any);
+      fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
 
       const ctx: ToolHandlerContext = {
         textApi: graphCtx.textApi,

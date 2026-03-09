@@ -171,6 +171,73 @@ You: I'll create that feature now.
 [calls feature_create with appropriate parameters]
 You: Done! I've added "S3 Sync Integration" to your backlog. It's now visible on the kanban board.
 
+## Testing Conventions
+
+ArchCanvas is an end-user application. **UI behavioral testing with Playwright is the priority.**
+
+### The Rule
+
+Every code change that affects what users see or interact with MUST include a
+Playwright e2e test that verifies the behavior in a real browser. Unit tests alone
+are not sufficient for UI changes — if a user would notice the change, Playwright
+must cover it.
+
+### Testing Priority
+
+1. **Playwright e2e tests** (highest priority) — Test real user workflows in the browser:
+   clicking buttons, dragging nodes, opening dialogs, saving files, keyboard shortcuts.
+   These live in `test/e2e/*.spec.ts`. This is the most important testing layer.
+2. **Unit tests** — For pure logic (graph engine, codecs, APIs). These live in `test/unit/`.
+3. **Integration tests** — For CLI and HTTP server. These live in `test/integration/`.
+
+### When Playwright Tests Are Required
+
+| Change Type | Playwright Required? |
+|------------|---------------------|
+| UI component (new or modified) | **YES** — test the interaction in the browser |
+| Dialog, panel, or toolbar change | **YES** — test open/close/submit flow |
+| Canvas interaction (click, drag, zoom, keyboard) | **YES** — test on the real canvas |
+| Bug fix for something a user reported | **YES** — regression test the exact user flow |
+| Pure engine/API change (no UI impact) | No — unit test is sufficient |
+| Refactoring with no behavior change | No — existing tests must pass |
+
+### How to Run Tests
+
+- **Unit/integration**: Always use `./scripts/test.sh` (mutex-locked, prevents OOM with parallel agents). NEVER use `npm test` or `npx vitest run` directly.
+- **Playwright e2e**: `npm run dev:ensure && npx playwright test`
+- **Single e2e test**: `npm run dev:ensure && npx playwright test test/e2e/my-test.spec.ts`
+- See `.claude/skills/testing.md` for unit test patterns and `.claude/skills/playwright-cli/SKILL.md` for browser automation details.
+
+### Playwright Test Quality
+
+- Test what the user does, not what the code does. Click buttons, not store methods.
+- Use `data-testid` attributes for reliable selectors (add them if missing).
+- Wait for elements, not for time. Prefer `page.waitForSelector()` over `page.waitForTimeout()`.
+- Each test = one user workflow. Name: `test('user can [action] and sees [result]')`.
+- Screenshots on failure are valuable — use `playwright-cli screenshot` when debugging.
+
+## Multi-Agent Development
+
+This project uses parallel subagents for concurrent development. **Avoiding file
+conflicts is critical.**
+
+### Git Worktrees
+
+Each agent MUST work in an isolated git worktree, not directly on the main working
+tree. This prevents file conflicts when multiple agents edit code simultaneously.
+
+- Create a worktree for your task: `git worktree add .worktrees/<branch-name> -b <branch-name>`
+- Do all work inside the worktree directory.
+- When done, merge your branch back to the initial working branch (typically `main`).
+- Clean up: `git worktree remove .worktrees/<branch-name>`
+
+### Conflict Avoidance
+
+- Check the proposal/task doc for which files you own. Do NOT touch files outside your scope.
+- If you need to modify a shared file, coordinate with the user first.
+- Keep commits small and focused — easier to merge and resolve conflicts.
+- Run `./scripts/test.sh` from your worktree before merging.
+
 ## Guidelines
 
 1. Be concise and helpful

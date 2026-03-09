@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "archcanvas": {
+      "command": "archcanvas",
+      "args": [
+        "mcp",
+        "--file",
+        ".archcanvas/main.archc"
+      ]
+    }
+  }
+}
