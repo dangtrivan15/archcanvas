@@ -13776,3 +13776,74 @@ into a parent node), not just at root level.
 
 #### Commit: dc2ea37
 #### Feature #504 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #544
+==================================================
+
+## Feature #544: Handle bridge server and Claude Code error states gracefully - PASSING
+
+### Summary:
+Built a complete terminal panel with bridge connection service that handles all error
+scenarios gracefully. Each error type shows a clear, actionable message in the terminal panel.
+
+### New Files:
+
+1. **src/services/bridgeConnection.ts** — Bridge connection service:
+   - WebSocket client with lifecycle management (connect/disconnect/reconnect)
+   - Error classification: classifyError() maps errors to BridgeErrorType
+   - Server error parsing: parseServerError() handles JSON error messages from bridge
+   - Reconnection with exponential backoff (max 5 attempts)
+   - Error types: bridge_not_running, claude_not_installed, claude_auth_expired,
+     websocket_dropped, pty_spawn_failed, unknown
+   - User-facing error messages with actionable instructions
+
+2. **src/store/terminalStore.ts** — Terminal state management (Zustand):
+   - Connection status tracking (disconnected/connecting/connected/reconnecting/error)
+   - Terminal line buffer (max 1000 lines) with typed lines (output/error/status/system)
+   - Actions: connect, disconnect, sendInput, clearTerminal, clearError, addLine
+   - Reconnect attempt tracking
+
+3. **src/components/panels/TerminalPanel.tsx** — Terminal UI component:
+   - Header with connection status indicator (colored dot + label)
+   - Error banner with type-specific colors and icons
+   - Actionable error messages in code-style box
+   - Copy error and Retry buttons
+   - Reconnection progress banner
+   - Terminal output area (dark bg, monospace font)
+   - Empty state with Connect to Bridge button
+   - Connect/Disconnect/Clear toolbar buttons
+
+4. **test/unit/services/bridgeConnection.test.ts** — 30 tests:
+   - Error message constants for all types
+   - classifyError for all error scenarios
+   - parseServerError for JSON and raw string errors
+   - Configuration constants validation
+
+5. **test/unit/ui/terminalPanel.test.ts** — 42 tests:
+   - Feature step 1-6 verification
+   - Terminal store state management
+   - Component structure verification
+   - Integration with right panel tabs
+   - Error state visual styling
+
+### Modified Files:
+- **src/utils/constants.ts**: Added 'terminal' to RIGHT_PANEL_TABS
+- **src/components/panels/NodeDetailPanel.tsx**: Added Terminal tab, imported TerminalPanel
+
+### Feature steps covered:
+1. ✅ Bridge not running → terminal shows 'Start bridge server with npm run bridge'
+2. ✅ Claude not installed → terminal shows install instructions
+3. ✅ Claude auth expired → terminal shows 'Run claude login to re-authenticate'
+4. ✅ WebSocket drops mid-session → terminal shows reconnect attempt
+5. ✅ PTY spawn fails → terminal shows error with details
+6. ✅ No unhandled exceptions crash the web app
+
+### Verification:
+- 72/72 new tests pass (30 bridge + 42 terminal)
+- Browser: Terminal tab visible, error banner shows on failed connection
+- Console: Only expected ERR_CONNECTION_REFUSED (no bridge running), zero app errors
+- No mock data patterns in production code
+
+#### Commit: 4cbb28a
+#### Feature #544 marked passing
