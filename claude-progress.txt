@@ -14213,3 +14213,45 @@ Notes still exist and can be created by humans, but the old AI suggestion flow
 
 #### Commit: 6fb9b25
 #### Feature #533 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #514
+==================================================
+
+## Feature #514: Positions survive across zoom-out and zoom-back-in - PASSING
+
+### Summary:
+Verified that child node positions (from auto-layout or manual drag) persist exactly
+when zooming out to root level and then zooming back into the same parent node.
+The architecture stores positions directly in the ArchNode.children tree, and
+getNodesAtLevel returns references to the same objects — positions are never lost.
+
+### New Test File:
+- **test/unit/core/positionSurviveZoomCycle.test.ts** — 15 tests:
+  - Step 1: Root and child nodes accessible at correct navigation paths
+  - Step 2: Children have original positions when zoomed in, including fractional values
+  - Step 3: Root nodes and parent position preserved after zoom-out
+  - Step 4: Children retrieved again after re-zooming into parent
+  - Step 5: Positions identical after zoom-out/zoom-back-in cycle
+  - Step 5: Moved node positions survive zoom cycle
+  - Step 5: Other children unaffected by moving one child
+  - Step 5: Deeply nested (3-level) positions survive multi-level zoom cycles
+  - Step 5: Graph positions stored in-place (reference identity verified)
+  - Source verification: navigationStore, graphQuery, graphEngine
+
+### Feature steps covered:
+1. ✅ Open a file and zoom into a parent node
+2. ✅ Note the positions of all children (from auto-layout or manual drag)
+3. ✅ Zoom out to root level
+4. ✅ Zoom back into the same parent
+5. ✅ Verify all children are at the exact same positions as before
+
+### Verification:
+- 15/15 new tests pass
+- 5503/5503 total tests pass (0 regressions)
+- 252/252 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 7cf513f
+#### Feature #514 marked passing
