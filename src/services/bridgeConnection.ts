@@ -42,8 +42,8 @@ export interface BridgeMessage {
 /** User-facing error messages for each error type */
 export const BRIDGE_ERROR_MESSAGES: Record<BridgeErrorType, { message: string; action: string }> = {
   bridge_not_running: {
-    message: 'Bridge server is not running',
-    action: 'Start bridge server with npm run bridge',
+    message: 'Bridge server not running. Start it with npm run bridge',
+    action: 'Run: npm run bridge',
   },
   claude_not_installed: {
     message: 'Claude Code is not installed',
