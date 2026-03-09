@@ -132,22 +132,22 @@ export function ModeStatusBar() {
         </div>
       )}
 
-      {/* Center: Breadcrumb path (file-level + within-file) */}
+      {/* Center: Breadcrumb path (file-level + within-file) — styled as highlighted pill */}
       <div
         data-testid="mode-breadcrumb"
-        className="flex items-center gap-1 min-w-0 text-[hsl(var(--muted-foreground))] overflow-hidden"
+        className="flex items-center gap-1 min-w-0 overflow-hidden font-bold text-[13px] leading-tight px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200"
       >
         {/* File-level breadcrumb segments */}
         {fileBreadcrumbs.map((segment, i) => {
           const isLast = i === fileBreadcrumbs.length - 1;
           return (
             <span key={`file-${i}`} className="flex items-center gap-1 shrink-0">
-              {i > 0 && <span className="text-gray-400">▸</span>}
+              {i > 0 && <span className="text-blue-400 dark:text-blue-400">▸</span>}
               <button
                 type="button"
                 data-testid={`file-breadcrumb-${i}`}
-                className={`font-bold hover:text-purple-500 hover:underline cursor-pointer transition-colors truncate max-w-[120px] ${
-                  isLast ? 'text-purple-400' : ''
+                className={`font-bold hover:underline cursor-pointer transition-colors truncate max-w-[120px] ${
+                  isLast ? 'text-purple-700 dark:text-purple-300' : 'hover:text-purple-600 dark:hover:text-purple-300'
                 }`}
                 onClick={() => handleFileSegmentClick(segment.depth)}
                 title={segment.label}
@@ -160,16 +160,16 @@ export function ModeStatusBar() {
 
         {/* Separator between file-level and within-file breadcrumbs */}
         {fileBreadcrumbs.length > 0 && (
-          <span className="text-gray-400 mx-0.5">—</span>
+          <span className="text-blue-400 dark:text-blue-400 mx-0.5">—</span>
         )}
 
-        {/* Within-file breadcrumb segments (only shown when navigated into a node) */}
-        {navigationPath.length > 0 && breadcrumbParts.map((part, i) => (
+        {/* Within-file breadcrumb segments (always shown, including Root at root level) */}
+        {breadcrumbParts.map((part, i) => (
           <span key={`nav-${i}`} className="flex items-center gap-1 shrink-0">
-            {i > 0 && <span className="text-gray-400">›</span>}
+            {i > 0 && <span className="text-blue-400 dark:text-blue-400">›</span>}
             <button
               type="button"
-              className="hover:text-blue-500 hover:underline cursor-pointer transition-colors truncate max-w-[120px]"
+              className="hover:underline cursor-pointer transition-colors truncate max-w-[120px] hover:text-blue-600 dark:hover:text-blue-100"
               onClick={() => {
                 if (part.path.length === 0) {
                   zoomToRoot();

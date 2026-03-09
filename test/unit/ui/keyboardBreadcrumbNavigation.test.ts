@@ -257,7 +257,7 @@ describe('Source Code Verification', () => {
     );
     expect(source).toContain('data-testid="mode-breadcrumb"');
     expect(source).toContain('Root');
-    expect(source).toContain('navigationPath.length > 0');
+    expect(source).toContain('breadcrumbParts.map');
   });
 
   it('ModeStatusBar imports findNode for breadcrumb name resolution', async () => {

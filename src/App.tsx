@@ -378,9 +378,11 @@ export function App() {
           data-testid="status-bar"
           style={{ height: 'clamp(1.5rem, 2vh, 2.25rem)', display: isMinimal ? 'none' : undefined }}
         >
-          <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2 justify-end">
-            {/* Breadcrumb navigation (from ModeStatusBar) */}
+          <div className="flex items-center px-2 text-xs text-[hsl(var(--muted-foreground))] flex-1 min-h-0 whitespace-nowrap gap-2">
+            {/* Breadcrumb navigation (from ModeStatusBar) - flush left */}
             <ModeStatusBar />
+            {/* Spacer pushes stats to the right */}
+            <div className="flex-1" />
             {/* Essential: dirty indicator - always visible */}
             <span data-testid="dirty-indicator">{isDirty ? '● Modified' : '✓ Saved'}</span>
             {/* Non-essential items: hidden in compact mode via CSS */}
