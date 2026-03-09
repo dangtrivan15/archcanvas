@@ -36,6 +36,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useAIStore } from '@/store/aiStore';
 import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
+import { needsAutoLayout } from '@/core/layout/positionDetection';
 
 /**
  * Core store state - the central Zustand store bridging the core engine to React.
@@ -89,6 +90,12 @@ export interface CoreStoreState {
 
   // Last-modified timestamp of the opened file (for external change detection)
   fileLastModifiedMs: number | null;
+
+  // Flag: true when external modification has been detected by file polling
+  fileExternallyModified: boolean;
+
+  // Acknowledge external modification (clears the flag without reloading)
+  acknowledgeExternalModification: () => void;
 
   // File operations
   newFile: () => void;
@@ -174,6 +181,14 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
   // Last-modified timestamp (for polling external changes)
   fileLastModifiedMs: null,
 
+  // External modification flag
+  fileExternallyModified: false,
+
+  // Acknowledge external modification (clears the flag)
+  acknowledgeExternalModification: () => {
+    set({ fileExternallyModified: false });
+  },
+
   // Computed
   nodeCount: 0,
   edgeCount: 0,
@@ -253,6 +268,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       fileHandle: null,
       fileCreatedAtMs: null,
       fileLastModifiedMs: null,
+      fileExternallyModified: false,
       nodeCount: 0,
       edgeCount: 0,
       canUndo: false,
@@ -286,6 +302,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       fileHandle,
       fileCreatedAtMs: createdAtMs ?? null,
       fileLastModifiedMs: null,
+      fileExternallyModified: false,
       nodeCount: countAllNodes(graph),
       edgeCount: graph.edges.length,
       canUndo: false,
@@ -330,6 +347,26 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     console.log(
       `[CoreStore] Opened file: ${fileName} (${countAllNodes(graph)} nodes, ${graph.edges.length} edges)`,
     );
+
+    // Auto-layout if root nodes lack saved positions (all at 0,0)
+    if (graph.nodes.length > 0 && needsAutoLayout(graph.nodes)) {
+      console.log('[CoreStore] Root nodes lack positions — triggering auto-layout');
+      // Use setTimeout to allow React to render first, then apply layout
+      setTimeout(() => {
+        get()
+          .autoLayout('horizontal', [])
+          .then(() => {
+            // After auto-layout, the file is not really "dirty" from the user's perspective
+            // since this is just initial arrangement. But we keep isDirty=true so it saves
+            // the positions on next save.
+            useCanvasStore.getState().requestFitView();
+            console.log('[CoreStore] Auto-layout on file open complete');
+          })
+          .catch((err) => {
+            console.warn('[CoreStore] Auto-layout on file open failed:', err);
+          });
+      }, 0);
+    }
   },
 
   /**
