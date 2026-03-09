@@ -14,6 +14,7 @@ import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
 import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
 import { ErrorDialog } from '@/components/shared/ErrorDialog';
 import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
+import { ConflictDialog } from '@/components/shared/ConflictDialog';
 import { EmptyProjectDialog } from '@/components/shared/EmptyProjectDialog';
 import { AnalysisProgressDialog } from '@/components/shared/AnalysisProgressDialog';
 import { ExternalAgentDialog } from '@/components/shared/ExternalAgentDialog';
@@ -331,6 +332,9 @@ export function App() {
 
         {/* Integrity Warning Dialog (overlay) */}
         <IntegrityWarningDialog />
+
+        {/* File Conflict Dialog (overlay) */}
+        <ConflictDialog />
 
         {/* Empty Project Onboarding Dialog (overlay) */}
         <EmptyProjectDialog />

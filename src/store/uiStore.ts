@@ -194,6 +194,15 @@ export interface IntegrityWarningDialogInfo {
   onProceed: () => void;
 }
 
+export interface ConflictDialogInfo {
+  /** Name of the externally modified file */
+  fileName: string;
+  /** Callback when user chooses "Reload from disk" (discard local changes) */
+  onReload: () => void;
+  /** Callback when user chooses "Save as copy" (save local to new file then reload) */
+  onSaveAsCopy: () => void;
+}
+
 export interface EmptyProjectDialogInfo {
   /** Name of the project folder */
   folderName: string;
@@ -312,6 +321,10 @@ export interface UIStoreState {
   integrityWarningDialogOpen: boolean;
   integrityWarningDialogInfo: IntegrityWarningDialogInfo | null;
 
+  // Conflict dialog (file modified externally while local unsaved changes exist)
+  conflictDialogOpen: boolean;
+  conflictDialogInfo: ConflictDialogInfo | null;
+
   // Placement mode (click-to-place node on canvas)
   placementMode: boolean;
   placementInfo: PlacementModeInfo | null;
@@ -404,6 +417,10 @@ export interface UIStoreState {
   // Integrity warning dialog actions
   openIntegrityWarningDialog: (info: IntegrityWarningDialogInfo) => void;
   closeIntegrityWarningDialog: () => void;
+
+  // Conflict dialog actions (file modified externally while local changes exist)
+  openConflictDialog: (info: ConflictDialogInfo) => void;
+  closeConflictDialog: () => void;
 
   // Placement mode actions
   enterPlacementMode: (info: PlacementModeInfo) => void;
@@ -533,6 +550,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   integrityWarningDialogOpen: false,
   integrityWarningDialogInfo: null,
 
+  conflictDialogOpen: false,
+  conflictDialogInfo: null,
+
   placementMode: false,
   placementInfo: null,
 
@@ -615,6 +635,12 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeIntegrityWarningDialog: () =>
     set({ integrityWarningDialogOpen: false, integrityWarningDialogInfo: null }),
+
+  openConflictDialog: (info) =>
+    set({ conflictDialogOpen: true, conflictDialogInfo: info }),
+
+  closeConflictDialog: () =>
+    set({ conflictDialogOpen: false, conflictDialogInfo: null }),
 
   enterPlacementMode: (info) => set({ placementMode: true, placementInfo: info }),
 
