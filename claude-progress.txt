@@ -15209,3 +15209,40 @@ on the Terminal tab. Opens terminal when closed, closes when already open.
 #### Commit: 7c4c741
 #### Feature #542 marked passing
 #### Current stats: 546/546 passing (100%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #547
+==================================================
+
+## Feature #547: Remove Configure API Key option from AI Setup dialog - PASSING
+
+### Summary:
+Removed the "Configure API Key" option from the EmptyProjectDialog AI Setup view.
+The dialog now shows only 2 options: "Use Claude Code" (recommended) and "Quick Scan" (basic).
+Also cleaned up related fields: hasApiKey, onUseExternalAgent, and the two-view
+architecture (choose/ai-setup) was simplified to a single view.
+
+### Modified Files:
+1. **src/store/uiStore.ts**: Removed onConfigureApiKey, hasApiKey, onUseExternalAgent from EmptyProjectDialogInfo
+2. **src/store/projectStore.ts**: Removed onConfigureApiKey callback, simplified buildEmptyProjectDialogInfo
+3. **src/components/shared/EmptyProjectDialog.tsx**: Simplified to single view with 2 options (Use Claude Code + Quick Scan), removed AISetupView/ChooseView sub-components, removed Settings import
+4. **test/unit/ui/emptyProjectDialog.test.ts**: Rewritten to match simplified interface (removed all onConfigureApiKey, hasApiKey, onUseExternalAgent references)
+5. **test/unit/project/loadMainArchc.test.ts**: Removed onConfigureApiKey and onUseExternalAgent from type assertions
+6. **test/unit/ui/analysisPipelineIntegration.test.ts**: Removed hasApiKey and onUseExternalAgent from test data
+
+### Feature steps covered:
+1. ✅ Remove onConfigureApiKey from EmptyProjectDialogInfo interface in uiStore.ts
+2. ✅ Remove onConfigureApiKey callback definition from projectStore.ts
+3. ✅ Update all test files to remove onConfigureApiKey references
+4. ✅ Remove the test case 'onConfigureApiKey callback can be invoked from AI setup view'
+5. ✅ TypeScript compilation succeeds (no new errors)
+6. ✅ All 58 affected tests pass (3 test files)
+7. ✅ App loads with zero console errors, dialog shows only 2 options
+
+### Verification:
+- 58/58 tests pass across 3 test files
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 2427015
+#### Feature #547 marked passing
