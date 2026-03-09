@@ -35,6 +35,7 @@ import { useUIStore } from '@/store/uiStore';
 import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
 import { needsAutoLayout } from '@/core/layout/positionDetection';
+import { useNavigationStore } from '@/store/navigationStore';
 
 /**
  * Core store state - the central Zustand store bridging the core engine to React.
@@ -950,6 +951,20 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       canUndo: undoManager.canUndo,
       canRedo: undoManager.canRedo,
     });
+
+    // Trigger auto-layout to incorporate the new node into the existing arrangement
+    const navigationPath = useNavigationStore.getState().path;
+    setTimeout(() => {
+      get()
+        .autoLayout('horizontal', navigationPath)
+        .then(() => {
+          useCanvasStore.getState().requestFitView();
+          console.log('[CoreStore] Auto-layout after addNode complete');
+        })
+        .catch((err: unknown) => {
+          console.warn('[CoreStore] Auto-layout after addNode failed:', err);
+        });
+    }, 0);
 
     return node;
   },
