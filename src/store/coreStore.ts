@@ -329,10 +329,6 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       }
     }
 
-    // AI state from file is ignored — AI store has been removed.
-    // Proto compatibility is maintained: aiState is still decoded/encoded by fileIO
-    // but no longer loaded into a Zustand store.
-
     // Request fit view so the canvas adjusts to show all nodes
     useCanvasStore.getState().requestFitView();
 
@@ -1441,9 +1437,6 @@ function _getCanvasStateForSave() {
     },
   };
 }
-
-// AI store has been removed — aiState is always undefined for saves.
-// Proto compatibility: graphToProto handles undefined aiState gracefully.
 
 /**
  * Lazy getter for the project store to avoid circular dependency.

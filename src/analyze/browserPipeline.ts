@@ -13,12 +13,8 @@ import { scanDirectoryBrowser } from './browserScanner';
 import { selectKeyFilesBrowser } from './browserFileSelector';
 import { detectProject, type ProjectProfile } from './detector';
 import {
-  inferArchitecture,
   type InferenceResult,
-  type InferenceOptions,
-  type AIMessageSender,
   type AnalysisDepth,
-  InferenceError,
 } from './inferEngine';
 import { buildGraph, type BuildResult, type BuildGraphOptions } from './graphBuilder';
 import type { ScanResult, ScanOptions } from './scanner';
@@ -46,8 +42,6 @@ export interface BrowserAnalyzeOptions {
   includeNotes?: boolean;
   /** Callback for progress events */
   onProgress?: (event: AnalyzeProgress) => void;
-  /** AI message sender (required for AI inference; falls back to structural if absent) */
-  aiSender?: AIMessageSender;
   /** AbortSignal for cancellation */
   signal?: AbortSignal;
   /** TextApi instance to use for graph building (avoids importing GraphContext) */
@@ -190,12 +184,10 @@ export async function analyzeCodebaseBrowser(
   const warnings: string[] = [];
 
   const {
-    analysisDepth = 'standard',
     maxFiles = 10000,
     maxTokenBudget = 100_000,
     includeNotes = true,
     onProgress,
-    aiSender,
     signal,
     textApi,
     registry,
@@ -293,60 +285,18 @@ export async function analyzeCodebaseBrowser(
 
   // ─── Phase 4: Inferring ───────────────────────────────────────
 
-  emitProgress('inferring', `Running AI inference (${analysisDepth} mode)...`, 50);
+  emitProgress('inferring', 'Running structural analysis...', 50);
 
   if (signal?.aborted) throw new Error('Pipeline aborted');
 
   let inferenceResult: InferenceResult;
-  let usedFallback = false;
+  inferenceResult = buildStructuralFallback(projectProfile, architectureName);
 
-  if (aiSender) {
-    try {
-      const inferenceOptions: InferenceOptions = {
-        depth: analysisDepth,
-        signal,
-        onProgress: (event) => {
-          const inferPercent = 50 + Math.round((event.step / event.totalSteps) * 25);
-          emitProgress('inferring', event.description, inferPercent);
-        },
-      };
-
-      inferenceResult = await inferArchitecture(
-        aiSender,
-        projectProfile,
-        keyFiles,
-        inferenceOptions,
-      );
-
-      emitProgress(
-        'inferring',
-        `Inference complete: ${inferenceResult.nodes.length} nodes, ${inferenceResult.edges.length} edges`,
-        75,
-        {
-          nodes: inferenceResult.nodes.length,
-          edges: inferenceResult.edges.length,
-        },
-      );
-    } catch (e) {
-      const errorMsg =
-        e instanceof InferenceError
-          ? `${e.code}: ${e.message}`
-          : e instanceof Error
-            ? e.message
-            : String(e);
-
-      warnings.push(`AI inference failed (falling back to structural analysis): ${errorMsg}`);
-      emitProgress('inferring', `AI inference failed, using structural fallback: ${errorMsg}`, 75);
-
-      inferenceResult = buildStructuralFallback(projectProfile, architectureName);
-      usedFallback = true;
-    }
-  } else {
-    warnings.push('No AI sender provided — using structural-only analysis');
-    emitProgress('inferring', 'No AI sender provided, using structural fallback', 75);
-    inferenceResult = buildStructuralFallback(projectProfile, architectureName);
-    usedFallback = true;
-  }
+  emitProgress(
+    'inferring',
+    `Structural analysis complete: ${inferenceResult.nodes.length} nodes`,
+    75,
+  );
 
   if (options.architectureName) {
     inferenceResult.architectureName = options.architectureName;
@@ -432,7 +382,6 @@ export async function analyzeCodebaseBrowser(
       edges: buildResult.edgesCreated,
       codeRefs: buildResult.codeRefsAttached,
       duration,
-      usedFallback,
     },
   );
 
