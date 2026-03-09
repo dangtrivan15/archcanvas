@@ -14358,3 +14358,56 @@ When isDirty is true, the existing behavior (setting fileExternallyModified flag
 
 #### Commit: 48c6fc9
 #### Feature #521 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #524
+==================================================
+
+## Feature #524: Show conflict dialog when file modified with unsaved local changes - PASSING
+
+### Summary:
+Implemented the conflict dialog that appears when an external modification is detected
+while the user has unsaved local changes (isDirty=true). The dialog presents three
+resolution options: Reload from disk, Keep your version, and Save as copy.
+
+### New Files:
+1. **src/components/shared/ConflictDialog.tsx** — Modal dialog component with:
+   - "Reload from disk" button: re-reads file and applies via _applyDecodedFile
+   - "Keep your version" button: acknowledges external modification, dismisses dialog
+   - "Save as copy" button: saves local changes to new file, then reloads original
+   - Focus trap, Escape key handling, backdrop click dismiss
+   - Accessible: alertdialog role, aria-modal, aria-labelledby/describedby
+   - Displays file name and clear conflict description
+
+2. **test/unit/hooks/useFilePollingConflict.test.ts** — 24 tests:
+   - Step 1: useFilePolling opens conflict dialog in isDirty branch
+   - Step 2: uiStore has conflict dialog state and actions
+   - Step 3: ConflictDialog component structure (3 buttons, testids)
+   - Step 4: Dialog explains situation clearly (file name, conflict message)
+   - Step 5: "Keep your version" acknowledges and dismisses
+   - Step 6: ConflictDialog rendered in App.tsx
+   - Step 7: Focus trap, escape key, backdrop click
+   - Step 8: ConflictDialogInfo interface exported from uiStore
+
+### Modified Files:
+- **src/store/uiStore.ts**: Added ConflictDialogInfo interface, conflictDialogOpen/Info state,
+  openConflictDialog/closeConflictDialog actions
+- **src/hooks/useFilePolling.ts**: Updated isDirty branch to open conflict dialog with
+  onReload and onSaveAsCopy callbacks
+- **src/App.tsx**: Added ConflictDialog import and rendering
+
+### Feature steps covered:
+1. ✅ Open a .archc file and make local changes (do not save)
+2. ✅ Modify the file externally via MCP agent
+3. ✅ Verify a conflict dialog appears (not auto-reload)
+4. ✅ Verify dialog shows three options: Reload from disk, Keep your version, Save as copy
+5. ✅ Verify dialog explains the situation clearly
+
+### Verification:
+- 24/24 new tests pass
+- 5550/5550 total tests pass (0 regressions)
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: b6c262f
+#### Feature #524 marked passing
