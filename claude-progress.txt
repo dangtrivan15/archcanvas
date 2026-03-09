@@ -14853,3 +14853,44 @@ and reports it. If not found, a clear error message with install URL is sent.
 
 #### Commit: e35d37e
 #### Feature #535 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #538
+==================================================
+
+## Feature #538: Spawn Claude Code with MCP config for current .archc file - PASSING
+
+### Summary:
+Verified that the bridge server correctly configures Claude Code with the ArchCanvas
+MCP server when spawning processes. The full pipeline works: bridge server accepts
+--file flag → spawnClaudeCode builds MCP config → passes --mcp-config to claude CLI →
+CLI mcp command loads .archc file → creates MCP server with TextApi + GraphContext →
+auto-saves mutations to disk → file polling detects changes and reloads canvas.
+
+### New Test File:
+- **test/unit/bridge/bridgeServerMcpConfig.test.ts** — 66 tests:
+  - Step 1: MCP config passed when spawning claude (10 tests)
+  - Step 2: MCP config points to current .archc file path (10 tests)
+  - Step 3: Claude Code can use MCP tools (12 tests)
+  - Step 4: MCP mutations modify .archc file on disk (8 tests)
+  - Step 5: File sync detects changes and reloads canvas (8 tests)
+  - Integration: buildMcpConfig, health endpoint, CLI mcp command (6 tests)
+  - Integration: MCP server tool registration and handlers (5 tests)
+  - End-to-end: Full pipeline bridge → MCP → file sync (7 tests)
+
+### Feature steps covered:
+1. ✅ Pass MCP server configuration when spawning claude process
+2. ✅ MCP config points to the current .archc file path
+3. ✅ Verify Claude Code can use MCP tools (describe, add_node, search)
+4. ✅ Verify Claude Code's MCP mutations modify the .archc file on disk
+5. ✅ Verify the file sync feature detects changes and reloads the canvas
+
+### Verification:
+- 66/66 new tests pass
+- 5877/5877 total tests pass (0 regressions)
+- 265/265 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 683f565
+#### Feature #538 marked passing
