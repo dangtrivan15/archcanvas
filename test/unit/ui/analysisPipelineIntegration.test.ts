@@ -296,7 +296,7 @@ describe('Analysis Pipeline Integration', () => {
       );
     });
 
-    it('should always pass undefined aiSender (Anthropic SDK removed)', async () => {
+    it('should not pass aiSender to browser pipeline', async () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
@@ -313,12 +313,8 @@ describe('Analysis Pipeline Integration', () => {
 
       await useProjectStore.getState().runAnalysisPipeline();
 
-      expect(mockAnalyzeCodebaseBrowser).toHaveBeenCalledWith(
-        dirHandle,
-        expect.objectContaining({
-          aiSender: undefined,
-        }),
-      );
+      const callArgs = mockAnalyzeCodebaseBrowser.mock.calls[0][1];
+      expect(callArgs).not.toHaveProperty('aiSender');
     });
 
     it('should show toast when no project folder is open', async () => {

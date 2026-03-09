@@ -4,9 +4,8 @@
  * Analyzes a codebase directory and produces a .archc architecture file.
  * This is the primary user-facing entry point for the codebase analysis feature.
  *
- * When an API key is available, uses the agentic loop engine (agentLoop.ts)
- * which lets Claude iteratively build the architecture via MCP tool calls.
- * When no API key is set, falls back to the structural-only analysis pipeline.
+ * Uses the structural analysis pipeline to detect components from project
+ * structure (languages, frameworks, data stores, infra signals).
  *
  * Output defaults to .archcanvas/main.archc inside the analyzed directory,
  * consistent with the .archcanvas/ folder convention.
@@ -85,9 +84,6 @@ export function registerAnalyzeCommand(program: Command): void {
         }
         const analysisDepth = cmdOpts.depth as AnalysisDepth;
 
-        // AI API key no longer used (Anthropic SDK removed)
-        const apiKey: string | undefined = undefined;
-
         // ─── Resolve output path ─────────────────────────────────
         // Default: .archcanvas/main.archc inside the analyzed directory
         const outputPath = cmdOpts.output
@@ -100,12 +96,12 @@ export function registerAnalyzeCommand(program: Command): void {
         try {
           // ─── Merge mode ─────────────────────────────────────────
           if (cmdOpts.merge) {
-            await handleMergeMode(resolvedDir, outputPath, analysisDepth, apiKey, cmdOpts, opts, fs);
+            await handleMergeMode(resolvedDir, outputPath, analysisDepth, cmdOpts, opts, fs);
             return;
           }
 
           // ─── Structural pipeline ───
-          await runLegacyPipeline(resolvedDir, outputPath, analysisDepth, apiKey, cmdOpts, opts);
+          await runLegacyPipeline(resolvedDir, outputPath, analysisDepth, cmdOpts, opts);
         } finally {
           restore();
         }
@@ -113,24 +109,16 @@ export function registerAnalyzeCommand(program: Command): void {
     );
 }
 
-// ── Agentic Loop Analysis ────────────────────────────────────────────────────
-
-// Agentic analysis removed (Anthropic SDK has been removed).
-
 // ── Structural Pipeline ──────────────────────────────────────────────────────
 
 async function runLegacyPipeline(
   resolvedDir: string,
   outputPath: string,
   analysisDepth: AnalysisDepth,
-  _apiKey: string | undefined,
   cmdOpts: AnalyzeCommandOptions,
   opts: GlobalOptions,
 ): Promise<void> {
   const { analyzeCodebase } = await import('@/analyze/pipeline');
-
-  // AI sender removed (Anthropic SDK has been removed)
-  const aiSender = undefined;
 
   // Progress reporting
   const phaseLabels: Record<string, string> = {
@@ -169,7 +157,6 @@ async function runLegacyPipeline(
     architectureName: cmdOpts.name,
     dryRun: cmdOpts.dryRun,
     verbose: cmdOpts.verbose,
-    aiSender,
     onProgress,
   });
 
@@ -255,15 +242,11 @@ async function handleMergeMode(
   resolvedDir: string,
   outputPath: string,
   analysisDepth: AnalysisDepth,
-  _apiKey: string | undefined,
   cmdOpts: AnalyzeCommandOptions,
   opts: GlobalOptions,
   fsModule: typeof import('node:fs'),
 ): Promise<void> {
   const { analyzeCodebase } = await import('@/analyze/pipeline');
-
-  // AI sender removed (Anthropic SDK has been removed)
-  const aiSender = undefined;
 
   const result = await analyzeCodebase(resolvedDir, {
     outputPath,
@@ -271,7 +254,6 @@ async function handleMergeMode(
     architectureName: cmdOpts.name,
     dryRun: true, // Always dry-run in merge mode to get inference
     verbose: cmdOpts.verbose,
-    aiSender,
     onProgress: () => {},
   });
 
@@ -359,6 +341,3 @@ async function handleMergeMode(
     }
   }
 }
-
-// Agentic analysis helpers (INIT_TOOL_NAMES, buildCliToolRegistry, etc.)
-// have been removed along with the Anthropic SDK.

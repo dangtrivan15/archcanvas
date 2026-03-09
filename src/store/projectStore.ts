@@ -97,12 +97,6 @@ export interface ProjectStoreState {
    */
   createBlankArchcFile: () => Promise<void>;
   /**
-   * Run the built-in AI agentic loop (API key path) on the current project folder.
-   * Uses the Anthropic SDK directly with initWithAI to iteratively build the graph.
-   * Shows progress dialog during execution. Saves result to .archcanvas/main.archc.
-   */
-  runBuiltInAI: () => Promise<void>;
-  /**
    * Run the codebase analysis pipeline on the current project folder.
    * Shows progress dialog, invokes the browser pipeline, and loads the result.
    */
@@ -463,7 +457,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
 
-      // Collect canvas state for persistence (AI store removed — aiState is undefined)
+      // Collect canvas state for persistence
       const canvasStoreModule = await import('@/store/canvasStore');
       const uiState = useUIStore.getState();
 
@@ -621,10 +615,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
   },
 
-  runBuiltInAI: async () => {
-    useUIStore.getState().showToast('AI analysis is not available. The Anthropic SDK has been removed.');
-  },
-
   runAnalysisPipeline: async () => {
     const { directoryHandle, manifest } = get();
     if (!directoryHandle || !manifest) {
@@ -648,9 +638,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         throw new Error('Core engines not initialized. Please wait for the app to fully load.');
       }
 
-      // AI sender removed (Anthropic SDK has been removed)
-      const aiSender = undefined;
-
       // Create a fresh TextApi with empty graph for the pipeline to populate
       const { TextApi } = await import('@/api/textApi');
       const freshGraph = createEmptyGraph(manifest.name || 'Architecture');
@@ -660,7 +647,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       const result = await analyzeCodebaseBrowser(directoryHandle, {
         textApi: pipelineTextApi,
         registry,
-        aiSender,
         architectureName: manifest.name || directoryHandle.name,
         onProgress: (event) => {
           useAnalysisStore.getState().setProgress(event);

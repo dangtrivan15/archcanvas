@@ -2,9 +2,9 @@
  * Feature #345: Analysis Pipeline Orchestrator
  *
  * Tests that analyzeCodebase() correctly orchestrates the full pipeline:
- * scan -> detect -> select -> infer -> build -> save
+ * scan -> detect -> select -> structural infer -> build -> save
  *
- * Uses mocked AI sender and temporary directories.
+ * Uses temporary directories with realistic project structure.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -13,11 +13,8 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import {
   analyzeCodebase,
-  type AnalyzeOptions,
   type AnalyzeProgress,
-  type PipelinePhase,
 } from '@/analyze/pipeline';
-import type { AIMessageSender } from '@/analyze/inferEngine';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -76,45 +73,6 @@ function cleanupTempDir(dir: string): void {
   }
 }
 
-function createMockAISender(): AIMessageSender {
-  return {
-    sendMessage: vi.fn().mockResolvedValue({
-      content: JSON.stringify({
-        architectureName: 'Test API',
-        architectureDescription: 'An Express API with PostgreSQL',
-        nodes: [
-          {
-            id: 'api-server',
-            type: 'service',
-            displayName: 'API Server',
-            description: 'Express.js REST API',
-            codeRefs: [{ path: 'src/index.ts', role: 'SOURCE' }],
-            children: [],
-          },
-          {
-            id: 'database',
-            type: 'database',
-            displayName: 'PostgreSQL',
-            description: 'Primary data store',
-            codeRefs: [],
-            children: [],
-          },
-        ],
-        edges: [
-          {
-            from: 'api-server',
-            to: 'database',
-            type: 'SYNC',
-            label: 'SQL queries',
-          },
-        ],
-      }),
-      stopReason: 'end_turn',
-      usage: { inputTokens: 1000, outputTokens: 500 },
-    }),
-  };
-}
-
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('Feature #345: Analysis Pipeline Orchestrator', () => {
@@ -128,14 +86,11 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     cleanupTempDir(tmpDir);
   });
 
-  it('should run the full pipeline with mocked AI and produce .archc file', async () => {
+  it('should run the full pipeline and produce .archc file', async () => {
     const outputPath = path.join(tmpDir, 'output.archc');
-    const aiSender = createMockAISender();
 
     const result = await analyzeCodebase(tmpDir, {
       outputPath,
-      analysisDepth: 'quick',
-      aiSender,
       architectureName: 'Test Architecture',
     });
 
@@ -143,10 +98,8 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     expect(result.outputPath).toBe(outputPath);
     expect(fs.existsSync(outputPath)).toBe(true);
 
-    // Should have created nodes and edges
-    expect(result.stats.nodes).toBe(2);
-    expect(result.stats.edges).toBe(1);
-    expect(result.stats.codeRefs).toBeGreaterThanOrEqual(1);
+    // Should have created at least one node (structural fallback)
+    expect(result.stats.nodes).toBeGreaterThanOrEqual(1);
 
     // Should have a project profile
     expect(result.projectProfile.projectType).toBeDefined();
@@ -154,20 +107,14 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
 
     // Should have duration
     expect(result.duration).toBeGreaterThan(0);
-
-    // AI sender should have been called
-    expect(aiSender.sendMessage).toHaveBeenCalled();
   });
 
   it('should emit progress events for each phase', async () => {
     const outputPath = path.join(tmpDir, 'output.archc');
-    const aiSender = createMockAISender();
     const progressEvents: AnalyzeProgress[] = [];
 
     await analyzeCodebase(tmpDir, {
       outputPath,
-      analysisDepth: 'quick',
-      aiSender,
       onProgress: (event) => progressEvents.push(event),
     });
 
@@ -190,61 +137,17 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
     expect(progressEvents[progressEvents.length - 1].percent).toBe(100);
   });
 
-  it('should fall back to structural analysis when AI fails', async () => {
-    const outputPath = path.join(tmpDir, 'output.archc');
-    const failingSender: AIMessageSender = {
-      sendMessage: vi.fn().mockRejectedValue(new Error('API rate limit exceeded')),
-    };
-
-    const result = await analyzeCodebase(tmpDir, {
-      outputPath,
-      analysisDepth: 'quick',
-      aiSender: failingSender,
-      architectureName: 'Fallback Test',
-    });
-
-    // Should still produce output
-    expect(result.outputPath).toBe(outputPath);
-    expect(fs.existsSync(outputPath)).toBe(true);
-
-    // Should have at least one node (structural fallback)
-    expect(result.stats.nodes).toBeGreaterThanOrEqual(1);
-
-    // Should have warning about AI failure
-    expect(result.warnings.some((w) => w.includes('AI inference failed'))).toBe(true);
-  }, 30000); // inferEngine retries with exponential backoff
-
-  it('should fall back to structural analysis when no AI sender provided', async () => {
-    const outputPath = path.join(tmpDir, 'output.archc');
-
-    const result = await analyzeCodebase(tmpDir, {
-      outputPath,
-      architectureName: 'No AI Test',
-    });
-
-    // Should still produce output
-    expect(result.outputPath).toBe(outputPath);
-    expect(fs.existsSync(outputPath)).toBe(true);
-    expect(result.stats.nodes).toBeGreaterThanOrEqual(1);
-    expect(result.warnings.some((w) => w.includes('No AI sender provided'))).toBe(true);
-  });
-
   it('should support dry-run mode', async () => {
-    const aiSender = createMockAISender();
-
     const result = await analyzeCodebase(tmpDir, {
-      analysisDepth: 'quick',
-      aiSender,
       dryRun: true,
     });
 
     // Should NOT have an output path
     expect(result.outputPath).toBeUndefined();
 
-    // Should have the inference result
+    // Should have the inference result (structural)
     expect(result.inferenceResult).toBeDefined();
-    expect(result.inferenceResult!.nodes.length).toBe(2);
-    expect(result.inferenceResult!.edges.length).toBe(1);
+    expect(result.inferenceResult!.nodes.length).toBeGreaterThanOrEqual(1);
 
     // No .archc file should have been written
     const defaultOutput = path.join(tmpDir, '.archcanvas', 'main.archc');
@@ -253,13 +156,10 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
 
   it('should support verbose mode without errors', async () => {
     const outputPath = path.join(tmpDir, 'output.archc');
-    const aiSender = createMockAISender();
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     await analyzeCodebase(tmpDir, {
       outputPath,
-      analysisDepth: 'quick',
-      aiSender,
       verbose: true,
     });
 
@@ -273,12 +173,9 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
 
   it('should generate .summary.md sidecar file', async () => {
     const outputPath = path.join(tmpDir, 'myproject.archc');
-    const aiSender = createMockAISender();
 
     await analyzeCodebase(tmpDir, {
       outputPath,
-      analysisDepth: 'quick',
-      aiSender,
     });
 
     // Sidecar should exist alongside the .archc file
@@ -290,12 +187,7 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
   });
 
   it('should use default output path when not specified', async () => {
-    const aiSender = createMockAISender();
-
-    const result = await analyzeCodebase(tmpDir, {
-      analysisDepth: 'quick',
-      aiSender,
-    });
+    const result = await analyzeCodebase(tmpDir, {});
 
     const expectedPath = path.join(tmpDir, '.archcanvas', 'main.archc');
     expect(result.outputPath).toBe(expectedPath);
@@ -303,12 +195,8 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
   });
 
   it('should override architecture name from options', async () => {
-    const aiSender = createMockAISender();
-
     const result = await analyzeCodebase(tmpDir, {
       outputPath: path.join(tmpDir, 'output.archc'),
-      analysisDepth: 'quick',
-      aiSender,
       architectureName: 'Custom Name',
       dryRun: true,
     });
@@ -317,13 +205,10 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
   });
 
   it('should respect maxFiles option', async () => {
-    const aiSender = createMockAISender();
     const progressEvents: AnalyzeProgress[] = [];
 
     await analyzeCodebase(tmpDir, {
       outputPath: path.join(tmpDir, 'output.archc'),
-      analysisDepth: 'quick',
-      aiSender,
       maxFiles: 2,
       onProgress: (event) => progressEvents.push(event),
     });
@@ -337,12 +222,8 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
   });
 
   it('should return correct AnalyzeResult shape', async () => {
-    const aiSender = createMockAISender();
-
     const result = await analyzeCodebase(tmpDir, {
       outputPath: path.join(tmpDir, 'output.archc'),
-      analysisDepth: 'quick',
-      aiSender,
     });
 
     // Verify shape
@@ -359,15 +240,12 @@ describe('Feature #345: Analysis Pipeline Orchestrator', () => {
   });
 
   it('should handle AbortSignal cancellation', async () => {
-    const aiSender = createMockAISender();
     const controller = new AbortController();
     controller.abort(); // abort immediately
 
     await expect(
       analyzeCodebase(tmpDir, {
         outputPath: path.join(tmpDir, 'output.archc'),
-        analysisDepth: 'quick',
-        aiSender,
         signal: controller.signal,
       }),
     ).rejects.toThrow('Pipeline aborted');
