@@ -13568,3 +13568,38 @@ checks every 1 second, dispatching a custom event when changes are detected.
 
 #### Commit: b0c481d
 #### Feature #518 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #520
+==================================================
+
+## Feature #520: Stop polling when no file is open and resume on file open - PASSING
+
+### Summary:
+Verified and tested the file polling lifecycle management. The useFilePolling hook
+correctly stops/starts based on whether a file is open (fileHandle + fileLastModifiedMs).
+
+### Implementation (from previous agent, feature #518):
+- useFilePolling.ts: Guards on both fileHandle and fileLastModifiedMs being present
+- When either is null, cleans up interval and returns early
+- coreStore.newFile() clears both fields → polling stops
+- coreStore._applyDecodedFile() sets fileHandle and captures fileLastModifiedMs async → polling starts
+- coreStore.saveFile/saveFileAs refresh fileLastModifiedMs → no false alarms
+
+### Tests added (8 new tests in Feature #520 describe block):
+1. Step 1: No polling when app launches with no file open
+2. Step 2: Polling starts when file is opened (handle + timestamp set)
+3. Step 3: Polling stops when new file created (handle + timestamp cleared)
+4. Step 3 (dynamic): newFile() sets both to null
+5. Step 4: Re-opening sets new fileHandle and triggers timestamp capture
+6. Step 5: Save As sets new fileHandle and captures fileLastModifiedMs
+7. useEffect cleanup clears interval when dependencies change
+8. Polling guard handles fileHandle without getFile method (fallback mode)
+
+### Verification:
+- 28/28 polling tests pass (20 existing + 8 new feature #520 tests)
+- 5532/5532 total tests pass (0 regressions)
+- Browser: App loads, no polling log when no file open, zero console errors
+- No mock data patterns in production code
+
+#### Feature #520 marked passing
