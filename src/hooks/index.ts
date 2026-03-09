@@ -10,7 +10,13 @@ export { useCachedFiles } from './useCachedFiles';
 export { useIPadExternalKeyboard } from './useIPadExternalKeyboard';
 export { useCanvasPerformance } from './useCanvasPerformance';
 export { useAutoSaveOnBlur } from './useAutoSaveOnBlur';
-export { useFilePolling, FILE_POLL_INTERVAL_MS, FILE_CHANGED_EVENT, FILE_INACCESSIBLE_MESSAGE } from './useFilePolling';
+export {
+  useFilePolling,
+  FILE_POLL_INTERVAL_MS,
+  DEBOUNCE_DELAY_MS,
+  FILE_CHANGED_EVENT,
+  FILE_INACCESSIBLE_MESSAGE,
+} from './useFilePolling';
 export type { FileChangedDetail } from './useFilePolling';
 export { useKeyboardShortcuts } from './useKeyboardShortcuts';
 export { usePropertyKeyboardNav } from './usePropertyKeyboardNav';

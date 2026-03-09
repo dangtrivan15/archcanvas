@@ -101,20 +101,20 @@ describe('Auto-reload on external modification (Feature #521)', () => {
       expect(catchBlock).not.toBeNull();
     });
 
-    it('updates fileLastModifiedMs before attempting reload', () => {
-      // To prevent re-triggering during async reload, timestamp should be updated first
-      const reloadSection = hookSource.match(
-        /!state\.isDirty[\s\S]*?fileLastModifiedMs:\s*currentModified[\s\S]*?arrayBuffer/,
+    it('updates fileLastModifiedMs immediately to prevent re-triggering', () => {
+      // Timestamp should be updated in the poll function before the debounce timer fires
+      const timestampUpdate = hookSource.match(
+        /fileLastModifiedMs:\s*currentModified/,
       );
-      expect(reloadSection).not.toBeNull();
+      expect(timestampUpdate).not.toBeNull();
     });
 
-    it('dispatches FILE_CHANGED_EVENT for both auto-reload and manual cases', () => {
-      // The event dispatch should be outside the if/else (after both branches)
-      const afterBranch = hookSource.match(
-        /\}\s*\/\/\s*Dispatch custom event for consumers[\s\S]*?CustomEvent/,
+    it('dispatches FILE_CHANGED_EVENT after debounce settles (in executeReload)', () => {
+      // The event dispatch should be in executeReload, called after debounce timer fires
+      const eventDispatch = hookSource.match(
+        /executeReload[\s\S]*?CustomEvent\(FILE_CHANGED_EVENT/,
       );
-      expect(afterBranch).not.toBeNull();
+      expect(eventDispatch).not.toBeNull();
     });
 
     it('logs auto-reload action for debugging', () => {
