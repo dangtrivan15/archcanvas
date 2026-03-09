@@ -14597,3 +14597,37 @@ auto-dismiss, role="status", aria-live="polite" for non-blocking accessibility.
 
 #### Commit: bf63fc8
 #### Feature #522 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #523
+==================================================
+
+## Feature #523: Reset undo history and canvas state on reload - PASSING
+
+### Summary:
+Verified that the existing _applyDecodedFile implementation correctly resets undo
+history and restores canvas state when a file is reloaded (auto or manual). The
+implementation already handles all feature requirements:
+- undoManager.clear() clears all undo entries
+- A fresh "Open file" snapshot is created as baseline
+- canUndo/canRedo set to false
+- Viewport restored from canvasState.viewport
+- Panel layout restored from canvasState.panelLayout
+
+### New Test File:
+- **test/unit/hooks/useFilePollingResetUndoCanvas.test.ts** — 22 tests:
+  - Step 1: UndoManager accumulates entries, undo returns previous state
+  - Step 2-3: Auto-reload calls _applyDecodedFile with canvasState
+  - Step 4: undoManager.clear() called, canUndo/canRedo false, undo() returns undefined
+  - Step 5: Viewport and panel layout restored, fitView requested
+  - Integration: Full edit→reload cycle, fresh history after reload
+
+### Verification:
+- 22/22 new tests pass
+- 5690/5690 total tests pass (0 regressions)
+- 260/260 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 5ae3b0d
+#### Feature #523 marked passing
