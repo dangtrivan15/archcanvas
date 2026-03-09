@@ -93,12 +93,11 @@ describe('External file modification detection (Feature #519)', () => {
       expect(hookSource).toMatch(/isSaving[\s\S]*?return/);
     });
 
-    it('updates both fileLastModifiedMs and fileExternallyModified atomically', () => {
-      // Both should be set in the same setState call
-      const setStateMatch = hookSource.match(
-        /setState\(\{[\s\S]*?fileLastModifiedMs:[\s\S]*?fileExternallyModified:[\s\S]*?\}/,
-      );
-      expect(setStateMatch).not.toBeNull();
+    it('updates fileLastModifiedMs immediately and fileExternallyModified after debounce', () => {
+      // fileLastModifiedMs is updated in poll(), fileExternallyModified in executeReload()
+      // Both are still set, but debounced for rapid changes
+      expect(hookSource).toContain('fileLastModifiedMs: currentModified');
+      expect(hookSource).toContain('fileExternallyModified: true');
     });
 
     it('dispatches FILE_CHANGED_EVENT with detail after flagging', () => {
