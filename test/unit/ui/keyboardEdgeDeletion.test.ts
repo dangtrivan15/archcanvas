@@ -291,20 +291,20 @@ describe('Keyboard Edge Deletion', () => {
 
   describe('Source code verification', () => {
     it('Canvas.tsx handles Delete key for edge deletion', async () => {
-      const source = await import('@/components/canvas/Canvas?raw');
+      const source = await import('@/components/canvas/hooks/useCanvasKeyboard?raw');
       expect(source.default).toContain("e.key === 'Delete'");
       expect(source.default).toContain('removeEdge');
       expect(source.default).toContain('showToast');
     });
 
     it('Canvas.tsx handles Backspace for edge deletion at root level', async () => {
-      const source = await import('@/components/canvas/Canvas?raw');
+      const source = await import('@/components/canvas/hooks/useCanvasKeyboard?raw');
       expect(source.default).toContain("e.key === 'Backspace'");
       expect(source.default).toContain('deleteSelectedEdges');
     });
 
     it('Canvas.tsx supports multi-edge deletion', async () => {
-      const source = await import('@/components/canvas/Canvas?raw');
+      const source = await import('@/components/canvas/hooks/useCanvasKeyboard?raw');
       expect(source.default).toContain('selectedEdgeIds');
       expect(source.default).toContain('Delete');
       // Multi-edge toast shows count
@@ -312,7 +312,7 @@ describe('Keyboard Edge Deletion', () => {
     });
 
     it('Edge deletion does not show confirmation dialog', async () => {
-      const source = await import('@/components/canvas/Canvas?raw');
+      const source = await import('@/components/canvas/hooks/useCanvasKeyboard?raw');
       // deleteSelectedEdges helper performs direct deletion (no dialog)
       expect(source.default).toContain('deleteSelectedEdges');
     });

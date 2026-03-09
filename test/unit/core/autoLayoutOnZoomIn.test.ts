@@ -73,7 +73,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
   describe('Step 2: Canvas.tsx triggers auto-layout on zoom-in when children lack positions', () => {
     it('Canvas.tsx imports getNodesAtLevel from graphQuery', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain("import { getNodesAtLevel } from '@/core/graph/graphQuery'");
@@ -81,7 +81,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx imports needsAutoLayout from positionDetection', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain("import { needsAutoLayout } from '@/core/layout/positionDetection'");
@@ -89,7 +89,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx uses autoLayout from coreStore', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain('autoLayout');
@@ -98,7 +98,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx checks navigationPath length to detect zoom-in', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       // Only triggers on zoom-in (path grew longer)
@@ -107,7 +107,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx calls getNodesAtLevel with current navigationPath', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain('getNodesAtLevel(graph, navigationPath)');
@@ -115,7 +115,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx calls needsAutoLayout on nodes at current level', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain('needsAutoLayout(nodesAtLevel)');
@@ -123,7 +123,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx calls autoLayout with horizontal direction and current navigationPath', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain("autoLayout('horizontal', navigationPath)");
@@ -131,7 +131,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx requests fit view after auto-layout completes', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain('requestFitView()');
@@ -139,7 +139,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('auto-layout is deferred with setTimeout to allow React to render first', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       // The auto-layout effect uses setTimeout to defer execution
@@ -148,7 +148,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('Canvas.tsx tracks previous navigation path with a ref', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       expect(source).toContain('prevNavigationPathRef');
@@ -193,7 +193,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
 
     it('zoom-out does not trigger auto-layout (path shortened)', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       // The effect checks navigationPath.length <= prevPath.length to skip zoom-out

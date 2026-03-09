@@ -103,7 +103,7 @@ describe('Feature #510: Skip auto-layout when nodes have user-set positions', ()
 
     it('Canvas.tsx checks needsAutoLayout before triggering zoom-in auto-layout', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       // Guard condition ensures auto-layout only triggers when children lack positions
@@ -141,7 +141,7 @@ describe('Feature #510: Skip auto-layout when nodes have user-set positions', ()
 
     it('zoom-out does not trigger auto-layout (only zoom-in triggers)', () => {
       const source = readFileSync(
-        join(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+        join(__dirname, '../../../src/components/canvas/hooks/useCanvasNavigation.ts'),
         'utf-8',
       );
       // Guard: only triggers when path grows (zoom-in), not when it shrinks (zoom-out)

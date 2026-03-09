@@ -234,18 +234,18 @@ describe('Breadcrumb Path Building', () => {
 });
 
 describe('Source Code Verification', () => {
-  it('Canvas.tsx handles Escape drill-out when nothing selected', async () => {
+  it('Canvas keyboard hook handles Escape drill-out when nothing selected', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
-    expect(source).toContain('drill out');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
+    expect(source).toContain('navigate up');
     expect(source).toContain('navigationPath.length > 0');
     expect(source).toContain('zoomOut()');
   });
 
-  it('Canvas.tsx handles Backspace drill-out when inside group', async () => {
+  it('Canvas keyboard hook handles Backspace drill-out when inside group', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
-    expect(source).toContain('zoom out');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
+    expect(source).toContain('zoomOut');
     expect(source).toContain('navigationPath.length > 0');
   });
 
@@ -289,7 +289,7 @@ describe('FocusZone Awareness', () => {
 
   it('Escape handler checks for dialog open state', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     expect(source).toContain('deleteDialogOpen');
     expect(source).toContain('connectionDialogOpen');
     expect(source).toContain('unsavedChangesDialogOpen');
