@@ -14507,3 +14507,56 @@ recovers exact positions, needsAutoLayout returns false (no re-trigger).
 
 #### Commit: 518b17a
 #### Feature #509 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #529
+==================================================
+
+## Feature #529: Debounce rapid consecutive external changes - PASSING
+
+### Summary:
+Added debounce logic to the useFilePolling hook so that when multiple external
+writes happen in quick succession (e.g., MCP agent making several mutations),
+the reload only triggers once after the changes settle (DEBOUNCE_DELAY_MS = 1500ms),
+not on every individual write.
+
+### Modified Files:
+1. **src/hooks/useFilePolling.ts**:
+   - Added DEBOUNCE_DELAY_MS constant (1500ms)
+   - Added debounceRef and burstStartTimestampRef refs
+   - Extracted reload logic into executeReload() function
+   - Poll function now updates timestamp immediately but debounces the reload
+   - Debounce timer resets on each new change during burst
+   - FILE_CHANGED_EVENT dispatched once per burst with full range
+   - Cleanup clears debounce timer on unmount, guard failure, file inaccessible
+   - Updated docstring to describe debouncing behavior
+
+2. **src/hooks/index.ts**: Added DEBOUNCE_DELAY_MS to barrel export
+
+3. **test/unit/hooks/useFilePollingAutoReload.test.ts**: Updated 2 source pattern
+   assertions to match debounced structure
+
+4. **test/unit/hooks/useFilePollingDetection.test.ts**: Updated 1 source pattern
+   assertion to match debounced structure
+
+### New Test File:
+- **test/unit/hooks/useFilePollingDebounce.test.ts** — 24 tests:
+  - Step 1: DEBOUNCE_DELAY_MS exported, positive, > FILE_POLL_INTERVAL_MS
+  - Step 2: Burst timestamp tracking and reset
+  - Step 3: executeReload called from setTimeout, not inline in poll
+  - Step 4: Cleanup on unmount, guard failure, and file inaccessible
+  - Step 5: Barrel export verification
+  - Step 6: Conflict dialog also debounced
+  - Step 7: Logging indicates debounce reset
+  - Step 8: Store state simulation for rapid updates
+  - Step 9: FILE_CHANGED_EVENT captures full burst range
+
+### Verification:
+- 24/24 new tests pass
+- 5630/5630 total tests pass (0 regressions)
+- 257/257 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 19c1b4c
+#### Feature #529 marked passing
