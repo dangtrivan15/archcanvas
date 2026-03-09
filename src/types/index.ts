@@ -37,7 +37,6 @@ export type {
   AddNoteParams,
   UpdateNodeParams,
   AddCodeRefParams,
-  SuggestParams,
 } from './api';
 
 // AI types

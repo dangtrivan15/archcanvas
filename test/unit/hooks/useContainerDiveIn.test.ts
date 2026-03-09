@@ -131,7 +131,6 @@ function makeContainerNode(overrides: Partial<CanvasNode> = {}): CanvasNode {
       refSource: 'child-system.archc',
       hasChildren: false,
       noteCount: 0,
-      pendingSuggestionCount: 0,
       codeRefCount: 0,
     } as CanvasNodeData,
     ...overrides,

@@ -24,8 +24,6 @@ export {
   AddCodeRefSchema,
   UpdateNodeSchema,
   UpdateEdgeSchema,
-  SuggestSchema,
-  ResolveSuggestionActionSchema,
   FileNameSchema,
   formatValidationError,
 } from './validation';

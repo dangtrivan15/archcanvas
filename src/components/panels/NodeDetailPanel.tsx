@@ -14,7 +14,6 @@ import {
   Settings,
   StickyNote,
   Check,
-  XCircle,
   FileText,
   Database,
   Cloud,
@@ -1020,7 +1019,6 @@ function NotesTab({
   onNoteAuthorChange: (v: string) => void;
   onAddNote: (tags?: string[]) => void;
 }) {
-  const resolveSuggestion = useCoreStore((s) => s.resolveSuggestion);
   const removeNote = useCoreStore((s) => s.removeNote);
   const updateNote = useCoreStore((s) => s.updateNote);
   const [isEditing, setIsEditing] = useState(false);
@@ -1243,20 +1241,8 @@ function NotesTab({
           </div>
         ) : (
           sortedNotes.map((note) => {
-            // Compute note card styles based on status
-            const isAccepted = note.status === 'accepted';
-            const isDismissed = note.status === 'dismissed';
-            const cardClassName = [
-              'border rounded-lg p-3',
-              isAccepted ? 'bg-green-50 border-green-300' : '',
-              isDismissed ? 'bg-gray-50 border-gray-200 opacity-60' : '',
-              !isAccepted && !isDismissed ? 'bg-white' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
-
             return (
-              <div key={note.id} className={cardClassName} data-testid={`note-${note.id}`}>
+              <div key={note.id} className="border rounded-lg p-3 bg-white" data-testid={`note-${note.id}`}>
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
                     {note.author.toLowerCase() === 'ai' ? (
@@ -1271,26 +1257,6 @@ function NotesTab({
                     ) : (
                       <span className="text-xs font-medium text-gray-700" data-testid="note-author">
                         {note.author}
-                      </span>
-                    )}
-                    {/* Accepted visual indicator */}
-                    {isAccepted && (
-                      <span
-                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200"
-                        data-testid="accepted-indicator"
-                      >
-                        <CheckCircle className="w-3 h-3" />
-                        Accepted
-                      </span>
-                    )}
-                    {/* Dismissed visual indicator */}
-                    {isDismissed && (
-                      <span
-                        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-300"
-                        data-testid="dismissed-indicator"
-                      >
-                        <XCircle className="w-3 h-3" />
-                        Dismissed
                       </span>
                     )}
                   </div>
@@ -1344,7 +1310,7 @@ function NotesTab({
                   </div>
                 ) : (
                   <div
-                    className={`text-sm prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 ${isDismissed ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                    className="text-sm prose prose-sm max-w-none [&_a]:text-blue-600 [&_a]:underline [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_pre]:text-xs [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 text-gray-800"
                     data-testid="note-content"
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
                   />
@@ -1390,27 +1356,6 @@ function NotesTab({
                         </span>
                       );
                     })}
-                  </div>
-                )}
-                {/* Accept/Dismiss buttons for pending AI suggestions */}
-                {note.status === 'pending' && (
-                  <div className="flex gap-2 mt-2" data-testid="suggestion-actions">
-                    <button
-                      onClick={() => resolveSuggestion(nodeId, note.id, 'accepted')}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 touch-target"
-                      data-testid="accept-suggestion"
-                    >
-                      <Check className="w-3 h-3" />
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => resolveSuggestion(nodeId, note.id, 'dismissed')}
-                      className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 touch-target"
-                      data-testid="dismiss-suggestion"
-                    >
-                      <XCircle className="w-3 h-3" />
-                      Dismiss
-                    </button>
                   </div>
                 )}
               </div>

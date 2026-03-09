@@ -209,10 +209,9 @@ describe('RenderApi transforms graph to React Flow nodes', () => {
     }
   });
 
-  it('CanvasNode data has zero counts for notes, suggestions, codeRefs', () => {
+  it('CanvasNode data has zero counts for notes and codeRefs', () => {
     for (const node of canvasNodes) {
       expect(node.data.noteCount).toBe(0);
-      expect(node.data.pendingSuggestionCount).toBe(0);
       expect(node.data.codeRefCount).toBe(0);
     }
   });

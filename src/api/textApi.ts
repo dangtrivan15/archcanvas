@@ -5,7 +5,7 @@
  * Query methods:  describe, listNodes, getNode, getEdges, getNodeDef, search, getAIContext
  * Mutation methods: addNode, addEdge, addNote, removeNote, addCodeRef,
  *                   updateNode, updateNodeColor, updateEdge, removeNode, removeEdge,
- *                   suggest, updateNote, resolveSuggestion
+ *                   updateNote
  */
 
 import type { ArchGraph, ArchNode, ArchEdge, Note } from '@/types/graph';
@@ -20,7 +20,6 @@ import type {
   AddNoteParams,
   AddCodeRefParams,
   UpdateNodeParams,
-  SuggestParams,
 } from '@/types/api';
 import type { AIContext } from '@/types/ai';
 import type { NodeDef } from '@/types/nodedef';
@@ -40,7 +39,6 @@ import {
   updateNodeColor as engineUpdateNodeColor,
   addNoteToNode,
   addNoteToEdge,
-  updateNoteStatus,
   updateNoteContent,
   addCodeRef as engineAddCodeRef,
   removeNoteFromNode,
@@ -52,12 +50,10 @@ import {
   AddNoteSchema,
   AddCodeRefSchema,
   UpdateNodeSchema,
-  SuggestSchema,
   NodeIdSchema,
   EdgeIdSchema,
   NoteIdSchema,
   DescribeOptionsSchema,
-  ResolveSuggestionActionSchema,
   formatValidationError,
 } from './validation';
 
@@ -504,31 +500,6 @@ export class TextApi {
   }
 
   /**
-   * Create an AI suggestion attached as a pending note on a node.
-   * The suggestion can later be accepted or dismissed via {@link resolveSuggestion}.
-   *
-   * @param params - Suggestion parameters (nodeId, content, optional suggestionType)
-   * @returns The created Note with status 'pending' and author 'ai'
-   * @throws Error if params fail validation
-   */
-  suggest(params: SuggestParams): Note {
-    const parsed = SuggestSchema.safeParse(params);
-    if (!parsed.success) {
-      throw new Error(`Invalid suggest params: ${formatValidationError(parsed.error)}`);
-    }
-
-    const note = createNote({
-      author: 'ai',
-      content: params.content,
-      status: 'pending',
-      suggestionType: params.suggestionType,
-    });
-
-    this.graph = addNoteToNode(this.graph, params.nodeId, note);
-    return note;
-  }
-
-  /**
    * Update a note's content.
    */
   updateNote(nodeId: string, noteId: string, content: string): void {
@@ -543,29 +514,6 @@ export class TextApi {
     this.graph = updateNoteContent(this.graph, nodeId, noteId, content);
   }
 
-  /**
-   * Accept or dismiss an AI suggestion (changes the note's status).
-   *
-   * @param nodeId - The node containing the suggestion note
-   * @param noteId - The suggestion note to resolve
-   * @param action - Whether to accept or dismiss the suggestion
-   * @throws Error if any parameter fails validation
-   */
-  resolveSuggestion(nodeId: string, noteId: string, action: 'accepted' | 'dismissed'): void {
-    const nodeIdParsed = NodeIdSchema.safeParse(nodeId);
-    if (!nodeIdParsed.success) {
-      throw new Error(`Invalid nodeId: ${formatValidationError(nodeIdParsed.error)}`);
-    }
-    const noteIdParsed = NoteIdSchema.safeParse(noteId);
-    if (!noteIdParsed.success) {
-      throw new Error(`Invalid noteId: ${formatValidationError(noteIdParsed.error)}`);
-    }
-    const actionParsed = ResolveSuggestionActionSchema.safeParse(action);
-    if (!actionParsed.success) {
-      throw new Error(`Invalid action: ${formatValidationError(actionParsed.error)}`);
-    }
-    this.graph = updateNoteStatus(this.graph, nodeId, noteId, action);
-  }
 
   // ============================================================
   // Private helpers

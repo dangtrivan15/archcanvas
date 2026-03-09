@@ -1,14 +1,13 @@
 /**
  * Feature #66: Render API includes badge counts on nodes
  *
- * RenderAPI calculates note count, pending suggestion count, and code ref count for each node.
+ * RenderAPI calculates note count and code ref count for each node.
  *
  * Steps verified:
- * 1. Create node with 3 notes (1 pending suggestion), 2 code refs
+ * 1. Create node with 3 notes, 2 code refs
  * 2. Call renderApi.render() (which calls toCanvasNode internally)
  * 3. Verify CanvasNode data.noteCount equals 3
- * 4. Verify CanvasNode data.pendingSuggestionCount equals 1
- * 5. Verify CanvasNode data.codeRefCount equals 2
+ * 4. Verify CanvasNode data.codeRefCount equals 2
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -22,7 +21,6 @@ import {
   addNoteToNode,
   addCodeRef,
 } from '@/core/graph/graphEngine';
-import type { ArchGraph } from '@/types/graph';
 import type { CanvasNode, CanvasNodeData } from '@/types/canvas';
 
 describe('Feature #66: Render API includes badge counts on nodes', () => {
@@ -34,11 +32,11 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
     renderApi = new RenderApi(registry);
   });
 
-  describe('Node with 3 notes (1 pending), 2 code refs', () => {
+  describe('Node with 3 notes, 2 code refs', () => {
     let canvasNode: CanvasNode;
 
     beforeAll(() => {
-      // Step 1: Create node with 3 notes (1 pending suggestion), 2 code refs
+      // Step 1: Create node with 3 notes, 2 code refs
       let graph = createEmptyGraph('Badge Count Test');
 
       const node = createNode({
@@ -49,7 +47,7 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
 
       graph = addNode(graph, node);
 
-      // Add 3 notes: 1 regular, 1 accepted, 1 pending suggestion
+      // Add 3 notes
       const regularNote = createNote({
         author: 'user',
         content: 'This service handles order processing',
@@ -86,20 +84,15 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
 
       // Step 2: Render the graph
       const result = renderApi.render(graph, []);
-      canvasNode = result.nodes[0];
+      canvasNode = result.nodes[0]!;
     });
 
-    // Step 3: Verify noteCount equals 2 (excludes pending suggestions)
-    it('has noteCount equal to 2 (excluding pending suggestion)', () => {
-      expect(canvasNode.data.noteCount).toBe(2);
+    // Step 3: Verify noteCount equals 3 (all notes)
+    it('has noteCount equal to 3 (all notes)', () => {
+      expect(canvasNode.data.noteCount).toBe(3);
     });
 
-    // Step 4: Verify pendingSuggestionCount equals 1
-    it('has pendingSuggestionCount equal to 1', () => {
-      expect(canvasNode.data.pendingSuggestionCount).toBe(1);
-    });
-
-    // Step 5: Verify codeRefCount equals 2
+    // Step 4: Verify codeRefCount equals 2
     it('has codeRefCount equal to 2', () => {
       expect(canvasNode.data.codeRefCount).toBe(2);
     });
@@ -118,15 +111,11 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       graph = addNode(graph, node);
 
       const result = renderApi.render(graph, []);
-      canvasNode = result.nodes[0];
+      canvasNode = result.nodes[0]!;
     });
 
     it('has noteCount equal to 0', () => {
       expect(canvasNode.data.noteCount).toBe(0);
-    });
-
-    it('has pendingSuggestionCount equal to 0', () => {
-      expect(canvasNode.data.pendingSuggestionCount).toBe(0);
     });
 
     it('has codeRefCount equal to 0', () => {
@@ -134,11 +123,11 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
     });
   });
 
-  describe('Node with multiple pending suggestions', () => {
+  describe('Node with multiple notes of various statuses', () => {
     let canvasNode: CanvasNode;
 
     beforeAll(() => {
-      let graph = createEmptyGraph('Multiple Pending Test');
+      let graph = createEmptyGraph('Multiple Notes Test');
       const node = createNode({
         type: 'messaging/message-queue',
         displayName: 'Event Bus',
@@ -146,7 +135,7 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       });
       graph = addNode(graph, node);
 
-      // 5 notes total: 3 pending, 1 accepted, 1 dismissed
+      // 5 notes total with various statuses
       graph = addNoteToNode(
         graph,
         node.id,
@@ -199,15 +188,11 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       );
 
       const result = renderApi.render(graph, []);
-      canvasNode = result.nodes[0];
+      canvasNode = result.nodes[0]!;
     });
 
-    it('has noteCount equal to 2 (excluding 3 pending suggestions)', () => {
-      expect(canvasNode.data.noteCount).toBe(2);
-    });
-
-    it('has pendingSuggestionCount equal to 3', () => {
-      expect(canvasNode.data.pendingSuggestionCount).toBe(3);
+    it('has noteCount equal to 5 (all notes counted)', () => {
+      expect(canvasNode.data.noteCount).toBe(5);
     });
   });
 
@@ -231,7 +216,7 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       graph = addCodeRef(graph, node.id, { path: 'deploy/auth.yaml', role: 'deployment' });
 
       const result = renderApi.render(graph, []);
-      canvasNode = result.nodes[0];
+      canvasNode = result.nodes[0]!;
     });
 
     it('has codeRefCount equal to 5 for all ref roles', () => {
@@ -245,7 +230,7 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
     beforeAll(() => {
       let graph = createEmptyGraph('Multi-Node Badge Test');
 
-      // Node 1: 2 notes (0 pending), 1 code ref
+      // Node 1: 2 notes, 1 code ref
       const node1 = createNode({
         type: 'compute/service',
         displayName: 'API Gateway',
@@ -272,7 +257,7 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       );
       graph = addCodeRef(graph, node1.id, { path: 'src/gateway.ts', role: 'source' });
 
-      // Node 2: 1 note (1 pending), 3 code refs
+      // Node 2: 1 note, 3 code refs
       const node2 = createNode({
         type: 'data/database',
         displayName: 'Main DB',
@@ -305,24 +290,21 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       canvasNodes = result.nodes;
     });
 
-    it('first node has noteCount=2, pendingSuggestionCount=0, codeRefCount=1', () => {
+    it('first node has noteCount=2, codeRefCount=1', () => {
       const gateway = canvasNodes.find((n) => n.data.displayName === 'API Gateway')!;
       expect(gateway.data.noteCount).toBe(2);
-      expect(gateway.data.pendingSuggestionCount).toBe(0);
       expect(gateway.data.codeRefCount).toBe(1);
     });
 
-    it('second node has noteCount=0 (only pending note), pendingSuggestionCount=1, codeRefCount=3', () => {
+    it('second node has noteCount=1, codeRefCount=3', () => {
       const db = canvasNodes.find((n) => n.data.displayName === 'Main DB')!;
-      expect(db.data.noteCount).toBe(0);
-      expect(db.data.pendingSuggestionCount).toBe(1);
+      expect(db.data.noteCount).toBe(1);
       expect(db.data.codeRefCount).toBe(3);
     });
 
-    it('third node has noteCount=0, pendingSuggestionCount=0, codeRefCount=0', () => {
+    it('third node has noteCount=0, codeRefCount=0', () => {
       const queue = canvasNodes.find((n) => n.data.displayName === 'Task Queue')!;
       expect(queue.data.noteCount).toBe(0);
-      expect(queue.data.pendingSuggestionCount).toBe(0);
       expect(queue.data.codeRefCount).toBe(0);
     });
   });
@@ -340,15 +322,11 @@ describe('Feature #66: Render API includes badge counts on nodes', () => {
       graph = addNode(graph, node);
 
       const result = renderApi.render(graph, []);
-      data = result.nodes[0].data;
+      data = result.nodes[0]!.data;
     });
 
     it('noteCount is a number', () => {
       expect(typeof data.noteCount).toBe('number');
-    });
-
-    it('pendingSuggestionCount is a number', () => {
-      expect(typeof data.pendingSuggestionCount).toBe('number');
     });
 
     it('codeRefCount is a number', () => {

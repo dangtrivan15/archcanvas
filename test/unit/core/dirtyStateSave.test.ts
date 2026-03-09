@@ -173,35 +173,6 @@ describe('Feature #154: Dirty state clears after save', () => {
     expect(useCoreStore.getState().isDirty).toBe(true);
   });
 
-  it('isDirty becomes true after suggest', () => {
-    const store = useCoreStore.getState();
-    const node = store.addNode({ type: 'compute/service', displayName: 'A' });
-
-    useCoreStore.setState({ isDirty: false });
-
-    useCoreStore.getState().suggest({
-      nodeId: node!.id,
-      content: 'AI suggestion',
-      suggestionType: 'add-note',
-    });
-    expect(useCoreStore.getState().isDirty).toBe(true);
-  });
-
-  it('isDirty becomes true after resolveSuggestion', () => {
-    const store = useCoreStore.getState();
-    const node = store.addNode({ type: 'compute/service', displayName: 'A' });
-    const suggestion = useCoreStore.getState().suggest({
-      nodeId: node!.id,
-      content: 'AI suggestion',
-      suggestionType: 'add-note',
-    });
-
-    useCoreStore.setState({ isDirty: false });
-
-    useCoreStore.getState().resolveSuggestion(node!.id, suggestion!.id, 'accepted');
-    expect(useCoreStore.getState().isDirty).toBe(true);
-  });
-
   it('isDirty resets to false after saveFile with fileHandle', async () => {
     const store = useCoreStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });

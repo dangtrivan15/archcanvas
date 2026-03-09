@@ -61,10 +61,7 @@ export class RenderApi {
       .filter((p) => p.direction === 'outbound')
       .map((p) => ({ name: p.name, protocol: p.protocol }));
 
-    const pendingSuggestionCount = node.notes.filter((n) => n.status === 'pending').length;
-
-    // Note count excludes pending suggestions (they have their own badge)
-    const regularNoteCount = node.notes.length - pendingSuggestionCount;
+    const noteCount = node.notes.length;
 
     // Determine component type:
     // - .archc refSource nodes get 'container' type (nested canvas)
@@ -87,8 +84,7 @@ export class RenderApi {
         outbound: outboundPorts,
       },
       hasChildren: node.children.length > 0,
-      noteCount: regularNoteCount,
-      pendingSuggestionCount,
+      noteCount,
       codeRefCount: node.codeRefs.length,
       properties: { ...node.properties },
       icon: nodeDef?.metadata.icon ?? 'Box',

@@ -17,7 +17,6 @@ export interface CanvasNodeData extends Record<string, unknown> {
   };
   hasChildren: boolean;
   noteCount: number;
-  pendingSuggestionCount: number;
   codeRefCount: number;
   properties: PropertyMap;
   icon: string;
