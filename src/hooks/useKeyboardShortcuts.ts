@@ -48,6 +48,7 @@ export function useKeyboardShortcuts() {
   const requestZoom100 = useCanvasStore((s) => s.requestZoom100);
   const selectNodes = useCanvasStore((s) => s.selectNodes);
   const selectEdges = useCanvasStore((s) => s.selectEdges);
+  const autoLayout = useCoreStore((s) => s.autoLayout);
   const toggleQuickSearch = useUIStore((s) => s.toggleQuickSearch);
 
   const handleKeyDown = useCallback(
@@ -292,6 +293,18 @@ export function useKeyboardShortcuts() {
           }
           break;
 
+        // Auto-Layout (Ctrl+Shift+L / Cmd+Shift+L)
+        case 'layout:auto':
+          e.preventDefault();
+          {
+            const navPath = useNavigationStore.getState().path;
+            autoLayout('horizontal', navPath).then(() => {
+              useCanvasStore.getState().requestFitView();
+              console.log('[Shortcut] Auto-layout (horizontal) applied at navigation level');
+            });
+          }
+          break;
+
         // Node Quick Create hotkeys (not in text input)
         case 'node:add-service':
         case 'node:add-database':
@@ -367,6 +380,7 @@ export function useKeyboardShortcuts() {
       openFile,
       undo,
       redo,
+      autoLayout,
       openUnsavedChangesDialog,
       toggleShortcutsHelp,
       toggleCommandPalette,
