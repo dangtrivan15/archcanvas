@@ -216,7 +216,94 @@ playwright-cli close-all
 playwright-cli kill-all
 ```
 
-## Example: Form submission
+## ArchCanvas-Specific Patterns
+
+### Opening the App
+
+```bash
+npm run dev:ensure                        # Start dev server (idempotent)
+playwright-cli open https://localhost:5173  # Open ArchCanvas
+playwright-cli snapshot                     # See the canvas and UI elements
+```
+
+### Key DOM Selectors
+
+The app uses these `data-testid` attributes:
+- `[data-testid="canvas"]` — The main React Flow canvas area
+- `[data-testid="drop-zone-overlay"]` — File drop overlay (visible during drag)
+- `.react-flow__node` — All rendered architecture nodes
+- `.react-flow__edge` — All rendered edges
+- `.react-flow__renderer` — The React Flow render container
+
+### Common ArchCanvas Workflows
+
+**Verify canvas loads with nodes:**
+```bash
+playwright-cli open https://localhost:5173
+playwright-cli snapshot
+# Look for .react-flow__node elements in the snapshot
+playwright-cli eval "document.querySelectorAll('.react-flow__node').length"
+```
+
+**Interact with toolbar:**
+```bash
+playwright-cli snapshot
+# Find toolbar buttons by their refs in the snapshot
+playwright-cli click e<ref>   # e.g., the "Add Node" button
+playwright-cli snapshot       # Verify the result
+```
+
+**Test keyboard shortcuts:**
+```bash
+playwright-cli press Control+s   # Save
+playwright-cli press Control+z   # Undo
+playwright-cli press Control+k   # Command palette
+playwright-cli press Escape      # Close dialogs/overlays
+playwright-cli press Delete      # Delete selected node
+```
+
+**Test file drop (synthetic):**
+```bash
+playwright-cli run-code "async page => {
+  const dt = new DataTransfer();
+  dt.items.add(new File(['test'], 'test.archc'));
+  const canvas = await page.waitForSelector('[data-testid=\"canvas\"]');
+  await canvas.dispatchEvent('dragenter', { dataTransfer: dt });
+}"
+playwright-cli snapshot   # Check for drop overlay
+```
+
+### E2E Test Files
+
+Playwright e2e tests live in `test/e2e/` and use `.spec.ts` extension:
+```
+test/e2e/
+  feature-371-drag-drop.spec.ts   # Existing: file drag & drop
+```
+
+Config: `playwright.config.ts` — runs `npm run build && npx vite preview --port 5173`,
+uses HTTPS, single Chromium worker, serial execution (fullyParallel: false).
+
+To run existing e2e tests:
+```bash
+npx playwright test                           # all e2e tests
+npx playwright test test/e2e/some-test.spec.ts  # specific test
+npx playwright test --trace on                # with trace on failure
+```
+
+### Gotchas
+
+- The app uses **HTTPS** locally (`https://localhost:5173`), not HTTP
+- React Flow nodes render asynchronously — always wait after navigation:
+  `await page.waitForTimeout(1000)` or `await page.waitForSelector('.react-flow__node')`
+- The canvas uses SVG and absolute-positioned divs — standard text selectors
+  won't find node labels. Use `page.evaluate()` for complex DOM queries.
+- File System Access API dialogs (open/save) can't be automated by Playwright.
+  Test file operations via drag-and-drop or programmatic store manipulation.
+
+## Generic Examples
+
+### Form submission
 
 ```bash
 playwright-cli open https://example.com/form
@@ -229,7 +316,7 @@ playwright-cli snapshot
 playwright-cli close
 ```
 
-## Example: Multi-tab workflow
+### Multi-tab workflow
 
 ```bash
 playwright-cli open https://example.com
@@ -240,7 +327,7 @@ playwright-cli snapshot
 playwright-cli close
 ```
 
-## Example: Debugging with DevTools
+### Debugging with DevTools
 
 ```bash
 playwright-cli open https://example.com
