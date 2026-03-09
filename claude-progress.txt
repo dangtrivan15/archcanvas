@@ -15008,3 +15008,46 @@ Rose Pine Dawn).
 
 #### Commit: 0ae0150
 #### Feature #537 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #539
+==================================================
+
+## Feature #539: Graceful Claude Code session shutdown on panel close or app exit - PASSING
+
+### Summary:
+Implemented graceful shutdown of Claude Code processes when the terminal panel is
+closed, navigated away from, or the browser tab is closed. Three key additions:
+
+1. **terminalStore.cleanup()** action: Disconnects bridge connection and resets state
+2. **TerminalPanel unmount cleanup**: useEffect cleanup calls cleanup() when panel unmounts
+3. **beforeunload handler**: Sends WebSocket close frame before page unload
+
+The bridge server already had solid cleanup (SIGTERM → SIGKILL after 3s on ws.close),
+so the main work was on the client side to ensure the WebSocket close frame is sent
+in all exit scenarios.
+
+### Modified Files:
+1. **src/store/terminalStore.ts**: Added `cleanup` action
+2. **src/components/panels/TerminalPanel.tsx**: Added unmount cleanup + beforeunload handler
+3. **src/bridge/server.ts**: Enhanced ws.on('close') logging, added graceful SIGKILL timer cleanup
+
+### New Test File:
+- **test/unit/bridge/gracefulShutdown.test.ts** — 44 tests:
+  - Step 1: Panel close terminates process (12 tests)
+  - Step 2: Browser tab close via beforeunload (5 tests)
+  - Step 3: Navigate away and back session state (6 tests)
+  - Step 4: No orphaned processes after exit (10 tests)
+  - Step 5: Multiple connect/disconnect cycles (7 tests)
+  - Integration: cleanup store action (4 tests)
+
+### Verification:
+- 44/44 new tests pass
+- 6076/6076 total tests pass (0 regressions)
+- 269/269 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 03a41a8
+#### Feature #539 marked passing
+#### Current stats: 542/546 passing (99.3%)
