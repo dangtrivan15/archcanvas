@@ -13679,3 +13679,54 @@ Files with custom positions are not affected.
 
 #### Commit: 796efcb
 #### Feature #507 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #508
+==================================================
+
+## Feature #508: Auto-layout triggers on zoom-in when children lack positions - PASSING
+
+### Summary:
+When zooming into a parent node (double-click), if the child nodes have no saved
+positions (all at 0,0), ELK auto-layout now runs automatically to arrange the children.
+On subsequent zoom-ins, saved positions are reused (no re-layout).
+
+### Changes:
+
+1. **src/components/canvas/Canvas.tsx**:
+   - Added imports: getNodesAtLevel (graphQuery), needsAutoLayout (positionDetection)
+   - Added autoLayout selector from coreStore
+   - Added prevNavigationPathRef to track navigation path changes
+   - Added useEffect that watches navigationPath:
+     - Only triggers on zoom-in (path grew longer)
+     - Gets nodes at current navigation level via getNodesAtLevel
+     - Checks needsAutoLayout on those nodes
+     - If true, defers autoLayout('horizontal', navigationPath) + requestFitView()
+     - Uses setTimeout(0) to allow React to render first
+
+2. **test/unit/core/autoLayoutOnZoomIn.test.ts** — 21 new tests:
+   - Step 1: Children at (0,0) need auto-layout, getNodesAtLevel retrieves children
+   - Step 2: Source verification of Canvas.tsx imports, autoLayout usage, path tracking
+   - Step 3: Mixed positions don't trigger, all (0,0) triggers, empty array doesn't
+   - Step 4: Positioned children don't re-layout, zoom-out doesn't trigger
+   - Step 5: Nested navigation (grandchildren) detection works
+
+3. **examples/create-zoom-in-layout-test.mjs** + **public/zoom-in-layout-test.archc**:
+   - Test file with parent node (Backend Server) having 4 children all at (0,0)
+
+### Feature steps covered:
+1. ✅ Open a file with a parent node whose children have no positions
+2. ✅ Double-click the parent node to zoom in
+3. ✅ Verify auto-layout runs automatically and children are arranged
+4. ✅ Zoom out, then zoom back in
+5. ✅ Verify the saved positions from auto-layout are used (no re-layout)
+
+### Verification:
+- 21/21 new tests pass
+- 5594/5594 total tests pass (0 regressions)
+- Browser: Auto-layout triggered on first zoom-in, skipped on second
+- Console: Zero errors, correct log messages for auto-layout trigger
+- No mock data patterns in production code
+
+#### Commit: ea18060
+#### Feature #508 marked passing
