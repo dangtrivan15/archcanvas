@@ -14757,3 +14757,47 @@ Verified that clicking "Keep your version" in the conflict dialog correctly:
 
 #### Commit: 9c659a7
 #### Feature #526 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #527
+==================================================
+
+## Feature #527: Conflict resolution: Save as copy then reload - PASSING
+
+### Summary:
+Verified that the existing "Save as copy" button in the conflict dialog correctly:
+1. Calls coreStore.saveFileAs() which opens the native Save As file picker
+2. Saves the user's local (dirty) changes to a new file
+3. After successful save, automatically reloads the original file from disk
+4. Passes the original file handle to _applyDecodedFile (not the copy's handle)
+5. Resets isDirty, fileExternallyModified, and clears undo history
+6. If user cancels Save As picker, no reload happens
+
+### New Test File:
+- **test/unit/hooks/useFilePollingConflictSaveAsCopy.test.ts** — 31 tests:
+  - Step 1: Conflict dialog opens with onSaveAsCopy callback (3 tests)
+  - Step 2: "Save as copy" button exists and invokes onSaveAsCopy (4 tests)
+  - Step 3: onSaveAsCopy calls saveFileAs to open Save As dialog (4 tests)
+  - Step 4: Local changes saved to new file with new handle (4 tests)
+  - Step 5: After saving copy, original file is reloaded from disk (5 tests)
+  - Step 6: Copy file contains local changes (saveFileAs saves current graph) (3 tests)
+  - Error handling: cancel and reload failure paths (4 tests)
+  - Integration: full flow simulations (4 tests)
+
+### Feature steps covered:
+1. ✅ Open a file, make local changes, trigger external modification
+2. ✅ Conflict dialog appears — click 'Save as copy'
+3. ✅ Verify Save As dialog opens (saveFileAs invoked)
+4. ✅ Save to a new filename
+5. ✅ Verify the original file's external changes are now loaded
+6. ✅ Verify the copy file contains the user's local changes
+
+### Verification:
+- 31/31 new tests pass
+- 5768/5768 total tests pass (0 regressions)
+- 263/263 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: c71eca9
+#### Feature #527 marked passing
