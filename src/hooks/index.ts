@@ -3,7 +3,6 @@ export { usePlatformModifier } from './usePlatformModifier';
 export { useFocusTrap } from './useFocusTrap';
 export { useHaptics } from './useHaptics';
 export { useAppUrlOpen } from './useAppUrlOpen';
-export { useCmdKeyHold } from './useCmdKeyHold';
 export { useViewportSize } from './useViewportSize';
 export { useStageManagerResize } from './useStageManagerResize';
 export { useBackgroundSync } from './useBackgroundSync';
