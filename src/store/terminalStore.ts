@@ -49,6 +49,8 @@ export interface TerminalState {
   addLine: (type: TerminalLine['type'], content: string) => void;
   setXtermInstance: (instance: Terminal | null) => void;
   writeToXterm: (data: string) => void;
+  /** Gracefully shut down: disconnect bridge and clean up state */
+  cleanup: () => void;
 }
 
 /** Maximum lines to keep in terminal buffer */
@@ -163,5 +165,19 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       // Fallback: add as line-based output if xterm not mounted yet
       get().addLine('output', data);
     }
+  },
+
+  cleanup: () => {
+    // Gracefully disconnect the bridge connection (sends close frame → server kills process)
+    if (bridgeConnection) {
+      bridgeConnection.disconnect();
+      bridgeConnection = null;
+    }
+    set({
+      connectionStatus: 'disconnected',
+      currentError: null,
+      reconnectAttempt: 0,
+      maxReconnectAttempts: 0,
+    });
   },
 }));

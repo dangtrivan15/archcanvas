@@ -289,16 +289,24 @@ function handleConnection(ws: WebSocket, archcFile?: string, detectionResult?: C
     }
   });
 
-  // Clean up on WebSocket close
-  ws.on('close', () => {
+  // Clean up on WebSocket close (panel unmount, tab close, disconnect)
+  ws.on('close', (code: number, reason: Buffer) => {
+    const reasonStr = reason.toString('utf-8') || 'no reason';
+    process.stderr.write(`[Bridge] WebSocket closed (code=${code}, reason=${reasonStr}). Terminating Claude Code process...\n`);
     if (proc && !proc.killed) {
       proc.kill('SIGTERM');
       // Force kill after 3 seconds if still alive
-      setTimeout(() => {
+      const forceKillTimer = setTimeout(() => {
         if (!proc.killed) {
+          process.stderr.write(`[Bridge] Claude Code process did not exit gracefully. Sending SIGKILL.\n`);
           proc.kill('SIGKILL');
         }
       }, 3000);
+      // Clean up timer if process exits on its own
+      proc.once('exit', () => {
+        clearTimeout(forceKillTimer);
+        process.stderr.write(`[Bridge] Claude Code process terminated.\n`);
+      });
     }
   });
 }
@@ -364,7 +372,7 @@ export function createBridgeServer(options: BridgeServerOptions): {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 
   wss.on('connection', (ws: WebSocket) => {
-    process.stderr.write(`[Bridge] New WebSocket connection\n`);
+    process.stderr.write(`[Bridge] New WebSocket connection (active: ${wss.clients.size})\n`);
     handleConnection(ws, archcFile, claudeDetection);
   });
 
