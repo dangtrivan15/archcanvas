@@ -21,10 +21,64 @@
  */
 
 import { createServer, type Server as HttpServer } from 'node:http';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, execSync, type ChildProcess } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { existsSync, realpathSync } from 'node:fs';
 import { WebSocketServer, WebSocket } from 'ws';
+
+// ─── Claude Code Detection ───────────────────────────────────
+
+/** Result of checking whether the claude CLI is installed and accessible */
+export interface ClaudeDetectionResult {
+  /** Whether the claude CLI was found on PATH */
+  found: boolean;
+  /** Version string (e.g. "1.2.3") if found */
+  version?: string;
+  /** Absolute path to the claude binary */
+  path?: string;
+  /** Error message if not found */
+  error?: string;
+}
+
+/**
+ * Detect whether the Claude Code CLI is installed and accessible.
+ * Uses `which` on macOS/Linux and `where` on Windows to locate the binary.
+ * If found, retrieves the version via `claude --version`.
+ */
+export function detectClaudeCode(): ClaudeDetectionResult {
+  const whichCmd = process.platform === 'win32' ? 'where claude' : 'which claude';
+
+  try {
+    const claudePath = execSync(whichCmd, {
+      encoding: 'utf-8',
+      timeout: 5000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim().split('\n')[0]!.trim();
+
+    // Get version
+    let version: string | undefined;
+    try {
+      const versionOutput = execSync('claude --version', {
+        encoding: 'utf-8',
+        timeout: 5000,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }).trim();
+      // Extract version number from output (may be "claude 1.2.3" or just "1.2.3")
+      const match = versionOutput.match(/(\d+\.\d+[\w.-]*)/);
+      version = match ? match[1] : versionOutput;
+    } catch {
+      // Could not get version, but binary exists
+      version = 'unknown';
+    }
+
+    return { found: true, version, path: claudePath };
+  } catch {
+    return {
+      found: false,
+      error: 'Claude Code not found. Install it from https://claude.ai/code',
+    };
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -131,9 +185,21 @@ function spawnClaudeCode(archcFile?: string): ChildProcess {
 
 /**
  * Handle a single WebSocket connection.
- * Spawns a Claude Code process and pipes data bidirectionally.
+ * Checks if Claude Code is installed, then spawns a process and pipes data bidirectionally.
  */
-function handleConnection(ws: WebSocket, archcFile?: string): void {
+function handleConnection(ws: WebSocket, archcFile?: string, detectionResult?: ClaudeDetectionResult): void {
+  // Check Claude Code availability before spawning
+  const detection = detectionResult ?? detectClaudeCode();
+  if (!detection.found) {
+    const errorMsg: BridgeOutputMessage = {
+      type: 'error',
+      message: detection.error ?? 'Claude Code not found. Install it from https://claude.ai/code',
+    };
+    ws.send(JSON.stringify(errorMsg));
+    ws.close();
+    return;
+  }
+
   let claudeProcess: ChildProcess | null = null;
 
   try {
@@ -148,8 +214,11 @@ function handleConnection(ws: WebSocket, archcFile?: string): void {
 
   const proc = claudeProcess;
 
-  // Send ready message
-  const readyMsg: BridgeOutputMessage = { type: 'ready' };
+  // Send ready message with version info
+  const readyMsg: BridgeOutputMessage = {
+    type: 'ready',
+    data: detection.version ? `Claude Code v${detection.version} ready` : undefined,
+  };
   ws.send(JSON.stringify(readyMsg));
 
   // Pipe stdout to WebSocket
@@ -242,8 +311,17 @@ function handleConnection(ws: WebSocket, archcFile?: string): void {
 export function createBridgeServer(options: BridgeServerOptions): {
   httpServer: HttpServer;
   wss: WebSocketServer;
+  claudeDetection: ClaudeDetectionResult;
 } {
   const { cors, archcFile } = options;
+
+  // Detect Claude Code installation on startup
+  const claudeDetection = detectClaudeCode();
+  if (claudeDetection.found) {
+    process.stderr.write(`[Bridge] Claude Code detected: v${claudeDetection.version} at ${claudeDetection.path}\n`);
+  } else {
+    process.stderr.write(`[Bridge] WARNING: ${claudeDetection.error}\n`);
+  }
 
   // Create HTTP server for health checks and CORS preflight
   const httpServer = createServer((req, res) => {
@@ -268,6 +346,12 @@ export function createBridgeServer(options: BridgeServerOptions): {
         status: 'ok',
         archcFile: archcFile ?? null,
         uptime: process.uptime(),
+        claude: {
+          found: claudeDetection.found,
+          version: claudeDetection.version ?? null,
+          path: claudeDetection.path ?? null,
+          error: claudeDetection.error ?? null,
+        },
       }));
       return;
     }
@@ -281,14 +365,14 @@ export function createBridgeServer(options: BridgeServerOptions): {
 
   wss.on('connection', (ws: WebSocket) => {
     process.stderr.write(`[Bridge] New WebSocket connection\n`);
-    handleConnection(ws, archcFile);
+    handleConnection(ws, archcFile, claudeDetection);
   });
 
   wss.on('error', (err: Error) => {
     process.stderr.write(`[Bridge] WebSocket server error: ${err.message}\n`);
   });
 
-  return { httpServer, wss };
+  return { httpServer, wss, claudeDetection };
 }
 
 // ─── Start Server ────────────────────────────────────────────
@@ -297,7 +381,7 @@ export function createBridgeServer(options: BridgeServerOptions): {
  * Start the bridge server and listen on the configured port.
  */
 export async function startBridgeServer(options: BridgeServerOptions): Promise<HttpServer> {
-  const { httpServer, wss } = createBridgeServer(options);
+  const { httpServer, wss, claudeDetection } = createBridgeServer(options);
 
   return new Promise((resolve, reject) => {
     httpServer.on('error', (err: Error) => {
@@ -310,7 +394,12 @@ export async function startBridgeServer(options: BridgeServerOptions): Promise<H
       process.stderr.write(`  URL:       ${url}\n`);
       process.stderr.write(`  WebSocket: ws://${options.host}:${options.port}/ws\n`);
       process.stderr.write(`  Health:    ${url}/health\n`);
-      process.stderr.write(`  File:      ${options.archcFile ?? '(none)'}\n\n`);
+      process.stderr.write(`  File:      ${options.archcFile ?? '(none)'}\n`);
+      process.stderr.write(`  Claude:    ${claudeDetection.found ? `v${claudeDetection.version} (${claudeDetection.path})` : 'NOT FOUND'}\n\n`);
+      if (!claudeDetection.found) {
+        process.stderr.write(`  WARNING: Claude Code not found. Install it from https://claude.ai/code\n`);
+        process.stderr.write(`  WebSocket connections will receive an error until Claude Code is installed.\n\n`);
+      }
       process.stderr.write(`The bridge spawns a Claude Code process per WebSocket connection.\n`);
       process.stderr.write(`Claude Code is configured with the ArchCanvas MCP server.\n\n`);
       process.stderr.write(`Press Ctrl+C to stop.\n\n`);
