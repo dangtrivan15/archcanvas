@@ -13978,3 +13978,44 @@ edge direction to determine node ordering (sources left, targets right for horiz
 
 #### Feature #505 marked passing
 #### Current stats: 518/545 passing (95.0%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #546
+==================================================
+
+## Feature #546: Remove Cmd-hold keyboard shortcuts overlay entirely - PASSING
+
+### Summary:
+Removed the iPadOS-style keyboard shortcuts overlay that appeared when holding Cmd
+for 1 second. Deleted the useCmdKeyHold hook, CmdKeyShortcutsOverlay component, and
+all related imports. The ? key ShortcutsHelpPanel remains functional (separate feature).
+
+### Deleted Files:
+- **src/hooks/useCmdKeyHold.ts** — Hook that detected Cmd key held for 1 second
+- **src/components/shared/CmdKeyShortcutsOverlay.tsx** — iPadOS-style overlay component
+- **test/unit/hooks/useCmdKeyHold.test.ts** — 11 tests for the removed hook
+
+### Modified Files:
+- **src/App.tsx**: Removed CmdKeyShortcutsOverlay import and <CmdKeyShortcutsOverlay /> usage
+- **src/hooks/index.ts**: Removed useCmdKeyHold barrel export
+
+### Feature steps covered:
+1. ✅ Removed src/hooks/useCmdKeyHold.ts
+2. ✅ Removed src/components/shared/CmdKeyShortcutsOverlay.tsx
+3. ✅ Removed CmdKeyShortcutsOverlay import and usage from App.tsx
+4. ✅ Removed useCmdKeyHold export from hooks/index.ts
+5. ✅ Build succeeds with no import errors (TypeScript check clean)
+6. ✅ No overlay appears (component removed entirely)
+7. ✅ No overlay appears on Cmd+S (component removed entirely)
+8. ✅ ? key shortcuts help panel still works (verified with browser)
+
+### Verification:
+- 5471/5471 tests pass (0 regressions, 11 removed with deleted test file)
+- 250/250 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- ? key shortcuts help panel opens correctly
+- No references to useCmdKeyHold or CmdKeyShortcutsOverlay remain in src/
+
+#### Commit: 7c90003
+#### Feature #546 marked passing
+#### Current stats: 520/546 passing (95.2%)
