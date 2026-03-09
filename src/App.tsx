@@ -43,6 +43,7 @@ import {
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
+import { initRegistryBridge } from '@/core/registry/registryStore';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
@@ -94,6 +95,7 @@ function ExternalAgentDialogConnected() {
 export function App() {
   const initialize = useCoreStore((s) => s.initialize);
   const initialized = useCoreStore((s) => s.initialized);
+  const registry = useCoreStore((s) => s.registry);
   const nodeCount = useCoreStore((s) => s.nodeCount);
   const edgeCount = useCoreStore((s) => s.edgeCount);
   const isDirty = useCoreStore((s) => s.isDirty);
@@ -191,6 +193,14 @@ export function App() {
       });
     }
   }, [initialized]);
+
+  // Wire the reactive registry store bridge once the registry is initialized.
+  // This syncs RegistryManagerCore state into a Zustand store for UI reactivity.
+  useEffect(() => {
+    if (initialized && registry) {
+      initRegistryBridge(registry);
+    }
+  }, [initialized, registry]);
 
   // Auto-load file from URL parameter (for development/testing)
   useEffect(() => {

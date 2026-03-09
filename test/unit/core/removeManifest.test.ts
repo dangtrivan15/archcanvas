@@ -27,8 +27,11 @@ describe('Remove .archproject.json manifest (Feature #479)', () => {
       expect(productionMatches).toHaveLength(0);
     });
 
-    it('should not import from manifest.ts in src/', () => {
-      const matches = searchFilesForPattern(SRC_DIR, "from './manifest'");
+    it('should not import from project manifest.ts in src/', () => {
+      // Only check for imports of the old project manifest, not the registry manifest
+      const matches = searchFilesForPattern(SRC_DIR, "from './manifest'").filter(
+        (m) => !m.file.startsWith('core/registry'),
+      );
       expect(matches).toHaveLength(0);
     });
 

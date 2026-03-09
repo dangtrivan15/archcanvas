@@ -3,73 +3,144 @@
  * Loads and parses built-in nodedef YAML files.
  * Uses Vite's ?raw import to get YAML content as strings at build time,
  * then parses with the 'yaml' package at runtime.
+ *
+ * The file list is driven by NODEDEF_MANIFEST — the single source of truth
+ * shared with the CLI loader. Adding a new builtin YAML requires:
+ *   1. Add an entry to manifest.ts
+ *   2. Add a ?raw import below + an entry in RAW_YAML_MAP
  */
 
 import { parse as parseYaml } from 'yaml';
 import type { NodeDef } from '@/types/nodedef';
+import { NODEDEF_MANIFEST } from './manifest';
 
-// Import YAML files as raw strings via Vite's ?raw suffix
+// ── ?raw YAML imports (static, required by Vite/esbuild) ──────────────
+
+// AI namespace
+import agentYaml from './builtins/core/ai/agent.yaml?raw';
+import embeddingServiceYaml from './builtins/core/ai/embedding-service.yaml?raw';
+import guardrailsYaml from './builtins/core/ai/guardrails.yaml?raw';
+import llmProviderYaml from './builtins/core/ai/llm-provider.yaml?raw';
+import modelServingYaml from './builtins/core/ai/model-serving.yaml?raw';
+import promptRegistryYaml from './builtins/core/ai/prompt-registry.yaml?raw';
+import ragPipelineYaml from './builtins/core/ai/rag-pipeline.yaml?raw';
+import vectorStoreYaml from './builtins/core/ai/vector-store.yaml?raw';
+
+// Client namespace
+import cliYaml from './builtins/core/client/cli.yaml?raw';
+import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
+import webAppYaml from './builtins/core/client/web-app.yaml?raw';
+
 // Compute namespace
-import serviceYaml from './builtins/core/compute/service.yaml?raw';
-import functionYaml from './builtins/core/compute/function.yaml?raw';
-import workerYaml from './builtins/core/compute/worker.yaml?raw';
 import apiGatewayYaml from './builtins/core/compute/api-gateway.yaml?raw';
-import cronJobYaml from './builtins/core/compute/cron-job.yaml?raw';
 import containerYaml from './builtins/core/compute/container.yaml?raw';
+import cronJobYaml from './builtins/core/compute/cron-job.yaml?raw';
+import functionYaml from './builtins/core/compute/function.yaml?raw';
+import serviceYaml from './builtins/core/compute/service.yaml?raw';
+import workerYaml from './builtins/core/compute/worker.yaml?raw';
 
 // Data namespace
-import databaseYaml from './builtins/core/data/database.yaml?raw';
 import cacheYaml from './builtins/core/data/cache.yaml?raw';
+import databaseYaml from './builtins/core/data/database.yaml?raw';
+import featureStoreYaml from './builtins/core/data/feature-store.yaml?raw';
+import graphDatabaseYaml from './builtins/core/data/graph-database.yaml?raw';
 import objectStorageYaml from './builtins/core/data/object-storage.yaml?raw';
 import repositoryYaml from './builtins/core/data/repository.yaml?raw';
 import searchIndexYaml from './builtins/core/data/search-index.yaml?raw';
-import featureStoreYaml from './builtins/core/data/feature-store.yaml?raw';
-import graphDatabaseYaml from './builtins/core/data/graph-database.yaml?raw';
+
+// Integration namespace
+import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
+import mcpServerYaml from './builtins/core/integration/mcp-server.yaml?raw';
+import thirdPartyApiYaml from './builtins/core/integration/third-party-api.yaml?raw';
+import webhookYaml from './builtins/core/integration/webhook.yaml?raw';
 
 // Messaging namespace
-import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
 import eventBusYaml from './builtins/core/messaging/event-bus.yaml?raw';
-import streamProcessorYaml from './builtins/core/messaging/stream-processor.yaml?raw';
+import messageQueueYaml from './builtins/core/messaging/message-queue.yaml?raw';
 import notificationYaml from './builtins/core/messaging/notification.yaml?raw';
+import streamProcessorYaml from './builtins/core/messaging/stream-processor.yaml?raw';
+
+// Meta namespace
+import canvasRefYaml from './builtins/core/meta/canvas-ref.yaml?raw';
 
 // Network namespace
-import loadBalancerYaml from './builtins/core/network/load-balancer.yaml?raw';
 import cdnYaml from './builtins/core/network/cdn.yaml?raw';
+import loadBalancerYaml from './builtins/core/network/load-balancer.yaml?raw';
 
 // Observability namespace
+import llmMonitorYaml from './builtins/core/observability/llm-monitor.yaml?raw';
 import loggingYaml from './builtins/core/observability/logging.yaml?raw';
 import monitoringYaml from './builtins/core/observability/monitoring.yaml?raw';
 import tracingYaml from './builtins/core/observability/tracing.yaml?raw';
-import llmMonitorYaml from './builtins/core/observability/llm-monitor.yaml?raw';
 
 // Security namespace
 import authProviderYaml from './builtins/core/security/auth-provider.yaml?raw';
 import vaultYaml from './builtins/core/security/vault.yaml?raw';
 import wafYaml from './builtins/core/security/waf.yaml?raw';
 
-// Integration namespace
-import thirdPartyApiYaml from './builtins/core/integration/third-party-api.yaml?raw';
-import webhookYaml from './builtins/core/integration/webhook.yaml?raw';
-import etlPipelineYaml from './builtins/core/integration/etl-pipeline.yaml?raw';
-import mcpServerYaml from './builtins/core/integration/mcp-server.yaml?raw';
+// ── Map manifest filePaths to their ?raw import values ─────────────────
 
-// Client namespace
-import webAppYaml from './builtins/core/client/web-app.yaml?raw';
-import mobileAppYaml from './builtins/core/client/mobile-app.yaml?raw';
-import cliYaml from './builtins/core/client/cli.yaml?raw';
+/**
+ * Maps each manifest filePath to the corresponding ?raw import.
+ * Must be kept in sync with NODEDEF_MANIFEST — a missing entry here
+ * causes a loud runtime error on startup.
+ */
+const RAW_YAML_MAP: Record<string, string> = {
+  // AI
+  'ai/agent.yaml': agentYaml,
+  'ai/embedding-service.yaml': embeddingServiceYaml,
+  'ai/guardrails.yaml': guardrailsYaml,
+  'ai/llm-provider.yaml': llmProviderYaml,
+  'ai/model-serving.yaml': modelServingYaml,
+  'ai/prompt-registry.yaml': promptRegistryYaml,
+  'ai/rag-pipeline.yaml': ragPipelineYaml,
+  'ai/vector-store.yaml': vectorStoreYaml,
+  // Client
+  'client/cli.yaml': cliYaml,
+  'client/mobile-app.yaml': mobileAppYaml,
+  'client/web-app.yaml': webAppYaml,
+  // Compute
+  'compute/api-gateway.yaml': apiGatewayYaml,
+  'compute/container.yaml': containerYaml,
+  'compute/cron-job.yaml': cronJobYaml,
+  'compute/function.yaml': functionYaml,
+  'compute/service.yaml': serviceYaml,
+  'compute/worker.yaml': workerYaml,
+  // Data
+  'data/cache.yaml': cacheYaml,
+  'data/database.yaml': databaseYaml,
+  'data/feature-store.yaml': featureStoreYaml,
+  'data/graph-database.yaml': graphDatabaseYaml,
+  'data/object-storage.yaml': objectStorageYaml,
+  'data/repository.yaml': repositoryYaml,
+  'data/search-index.yaml': searchIndexYaml,
+  // Integration
+  'integration/etl-pipeline.yaml': etlPipelineYaml,
+  'integration/mcp-server.yaml': mcpServerYaml,
+  'integration/third-party-api.yaml': thirdPartyApiYaml,
+  'integration/webhook.yaml': webhookYaml,
+  // Messaging
+  'messaging/event-bus.yaml': eventBusYaml,
+  'messaging/message-queue.yaml': messageQueueYaml,
+  'messaging/notification.yaml': notificationYaml,
+  'messaging/stream-processor.yaml': streamProcessorYaml,
+  // Meta
+  'meta/canvas-ref.yaml': canvasRefYaml,
+  // Network
+  'network/cdn.yaml': cdnYaml,
+  'network/load-balancer.yaml': loadBalancerYaml,
+  // Observability
+  'observability/llm-monitor.yaml': llmMonitorYaml,
+  'observability/logging.yaml': loggingYaml,
+  'observability/monitoring.yaml': monitoringYaml,
+  'observability/tracing.yaml': tracingYaml,
+  // Security
+  'security/auth-provider.yaml': authProviderYaml,
+  'security/vault.yaml': vaultYaml,
+  'security/waf.yaml': wafYaml,
+};
 
-// Meta namespace
-import canvasRefYaml from './builtins/core/meta/canvas-ref.yaml?raw';
-
-// AI namespace
-import llmProviderYaml from './builtins/core/ai/llm-provider.yaml?raw';
-import embeddingServiceYaml from './builtins/core/ai/embedding-service.yaml?raw';
-import vectorStoreYaml from './builtins/core/ai/vector-store.yaml?raw';
-import ragPipelineYaml from './builtins/core/ai/rag-pipeline.yaml?raw';
-import agentYaml from './builtins/core/ai/agent.yaml?raw';
-import promptRegistryYaml from './builtins/core/ai/prompt-registry.yaml?raw';
-import modelServingYaml from './builtins/core/ai/model-serving.yaml?raw';
-import guardrailsYaml from './builtins/core/ai/guardrails.yaml?raw';
+// ── Public API ─────────────────────────────────────────────────────────
 
 /**
  * Metadata about a YAML nodedef source file.
@@ -86,217 +157,24 @@ export interface YamlNodeDefSource {
 }
 
 /**
- * All 20 built-in nodedef YAML sources, organized for loading.
+ * All 42 built-in nodedef YAML sources, derived from the shared manifest.
+ * Each entry's rawYaml is resolved from the ?raw import map.
  */
-export const YAML_SOURCES: YamlNodeDefSource[] = [
-  // Compute (4)
-  { filePath: 'compute/service.yaml', rawYaml: serviceYaml, namespace: 'compute', name: 'service' },
-  {
-    filePath: 'compute/function.yaml',
-    rawYaml: functionYaml,
-    namespace: 'compute',
-    name: 'function',
-  },
-  { filePath: 'compute/worker.yaml', rawYaml: workerYaml, namespace: 'compute', name: 'worker' },
-  {
-    filePath: 'compute/api-gateway.yaml',
-    rawYaml: apiGatewayYaml,
-    namespace: 'compute',
-    name: 'api-gateway',
-  },
-  {
-    filePath: 'compute/cron-job.yaml',
-    rawYaml: cronJobYaml,
-    namespace: 'compute',
-    name: 'cron-job',
-  },
-  {
-    filePath: 'compute/container.yaml',
-    rawYaml: containerYaml,
-    namespace: 'compute',
-    name: 'container',
-  },
-  // Data (4)
-  { filePath: 'data/database.yaml', rawYaml: databaseYaml, namespace: 'data', name: 'database' },
-  { filePath: 'data/cache.yaml', rawYaml: cacheYaml, namespace: 'data', name: 'cache' },
-  {
-    filePath: 'data/object-storage.yaml',
-    rawYaml: objectStorageYaml,
-    namespace: 'data',
-    name: 'object-storage',
-  },
-  {
-    filePath: 'data/repository.yaml',
-    rawYaml: repositoryYaml,
-    namespace: 'data',
-    name: 'repository',
-  },
-  {
-    filePath: 'data/search-index.yaml',
-    rawYaml: searchIndexYaml,
-    namespace: 'data',
-    name: 'search-index',
-  },
-  {
-    filePath: 'data/feature-store.yaml',
-    rawYaml: featureStoreYaml,
-    namespace: 'data',
-    name: 'feature-store',
-  },
-  {
-    filePath: 'data/graph-database.yaml',
-    rawYaml: graphDatabaseYaml,
-    namespace: 'data',
-    name: 'graph-database',
-  },
-  // Messaging (3)
-  {
-    filePath: 'messaging/message-queue.yaml',
-    rawYaml: messageQueueYaml,
-    namespace: 'messaging',
-    name: 'message-queue',
-  },
-  {
-    filePath: 'messaging/event-bus.yaml',
-    rawYaml: eventBusYaml,
-    namespace: 'messaging',
-    name: 'event-bus',
-  },
-  {
-    filePath: 'messaging/stream-processor.yaml',
-    rawYaml: streamProcessorYaml,
-    namespace: 'messaging',
-    name: 'stream-processor',
-  },
-  {
-    filePath: 'messaging/notification.yaml',
-    rawYaml: notificationYaml,
-    namespace: 'messaging',
-    name: 'notification',
-  },
-  // Network (2)
-  {
-    filePath: 'network/load-balancer.yaml',
-    rawYaml: loadBalancerYaml,
-    namespace: 'network',
-    name: 'load-balancer',
-  },
-  { filePath: 'network/cdn.yaml', rawYaml: cdnYaml, namespace: 'network', name: 'cdn' },
-  // Observability (2)
-  {
-    filePath: 'observability/logging.yaml',
-    rawYaml: loggingYaml,
-    namespace: 'observability',
-    name: 'logging',
-  },
-  {
-    filePath: 'observability/monitoring.yaml',
-    rawYaml: monitoringYaml,
-    namespace: 'observability',
-    name: 'monitoring',
-  },
-  {
-    filePath: 'observability/tracing.yaml',
-    rawYaml: tracingYaml,
-    namespace: 'observability',
-    name: 'tracing',
-  },
-  {
-    filePath: 'observability/llm-monitor.yaml',
-    rawYaml: llmMonitorYaml,
-    namespace: 'observability',
-    name: 'llm-monitor',
-  },
-  // Security (3)
-  {
-    filePath: 'security/auth-provider.yaml',
-    rawYaml: authProviderYaml,
-    namespace: 'security',
-    name: 'auth-provider',
-  },
-  { filePath: 'security/vault.yaml', rawYaml: vaultYaml, namespace: 'security', name: 'vault' },
-  { filePath: 'security/waf.yaml', rawYaml: wafYaml, namespace: 'security', name: 'waf' },
-  // Integration (3)
-  {
-    filePath: 'integration/third-party-api.yaml',
-    rawYaml: thirdPartyApiYaml,
-    namespace: 'integration',
-    name: 'third-party-api',
-  },
-  {
-    filePath: 'integration/webhook.yaml',
-    rawYaml: webhookYaml,
-    namespace: 'integration',
-    name: 'webhook',
-  },
-  {
-    filePath: 'integration/etl-pipeline.yaml',
-    rawYaml: etlPipelineYaml,
-    namespace: 'integration',
-    name: 'etl-pipeline',
-  },
-  {
-    filePath: 'integration/mcp-server.yaml',
-    rawYaml: mcpServerYaml,
-    namespace: 'integration',
-    name: 'mcp-server',
-  },
-  // Client (3)
-  { filePath: 'client/web-app.yaml', rawYaml: webAppYaml, namespace: 'client', name: 'web-app' },
-  {
-    filePath: 'client/mobile-app.yaml',
-    rawYaml: mobileAppYaml,
-    namespace: 'client',
-    name: 'mobile-app',
-  },
-  { filePath: 'client/cli.yaml', rawYaml: cliYaml, namespace: 'client', name: 'cli' },
-  // AI (4)
-  {
-    filePath: 'ai/llm-provider.yaml',
-    rawYaml: llmProviderYaml,
-    namespace: 'ai',
-    name: 'llm-provider',
-  },
-  {
-    filePath: 'ai/embedding-service.yaml',
-    rawYaml: embeddingServiceYaml,
-    namespace: 'ai',
-    name: 'embedding-service',
-  },
-  {
-    filePath: 'ai/vector-store.yaml',
-    rawYaml: vectorStoreYaml,
-    namespace: 'ai',
-    name: 'vector-store',
-  },
-  {
-    filePath: 'ai/rag-pipeline.yaml',
-    rawYaml: ragPipelineYaml,
-    namespace: 'ai',
-    name: 'rag-pipeline',
-  },
-  { filePath: 'ai/agent.yaml', rawYaml: agentYaml, namespace: 'ai', name: 'agent' },
-  {
-    filePath: 'ai/prompt-registry.yaml',
-    rawYaml: promptRegistryYaml,
-    namespace: 'ai',
-    name: 'prompt-registry',
-  },
-  {
-    filePath: 'ai/model-serving.yaml',
-    rawYaml: modelServingYaml,
-    namespace: 'ai',
-    name: 'model-serving',
-  },
-  { filePath: 'ai/guardrails.yaml', rawYaml: guardrailsYaml, namespace: 'ai', name: 'guardrails' },
-  // Meta (1)
-  {
-    filePath: 'meta/canvas-ref.yaml',
-    rawYaml: canvasRefYaml,
-    namespace: 'meta',
-    name: 'canvas-ref',
-  },
-];
+export const YAML_SOURCES: YamlNodeDefSource[] = NODEDEF_MANIFEST.map((entry) => {
+  const rawYaml = RAW_YAML_MAP[entry.filePath];
+  if (!rawYaml) {
+    throw new Error(
+      `[loader] No ?raw import found for manifest entry: ${entry.filePath}. ` +
+        `Add the import to loader.ts and map it in RAW_YAML_MAP.`,
+    );
+  }
+  return {
+    filePath: entry.filePath,
+    rawYaml,
+    namespace: entry.namespace,
+    name: entry.name,
+  };
+});
 
 /**
  * Parse a raw YAML string into a NodeDef-shaped object.
@@ -307,7 +185,7 @@ export function parseNodeDefYaml(yamlContent: string): unknown {
 }
 
 /**
- * Load all 20 built-in nodedef YAML files and parse them into objects.
+ * Load all 42 built-in nodedef YAML files and parse them into objects.
  * Returns an array of parsed objects ready for validation.
  */
 export function loadAllBuiltinYaml(): NodeDef[] {
