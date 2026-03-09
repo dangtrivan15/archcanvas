@@ -14801,3 +14801,55 @@ Verified that the existing "Save as copy" button in the conflict dialog correctl
 
 #### Commit: c71eca9
 #### Feature #527 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #535
+==================================================
+
+## Feature #535: Auto-detect Claude Code installation - PASSING
+
+### Summary:
+Added auto-detection of the Claude Code CLI on bridge server startup. The server
+uses `which claude` (macOS/Linux) or `where claude` (Windows) to check if the CLI
+is installed and accessible. If found, it retrieves the version via `claude --version`
+and reports it. If not found, a clear error message with install URL is sent.
+
+### Modified Files:
+1. **src/bridge/server.ts**:
+   - Added `execSync` import from node:child_process
+   - Added `ClaudeDetectionResult` interface (found, version, path, error)
+   - Added `detectClaudeCode()` function: uses which/where + claude --version
+   - Updated `createBridgeServer()` to run detection on startup, log result, return it
+   - Updated `/health` endpoint to include claude detection info
+   - Updated `handleConnection()` to check detection before spawning claude
+   - Updated `startBridgeServer()` to show Claude status in startup banner
+   - If not found: sends error via WebSocket, closes connection
+   - If found: sends ready message with version info
+
+2. **test/unit/bridge/bridgeServer.test.ts**: Updated import assertion for execSync
+
+### New Test File:
+- **test/unit/bridge/bridgeServerDetection.test.ts** — 43 tests:
+  - Step 1: Detection function, which/where commands, execSync, startup check (11 tests)
+  - Step 2: Version detection, ready message, health endpoint, startup banner (7 tests)
+  - Step 3: Error message with install URL, WebSocket close, WARNING banner (6 tests)
+  - Step 4: Web app displays error in terminal panel (8 tests)
+  - Step 5: macOS/Linux compatibility, multi-line handling, error graceful (5 tests)
+  - Integration: detectClaudeCode function and health endpoint (6 tests)
+
+### Feature steps covered:
+1. ✅ Bridge server checks for claude CLI on startup
+2. ✅ If found, report version and ready status via WebSocket
+3. ✅ If not found, send error: 'Claude Code not found. Install it from https://claude.ai/code'
+4. ✅ Web app displays the error in the terminal panel area
+5. ✅ Detection works on macOS and Linux (which) and Windows (where)
+
+### Verification:
+- 43/43 new tests pass
+- 5869/5869 total tests pass (0 regressions)
+- 265/265 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: e35d37e
+#### Feature #535 marked passing
