@@ -35,7 +35,6 @@ import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { useUIStore } from './uiStore';
 import type { EmptyProjectDialogInfo } from './uiStore';
 import { useAnalysisStore } from './analysisStore';
-import { isAIConfigured } from '@/ai/config';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -630,120 +629,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   runBuiltInAI: async () => {
-    const { directoryHandle, manifest } = get();
-    if (!directoryHandle || !manifest) {
-      useUIStore.getState().showToast('No project folder is open.');
-      return;
-    }
-
-    // Open the progress dialog
-    const abortController = useAnalysisStore.getState().openDialog();
-
-    try {
-      const { initWithAI } = await import('@/ai/initWithAI');
-      const { getAnthropicApiKey, aiConfig } = await import('@/ai/config');
-      const { default: Anthropic } = await import('@anthropic-ai/sdk');
-      const { useCoreStore } = await import('./coreStore');
-      const { TextApi } = await import('@/api/textApi');
-
-      const coreStore = useCoreStore.getState();
-      const registry = coreStore.registry;
-      if (!registry) {
-        throw new Error('Registry not initialized. Please wait for the app to fully load.');
-      }
-
-      const apiKey = getAnthropicApiKey();
-      if (!apiKey) {
-        throw new Error('No API key configured. Please add your Anthropic API key in Settings.');
-      }
-
-      const client = new Anthropic({
-        apiKey,
-        dangerouslyAllowBrowser: true,
-      });
-
-      // Create a fresh TextApi with empty graph for the AI to populate
-      const freshGraph = createEmptyGraph(manifest.name || 'Architecture');
-      const textApi = new TextApi(freshGraph, registry);
-
-      const result = await initWithAI({
-        directoryHandle,
-        client,
-        textApi,
-        registry,
-        architectureName: manifest.name || directoryHandle.name,
-        model: aiConfig.model,
-        maxTokens: aiConfig.maxTokens,
-        signal: abortController.signal,
-        onProgress: (event) => {
-          // Map InitWithAIProgress phases to PipelinePhase for the progress dialog
-          const phaseMap: Record<string, 'scanning' | 'detecting' | 'selecting' | 'inferring' | 'building' | 'saving' | 'complete'> = {
-            scanning: 'scanning',
-            detecting: 'detecting',
-            selecting: 'selecting',
-            prompting: 'inferring',
-            building: 'building',
-            complete: 'complete',
-            error: 'complete',
-          };
-          useAnalysisStore.getState().setProgress({
-            phase: phaseMap[event.phase] ?? 'building',
-            message: event.message,
-            percent: event.percent,
-          });
-        },
-      });
-
-      // Save the resulting graph to .archcanvas/main.archc
-      const archcanvasHandle = await initArchcanvasDir(directoryHandle);
-      const fileName = ARCHCANVAS_MAIN_FILE;
-
-      const protoFile = graphToProto(result.graph);
-      const binaryData = await encode(protoFile);
-      await writeArchcToFolder(archcanvasHandle, fileName, binaryData);
-
-      // Update project state
-      const updatedManifest: ProjectDescriptor = {
-        ...manifest,
-        rootFile: fileName,
-        files: [{ path: fileName, displayName: result.graph.name || manifest.name }],
-      };
-
-      const entry: LoadedFileEntry = {
-        path: fileName,
-        graph: result.graph,
-        loadedAtMs: Date.now(),
-      };
-      const newCache = new Map(get().loadedFiles);
-      newCache.set(fileName, entry);
-
-      set({
-        manifest: updatedManifest,
-        archcanvasHandle,
-        loadedFiles: newCache,
-        isEmpty: false,
-      });
-
-      // Load the graph into the canvas
-      const coreTextApi = coreStore.textApi;
-      if (coreTextApi) {
-        coreTextApi.setGraph(result.graph);
-        coreStore._setGraph(result.graph);
-      }
-
-      useAnalysisStore.getState().markComplete();
-
-      if (result.warnings.length > 0) {
-        console.warn('[AI Init] Warnings:', result.warnings);
-      }
-    } catch (err) {
-      if (err instanceof Error && err.message === 'Pipeline aborted') {
-        return;
-      }
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      useAnalysisStore.getState().setError(errorMsg);
-      console.error('[AI Init] Failed:', err);
-    }
+    useUIStore.getState().showToast('AI analysis is not available. The Anthropic SDK has been removed.');
   },
 
   runAnalysisPipeline: async () => {
@@ -757,10 +643,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const abortController = useAnalysisStore.getState().openDialog();
 
     try {
-      // Dynamically import pipeline and AI client to avoid circular deps
+      // Dynamically import pipeline to avoid circular deps
       const { analyzeCodebaseBrowser } = await import('@/analyze/browserPipeline');
-      const { sendMessage } = await import('@/ai/client');
-      const { getAnthropicApiKey } = await import('@/ai/config');
       const { useCoreStore } = await import('./coreStore');
 
       const coreStore = useCoreStore.getState();
@@ -771,32 +655,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         throw new Error('Core engines not initialized. Please wait for the app to fully load.');
       }
 
-      // Build an AIMessageSender wrapping the browser AI client
-      const apiKey = getAnthropicApiKey();
-      const aiSender = apiKey
-        ? {
-            async sendMessage(options: {
-              messages: Array<{ role: 'user' | 'assistant'; content: string }>;
-              system?: string;
-              maxTokens?: number;
-              stream?: boolean;
-              onChunk?: (text: string) => void;
-              signal?: AbortSignal;
-            }): Promise<{
-              content: string;
-              stopReason: string | null;
-              usage: { inputTokens: number; outputTokens: number };
-            }> {
-              return sendMessage({
-                messages: options.messages,
-                system: options.system,
-                maxTokens: options.maxTokens ?? 8192,
-                stream: false,
-                signal: options.signal,
-              });
-            },
-          }
-        : undefined;
+      // AI sender removed (Anthropic SDK has been removed)
+      const aiSender = undefined;
 
       // Create a fresh TextApi with empty graph for the pipeline to populate
       const { TextApi } = await import('@/api/textApi');
@@ -879,7 +739,7 @@ function buildEmptyProjectDialogInfo(
   return {
     folderName,
     hasSourceFiles,
-    hasApiKey: isAIConfigured(),
+    hasApiKey: false,
     onUseAI: () => {
       useUIStore.getState().closeEmptyProjectDialog();
       get().runBuiltInAI();
@@ -895,27 +755,7 @@ function buildEmptyProjectDialogInfo(
     },
     onUseExternalAgent: () => {
       useUIStore.getState().closeEmptyProjectDialog();
-      // Build the external agent prompt and open the dialog
-      import('@/ai/prompts/externalAgentPrompt').then(({ buildExternalAgentPrompt, buildPromptContextFromProject }) => {
-        const state = get();
-        const context = buildPromptContextFromProject(
-          state.manifest,
-          state.directoryHandle,
-          hasSourceFiles,
-        );
-        const prompt = buildExternalAgentPrompt(context);
-        useUIStore.getState().openExternalAgentDialog({
-          prompt,
-          onDone: () => {
-            useUIStore.getState().closeExternalAgentDialog();
-            // Save current graph to .archcanvas/main.archc after external agent finishes
-            get().saveMainArchc();
-          },
-          onCancel: () => {
-            useUIStore.getState().closeExternalAgentDialog();
-          },
-        });
-      });
+      useUIStore.getState().showToast('External agent prompts are not available. The Anthropic SDK has been removed.');
     },
   };
 }

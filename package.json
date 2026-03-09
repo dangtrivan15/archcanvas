@@ -42,7 +42,6 @@
     "build:release": "npm run build && npx cap sync ios"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/clipboard": "^8.0.1",
     "@capacitor/core": "^8.1.0",

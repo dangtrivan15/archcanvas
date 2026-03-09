@@ -272,7 +272,7 @@ describe('CLI analyze command', () => {
       }
     });
 
-    it('warns when API key is not set', async () => {
+    it('runs structural pipeline without AI (Anthropic SDK removed)', async () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'archcanvas-analyze-'));
       fs.writeFileSync(path.join(tmpDir, 'index.js'), 'console.log("hello");');
 
@@ -280,8 +280,9 @@ describe('CLI analyze command', () => {
         const program = createProgram();
         await program.parseAsync(['node', 'archcanvas', 'analyze', tmpDir, '--dry-run']);
 
+        // Should NOT reference ANTHROPIC_API_KEY since SDK was removed
         const errOutput = errorSpy.mock.calls.map((c) => c.join(' ')).join('\n');
-        expect(errOutput).toContain('ANTHROPIC_API_KEY');
+        expect(errOutput).not.toContain('ANTHROPIC_API_KEY');
       } finally {
         fs.rmSync(tmpDir, { recursive: true, force: true });
       }

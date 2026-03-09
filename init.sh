@@ -75,9 +75,9 @@ if [ -f ".env" ]; then
 else
     if [ -f ".env.example" ]; then
         cp .env.example .env
-        echo -e "  ${YELLOW}⚠${NC} Created .env from .env.example - please set VITE_ANTHROPIC_API_KEY"
+        echo -e "  ${YELLOW}⚠${NC} Created .env from .env.example"
     else
-        echo -e "  ${YELLOW}⚠${NC} No .env file found. AI features require VITE_ANTHROPIC_API_KEY"
+        echo -e "  ${YELLOW}⚠${NC} No .env file found"
     fi
 fi
 

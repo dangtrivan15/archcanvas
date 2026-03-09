@@ -18,19 +18,7 @@ vi.mock('@/analyze/browserPipeline', () => ({
   analyzeCodebaseBrowser: (...args: unknown[]) => mockAnalyzeCodebaseBrowser(...args),
 }));
 
-// Mock AI client
-vi.mock('@/ai/client', () => ({
-  sendMessage: vi.fn().mockResolvedValue({
-    content: '{"nodes":[],"edges":[]}',
-    stopReason: 'end_turn',
-    usage: { inputTokens: 100, outputTokens: 50 },
-  }),
-}));
-
-// Mock AI config
-vi.mock('@/ai/config', () => ({
-  getAnthropicApiKey: vi.fn().mockReturnValue('test-api-key'),
-}));
+// AI client and config mocks removed (Anthropic SDK has been removed)
 
 // Mock coreStore
 const mockTextApi = {
@@ -308,43 +296,12 @@ describe('Analysis Pipeline Integration', () => {
       );
     });
 
-    it('should pass aiSender when API key is configured', async () => {
+    it('should always pass undefined aiSender (Anthropic SDK removed)', async () => {
       const dirHandle = createMockDirHandle();
       useProjectStore.setState({
         directoryHandle: dirHandle,
         manifest: { name: 'test-project', rootFile: '', files: [] },
       });
-
-      mockAnalyzeCodebaseBrowser.mockResolvedValue({
-        graph: mockResultGraph,
-        stats: { nodes: 1, edges: 0, codeRefs: 0 },
-        projectProfile: {},
-        warnings: [],
-        duration: 1000,
-      });
-
-      await useProjectStore.getState().runAnalysisPipeline();
-
-      expect(mockAnalyzeCodebaseBrowser).toHaveBeenCalledWith(
-        dirHandle,
-        expect.objectContaining({
-          aiSender: expect.objectContaining({
-            sendMessage: expect.any(Function),
-          }),
-        }),
-      );
-    });
-
-    it('should pass undefined aiSender when no API key is configured', async () => {
-      const dirHandle = createMockDirHandle();
-      useProjectStore.setState({
-        directoryHandle: dirHandle,
-        manifest: { name: 'test-project', rootFile: '', files: [] },
-      });
-
-      // Clear the API key
-      const { getAnthropicApiKey } = await import('@/ai/config');
-      vi.mocked(getAnthropicApiKey).mockReturnValue(undefined);
 
       mockAnalyzeCodebaseBrowser.mockResolvedValue({
         graph: mockResultGraph,
@@ -362,9 +319,6 @@ describe('Analysis Pipeline Integration', () => {
           aiSender: undefined,
         }),
       );
-
-      // Restore
-      vi.mocked(getAnthropicApiKey).mockReturnValue('test-api-key');
     });
 
     it('should show toast when no project folder is open', async () => {

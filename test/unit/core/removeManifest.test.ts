@@ -162,25 +162,20 @@ describe('Remove .archproject.json manifest (Feature #479)', () => {
     });
   });
 
-  describe('CLI analyze uses agentic loop', () => {
-    it('CLI analyze imports runAgentLoop', () => {
-      const analyzePath = path.resolve(SRC_DIR, 'cli/commands/analyze.ts');
-      const content = fs.readFileSync(analyzePath, 'utf-8');
-      expect(content).toContain('runAgentLoop');
-    });
-
-    it('CLI analyze imports agentic prompts', () => {
-      const analyzePath = path.resolve(SRC_DIR, 'cli/commands/analyze.ts');
-      const content = fs.readFileSync(analyzePath, 'utf-8');
-      expect(content).toContain('buildSystemPrompt');
-      expect(content).toContain('buildUserPrompt');
-    });
-
-    it('CLI analyze falls back to legacy pipeline', () => {
+  describe('CLI analyze uses structural pipeline', () => {
+    it('CLI analyze has legacy pipeline (agentic loop removed with Anthropic SDK)', () => {
       const analyzePath = path.resolve(SRC_DIR, 'cli/commands/analyze.ts');
       const content = fs.readFileSync(analyzePath, 'utf-8');
       expect(content).toContain('runLegacyPipeline');
       expect(content).toContain('structural');
+    });
+
+    it('CLI analyze no longer imports agentic loop or prompts', () => {
+      const analyzePath = path.resolve(SRC_DIR, 'cli/commands/analyze.ts');
+      const content = fs.readFileSync(analyzePath, 'utf-8');
+      expect(content).not.toContain('runAgentLoop');
+      expect(content).not.toContain('buildSystemPrompt');
+      expect(content).not.toContain('buildUserPrompt');
     });
   });
 });
