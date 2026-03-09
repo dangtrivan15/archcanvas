@@ -14,8 +14,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       // Include service worker in dev mode for testing
       devOptions: {
-        enabled: true,
-        type: 'module',
+        enabled: false,
       },
       includeAssets: ['icons/*.png', 'icons/*.svg', 'manifest.json'],
       manifest: false, // Use existing public/manifest.json
