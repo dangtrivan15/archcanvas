@@ -208,16 +208,10 @@ export interface EmptyProjectDialogInfo {
   folderName: string;
   /** Whether the folder contains recognizable source files */
   hasSourceFiles: boolean;
-  /** Whether an API key is configured (determines AI path routing) */
-  hasApiKey: boolean;
-  /** Callback when user chooses "Use AI" (API key is available) */
+  /** Callback when user chooses "Use Claude Code" (opens terminal panel) */
   onUseAI: () => void;
   /** Callback when user chooses "Quick scan" */
   onQuickScan: () => void;
-  /** Callback when user wants to configure an API key (opens Settings) */
-  onConfigureApiKey: () => void;
-  /** Callback when user wants to use an external agent (opens ExternalAgentDialog) */
-  onUseExternalAgent: () => void;
 }
 
 export interface ExternalAgentDialogInfo {

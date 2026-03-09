@@ -732,23 +732,13 @@ function buildEmptyProjectDialogInfo(
   return {
     folderName,
     hasSourceFiles,
-    hasApiKey: false,
     onUseAI: () => {
       useUIStore.getState().closeEmptyProjectDialog();
-      get().runBuiltInAI();
+      useUIStore.getState().openRightPanel('terminal');
     },
     onQuickScan: () => {
       useUIStore.getState().closeEmptyProjectDialog();
       get().runAnalysisPipeline();
-    },
-    onConfigureApiKey: () => {
-      // Close the empty project dialog and open settings
-      useUIStore.getState().closeEmptyProjectDialog();
-      useUIStore.getState().openSettingsDialog();
-    },
-    onUseExternalAgent: () => {
-      useUIStore.getState().closeEmptyProjectDialog();
-      useUIStore.getState().showToast('External agent prompts are not available. The Anthropic SDK has been removed.');
     },
   };
 }

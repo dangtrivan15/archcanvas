@@ -371,8 +371,8 @@ describe('Feature #468: Load main.archc as project root on open', () => {
           folderName: 'CorruptProject',
           onUseAI: expect.any(Function),
           onQuickScan: expect.any(Function),
-          onConfigureApiKey: expect.any(Function),
-          onUseExternalAgent: expect.any(Function),
+
+
         }),
       );
     });
@@ -576,14 +576,10 @@ describe('Feature #468: Load main.archc as project root on open', () => {
         folderName: string;
         onUseAI: () => void;
         onQuickScan: () => void;
-        onConfigureApiKey: () => void;
-        onUseExternalAgent: () => void;
       };
       expect(dialogInfo.folderName).toBe('RecreateTest');
       expect(typeof dialogInfo.onUseAI).toBe('function');
       expect(typeof dialogInfo.onQuickScan).toBe('function');
-      expect(typeof dialogInfo.onConfigureApiKey).toBe('function');
-      expect(typeof dialogInfo.onUseExternalAgent).toBe('function');
     });
   });
 
