@@ -18,9 +18,9 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 describe('Feature #223: ARIA labels on canvas controls', () => {
-  // Read the Canvas.tsx source to verify ARIA configuration
+  // Read the CanvasRenderer.tsx source (sole ReactFlow mount point) to verify ARIA configuration
   const canvasSource = readFileSync(
-    resolve(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+    resolve(__dirname, '../../../src/components/canvas/CanvasRenderer.tsx'),
     'utf-8',
   );
 
@@ -88,13 +88,19 @@ describe('Feature #223: ARIA labels on canvas controls', () => {
   });
 
   describe('Canvas has proper application role', () => {
+    // Canvas.tsx (orchestrator) has ReactFlowProvider; CanvasRenderer has ReactFlow
+    const orchestratorSource = readFileSync(
+      resolve(__dirname, '../../../src/components/canvas/Canvas.tsx'),
+      'utf-8',
+    );
+
     it('Canvas renders ReactFlow which provides application role', () => {
       expect(canvasSource).toContain('ReactFlow');
-      expect(canvasSource).toContain('<ReactFlowProvider>');
+      expect(orchestratorSource).toContain('<ReactFlowProvider>');
     });
 
     it('Canvas has data-testid for testing', () => {
-      expect(canvasSource).toContain('data-testid="canvas"');
+      expect(orchestratorSource).toContain('data-testid="canvas"');
     });
   });
 

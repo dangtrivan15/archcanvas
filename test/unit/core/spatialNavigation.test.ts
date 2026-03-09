@@ -332,17 +332,17 @@ describe('Hemisphere fallback', () => {
 // 10. FocusZone Integration
 // ================================================================
 describe('Arrow key FocusZone integration', () => {
-  it('Canvas.tsx imports spatialNavigation functions', async () => {
+  it('Canvas keyboard hook imports spatialNavigation functions', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     expect(source).toContain('findNearestNode');
     expect(source).toContain('findTopLeftNode');
     expect(source).toContain('extractPositions');
   });
 
-  it('Canvas.tsx respects isActiveElementTextInput in arrow handler', async () => {
+  it('Canvas keyboard hook respects isActiveElementTextInput in arrow handler', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     // The arrow handler should check for text inputs
     expect(source).toContain('isActiveElementTextInput');
     // Arrow key handler should check for modifier keys
@@ -368,23 +368,23 @@ describe('Arrow key FocusZone integration', () => {
     expect(source).toContain('Navigate to node right');
   });
 
-  it('Canvas.tsx uses setCenter for viewport panning', async () => {
+  it('Canvas keyboard hook uses setCenter for viewport panning', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     expect(source).toContain('setCenter');
   });
 
   it('Arrow handler does not fire when dialog is open', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     // Should check dialog states
     expect(source).toContain('deleteDialogOpen');
     expect(source).toContain('commandPaletteOpen');
   });
 
-  it('Canvas.tsx does not fire arrows during placement mode', async () => {
+  it('Canvas keyboard hook does not fire arrows during placement mode', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     expect(source).toContain('placementMode');
   });
 });

@@ -258,16 +258,16 @@ describe('Feature #254: Keyboard Multi-Selection', () => {
   });
 
   describe('Source code integration verification', () => {
-    it('Canvas.tsx uses addNodeToSelection for Shift+Arrow', async () => {
+    it('Canvas keyboard hook uses addNodeToSelection for Shift+Arrow', async () => {
       const fs = await import('fs');
-      const content = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const content = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(content).toContain('addNodeToSelection');
       expect(content).toContain('isShift');
     });
 
-    it('Canvas.tsx uses toggleNodeInSelection for Mod+Arrow', async () => {
+    it('Canvas keyboard hook uses toggleNodeInSelection for Mod+Arrow', async () => {
       const fs = await import('fs');
-      const content = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const content = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(content).toContain('toggleNodeInSelection');
       expect(content).toContain('isMod');
     });
@@ -293,9 +293,9 @@ describe('Feature #254: Keyboard Multi-Selection', () => {
       expect(content).toContain('selectedNodeIds');
     });
 
-    it('Canvas syncs selectedNodeIds to React Flow', async () => {
+    it('Canvas renderer hook syncs selectedNodeIds to React Flow', async () => {
       const fs = await import('fs');
-      const content = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const content = fs.readFileSync('src/components/canvas/hooks/useCanvasRenderer.ts', 'utf-8');
       expect(content).toContain('selectedNodeIds');
       expect(content).toContain('shouldBeSelected');
     });

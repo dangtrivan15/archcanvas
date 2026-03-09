@@ -470,18 +470,18 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
   });
 
   describe('Source code verification', () => {
-    it('Canvas.tsx has Alt+Arrow bulk move handler', async () => {
+    it('Canvas keyboard hook has Alt+Arrow bulk move handler', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const src = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(src).toContain('handleBulkMove');
       expect(src).toContain('altKey');
       expect(src).toContain('SMALL_STEP');
       expect(src).toContain('LARGE_STEP');
     });
 
-    it('Canvas.tsx checks shiftKey for large step', async () => {
+    it('Canvas keyboard hook checks shiftKey for large step', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const src = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(src).toContain('e.shiftKey');
       expect(src).toContain('LARGE_STEP');
       expect(src).toContain('SMALL_STEP');
@@ -513,22 +513,22 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       expect(snapshotCalls).toBe(1);
     });
 
-    it('Canvas.tsx handler prevents default on Alt+Arrow', async () => {
+    it('Canvas keyboard hook handler prevents default on Alt+Arrow', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const src = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(src).toContain('handleBulkMove');
       expect(src).toContain('e.preventDefault()');
     });
 
-    it('Canvas.tsx skips bulk move when text input is active', async () => {
+    it('Canvas keyboard hook skips bulk move when text input is active', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const src = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(src).toContain('isActiveElementTextInput');
     });
 
-    it('Canvas.tsx subscribes to moveNodes from coreStore', async () => {
+    it('Canvas keyboard hook subscribes to moveNodes from coreStore', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+      const src = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
       expect(src).toContain('moveNodes');
       expect(src).toContain('useCoreStore');
     });
