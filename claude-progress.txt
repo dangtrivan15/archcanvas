@@ -14671,3 +14671,56 @@ graph via _applyDecodedFile, resets isDirty to false, and clears undo history.
 
 #### Commit: 2451955
 #### Feature #525 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #513
+==================================================
+
+## Feature #513: Adding a new node triggers re-layout at current level - PASSING
+
+### Summary:
+Modified coreStore.addNode to trigger auto-layout after adding any new node.
+The auto-layout uses the current navigation path from useNavigationStore so it
+works at both root level and inside parent nodes (zoomed-in children).
+
+### Modified Files:
+1. **src/store/coreStore.ts**:
+   - Added import of useNavigationStore from navigationStore
+   - Added auto-layout trigger in addNode action (after set() and before return)
+   - Uses setTimeout(0) for async scheduling (same pattern as file-open auto-layout)
+   - Gets navigation path from useNavigationStore.getState().path
+   - Calls autoLayout('horizontal', navigationPath) then requestFitView
+   - Graceful error handling with .catch
+
+### New Test File:
+- **test/unit/core/addNodeTriggersRelayout.test.ts** — 18 tests:
+  - Step 1: Source code verification (5 tests): autoLayout call, setTimeout, navigationStore, requestFitView, catch
+  - Step 2: ELK layout at root level (3 tests): new node positioned, distinct positions, edge-based ordering
+  - Step 3: ELK layout inside parent (3 tests): child positioned, distinct positions, parent unaffected
+  - Step 4: Graph engine (3 tests): engineAddNode, addChildNode, getNodesAtLevel
+  - Step 5: Full scenarios (2 tests): add-then-layout at root and child level
+  - Step 6: Navigation integration (2 tests): import verification, horizontal default
+
+### Feature steps covered:
+1. ✅ Open a file with arranged nodes at root level
+2. ✅ Add a new node via the NodeDef browser
+3. ✅ Verify auto-layout runs and the new node is incorporated into the layout
+4. ✅ Zoom into a parent node with arranged children
+5. ✅ Add a new child node
+6. ✅ Verify auto-layout runs and incorporates the new child
+
+### Browser Verification:
+- Added Service node via Add Node button → console shows "[CoreStore] Auto-layout after addNode complete"
+- Added Database node → console shows second auto-layout trigger
+- Both nodes arranged vertically by ELK layout
+- Zero console errors (0 Errors, 0 Warnings)
+- Screenshot confirms proper node arrangement with fitView
+
+### Verification:
+- 18/18 new tests pass
+- 5717/5717 total tests pass (0 regressions)
+- 261/261 test files pass
+- No mock data patterns in production code
+
+#### Commit: 6d46284
+#### Feature #513 marked passing
