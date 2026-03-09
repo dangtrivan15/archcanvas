@@ -13339,3 +13339,40 @@ whether auto-layout should trigger automatically.
 
 #### Commit: a96c46e
 #### Feature #506 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #503
+==================================================
+
+## Feature #503: ELK layout applies to current navigation level nodes - PASSING
+
+### Summary:
+Verified that the ELK auto-layout engine correctly operates on nodes at the current
+navigation level, not just root-level nodes. When zoomed into a parent node, layout
+arranges only the children of that parent, respecting edges between them.
+
+### Test Setup:
+- Created examples/create-nested-layout-test.mjs to generate a test .archc file
+- Test file: public/nested-layout-test.archc
+  - 3 root nodes: Backend Server (with 4 children), React Frontend, PostgreSQL
+  - 4 children of Backend Server: Auth Controller, User Controller, Auth Service, User Repository
+  - 3 child-level edges: auth-controller→auth-service, user-controller→user-repo, auth-service→user-repo
+  - Children positions initially SCATTERED (not in layout order)
+
+### Verification Steps:
+1. ✅ Opened nested-layout-test.archc via ?load= URL parameter
+2. ✅ Double-clicked Backend Server to zoom in (breadcrumb: Root > Backend Server)
+3. ✅ Triggered Auto-Layout (Horizontal) via Layout menu
+4. ✅ Children arranged in proper layered hierarchy (left-to-right flow)
+5. ✅ Edges between children respected in layout (Auth Controller→Auth Service→User Repository, User Controller→User Repository)
+6. ✅ Zero console errors (only pre-existing SSL/PWA warnings filtered out)
+7. ✅ Log confirmed: "Auto-layout applied: horizontal spacing: {nodeSpacing: 60, layerSpacing: 100}"
+
+### Implementation Notes:
+- No code changes needed - the feature was already fully implemented:
+  - elkLayout.ts: applyElkLayout() accepts navigationPath and traverses to correct level
+  - LayoutMenu.tsx: passes current navigationPath from navigationStore to autoLayout()
+  - coreStore.ts: autoLayout() passes navigationPath through to applyElkLayout()
+  - applyPositionsToNodes() recursively applies positions at the correct hierarchy level
+
+#### Feature #503 marked passing
