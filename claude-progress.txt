@@ -14154,3 +14154,62 @@ serializes positions via graphToProto → encode → decode → protoToGraphFull
 #### Commit: b643721
 #### Feature #512 marked passing
 #### Current stats: 522/546 passing (95.6%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #533
+==================================================
+
+## Feature #533: Clean up AI suggestion handling from Notes panel and graph engine - PASSING
+
+### Summary:
+Removed all AI suggestion accept/dismiss UI and logic from the Notes panel and graph engine.
+Notes still exist and can be created by humans, but the old AI suggestion flow
+(suggest → pending → accept/dismiss) has been completely removed.
+
+### Deleted Files:
+- **test/unit/api/textApiSuggest.test.ts** — Tests for TextApi.suggest()
+- **test/unit/api/textApiResolveSuggestion.test.ts** — Tests for TextApi.resolveSuggestion()
+- **test/e2e/feature-129-suggestion-accept.spec.ts** — E2E test for suggestion accept
+- **test/e2e/feature-129-suggestion-dismiss.spec.ts** — E2E test for suggestion dismiss
+
+### Modified Source Files:
+1. **src/components/panels/NodeDetailPanel.tsx**: Removed resolveSuggestion hook, Accept/Dismiss buttons, accepted/dismissed status indicators, status-based card styling
+2. **src/components/nodes/NodeBadges.tsx**: Removed pendingSuggestionCount badge and Lightbulb icon
+3. **src/components/nodes/NodeContent.tsx**: Removed pendingSuggestionCount prop
+4. **src/components/nodes/ContainerNode.tsx**: Removed pendingSuggestionCount prop
+5. **src/components/nodes/GenericNode.tsx**: Removed pendingSuggestionCount prop
+6. **src/components/shared/TemplatePreview.tsx**: Removed pendingSuggestionCount from mock data
+7. **src/store/coreStore.ts**: Removed suggest() and resolveSuggestion() methods, SuggestParams import
+8. **src/api/textApi.ts**: Removed suggest() and resolveSuggestion() methods, SuggestSchema/ResolveSuggestionActionSchema/updateNoteStatus imports
+9. **src/api/renderApi.ts**: Simplified note counting (all notes counted, no pending separation)
+10. **src/api/index.ts**: Removed SuggestSchema and ResolveSuggestionActionSchema exports
+11. **src/core/graph/graphEngine.ts**: Removed updateNoteStatus() and updateNoteInNodeList() functions
+12. **src/core/graph/index.ts**: Removed updateNoteStatus export
+13. **src/types/canvas.ts**: Removed pendingSuggestionCount from CanvasNodeData
+14. **src/types/index.ts**: Removed SuggestParams export
+
+### Modified Test Files:
+15. **test/unit/api/renderApiBadgeCounts.test.ts**: Updated to test noteCount includes all notes
+16. **test/unit/api/renderApiNodes.test.ts**: Removed pendingSuggestionCount assertion
+17. **test/unit/core/dirtyStateSave.test.ts**: Removed suggest/resolveSuggestion dirty state tests
+18. **test/unit/hooks/useContainerDiveIn.test.ts**: Removed pendingSuggestionCount from mock data
+19. **test/unit/navigation/resolveRefSource.test.ts**: Removed pendingSuggestionCount from mock data
+
+### Feature steps covered:
+1. ✅ Removed Accept/Dismiss buttons from notes for AI-authored notes
+2. ✅ Removed suggestion application logic from notes panel
+3. ✅ Removed AI suggestion-related imports throughout components
+4. ✅ Human-authored notes still display and function correctly (verified in browser)
+5. ✅ Note protobuf message unchanged (backward compat - types preserved)
+6. ✅ Build succeeds and app runs without errors
+
+### Verification:
+- 5474/5474 tests pass (0 regressions, removed 4 test files for deleted functionality)
+- 250/250 test files pass
+- Browser: App loads, node created, note added successfully
+- Zero console errors, zero warnings
+- Notes tab shows correctly with human notes
+- No suggestion badges or accept/dismiss buttons visible
+
+#### Commit: 6fb9b25
+#### Feature #533 marked passing
