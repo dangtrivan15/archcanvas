@@ -3,6 +3,8 @@
  *
  * Zustand store for managing terminal panel state including
  * bridge connection status, messages, and error states.
+ * Supports both line-based output (for system/status messages)
+ * and direct xterm.js writes (for streaming PTY output).
  */
 
 import { create } from 'zustand';
@@ -16,6 +18,7 @@ import {
   createBridgeConnection,
   DEFAULT_BRIDGE_URL,
 } from '@/services/bridgeConnection';
+import type { Terminal } from '@xterm/xterm';
 
 export interface TerminalLine {
   id: string;
@@ -31,8 +34,11 @@ export interface TerminalState {
   reconnectAttempt: number;
   maxReconnectAttempts: number;
 
-  // Terminal output
+  // Terminal output (line-based for system/status messages)
   lines: TerminalLine[];
+
+  // xterm.js instance reference (set by TerminalPanel component)
+  xtermInstance: Terminal | null;
 
   // Actions
   connect: (url?: string) => void;
@@ -41,6 +47,8 @@ export interface TerminalState {
   clearTerminal: () => void;
   clearError: () => void;
   addLine: (type: TerminalLine['type'], content: string) => void;
+  setXtermInstance: (instance: Terminal | null) => void;
+  writeToXterm: (data: string) => void;
 }
 
 /** Maximum lines to keep in terminal buffer */
@@ -55,6 +63,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   reconnectAttempt: 0,
   maxReconnectAttempts: 0,
   lines: [],
+  xtermInstance: null,
 
   connect: (url?: string) => {
     const bridgeUrl = url ?? DEFAULT_BRIDGE_URL;
@@ -77,7 +86,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       onMessage: (message: BridgeMessage) => {
         const state = get();
         if (message.type === 'output' && message.data) {
-          state.addLine('output', message.data);
+          // Write directly to xterm for character-by-character streaming
+          state.writeToXterm(message.data);
         } else if (message.type === 'status' && message.data) {
           state.addLine('status', message.data);
         } else if (message.type === 'error' && message.data) {
@@ -138,5 +148,20 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }
       return { lines };
     });
+  },
+
+  setXtermInstance: (instance: Terminal | null) => {
+    set({ xtermInstance: instance });
+  },
+
+  writeToXterm: (data: string) => {
+    const { xtermInstance } = get();
+    if (xtermInstance) {
+      // Write directly to xterm for character-by-character rendering
+      xtermInstance.write(data);
+    } else {
+      // Fallback: add as line-based output if xterm not mounted yet
+      get().addLine('output', data);
+    }
   },
 }));
