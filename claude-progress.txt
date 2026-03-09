@@ -13426,3 +13426,43 @@ correctly through zoom-in/zoom-out cycles.
 
 #### Commit: ad73bfe
 #### Feature #511 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #515
+==================================================
+
+## Feature #515: Breadcrumb path positioned at far left of status bar - PASSING
+
+### Summary:
+Changed the status bar layout from a single right-aligned flex container to a
+split layout with breadcrumb on the left and stats on the right. Also made the
+breadcrumb always visible (showing "Root" even at root level).
+
+### Changes:
+
+1. **src/App.tsx**:
+   - Removed `justify-end` from status bar inner container
+   - Added a flex spacer (`<div className="flex-1" />`) between breadcrumb and stats
+   - Breadcrumb now flush left, stats flush right
+
+2. **src/components/canvas/ModeStatusBar.tsx**:
+   - Changed breadcrumb to always render (including "Root" at root level)
+   - Previously only showed when navigationPath.length > 0
+   - Linter applied pill styling (blue background, rounded-full)
+
+3. **test/unit/ui/keyboardBreadcrumbNavigation.test.ts**:
+   - Updated source code assertion from checking `navigationPath.length > 0`
+     to checking `breadcrumbParts.map` (reflecting always-visible breadcrumb)
+
+### Feature steps covered:
+1. ✅ Open file, navigate to root - breadcrumb "Root" at far left
+2. ✅ Zoom into parent node - breadcrumb "Root › Backend Server" at far left
+3. ✅ No vertical separator between breadcrumb and right-side stats
+
+### Verification:
+- 5504/5504 tests pass (0 regressions)
+- Browser: Breadcrumb at far left, stats at far right, zero console errors
+- Split layout verified at both root and child navigation levels
+
+#### Commit: 3fe48e0
+#### Feature #515 marked passing
