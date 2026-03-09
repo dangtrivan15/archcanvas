@@ -14467,3 +14467,43 @@ is configured with an MCP server pointing to the current .archc file.
 
 #### Commit: f3baffd
 #### Feature #534 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #509
+==================================================
+
+## Feature #509: Save computed positions after auto-layout - PASSING
+
+### Summary:
+Verified that the existing auto-layout implementation correctly saves computed positions
+back to the graph data so they persist in the .archc file on save. The complete chain
+works: ELK computes positions, applyElkLayout updates ArchNode.position, coreStore
+sets graph + isDirty=true, save encodes positions to Protocol Buffers, reload
+recovers exact positions, needsAutoLayout returns false (no re-trigger).
+
+### New Test File:
+- test/unit/core/saveComputedPositionsAfterLayout.test.ts - 17 tests:
+  - Step 1: Nodes at (0,0) detected as needing auto-layout
+  - Step 2: applyElkLayout assigns distinct positions, horizontal/vertical order
+  - Step 2: Laid-out nodes no longer flagged for auto-layout
+  - Step 3-4: Auto-layout positions survive full save/reload roundtrip
+  - Step 5: Reloaded positions prevent auto-layout re-trigger
+  - Child-level: Child nodes get distinct positions, survive roundtrip
+  - Source verification: immutable graph update, isDirty=true, textApi.setGraph
+
+### Browser Verification:
+- Loaded no-positions-test.archc (4 nodes at 0,0, 4 edges)
+- Console: Root nodes lack positions, triggering auto-layout
+- Console: Auto-layout applied horizontal
+- Screenshot: API Gateway (left) to Auth/User Service (middle) to PostgreSQL (right)
+- Title bar shows Modified (isDirty=true from auto-layout)
+- Zero console errors
+
+### Verification:
+- 17/17 new tests pass
+- 5606/5606 total tests pass (0 regressions)
+- 256/256 test files pass
+- No mock data patterns in production code
+
+#### Commit: 518b17a
+#### Feature #509 marked passing
