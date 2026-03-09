@@ -13506,3 +13506,15 @@ with bold text, colored background, and good contrast in both dark and standard 
 - Browser verified in dark mode with screenshots
 
 #### Feature #516 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #517
+==================================================
+
+## Feature #517: Right-side stats remain right-aligned with existing styling - PASSING
+
+Verified status bar layout: breadcrumb pill on left, stats on right with flex-1 spacer.
+No divider between breadcrumb and stats. Stats have w-px separators between each other.
+Zero console errors. Layout robust to resizing.
+
+#### Feature #517 marked passing
