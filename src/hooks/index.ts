@@ -16,6 +16,7 @@ export {
   DEBOUNCE_DELAY_MS,
   FILE_CHANGED_EVENT,
   FILE_INACCESSIBLE_MESSAGE,
+  FILE_RELOADED_MESSAGE,
 } from './useFilePolling';
 export type { FileChangedDetail } from './useFilePolling';
 export { useKeyboardShortcuts } from './useKeyboardShortcuts';

@@ -52,6 +52,9 @@ export const FILE_CHANGED_EVENT = 'archcanvas:file-changed';
 /** Warning message shown when the polled file becomes inaccessible */
 export const FILE_INACCESSIBLE_MESSAGE = 'File is no longer accessible.';
 
+/** Toast message shown when a file is auto-reloaded due to external modification */
+export const FILE_RELOADED_MESSAGE = 'File updated externally. Reloaded.';
+
 export interface FileChangedDetail {
   fileName: string;
   previousModified: number;
@@ -120,6 +123,9 @@ export function useFilePolling() {
           console.log(
             `[FilePolling] Auto-reloaded "${handle.name}" successfully`,
           );
+
+          // Show a brief toast so the user knows the canvas changed
+          useUIStore.getState().showToast(FILE_RELOADED_MESSAGE);
         } catch (reloadErr) {
           console.error('[FilePolling] Auto-reload failed:', reloadErr);
           // Fall back to flagging as externally modified
