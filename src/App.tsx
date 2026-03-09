@@ -33,6 +33,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useIPadExternalKeyboard } from '@/hooks/useIPadExternalKeyboard';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAutoSaveOnBlur } from '@/hooks/useAutoSaveOnBlur';
+import { useFilePolling } from '@/hooks/useFilePolling';
 import {
   useViewportSize,
   ICON_RAIL_BREAKPOINT,
@@ -164,6 +165,9 @@ export function App() {
 
   // Autosave when browser tab/window loses focus
   useAutoSaveOnBlur();
+
+  // Poll open file for external modifications (every 1 second)
+  useFilePolling();
 
   // Handle .archc file opens from iOS (Files app, AirDrop, etc.)
   useAppUrlOpen(initialized);
