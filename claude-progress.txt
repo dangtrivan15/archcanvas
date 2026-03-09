@@ -13847,3 +13847,38 @@ scenarios gracefully. Each error type shows a clear, actionable message in the t
 
 #### Commit: 4cbb28a
 #### Feature #544 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #545
+==================================================
+
+## Feature #545: Keyboard shortcuts overlay does not appear during Cmd+key combos - PASSING
+
+### Summary:
+Verified the fix from commit f42e9c1 that prevents the iPadOS-style keyboard shortcuts
+overlay from appearing during Cmd+key shortcut combos. The fix keeps cmdDownRef true when
+another key is pressed so Meta key-repeat events don't restart the 1s timer.
+
+### New Files:
+1. **test/unit/hooks/useCmdKeyHold.test.ts** — 11 tests covering:
+   - Step 1: Hold Cmd+S → overlay does NOT appear
+   - Step 2: Hold Cmd+Z → overlay does NOT appear
+   - Step 3: Hold Cmd alone for 1s → overlay DOES appear
+   - Step 4: Release Cmd → overlay dismisses
+   - Step 5: Hold Cmd+Shift+L → overlay does NOT appear
+   - Meta key-repeat after Cmd+key combo → timer NOT restarted (key fix)
+   - Platform detection: no-op on Linux/Windows, active on Mac/iPad
+   - Window blur dismisses overlay
+   - Overlay recoverable after full Cmd release + re-press
+
+### Verification:
+- 11/11 new tests pass
+- 308/308 hook tests pass (0 regressions)
+- Browser: App loads correctly, zero console errors
+- No mock data patterns in production code
+- Note: Browser automation on Linux can't directly test Cmd overlay (Mac/iPad only)
+  so verification was done through comprehensive unit tests with platform mocking
+
+#### Commit: 66e579b
+#### Feature #545 marked passing
+#### Current stats: 516/545 passing (94.7%)
