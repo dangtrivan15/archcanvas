@@ -416,12 +416,12 @@ describe('search command', () => {
 // ─── list-nodedefs command ──────────────────────────────────
 
 describe('list-nodedefs command', () => {
-  it('lists all 15 built-in nodedefs in JSON format', async () => {
+  it('lists all 42 built-in nodedefs in JSON format', async () => {
     const { stdout } = await captureOutput(['list-nodedefs', '--format', 'json']);
     const output = stdout.join('\n');
     const parsed = JSON.parse(output);
     expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed).toHaveLength(15);
+    expect(parsed).toHaveLength(42);
   });
 
   it('each nodedef has type, displayName, and namespace', async () => {
@@ -443,7 +443,7 @@ describe('list-nodedefs command', () => {
       'json',
     ]);
     const parsed = JSON.parse(stdout.join('\n'));
-    expect(parsed).toHaveLength(4);
+    expect(parsed).toHaveLength(6);
     for (const def of parsed) {
       expect(def.namespace).toBe('compute');
     }
@@ -458,7 +458,7 @@ describe('list-nodedefs command', () => {
       'json',
     ]);
     const parsed = JSON.parse(stdout.join('\n'));
-    expect(parsed).toHaveLength(4);
+    expect(parsed).toHaveLength(7);
     for (const def of parsed) {
       expect(def.namespace).toBe('data');
     }
@@ -490,7 +490,7 @@ describe('list-nodedefs command', () => {
     const { stdout, exitCode } = await captureOutput(['list-nodedefs', '--format', 'json']);
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout.join('\n'));
-    expect(parsed.length).toBe(15);
+    expect(parsed.length).toBe(42);
   });
 
   it('table format shows columns', async () => {

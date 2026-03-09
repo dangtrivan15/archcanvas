@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
-import { mkdtemp, rm, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile, mkdir, realpath } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
 import {
   buildInstallEntry,
@@ -56,7 +56,8 @@ describe('archcanvas mcp install', () => {
   let registryDir: string;
 
   beforeEach(async () => {
-    testDir = await mkdtemp(join(tmpdir(), 'archcanvas-mcp-install-test-'));
+    const rawDir = await mkdtemp(join(tmpdir(), 'archcanvas-mcp-install-test-'));
+    testDir = await realpath(rawDir);
     registryDir = join(testDir, 'registry');
     await mkdir(registryDir, { recursive: true });
     origCwd = process.cwd();

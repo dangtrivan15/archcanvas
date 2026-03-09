@@ -422,10 +422,10 @@ describe('CLI Entry Point', () => {
   // ─── RegistryManagerCore / nodeLoader ──────────────────────
 
   describe('CLI NodeDef Loader', () => {
-    it('loadBuiltinNodeDefs returns 15 nodedefs', async () => {
+    it('loadBuiltinNodeDefs returns 42 nodedefs', async () => {
       const { loadBuiltinNodeDefs } = await import('@/cli/nodeLoader');
       const defs = loadBuiltinNodeDefs();
-      expect(defs).toHaveLength(15);
+      expect(defs).toHaveLength(42);
     });
 
     it('loaded nodedefs have correct structure', async () => {
@@ -445,7 +445,7 @@ describe('CLI Entry Point', () => {
       const { loadBuiltinNodeDefs } = await import('@/cli/nodeLoader');
       const registry = new RegistryManagerCore();
       registry.initialize(loadBuiltinNodeDefs());
-      expect(registry.size).toBe(15);
+      expect(registry.size).toBe(42);
       expect(registry.resolve('compute/service')).toBeDefined();
     });
   });
