@@ -53,7 +53,7 @@ describe('Terminal Panel - Error State Display', () => {
   describe('Feature Step 1: Bridge not running shows actionable message', () => {
     it('bridge_not_running error message tells user to start bridge server', () => {
       const msg = BRIDGE_ERROR_MESSAGES.bridge_not_running;
-      expect(msg.action).toBe('Start bridge server with npm run bridge');
+      expect(msg.action).toBe('Run: npm run bridge');
     });
 
     it('classifyError for connection failure produces bridge_not_running', () => {
