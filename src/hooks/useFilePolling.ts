@@ -3,10 +3,19 @@
  * timestamp every 1 second via the File System Access API's getFile() metadata.
  *
  * When an external modification is detected (lastModified differs from stored
- * value), it:
- * 1. Sets the `fileExternallyModified` flag in coreStore
- * 2. Emits a custom event 'archcanvas:file-changed' on the window object
- * 3. Updates the stored timestamp to prevent repeated alerts
+ * value), it either:
+ * A. Auto-reloads the file if isDirty is false (no unsaved local changes)
+ * B. Sets the `fileExternallyModified` flag if isDirty is true (has unsaved changes)
+ *
+ * Auto-reload (isDirty=false):
+ * - Re-reads the .archc binary from disk via getFile().arrayBuffer()
+ * - Decodes it with decodeArchcData and applies with _applyDecodedFile
+ * - No confirmation dialog is shown
+ *
+ * Manual resolution (isDirty=true):
+ * - Sets the `fileExternallyModified` flag in coreStore
+ * - Emits a custom event 'archcanvas:file-changed' on the window object
+ * - Updates the stored timestamp to prevent repeated alerts
  *
  * False-positive prevention:
  * - Skips detection while `isSaving` is true (the web app is writing the file)
@@ -24,6 +33,7 @@
 import { useEffect, useRef } from 'react';
 import { useCoreStore } from '@/store/coreStore';
 import { useUIStore } from '@/store/uiStore';
+import { decodeArchcData } from '@/core/storage/fileIO';
 
 /** Polling interval in milliseconds */
 export const FILE_POLL_INTERVAL_MS = 1000;
@@ -83,13 +93,104 @@ export function useFilePolling() {
               `(was ${previousModified}, now ${currentModified})`,
           );
 
-          // Flag the file as externally modified and update timestamp
-          useCoreStore.setState({
-            fileLastModifiedMs: currentModified,
-            fileExternallyModified: true,
-          });
+          if (!state.isDirty) {
+            // No unsaved local changes — auto-reload from disk
+            console.log('[FilePolling] No local changes, auto-reloading file...');
 
-          // Dispatch custom event for consumers
+            // Update timestamp immediately to prevent re-triggering during reload
+            useCoreStore.setState({ fileLastModifiedMs: currentModified });
+
+            try {
+              const data = new Uint8Array(await file.arrayBuffer());
+              const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
+
+              // Re-apply the decoded file, keeping the same file handle
+              useCoreStore.getState()._applyDecodedFile(
+                graph,
+                handle.name,
+                handle,
+                canvasState,
+                aiState,
+                createdAtMs,
+              );
+
+              console.log(`[FilePolling] Auto-reloaded "${handle.name}" successfully`);
+            } catch (reloadErr) {
+              console.error('[FilePolling] Auto-reload failed:', reloadErr);
+              // Fall back to flagging as externally modified
+              useCoreStore.setState({ fileExternallyModified: true });
+            }
+          } else {
+            // Has unsaved local changes — flag for manual resolution
+            useCoreStore.setState({
+              fileLastModifiedMs: currentModified,
+              fileExternallyModified: true,
+            });
+
+            // Show conflict dialog with three resolution options
+            const { openConflictDialog } = useUIStore.getState();
+            openConflictDialog({
+              fileName: handle.name,
+              onReload: async () => {
+                // Discard local changes and reload the externally modified file
+                try {
+                  const reloadFile = await handle.getFile();
+                  const data = new Uint8Array(await reloadFile.arrayBuffer());
+                  const { graph, canvasState, aiState, createdAtMs } =
+                    await decodeArchcData(data);
+                  useCoreStore.getState()._applyDecodedFile(
+                    graph,
+                    handle.name,
+                    handle,
+                    canvasState,
+                    aiState,
+                    createdAtMs,
+                  );
+                  console.log(
+                    `[FilePolling] Reloaded "${handle.name}" from disk (user chose reload)`,
+                  );
+                } catch (reloadErr) {
+                  console.error('[FilePolling] Reload from disk failed:', reloadErr);
+                  useUIStore.getState().openErrorDialog({
+                    title: 'Reload Failed',
+                    message: `Could not reload the file from disk: ${reloadErr instanceof Error ? reloadErr.message : String(reloadErr)}`,
+                  });
+                }
+              },
+              onSaveAsCopy: async () => {
+                // Save local changes to a new file, then reload from disk
+                const saved = await useCoreStore.getState().saveFileAs();
+                if (saved) {
+                  // After saving the copy, reload the original file
+                  try {
+                    const reloadFile = await handle.getFile();
+                    const data = new Uint8Array(await reloadFile.arrayBuffer());
+                    const { graph, canvasState, aiState, createdAtMs } =
+                      await decodeArchcData(data);
+                    useCoreStore.getState()._applyDecodedFile(
+                      graph,
+                      handle.name,
+                      handle,
+                      canvasState,
+                      aiState,
+                      createdAtMs,
+                    );
+                    console.log(
+                      `[FilePolling] Saved copy and reloaded "${handle.name}" from disk`,
+                    );
+                  } catch (reloadErr) {
+                    console.error('[FilePolling] Reload after save-as-copy failed:', reloadErr);
+                    useUIStore.getState().openErrorDialog({
+                      title: 'Reload Failed',
+                      message: `Saved your copy, but could not reload the original file: ${reloadErr instanceof Error ? reloadErr.message : String(reloadErr)}`,
+                    });
+                  }
+                }
+              },
+            });
+          }
+
+          // Dispatch custom event for consumers (both auto-reload and manual cases)
           const detail: FileChangedDetail = {
             fileName: handle.name,
             previousModified,
