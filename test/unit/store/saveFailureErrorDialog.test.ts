@@ -45,15 +45,6 @@ vi.mock('@/store/navigationStore', () => ({
   },
 }));
 
-// Mock aiStore
-vi.mock('@/store/aiStore', () => ({
-  useAIStore: {
-    getState: () => ({
-      conversations: [],
-    }),
-  },
-}));
-
 // Mock layout
 vi.mock('@/core/layout/elkLayout', () => ({
   applyElkLayout: vi.fn(),

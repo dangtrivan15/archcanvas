@@ -33,7 +33,6 @@ import { enqueueSave } from '@/core/sync/syncQueue';
 import { encode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
-import { useAIStore } from '@/store/aiStore';
 import { haptics } from '@/hooks/useHaptics';
 import { applyElkLayout } from '@/core/layout/elkLayout';
 import { needsAutoLayout } from '@/core/layout/positionDetection';
@@ -153,7 +152,7 @@ export interface CoreStoreState {
     fileName: string,
     fileHandle: unknown,
     canvasState?: import('@/types/graph').SavedCanvasState,
-    aiState?: import('@/core/storage/fileIO').AIStateData,
+    _aiState?: import('@/core/storage/fileIO').AIStateData,
     createdAtMs?: number,
   ) => void;
 }
@@ -258,9 +257,6 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     undoManager.clear();
     undoManager.snapshot('New file', graph);
 
-    // Clear AI conversations
-    useAIStore.getState().clearConversations();
-
     set({
       graph,
       isDirty: false,
@@ -285,7 +281,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     fileName: string,
     fileHandle: unknown,
     canvasState?: import('@/types/graph').SavedCanvasState,
-    aiState?: import('@/core/storage/fileIO').AIStateData,
+    _aiState?: import('@/core/storage/fileIO').AIStateData,
     createdAtMs?: number,
   ) => {
     const { textApi, undoManager } = get();
@@ -335,11 +331,9 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
       }
     }
 
-    if (aiState && aiState.conversations.length > 0) {
-      useAIStore.getState().setConversations(aiState.conversations);
-    } else {
-      useAIStore.getState().clearConversations();
-    }
+    // AI state from file is ignored — AI store has been removed.
+    // Proto compatibility is maintained: aiState is still decoded/encoded by fileIO
+    // but no longer loaded into a Zustand store.
 
     // Request fit view so the canvas adjusts to show all nodes
     useCanvasStore.getState().requestFitView();
@@ -541,7 +535,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
     try {
       const canvasState = _getCanvasStateForSave();
-      const aiState = _getAIStateForSave();
+      const aiState = undefined;
 
       // If offline, queue the save for background sync instead of writing directly
       if (!navigator.onLine) {
@@ -647,7 +641,7 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
 
     try {
       const canvasState = _getCanvasStateForSave();
-      const aiState = _getAIStateForSave();
+      const aiState = undefined;
       const result = await saveArchcFileAs(
         graph,
         fileName,
@@ -1478,12 +1472,8 @@ function _getCanvasStateForSave() {
   };
 }
 
-function _getAIStateForSave() {
-  const aiStoreState = useAIStore.getState();
-  const conversations = aiStoreState.conversations;
-  if (conversations.length === 0) return undefined;
-  return { conversations };
-}
+// AI store has been removed — aiState is always undefined for saves.
+// Proto compatibility: graphToProto handles undefined aiState gracefully.
 
 /**
  * Lazy getter for the project store to avoid circular dependency.

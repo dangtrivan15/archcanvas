@@ -33,8 +33,6 @@ export { DEFAULT_LAYOUT_SPACING, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } 
 export { useNavigationStore } from './navigationStore';
 export type { NavigationStoreState } from './navigationStore';
 
-export { useAIStore } from './aiStore';
-export type { AIStoreState } from './aiStore';
 
 export { usePencilStore } from './pencilStore';
 export type { PencilStoreState, PencilTilt } from './pencilStore';

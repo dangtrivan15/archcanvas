@@ -54,17 +54,6 @@ vi.mock('@/store/navigationStore', () => {
   return { useNavigationStore };
 });
 
-// Mock aiStore
-vi.mock('@/store/aiStore', () => ({
-  useAIStore: {
-    getState: () => ({
-      conversations: [],
-      clearConversations: vi.fn(),
-      setConversations: vi.fn(),
-    }),
-  },
-}));
-
 // Mock layout
 vi.mock('@/core/layout/elkLayout', () => ({
   applyElkLayout: vi.fn(),

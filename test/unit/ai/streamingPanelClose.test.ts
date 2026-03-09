@@ -5,7 +5,7 @@
  * and reopening the panel shows the preserved messages.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // ---- AI client tests (abort + streaming) ----
 
@@ -68,109 +68,6 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
     });
   });
 
-  describe('AI Store conversation persistence across panel close', () => {
-    // Import the actual store for persistence tests
-    let useAIStore: typeof import('@/store/aiStore').useAIStore;
-
-    beforeEach(async () => {
-      const module = await import('@/store/aiStore');
-      useAIStore = module.useAIStore;
-      useAIStore.getState().clearConversations();
-    });
-
-    afterEach(() => {
-      useAIStore.getState().clearConversations();
-    });
-
-    it('user message persisted to store before streaming begins', () => {
-      // Simulate: user sends message → persisted to store
-      useAIStore.getState().addMessage('user', 'What does this service do?');
-
-      const messages = useAIStore.getState().getMessages();
-      expect(messages).toHaveLength(1);
-      expect(messages[0].role).toBe('user');
-      expect(messages[0].content).toBe('What does this service do?');
-    });
-
-    it('persisted messages survive component unmount (panel close)', () => {
-      // Add messages to store
-      useAIStore.getState().addMessage('user', 'Hello');
-      useAIStore.getState().addMessage('assistant', 'Hi there!');
-      useAIStore.getState().addMessage('user', 'What is this architecture?');
-
-      // "Close panel" = component unmounts, but store persists
-      // (Zustand global store is NOT affected by React component lifecycle)
-      const messages = useAIStore.getState().getMessages();
-      expect(messages).toHaveLength(3);
-    });
-
-    it('conversation state is preserved after simulated panel close and reopen', () => {
-      // Phase 1: Send messages (user + assistant reply)
-      useAIStore.getState().addMessage('user', 'Explain the database node');
-      useAIStore
-        .getState()
-        .addMessage('assistant', 'The database node is a persistent data store...');
-
-      // Phase 2: "Close" the panel (in reality, the component unmounts but store stays)
-      // No action needed - Zustand stores are global
-
-      // Phase 3: "Reopen" panel → component remounts, reads from store
-      const messagesAfterReopen = useAIStore.getState().getMessages();
-      expect(messagesAfterReopen).toHaveLength(2);
-      expect(messagesAfterReopen[0].content).toBe('Explain the database node');
-      expect(messagesAfterReopen[1].content).toBe(
-        'The database node is a persistent data store...',
-      );
-    });
-
-    it('node-scoped messages persist across panel close/reopen', () => {
-      const nodeId = 'test-node-123';
-
-      // Add messages scoped to a node
-      useAIStore.getState().addMessageToNode(nodeId, 'user', 'What does this node do?');
-      useAIStore.getState().addMessageToNode(nodeId, 'assistant', 'This is a service node...');
-
-      // "Close and reopen" - read messages again
-      const nodeMessages = useAIStore.getState().getNodeMessages(nodeId);
-      expect(nodeMessages).toHaveLength(2);
-      expect(nodeMessages[0].role).toBe('user');
-      expect(nodeMessages[1].role).toBe('assistant');
-    });
-
-    it('global and node-scoped conversations are independent', () => {
-      // Add global message
-      useAIStore.getState().addMessage('user', 'Global question');
-
-      // Add node-scoped message
-      useAIStore.getState().addMessageToNode('node-1', 'user', 'Node question');
-
-      // Both exist independently
-      const globalMsgs = useAIStore.getState().getMessages();
-      const nodeMsgs = useAIStore.getState().getNodeMessages('node-1');
-
-      expect(globalMsgs).toHaveLength(1);
-      expect(globalMsgs[0].content).toBe('Global question');
-      expect(nodeMsgs).toHaveLength(1);
-      expect(nodeMsgs[0].content).toBe('Node question');
-    });
-
-    it('multiple conversations survive panel close/reopen', () => {
-      // Create conversations for multiple nodes
-      useAIStore.getState().addMessageToNode('node-a', 'user', 'Question about A');
-      useAIStore.getState().addMessageToNode('node-a', 'assistant', 'Answer about A');
-      useAIStore.getState().addMessageToNode('node-b', 'user', 'Question about B');
-      useAIStore.getState().addMessage('user', 'Global question');
-
-      // All conversations preserved
-      const conversations = useAIStore.getState().conversations;
-      expect(conversations).toHaveLength(3); // node-a, node-b, global
-
-      expect(useAIStore.getState().getNodeMessages('node-a')).toHaveLength(2);
-      expect(useAIStore.getState().getNodeMessages('node-b')).toHaveLength(1);
-      expect(useAIStore.getState().getMessages()).toHaveLength(1);
-    });
-  });
-
   describe('streaming message lifecycle on panel close', () => {
     it('streaming message is local state (not persisted if incomplete)', () => {
       // The streaming message in AIChatTab is stored in useState (local)
@@ -195,20 +92,6 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
       // after sendAIMessage resolves, not during streaming)
     });
 
-    it('completed assistant message IS persisted to store', async () => {
-      const { useAIStore: store } = await import('@/store/aiStore');
-      store.getState().clearConversations();
-
-      // Simulate: streaming completes → persistMessage called
-      store.getState().addMessage('assistant', 'Complete response from AI');
-
-      const messages = store.getState().getMessages();
-      expect(messages).toHaveLength(1);
-      expect(messages[0].content).toBe('Complete response from AI');
-      expect(messages[0].role).toBe('assistant');
-
-      store.getState().clearConversations();
-    });
   });
 
   describe('cleanup effect behavior', () => {
@@ -322,13 +205,13 @@ describe('Feature #230: Streaming AI response handles panel close gracefully', (
       expect(source).toContain('setIsStreaming');
     });
 
-    it('user messages are persisted BEFORE streaming begins', async () => {
+    it('user messages are added BEFORE streaming begins', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/components/panels/AIChatTab.tsx', 'utf-8');
 
-      // In handleSend, persistMessage('user', trimmed) is called before sendWithPlaceholder
+      // In handleSend, addMessage('user', trimmed) is called before sendWithPlaceholder
       const handleSendMatch = source.match(
-        /persistMessage\('user',\s*trimmed\)[\s\S]*?sendWith(?:AI|Placeholder)/,
+        /addMessage\('user',\s*trimmed\)[\s\S]*?sendWith(?:AI|Placeholder)/,
       );
       expect(handleSendMatch).not.toBeNull();
     });

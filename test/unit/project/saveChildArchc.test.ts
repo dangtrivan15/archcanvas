@@ -142,17 +142,6 @@ vi.mock('@/store/canvasStore', () => {
   return { useCanvasStore };
 });
 
-vi.mock('@/store/aiStore', () => {
-  const store = {
-    conversations: [],
-  };
-  const useAIStore = Object.assign(
-    (selector: (s: typeof store) => unknown) => selector(store),
-    { getState: () => store, setState: vi.fn() },
-  );
-  return { useAIStore };
-});
-
 // Import the store under test (after mocks are registered)
 const { useProjectStore } = await import('@/store/projectStore');
 
