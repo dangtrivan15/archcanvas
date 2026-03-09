@@ -42,9 +42,9 @@ export function useCmdKeyHold(): boolean {
         return;
       }
 
-      // Any other key press while Cmd is down: cancel timer and dismiss overlay
+      // Any other key press while Cmd is down: cancel timer and dismiss overlay.
+      // Keep cmdDownRef true so that Meta key-repeat events don't restart the timer.
       clearTimer();
-      cmdDownRef.current = false;
       setVisible(false);
     };
 
