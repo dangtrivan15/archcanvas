@@ -3,9 +3,15 @@
  * timestamp every 1 second via the File System Access API's getFile() metadata.
  *
  * When an external modification is detected (lastModified differs from stored
- * value), it emits a custom event 'archcanvas:file-changed' on the window object
- * and logs a console warning. Consumers can listen for this event to prompt
- * the user to reload or merge changes.
+ * value), it:
+ * 1. Sets the `fileExternallyModified` flag in coreStore
+ * 2. Emits a custom event 'archcanvas:file-changed' on the window object
+ * 3. Updates the stored timestamp to prevent repeated alerts
+ *
+ * False-positive prevention:
+ * - Skips detection while `isSaving` is true (the web app is writing the file)
+ * - The save flow updates `fileLastModifiedMs` after writing, so the next poll
+ *   sees the new timestamp and won't flag it as external
  *
  * Polling is only active when:
  * - A file handle exists (File System Access API, not fallback download)
@@ -51,26 +57,38 @@ export function useFilePolling() {
       return;
     }
 
-    const baselineMs = fileLastModifiedMs;
-
     const poll = async () => {
       try {
+        // Skip detection while the web app is saving to prevent false positives.
+        // The save operation changes the file's lastModified, and the save flow
+        // updates fileLastModifiedMs after writing. Without this guard, a poll
+        // between write and timestamp update would incorrectly flag the change.
+        if (useCoreStore.getState().isSaving) {
+          return;
+        }
+
         const file = await handle.getFile();
         const currentModified = file.lastModified;
 
-        if (currentModified !== useCoreStore.getState().fileLastModifiedMs) {
+        const state = useCoreStore.getState();
+        if (currentModified !== state.fileLastModifiedMs) {
+          const previousModified = state.fileLastModifiedMs!;
+
           console.warn(
             `[FilePolling] External modification detected: ${handle.name} ` +
-              `(was ${useCoreStore.getState().fileLastModifiedMs}, now ${currentModified})`,
+              `(was ${previousModified}, now ${currentModified})`,
           );
 
-          // Update the stored timestamp so we don't fire repeatedly
-          useCoreStore.setState({ fileLastModifiedMs: currentModified });
+          // Flag the file as externally modified and update timestamp
+          useCoreStore.setState({
+            fileLastModifiedMs: currentModified,
+            fileExternallyModified: true,
+          });
 
           // Dispatch custom event for consumers
           const detail: FileChangedDetail = {
             fileName: handle.name,
-            previousModified: baselineMs,
+            previousModified,
             currentModified,
           };
           window.dispatchEvent(

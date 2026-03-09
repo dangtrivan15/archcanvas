@@ -125,7 +125,7 @@ describe('useFilePolling', () => {
     it('updates stored timestamp after detecting change', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/hooks/useFilePolling.ts', 'utf-8');
-      expect(source).toContain('useCoreStore.setState({ fileLastModifiedMs: currentModified })');
+      expect(source).toContain('fileLastModifiedMs: currentModified');
     });
 
     it('handles getFile() errors gracefully (stops polling)', async () => {
