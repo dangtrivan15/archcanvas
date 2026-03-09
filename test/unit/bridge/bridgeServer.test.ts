@@ -65,7 +65,7 @@ describe('Step 2: WebSocket dependency', () => {
 
 describe('Step 3: Spawns claude CLI process', () => {
   it('should import spawn from child_process', () => {
-    expect(BRIDGE_SOURCE).toContain("import { spawn, type ChildProcess } from 'node:child_process'");
+    expect(BRIDGE_SOURCE).toContain("import { spawn, execSync, type ChildProcess } from 'node:child_process'");
   });
 
   it('should have a spawnClaudeCode function', () => {
