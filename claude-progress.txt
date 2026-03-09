@@ -15294,3 +15294,39 @@ fields and components are confirmed absent.
 - No mock data patterns in production code
 
 #### Feature #548 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #550
+==================================================
+
+## Feature #550: Derive bridge WebSocket URL from window.location.host - PASSING
+
+### Summary:
+Continued work from a previous killed agent that had substantial uncommitted changes.
+The bridge server is now integrated into the Vite dev server via a plugin (no separate
+process needed), and the WebSocket URL is derived from window.location.host.
+
+### Key Changes (from previous agent + my fixes):
+1. **src/bridge/viteBridgePlugin.ts** (NEW): Vite plugin that attaches WebSocket server
+   to Vite dev server at /bridge path, with /bridge/health endpoint
+2. **src/services/bridgeConnection.ts**: Added getBridgeUrl() that derives URL from
+   window.location (wss:// for HTTPS, ws:// for HTTP)
+3. **src/store/terminalStore.ts**: Uses getBridgeUrl() instead of DEFAULT_BRIDGE_URL
+4. **src/bridge/server.ts**: Removed CLI entry point, exported handleConnection for plugin use
+5. **vite.config.ts**: Added viteBridgePlugin to dev server plugins
+6. **package.json**: Removed standalone "bridge" npm script
+
+### My Fixes (previous agent's tests were failing):
+- **test/unit/bridge/bridgeServer.test.ts**: Updated Step 1, 6, 7 tests to reflect
+  Vite-integrated architecture (no CLI, no separate port, no bridge npm script)
+
+### Verification:
+- 6205/6205 tests pass (0 regressions)
+- 272/272 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- Bridge health endpoint responds at /bridge/health
+- No hardcoded localhost:3100 or localhost:5173 references in src/
+- No mock data patterns in production code
+
+#### Commit: 11bb7ce
+#### Feature #550 marked passing
