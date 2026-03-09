@@ -14894,3 +14894,42 @@ auto-saves mutations to disk → file polling detects changes and reloads canvas
 
 #### Commit: 683f565
 #### Feature #538 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #543
+==================================================
+
+## Feature #543: Add npm script and startup instructions for bridge server - PASSING
+
+### Summary:
+Verified that the existing bridge server setup (from feature #534) includes a proper
+npm script and all necessary startup instructions. The bridge script (`npm run bridge`)
+invokes `npx tsx src/bridge/server.ts` which starts the HTTP + WebSocket server on
+port 3001, logs the WebSocket URL, and can run concurrently with Vite dev server
+(port 5173).
+
+### New Test File:
+- **test/unit/bridge/bridgeServerNpmScript.test.ts** — 42 tests:
+  - Step 1: bridge script in package.json (5 tests)
+  - Step 2: npm run bridge starts server via main() entry point (8 tests)
+  - Step 3: Bridge and Vite can run concurrently on different ports (6 tests)
+  - Step 4: Bridge server logs WebSocket URL on startup (8 tests)
+  - Step 5: dev:ensure pattern and help/instructions (8 tests)
+  - Integration: Complete npm script workflow (7 tests)
+
+### Feature steps covered:
+1. ✅ 'bridge' script exists in package.json
+2. ✅ 'npm run bridge' starts the bridge server successfully
+3. ✅ Bridge server and Vite dev server can run concurrently (ports 3001 vs 5173)
+4. ✅ Bridge server logs its WebSocket URL on startup
+5. ✅ Bridge server has --help with startup instructions
+
+### Verification:
+- 42/42 new tests pass
+- 5919/5919 total tests pass (0 regressions)
+- 266/266 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 36dc246
+#### Feature #543 marked passing
