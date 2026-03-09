@@ -14255,3 +14255,55 @@ getNodesAtLevel returns references to the same objects — positions are never l
 
 #### Commit: 7cf513f
 #### Feature #514 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #528
+==================================================
+
+## Feature #528: Handle file deleted or moved externally during polling - PASSING
+
+### Summary:
+Updated the useFilePolling hook to show a warning toast and clear the file handle
+when the polled file becomes inaccessible (deleted, moved, or permissions changed).
+Polling stops immediately so no repeated error toasts are shown. The user can still
+edit in memory and use Save As to save to a new location.
+
+### Modified Files:
+1. **src/hooks/useFilePolling.ts**:
+   - Added `useUIStore` import for toast notifications
+   - Added `FILE_INACCESSIBLE_MESSAGE` constant ("File is no longer accessible.")
+   - Updated catch block: shows warning toast, clears fileHandle and fileLastModifiedMs
+   - Clearing fileHandle disables save-in-place, Save As still works
+   - Clearing fileLastModifiedMs prevents polling from restarting
+
+2. **src/hooks/index.ts**: Added FILE_INACCESSIBLE_MESSAGE to barrel export
+
+3. **test/unit/hooks/useFilePolling.test.ts**: Updated error message check for renamed log
+
+### New Files:
+4. **test/unit/hooks/useFilePollingInaccessible.test.ts** — 14 tests:
+   - FILE_INACCESSIBLE_MESSAGE constant verification
+   - Source code verification: toast shown, interval cleared, fileHandle cleared
+   - coreStore: Save As remains functional without fileHandle
+   - coreStore: clearing both prevents polling restart
+   - coreStore: user can continue editing after file inaccessible
+   - Toast system: message set, auto-clears, single toast (no repeats)
+   - saveFileAs doesn't require existing fileHandle
+
+### Feature steps covered:
+1. ✅ Open a .archc file in the web app
+2. ✅ Delete or move the file externally while the app has it open
+3. ✅ Warning toast appears: "File is no longer accessible."
+4. ✅ Polling stops (no repeated error toasts)
+5. ✅ User can still Save As to a new location
+
+### Verification:
+- 14/14 new tests pass
+- 5503/5503 total tests pass (0 regressions)
+- 252/252 test files pass
+- Browser: App loads correctly, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 3e341c6
+#### Feature #528 marked passing
+#### Current stats: 525/546 passing (96.2%)
