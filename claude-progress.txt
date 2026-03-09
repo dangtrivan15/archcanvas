@@ -13882,3 +13882,54 @@ another key is pressed so Meta key-repeat events don't restart the 1s timer.
 #### Commit: 66e579b
 #### Feature #545 marked passing
 #### Current stats: 516/545 passing (94.7%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #531
+==================================================
+
+## Feature #531: Remove AI store and AI-related state from Zustand - PASSING
+
+### Summary:
+Removed the AI Zustand store (src/store/aiStore.ts) and all cross-store dependencies
+related to AI chat. Proto compatibility maintained — aiState is still decoded/encoded
+by fileIO but no longer loaded into a Zustand store.
+
+### Deleted Files:
+- **src/store/aiStore.ts** — Zustand store for AI conversations, messages, persistence
+- **test/unit/store/aiMessagePersistence.test.ts** — Tests for the removed AI store
+
+### Modified Source Files:
+1. **src/store/index.ts**: Removed useAIStore and AIStoreState exports
+2. **src/store/selectors.ts**: Removed AIStoreState import and AI selectors (selectConversations, selectHasConversations)
+3. **src/store/coreStore.ts**:
+   - Removed `import { useAIStore }` 
+   - Removed `useAIStore.getState().clearConversations()` from newFile()
+   - Removed `useAIStore.getState().setConversations()` from _applyDecodedFile()
+   - Replaced `_getAIStateForSave()` calls with `undefined`
+   - Removed `_getAIStateForSave()` function
+   - Renamed aiState param to _aiState (unused but kept for proto compat)
+4. **src/store/projectStore.ts**: Removed dynamic import of aiStore, pass undefined for aiState
+5. **src/components/panels/AIChatTab.tsx**: Replaced aiStore usage with local React state
+
+### Modified Test Files (9 files):
+- Removed vi.mock('@/store/aiStore') blocks from: saveChildArchc, saveMainArchc,
+  focusRingsInteractiveElements, toolbarTabNavigation, saveButtonDisabledDuringSave,
+  undoDuringSave, doubleClickSave, saveFailureErrorDialog, rapidNodeAdditions
+- Updated storeSelectors.test.ts: removed AI selector tests
+- Updated streamingPanelClose.test.ts: removed AI store persistence tests, fixed source regex
+
+### Feature steps covered:
+1. ✅ Removed src/store/aiStore.ts
+2. ✅ Removed AI-related imports and references from other stores
+3. ✅ AIState handling kept as no-op for proto compat (param exists but ignored)
+4. ✅ All remaining stores compile and function correctly
+5. ✅ App launches without errors (zero console errors, 42 nodedefs loaded)
+
+### Verification:
+- 5485/5485 tests pass (0 regressions)
+- Browser: App loads correctly, zero console errors
+- Zero references to aiStore remaining in src/
+- No mock data patterns in production code
+
+#### Commit: 0783614
+#### Feature #531 marked passing
