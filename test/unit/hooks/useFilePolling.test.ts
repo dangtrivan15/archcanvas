@@ -148,7 +148,7 @@ describe('useFilePolling', () => {
   describe('coreStore save updates fileLastModifiedMs', () => {
     it('saveFile path in coreStore reads lastModified after save', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       // After saveArchcFile, should refresh lastModified
       expect(source).toContain('Refresh lastModified timestamp after save');
       expect(source).toContain('savedFile.lastModified');
@@ -156,7 +156,7 @@ describe('useFilePolling', () => {
 
     it('saveFileAs path captures lastModified from new handle', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       expect(source).toContain('newLastModifiedMs');
       expect(source).toContain('fileLastModifiedMs: newLastModifiedMs');
     });
@@ -231,7 +231,7 @@ describe('useFilePolling', () => {
       expect(source).toContain('intervalRef.current = setInterval(poll, FILE_POLL_INTERVAL_MS)');
 
       // Verify _applyDecodedFile sets fileHandle and captures fileLastModifiedMs async
-      const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const storeSource = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       expect(storeSource).toContain('fileHandle');
       // The async block after _applyDecodedFile captures lastModified
       expect(storeSource).toContain('set({ fileLastModifiedMs: file.lastModified })');
@@ -239,7 +239,7 @@ describe('useFilePolling', () => {
 
     it('Step 3: polling stops when new file created (handle + timestamp cleared)', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // Extract the newFile block to verify both are cleared
       const newFileMatch = source.match(/newFile:[\s\S]*?fileHandle:\s*null[\s\S]*?fileLastModifiedMs:\s*null/);
@@ -279,7 +279,7 @@ describe('useFilePolling', () => {
 
     it('Step 4: re-opening a file sets new fileHandle and triggers timestamp capture', async () => {
       const fs = await import('fs');
-      const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const storeSource = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // _applyDecodedFile accepts a fileHandle parameter and calls getFile() on it
       expect(storeSource).toContain('(fileHandle as FileSystemFileHandle)');
@@ -292,7 +292,7 @@ describe('useFilePolling', () => {
 
     it('Step 5: Save As sets new fileHandle and captures fileLastModifiedMs', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // saveFileAs captures lastModified from new handle
       expect(source).toContain('newLastModifiedMs');

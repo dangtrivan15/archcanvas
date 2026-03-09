@@ -15,15 +15,20 @@ import path from 'path';
 
 describe('Reset undo history and canvas state on reload (Feature #523)', () => {
   let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
-  let coreStoreSource: string;
+  let fileStoreSource: string;
+  let historyStoreSource: string;
   let hookSource: string;
 
   beforeEach(async () => {
     vi.resetModules();
     const mod = await import('@/store/coreStore');
     useCoreStore = mod.useCoreStore;
-    coreStoreSource = fs.readFileSync(
-      path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+    fileStoreSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/store/fileStore.ts'),
+      'utf-8',
+    );
+    historyStoreSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/store/historyStore.ts'),
       'utf-8',
     );
     hookSource = fs.readFileSync(
@@ -88,7 +93,7 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
     });
 
     it('_applyDecodedFile accepts canvasState parameter', () => {
-      expect(coreStoreSource).toMatch(
+      expect(fileStoreSource).toMatch(
         /_applyDecodedFile[\s\S]*?canvasState\?/,
       );
     });
@@ -98,35 +103,29 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
   // Step 4: Undo history is cleared (Ctrl+Z does nothing)
   // ──────────────────────────────────────────
   describe('Step 4: Undo history cleared after reload', () => {
-    it('_applyDecodedFile calls undoManager.clear()', () => {
-      // Extract the _applyDecodedFile function body
-      const applyFnMatch = coreStoreSource.match(
-        /_applyDecodedFile[\s\S]*?undoManager\.clear\(\)/,
-      );
-      expect(applyFnMatch).not.toBeNull();
+    it('_applyDecodedFile delegates undo reset to historyStore', () => {
+      // _applyDecodedFile calls useHistoryStore.getState().reset(graph) which clears undo
+      expect(fileStoreSource).toContain('useHistoryStore.getState().reset(graph)');
     });
 
-    it('_applyDecodedFile creates a fresh "Open file" snapshot after clear', () => {
-      // After clear(), a new snapshot is taken as baseline
-      const afterClear = coreStoreSource.match(
-        /undoManager\.clear\(\)[\s\S]*?undoManager\.snapshot\('Open file'/,
-      );
-      expect(afterClear).not.toBeNull();
+    it('historyStore.reset clears undo and creates a fresh "Open file" snapshot', () => {
+      // reset() calls undoManager.clear() then undoManager.snapshot('Open file', graph)
+      expect(historyStoreSource).toContain('undoManager.clear()');
+      expect(historyStoreSource).toContain("undoManager.snapshot('Open file'");
     });
 
-    it('_applyDecodedFile sets canUndo to false', () => {
-      // In the set() call within _applyDecodedFile
-      const setCall = coreStoreSource.match(
-        /_applyDecodedFile[\s\S]*?set\(\{[\s\S]*?canUndo:\s*false/,
+    it('historyStore.reset sets canUndo to false', () => {
+      const resetMatch = historyStoreSource.match(
+        /reset[\s\S]*?canUndo:\s*false/,
       );
-      expect(setCall).not.toBeNull();
+      expect(resetMatch).not.toBeNull();
     });
 
-    it('_applyDecodedFile sets canRedo to false', () => {
-      const setCall = coreStoreSource.match(
-        /_applyDecodedFile[\s\S]*?set\(\{[\s\S]*?canRedo:\s*false/,
+    it('historyStore.reset sets canRedo to false', () => {
+      const resetMatch = historyStoreSource.match(
+        /reset[\s\S]*?canRedo:\s*false/,
       );
-      expect(setCall).not.toBeNull();
+      expect(resetMatch).not.toBeNull();
     });
 
     it('UndoManager.clear() removes all entries and resets index', async () => {
@@ -177,16 +176,16 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
       expect(result).toBeUndefined();
     });
 
-    it('coreStore.undo() is a no-op when canUndo is false', () => {
+    it('historyStore.undo() is a no-op when canUndo is false', () => {
       // Verify the undo function checks undoManager.undo() result
-      expect(coreStoreSource).toMatch(
+      expect(historyStoreSource).toMatch(
         /undo:\s*\(\)\s*=>\s*\{[\s\S]*?undoManager\.undo\(\)/,
       );
       // The result is checked before applying
-      expect(coreStoreSource).toMatch(
+      expect(historyStoreSource).toMatch(
         /const\s+previousGraph\s*=\s*undoManager\.undo\(\)/,
       );
-      expect(coreStoreSource).toMatch(/if\s*\(previousGraph\)/);
+      expect(historyStoreSource).toMatch(/if\s*\(previousGraph\)/);
     });
   });
 
@@ -195,26 +194,26 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
   // ──────────────────────────────────────────
   describe('Step 5: Canvas state restored from reloaded file', () => {
     it('_applyDecodedFile restores viewport from canvasState', () => {
-      const viewportRestore = coreStoreSource.match(
+      const viewportRestore = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?setViewport\(canvasState\.viewport\)/,
       );
       expect(viewportRestore).not.toBeNull();
     });
 
     it('_applyDecodedFile restores panel layout from canvasState', () => {
-      const panelRestore = coreStoreSource.match(
+      const panelRestore = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?canvasState\.panelLayout/,
       );
       expect(panelRestore).not.toBeNull();
     });
 
     it('_applyDecodedFile conditionally opens or closes the right panel', () => {
-      const openPanel = coreStoreSource.match(
+      const openPanel = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?canvasState\.panelLayout\.rightPanelOpen[\s\S]*?openRightPanel/,
       );
       expect(openPanel).not.toBeNull();
 
-      const closePanel = coreStoreSource.match(
+      const closePanel = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?closeRightPanel/,
       );
       expect(closePanel).not.toBeNull();
@@ -222,14 +221,14 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
 
     it('_applyDecodedFile guards canvasState restoration with if(canvasState)', () => {
       // canvasState is optional, so there should be a guard
-      const guard = coreStoreSource.match(
+      const guard = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?if\s*\(canvasState\)/,
       );
       expect(guard).not.toBeNull();
     });
 
     it('_applyDecodedFile requests fit view after restoration', () => {
-      const fitView = coreStoreSource.match(
+      const fitView = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?requestFitView\(\)/,
       );
       expect(fitView).not.toBeNull();
@@ -274,14 +273,14 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
     });
 
     it('_applyDecodedFile clears isDirty flag after reload', () => {
-      const setDirty = coreStoreSource.match(
-        /_applyDecodedFile[\s\S]*?set\(\{[\s\S]*?isDirty:\s*false/,
+      const setDirty = fileStoreSource.match(
+        /_applyDecodedFile[\s\S]*?useGraphStore\.setState\(\{[\s\S]*?isDirty:\s*false/,
       );
       expect(setDirty).not.toBeNull();
     });
 
     it('_applyDecodedFile clears fileExternallyModified flag', () => {
-      const clearFlag = coreStoreSource.match(
+      const clearFlag = fileStoreSource.match(
         /_applyDecodedFile[\s\S]*?set\(\{[\s\S]*?fileExternallyModified:\s*false/,
       );
       expect(clearFlag).not.toBeNull();

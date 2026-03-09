@@ -54,8 +54,8 @@ describe('Feature #510: Skip auto-layout when nodes have user-set positions', ()
       expect(needsAutoLayout(nodes)).toBe(false);
     });
 
-    it('coreStore skips auto-layout when needsAutoLayout returns false', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+    it('fileStore skips auto-layout when needsAutoLayout returns false', () => {
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       // The guard condition: only triggers when needsAutoLayout returns true
       expect(source).toContain('needsAutoLayout(graph.nodes)');
       // This means if it returns false (nodes have positions), the auto-layout block is skipped
@@ -150,8 +150,8 @@ describe('Feature #510: Skip auto-layout when nodes have user-set positions', ()
   });
 
   describe('Step 5: Verify user can still manually trigger layout via menu/shortcut', () => {
-    it('autoLayout action exists in coreStore for manual triggering', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+    it('autoLayout action exists in graphStore for manual triggering', () => {
+      const source = readFileSync(join(__dirname, '../../../src/store/graphStore.ts'), 'utf-8');
       // The autoLayout action is always available regardless of needsAutoLayout
       expect(source).toContain('autoLayout:');
       expect(source).toContain('applyElkLayout(graph, direction, navigationPath, spacing)');

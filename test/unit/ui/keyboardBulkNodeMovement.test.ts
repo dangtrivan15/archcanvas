@@ -489,27 +489,27 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
 
     it('coreStore has moveNodes method', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const src = fs.readFileSync('src/store/graphStore.ts', 'utf-8');
       expect(src).toContain('moveNodes:');
       expect(src).toContain('snapshotDescription');
     });
 
     it('coreStore moveNodes clamps negative coordinates', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const src = fs.readFileSync('src/store/graphStore.ts', 'utf-8');
       expect(src).toContain('Math.max(0, x)');
       expect(src).toContain('Math.max(0, y)');
     });
 
     it('coreStore moveNodes takes single undo snapshot', async () => {
       const fs = await import('fs');
-      const src = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const src = fs.readFileSync('src/store/graphStore.ts', 'utf-8');
       // Find the implementation of moveNodes (second occurrence, after interface)
       const implStart = src.indexOf('moveNodes: (moves, snapshotDescription)');
       const implEnd = src.indexOf('duplicateSelection:', implStart);
       expect(implStart).toBeGreaterThan(0);
       const moveNodesBlock = src.slice(implStart, implEnd);
-      const snapshotCalls = (moveNodesBlock.match(/undoManager\.snapshot/g) || []).length;
+      const snapshotCalls = (moveNodesBlock.match(/pushSnapshot/g) || []).length;
       expect(snapshotCalls).toBe(1);
     });
 

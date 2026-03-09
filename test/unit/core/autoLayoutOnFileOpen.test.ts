@@ -32,31 +32,31 @@ describe('Feature #507: Auto-layout triggers on file open when root nodes lack p
     });
   });
 
-  describe('Step 2-4: coreStore._applyDecodedFile triggers auto-layout for nodes at (0,0)', () => {
-    it('coreStore.ts imports needsAutoLayout from positionDetection', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+  describe('Step 2-4: fileStore._applyDecodedFile triggers auto-layout for nodes at (0,0)', () => {
+    it('fileStore.ts imports needsAutoLayout from positionDetection', () => {
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain("import { needsAutoLayout } from '@/core/layout/positionDetection'");
     });
 
     it('_applyDecodedFile calls needsAutoLayout on the graph nodes', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain('needsAutoLayout(graph.nodes)');
     });
 
     it('_applyDecodedFile calls autoLayout when needsAutoLayout returns true', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       // Should call autoLayout with horizontal direction and empty navigation path
       expect(source).toContain("autoLayout('horizontal', [])");
     });
 
     it('auto-layout is triggered asynchronously to allow React to render first', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       // setTimeout ensures React has rendered the initial node positions before layout
       expect(source).toContain('setTimeout');
     });
 
     it('auto-layout requests fit view after completing', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       // After auto-layout completes, should fit view to show arranged nodes
       // Find the section that handles auto-layout on open
       const autoLayoutSection = source.slice(
@@ -67,7 +67,7 @@ describe('Feature #507: Auto-layout triggers on file open when root nodes lack p
     });
 
     it('handles auto-layout errors gracefully', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain('Auto-layout on file open failed');
     });
   });
@@ -92,7 +92,7 @@ describe('Feature #507: Auto-layout triggers on file open when root nodes lack p
     });
 
     it('auto-layout guard checks graph.nodes.length > 0', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain('graph.nodes.length > 0');
     });
 
@@ -103,13 +103,13 @@ describe('Feature #507: Auto-layout triggers on file open when root nodes lack p
 
   describe('Integration: auto-layout uses edges for layout direction', () => {
     it('autoLayout passes edges to ELK for layout direction', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/graphStore.ts'), 'utf-8');
       // autoLayout calls applyElkLayout which uses graph edges for layout
       expect(source).toContain('applyElkLayout(graph, direction, navigationPath, spacing)');
     });
 
     it('auto-layout on file open uses horizontal direction', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       const autoLayoutOnOpenSection = source.slice(
         source.indexOf('Root nodes lack positions'),
         source.indexOf('Auto-layout on file open complete') + 50,
@@ -120,12 +120,12 @@ describe('Feature #507: Auto-layout triggers on file open when root nodes lack p
 
   describe('Logging', () => {
     it('logs when auto-layout is triggered on file open', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain('Root nodes lack positions');
     });
 
     it('logs when auto-layout on file open completes', () => {
-      const source = readFileSync(join(__dirname, '../../../src/store/coreStore.ts'), 'utf-8');
+      const source = readFileSync(join(__dirname, '../../../src/store/fileStore.ts'), 'utf-8');
       expect(source).toContain('Auto-layout on file open complete');
     });
   });

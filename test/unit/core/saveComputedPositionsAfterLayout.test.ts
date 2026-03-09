@@ -314,9 +314,9 @@ describe('Feature #509: Save computed positions after auto-layout', () => {
       expect(result.nodes).not.toBe(graph.nodes);
     });
 
-    it('coreStore.autoLayout sets isDirty=true after layout', async () => {
+    it('graphStore.autoLayout sets isDirty=true after layout', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/graphStore.ts', 'utf-8');
 
       // After applyElkLayout, the store sets isDirty: true
       expect(source).toContain('isDirty: true');
@@ -330,7 +330,7 @@ describe('Feature #509: Save computed positions after auto-layout', () => {
 
     it('file open triggers auto-layout for unpositioned nodes', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // needsAutoLayout check on file open
       expect(source).toContain('needsAutoLayout(graph.nodes)');

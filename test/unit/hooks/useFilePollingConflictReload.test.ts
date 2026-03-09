@@ -24,7 +24,7 @@ const CONFLICT_DIALOG_PATH = path.resolve(
 );
 const CORE_STORE_PATH = path.resolve(
   __dirname,
-  '../../../src/store/coreStore.ts',
+  '../../../src/store/fileStore.ts',
 );
 
 const useFilePollingSource = fs.readFileSync(USE_FILE_POLLING_PATH, 'utf-8');
@@ -128,8 +128,8 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
     });
 
     it('_applyDecodedFile sets the graph in the store state', () => {
-      // The set() call includes the new graph
-      expect(coreStoreSource).toMatch(/set\(\{[\s\S]*?graph,/);
+      // The setState() call includes the new graph
+      expect(coreStoreSource).toMatch(/setState\(\{[\s\S]*?graph,/);
     });
 
     it('_applyDecodedFile updates nodeCount and edgeCount from new graph', () => {
@@ -150,8 +150,8 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
 
   describe('Step 5: isDirty is reset to false after reload', () => {
     it('_applyDecodedFile sets isDirty to false', () => {
-      // The _applyDecodedFile method explicitly sets isDirty: false
-      expect(coreStoreSource).toMatch(/_applyDecodedFile[\s\S]*?isDirty:\s*false/);
+      // The _applyDecodedFile method sets isDirty: false via graphStore
+      expect(coreStoreSource).toContain('isDirty: false');
     });
 
     it('store simulation: isDirty transitions from true to false after _applyDecodedFile', () => {
@@ -178,23 +178,27 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
   // ── Step 6: Verify undo history is cleared ──
 
   describe('Step 6: Undo history is cleared after reload', () => {
-    it('_applyDecodedFile calls undoManager.clear()', () => {
-      // _applyDecodedFile clears undo history before creating a fresh baseline
-      expect(coreStoreSource).toMatch(
-        /_applyDecodedFile[\s\S]*?undoManager\.clear\(\)/,
-      );
+    it('_applyDecodedFile resets history via historyStore', () => {
+      // _applyDecodedFile delegates undo history reset to historyStore
+      expect(coreStoreSource).toContain('useHistoryStore.getState().reset(graph)');
     });
 
-    it('_applyDecodedFile creates a fresh "Open file" snapshot after clear', () => {
-      // After clearing, a fresh snapshot is created as the baseline
-      expect(coreStoreSource).toMatch(
-        /undoManager\.clear\(\)[\s\S]*?undoManager\.snapshot\('Open file'/,
+    it('historyStore.reset clears and creates fresh snapshot', () => {
+      const historySource = fs.readFileSync(
+        path.resolve(__dirname, '../../../src/store/historyStore.ts'),
+        'utf-8',
       );
+      expect(historySource).toContain('undoManager.clear()');
+      expect(historySource).toContain("undoManager.snapshot('Open file'");
     });
 
-    it('_applyDecodedFile sets canUndo and canRedo to false', () => {
-      expect(coreStoreSource).toMatch(/_applyDecodedFile[\s\S]*?canUndo:\s*false/);
-      expect(coreStoreSource).toMatch(/_applyDecodedFile[\s\S]*?canRedo:\s*false/);
+    it('historyStore.reset sets canUndo and canRedo to false', () => {
+      const historySource = fs.readFileSync(
+        path.resolve(__dirname, '../../../src/store/historyStore.ts'),
+        'utf-8',
+      );
+      expect(historySource).toMatch(/reset[\s\S]*?canUndo:\s*false/);
+      expect(historySource).toMatch(/reset[\s\S]*?canRedo:\s*false/);
     });
 
     it('store simulation: undo state transitions after reload', () => {
