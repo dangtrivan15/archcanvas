@@ -150,17 +150,17 @@ describe('isActiveElementTextInput()', () => {
 });
 
 describe('FocusZone integration with keyboard handlers', () => {
-  it('Canvas.tsx imports isActiveElementTextInput', async () => {
+  it('Canvas keyboard hook imports isActiveElementTextInput', async () => {
     const fs = await import('fs');
-    const canvasSource = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const canvasSource = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     expect(canvasSource).toContain(
       "import { isActiveElementTextInput } from '@/core/input/focusZones'",
     );
   });
 
-  it('Canvas.tsx uses isActiveElementTextInput instead of inline tagName checks', async () => {
+  it('Canvas keyboard hook uses isActiveElementTextInput instead of inline tagName checks', async () => {
     const fs = await import('fs');
-    const canvasSource = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const canvasSource = fs.readFileSync('src/components/canvas/hooks/useCanvasKeyboard.ts', 'utf-8');
     // Should use the centralized function
     expect(canvasSource).toContain('isActiveElementTextInput()');
     // The old inline check pattern should NOT be present in the keyboard handler
