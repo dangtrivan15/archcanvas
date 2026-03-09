@@ -184,7 +184,7 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
 
       const undoManager = new UndoManager();
       undoManager.snapshot('Initial state', graph);
-      expect(undoManager.entries.length).toBe(1);
+      expect(undoManager.historyLength).toBe(1);
 
       // Perform batch move (simulating moveNodes)
       const moved = batchMoveNodes(graph, [
@@ -195,8 +195,8 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       undoManager.snapshot('Move 3 nodes', moved);
 
       // Should have exactly 2 entries: initial + one batch move
-      expect(undoManager.entries.length).toBe(2);
-      expect(undoManager.entries[1]!.description).toBe('Move 3 nodes');
+      expect(undoManager.historyLength).toBe(2);
+      expect(undoManager.getDescriptions()[1]).toBe('Move 3 nodes');
     });
 
     it('undo restores all 3 nodes to their original positions', () => {
@@ -256,7 +256,7 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       const desc = `Move ${count} node${count === 1 ? '' : 's'}`;
       undoManager.snapshot(desc, moved);
 
-      expect(undoManager.entries[1]!.description).toBe('Move 1 node');
+      expect(undoManager.getDescriptions()[1]).toBe('Move 1 node');
     });
 
     it('snapshot description formats correctly for multiple nodes', () => {
@@ -272,7 +272,7 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       const desc = `Move ${count} node${count === 1 ? '' : 's'}`;
       undoManager.snapshot(desc, graph);
 
-      expect(undoManager.entries[1]!.description).toBe('Move 3 nodes');
+      expect(undoManager.getDescriptions()[1]).toBe('Move 3 nodes');
     });
   });
 
@@ -612,7 +612,7 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       undoManager.snapshot('Move 1 node', step3);
 
       // 4 entries: initial + 3 moves
-      expect(undoManager.entries.length).toBe(4);
+      expect(undoManager.historyLength).toBe(4);
 
       // Undo to step 2
       const u1 = undoManager.undo();
