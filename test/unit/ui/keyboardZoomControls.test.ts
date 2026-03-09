@@ -249,18 +249,18 @@ describe('Browser Zoom Prevention', () => {
 });
 
 describe('Canvas Zoom Implementation', () => {
-  it('Canvas uses ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION', async () => {
+  it('Canvas viewport hook uses ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('ZOOM_STEP');
     expect(source).toContain('ZOOM_MIN');
     expect(source).toContain('ZOOM_MAX');
     expect(source).toContain('ZOOM_DURATION');
   });
 
-  it('Canvas watches zoom counter effects', async () => {
+  it('Canvas viewport hook watches zoom counter effects', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('zoomInCounter');
     expect(source).toContain('zoomOutCounter');
     expect(source).toContain('fitViewCounter');
@@ -269,31 +269,31 @@ describe('Canvas Zoom Implementation', () => {
 
   it('zoom-in uses Math.min to clamp at ZOOM_MAX', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('Math.min(ZOOM_MAX, vp.zoom + ZOOM_STEP)');
   });
 
   it('zoom-out uses Math.max to clamp at ZOOM_MIN', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('Math.max(ZOOM_MIN, vp.zoom - ZOOM_STEP)');
   });
 
   it('zoom-100 sets zoom to 1.0', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('zoom: 1.0');
   });
 
   it('fitView uses padding and duration', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('fitView({ padding: 0.2, duration: 300 })');
   });
 
   it('zoom animations use ZOOM_DURATION', async () => {
     const fs = await import('fs');
-    const source = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
+    const source = fs.readFileSync('src/components/canvas/hooks/useCanvasViewport.ts', 'utf-8');
     expect(source).toContain('duration: ZOOM_DURATION');
   });
 });
