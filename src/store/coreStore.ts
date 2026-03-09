@@ -11,7 +11,6 @@ import type {
   AddNoteParams,
   AddCodeRefParams,
   UpdateNodeParams,
-  SuggestParams,
 } from '@/types/api';
 import { RegistryManager } from '@/core/registry/registryManager';
 import { createEmptyGraph, moveNode as engineMoveNode } from '@/core/graph/graphEngine';
@@ -119,8 +118,6 @@ export interface CoreStoreState {
   removeNote: (nodeId: string, noteId: string) => void;
   updateNote: (nodeId: string, noteId: string, content: string) => void;
   addCodeRef: (params: AddCodeRefParams) => void;
-  suggest: (params: SuggestParams) => Note | undefined;
-  resolveSuggestion: (nodeId: string, noteId: string, action: 'accepted' | 'dismissed') => void;
   updateNodeColor: (nodeId: string, color: string | undefined) => void;
   moveNode: (nodeId: string, x: number, y: number) => void;
   moveNodes: (
@@ -1136,48 +1133,6 @@ export const useCoreStore = create<CoreStoreState>((set, get) => ({
     });
   },
 
-  /**
-   * Create a pending AI suggestion note on a node.
-   */
-  suggest: (params) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return undefined;
-
-    const note = textApi.suggest(params);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot('AI suggestion', updatedGraph);
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-
-    return note;
-  },
-
-  /**
-   * Accept or dismiss an AI suggestion note.
-   */
-  resolveSuggestion: (nodeId, noteId, action) => {
-    const { textApi, undoManager } = get();
-    if (!textApi || !undoManager) return;
-
-    textApi.resolveSuggestion(nodeId, noteId, action);
-    const updatedGraph = textApi.getGraph();
-    undoManager.snapshot(
-      `${action === 'accepted' ? 'Accept' : 'Dismiss'} suggestion`,
-      updatedGraph,
-    );
-
-    set({
-      graph: updatedGraph,
-      isDirty: true,
-      canUndo: undoManager.canUndo,
-      canRedo: undoManager.canRedo,
-    });
-  },
 
   /**
    * Update a node's custom color (stored in position.color).

@@ -460,43 +460,6 @@ function removeNoteFromNodeList(nodes: ArchNode[], nodeId: string, noteId: strin
   });
 }
 
-/**
- * Update a note's status (for accepting/dismissing AI suggestions).
- */
-export function updateNoteStatus(
-  graph: ArchGraph,
-  nodeId: string,
-  noteId: string,
-  status: Note['status'],
-): ArchGraph {
-  return {
-    ...graph,
-    nodes: updateNoteInNodeList(graph.nodes, nodeId, noteId, status),
-  };
-}
-
-function updateNoteInNodeList(
-  nodes: ArchNode[],
-  nodeId: string,
-  noteId: string,
-  status: Note['status'],
-): ArchNode[] {
-  return nodes.map((node) => {
-    if (node.id === nodeId) {
-      return {
-        ...node,
-        notes: node.notes.map((n) => (n.id === noteId ? { ...n, status } : n)),
-      };
-    }
-    if (node.children.length > 0) {
-      return {
-        ...node,
-        children: updateNoteInNodeList(node.children, nodeId, noteId, status),
-      };
-    }
-    return node;
-  });
-}
 
 /**
  * Update a note's content while preserving author, timestamp, and id.

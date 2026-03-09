@@ -85,7 +85,6 @@ function archNodeToCanvas(node: ArchNode): CanvasNode {
     ports: { inbound: [], outbound: [] },
     hasChildren: node.children.length > 0,
     noteCount: 0,
-    pendingSuggestionCount: 0,
     codeRefCount: 0,
     properties: {},
     icon: 'Box',

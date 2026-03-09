@@ -1,14 +1,13 @@
 /**
  * NodeBadges - Compact pill-shaped badges with Lucide icons for node footer counts.
- * Replaces emoji-based text badges (📝, 💡, 📎) with styled pill badges.
+ * Replaces emoji-based text badges (📝, 📎) with styled pill badges.
  * Each badge type has a distinct muted color. Badges only render when count > 0.
  */
 import React from 'react';
-import { MessageSquare, Lightbulb, FileCode } from 'lucide-react';
+import { MessageSquare, FileCode } from 'lucide-react';
 
 interface NodeBadgesProps {
   noteCount: number;
-  pendingSuggestionCount: number;
   codeRefCount: number;
   className?: string;
   /** Optional color for the top divider line (hex with alpha, e.g. '#3B82F620') */
@@ -26,7 +25,6 @@ interface BadgeConfig {
 
 export function NodeBadges({
   noteCount,
-  pendingSuggestionCount,
   codeRefCount,
   className = '',
   dividerColor,
@@ -39,14 +37,6 @@ export function NodeBadges({
       testId: 'badge-notes',
       bgColor: 'bg-blue-500/15',
       textColor: 'text-blue-600 dark:text-blue-400',
-    },
-    {
-      count: pendingSuggestionCount,
-      icon: Lightbulb,
-      label: 'pending suggestions',
-      testId: 'badge-suggestions',
-      bgColor: 'bg-amber-500/15',
-      textColor: 'text-amber-600 dark:text-amber-400',
     },
     {
       count: codeRefCount,

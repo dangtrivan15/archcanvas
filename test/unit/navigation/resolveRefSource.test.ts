@@ -125,7 +125,6 @@ function makeNode(refSource: string): CanvasNode {
       refSource,
       hasChildren: false,
       noteCount: 0,
-      pendingSuggestionCount: 0,
       codeRefCount: 0,
     } as CanvasNodeData,
   } as CanvasNode;

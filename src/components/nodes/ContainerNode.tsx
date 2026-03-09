@@ -506,7 +506,6 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
       {/* Badges (footer) */}
       <NodeBadges
         noteCount={nodeData.noteCount}
-        pendingSuggestionCount={nodeData.pendingSuggestionCount}
         codeRefCount={nodeData.codeRefCount}
         className="px-3 py-1.5"
         dividerColor={`${effectiveColor}20`}

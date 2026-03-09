@@ -127,7 +127,6 @@ export function NodeContent({
       {/* Badges (footer) */}
       <NodeBadges
         noteCount={nodeData.noteCount}
-        pendingSuggestionCount={nodeData.pendingSuggestionCount}
         codeRefCount={nodeData.codeRefCount}
         className={badgesClassName}
         dividerColor={`${effectiveColor}20`}

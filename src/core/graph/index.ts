@@ -22,7 +22,6 @@ export {
   addNoteToNode,
   addNoteToEdge,
   removeNoteFromNode,
-  updateNoteStatus,
   updateNoteContent,
   addCodeRef,
   findNode,
