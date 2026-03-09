@@ -14631,3 +14631,43 @@ implementation already handles all feature requirements:
 
 #### Commit: 5ae3b0d
 #### Feature #523 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #525
+==================================================
+
+## Feature #525: Conflict resolution: Reload from disk discards local changes - PASSING
+
+### Summary:
+Verified that the existing "Reload from disk" button in the conflict dialog correctly
+discards local changes, re-reads the .archc file from disk, replaces the in-memory
+graph via _applyDecodedFile, resets isDirty to false, and clears undo history.
+
+### New Test File:
+- **test/unit/hooks/useFilePollingConflictReload.test.ts** — 27 tests:
+  - Step 1: Conflict dialog triggered with onReload callback when isDirty=true
+  - Step 2: Reload button invokes handleReload → info.onReload() → closeDialog
+  - Step 3: onReload reads file via handle.getFile(), decodes, calls _applyDecodedFile
+  - Step 4: _applyDecodedFile replaces graph, updates counts, clears external flag
+  - Step 5: isDirty reset to false after reload
+  - Step 6: Undo history cleared (undoManager.clear()), canUndo/canRedo false
+  - Error handling: reload failure shows error dialog
+  - Integration: full flow simulation (dirty → conflict → reload → clean)
+
+### Feature steps covered:
+1. ✅ Open a file, make local changes, trigger external modification
+2. ✅ Conflict dialog appears — click "Reload from disk"
+3. ✅ Local changes are gone (graph replaced by file contents)
+4. ✅ Externally modified content is now displayed
+5. ✅ isDirty is false
+6. ✅ Undo history is cleared
+
+### Verification:
+- 27/27 new tests pass
+- 5699/5699 total tests pass (0 regressions)
+- 260/260 test files pass
+- Browser: App loads with 42 nodedefs, zero console errors
+- No mock data patterns in production code
+
+#### Commit: 2451955
+#### Feature #525 marked passing
