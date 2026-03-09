@@ -463,14 +463,14 @@ describe('Analysis Pipeline Integration', () => {
       useUIStore.getState().openEmptyProjectDialog({
         folderName: 'test-project',
         hasSourceFiles: true,
-        hasApiKey: false,
+
         onUseAI: vi.fn(),
         onQuickScan: () => {
           useUIStore.getState().closeEmptyProjectDialog();
           useProjectStore.getState().runAnalysisPipeline();
         },
-        onConfigureApiKey: vi.fn(),
-        onUseExternalAgent: vi.fn(),
+
+
       });
 
       // Verify dialog is open
