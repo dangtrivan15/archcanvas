@@ -23,12 +23,16 @@
 
 import { useEffect, useRef } from 'react';
 import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
 
 /** Polling interval in milliseconds */
 export const FILE_POLL_INTERVAL_MS = 1000;
 
 /** Custom event name dispatched when external file change is detected */
 export const FILE_CHANGED_EVENT = 'archcanvas:file-changed';
+
+/** Warning message shown when the polled file becomes inaccessible */
+export const FILE_INACCESSIBLE_MESSAGE = 'File is no longer accessible.';
 
 export interface FileChangedDetail {
   fileName: string;
@@ -96,12 +100,23 @@ export function useFilePolling() {
           );
         }
       } catch (err) {
-        // Permission revoked or file deleted — stop polling
-        console.warn('[FilePolling] Poll failed, stopping:', err);
+        // File deleted, moved, or permissions revoked — stop polling
+        console.warn('[FilePolling] File inaccessible, stopping polling:', err);
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
+
+        // Show a single warning toast (polling is already stopped, so no repeats)
+        useUIStore.getState().showToast(FILE_INACCESSIBLE_MESSAGE);
+
+        // Clear the file handle so the user can't save-in-place,
+        // but they can still Save As to a new location.
+        // Keep fileLastModifiedMs null so polling won't restart.
+        useCoreStore.setState({
+          fileHandle: null,
+          fileLastModifiedMs: null,
+        });
       }
     };
 

@@ -132,7 +132,7 @@ describe('useFilePolling', () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/hooks/useFilePolling.ts', 'utf-8');
       expect(source).toContain('catch');
-      expect(source).toContain('Poll failed');
+      expect(source).toContain('File inaccessible');
     });
 
     it('only polls when fileHandle and fileLastModifiedMs are present', async () => {
