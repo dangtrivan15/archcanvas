@@ -27,12 +27,14 @@ import {
   Bot,
   Palette,
   RotateCcw,
+  Terminal,
 } from 'lucide-react';
 import { useCoreStore } from '@/store/coreStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
 import { AIChatTab } from './AIChatTab';
+import { TerminalPanel } from './TerminalPanel';
 import type { NodeDef, ArgDef } from '@/types/nodedef';
 import { formatRelativeTime } from '@/utils/formatRelativeTime';
 import { marked } from 'marked';
@@ -58,7 +60,7 @@ function renderMarkdown(content: string): string {
   return sanitizeHtml(html);
 }
 
-type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat';
+type Tab = 'properties' | 'notes' | 'coderefs' | 'aichat' | 'terminal';
 
 export function NodeDetailPanel() {
   const graph = useCoreStore((s) => s.graph);
@@ -139,6 +141,7 @@ export function NodeDetailPanel() {
           { key: 'notes' as Tab, icon: StickyNote, label: 'Notes' },
           { key: 'coderefs' as Tab, icon: FileCode, label: 'Code Refs' },
           { key: 'aichat' as Tab, icon: MessageSquare, label: 'AI Chat' },
+          { key: 'terminal' as Tab, icon: Terminal, label: 'Terminal' },
         ].map(({ key, icon: Icon, label }) => (
           <button
             key={key}
@@ -158,7 +161,11 @@ export function NodeDetailPanel() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'aichat' ? (
+      {activeTab === 'terminal' ? (
+        <div className="flex-1 overflow-hidden min-h-0">
+          <TerminalPanel />
+        </div>
+      ) : activeTab === 'aichat' ? (
         <div className="flex-1 overflow-hidden min-h-0">
           <AIChatTab />
         </div>
