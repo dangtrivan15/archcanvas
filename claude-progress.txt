@@ -14933,3 +14933,21 @@ port 3001, logs the WebSocket URL, and can run concurrently with Vite dev server
 
 #### Commit: 36dc246
 #### Feature #543 marked passing
+
+==================================================
+SESSION: 2026-03-09 - Feature #536
+==================================================
+
+## Feature #536: xterm.js terminal component in right panel - PASSING
+
+### Summary:
+Replaced div-based terminal output with xterm.js Terminal instance.
+Added @xterm/xterm and @xterm/addon-fit dependencies.
+Terminal streams PTY output character-by-character via writeToXterm.
+FitAddon + ResizeObserver handles panel resize.
+58 new tests, 42 existing tests still pass.
+Browser verified: Terminal tab renders, zero console errors.
+
+#### Commit: 02e640a
+#### Feature #536 marked passing
+#### Current stats: 537/546 passing (98.4%)
