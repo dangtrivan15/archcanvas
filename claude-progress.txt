@@ -14951,3 +14951,60 @@ Browser verified: Terminal tab renders, zero console errors.
 #### Commit: 02e640a
 #### Feature #536 marked passing
 #### Current stats: 537/546 passing (98.4%)
+
+==================================================
+SESSION: 2026-03-09 - Feature #537
+==================================================
+
+## Feature #537: Terminal panel styling consistent with ArchCanvas theme - PASSING
+
+### Summary:
+Styled the xterm.js terminal to match the ArchCanvas theme system. The terminal
+now dynamically adapts its colors when the user switches between any of the 7
+built-in themes (Dark, Light, Nord, Catppuccin Mocha, Rose Pine, Rose Pine Moon,
+Rose Pine Dawn).
+
+### Changes Made:
+- **src/components/panels/TerminalPanel.tsx**:
+  - Added `hslToHex()` utility to convert theme HSL strings to hex for xterm.js
+  - Added `buildXtermTheme()` to map ArchCanvas theme tokens to xterm ITheme
+  - Exported `TERMINAL_FONT_FAMILY` constant with modern monospace font stack
+  - Replaced hardcoded `bg-gray-900` with `bg-background` (theme token)
+  - Replaced hardcoded `bg-gray-50 dark:bg-gray-900` header with `bg-surface`
+  - Replaced hardcoded text colors with `text-text`, `text-muted-foreground`
+  - Replaced hardcoded button hovers with `hover:bg-highlight-low`
+  - Added `useTheme()` hook and `useMemo` for reactive theme updates
+  - Added `useEffect` to update xterm.options.theme when theme changes
+  - Set `cursorStyle: 'bar'` and cursor color from theme iris token
+
+### New Test File:
+- **test/unit/ui/terminalPanelTheme.test.ts** — 55 tests:
+  - Step 1: Dark mode xterm theme color mapping (10 tests)
+  - Step 2: Light mode xterm theme color mapping (9 tests)
+  - Step 3: Theme switching integration (11 tests)
+  - Step 4: Monospace font consistency (5 tests)
+  - Step 5: Cursor visibility in both modes (7 tests)
+  - hslToHex utility tests (8 tests)
+  - Integration: buildXtermTheme completeness (5 tests)
+
+### Updated Test:
+- **test/unit/ui/terminalPanel.test.ts** — Updated 1 test:
+  - Changed "terminal output area has dark background" to "theme-aware background"
+
+### Feature steps covered:
+1. ✅ Configure xterm.js theme colors matching ArchCanvas dark mode palette
+2. ✅ Configure xterm.js theme colors matching ArchCanvas light mode palette
+3. ✅ Terminal switches theme when user toggles dark/light mode
+4. ✅ Verify font is monospace and consistent with the app's code font
+5. ✅ Verify cursor is visible and styled appropriately in both modes
+
+### Verification:
+- 55/55 new tests pass
+- 6076/6076 total tests pass (0 regressions)
+- 269/269 test files pass
+- Browser: Terminal panel verified in Dark, Light, and Nord themes
+- Zero console errors
+- No mock data patterns in production code
+
+#### Commit: 0ae0150
+#### Feature #537 marked passing
