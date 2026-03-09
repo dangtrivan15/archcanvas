@@ -36,7 +36,7 @@ export type NodeDefNamespace = (typeof NODEDEF_NAMESPACES)[number];
 
 // Right panel tabs
 // Note: Panel dimension constants (widths, min/max) live in src/store/uiStore.ts
-export const RIGHT_PANEL_TABS = ['properties', 'notes', 'coderefs', 'aichat', 'terminal'] as const;
+export const RIGHT_PANEL_TABS = ['properties', 'notes', 'coderefs', 'terminal'] as const;
 export type RightPanelTab = (typeof RIGHT_PANEL_TABS)[number];
 
 // Default architecture
