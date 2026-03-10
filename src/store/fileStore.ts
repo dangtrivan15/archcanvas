@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import type { ArchGraph } from '@/types/graph';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { countAllNodes } from '@/core/graph/graphQuery';
+import { getFileLastModified } from '@/core/platform/fileSystemAdapter';
 import {
   pickArchcFile,
   decodeArchcData,
@@ -161,17 +162,16 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     });
 
     // Capture the file's lastModified timestamp for external change polling
-    if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-      (fileHandle as FileSystemFileHandle)
-        .getFile()
-        .then((file) => {
-          set({ fileLastModifiedMs: file.lastModified });
-          console.log(`[FileStore] Captured file lastModified: ${file.lastModified}`);
-        })
-        .catch((err) => {
-          console.warn('[FileStore] Could not read file lastModified:', err);
-        });
-    }
+    getFileLastModified(fileHandle)
+      .then((lastModified) => {
+        if (lastModified !== null) {
+          set({ fileLastModifiedMs: lastModified });
+          console.log(`[FileStore] Captured file lastModified: ${lastModified}`);
+        }
+      })
+      .catch((err) => {
+        console.warn('[FileStore] Could not read file lastModified:', err);
+      });
 
     if (canvasState) {
       useCanvasStore.getState().setViewport(canvasState.viewport);
@@ -378,13 +378,9 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
 
       // Refresh lastModified timestamp after save so polling doesn't false-alarm
-      if (fileHandle && typeof (fileHandle as FileSystemFileHandle).getFile === 'function') {
-        try {
-          const savedFile = await (fileHandle as FileSystemFileHandle).getFile();
-          set({ fileLastModifiedMs: savedFile.lastModified });
-        } catch {
-          // Non-critical
-        }
+      const savedLastModified = await getFileLastModified(fileHandle);
+      if (savedLastModified !== null) {
+        set({ fileLastModifiedMs: savedLastModified });
       }
 
       const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
@@ -465,16 +461,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
       const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
 
-      let newLastModifiedMs: number | null = null;
-      const newHandle = result.fileHandle as FileSystemFileHandle | undefined;
-      if (newHandle && typeof newHandle.getFile === 'function') {
-        try {
-          const savedFile = await newHandle.getFile();
-          newLastModifiedMs = savedFile.lastModified;
-        } catch {
-          // Non-critical
-        }
-      }
+      const newLastModifiedMs = await getFileLastModified(result.fileHandle);
 
       useGraphStore.setState({ isDirty: graphChangedDuringSave });
       set({
