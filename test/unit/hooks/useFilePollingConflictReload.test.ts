@@ -10,6 +10,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useHistoryStore } from '@/store/historyStore';
+import { useUIStore } from '@/store/uiStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,13 +36,16 @@ const conflictDialogSource = fs.readFileSync(CONFLICT_DIALOG_PATH, 'utf-8');
 const coreStoreSource = fs.readFileSync(CORE_STORE_PATH, 'utf-8');
 
 describe('Conflict resolution: Reload from disk discards local changes (Feature #525)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let useUIStore: typeof import('@/store/uiStore').useUIStore;
 
   beforeEach(async () => {
     vi.resetModules();
-    const coreMod = await import('@/store/coreStore');
-    useCoreStore = coreMod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore');
+    const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore;
+    useGraphStoreRef = graphStoreMod.useGraphStore;
     const uiMod = await import('@/store/uiStore');
     useUIStore = uiMod.useUIStore;
   });
@@ -101,7 +108,7 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
     it('onReload calls _applyDecodedFile to replace the in-memory graph', () => {
       // _applyDecodedFile replaces the graph, resetting all state
       expect(useFilePollingSource).toContain(
-        "useCoreStore.getState()._applyDecodedFile(",
+        "useFileStore.getState()._applyDecodedFile(",
       );
     });
 
@@ -156,22 +163,22 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
 
     it('store simulation: isDirty transitions from true to false after _applyDecodedFile', () => {
       // Simulate: user has dirty state
-      useCoreStore.setState({ isDirty: true });
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      useGraphStore.setState({ isDirty: true });
+      expect(useGraphStore.getState().isDirty).toBe(true);
 
       // After _applyDecodedFile, isDirty should be false
       // (We simulate by directly setting state as _applyDecodedFile would)
-      useCoreStore.setState({ isDirty: false, fileExternallyModified: false });
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useGraphStore.setState({ isDirty: false, fileExternallyModified: false });
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('store simulation: fileName is updated after reload', () => {
-      useCoreStore.setState({ fileName: 'old.archc', isDirty: true });
+      useFileStore.setState({ fileName: 'old.archc', isDirty: true });
       // After reload, fileName is updated from file handle
-      useCoreStore.setState({ fileName: 'reloaded.archc', isDirty: false });
-      expect(useCoreStore.getState().fileName).toBe('reloaded.archc');
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      useFileStore.setState({ fileName: 'reloaded.archc', isDirty: false });
+      expect(useFileStore.getState().fileName).toBe('reloaded.archc');
+      expect(useGraphStore.getState().isDirty).toBe(false);
     });
   });
 
@@ -203,13 +210,13 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
 
     it('store simulation: undo state transitions after reload', () => {
       // Simulate: user has undo history from edits
-      useCoreStore.setState({ canUndo: true, canRedo: false });
-      expect(useCoreStore.getState().canUndo).toBe(true);
+      useHistoryStore.setState({ canUndo: true, canRedo: false });
+      expect(useHistoryStore.getState().canUndo).toBe(true);
 
       // After _applyDecodedFile, undo is cleared
-      useCoreStore.setState({ canUndo: false, canRedo: false });
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      expect(useCoreStore.getState().canRedo).toBe(false);
+      useHistoryStore.setState({ canUndo: false, canRedo: false });
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      expect(useHistoryStore.getState().canRedo).toBe(false);
     });
   });
 
@@ -231,16 +238,10 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
   describe('Integration: full conflict reload flow', () => {
     it('simulates: dirty state → conflict dialog → reload → clean state', () => {
       // 1. User opens a file and makes changes
-      useCoreStore.setState({
-        isDirty: true,
-        fileName: 'project.archc',
-        fileExternallyModified: false,
-        canUndo: true,
-        canRedo: false,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileName: 'project.archc', fileExternallyModified: false }); useHistoryStore.setState({ canUndo: true, canRedo: false });
 
       // 2. External modification detected → conflict dialog opens
-      useCoreStore.setState({ fileExternallyModified: true });
+      useFileStore.setState({ fileExternallyModified: true });
       const onReload = vi.fn();
       useUIStore.getState().openConflictDialog({
         fileName: 'project.archc',
@@ -253,41 +254,30 @@ describe('Conflict resolution: Reload from disk discards local changes (Feature 
       onReload();
 
       // 4. _applyDecodedFile resets everything (simulated)
-      useCoreStore.setState({
-        isDirty: false,
-        fileExternallyModified: false,
-        canUndo: false,
-        canRedo: false,
-      });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileExternallyModified: false }); useHistoryStore.setState({ canUndo: false, canRedo: false });
 
       // 5. Dialog closes
       useUIStore.getState().closeConflictDialog();
 
       // 6. Verify final state
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      expect(useCoreStore.getState().canRedo).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      expect(useHistoryStore.getState().canRedo).toBe(false);
       expect(useUIStore.getState().conflictDialogOpen).toBe(false);
       expect(onReload).toHaveBeenCalledTimes(1);
     });
 
     it('simulates: reload preserves file handle for continued save-in-place', () => {
       const mockHandle = { name: 'project.archc', getFile: vi.fn() };
-      useCoreStore.setState({
-        fileHandle: mockHandle,
-        isDirty: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: mockHandle });
 
       // After reload, file handle should still be present (not null)
       // _applyDecodedFile receives the same handle
-      useCoreStore.setState({
-        fileHandle: mockHandle,
-        isDirty: false,
-      });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileHandle: mockHandle });
 
-      expect(useCoreStore.getState().fileHandle).toBe(mockHandle);
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileHandle).toBe(mockHandle);
+      expect(useGraphStore.getState().isDirty).toBe(false);
     });
   });
 });

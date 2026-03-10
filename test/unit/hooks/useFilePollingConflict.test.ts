@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useUIStore } from '@/store/uiStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -24,13 +27,16 @@ const UI_STORE_PATH = path.resolve(__dirname, '../../../src/store/uiStore.ts');
 const APP_PATH = path.resolve(__dirname, '../../../src/App.tsx');
 
 describe('Conflict dialog when file modified with unsaved local changes (Feature #524)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let useUIStore: typeof import('@/store/uiStore').useUIStore;
 
   beforeEach(async () => {
     vi.resetModules();
-    const coreMod = await import('@/store/coreStore');
-    useCoreStore = coreMod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore');
+    const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore;
+    useGraphStoreRef = graphStoreMod.useGraphStore;
     const uiMod = await import('@/store/uiStore');
     useUIStore = uiMod.useUIStore;
   });
@@ -163,10 +169,10 @@ describe('Conflict dialog when file modified with unsaved local changes (Feature
     });
 
     it('acknowledgeExternalModification clears fileExternallyModified flag', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
   });
 

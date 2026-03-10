@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useUIStore } from '@/store/uiStore';
 import fs from 'fs';
 import path from 'path';
 

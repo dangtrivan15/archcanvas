@@ -15,7 +15,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 
 export interface UseInlineEditResult {
   /** Whether this node is currently in inline editing mode */
@@ -63,7 +63,7 @@ export function useInlineEdit(archNodeId: string, displayName: string): UseInlin
   const confirmEdit = useCallback(() => {
     const trimmedValue = editValue.trim();
     if (trimmedValue && trimmedValue !== displayName) {
-      useCoreStore.getState().updateNode(archNodeId, {
+      useGraphStore.getState().updateNode(archNodeId, {
         displayName: trimmedValue,
       });
     }

@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useUIStore } from '@/store/uiStore';
 import {
   FILE_INACCESSIBLE_MESSAGE,
   FILE_POLL_INTERVAL_MS,
@@ -61,12 +65,13 @@ describe('Feature #528: Handle file deleted or moved externally during polling',
   });
 
   describe('coreStore file handle and Save As', () => {
-    let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+    let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
 
     beforeEach(async () => {
       vi.resetModules();
-      const mod = await import('@/store/coreStore');
-      useCoreStore = mod.useCoreStore;
+      const fileStoreMod = await import('@/store/fileStore'); const graphStoreMod = await import('@/store/graphStore');
+      useFileStoreRef = fileStoreMod.useFileStore; useGraphStoreRef = graphStoreMod.useGraphStore;
     });
 
     afterEach(() => {
@@ -75,48 +80,39 @@ describe('Feature #528: Handle file deleted or moved externally during polling',
 
     it('Step 5: user can still Save As when fileHandle is null', () => {
       // Simulate the state after file becomes inaccessible
-      useCoreStore.setState({
-        fileHandle: null,
-        fileLastModifiedMs: null,
-      });
+      useFileStore.setState({ fileHandle: null, fileLastModifiedMs: null });
 
-      const state = useCoreStore.getState();
+      const fileState = useFileStore.getState();
       // fileHandle is null, but saveFileAs should still be callable
-      expect(state.fileHandle).toBeNull();
-      expect(typeof state.saveFileAs).toBe('function');
+      expect(fileState.fileHandle).toBeNull();
+      expect(typeof fileState.saveFileAs).toBe('function');
     });
 
     it('Step 2 & 3: clearing fileHandle and fileLastModifiedMs prevents polling from restarting', () => {
       // When both are null, the useEffect guard in useFilePolling
       // will not start a new interval
-      useCoreStore.setState({
-        fileHandle: null,
-        fileLastModifiedMs: null,
-      });
+      useFileStore.setState({ fileHandle: null, fileLastModifiedMs: null });
 
-      const state = useCoreStore.getState();
-      expect(state.fileHandle).toBeNull();
-      expect(state.fileLastModifiedMs).toBeNull();
+      const fileState = useFileStore.getState();
+      expect(fileState.fileHandle).toBeNull();
+      expect(fileState.fileLastModifiedMs).toBeNull();
     });
 
     it('user can continue editing in memory after file becomes inaccessible', () => {
-      useCoreStore.getState().initialize();
+      useEngineStore.getState().initialize();
 
       // Simulate file was open, then becomes inaccessible
-      useCoreStore.setState({
-        fileHandle: null,
-        fileLastModifiedMs: null,
-        // Graph data is preserved — user can still edit
-      });
+      useFileStore.setState({ fileHandle: null, fileLastModifiedMs: null });
 
-      const state = useCoreStore.getState();
+      const graphState = useGraphStore.getState();
+      const fileState = useFileStore.getState();
       // Graph operations still work
-      expect(typeof state.addNode).toBe('function');
-      expect(typeof state.removeNode).toBe('function');
-      expect(typeof state.saveFileAs).toBe('function');
+      expect(typeof graphState.addNode).toBe('function');
+      expect(typeof graphState.removeNode).toBe('function');
+      expect(typeof fileState.saveFileAs).toBe('function');
       // Graph is still available
-      expect(state.graph).toBeDefined();
-      expect(state.graph.nodes).toBeDefined();
+      expect(graphState.graph).toBeDefined();
+      expect(graphState.graph.nodes).toBeDefined();
     });
   });
 

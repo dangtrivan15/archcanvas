@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import type { ArchNode } from '@/types/graph';
 
@@ -32,7 +32,7 @@ function resolvePathNames(
 }
 
 export function NavigationBreadcrumb() {
-  const graph = useCoreStore((s) => s.graph);
+  const graph = useGraphStore((s) => s.graph);
   const path = useNavigationStore((s) => s.path);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);

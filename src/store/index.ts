@@ -15,10 +15,6 @@ export type { FileStoreState } from './fileStore';
 export { useHistoryStore } from './historyStore';
 export type { HistoryStoreState } from './historyStore';
 
-// ─── Compatibility facade (deprecated) ───────────────────────
-export { useCoreStore } from './coreStore';
-export type { CoreStoreState } from './coreStore';
-
 export { useUIStore, computeDefaultLeftPanelWidth, computeDefaultRightPanelWidth } from './uiStore';
 export type { UIStoreState, DeleteDialogInfo, ConnectionDialogInfo, PlacementModeInfo, ConnectModeState, UnsavedChangesDialogInfo, ErrorDialogInfo, IntegrityWarningDialogInfo } from './uiStore';
 export type { ConnectModeStep } from './uiStore';

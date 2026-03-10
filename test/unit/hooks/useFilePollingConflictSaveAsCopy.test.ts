@@ -10,6 +10,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useHistoryStore } from '@/store/historyStore';
+import { useUIStore } from '@/store/uiStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,13 +36,16 @@ const conflictDialogSource = fs.readFileSync(CONFLICT_DIALOG_PATH, 'utf-8');
 const coreStoreSource = fs.readFileSync(FILE_STORE_PATH, 'utf-8');
 
 describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let useUIStore: typeof import('@/store/uiStore').useUIStore;
 
   beforeEach(async () => {
     vi.resetModules();
-    const coreMod = await import('@/store/coreStore');
-    useCoreStore = coreMod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore');
+    const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore;
+    useGraphStoreRef = graphStoreMod.useGraphStore;
     const uiMod = await import('@/store/uiStore');
     useUIStore = uiMod.useUIStore;
   });
@@ -102,14 +109,14 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
     it('onSaveAsCopy invokes coreStore.saveFileAs()', () => {
       // The onSaveAsCopy callback in useFilePolling calls saveFileAs
       expect(useFilePollingSource).toContain(
-        'useCoreStore.getState().saveFileAs()',
+        'useFileStore.getState().saveFileAs()',
       );
     });
 
     it('saveFileAs awaits result and checks success before reloading', () => {
       // The pattern: const saved = await ... saveFileAs(); if (saved) { ... reload }
       expect(useFilePollingSource).toMatch(
-        /const saved = await useCoreStore\.getState\(\)\.saveFileAs\(\)/,
+        /const saved = await useFileStore\.getState\(\)\.saveFileAs\(\)/,
       );
       expect(useFilePollingSource).toContain('if (saved)');
     });
@@ -260,17 +267,10 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
     it('simulates: dirty state → conflict dialog → save as copy → reload → clean state', () => {
       // 1. User opens a file and makes local changes
       const mockHandle = { name: 'project.archc', getFile: vi.fn() };
-      useCoreStore.setState({
-        isDirty: true,
-        fileName: 'project.archc',
-        fileHandle: mockHandle,
-        fileExternallyModified: false,
-        canUndo: true,
-        canRedo: false,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileName: 'project.archc', fileHandle: mockHandle, fileExternallyModified: false }); useHistoryStore.setState({ canUndo: true, canRedo: false });
 
       // 2. External modification detected → conflict dialog opens
-      useCoreStore.setState({ fileExternallyModified: true });
+      useFileStore.setState({ fileExternallyModified: true });
       const onSaveAsCopy = vi.fn();
       const onReload = vi.fn();
       useUIStore.getState().openConflictDialog({
@@ -285,25 +285,24 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
 
       // 4. saveFileAs saves local changes to "project-copy.archc" (simulated)
       // Then _applyDecodedFile reloads the original from disk (simulated)
-      useCoreStore.setState({
-        isDirty: false,
-        fileName: 'project.archc', // back to original file
-        fileHandle: mockHandle,    // back to original handle
+      useGraphStore.setState({ isDirty: false });
+      useFileStore.setState({
+        fileName: 'project.archc',
+        fileHandle: mockHandle,
         fileExternallyModified: false,
-        canUndo: false,
-        canRedo: false,
       });
+      useHistoryStore.setState({ canUndo: false, canRedo: false });
 
       // 5. Dialog closes
       useUIStore.getState().closeConflictDialog();
 
       // 6. Verify final state
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      expect(useCoreStore.getState().canRedo).toBe(false);
-      expect(useCoreStore.getState().fileName).toBe('project.archc');
-      expect(useCoreStore.getState().fileHandle).toBe(mockHandle);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      expect(useHistoryStore.getState().canRedo).toBe(false);
+      expect(useFileStore.getState().fileName).toBe('project.archc');
+      expect(useFileStore.getState().fileHandle).toBe(mockHandle);
       expect(useUIStore.getState().conflictDialogOpen).toBe(false);
       expect(onSaveAsCopy).toHaveBeenCalledTimes(1);
       // Reload should NOT have been called (user chose save-as-copy, not reload)
@@ -312,64 +311,41 @@ describe('Conflict resolution: Save as copy then reload (Feature #527)', () => {
 
     it('simulates: save-as-copy preserves original file handle after reload', () => {
       const originalHandle = { name: 'architecture.archc', getFile: vi.fn() };
-      useCoreStore.setState({
-        fileHandle: originalHandle,
-        fileName: 'architecture.archc',
-        isDirty: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: originalHandle, fileName: 'architecture.archc' });
 
       // After save-as-copy + reload, the original handle is restored
       // (not replaced with the copy's handle)
-      useCoreStore.setState({
-        fileHandle: originalHandle,
-        fileName: 'architecture.archc',
-        isDirty: false,
-      });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileHandle: originalHandle, fileName: 'architecture.archc' });
 
-      expect(useCoreStore.getState().fileHandle).toBe(originalHandle);
-      expect(useCoreStore.getState().fileName).toBe('architecture.archc');
+      expect(useFileStore.getState().fileHandle).toBe(originalHandle);
+      expect(useFileStore.getState().fileName).toBe('architecture.archc');
     });
 
     it('simulates: user cancels Save As picker — no reload happens, dialog stays closed', () => {
       const mockHandle = { name: 'project.archc', getFile: vi.fn() };
-      useCoreStore.setState({
-        isDirty: true,
-        fileName: 'project.archc',
-        fileHandle: mockHandle,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileName: 'project.archc', fileHandle: mockHandle, fileExternallyModified: true });
 
       // If user cancels the Save As picker, saveFileAs returns false
       // The reload should NOT happen (guarded by if (saved))
       // State remains dirty since nothing was saved
-      expect(useCoreStore.getState().isDirty).toBe(true);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
     });
 
     it('simulates: after successful save-as-copy, isDirty resets and file reverts to original', () => {
       // Start with dirty state and a different graph in memory
-      useCoreStore.setState({
-        isDirty: true,
-        fileName: 'mydesign.archc',
-        fileExternallyModified: true,
-        canUndo: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileName: 'mydesign.archc', fileExternallyModified: true }); useHistoryStore.setState({ canUndo: true });
 
       // After save-as-copy and reload of original:
       // - isDirty = false (freshly loaded from disk)
       // - fileExternallyModified = false (we just loaded the latest version)
       // - canUndo = false (undo history cleared by _applyDecodedFile)
-      useCoreStore.setState({
-        isDirty: false,
-        fileExternallyModified: false,
-        canUndo: false,
-        canRedo: false,
-      });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileExternallyModified: false }); useHistoryStore.setState({ canUndo: false, canRedo: false });
 
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      expect(useCoreStore.getState().canRedo).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      expect(useHistoryStore.getState().canRedo).toBe(false);
     });
   });
 });

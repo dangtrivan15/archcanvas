@@ -23,7 +23,7 @@ import {
   Boxes,
   ArrowRightLeft,
 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ export function ExternalAgentDialog({
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Monitor graph state for live progress
-  const nodeCount = useCoreStore((s) => {
+  const nodeCount = useGraphStore((s) => {
     // Count all nodes recursively
     let count = 0;
     const countNodes = (nodes: { children?: unknown[] }[]) => {
@@ -66,7 +66,7 @@ export function ExternalAgentDialog({
     countNodes(s.graph.nodes);
     return count;
   });
-  const edgeCount = useCoreStore((s) => s.graph.edges.length);
+  const edgeCount = useGraphStore((s) => s.graph.edges.length);
 
   const hasActivity = nodeCount > 0 || edgeCount > 0;
 

@@ -9,7 +9,10 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -32,12 +35,12 @@ export const HOTKEY_NODE_TYPE_MAP: Record<string, string> = {
 };
 
 export function useKeyboardShortcuts() {
-  const saveFile = useCoreStore((s) => s.saveFile);
-  const saveFileAs = useCoreStore((s) => s.saveFileAs);
-  const newFile = useCoreStore((s) => s.newFile);
-  const openFile = useCoreStore((s) => s.openFile);
-  const undo = useCoreStore((s) => s.undo);
-  const redo = useCoreStore((s) => s.redo);
+  const saveFile = useFileStore((s) => s.saveFile);
+  const saveFileAs = useFileStore((s) => s.saveFileAs);
+  const newFile = useFileStore((s) => s.newFile);
+  const openFile = useFileStore((s) => s.openFile);
+  const undo = useHistoryStore((s) => s.undo);
+  const redo = useHistoryStore((s) => s.redo);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const toggleShortcutsHelp = useUIStore((s) => s.toggleShortcutsHelp);
   const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette);
@@ -48,7 +51,7 @@ export function useKeyboardShortcuts() {
   const requestZoom100 = useCanvasStore((s) => s.requestZoom100);
   const selectNodes = useCanvasStore((s) => s.selectNodes);
   const selectEdges = useCanvasStore((s) => s.selectEdges);
-  const autoLayout = useCoreStore((s) => s.autoLayout);
+  const autoLayout = useGraphStore((s) => s.autoLayout);
   const toggleQuickSearch = useUIStore((s) => s.toggleQuickSearch);
 
   const handleKeyDown = useCallback(
@@ -127,7 +130,7 @@ export function useKeyboardShortcuts() {
         case 'file:new':
           e.preventDefault();
           {
-            const isDirty = useCoreStore.getState().isDirty;
+            const isDirty = useGraphStore.getState().isDirty;
             const doNew = () => {
               newFile();
               zoomToRoot();
@@ -161,7 +164,7 @@ export function useKeyboardShortcuts() {
           {
             const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } =
               useCanvasStore.getState();
-            const { duplicateSelection } = useCoreStore.getState();
+            const { duplicateSelection } = useGraphStore.getState();
 
             // Determine which nodes to duplicate
             let nodeIds: string[] = [];
@@ -221,10 +224,11 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           {
             // Select all nodes at the current navigation level
-            const coreState = useCoreStore.getState();
+            const { renderApi } = useEngineStore.getState();
+            const { graph } = useGraphStore.getState();
             const navPath = useNavigationStore.getState().path;
-            if (coreState.renderApi && coreState.graph) {
-              const { nodes } = coreState.renderApi.render(coreState.graph, navPath);
+            if (renderApi && graph) {
+              const { nodes } = renderApi.render(graph, navPath);
               selectNodes(nodes.map((n) => n.id));
             }
           }
@@ -234,10 +238,11 @@ export function useKeyboardShortcuts() {
           e.preventDefault();
           {
             // Select all edges at the current navigation level
-            const coreState = useCoreStore.getState();
+            const { renderApi } = useEngineStore.getState();
+            const { graph } = useGraphStore.getState();
             const navPath = useNavigationStore.getState().path;
-            if (coreState.renderApi && coreState.graph) {
-              const { edges } = coreState.renderApi.render(coreState.graph, navPath);
+            if (renderApi && graph) {
+              const { edges } = renderApi.render(graph, navPath);
               selectEdges(edges.map((e) => e.id));
             }
           }
@@ -266,7 +271,7 @@ export function useKeyboardShortcuts() {
           if (inInput) return;
           e.preventDefault();
           {
-            const { graph, updateEdge } = useCoreStore.getState();
+            const { graph, updateEdge } = useGraphStore.getState();
             const { selectedEdgeId } = useCanvasStore.getState();
             const { showToast } = useUIStore.getState();
 
@@ -330,7 +335,8 @@ export function useKeyboardShortcuts() {
             const typeKey = HOTKEY_NODE_TYPE_MAP[actionId];
             if (!typeKey) break;
 
-            const { addNode, registry, graph } = useCoreStore.getState();
+            const { addNode, graph } = useGraphStore.getState();
+            const { registry } = useEngineStore.getState();
             const { viewport, selectedNodeId, selectNode } = useCanvasStore.getState();
             const { openRightPanel, setPendingRenameNodeId } = useUIStore.getState();
             const { path } = useNavigationStore.getState();

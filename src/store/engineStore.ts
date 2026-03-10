@@ -12,6 +12,8 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
+import { initEventSubscriptions } from '@/events/appEvents';
+import { useGraphStore } from './graphStore';
 
 export interface EngineStoreState {
   /** Whether core engines (registry, APIs, undo) have been initialized */
@@ -71,6 +73,16 @@ export const useEngineStore = create<EngineStoreState>((set, get) => ({
       renderApi,
       exportApi,
       undoManager,
+    });
+
+    // Ensure event subscriptions are active
+    initEventSubscriptions();
+
+    // Sync initial graph to graphStore
+    useGraphStore.setState({
+      graph,
+      nodeCount: 0,
+      edgeCount: 0,
     });
 
     console.log('[EngineStore] All engines initialized successfully');

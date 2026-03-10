@@ -25,7 +25,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useFileStore } from '@/store/fileStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
@@ -85,12 +88,12 @@ function CanvasInner() {
     getViewport,
     setViewport: rfSetViewport,
   } = useReactFlow();
-  const graph = useCoreStore((s) => s.graph);
-  const renderApi = useCoreStore((s) => s.renderApi);
-  const autoLayout = useCoreStore((s) => s.autoLayout);
-  const addNode = useCoreStore((s) => s.addNode);
-  const moveNode = useCoreStore((s) => s.moveNode);
-  const moveNodes = useCoreStore((s) => s.moveNodes);
+  const graph = useGraphStore((s) => s.graph);
+  const renderApi = useEngineStore((s) => s.renderApi);
+  const autoLayout = useGraphStore((s) => s.autoLayout);
+  const addNode = useGraphStore((s) => s.addNode);
+  const moveNode = useGraphStore((s) => s.moveNode);
+  const moveNodes = useGraphStore((s) => s.moveNodes);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
@@ -101,7 +104,7 @@ function CanvasInner() {
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomIn = useNavigationStore((s) => s.zoomIn);
   const zoomOut = useNavigationStore((s) => s.zoomOut);
-  const removeEdge = useCoreStore((s) => s.removeEdge);
+  const removeEdge = useGraphStore((s) => s.removeEdge);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const openDeleteDialog = useUIStore((s) => s.openDeleteDialog);
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
@@ -115,7 +118,7 @@ function CanvasInner() {
   const setConnectTarget = useUIStore((s) => s.setConnectTarget);
   const advanceToPickType = useUIStore((s) => s.advanceToPickType);
   const exitConnectMode = useUIStore((s) => s.exitConnectMode);
-  const addEdge = useCoreStore((s) => s.addEdge);
+  const addEdge = useGraphStore((s) => s.addEdge);
 
   // Viewport size for responsive behavior (hide minimap/controls in compact mode)
   const { isCompact } = useViewportSize();
@@ -145,7 +148,7 @@ function CanvasInner() {
   const nestedDepth = useNestedCanvasStore((s) => s.fileStack.length);
 
   // File drag & drop
-  const loadFromDroppedFile = useCoreStore((s) => s.loadFromDroppedFile);
+  const loadFromDroppedFile = useFileStore((s) => s.loadFromDroppedFile);
   const [isDragOverWithFiles, setIsDragOverWithFiles] = useState(false);
   const dragOverCounterRef = useRef(0);
 
@@ -823,19 +826,17 @@ function CanvasInner() {
           showToast(`Deleted ${edgeLabel}. ${formatBindingDisplay('mod+z')} to undo`);
         } else {
           // Multi-edge deletion
-          const { textApi, undoManager } = useCoreStore.getState();
-          if (textApi && undoManager) {
+          const { textApi } = useEngineStore.getState();
+          if (textApi) {
             for (const edgeId of edgeIds) {
               textApi.removeEdge(edgeId);
             }
             const updatedGraph = textApi.getGraph();
-            undoManager.snapshot(`Delete ${edgeIds.length} edges`, updatedGraph);
-            useCoreStore.setState({
+            useHistoryStore.getState().pushSnapshot(`Delete ${edgeIds.length} edges`, updatedGraph);
+            useGraphStore.setState({
               graph: updatedGraph,
               isDirty: true,
               edgeCount: updatedGraph.edges.length,
-              canUndo: undoManager.canUndo,
-              canRedo: undoManager.canRedo,
             });
           }
           clearSelection();
@@ -1103,7 +1104,7 @@ function CanvasInner() {
       const dy = offset.dy * step;
 
       // Build batch moves from current graph positions
-      const currentGraph = useCoreStore.getState().graph;
+      const currentGraph = useGraphStore.getState().graph;
       const moves: Array<{ nodeId: string; x: number; y: number }> = [];
 
       for (const nodeId of selectedIds) {

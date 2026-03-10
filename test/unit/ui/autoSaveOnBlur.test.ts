@@ -15,7 +15,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 
 function readSource(relativePath: string): string {
   const fullPath = path.resolve(__dirname, '../../../src', relativePath);
@@ -29,10 +32,7 @@ describe('Feature #238: Autosave on Focus Change', () => {
       autosaveOnBlur: true,
       autosaveStatusMessage: null,
     });
-    useCoreStore.setState({
-      isDirty: false,
-      isSaving: false,
-    });
+    useGraphStore.setState({ isDirty: false }); useFileStore.setState({ isSaving: false });
   });
 
   // ─── UI Store: Autosave Preference ───────────────────────────────
@@ -75,36 +75,39 @@ describe('Feature #238: Autosave on Focus Change', () => {
     });
 
     it('should NOT autosave when isDirty is false', () => {
-      const { isDirty } = useCoreStore.getState();
+      const { isDirty } = useGraphStore.getState();
       expect(isDirty).toBe(false);
     });
 
     it('should NOT autosave when isSaving is true', () => {
-      useCoreStore.setState({ isSaving: true });
-      expect(useCoreStore.getState().isSaving).toBe(true);
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: true });
+      expect(useFileStore.getState().isSaving).toBe(true);
+      useFileStore.setState({ isSaving: false });
     });
 
     it('should NOT autosave when fileHandle is null (new unsaved file)', () => {
-      const { fileHandle } = useCoreStore.getState();
+      const { fileHandle } = useFileStore.getState();
       expect(fileHandle).toBeNull();
     });
 
     it('should meet all conditions when dirty, not saving, has handle, and enabled', () => {
       useUIStore.setState({ autosaveOnBlur: true });
-      useCoreStore.setState({
-        isDirty: true,
+      useGraphStore.setState({
+        isDirty: true
+    });
+    useFileStore.setState({
         isSaving: false,
-        fileHandle: {} as FileSystemFileHandle,
-      });
+        fileHandle: {} as FileSystemFileHandle
+    });
       const uiState = useUIStore.getState();
-      const coreState = useCoreStore.getState();
+      const graphState = useGraphStore.getState();
+      const fileState = useFileStore.getState();
       expect(uiState.autosaveOnBlur).toBe(true);
-      expect(coreState.isDirty).toBe(true);
-      expect(coreState.isSaving).toBe(false);
-      expect(coreState.fileHandle).not.toBeNull();
+      expect(graphState.isDirty).toBe(true);
+      expect(fileState.isSaving).toBe(false);
+      expect(fileState.fileHandle).not.toBeNull();
       // Clean up
-      useCoreStore.setState({ isDirty: false, fileHandle: null });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileHandle: null });
     });
   });
 
@@ -291,13 +294,14 @@ describe('Feature #238: Autosave on Focus Change', () => {
     });
 
     it('autosave does not interfere with isSaving guard', () => {
-      useCoreStore.setState({ isSaving: true });
-      expect(useCoreStore.getState().isSaving).toBe(true);
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: true });
+      expect(useFileStore.getState().isSaving).toBe(true);
+      useFileStore.setState({ isSaving: false });
     });
 
     it('autosave requires fileHandle for seamless save-in-place', () => {
-      expect(useCoreStore.getState().fileHandle).toBeNull();
+      // fileHandle lives in fileStore, not graphStore
+      expect(useFileStore.getState().fileHandle).toBeNull();
     });
   });
 

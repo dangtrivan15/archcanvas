@@ -12,7 +12,7 @@ import {
   Settings2,
   RotateCcw,
 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore, DEFAULT_LAYOUT_SPACING } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
@@ -21,7 +21,7 @@ export function LayoutMenu({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSpacing, setShowSpacing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const autoLayout = useCoreStore((s) => s.autoLayout);
+  const autoLayout = useGraphStore((s) => s.autoLayout);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const layoutSpacing = useCanvasStore((s) => s.layoutSpacing);
   const setLayoutSpacing = useCanvasStore((s) => s.setLayoutSpacing);

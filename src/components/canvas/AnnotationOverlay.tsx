@@ -9,7 +9,7 @@
 import { useCallback, useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useAnnotationStore } from '@/store/annotationStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import type { Annotation, AnnotationPathData } from '@/types/graph';
 
@@ -136,9 +136,9 @@ export function AnnotationOverlay() {
   const continueStroke = useAnnotationStore((s) => s.continueStroke);
   const finishStroke = useAnnotationStore((s) => s.finishStroke);
   const pushUndo = useAnnotationStore((s) => s.pushUndo);
-  const addAnnotation = useCoreStore((s) => s.addAnnotation);
-  const removeAnnotation = useCoreStore((s) => s.removeAnnotation);
-  const annotations = useCoreStore((s) => s.graph.annotations ?? []);
+  const addAnnotation = useGraphStore((s) => s.addAnnotation);
+  const removeAnnotation = useGraphStore((s) => s.removeAnnotation);
+  const annotations = useGraphStore((s) => s.graph.annotations ?? []);
   const viewport = useCanvasStore((s) => s.viewport);
   const { screenToFlowPosition } = useReactFlow();
 

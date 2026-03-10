@@ -15,7 +15,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FileText, Loader2, FolderOpen, Layers } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -82,9 +85,9 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(!!template);
 
-  const textApi = useCoreStore((s) => s.textApi);
-  const undoManager = useCoreStore((s) => s.undoManager);
-  const isDirty = useCoreStore((s) => s.isDirty);
+  const textApi = useEngineStore((s) => s.textApi);
+  const undoManager = useEngineStore((s) => s.undoManager);
+  const isDirty = useGraphStore((s) => s.isDirty);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const showToast = useUIStore((s) => s.showToast);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
@@ -181,7 +184,7 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
 
         undoManager.snapshot('Import template as container: ' + archName, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
           nodeCount: updatedGraph.nodes.length,
@@ -245,14 +248,18 @@ export function UseTemplateDialog({ template, onClose, onSuccess }: UseTemplateD
         undoManager.clear();
         undoManager.snapshot('Use template: ' + archName, graph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph,
           isDirty: true,
+          nodeCount: graph.nodes.length,
+          edgeCount: graph.edges.length,
+        });
+        useFileStore.setState({
           fileName: archName.trim() || displayName,
           fileHandle: null,
           fileCreatedAtMs: null,
-          nodeCount: graph.nodes.length,
-          edgeCount: graph.edges.length,
+        });
+        useHistoryStore.setState({
           canUndo: false,
           canRedo: false,
         });

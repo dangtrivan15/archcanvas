@@ -17,7 +17,7 @@ import { useReactFlow } from '@xyflow/react';
 import type { TransitionPhase } from '@/components/canvas/TransitionOverlay';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useProjectStore } from '@/store/projectStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
 import type { CanvasNode } from '@/types/canvas';
 
@@ -223,7 +223,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
    * Returns a promise that resolves when the save completes (or immediately if clean).
    */
   const autoSaveChildIfDirty = useCallback(async () => {
-    const { isDirty } = useCoreStore.getState();
+    const { isDirty } = useGraphStore.getState();
     const nestedStore = useNestedCanvasStore.getState();
     const activeFilePath = nestedStore.activeFilePath;
 

@@ -93,7 +93,7 @@ describe('Feature #508: Auto-layout triggers on zoom-in when children lack posit
         'utf-8',
       );
       expect(source).toContain('autoLayout');
-      expect(source).toContain('useCoreStore((s) => s.autoLayout)');
+      expect(source).toContain('useGraphStore((s) => s.autoLayout)');
     });
 
     it('Canvas.tsx checks navigationPath length to detect zoom-in', () => {

@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { Pencil, StickyNote, Plus, ZoomIn, Trash2 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
@@ -21,7 +21,7 @@ interface NodeContextMenuProps {
 }
 
 export function NodeContextMenu({ x, y, nodeId, onClose }: NodeContextMenuProps) {
-  const graph = useCoreStore((s) => s.graph);
+  const graph = useGraphStore((s) => s.graph);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const zoomIn = useNavigationStore((s) => s.zoomIn);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
@@ -43,7 +43,7 @@ export function NodeContextMenu({ x, y, nodeId, onClose }: NodeContextMenuProps)
   }, [selectNode, nodeId, openRightPanel, onClose]);
 
   const handleAddChild = useCallback(() => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     addNode({
       type: 'compute/service',
       displayName: 'New Child',

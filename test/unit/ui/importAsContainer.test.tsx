@@ -48,7 +48,27 @@ const mocks = vi.hoisted(() => ({
 
 // ── Mock stores ──────────────────────────────────────────
 
-vi.mock('@/store/coreStore', () => {
+vi.mock('@/store/graphStore', () => {
+  const graph = {
+    name: 'Test',
+    description: '',
+    owners: [],
+    nodes: [],
+    edges: [],
+    annotations: [],
+  };
+  const store = {
+    isDirty: false,
+    graph,
+  };
+  const useGraphStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { setState: mocks.setState, getState: () => store },
+  );
+  return { useGraphStore };
+});
+
+vi.mock('@/store/engineStore', () => {
   const graph = {
     name: 'Test',
     description: '',
@@ -66,14 +86,12 @@ vi.mock('@/store/coreStore', () => {
       clear: mocks.clear,
       snapshot: mocks.snapshot,
     },
-    isDirty: false,
-    graph,
   };
-  const useCoreStore = Object.assign(
+  const useEngineStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
-    { setState: mocks.setState, getState: () => store },
+    { setState: vi.fn(), getState: () => store },
   );
-  return { useCoreStore };
+  return { useEngineStore };
 });
 
 vi.mock('@/store/canvasStore', () => ({

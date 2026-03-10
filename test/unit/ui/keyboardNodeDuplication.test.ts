@@ -25,12 +25,15 @@ import {
 } from '@/core/shortcuts/shortcutManager';
 import { KEYBOARD_SHORTCUTS, getShortcutsByCategory } from '@/config/keyboardShortcuts';
 import { getStaticCommands, getAllCommands } from '@/config/commandRegistry';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 function resetStores() {
-  useCoreStore.getState().initialize();
+  useEngineStore.getState().initialize();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,
@@ -126,7 +129,7 @@ describe('Keyboard Node Duplication - Single Node', () => {
   beforeEach(resetStores);
 
   it('duplicateSelection creates a new node with a different ID', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Auth Service',
@@ -140,7 +143,7 @@ describe('Keyboard Node Duplication - Single Node', () => {
   });
 
   it('duplicated node has " (copy)" suffix in display name', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Auth Service',
@@ -148,14 +151,14 @@ describe('Keyboard Node Duplication - Single Node', () => {
     });
 
     const newIds = store.duplicateSelection([node!.id]);
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     const newNode = updatedGraph.nodes.find((n) => n.id === newIds[0]);
     expect(newNode).toBeDefined();
     expect(newNode!.displayName).toBe('Auth Service (copy)');
   });
 
   it('duplicated node is offset +50px in x and y', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Auth Service',
@@ -163,7 +166,7 @@ describe('Keyboard Node Duplication - Single Node', () => {
     });
 
     const newIds = store.duplicateSelection([node!.id]);
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     const newNode = updatedGraph.nodes.find((n) => n.id === newIds[0]);
     expect(newNode).toBeDefined();
     expect(newNode!.position.x).toBe(150); // 100 + 50
@@ -171,7 +174,7 @@ describe('Keyboard Node Duplication - Single Node', () => {
   });
 
   it('duplicated node preserves the same type', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'data/database',
       displayName: 'Users DB',
@@ -179,13 +182,13 @@ describe('Keyboard Node Duplication - Single Node', () => {
     });
 
     const newIds = store.duplicateSelection([node!.id]);
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     const newNode = updatedGraph.nodes.find((n) => n.id === newIds[0]);
     expect(newNode!.type).toBe('data/database');
   });
 
   it('duplicated node preserves args', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'API',
@@ -194,7 +197,7 @@ describe('Keyboard Node Duplication - Single Node', () => {
     });
 
     const newIds = store.duplicateSelection([node!.id]);
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     const newNode = updatedGraph.nodes.find((n) => n.id === newIds[0]);
     // addNode merges NodeDef defaults with user args, so the duplicate
     // should contain at least the user-provided args (plus NodeDef defaults).
@@ -202,21 +205,21 @@ describe('Keyboard Node Duplication - Single Node', () => {
   });
 
   it('duplicating increases graph node count by 1', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
       position: { x: 0, y: 0 },
     });
 
-    const countBefore = useCoreStore.getState().nodeCount;
+    const countBefore = useGraphStore.getState().nodeCount;
     store.duplicateSelection([node!.id]);
-    const countAfter = useCoreStore.getState().nodeCount;
+    const countAfter = useGraphStore.getState().nodeCount;
     expect(countAfter).toBe(countBefore + 1);
   });
 
   it('sets isDirty to true after duplication', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Svc',
@@ -224,19 +227,19 @@ describe('Keyboard Node Duplication - Single Node', () => {
     });
 
     // Reset dirty (addNode also sets dirty, so re-read)
-    useCoreStore.setState({ isDirty: false });
-    useCoreStore.getState().duplicateSelection([node!.id]);
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    useGraphStore.setState({ isDirty: false });
+    useGraphStore.getState().duplicateSelection([node!.id]);
+    expect(useGraphStore.getState().isDirty).toBe(true);
   });
 
   it('returns empty array when given empty nodeIds', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const result = store.duplicateSelection([]);
     expect(result).toEqual([]);
   });
 
   it('returns empty array when given non-existent node IDs', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const result = store.duplicateSelection(['nonexistent-id']);
     expect(result).toEqual([]);
   });
@@ -248,7 +251,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
   beforeEach(resetStores);
 
   it('duplicates multiple nodes at once', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const nodeA = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
@@ -267,7 +270,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
   });
 
   it('duplicated nodes preserve relative position offset (+50px each)', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const nodeA = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
@@ -280,7 +283,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
     });
 
     const newIds = store.duplicateSelection([nodeA!.id, nodeB!.id]);
-    const graph = useCoreStore.getState().graph;
+    const graph = useGraphStore.getState().graph;
     const newA = graph.nodes.find((n) => n.id === newIds[0]);
     const newB = graph.nodes.find((n) => n.id === newIds[1]);
 
@@ -291,7 +294,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
   });
 
   it('duplicates internal edges between selected nodes', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const nodeA = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
@@ -311,10 +314,10 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
       label: 'reads from',
     });
 
-    const edgeCountBefore = useCoreStore.getState().edgeCount;
+    const edgeCountBefore = useGraphStore.getState().edgeCount;
     const newIds = store.duplicateSelection([nodeA!.id, nodeB!.id]);
 
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     const edgeCountAfter = updatedGraph.edges.length;
 
     // Should have one more edge (the duplicated internal edge)
@@ -330,7 +333,7 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
   });
 
   it('does NOT duplicate edges that are external to the selection', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const nodeA = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
@@ -351,17 +354,17 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
     store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'sync' });
     store.addEdge({ fromNode: nodeB!.id, toNode: nodeC!.id, type: 'async' });
 
-    const edgeCountBefore = useCoreStore.getState().graph.edges.length;
+    const edgeCountBefore = useGraphStore.getState().graph.edges.length;
     // Only duplicate A and B, not C
     store.duplicateSelection([nodeA!.id, nodeB!.id]);
-    const edgeCountAfter = useCoreStore.getState().graph.edges.length;
+    const edgeCountAfter = useGraphStore.getState().graph.edges.length;
 
     // Only 1 new edge (A→B internal), not the B→C external edge
     expect(edgeCountAfter).toBe(edgeCountBefore + 1);
   });
 
   it('single node duplication does NOT duplicate any edges', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const nodeA = store.addNode({
       type: 'compute/service',
       displayName: 'Service A',
@@ -375,10 +378,10 @@ describe('Keyboard Node Duplication - Multi-Node with Edges', () => {
 
     store.addEdge({ fromNode: nodeA!.id, toNode: nodeB!.id, type: 'sync' });
 
-    const edgeCountBefore = useCoreStore.getState().graph.edges.length;
+    const edgeCountBefore = useGraphStore.getState().graph.edges.length;
     // Only duplicate A (single node → no edge duplication)
     store.duplicateSelection([nodeA!.id]);
-    const edgeCountAfter = useCoreStore.getState().graph.edges.length;
+    const edgeCountAfter = useGraphStore.getState().graph.edges.length;
 
     expect(edgeCountAfter).toBe(edgeCountBefore);
   });
@@ -390,27 +393,27 @@ describe('Keyboard Node Duplication - Undo', () => {
   beforeEach(resetStores);
 
   it('undo after single duplication removes the duplicated node', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Service',
       position: { x: 0, y: 0 },
     });
 
-    const countBefore = useCoreStore.getState().nodeCount;
+    const countBefore = useGraphStore.getState().nodeCount;
     store.duplicateSelection([node!.id]);
-    expect(useCoreStore.getState().nodeCount).toBe(countBefore + 1);
+    expect(useGraphStore.getState().nodeCount).toBe(countBefore + 1);
 
     // Undo
-    useCoreStore.getState().undo();
+    useHistoryStore.getState().undo();
     // After undo, we should be back to original node count
     // Note: undo restores from the snapshot BEFORE the duplication
-    const countAfterUndo = useCoreStore.getState().nodeCount;
+    const countAfterUndo = useGraphStore.getState().nodeCount;
     expect(countAfterUndo).toBe(countBefore);
   });
 
   it('canUndo is true after duplication', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Service',
@@ -418,11 +421,11 @@ describe('Keyboard Node Duplication - Undo', () => {
     });
 
     store.duplicateSelection([node!.id]);
-    expect(useCoreStore.getState().canUndo).toBe(true);
+    expect(useHistoryStore.getState().canUndo).toBe(true);
   });
 
   it('undo snapshot description mentions duplication count', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     const node = store.addNode({
       type: 'compute/service',
       displayName: 'Service',
@@ -432,7 +435,7 @@ describe('Keyboard Node Duplication - Undo', () => {
     store.duplicateSelection([node!.id]);
 
     // The undoManager should have a snapshot
-    const { undoManager } = useCoreStore.getState();
+    const { undoManager } = useEngineStore.getState();
     expect(undoManager).toBeDefined();
     // canUndo should be true (snapshot was taken)
     expect(undoManager!.canUndo).toBe(true);

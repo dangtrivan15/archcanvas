@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 
 // Mock file I/O
 vi.mock('@/core/storage/fileIO', async () => {
@@ -42,22 +45,30 @@ vi.mock('@/store/uiStore', () => ({
 
 describe('Feature #37: Store-level undo branch behavior', () => {
   beforeEach(() => {
-    useCoreStore.setState({
-      initialized: false,
+    useGraphStore.setState({
       isDirty: false,
       graph: { name: 'Untitled', description: '', owners: [], nodes: [], edges: [] },
-      fileHandle: null,
-      fileName: 'Untitled',
       nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
+      edgeCount: 0
     });
-    useCoreStore.getState().initialize();
+    useFileStore.setState({
+      fileHandle: null,
+      fileName: 'Untitled'
+    });
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
+      canUndo: false,
+      canRedo: false
+    });
+    useEngineStore.getState().initialize();
   });
 
   it('add A, add B, undo → canRedo true; add C → canRedo false; graph has A and C', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     // Step 1a: Add node A
     const nodeA = store().addNode({ type: 'compute/service', displayName: 'A' });
@@ -92,7 +103,9 @@ describe('Feature #37: Store-level undo branch behavior', () => {
   });
 
   it('undo+redo+undo+branch works correctly', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     // Add A, B, C
     store().addNode({ type: 'compute/service', displayName: 'A' });
@@ -129,7 +142,9 @@ describe('Feature #37: Store-level undo branch behavior', () => {
   });
 
   it('updateNode after undo discards redo future', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     const nodeA = store().addNode({ type: 'compute/service', displayName: 'A' });
     store().updateNode(nodeA!.id, { displayName: 'A-v2' });
@@ -147,7 +162,9 @@ describe('Feature #37: Store-level undo branch behavior', () => {
   });
 
   it('addEdge after undo discards redo future', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     const nodeA = store().addNode({ type: 'compute/service', displayName: 'A' });
     const nodeB = store().addNode({ type: 'data/database', displayName: 'B' });
@@ -169,7 +186,9 @@ describe('Feature #37: Store-level undo branch behavior', () => {
   });
 
   it('removeNode after undo discards redo future', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     const nodeA = store().addNode({ type: 'compute/service', displayName: 'A' });
     const nodeB = store().addNode({ type: 'data/database', displayName: 'B' });
@@ -187,7 +206,9 @@ describe('Feature #37: Store-level undo branch behavior', () => {
   });
 
   it('addNote after undo discards redo future', () => {
-    const store = useCoreStore.getState;
+    const graph = useGraphStore.getState;
+    const history = useHistoryStore.getState;
+    const store = () => ({ ...graph(), ...history() });
 
     const nodeA = store().addNode({ type: 'compute/service', displayName: 'A' });
     store().addNote({ nodeId: nodeA!.id, author: 'test', content: 'Note 1' });
