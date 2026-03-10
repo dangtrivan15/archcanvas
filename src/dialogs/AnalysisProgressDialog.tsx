@@ -7,6 +7,10 @@
  * - Phase-specific status message
  * - Cancel button (triggers AbortController)
  * - Error state with retry option
+ *
+ * This is a self-contained connected component that reads directly from
+ * the analysisStore (not from uiStore). Previously, App.tsx held a
+ * `AnalysisProgressDialogConnected` wrapper — that logic is now inlined here.
  */
 
 import { useCallback, useEffect } from 'react';
@@ -21,8 +25,10 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react';
-import type { PipelinePhase, AnalyzeProgress } from '@/analyze/browserPipeline';
+import type { PipelinePhase } from '@/analyze/browserPipeline';
+import { useAnalysisStore } from '@/store/analysisStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { registerDialog } from './registry';
 
 // ── Phase metadata ──────────────────────────────────────────────────────────
 
@@ -40,30 +46,16 @@ const PHASE_ORDER: PipelinePhase[] = [
   'scanning', 'detecting', 'selecting', 'inferring', 'building', 'saving', 'complete',
 ];
 
-// ── Props ───────────────────────────────────────────────────────────────────
-
-export interface AnalysisProgressDialogProps {
-  /** Whether the dialog is open */
-  open: boolean;
-  /** Current progress state */
-  progress: AnalyzeProgress | null;
-  /** Error message if the pipeline failed */
-  error: string | null;
-  /** Called when the user clicks Cancel */
-  onCancel: () => void;
-  /** Called when the user clicks Close (after completion or error) */
-  onClose: () => void;
-}
-
 // ── Component ───────────────────────────────────────────────────────────────
 
-export function AnalysisProgressDialog({
-  open,
-  progress,
-  error,
-  onCancel,
-  onClose,
-}: AnalysisProgressDialogProps) {
+export function AnalysisProgressDialog() {
+  // Read directly from analysisStore (no props needed)
+  const open = useAnalysisStore((s) => s.dialogOpen);
+  const progress = useAnalysisStore((s) => s.progress);
+  const error = useAnalysisStore((s) => s.error);
+  const onCancel = useAnalysisStore((s) => s.cancel);
+  const onClose = useAnalysisStore((s) => s.closeDialog);
+
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
 
   const isComplete = progress?.phase === 'complete';
@@ -239,3 +231,6 @@ export function AnalysisProgressDialog({
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'analysis-progress', component: AnalysisProgressDialog });

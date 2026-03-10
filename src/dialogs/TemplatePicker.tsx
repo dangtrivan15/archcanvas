@@ -37,7 +37,8 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useProjectStore } from '@/store/projectStore';
 import { computeElkLayout } from '@/core/layout/elkLayout';
 import { createNode, addNode as engineAddNode } from '@/core/graph/graphEngine';
-import type { ImportMode } from './UseTemplateDialog';
+import type { ImportMode } from '@/components/shared/UseTemplateDialog';
+import { registerDialog } from './registry';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Rocket,
@@ -384,3 +385,6 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'template-picker', component: TemplatePicker });

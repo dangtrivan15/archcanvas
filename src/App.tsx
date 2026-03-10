@@ -12,16 +12,8 @@ import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
 import { DialogHost } from '@/dialogs';
-import { AnalysisProgressDialog } from '@/components/shared/AnalysisProgressDialog';
-import { ExternalAgentDialog } from '@/components/shared/ExternalAgentDialog';
-import { useAnalysisStore } from '@/store/analysisStore';
-import { ShortcutsHelpPanel } from '@/components/shared/ShortcutsHelpPanel';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
-import { ShortcutSettingsPanel } from '@/components/shared/ShortcutSettingsPanel';
-import { SettingsDialog } from '@/components/settings/SettingsDialog';
-import { TemplatePicker } from '@/components/shared/TemplatePicker';
-import { TemplateGallery } from '@/components/shared/TemplateGallery';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { Toast } from '@/components/shared/Toast';
 import { ResizeHandle } from '@/components/shared/ResizeHandle';
@@ -45,48 +37,6 @@ import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
 import { SyncStatusIndicator } from '@/components/shared/SyncStatusIndicator';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
-
-/**
- * Connected wrapper for AnalysisProgressDialog that reads from the analysisStore.
- */
-function AnalysisProgressDialogConnected() {
-  const dialogOpen = useAnalysisStore((s) => s.dialogOpen);
-  const progress = useAnalysisStore((s) => s.progress);
-  const error = useAnalysisStore((s) => s.error);
-  const cancel = useAnalysisStore((s) => s.cancel);
-  const closeDialog = useAnalysisStore((s) => s.closeDialog);
-
-  return (
-    <AnalysisProgressDialog
-      open={dialogOpen}
-      progress={progress}
-      error={error}
-      onCancel={cancel}
-      onClose={closeDialog}
-    />
-  );
-}
-
-/**
- * Connected wrapper for ExternalAgentDialog that reads from the uiStore.
- */
-function ExternalAgentDialogConnected() {
-  const dialogOpen = useUIStore((s) => s.externalAgentDialogOpen);
-  const dialogInfo = useUIStore((s) => s.externalAgentDialogInfo);
-
-  if (!dialogInfo) {
-    return <ExternalAgentDialog open={false} prompt="" onDone={() => {}} onCancel={() => {}} />;
-  }
-
-  return (
-    <ExternalAgentDialog
-      open={dialogOpen}
-      prompt={dialogInfo.prompt}
-      onDone={dialogInfo.onDone}
-      onCancel={dialogInfo.onCancel}
-    />
-  );
-}
 
 export function App() {
   const initialize = useEngineStore((s) => s.initialize);
@@ -327,26 +277,10 @@ export function App() {
         {/* Registry-managed dialogs (delete, connection, unsaved, error, integrity, conflict, empty-project) */}
         <DialogHost />
 
-        {/* Analysis Progress Dialog (overlay) */}
-        <AnalysisProgressDialogConnected />
-
-        {/* External Agent Dialog (overlay) */}
-        <ExternalAgentDialogConnected />
-
-        {/* Keyboard Shortcuts Help Panel (overlay) */}
-        <ShortcutsHelpPanel />
-
-        {/* Keyboard Shortcut Settings Panel (overlay) */}
-        <ShortcutSettingsPanel />
-
-        {/* Settings Dialog (overlay) */}
-        <SettingsDialog />
-
-        {/* Template Picker Dialog (overlay) */}
-        <TemplatePicker />
-
-        {/* Template Gallery Panel (overlay) */}
-        <TemplateGallery />
+        {/* Registered dialogs (self-registered via src/dialogs/) */}
+        {getRegisteredDialogs().map((reg) => (
+          <reg.component key={reg.id} />
+        ))}
 
         {/* Command Palette (Cmd+K) */}
         <CommandPalette />

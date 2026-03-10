@@ -8,6 +8,7 @@
  */
 
 // Import each dialog to trigger self-registration via registerDialog()
+// Simple dialogs (P01-T2)
 import './DeleteConfirmationDialog';
 import './ConnectionTypeDialog';
 import './UnsavedChangesDialog';
@@ -15,6 +16,14 @@ import './ErrorDialog';
 import './IntegrityWarningDialog';
 import './ConflictDialog';
 import './EmptyProjectDialog';
+// Complex dialogs (P01-T3)
+import './AnalysisProgressDialog';
+import './ExternalAgentDialog';
+import './ShortcutsHelpPanel';
+import './ShortcutSettingsPanel';
+import './SettingsDialog';
+import './TemplatePicker';
+import './TemplateGallery';
 
 // Re-export the host component and registry utilities
 export { DialogHost } from './DialogHost';

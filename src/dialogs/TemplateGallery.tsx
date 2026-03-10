@@ -9,15 +9,16 @@ import { useUIStore } from '@/store/uiStore';
 import { getAllTemplates } from '@/templates/registry';
 import { saveImportedTemplate, deleteImportedTemplate } from '@/templates/storage';
 import type { TemplateMetadata, TemplateRecord } from '@/templates/types';
-import { TemplateCard } from './TemplateCard';
-import { TemplatePreview } from './TemplatePreview';
-import { UseTemplateDialog } from './UseTemplateDialog';
-import { ImportTemplateDialog } from './ImportTemplateDialog';
+import { TemplateCard } from '@/components/shared/TemplateCard';
+import { TemplatePreview } from '@/components/shared/TemplatePreview';
+import { UseTemplateDialog } from '@/components/shared/UseTemplateDialog';
+import { ImportTemplateDialog } from '@/components/shared/ImportTemplateDialog';
 import { isArchcFile, decode } from '@/core/storage/codec';
 import { protoToGraph } from '@/core/storage/fileIO';
 import type { ArchGraph } from '@/types/graph';
 import { ulid } from 'ulid';
 import { Architecture } from '@/proto/archcanvas';
+import { registerDialog } from './registry';
 
 /**
  * Category filter definitions.
@@ -609,3 +610,6 @@ function TemplateGalleryContent({ onClose }: { onClose: () => void }) {
     </>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'template-gallery', component: TemplateGallery });

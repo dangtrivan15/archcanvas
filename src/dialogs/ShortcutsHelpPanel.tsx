@@ -14,6 +14,7 @@ import {
   getShortcutKeys,
   type ShortcutCategory,
 } from '@/config/keyboardShortcuts';
+import { registerDialog } from './registry';
 
 /** Category icon/color mapping */
 const CATEGORY_STYLES: Record<ShortcutCategory, { color: string; bg: string }> = {
@@ -180,3 +181,6 @@ export function ShortcutsHelpPanel() {
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'shortcuts-help', component: ShortcutsHelpPanel });
