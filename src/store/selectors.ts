@@ -135,8 +135,9 @@ export const selectConnectStep = (s: UIStoreState) => s.connectStep;
 /** Derived: whether connect mode is active */
 export const selectIsConnectMode = (s: UIStoreState) => s.connectStep !== null;
 
-/** Derived: whether any modal dialog is open */
+/** Derived: whether any modal dialog is open (checks both legacy flags and generic Set) */
 export const selectHasOpenDialog = (s: UIStoreState) =>
+  s.openDialogs.size > 0 ||
   s.deleteDialogOpen ||
   s.connectionDialogOpen ||
   s.unsavedChangesDialogOpen ||

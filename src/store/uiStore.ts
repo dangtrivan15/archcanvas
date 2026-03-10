@@ -380,6 +380,12 @@ export interface UIStoreState {
   toastMessage: string | null;
   toastTimerId: ReturnType<typeof setTimeout> | null;
 
+  // Generic dialog registry state
+  /** Set of currently open dialog IDs (used by DialogHost) */
+  openDialogs: Set<string>;
+  /** Props for each open dialog, keyed by dialog ID */
+  dialogProps: Map<string, unknown>;
+
   // Theme actions
   setTheme: (themeId: string) => void;
 
@@ -389,6 +395,14 @@ export interface UIStoreState {
   setRightPanelTab: (tab: RightPanelTab) => void;
   openRightPanel: (tab?: RightPanelTab) => void;
   closeRightPanel: () => void;
+
+  // Generic dialog actions (used by dialog registry system)
+  /** Open a dialog by ID, optionally passing props */
+  openDialog: (id: string, props?: unknown) => void;
+  /** Close a dialog by ID */
+  closeDialog: (id: string) => void;
+  /** Get props for a specific dialog */
+  getDialogProps: (id: string) => unknown;
 
   // Delete dialog actions
   openDeleteDialog: (info: DeleteDialogInfo) => void;
@@ -589,6 +603,9 @@ export const useUIStore = create<UIStoreState>((set) => ({
   toastMessage: null,
   toastTimerId: null,
 
+  openDialogs: new Set<string>(),
+  dialogProps: new Map<string, unknown>(),
+
   setTheme: (themeId) => {
     persistTheme(themeId);
     set({ themeId });
@@ -604,35 +621,197 @@ export const useUIStore = create<UIStoreState>((set) => ({
 
   closeRightPanel: () => set({ rightPanelOpen: false }),
 
-  openDeleteDialog: (info) => set({ deleteDialogOpen: true, deleteDialogInfo: info }),
+  // Generic dialog open/close (used by dialog registry system)
+  openDialog: (id, props) =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add(id);
+      const nextProps = new Map(s.dialogProps);
+      if (props !== undefined) {
+        nextProps.set(id, props);
+      }
+      return { openDialogs: nextOpen, dialogProps: nextProps };
+    }),
 
-  closeDeleteDialog: () => set({ deleteDialogOpen: false, deleteDialogInfo: null }),
+  closeDialog: (id) =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete(id);
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete(id);
+      return { openDialogs: nextOpen, dialogProps: nextProps };
+    }),
 
-  openConnectionDialog: (info) => set({ connectionDialogOpen: true, connectionDialogInfo: info }),
+  getDialogProps: (id): unknown => useUIStore.getState().dialogProps.get(id),
 
-  closeConnectionDialog: () => set({ connectionDialogOpen: false, connectionDialogInfo: null }),
+  // Legacy dialog actions — delegate to generic openDialogs Set for consistency
+  openDeleteDialog: (info) =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('delete');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('delete', info);
+      return {
+        deleteDialogOpen: true,
+        deleteDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
+
+  closeDeleteDialog: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('delete');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('delete');
+      return {
+        deleteDialogOpen: false,
+        deleteDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
+
+  openConnectionDialog: (info) =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('connection');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('connection', info);
+      return {
+        connectionDialogOpen: true,
+        connectionDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
+
+  closeConnectionDialog: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('connection');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('connection');
+      return {
+        connectionDialogOpen: false,
+        connectionDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   openUnsavedChangesDialog: (info) =>
-    set({ unsavedChangesDialogOpen: true, unsavedChangesDialogInfo: info }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('unsavedChanges');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('unsavedChanges', info);
+      return {
+        unsavedChangesDialogOpen: true,
+        unsavedChangesDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   closeUnsavedChangesDialog: () =>
-    set({ unsavedChangesDialogOpen: false, unsavedChangesDialogInfo: null }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('unsavedChanges');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('unsavedChanges');
+      return {
+        unsavedChangesDialogOpen: false,
+        unsavedChangesDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
-  openErrorDialog: (info) => set({ errorDialogOpen: true, errorDialogInfo: info }),
+  openErrorDialog: (info) =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('error');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('error', info);
+      return {
+        errorDialogOpen: true,
+        errorDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
-  closeErrorDialog: () => set({ errorDialogOpen: false, errorDialogInfo: null }),
+  closeErrorDialog: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('error');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('error');
+      return {
+        errorDialogOpen: false,
+        errorDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   openIntegrityWarningDialog: (info) =>
-    set({ integrityWarningDialogOpen: true, integrityWarningDialogInfo: info }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('integrityWarning');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('integrityWarning', info);
+      return {
+        integrityWarningDialogOpen: true,
+        integrityWarningDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   closeIntegrityWarningDialog: () =>
-    set({ integrityWarningDialogOpen: false, integrityWarningDialogInfo: null }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('integrityWarning');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('integrityWarning');
+      return {
+        integrityWarningDialogOpen: false,
+        integrityWarningDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   openConflictDialog: (info) =>
-    set({ conflictDialogOpen: true, conflictDialogInfo: info }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('conflict');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('conflict', info);
+      return {
+        conflictDialogOpen: true,
+        conflictDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   closeConflictDialog: () =>
-    set({ conflictDialogOpen: false, conflictDialogInfo: null }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('conflict');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('conflict');
+      return {
+        conflictDialogOpen: false,
+        conflictDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   enterPlacementMode: (info) => set({ placementMode: true, placementInfo: info }),
 
@@ -712,51 +891,186 @@ export const useUIStore = create<UIStoreState>((set) => ({
     });
   },
 
-  openShortcutsHelp: () => set({ shortcutsHelpOpen: true }),
+  openShortcutsHelp: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('shortcutsHelp');
+      return { shortcutsHelpOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeShortcutsHelp: () => set({ shortcutsHelpOpen: false }),
+  closeShortcutsHelp: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('shortcutsHelp');
+      return { shortcutsHelpOpen: false, openDialogs: nextOpen };
+    }),
 
-  toggleShortcutsHelp: () => set((s) => ({ shortcutsHelpOpen: !s.shortcutsHelpOpen })),
+  toggleShortcutsHelp: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      const nextState = !s.shortcutsHelpOpen;
+      if (nextState) nextOpen.add('shortcutsHelp');
+      else nextOpen.delete('shortcutsHelp');
+      return { shortcutsHelpOpen: nextState, openDialogs: nextOpen };
+    }),
 
-  openCommandPalette: () => set({ commandPaletteOpen: true }),
+  openCommandPalette: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('commandPalette');
+      return { commandPaletteOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeCommandPalette: () => set({ commandPaletteOpen: false }),
+  closeCommandPalette: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('commandPalette');
+      return { commandPaletteOpen: false, openDialogs: nextOpen };
+    }),
 
-  toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
+  toggleCommandPalette: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      const nextState = !s.commandPaletteOpen;
+      if (nextState) nextOpen.add('commandPalette');
+      else nextOpen.delete('commandPalette');
+      return { commandPaletteOpen: nextState, openDialogs: nextOpen };
+    }),
 
-  openQuickSearch: () => set({ quickSearchOpen: true }),
+  openQuickSearch: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('quickSearch');
+      return { quickSearchOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeQuickSearch: () => set({ quickSearchOpen: false }),
+  closeQuickSearch: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('quickSearch');
+      return { quickSearchOpen: false, openDialogs: nextOpen };
+    }),
 
-  toggleQuickSearch: () => set((s) => ({ quickSearchOpen: !s.quickSearchOpen })),
+  toggleQuickSearch: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      const nextState = !s.quickSearchOpen;
+      if (nextState) nextOpen.add('quickSearch');
+      else nextOpen.delete('quickSearch');
+      return { quickSearchOpen: nextState, openDialogs: nextOpen };
+    }),
 
-  openShortcutSettings: () => set({ shortcutSettingsOpen: true }),
+  openShortcutSettings: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('shortcutSettings');
+      return { shortcutSettingsOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeShortcutSettings: () => set({ shortcutSettingsOpen: false }),
+  closeShortcutSettings: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('shortcutSettings');
+      return { shortcutSettingsOpen: false, openDialogs: nextOpen };
+    }),
 
-  openSettingsDialog: () => set({ settingsDialogOpen: true }),
+  openSettingsDialog: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('settings');
+      return { settingsDialogOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeSettingsDialog: () => set({ settingsDialogOpen: false }),
+  closeSettingsDialog: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('settings');
+      return { settingsDialogOpen: false, openDialogs: nextOpen };
+    }),
 
   openEmptyProjectDialog: (info) =>
-    set({ emptyProjectDialogOpen: true, emptyProjectDialogInfo: info }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('emptyProject');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('emptyProject', info);
+      return {
+        emptyProjectDialogOpen: true,
+        emptyProjectDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   closeEmptyProjectDialog: () =>
-    set({ emptyProjectDialogOpen: false, emptyProjectDialogInfo: null }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('emptyProject');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('emptyProject');
+      return {
+        emptyProjectDialogOpen: false,
+        emptyProjectDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   openExternalAgentDialog: (info) =>
-    set({ externalAgentDialogOpen: true, externalAgentDialogInfo: info }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('externalAgent');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.set('externalAgent', info);
+      return {
+        externalAgentDialogOpen: true,
+        externalAgentDialogInfo: info,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
   closeExternalAgentDialog: () =>
-    set({ externalAgentDialogOpen: false, externalAgentDialogInfo: null }),
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('externalAgent');
+      const nextProps = new Map(s.dialogProps);
+      nextProps.delete('externalAgent');
+      return {
+        externalAgentDialogOpen: false,
+        externalAgentDialogInfo: null,
+        openDialogs: nextOpen,
+        dialogProps: nextProps,
+      };
+    }),
 
-  openTemplatePicker: () => set({ templatePickerOpen: true }),
+  openTemplatePicker: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('templatePicker');
+      return { templatePickerOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeTemplatePicker: () => set({ templatePickerOpen: false }),
+  closeTemplatePicker: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('templatePicker');
+      return { templatePickerOpen: false, openDialogs: nextOpen };
+    }),
 
-  openTemplateGallery: () => set({ templateGalleryOpen: true }),
+  openTemplateGallery: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.add('templateGallery');
+      return { templateGalleryOpen: true, openDialogs: nextOpen };
+    }),
 
-  closeTemplateGallery: () => set({ templateGalleryOpen: false }),
+  closeTemplateGallery: () =>
+    set((s) => {
+      const nextOpen = new Set(s.openDialogs);
+      nextOpen.delete('templateGallery');
+      return { templateGalleryOpen: false, openDialogs: nextOpen };
+    }),
 
   setFileOperationLoading: (message) =>
     set({ fileOperationLoading: true, fileOperationMessage: message }),
