@@ -12,7 +12,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { ArrowLeft, ArrowRight, Zap, Database, RefreshCw } from 'lucide-react';
-import { useNestedCanvasStore, type ParentEdgeIndicator } from '@/store/nestedCanvasStore';
+import { useNavigationStore, type ParentEdgeIndicator } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
 
 // ─── Edge type styling ──────────────────────────────────────────
@@ -99,10 +99,10 @@ const IndicatorPill = React.memo(function IndicatorPill({
 // ─── Main Component ─────────────────────────────────────────────
 
 export const ParentEdgeIndicators = React.memo(function ParentEdgeIndicators() {
-  const parentEdgeIndicators = useNestedCanvasStore((s) => s.parentEdgeIndicators);
-  const popFile = useNestedCanvasStore((s) => s.popFile);
+  const parentEdgeIndicators = useNavigationStore((s) => s.parentEdgeIndicators);
+  const popFile = useNavigationStore((s) => s.popFile);
   const requestCenterOnNode = useCanvasStore((s) => s.requestCenterOnNode);
-  const depth = useNestedCanvasStore((s) => s.fileStack.length);
+  const depth = useNavigationStore((s) => s.fileStack.length);
 
   // Split indicators by direction for positioning
   const { incoming, outgoing } = useMemo(() => {

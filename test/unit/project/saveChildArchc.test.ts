@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { decode } from '@/core/storage/codec';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
 
 // ── Shared mocks ──
 
@@ -411,7 +411,7 @@ describe('Feature #472: Save child .archc files on modification', () => {
       // Test through the real store (not mocked), verifying activeFilePath tracking.
 
       // Reset unified navigation store to clean state
-      useNestedCanvasStore.setState({
+      useNavigationStore.setState({
         fileStack: [],
         activeFilePath: null,
         path: [],
@@ -419,15 +419,15 @@ describe('Feature #472: Save child .archc files on modification', () => {
       });
 
       // Initially at root
-      expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
+      expect(useNavigationStore.getState().activeFilePath).toBeNull();
 
       // After pushing a file, activeFilePath should be set
-      useNestedCanvasStore.getState().pushFile('01ABC.archc', childGraph, 'node1');
-      expect(useNestedCanvasStore.getState().activeFilePath).toBe('01ABC.archc');
+      useNavigationStore.getState().pushFile('01ABC.archc', childGraph, 'node1');
+      expect(useNavigationStore.getState().activeFilePath).toBe('01ABC.archc');
 
       // After popping, should return to null (root)
-      useNestedCanvasStore.getState().popFile();
-      expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
+      useNavigationStore.getState().popFile();
+      expect(useNavigationStore.getState().activeFilePath).toBeNull();
     });
   });
 });

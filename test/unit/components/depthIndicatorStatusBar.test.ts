@@ -60,34 +60,34 @@ describe('ModeStatusBar depth indicator integration', () => {
 });
 
 describe('ModeStatusBar source code verification', () => {
-  it('imports useNestedCanvasStore for file stack access', async () => {
+  it('imports useNavigationStore for file stack access', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/ModeStatusBar.tsx', 'utf-8');
-    expect(source).toContain("import { useNestedCanvasStore } from '@/store/nestedCanvasStore'");
+    expect(source).toContain("import { useNavigationStore } from '@/store/navigationStore'");
   });
 
   it('reads fileStack from nestedCanvasStore', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/ModeStatusBar.tsx', 'utf-8');
-    expect(source).toContain('useNestedCanvasStore((s) => s.fileStack)');
+    expect(source).toContain('useNavigationStore((s) => s.fileStack)');
   });
 
   it('reads activeFilePath from nestedCanvasStore', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/ModeStatusBar.tsx', 'utf-8');
-    expect(source).toContain('useNestedCanvasStore((s) => s.activeFilePath)');
+    expect(source).toContain('useNavigationStore((s) => s.activeFilePath)');
   });
 
   it('reads popFile from nestedCanvasStore', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/ModeStatusBar.tsx', 'utf-8');
-    expect(source).toContain('useNestedCanvasStore((s) => s.popFile)');
+    expect(source).toContain('useNavigationStore((s) => s.popFile)');
   });
 
   it('reads popToRoot from nestedCanvasStore', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/components/canvas/ModeStatusBar.tsx', 'utf-8');
-    expect(source).toContain('useNestedCanvasStore((s) => s.popToRoot)');
+    expect(source).toContain('useNavigationStore((s) => s.popToRoot)');
   });
 
   it('renders a depth badge with data-testid="depth-badge"', async () => {

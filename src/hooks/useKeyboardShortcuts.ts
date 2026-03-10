@@ -16,7 +16,6 @@ import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { isPrimaryModifier } from '@/core/input';
@@ -252,7 +251,7 @@ export function useKeyboardShortcuts() {
         case 'nav:nested-root':
           e.preventDefault();
           {
-            const nestedStore = useNestedCanvasStore.getState();
+            const nestedStore = useNavigationStore.getState();
             if (nestedStore.getDepth() > 0) {
               nestedStore.popToRoot();
             }

@@ -9,7 +9,6 @@ import { useMemo } from 'react';
 import { ChevronRight, Layers } from 'lucide-react';
 import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import type { ArchNode } from '@/types/graph';
 
 /**
@@ -55,10 +54,10 @@ export function NavigationBreadcrumb() {
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);
 
   // Cross-file navigation
-  const fileStack = useNestedCanvasStore((s) => s.fileStack);
-  const activeFilePath = useNestedCanvasStore((s) => s.activeFilePath);
-  const popFile = useNestedCanvasStore((s) => s.popFile);
-  const popToRoot = useNestedCanvasStore((s) => s.popToRoot);
+  const fileStack = useNavigationStore((s) => s.fileStack);
+  const activeFilePath = useNavigationStore((s) => s.activeFilePath);
+  const popFile = useNavigationStore((s) => s.popFile);
+  const popToRoot = useNavigationStore((s) => s.popToRoot);
 
   const fileDepth = fileStack.length;
 
