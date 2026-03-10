@@ -27,3 +27,4 @@ export { useResponsiveLayout } from './useResponsiveLayout';
 export { useOfflineStatus } from './useOfflineStatus';
 export { useVirtualKeyboard } from './useVirtualKeyboard';
 export { useChildGraph, type ChildGraphState } from './useChildGraph';
+export { useAppInitialization } from './useAppInitialization';
