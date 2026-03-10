@@ -21,7 +21,7 @@ import path from 'path';
 const USE_FILE_POLLING_PATH = path.resolve(__dirname, '../../../src/hooks/useFilePolling.ts');
 const CONFLICT_DIALOG_PATH = path.resolve(
   __dirname,
-  '../../../src/components/shared/ConflictDialog.tsx',
+  '../../../src/dialogs/ConflictDialog.tsx',
 );
 const UI_STORE_PATH = path.resolve(__dirname, '../../../src/store/uiStore.ts');
 const APP_PATH = path.resolve(__dirname, '../../../src/App.tsx');
@@ -176,15 +176,15 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
     });
   });
 
-  describe('Step 6: ConflictDialog is rendered in App.tsx', () => {
-    it('App.tsx imports ConflictDialog', () => {
+  describe('Step 6: ConflictDialog is rendered in App.tsx via DialogHost', () => {
+    it('App.tsx imports DialogHost from dialogs', () => {
       const src = fs.readFileSync(APP_PATH, 'utf-8');
-      expect(src).toContain("import { ConflictDialog }");
+      expect(src).toContain("import { DialogHost } from '@/dialogs'");
     });
 
-    it('App.tsx renders <ConflictDialog />', () => {
+    it('App.tsx renders <DialogHost /> which includes ConflictDialog', () => {
       const src = fs.readFileSync(APP_PATH, 'utf-8');
-      expect(src).toContain('<ConflictDialog />');
+      expect(src).toContain('<DialogHost />');
     });
   });
 

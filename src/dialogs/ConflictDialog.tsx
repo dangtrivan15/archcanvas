@@ -13,6 +13,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFileStore } from '@/store/fileStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { registerDialog } from './registry';
 
 export function ConflictDialog() {
   const open = useUIStore((s) => s.conflictDialogOpen);
@@ -149,3 +150,6 @@ export function ConflictDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'conflict', component: ConflictDialog });
