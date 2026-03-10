@@ -33,6 +33,12 @@ export function useCanvasNavigation(
   const [diveState, diveActions] = useContainerDiveIn();
   const nestedDepth = useNestedCanvasStore((s) => s.fileStack.length);
 
+  // Store-based dive-in request (replaces DOM event)
+  const diveInNodeId = useCanvasStore((s) => s.diveInNodeId);
+  const diveInRefSource = useCanvasStore((s) => s.diveInRefSource);
+  const diveInCounter = useCanvasStore((s) => s.diveInCounter);
+  const prevDiveInCounterRef = useRef(diveInCounter);
+
   // Auto-layout when zooming into a parent whose children lack positions
   const prevNavigationPathRef = useRef(navigationPath);
   useEffect(() => {
@@ -59,18 +65,15 @@ export function useCanvasNavigation(
     }
   }, [navigationPath, graph, autoLayout]);
 
-  // TODO: replace DOM event with store action when ContainerNode is updated
-  // Listen for container dive-in events (dispatched by ContainerNode)
+  // Watch for dive-in requests (from ContainerNode via canvasStore counter)
   useEffect(() => {
-    const handleDiveIn = (event: Event) => {
-      const { nodeId, refSource } = (event as CustomEvent).detail ?? {};
-      if (nodeId && refSource) {
-        diveActions.diveIn(nodeId, refSource, rfNodes, perf.prefersReducedMotion);
+    if (diveInCounter !== prevDiveInCounterRef.current) {
+      prevDiveInCounterRef.current = diveInCounter;
+      if (diveInNodeId && diveInRefSource) {
+        diveActions.diveIn(diveInNodeId, diveInRefSource, rfNodes, perf.prefersReducedMotion);
       }
-    };
-    document.addEventListener('archcanvas:container-dive-in', handleDiveIn);
-    return () => document.removeEventListener('archcanvas:container-dive-in', handleDiveIn);
-  }, [diveActions, rfNodes, perf.prefersReducedMotion]);
+    }
+  }, [diveInCounter, diveInNodeId, diveInRefSource, diveActions, rfNodes, perf.prefersReducedMotion]);
 
   // Escape key for nested file dive-out
   useEffect(() => {

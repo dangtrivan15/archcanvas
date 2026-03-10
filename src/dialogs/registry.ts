@@ -37,6 +37,14 @@ export function getRegisteredDialogIds(): string[] {
 }
 
 /**
+ * Get all registered dialog configs (for unconditional rendering).
+ * Dialogs self-manage visibility via their own `open` state.
+ */
+export function getRegisteredDialogs(): DialogConfig[] {
+  return Array.from(registry.values());
+}
+
+/**
  * Clear the registry (for testing only).
  */
 export function clearRegistry(): void {

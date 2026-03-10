@@ -57,6 +57,11 @@ export interface CanvasStoreState {
   centerOnNodeId: string | null;
   centerOnNodeCounter: number;
 
+  // Dive-in request (replaces DOM event 'archcanvas:container-dive-in')
+  diveInNodeId: string | null;
+  diveInRefSource: string | null;
+  diveInCounter: number;
+
   // Actions - single selection (replaces entire selection)
   selectNode: (nodeId: string | null) => void;
   selectEdge: (edgeId: string | null) => void;
@@ -79,6 +84,7 @@ export interface CanvasStoreState {
   setLayoutSpacing: (spacing: Partial<LayoutSpacing>) => void;
   resetLayoutSpacing: () => void;
   requestCenterOnNode: (nodeId: string) => void;
+  requestDiveIn: (nodeId: string, refSource: string) => void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set) => ({
@@ -94,6 +100,9 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
   layoutSpacing: { ...DEFAULT_LAYOUT_SPACING },
   centerOnNodeId: null,
   centerOnNodeCounter: 0,
+  diveInNodeId: null,
+  diveInRefSource: null,
+  diveInCounter: 0,
 
   // Single select: replaces entire selection
   selectNode: (nodeId) => {
@@ -212,4 +221,11 @@ export const useCanvasStore = create<CanvasStoreState>((set) => ({
 
   requestCenterOnNode: (nodeId) =>
     set((s) => ({ centerOnNodeId: nodeId, centerOnNodeCounter: s.centerOnNodeCounter + 1 })),
+
+  requestDiveIn: (nodeId, refSource) =>
+    set((s) => ({
+      diveInNodeId: nodeId,
+      diveInRefSource: refSource,
+      diveInCounter: s.diveInCounter + 1,
+    })),
 }));

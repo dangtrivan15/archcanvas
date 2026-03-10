@@ -11,7 +11,7 @@ import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
-import { DialogHost } from '@/dialogs';
+import { DialogHost, getRegisteredDialogs } from '@/dialogs';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { QuickSearchOverlay } from '@/components/shared/QuickSearchOverlay';
 import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
