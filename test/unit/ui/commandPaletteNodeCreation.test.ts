@@ -10,7 +10,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getNodeCreationCommands, getAllCommands, searchCommands } from '@/config/commandRegistry';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -18,7 +21,7 @@ import { createEmptyGraph } from '@/core/graph/graphEngine';
 import type { ArchNode } from '@/types/graph';
 
 function resetStores() {
-  useCoreStore.getState().initialize();
+  useEngineStore.getState().initialize();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,
@@ -44,7 +47,7 @@ describe('Command Palette Node Creation - getNodeCreationCommands', () => {
   });
 
   it('creates one command per NodeDef type', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     if (!registry) return;
     const types = registry.listAll();
     const commands = getNodeCreationCommands();
@@ -158,9 +161,9 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     expect(serviceCmd).toBeDefined();
 
-    const initialNodeCount = useCoreStore.getState().graph.nodes.length;
+    const initialNodeCount = useGraphStore.getState().graph.nodes.length;
     serviceCmd!.execute();
-    const newNodeCount = useCoreStore.getState().graph.nodes.length;
+    const newNodeCount = useGraphStore.getState().graph.nodes.length;
     expect(newNodeCount).toBe(initialNodeCount + 1);
   });
 
@@ -169,7 +172,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     serviceCmd!.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const newNode = nodes[nodes.length - 1];
     expect(newNode.type).toBe('compute/service');
   });
@@ -179,7 +182,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     serviceCmd!.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const newNode = nodes[nodes.length - 1];
     expect(newNode.displayName).toBe('Service');
   });
@@ -189,7 +192,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     serviceCmd!.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const newNode = nodes[nodes.length - 1];
     expect(useCanvasStore.getState().selectedNodeId).toBe(newNode.id);
   });
@@ -208,7 +211,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     serviceCmd!.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const newNode = nodes[nodes.length - 1];
     expect(useUIStore.getState().pendingRenameNodeId).toBe(newNode.id);
   });
@@ -223,7 +226,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service');
     serviceCmd!.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const newNode = nodes[nodes.length - 1];
     // Node should be at or near viewport center
     expect(newNode.position.x).toBeGreaterThan(0);
@@ -236,7 +239,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service')!;
     serviceCmd.execute();
 
-    const firstNode = useCoreStore.getState().graph.nodes[0];
+    const firstNode = useGraphStore.getState().graph.nodes[0];
     const firstX = firstNode.position.x;
     const firstY = firstNode.position.y;
 
@@ -244,7 +247,7 @@ describe('Command Palette Node Creation - Execute Command', () => {
     const dbCmd = commands.find((c) => c.label === 'Add Database')!;
     dbCmd.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const secondNode = nodes[nodes.length - 1];
     // Second node should be offset to the right (+300) from first
     expect(secondNode.position.x).toBe(firstX + 300);
@@ -261,7 +264,7 @@ describe('Command Palette Node Creation - Nested Navigation', () => {
     const workerCmd = commands.find((c) => c.label === 'Add Worker')!;
     workerCmd.execute();
 
-    const parentNode = useCoreStore.getState().graph.nodes.find((n) => n.type === 'compute/worker');
+    const parentNode = useGraphStore.getState().graph.nodes.find((n) => n.type === 'compute/worker');
     expect(parentNode).toBeDefined();
 
     // Simulate navigating into the parent node
@@ -276,7 +279,7 @@ describe('Command Palette Node Creation - Nested Navigation', () => {
     expect(selectedId).toBeTruthy();
 
     // Find the parent node again - it should have a child now
-    const updatedParent = useCoreStore.getState().graph.nodes.find((n) => n.id === parentNode!.id);
+    const updatedParent = useGraphStore.getState().graph.nodes.find((n) => n.id === parentNode!.id);
     expect(updatedParent).toBeDefined();
     expect(updatedParent!.children.length).toBeGreaterThan(0);
     expect(updatedParent!.children[0].type).toBe('compute/service');
@@ -289,7 +292,7 @@ describe('Command Palette Node Creation - Nested Navigation', () => {
     const serviceCmd = commands.find((c) => c.label === 'Add Service')!;
     serviceCmd.execute();
 
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     expect(nodes.length).toBeGreaterThan(0);
   });
 });
@@ -324,10 +327,10 @@ describe('Command Palette Node Creation - Integration with getAllCommands', () =
     const serviceCmd = commands.find((c) => c.label === 'Add Service')!;
 
     serviceCmd.execute();
-    const node1 = useCoreStore.getState().graph.nodes[0];
+    const node1 = useGraphStore.getState().graph.nodes[0];
 
     serviceCmd.execute();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const node2 = nodes[nodes.length - 1];
 
     expect(node1.id).not.toBe(node2.id);

@@ -15,7 +15,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { getStaticCommands, searchCommands } from '@/config/commandRegistry';
 import {
   parseBinding,
@@ -77,9 +80,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
     useNestedCanvasStore.setState({ fileStack: [], activeFilePath: null });
     useNavigationStore.setState({ path: [] });
     useCanvasStore.setState({ viewport: { x: 0, y: 0, zoom: 1 } });
-    useCoreStore.setState({
-      graph: makeGraph('root'),
-    });
+    useGraphStore.setState({ graph: makeGraph('root') });
   });
 
   // ─── Escape Key Behavior ──────────────────────────────────────
@@ -89,7 +90,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       // Setup: push a file so we're nested
       const rootGraph = makeGraph('root');
       const childGraph = makeGraph('child');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child.archc', childGraph);
 
       expect(useNestedCanvasStore.getState().getDepth()).toBe(1);
@@ -99,14 +100,14 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       useNestedCanvasStore.getState().popFile();
 
       expect(useNestedCanvasStore.getState().getDepth()).toBe(0);
-      expect(useCoreStore.getState().graph.name).toBe('root');
+      expect(useGraphStore.getState().graph.name).toBe('root');
     });
 
     it('should zoom out within file when nav path is non-empty and nested', () => {
       // Setup: push a file, then zoom into a node within that file
       const rootGraph = makeGraph('root');
       const childGraph = makeGraph('child');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child.archc', childGraph);
       useNavigationStore.getState().zoomIn('node-child');
 
@@ -128,7 +129,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       const rootGraph = makeGraph('root');
       const child1Graph = makeGraph('child1');
       const child2Graph = makeGraph('child2');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child1.archc', child1Graph);
       useNestedCanvasStore.getState().pushFile('child2.archc', child2Graph);
 
@@ -138,7 +139,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
 
       expect(useNestedCanvasStore.getState().getDepth()).toBe(0);
       expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
-      expect(useCoreStore.getState().graph.name).toBe('root');
+      expect(useGraphStore.getState().graph.name).toBe('root');
     });
 
     it('should have mod+shift+home registered as a shortcut action', () => {
@@ -224,7 +225,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
 
     it('nav:nested-up should be enabled when nested', () => {
       const rootGraph = makeGraph('root');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child.archc', makeGraph('child'));
 
       const commands = getStaticCommands();
@@ -240,7 +241,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
 
     it('nav:nested-root should be enabled when nested', () => {
       const rootGraph = makeGraph('root');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child.archc', makeGraph('child'));
 
       const commands = getStaticCommands();
@@ -264,7 +265,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
 
     it('nav:nested-up execute should call popFile', () => {
       const rootGraph = makeGraph('root');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child.archc', makeGraph('child'));
       expect(useNestedCanvasStore.getState().getDepth()).toBe(1);
 
@@ -277,7 +278,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
 
     it('nav:nested-root execute should call popToRoot', () => {
       const rootGraph = makeGraph('root');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
       useNestedCanvasStore.getState().pushFile('child1.archc', makeGraph('child1'));
       useNestedCanvasStore.getState().pushFile('child2.archc', makeGraph('child2'));
       expect(useNestedCanvasStore.getState().getDepth()).toBe(2);
@@ -307,7 +308,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
     it('should zoom out nav path first, then pop file on successive Escapes', () => {
       const rootGraph = makeGraph('root');
       const childGraph = makeGraph('child');
-      useCoreStore.setState({ graph: rootGraph });
+      useGraphStore.setState({ graph: rootGraph });
 
       // Push into a nested file
       useNestedCanvasStore.getState().pushFile('child.archc', childGraph);
@@ -325,14 +326,14 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       // Second "Escape": should pop the file (since nav path is now empty)
       useNestedCanvasStore.getState().popFile();
       expect(useNestedCanvasStore.getState().getDepth()).toBe(0);
-      expect(useCoreStore.getState().graph.name).toBe('root');
+      expect(useGraphStore.getState().graph.name).toBe('root');
     });
 
     it('should handle deep nesting: 3 levels of files', () => {
       const g1 = makeGraph('root');
       const g2 = makeGraph('level1');
       const g3 = makeGraph('level2');
-      useCoreStore.setState({ graph: g1 });
+      useGraphStore.setState({ graph: g1 });
 
       useNestedCanvasStore.getState().pushFile('level1.archc', g2);
       useNestedCanvasStore.getState().pushFile('level2.archc', g3);
@@ -341,7 +342,7 @@ describe('Feature #455: Keyboard & Gesture Navigation for Nested Canvas', () => 
       // popToRoot should go straight back
       useNestedCanvasStore.getState().popToRoot();
       expect(useNestedCanvasStore.getState().getDepth()).toBe(0);
-      expect(useCoreStore.getState().graph.name).toBe('root');
+      expect(useGraphStore.getState().graph.name).toBe('root');
     });
   });
 

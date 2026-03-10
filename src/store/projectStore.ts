@@ -35,6 +35,9 @@ import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { useUIStore } from './uiStore';
 import type { EmptyProjectDialogInfo } from './uiStore';
 import { useAnalysisStore } from './analysisStore';
+import { useGraphStore } from './graphStore';
+import { useFileStore } from './fileStore';
+import { useEngineStore } from './engineStore';
 
 /**
  * A cached entry for a loaded .archc file within the project.
@@ -367,11 +370,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     });
 
     // Load the graph into the store so the canvas shows it
-    const { useCoreStore } = await import('./coreStore');
-    const coreState = useCoreStore.getState();
-    if (coreState.textApi) {
-      coreState.textApi.setGraph(graph);
-      coreState._setGraph(graph);
+    const { textApi } = useEngineStore.getState();
+    if (textApi) {
+      textApi.setGraph(graph);
+      useGraphStore.getState()._setGraph(graph);
     }
 
     useUIStore.getState().showToast(`Created new architecture in ${projectName}`);
@@ -406,8 +408,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ loadedFiles: newCache });
 
       // Apply to stores: set as active canvas + initialize undo history
-      const { useCoreStore } = await import('./coreStore');
-      useCoreStore.getState()._applyDecodedFile(
+      useFileStore.getState()._applyDecodedFile(
         graph,
         manifest.name || rootFile,
         null,
@@ -454,11 +455,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const rootFile = manifest.rootFile;
 
     try {
-      // Get the current graph and canvas/AI state from coreStore
-      const { useCoreStore } = await import('./coreStore');
-      const coreState = useCoreStore.getState();
-      const graph = coreState.graph;
-      const fileCreatedAtMs = coreState.fileCreatedAtMs;
+      // Get the current graph from graphStore and file metadata from fileStore
+      const graph = useGraphStore.getState().graph;
+      const fileCreatedAtMs = useFileStore.getState().fileCreatedAtMs;
 
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
@@ -505,10 +504,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ loadedFiles: newCache });
 
       // Clear isDirty only if the graph hasn't changed during the async save
-      const graphChangedDuringSave = useCoreStore.getState().graph !== graphAtSaveStart;
-      useCoreStore.setState({ isDirty: graphChangedDuringSave });
+      const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
+      useGraphStore.setState({ isDirty: graphChangedDuringSave });
       if (!fileCreatedAtMs) {
-        useCoreStore.setState({ fileCreatedAtMs: Date.now() });
+        useFileStore.setState({ fileCreatedAtMs: Date.now() });
       }
 
       console.log(`[ProjectStore] Saved ${rootFile} successfully`);
@@ -552,11 +551,9 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
 
     try {
-      // Get the current graph from coreStore (this is the child's graph)
-      const { useCoreStore } = await import('./coreStore');
-      const coreState = useCoreStore.getState();
-      const graph = coreState.graph;
-      const fileCreatedAtMs = coreState.fileCreatedAtMs;
+      // Get the current graph from graphStore (this is the child's graph)
+      const graph = useGraphStore.getState().graph;
+      const fileCreatedAtMs = useFileStore.getState().fileCreatedAtMs;
 
       // Capture graph reference to detect concurrent modifications
       const graphAtSaveStart = graph;
@@ -586,8 +583,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({ loadedFiles: newCache });
 
       // Clear isDirty only if the graph hasn't changed during the async save
-      const graphChangedDuringSave = useCoreStore.getState().graph !== graphAtSaveStart;
-      useCoreStore.setState({ isDirty: graphChangedDuringSave });
+      const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
+      useGraphStore.setState({ isDirty: graphChangedDuringSave });
 
       console.log(`[ProjectStore] Saved child file ${filePath} successfully`);
       useUIStore.getState().showToast('File saved');
@@ -635,11 +632,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     try {
       // Dynamically import pipeline to avoid circular deps
       const { analyzeCodebaseBrowser } = await import('@/analyze/browserPipeline');
-      const { useCoreStore } = await import('./coreStore');
 
-      const coreState = useCoreStore.getState();
-      const textApi = coreState.textApi;
-      const registry = coreState.registry;
+      const { textApi, registry } = useEngineStore.getState();
 
       if (!textApi || !registry) {
         throw new Error('Core engines not initialized. Please wait for the app to fully load.');
@@ -694,7 +688,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       // Load the generated graph into the canvas
       textApi.setGraph(result.graph);
-      useCoreStore.getState()._setGraph(result.graph);
+      useGraphStore.getState()._setGraph(result.graph);
 
       // Mark analysis as complete
       useAnalysisStore.getState().markComplete();

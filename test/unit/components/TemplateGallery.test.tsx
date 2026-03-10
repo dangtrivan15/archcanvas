@@ -178,14 +178,45 @@ vi.mock('@/store/uiStore', () => ({
   }),
 }));
 
-vi.mock('@/store/coreStore', () => ({
-  useCoreStore: Object.assign(
+vi.mock('@/store/graphStore', () => ({
+  useGraphStore: Object.assign(
+    vi.fn((selector) => {
+      const state = {
+        _setGraph: vi.fn(),
+      };
+      return selector(state);
+    }),
+    { setState: vi.fn() },
+  ),
+}));
+
+vi.mock('@/store/engineStore', () => ({
+  useEngineStore: Object.assign(
     vi.fn((selector) => {
       const state = {
         textApi: null,
         undoManager: null,
-        _setGraph: vi.fn(),
       };
+      return selector(state);
+    }),
+    { setState: vi.fn() },
+  ),
+}));
+
+vi.mock('@/store/fileStore', () => ({
+  useFileStore: Object.assign(
+    vi.fn((selector) => {
+      const state = {};
+      return selector(state);
+    }),
+    { setState: vi.fn() },
+  ),
+}));
+
+vi.mock('@/store/historyStore', () => ({
+  useHistoryStore: Object.assign(
+    vi.fn((selector) => {
+      const state = { canUndo: false, canRedo: false };
       return selector(state);
     }),
     { setState: vi.fn() },

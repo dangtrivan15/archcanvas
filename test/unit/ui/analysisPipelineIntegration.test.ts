@@ -28,11 +28,18 @@ const mockTextApi = {
 const mockRegistry = { resolveType: vi.fn() };
 const mockSetGraph = vi.fn();
 
-vi.mock('@/store/coreStore', () => ({
-  useCoreStore: {
+vi.mock('@/store/engineStore', () => ({
+  useEngineStore: {
     getState: () => ({
       textApi: mockTextApi,
       registry: mockRegistry,
+    }),
+  },
+}));
+
+vi.mock('@/store/graphStore', () => ({
+  useGraphStore: {
+    getState: () => ({
       _setGraph: mockSetGraph,
     }),
   },

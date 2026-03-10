@@ -526,11 +526,11 @@ describe('Feature #260: Keyboard Bulk Node Movement', () => {
       expect(src).toContain('isActiveElementTextInput');
     });
 
-    it('Canvas.tsx subscribes to moveNodes from coreStore', async () => {
+    it('Canvas.tsx subscribes to moveNodes from graphStore', async () => {
       const fs = await import('fs');
       const src = fs.readFileSync('src/components/canvas/Canvas.tsx', 'utf-8');
       expect(src).toContain('moveNodes');
-      expect(src).toContain('useCoreStore');
+      expect(src).toContain('useGraphStore');
     });
   });
 

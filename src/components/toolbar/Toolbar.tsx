@@ -17,14 +17,15 @@ import { ConnectNodesButton } from './ConnectNodesButton';
 import { LayoutMenu } from './LayoutMenu';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { PencilIndicator } from './PencilIndicator';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAnnotationStore } from '@/store/annotationStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
 
 export function Toolbar() {
-  const fileName = useCoreStore((s) => s.fileName);
-  const isDirty = useCoreStore((s) => s.isDirty);
+  const fileName = useFileStore((s) => s.fileName);
+  const isDirty = useGraphStore((s) => s.isDirty);
   const openShortcutsHelp = useUIStore((s) => s.openShortcutsHelp);
   const openSettingsDialog = useUIStore((s) => s.openSettingsDialog);
   const openTemplateGallery = useUIStore((s) => s.openTemplateGallery);

@@ -107,13 +107,8 @@ vi.mock('@/store/analysisStore', () => {
   return { useAnalysisStore };
 });
 
-vi.mock('@/store/coreStore', () => {
+vi.mock('@/store/graphStore', () => {
   const store = {
-    textApi: {
-      setGraph: mocks.setGraph,
-      getGraph: vi.fn(() => mocks.coreGraph.value),
-    },
-    _applyDecodedFile: mocks._applyDecodedFile,
     _setGraph: mocks._setGraph,
     get graph() {
       return mocks.coreGraph.value;
@@ -121,13 +116,38 @@ vi.mock('@/store/coreStore', () => {
     get isDirty() {
       return mocks.coreIsDirty.value;
     },
-    fileCreatedAtMs: 1700000000000,
   };
-  const useCoreStore = Object.assign(
+  const useGraphStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
     { getState: () => store, setState: mocks.coreSetState },
   );
-  return { useCoreStore };
+  return { useGraphStore };
+});
+
+vi.mock('@/store/fileStore', () => {
+  const store = {
+    _applyDecodedFile: mocks._applyDecodedFile,
+    fileCreatedAtMs: 1700000000000,
+  };
+  const useFileStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: mocks.coreSetState },
+  );
+  return { useFileStore };
+});
+
+vi.mock('@/store/engineStore', () => {
+  const store = {
+    textApi: {
+      setGraph: mocks.setGraph,
+      getGraph: vi.fn(() => mocks.coreGraph.value),
+    },
+  };
+  const useEngineStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: vi.fn() },
+  );
+  return { useEngineStore };
 });
 
 vi.mock('@/store/canvasStore', () => {

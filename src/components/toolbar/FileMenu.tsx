@@ -19,7 +19,9 @@ import {
   Check,
   Rocket,
 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useProjectStore } from '@/store/projectStore';
@@ -29,15 +31,15 @@ export function FileMenu({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showExportSub, setShowExportSub] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const newFile = useCoreStore((s) => s.newFile);
-  const openFile = useCoreStore((s) => s.openFile);
-  const saveFile = useCoreStore((s) => s.saveFile);
-  const saveFileAs = useCoreStore((s) => s.saveFileAs);
-  const exportApi = useCoreStore((s) => s.exportApi);
-  const graph = useCoreStore((s) => s.graph);
-  const fileName = useCoreStore((s) => s.fileName);
-  const isDirty = useCoreStore((s) => s.isDirty);
-  const isSaving = useCoreStore((s) => s.isSaving);
+  const newFile = useFileStore((s) => s.newFile);
+  const openFile = useFileStore((s) => s.openFile);
+  const saveFile = useFileStore((s) => s.saveFile);
+  const saveFileAs = useFileStore((s) => s.saveFileAs);
+  const exportApi = useEngineStore((s) => s.exportApi);
+  const graph = useGraphStore((s) => s.graph);
+  const fileName = useFileStore((s) => s.fileName);
+  const isDirty = useGraphStore((s) => s.isDirty);
+  const isSaving = useFileStore((s) => s.isSaving);
   const openUnsavedChangesDialog = useUIStore((s) => s.openUnsavedChangesDialog);
   const openTemplatePicker = useUIStore((s) => s.openTemplatePicker);
   const autosaveOnBlur = useUIStore((s) => s.autosaveOnBlur);

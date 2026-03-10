@@ -20,7 +20,8 @@ import {
   X,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import type { NodeDef } from '@/types/nodedef';
 
@@ -61,8 +62,8 @@ interface DragState {
 const DRAG_THRESHOLD = 8; // px before drag activates
 
 export function NodePalette() {
-  const registry = useCoreStore((s) => s.registry);
-  const addNode = useCoreStore((s) => s.addNode);
+  const registry = useEngineStore((s) => s.registry);
+  const addNode = useGraphStore((s) => s.addNode);
   const { isCompact } = useViewportSize();
   const { screenToFlowPosition } = useReactFlow();
 

@@ -98,7 +98,37 @@ vi.mock('@/store/analysisStore', () => {
   return { useAnalysisStore };
 });
 
-vi.mock('@/store/coreStore', () => {
+vi.mock('@/store/fileStore', () => {
+  const store = {
+    _applyDecodedFile: mocks._applyDecodedFile,
+  };
+  const useFileStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: vi.fn() },
+  );
+  return { useFileStore };
+});
+
+vi.mock('@/store/graphStore', () => {
+  const store = {
+    _setGraph: mocks._setGraph,
+    graph: {
+      name: 'Test',
+      description: '',
+      owners: [],
+      nodes: [],
+      edges: [],
+      annotations: [],
+    },
+  };
+  const useGraphStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: vi.fn() },
+  );
+  return { useGraphStore };
+});
+
+vi.mock('@/store/engineStore', () => {
   const store = {
     textApi: {
       setGraph: mocks.setGraph,
@@ -111,22 +141,12 @@ vi.mock('@/store/coreStore', () => {
         annotations: [],
       })),
     },
-    _applyDecodedFile: mocks._applyDecodedFile,
-    _setGraph: mocks._setGraph,
-    graph: {
-      name: 'Test',
-      description: '',
-      owners: [],
-      nodes: [],
-      edges: [],
-      annotations: [],
-    },
   };
-  const useCoreStore = Object.assign(
+  const useEngineStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
     { getState: () => store, setState: vi.fn() },
   );
-  return { useCoreStore };
+  return { useEngineStore };
 });
 
 // Import the store under test (after mocks are registered)

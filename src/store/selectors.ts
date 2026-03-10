@@ -9,52 +9,61 @@
  *
  * Usage:
  *   import { selectNodeCount, selectIsDirty } from '@/store/selectors';
- *   const nodeCount = useCoreStore(selectNodeCount);
- *   const isDirty = useCoreStore(selectIsDirty);
+ *   const nodeCount = useGraphStore(selectNodeCount);
+ *   const isDirty = useGraphStore(selectIsDirty);
  */
 
-import type { CoreStoreState } from './coreStore';
+import type { GraphStoreState } from './graphStore';
+import type { FileStoreState } from './fileStore';
+import type { EngineStoreState } from './engineStore';
+import type { HistoryStoreState } from './historyStore';
 import type { CanvasStoreState } from './canvasStore';
 import type { UIStoreState } from './uiStore';
 import type { NavigationStoreState } from './navigationStore';
 import type { AnnotationStoreState } from './annotationStore';
-// ─── Core Store Selectors ─────────────────────────────────────
+// ─── Graph Store Selectors ───────────────────────────────────
 
 /** Select the full architecture graph */
-export const selectGraph = (s: CoreStoreState) => s.graph;
+export const selectGraph = (s: GraphStoreState) => s.graph;
 
 /** Select whether the document has unsaved changes */
-export const selectIsDirty = (s: CoreStoreState) => s.isDirty;
-
-/** Select the current file name */
-export const selectFileName = (s: CoreStoreState) => s.fileName;
-
-/** Select whether core engines are initialized */
-export const selectInitialized = (s: CoreStoreState) => s.initialized;
+export const selectIsDirty = (s: GraphStoreState) => s.isDirty;
 
 /** Derived: total node count (includes children) */
-export const selectNodeCount = (s: CoreStoreState) => s.nodeCount;
+export const selectNodeCount = (s: GraphStoreState) => s.nodeCount;
 
 /** Derived: total edge count */
-export const selectEdgeCount = (s: CoreStoreState) => s.edgeCount;
+export const selectEdgeCount = (s: GraphStoreState) => s.edgeCount;
+
+// ─── File Store Selectors ────────────────────────────────────
+
+/** Select the current file name */
+export const selectFileName = (s: FileStoreState) => s.fileName;
 
 /** Select whether a save operation is in progress */
-export const selectIsSaving = (s: CoreStoreState) => s.isSaving;
+export const selectIsSaving = (s: FileStoreState) => s.isSaving;
 
-/** Select undo availability */
-export const selectCanUndo = (s: CoreStoreState) => s.canUndo;
+// ─── Engine Store Selectors ──────────────────────────────────
 
-/** Select redo availability */
-export const selectCanRedo = (s: CoreStoreState) => s.canRedo;
+/** Select whether core engines are initialized */
+export const selectInitialized = (s: EngineStoreState) => s.initialized;
 
 /** Select the registry instance */
-export const selectRegistry = (s: CoreStoreState) => s.registry;
+export const selectRegistry = (s: EngineStoreState) => s.registry;
 
 /** Select the render API instance */
-export const selectRenderApi = (s: CoreStoreState) => s.renderApi;
+export const selectRenderApi = (s: EngineStoreState) => s.renderApi;
 
 /** Select the export API instance */
-export const selectExportApi = (s: CoreStoreState) => s.exportApi;
+export const selectExportApi = (s: EngineStoreState) => s.exportApi;
+
+// ─── History Store Selectors ─────────────────────────────────
+
+/** Select undo availability */
+export const selectCanUndo = (s: HistoryStoreState) => s.canUndo;
+
+/** Select redo availability */
+export const selectCanRedo = (s: HistoryStoreState) => s.canRedo;
 
 // ─── Canvas Store Selectors ───────────────────────────────────
 

@@ -7,7 +7,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Search, ChevronRight, ChevronDown, X } from 'lucide-react';
 import { Box, Server, Database, HardDrive, Radio, Globe, Shield, Cpu, Layers } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useEngineStore } from '@/store/engineStore';
 import { useUIStore } from '@/store/uiStore';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { ICON_RAIL_BREAKPOINT } from '@/hooks/useViewportSize';
@@ -44,7 +44,7 @@ const namespaceIcons: Record<string, React.ElementType> = {
 };
 
 export function NodeDefBrowser() {
-  const registry = useCoreStore((s) => s.registry);
+  const registry = useEngineStore((s) => s.registry);
   const placementMode = useUIStore((s) => s.placementMode);
   const placementInfo = useUIStore((s) => s.placementInfo);
   const enterPlacementMode = useUIStore((s) => s.enterPlacementMode);

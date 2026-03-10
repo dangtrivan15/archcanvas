@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Link2 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 
 export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,8 +13,8 @@ export function ConnectNodesButton({ compact = false }: { compact?: boolean }) {
   const [sourceIdx, setSourceIdx] = useState(0);
   const [targetIdx, setTargetIdx] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const addEdge = useCoreStore((s) => s.addEdge);
-  const graph = useCoreStore((s) => s.graph);
+  const addEdge = useGraphStore((s) => s.addEdge);
+  const graph = useGraphStore((s) => s.graph);
 
   // Close dropdown on outside click
   useEffect(() => {

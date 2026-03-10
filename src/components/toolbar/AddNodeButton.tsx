@@ -4,7 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
 
 const NODE_TYPES = [
@@ -25,8 +25,8 @@ export function AddNodeButton({ compact = false }: { compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [customName, setCustomName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const addNode = useCoreStore((s) => s.addNode);
-  const graph = useCoreStore((s) => s.graph);
+  const addNode = useGraphStore((s) => s.addNode);
+  const graph = useGraphStore((s) => s.graph);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
 

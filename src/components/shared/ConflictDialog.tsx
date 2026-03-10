@@ -11,7 +11,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export function ConflictDialog() {
@@ -56,7 +56,7 @@ export function ConflictDialog() {
 
   const handleKeep = useCallback(() => {
     // Acknowledge the external modification and dismiss
-    useCoreStore.getState().acknowledgeExternalModification();
+    useFileStore.getState().acknowledgeExternalModification();
     closeDialog();
   }, [closeDialog]);
 

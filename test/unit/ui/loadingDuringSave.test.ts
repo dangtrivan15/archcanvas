@@ -5,7 +5,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useUIStore } from '@/store/uiStore';
 
 // Mock the file I/O module
@@ -36,18 +39,24 @@ vi.mock('@/store/canvasStore', () => ({
 describe('Feature #196: Loading indicator during save operations', () => {
   beforeEach(() => {
     // Reset stores
-    useCoreStore.setState({
-      initialized: false,
+    useGraphStore.setState({
       isDirty: false,
       graph: { name: 'Untitled Architecture', description: '', owners: [], nodes: [], edges: [] },
-      fileHandle: null,
-      fileName: 'Untitled Architecture',
       nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
+      edgeCount: 0
     });
-    useCoreStore.getState().initialize();
+    useFileStore.setState({
+      fileHandle: null,
+      fileName: 'Untitled Architecture'
+    });
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
+      canUndo: false,
+      canRedo: false
+    });
+    useEngineStore.getState().initialize();
 
     // Reset loading state
     useUIStore.getState().clearFileOperationLoading();
@@ -55,15 +64,15 @@ describe('Feature #196: Loading indicator during save operations', () => {
 
   it('saveFile sets and clears loading state', async () => {
     // Setup: add a node and set file handle
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
 
     // Before save
     expect(useUIStore.getState().fileOperationLoading).toBe(false);
 
     // Execute save
-    const result = await useCoreStore.getState().saveFile();
+    const result = await useFileStore.getState().saveFile();
     expect(result).toBe(true);
 
     // After save completes, loading should be cleared
@@ -72,14 +81,14 @@ describe('Feature #196: Loading indicator during save operations', () => {
   });
 
   it('saveFileAs sets and clears loading state', async () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
 
     // Before save
     expect(useUIStore.getState().fileOperationLoading).toBe(false);
 
     // Execute save as
-    const result = await useCoreStore.getState().saveFileAs();
+    const result = await useFileStore.getState().saveFileAs();
     expect(result).toBe(true);
 
     // After save completes, loading should be cleared
@@ -88,9 +97,9 @@ describe('Feature #196: Loading indicator during save operations', () => {
   });
 
   it('loading state uses correct message for save operations', async () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
 
     // Track loading message changes
     const messages: string[] = [];
@@ -100,7 +109,7 @@ describe('Feature #196: Loading indicator during save operations', () => {
       }
     });
 
-    await useCoreStore.getState().saveFile();
+    await useFileStore.getState().saveFile();
 
     unsubscribe();
 
@@ -114,12 +123,12 @@ describe('Feature #196: Loading indicator during save operations', () => {
     const { saveArchcFile } = await import('@/core/storage/fileIO');
     (saveArchcFile as any).mockRejectedValueOnce(new Error('Write failed'));
 
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
 
     // Execute save (should fail)
-    const result = await useCoreStore.getState().saveFile();
+    const result = await useFileStore.getState().saveFile();
     expect(result).toBe(false);
 
     // Loading should be cleared even on error

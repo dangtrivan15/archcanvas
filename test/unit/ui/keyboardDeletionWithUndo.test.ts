@@ -11,7 +11,10 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import type { ArchNode, ArchEdge, ArchGraph } from '@/types/graph';
@@ -174,12 +177,12 @@ describe('Delete Confirmation Dialog - Keyboard Accessibility', () => {
 describe('Undo After Deletion', () => {
   beforeEach(() => {
     resetStores();
-    useCoreStore.getState().initialize();
+    useEngineStore.getState().initialize();
   });
 
   it('node deletion is undoable', () => {
     // Add a node
-    const node = useCoreStore.getState().addNode({
+    const node = useGraphStore.getState().addNode({
       type: 'compute/service',
       displayName: 'Test Service',
       position: { x: 0, y: 0 },
@@ -187,30 +190,30 @@ describe('Undo After Deletion', () => {
     expect(node).toBeDefined();
 
     const nodeId = node!.id;
-    const nodeCountBefore = useCoreStore.getState().graph.nodes.length;
+    const nodeCountBefore = useGraphStore.getState().graph.nodes.length;
 
     // Delete the node
-    useCoreStore.getState().removeNode(nodeId);
-    expect(useCoreStore.getState().graph.nodes.length).toBe(nodeCountBefore - 1);
+    useGraphStore.getState().removeNode(nodeId);
+    expect(useGraphStore.getState().graph.nodes.length).toBe(nodeCountBefore - 1);
 
     // Undo
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().graph.nodes.length).toBe(nodeCountBefore);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().graph.nodes.length).toBe(nodeCountBefore);
 
     // The node should be back
-    const restoredNode = useCoreStore.getState().graph.nodes.find((n) => n.id === nodeId);
+    const restoredNode = useGraphStore.getState().graph.nodes.find((n) => n.id === nodeId);
     expect(restoredNode).toBeDefined();
     expect(restoredNode!.displayName).toBe('Test Service');
   });
 
   it('edge deletion is undoable', () => {
     // Add two nodes and an edge
-    const node1 = useCoreStore.getState().addNode({
+    const node1 = useGraphStore.getState().addNode({
       type: 'compute/service',
       displayName: 'Service A',
       position: { x: 0, y: 0 },
     });
-    const node2 = useCoreStore.getState().addNode({
+    const node2 = useGraphStore.getState().addNode({
       type: 'compute/service',
       displayName: 'Service B',
       position: { x: 300, y: 0 },
@@ -218,22 +221,22 @@ describe('Undo After Deletion', () => {
     expect(node1).toBeDefined();
     expect(node2).toBeDefined();
 
-    const edge = useCoreStore.getState().addEdge({
+    const edge = useGraphStore.getState().addEdge({
       fromNode: node1!.id,
       toNode: node2!.id,
       type: 'sync',
     });
     expect(edge).toBeDefined();
 
-    const edgeCountBefore = useCoreStore.getState().graph.edges.length;
+    const edgeCountBefore = useGraphStore.getState().graph.edges.length;
 
     // Delete the edge
-    useCoreStore.getState().removeEdge(edge!.id);
-    expect(useCoreStore.getState().graph.edges.length).toBe(edgeCountBefore - 1);
+    useGraphStore.getState().removeEdge(edge!.id);
+    expect(useGraphStore.getState().graph.edges.length).toBe(edgeCountBefore - 1);
 
     // Undo
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().graph.edges.length).toBe(edgeCountBefore);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().graph.edges.length).toBe(edgeCountBefore);
   });
 });
 
@@ -261,29 +264,29 @@ describe('Edge Deletion via Delete Key', () => {
   });
 
   it('removeEdge removes edge from graph', () => {
-    useCoreStore.getState().initialize();
+    useEngineStore.getState().initialize();
 
     // Create two nodes and an edge
-    const node1 = useCoreStore.getState().addNode({
+    const node1 = useGraphStore.getState().addNode({
       type: 'compute/service',
       displayName: 'A',
       position: { x: 0, y: 0 },
     });
-    const node2 = useCoreStore.getState().addNode({
+    const node2 = useGraphStore.getState().addNode({
       type: 'compute/service',
       displayName: 'B',
       position: { x: 300, y: 0 },
     });
-    const edge = useCoreStore.getState().addEdge({
+    const edge = useGraphStore.getState().addEdge({
       fromNode: node1!.id,
       toNode: node2!.id,
       type: 'sync',
     });
     expect(edge).toBeDefined();
 
-    const edgeBefore = useCoreStore.getState().graph.edges.length;
-    useCoreStore.getState().removeEdge(edge!.id);
-    expect(useCoreStore.getState().graph.edges.length).toBe(edgeBefore - 1);
+    const edgeBefore = useGraphStore.getState().graph.edges.length;
+    useGraphStore.getState().removeEdge(edge!.id);
+    expect(useGraphStore.getState().graph.edges.length).toBe(edgeBefore - 1);
   });
 });
 

@@ -5,7 +5,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
@@ -66,16 +69,7 @@ function setupStore() {
   const undoManager = new UndoManager();
   undoManager.snapshot('Initial state', graph);
 
-  useCoreStore.setState({
-    graph,
-    textApi,
-    undoManager,
-    nodeCount: 4,
-    edgeCount: 3,
-    isDirty: false,
-    canUndo: false,
-    canRedo: false,
-  });
+  useGraphStore.setState({ graph, nodeCount: 4, edgeCount: 3, isDirty: false }); useEngineStore.setState({ textApi, undoManager }); useHistoryStore.setState({ canUndo: false, canRedo: false });
 
   useCanvasStore.setState({
     selectedNodeId: null,
@@ -102,7 +96,7 @@ function setupStore() {
 
 describe('Keyboard Edge Deletion', () => {
   beforeEach(() => {
-    useCoreStore.setState(useCoreStore.getInitialState());
+    useGraphStore.setState(useGraphStore.getInitialState()); useEngineStore.setState(useEngineStore.getInitialState()); useFileStore.setState(useFileStore.getInitialState()); useHistoryStore.setState(useHistoryStore.getInitialState());
     useCanvasStore.setState(useCanvasStore.getInitialState());
     useUIStore.setState(useUIStore.getInitialState());
   });
@@ -110,59 +104,59 @@ describe('Keyboard Edge Deletion', () => {
   describe('Single edge deletion', () => {
     it('removes a single edge via removeEdge', () => {
       const { edge1 } = setupStore();
-      expect(useCoreStore.getState().edgeCount).toBe(3);
-      useCoreStore.getState().removeEdge(edge1.id);
-      expect(useCoreStore.getState().edgeCount).toBe(2);
+      expect(useGraphStore.getState().edgeCount).toBe(3);
+      useGraphStore.getState().removeEdge(edge1.id);
+      expect(useGraphStore.getState().edgeCount).toBe(2);
     });
 
     it('removed edge no longer exists in graph', () => {
       const { edge1 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
-      const found = useCoreStore.getState().graph.edges.find((e) => e.id === edge1.id);
+      useGraphStore.getState().removeEdge(edge1.id);
+      const found = useGraphStore.getState().graph.edges.find((e) => e.id === edge1.id);
       expect(found).toBeUndefined();
     });
 
     it('marks state as dirty after deletion', () => {
       const { edge1 } = setupStore();
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      useCoreStore.getState().removeEdge(edge1.id);
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      useGraphStore.getState().removeEdge(edge1.id);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('sets canUndo to true after deletion', () => {
       const { edge1 } = setupStore();
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      useCoreStore.getState().removeEdge(edge1.id);
-      expect(useCoreStore.getState().canUndo).toBe(true);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      useGraphStore.getState().removeEdge(edge1.id);
+      expect(useHistoryStore.getState().canUndo).toBe(true);
     });
 
     it('undo restores deleted edge', () => {
       const { edge1 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
-      expect(useCoreStore.getState().edgeCount).toBe(2);
+      useGraphStore.getState().removeEdge(edge1.id);
+      expect(useGraphStore.getState().edgeCount).toBe(2);
 
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().edgeCount).toBe(3);
-      const restored = useCoreStore.getState().graph.edges.find((e) => e.id === edge1.id);
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().edgeCount).toBe(3);
+      const restored = useGraphStore.getState().graph.edges.find((e) => e.id === edge1.id);
       expect(restored).toBeDefined();
       expect(restored!.label).toBe('HTTP Request');
     });
 
     it('redo re-removes restored edge', () => {
       const { edge1 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().edgeCount).toBe(3);
+      useGraphStore.getState().removeEdge(edge1.id);
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().edgeCount).toBe(3);
 
-      useCoreStore.getState().redo();
-      expect(useCoreStore.getState().edgeCount).toBe(2);
+      useHistoryStore.getState().redo();
+      expect(useGraphStore.getState().edgeCount).toBe(2);
     });
 
     it('other edges remain after single deletion', () => {
       const { edge1, edge2, edge3 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
+      useGraphStore.getState().removeEdge(edge1.id);
 
-      const remaining = useCoreStore.getState().graph.edges;
+      const remaining = useGraphStore.getState().graph.edges;
       expect(remaining.length).toBe(2);
       expect(remaining.find((e) => e.id === edge2.id)).toBeDefined();
       expect(remaining.find((e) => e.id === edge3.id)).toBeDefined();
@@ -170,58 +164,46 @@ describe('Keyboard Edge Deletion', () => {
 
     it('nodes are not affected by edge deletion', () => {
       const { edge1 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
-      expect(useCoreStore.getState().nodeCount).toBe(4);
-      expect(useCoreStore.getState().graph.nodes.length).toBe(4);
+      useGraphStore.getState().removeEdge(edge1.id);
+      expect(useGraphStore.getState().nodeCount).toBe(4);
+      expect(useGraphStore.getState().graph.nodes.length).toBe(4);
     });
   });
 
   describe('Multi-edge deletion', () => {
     it('removes multiple edges via textApi batch', () => {
       const { edge1, edge2 } = setupStore();
-      const { textApi, undoManager } = useCoreStore.getState();
+      const { textApi, undoManager } = useEngineStore.getState();
 
       textApi!.removeEdge(edge1.id);
       textApi!.removeEdge(edge2.id);
       const updatedGraph = textApi!.getGraph();
       undoManager!.snapshot('Delete 2 edges', updatedGraph);
 
-      useCoreStore.setState({
-        graph: updatedGraph,
-        isDirty: true,
-        edgeCount: updatedGraph.edges.length,
-        canUndo: undoManager!.canUndo,
-        canRedo: undoManager!.canRedo,
-      });
+      useGraphStore.setState({ graph: updatedGraph, isDirty: true, edgeCount: updatedGraph.edges.length }); useHistoryStore.setState({ canUndo: undoManager!.canUndo, canRedo: undoManager!.canRedo });
 
-      expect(useCoreStore.getState().edgeCount).toBe(1);
+      expect(useGraphStore.getState().edgeCount).toBe(1);
     });
 
     it('undo restores all edges from batch deletion', () => {
       const { edge1, edge2 } = setupStore();
-      const { textApi, undoManager } = useCoreStore.getState();
+      const { textApi, undoManager } = useEngineStore.getState();
 
       textApi!.removeEdge(edge1.id);
       textApi!.removeEdge(edge2.id);
       const updatedGraph = textApi!.getGraph();
       undoManager!.snapshot('Delete 2 edges', updatedGraph);
 
-      useCoreStore.setState({
-        graph: updatedGraph,
-        isDirty: true,
-        edgeCount: updatedGraph.edges.length,
-        canUndo: undoManager!.canUndo,
-        canRedo: undoManager!.canRedo,
-      });
+      useGraphStore.setState({ graph: updatedGraph, isDirty: true, edgeCount: updatedGraph.edges.length }); useHistoryStore.setState({ canUndo: undoManager!.canUndo, canRedo: undoManager!.canRedo });
 
-      expect(useCoreStore.getState().edgeCount).toBe(1);
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().edgeCount).toBe(3);
+      expect(useGraphStore.getState().edgeCount).toBe(1);
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().edgeCount).toBe(3);
     });
 
     it('all three edges can be deleted at once', () => {
       const { edge1, edge2, edge3 } = setupStore();
-      const { textApi, undoManager } = useCoreStore.getState();
+      const { textApi, undoManager } = useEngineStore.getState();
 
       textApi!.removeEdge(edge1.id);
       textApi!.removeEdge(edge2.id);
@@ -229,16 +211,10 @@ describe('Keyboard Edge Deletion', () => {
       const updatedGraph = textApi!.getGraph();
       undoManager!.snapshot('Delete 3 edges', updatedGraph);
 
-      useCoreStore.setState({
-        graph: updatedGraph,
-        isDirty: true,
-        edgeCount: updatedGraph.edges.length,
-        canUndo: undoManager!.canUndo,
-        canRedo: undoManager!.canRedo,
-      });
+      useGraphStore.setState({ graph: updatedGraph, isDirty: true, edgeCount: updatedGraph.edges.length }); useHistoryStore.setState({ canUndo: undoManager!.canUndo, canRedo: undoManager!.canRedo });
 
-      expect(useCoreStore.getState().edgeCount).toBe(0);
-      expect(useCoreStore.getState().graph.edges.length).toBe(0);
+      expect(useGraphStore.getState().edgeCount).toBe(0);
+      expect(useGraphStore.getState().graph.edges.length).toBe(0);
     });
   });
 
@@ -320,7 +296,7 @@ describe('Keyboard Edge Deletion', () => {
     it('No confirmation modal for edge deletion (unlike nodes)', () => {
       // Edge deletion is immediate - verify the pattern
       const { edge1 } = setupStore();
-      useCoreStore.getState().removeEdge(edge1.id);
+      useGraphStore.getState().removeEdge(edge1.id);
       // No dialog was opened
       expect(useUIStore.getState().deleteDialogOpen).toBe(false);
     });

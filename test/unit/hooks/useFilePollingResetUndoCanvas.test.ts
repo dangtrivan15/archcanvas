@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useHistoryStore } from '@/store/historyStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -14,15 +17,16 @@ import path from 'path';
  */
 
 describe('Reset undo history and canvas state on reload (Feature #523)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let fileStoreSource: string;
   let historyStoreSource: string;
   let hookSource: string;
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import('@/store/coreStore');
-    useCoreStore = mod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore'); const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore; useGraphStoreRef = graphStoreMod.useGraphStore;
     fileStoreSource = fs.readFileSync(
       path.resolve(__dirname, '../../../src/store/fileStore.ts'),
       'utf-8',
@@ -72,8 +76,8 @@ describe('Reset undo history and canvas state on reload (Feature #523)', () => {
       expect(result!.name).toBe('g1');
     });
 
-    it('coreStore exposes canUndo and canRedo state', () => {
-      const state = useCoreStore.getState();
+    it('historyStore exposes canUndo and canRedo state', () => {
+      const state = useHistoryStore.getState();
       expect(state).toHaveProperty('canUndo');
       expect(state).toHaveProperty('canRedo');
     });
