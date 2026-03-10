@@ -1,9 +1,6 @@
-import { useEffect, useCallback } from 'react';
-import { SplashScreen } from '@capacitor/splash-screen';
+import { useCallback } from 'react';
 import { ChevronRight, X } from 'lucide-react';
-import { useEngineStore } from '@/store/engineStore';
 import { useGraphStore } from '@/store/graphStore';
-import { useFileStore } from '@/store/fileStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore, LEFT_PANEL_COLLAPSE_THRESHOLD } from '@/store/uiStore';
 import { Toolbar } from '@/components/toolbar';
@@ -30,8 +27,8 @@ import {
 } from '@/hooks/useViewportSize';
 import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 import { useAppUrlOpen } from '@/hooks/useAppUrlOpen';
+import { useAppInitialization } from '@/hooks/useAppInitialization';
 import { FocusZoneProvider, FocusZoneRegion, FocusZone } from '@/core/input/focusZones';
-import { initRegistryBridge } from '@/core/registry/registryStore';
 import { ModeStatusBar } from '@/components/canvas/ModeStatusBar';
 import { OfflineBanner } from '@/components/shared/OfflineBanner';
 import { CachedFilesIndicator } from '@/components/shared/CachedFilesIndicator';
@@ -39,21 +36,15 @@ import { SyncStatusIndicator } from '@/components/shared/SyncStatusIndicator';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 
 export function App() {
-  const initialize = useEngineStore((s) => s.initialize);
-  const initialized = useEngineStore((s) => s.initialized);
-  const registry = useEngineStore((s) => s.registry);
   const nodeCount = useGraphStore((s) => s.nodeCount);
   const edgeCount = useGraphStore((s) => s.edgeCount);
   const isDirty = useGraphStore((s) => s.isDirty);
-  const loadFromUrl = useFileStore((s) => s.loadFromUrl);
 
-  const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const selectedEdgeIds = useCanvasStore((s) => s.selectedEdgeIds);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
-  const openRightPanel = useUIStore((s) => s.openRightPanel);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const leftPanelWidth = useUIStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useUIStore((s) => s.rightPanelWidth);
@@ -62,8 +53,6 @@ export function App() {
   const zoom = useCanvasStore((s) => s.viewport.zoom);
   const autosaveStatusMessage = useUIStore((s) => s.autosaveStatusMessage);
   const { syncStatus, pendingCount } = useBackgroundSync();
-  const updateLeftPanelWidthFromViewport = useUIStore((s) => s.updateLeftPanelWidthFromViewport);
-  const updateRightPanelWidthFromViewport = useUIStore((s) => s.updateRightPanelWidthFromViewport);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 
   // Viewport size for responsive layout (iPad Split View / Slide Over)
@@ -71,6 +60,9 @@ export function App() {
 
   // Virtual keyboard detection for on-screen keyboard handling
   const { isKeyboardVisible, keyboardHeight } = useVirtualKeyboard();
+
+  // Core initialization: engine init, splash screen, URL loading, panel responsiveness, auto-open panel
+  const { initialized } = useAppInitialization(viewportWidth);
 
   const handleLeftResize = useCallback(
     (delta: number) => {
@@ -104,12 +96,6 @@ export function App() {
   // Responsive layout: auto-close panels when window is narrow
   useResponsiveLayout();
 
-  // Update panel widths when viewport width changes (only if user hasn't customized)
-  useEffect(() => {
-    updateLeftPanelWidthFromViewport(viewportWidth);
-    updateRightPanelWidthFromViewport(viewportWidth);
-  }, [viewportWidth, updateLeftPanelWidthFromViewport, updateRightPanelWidthFromViewport]);
-
   // Autosave when browser tab/window loses focus
   useAutoSaveOnBlur();
 
@@ -118,49 +104,6 @@ export function App() {
 
   // Handle .archc file opens from iOS (Files app, AirDrop, etc.)
   useAppUrlOpen(initialized);
-
-  // Auto-open right panel when a node or edge is selected
-  useEffect(() => {
-    if (selectedNodeId || selectedEdgeId) {
-      openRightPanel();
-    }
-  }, [selectedNodeId, selectedEdgeId, openRightPanel]);
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  // Hide the native splash screen once the app is fully initialized and interactive.
-  // launchAutoHide is false in capacitor.config.ts so we control the timing here.
-  useEffect(() => {
-    if (initialized) {
-      SplashScreen.hide({ fadeOutDuration: 300 }).catch(() => {
-        // Silently ignore — SplashScreen.hide() throws on web where there's no native splash
-      });
-    }
-  }, [initialized]);
-
-  // Wire the reactive registry store bridge once the registry is initialized.
-  // This syncs RegistryManagerCore state into a Zustand store for UI reactivity.
-  useEffect(() => {
-    if (initialized && registry) {
-      initRegistryBridge(registry);
-    }
-  }, [initialized, registry]);
-
-  // Auto-load file from URL parameter (for development/testing)
-  useEffect(() => {
-    if (!initialized) return;
-    const params = new URLSearchParams(window.location.search);
-    const loadFile = params.get('load');
-    if (loadFile) {
-      loadFromUrl(`/${loadFile}`).then((success) => {
-        if (success) {
-          console.log(`[App] Auto-loaded file from URL param: ${loadFile}`);
-        }
-      });
-    }
-  }, [initialized, loadFromUrl]);
 
   if (!initialized) {
     return (
