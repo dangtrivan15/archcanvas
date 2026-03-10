@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
@@ -21,8 +21,8 @@ export function useCanvasNavigation(
   rfNodes: CanvasNode[],
   perf: CanvasPerformanceState,
 ) {
-  const graph = useCoreStore((s) => s.graph);
-  const autoLayout = useCoreStore((s) => s.autoLayout);
+  const graph = useGraphStore((s) => s.graph);
+  const autoLayout = useGraphStore((s) => s.autoLayout);
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomOut = useNavigationStore((s) => s.zoomOut);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);

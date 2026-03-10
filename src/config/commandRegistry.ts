@@ -4,7 +4,10 @@
  * for searching, display, and execution.
  */
 
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -53,9 +56,9 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+n'),
       keywords: ['create', 'blank', 'empty'],
       execute: () => {
-        const { newFile } = useCoreStore.getState();
+        const { newFile } = useFileStore.getState();
         const { zoomToRoot } = useNavigationStore.getState();
-        const { isDirty } = useCoreStore.getState();
+        const { isDirty } = useGraphStore.getState();
         const { openUnsavedChangesDialog } = useUIStore.getState();
         const doNew = () => {
           newFile();
@@ -75,7 +78,7 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+o'),
       keywords: ['load', 'browse', 'import'],
       execute: () => {
-        useCoreStore.getState().openFile();
+        useFileStore.getState().openFile();
       },
     },
     {
@@ -85,7 +88,7 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+s'),
       keywords: ['persist', 'write', 'store'],
       execute: () => {
-        useCoreStore.getState().saveFile();
+        useFileStore.getState().saveFile();
       },
     },
     {
@@ -95,7 +98,7 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+shift+s'),
       keywords: ['export', 'download', 'copy'],
       execute: () => {
-        useCoreStore.getState().saveFileAs();
+        useFileStore.getState().saveFileAs();
       },
     },
 
@@ -107,9 +110,9 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+z'),
       keywords: ['revert', 'back'],
       execute: () => {
-        useCoreStore.getState().undo();
+        useHistoryStore.getState().undo();
       },
-      isEnabled: () => useCoreStore.getState().canUndo,
+      isEnabled: () => useHistoryStore.getState().canUndo,
     },
     {
       id: 'edit:redo',
@@ -118,9 +121,9 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+shift+z'),
       keywords: ['forward', 'repeat'],
       execute: () => {
-        useCoreStore.getState().redo();
+        useHistoryStore.getState().redo();
       },
-      isEnabled: () => useCoreStore.getState().canRedo,
+      isEnabled: () => useHistoryStore.getState().canRedo,
     },
 
     {
@@ -150,7 +153,7 @@ export function getStaticCommands(): Command[] {
       execute: () => {
         const { selectedNodeId, selectedNodeIds, selectNode, selectNodes } =
           useCanvasStore.getState();
-        const { duplicateSelection } = useCoreStore.getState();
+        const { duplicateSelection } = useGraphStore.getState();
 
         let nodeIds: string[] = [];
         if (selectedNodeIds.length > 0) {
@@ -294,7 +297,7 @@ export function getStaticCommands(): Command[] {
       category: 'Canvas',
       keywords: ['arrange', 'organize', 'elk', 'left-right'],
       execute: () => {
-        useCoreStore.getState().autoLayout('horizontal');
+        useGraphStore.getState().autoLayout('horizontal');
       },
     },
     {
@@ -303,7 +306,7 @@ export function getStaticCommands(): Command[] {
       category: 'Canvas',
       keywords: ['arrange', 'organize', 'elk', 'top-bottom'],
       execute: () => {
-        useCoreStore.getState().autoLayout('vertical');
+        useGraphStore.getState().autoLayout('vertical');
       },
     },
 
@@ -367,7 +370,7 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('t'),
       keywords: ['cycle', 'type', 'edge', 'toggle', 'change'],
       execute: () => {
-        const { graph, updateEdge } = useCoreStore.getState();
+        const { graph, updateEdge } = useGraphStore.getState();
         const { selectedEdgeId } = useCanvasStore.getState();
         const { showToast } = useUIStore.getState();
         if (!selectedEdgeId) return;
@@ -396,7 +399,7 @@ export function getStaticCommands(): Command[] {
       category: 'Edge',
       keywords: ['sync', 'type', 'edge', 'set', 'request', 'response'],
       execute: () => {
-        const { updateEdge } = useCoreStore.getState();
+        const { updateEdge } = useGraphStore.getState();
         const { selectedEdgeId } = useCanvasStore.getState();
         const { showToast } = useUIStore.getState();
         if (!selectedEdgeId) return;
@@ -411,7 +414,7 @@ export function getStaticCommands(): Command[] {
       category: 'Edge',
       keywords: ['async', 'type', 'edge', 'set', 'event', 'message'],
       execute: () => {
-        const { updateEdge } = useCoreStore.getState();
+        const { updateEdge } = useGraphStore.getState();
         const { selectedEdgeId } = useCanvasStore.getState();
         const { showToast } = useUIStore.getState();
         if (!selectedEdgeId) return;
@@ -426,7 +429,7 @@ export function getStaticCommands(): Command[] {
       category: 'Edge',
       keywords: ['data', 'flow', 'type', 'edge', 'set', 'pipeline', 'etl'],
       execute: () => {
-        const { updateEdge } = useCoreStore.getState();
+        const { updateEdge } = useGraphStore.getState();
         const { selectedEdgeId } = useCanvasStore.getState();
         const { showToast } = useUIStore.getState();
         if (!selectedEdgeId) return;
@@ -442,7 +445,7 @@ export function getStaticCommands(): Command[] {
  * Get node commands - allows navigating to/selecting specific nodes.
  */
 export function getNodeCommands(): Command[] {
-  const { graph } = useCoreStore.getState();
+  const { graph } = useGraphStore.getState();
   const commands: Command[] = [];
 
   function collectNodes(nodes: import('@/types/graph').ArchNode[], depth: number) {
@@ -478,7 +481,7 @@ export function getNodeCommands(): Command[] {
  * After creation, the node is selected and rename mode activates.
  */
 export function getNodeCreationCommands(): Command[] {
-  const { registry } = useCoreStore.getState();
+  const { registry } = useEngineStore.getState();
   if (!registry) return [];
 
   const commands: Command[] = [];
@@ -505,12 +508,12 @@ export function getNodeCreationCommands(): Command[] {
         ...tags.map((t) => t.toLowerCase()),
       ],
       execute: () => {
-        const { addNode } = useCoreStore.getState();
+        const { addNode } = useGraphStore.getState();
         const { viewport, selectedNodeId } = useCanvasStore.getState();
         const { selectNode } = useCanvasStore.getState();
         const { openRightPanel, setPendingRenameNodeId } = useUIStore.getState();
         const { path } = useNavigationStore.getState();
-        const { graph } = useCoreStore.getState();
+        const { graph } = useGraphStore.getState();
 
         // Calculate placement position:
         // If a node is selected, offset from it; otherwise use viewport center
@@ -615,7 +618,7 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['delete', 'remove', 'bulk', 'selected', 'multi'],
       iconName: 'Trash2',
       execute: () => {
-        const { textApi, undoManager } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
         const { selectedNodeIds, clearSelection } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length === 0) return;
 
@@ -624,15 +627,13 @@ export function getBulkOperationCommands(): Command[] {
           textApi.removeNode(nodeId);
         }
         const updatedGraph = textApi.getGraph();
-        undoManager.snapshot(`Delete ${selectedNodeIds.length} nodes`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Delete ${selectedNodeIds.length} nodes`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
           nodeCount: _countAllNodes(updatedGraph),
           edgeCount: updatedGraph.edges.length,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
 
         clearSelection();
@@ -649,7 +650,7 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['duplicate', 'copy', 'clone', 'bulk', 'selected', 'multi'],
       iconName: 'Copy',
       execute: () => {
-        const coreState = useCoreStore.getState();
+        const coreState = { ...useEngineStore.getState(), ...useGraphStore.getState() };
         const { textApi, undoManager, graph } = coreState;
         const { selectedNodeIds, selectNodes } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length === 0) return;
@@ -677,15 +678,13 @@ export function getBulkOperationCommands(): Command[] {
         }
 
         const updatedGraph = textApi.getGraph();
-        undoManager.snapshot(`Duplicate ${selectedNodeIds.length} nodes`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Duplicate ${selectedNodeIds.length} nodes`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
           nodeCount: _countAllNodes(updatedGraph),
           edgeCount: updatedGraph.edges.length,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
 
         // Select the new duplicated nodes
@@ -704,7 +703,8 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['align', 'horizontal', 'same', 'row', 'y', 'line up'],
       iconName: 'AlignVerticalJustifyCenter',
       execute: () => {
-        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
+        const { graph } = useGraphStore.getState();
         const { selectedNodeIds } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
 
@@ -724,13 +724,11 @@ export function getBulkOperationCommands(): Command[] {
         }
 
         textApi.setGraph(updatedGraph);
-        undoManager.snapshot(`Align ${nodes.length} nodes horizontally`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Align ${nodes.length} nodes horizontally`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
       },
       isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
@@ -744,7 +742,8 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['align', 'vertical', 'same', 'column', 'x', 'line up'],
       iconName: 'AlignHorizontalJustifyCenter',
       execute: () => {
-        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
+        const { graph } = useGraphStore.getState();
         const { selectedNodeIds } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
 
@@ -762,13 +761,11 @@ export function getBulkOperationCommands(): Command[] {
         }
 
         textApi.setGraph(updatedGraph);
-        undoManager.snapshot(`Align ${nodes.length} nodes vertically`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Align ${nodes.length} nodes vertically`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
       },
       isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 2,
@@ -782,7 +779,8 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['distribute', 'horizontal', 'even', 'space', 'spread'],
       iconName: 'MoveHorizontal',
       execute: () => {
-        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
+        const { graph } = useGraphStore.getState();
         const { selectedNodeIds } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length < 3) return;
 
@@ -806,13 +804,11 @@ export function getBulkOperationCommands(): Command[] {
         }
 
         textApi.setGraph(updatedGraph);
-        undoManager.snapshot(`Distribute ${nodes.length} nodes horizontally`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Distribute ${nodes.length} nodes horizontally`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
       },
       isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 3,
@@ -826,7 +822,8 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['distribute', 'vertical', 'even', 'space', 'spread'],
       iconName: 'MoveVertical',
       execute: () => {
-        const { graph, textApi, undoManager } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
+        const { graph } = useGraphStore.getState();
         const { selectedNodeIds } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length < 3) return;
 
@@ -850,13 +847,11 @@ export function getBulkOperationCommands(): Command[] {
         }
 
         textApi.setGraph(updatedGraph);
-        undoManager.snapshot(`Distribute ${nodes.length} nodes vertically`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Distribute ${nodes.length} nodes vertically`, updatedGraph);
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
       },
       isEnabled: () => useCanvasStore.getState().selectedNodeIds.length >= 3,
@@ -870,7 +865,8 @@ export function getBulkOperationCommands(): Command[] {
       keywords: ['group', 'nest', 'parent', 'container', 'wrap', 'combine'],
       iconName: 'Group',
       execute: () => {
-        const { textApi, undoManager, graph } = useCoreStore.getState();
+        const { textApi, undoManager } = useEngineStore.getState();
+        const { graph } = useGraphStore.getState();
         const { selectedNodeIds, selectNode } = useCanvasStore.getState();
         if (!textApi || !undoManager || selectedNodeIds.length < 2) return;
 
@@ -913,15 +909,13 @@ export function getBulkOperationCommands(): Command[] {
           }
 
           const updatedGraph = textApi.getGraph();
-          undoManager.snapshot(`Group ${nodes.length} nodes`, updatedGraph);
+          useHistoryStore.getState().pushSnapshot(`Group ${nodes.length} nodes`, updatedGraph);
 
-          useCoreStore.setState({
+          useGraphStore.setState({
             graph: updatedGraph,
             isDirty: true,
             nodeCount: _countAllNodes(updatedGraph),
             edgeCount: updatedGraph.edges.length,
-            canUndo: undoManager.canUndo,
-            canRedo: undoManager.canRedo,
           });
 
           selectNode(groupNode.id);

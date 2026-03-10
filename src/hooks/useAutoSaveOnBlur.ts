@@ -10,7 +10,8 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
 import { useUIStore } from '@/store/uiStore';
 
 /** How long to show the "Autosaved" status message (ms) */
@@ -29,7 +30,8 @@ export function useAutoSaveOnBlur() {
     if (document.visibilityState !== 'hidden') return;
     if (!autosaveOnBlur) return;
 
-    const { isDirty, isSaving, fileHandle } = useCoreStore.getState();
+    const { isDirty } = useGraphStore.getState();
+    const { isSaving, fileHandle } = useFileStore.getState();
 
     // Only autosave if: dirty, not already saving, and we have a file handle
     // (can't show file picker dialog when tab is hidden)
@@ -42,7 +44,7 @@ export function useAutoSaveOnBlur() {
 
     console.log('[AutoSave] Tab hidden with unsaved changes, triggering autosave...');
 
-    useCoreStore
+    useFileStore
       .getState()
       .saveFile()
       .then((success) => {
@@ -65,7 +67,8 @@ export function useAutoSaveOnBlur() {
   const handleWindowBlur = useCallback(() => {
     if (!autosaveOnBlur) return;
 
-    const { isDirty, isSaving, fileHandle } = useCoreStore.getState();
+    const { isDirty } = useGraphStore.getState();
+    const { isSaving, fileHandle } = useFileStore.getState();
     if (!isDirty || isSaving || !fileHandle) return;
 
     const now = Date.now();
@@ -74,7 +77,7 @@ export function useAutoSaveOnBlur() {
 
     console.log('[AutoSave] Window blur with unsaved changes, triggering autosave...');
 
-    useCoreStore
+    useFileStore
       .getState()
       .saveFile()
       .then((success) => {

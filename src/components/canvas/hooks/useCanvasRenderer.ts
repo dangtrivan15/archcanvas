@@ -6,7 +6,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
@@ -15,8 +16,8 @@ import type { CanvasNode, CanvasEdge } from '@/types/canvas';
 import type { CanvasPerformanceState } from '@/hooks/useCanvasPerformance';
 
 export function useCanvasRenderer(perf: CanvasPerformanceState) {
-  const graph = useCoreStore((s) => s.graph);
-  const renderApi = useCoreStore((s) => s.renderApi);
+  const graph = useGraphStore((s) => s.graph);
+  const renderApi = useEngineStore((s) => s.renderApi);
   const navigationPath = useNavigationStore((s) => s.path);
   const showToast = useUIStore((s) => s.showToast);
 

@@ -5,13 +5,13 @@
 
 import { useMemo } from 'react';
 import { X, Bot } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findEdge, findNode } from '@/core/graph/graphEngine';
 
 export function EdgeDetailPanel() {
-  const graph = useCoreStore((s) => s.graph);
+  const graph = useGraphStore((s) => s.graph);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
 

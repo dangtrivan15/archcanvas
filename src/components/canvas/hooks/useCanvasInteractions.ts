@@ -5,15 +5,15 @@
 
 import { useCallback } from 'react';
 import { useReactFlow, type OnSelectionChangeFunc, type OnConnect, type Connection } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
 import type { CanvasNode } from '@/types/canvas';
 
 export function useCanvasInteractions(closeAllMenus: () => void) {
-  const moveNode = useCoreStore((s) => s.moveNode);
-  const addNode = useCoreStore((s) => s.addNode);
+  const moveNode = useGraphStore((s) => s.moveNode);
+  const addNode = useGraphStore((s) => s.addNode);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const clearSelection = useCanvasStore((s) => s.clearSelection);

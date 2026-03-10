@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
@@ -20,7 +20,7 @@ import {
 import type { CanvasNode, CanvasEdge } from '@/types/canvas';
 
 export function useCanvasConnectMode(rfNodes: CanvasNode[], rfEdges: CanvasEdge[]) {
-  const addEdge = useCoreStore((s) => s.addEdge);
+  const addEdge = useGraphStore((s) => s.addEdge);
   const connectSource = useUIStore((s) => s.connectSource);
   const connectTarget = useUIStore((s) => s.connectTarget);
   const connectStep = useUIStore((s) => s.connectStep);

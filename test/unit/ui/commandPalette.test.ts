@@ -14,7 +14,10 @@ import {
   searchCommands,
   type Command,
 } from '@/config/commandRegistry';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -22,9 +25,9 @@ import { useNavigationStore } from '@/store/navigationStore';
 // Initialize stores before tests
 beforeEach(() => {
   // Reset stores to default state
-  useCoreStore.getState().initialize();
+  useEngineStore.getState().initialize();
   // Reset to clean empty graph
-  useCoreStore.getState().newFile();
+  useFileStore.getState().newFile();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,
@@ -108,8 +111,8 @@ describe('Command Registry', () => {
     });
 
     it('returns commands for existing nodes', () => {
-      useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'My Service' });
-      useCoreStore.getState().addNode({ type: 'data/database', displayName: 'My DB' });
+      useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'My Service' });
+      useGraphStore.getState().addNode({ type: 'data/database', displayName: 'My DB' });
 
       const commands = getNodeCommands();
       expect(commands.length).toBe(2);
@@ -118,21 +121,21 @@ describe('Command Registry', () => {
     });
 
     it('node commands have Go to prefix', () => {
-      useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Test Node' });
+      useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Test Node' });
 
       const commands = getNodeCommands();
       expect(commands[0].label).toBe('Go to: Test Node');
     });
 
     it('node commands belong to Node category', () => {
-      useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Node1' });
+      useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Node1' });
 
       const commands = getNodeCommands();
       expect(commands[0].category).toBe('Node');
     });
 
     it('node command execution selects the node and opens right panel', () => {
-      const node = useCoreStore
+      const node = useGraphStore
         .getState()
         .addNode({ type: 'compute/service', displayName: 'Target' })!;
 
@@ -146,7 +149,7 @@ describe('Command Registry', () => {
 
   describe('getAllCommands', () => {
     it('combines static, bulk, node creation, and node navigation commands', () => {
-      const textApi = useCoreStore.getState().textApi!;
+      const textApi = useEngineStore.getState().textApi!;
       textApi.addNode({ type: 'compute/service', displayName: 'Node1' });
 
       const all = getAllCommands();
@@ -163,8 +166,8 @@ describe('searchCommands', () => {
   let allCommands: Command[];
 
   beforeEach(() => {
-    useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Order Service' });
-    useCoreStore.getState().addNode({ type: 'data/database', displayName: 'Users DB' });
+    useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Order Service' });
+    useGraphStore.getState().addNode({ type: 'data/database', displayName: 'Users DB' });
     allCommands = getAllCommands();
   });
 
@@ -229,7 +232,7 @@ describe('Command execution', () => {
   it('file:save calls saveFile', () => {
     const commands = getStaticCommands();
     const saveCmd = commands.find((c) => c.id === 'file:save')!;
-    const saveSpy = vi.spyOn(useCoreStore.getState(), 'saveFile');
+    const saveSpy = vi.spyOn(useFileStore.getState(), 'saveFile');
     saveCmd.execute();
     expect(saveSpy).toHaveBeenCalled();
     saveSpy.mockRestore();
@@ -238,7 +241,7 @@ describe('Command execution', () => {
   it('edit:undo calls undo', () => {
     const commands = getStaticCommands();
     const undoCmd = commands.find((c) => c.id === 'edit:undo')!;
-    const undoSpy = vi.spyOn(useCoreStore.getState(), 'undo');
+    const undoSpy = vi.spyOn(useHistoryStore.getState(), 'undo');
     undoCmd.execute();
     expect(undoSpy).toHaveBeenCalled();
     undoSpy.mockRestore();
@@ -305,7 +308,7 @@ describe('Command isEnabled', () => {
   });
 
   it('undo is enabled after a mutation', () => {
-    useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'A' });
+    useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'A' });
     const commands = getStaticCommands();
     const undoCmd = commands.find((c) => c.id === 'edit:undo')!;
     expect(undoCmd.isEnabled!()).toBe(true);

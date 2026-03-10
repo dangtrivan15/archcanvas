@@ -149,16 +149,16 @@ describe('FileSystemAdapter factory', () => {
 
 // ── coreStore fileHandle type ────────────────────────────────────
 
-describe('coreStore fileHandle type', () => {
+describe('fileStore fileHandle type', () => {
   it('fileHandle accepts null (initial state)', async () => {
-    const { useCoreStore } = await import('@/store/coreStore');
-    const state = useCoreStore.getState();
+    const { useFileStore } = await import('@/store/fileStore');
+    const state = useFileStore.getState();
     expect(state.fileHandle).toBeNull();
   });
 
   it('_applyDecodedFile accepts unknown fileHandle', async () => {
-    const { useCoreStore } = await import('@/store/coreStore');
-    const state = useCoreStore.getState();
+    const { useFileStore } = await import('@/store/fileStore');
+    const state = useFileStore.getState();
     expect(typeof state._applyDecodedFile).toBe('function');
     // The function accepts (graph, fileName, fileHandle: unknown, ...)
     // This is verified by TypeScript compilation

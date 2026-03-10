@@ -50,21 +50,16 @@ vi.mock('@/core/layout/elkLayout', () => ({
   applyElkLayout: vi.fn(),
 }));
 
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import type { ArchNode } from '@/types/graph';
 
 describe("Feature #229: Rapid node additions don't lose data", () => {
   beforeEach(() => {
-    useCoreStore.setState({
-      initialized: false,
-      isDirty: false,
-      isSaving: false,
-      nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
-    });
-    useCoreStore.getState().initialize();
+    useGraphStore.setState({ isDirty: false, nodeCount: 0, edgeCount: 0 }); useFileStore.setState({ isSaving: false }); useEngineStore.setState({ initialized: false }); useHistoryStore.setState({ canUndo: false, canRedo: false });
+    useEngineStore.getState().initialize();
   });
 
   afterEach(() => {
@@ -75,7 +70,7 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
     it('all 5 nodes exist in the graph after rapid addition', () => {
       const nodes: (ArchNode | undefined)[] = [];
       for (let i = 0; i < 5; i++) {
-        const node = useCoreStore.getState().addNode({
+        const node = useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `RapidNode-${i}`,
           position: { x: i * 150, y: 0 },
@@ -83,14 +78,14 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
         nodes.push(node);
       }
 
-      const graph = useCoreStore.getState().graph;
+      const graph = useGraphStore.getState().graph;
       expect(graph.nodes).toHaveLength(5);
     });
 
     it('each node has a unique ID', () => {
       const nodeIds: string[] = [];
       for (let i = 0; i < 5; i++) {
-        const node = useCoreStore.getState().addNode({
+        const node = useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `RapidNode-${i}`,
           position: { x: i * 150, y: 0 },
@@ -106,14 +101,14 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
     it('each node has the correct type', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `RapidNode-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      const graph = useCoreStore.getState().graph;
+      const graph = useGraphStore.getState().graph;
       for (const node of graph.nodes) {
         expect(node.type).toBe('compute/service');
       }
@@ -121,14 +116,14 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
     it('each node has the correct display name', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `RapidNode-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      const graph = useCoreStore.getState().graph;
+      const graph = useGraphStore.getState().graph;
       const displayNames = graph.nodes.map((n) => n.displayName).sort();
       expect(displayNames).toEqual([
         'RapidNode-0',
@@ -141,15 +136,15 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
     it('nodeCount is consistent after rapid additions', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `RapidNode-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      expect(useCoreStore.getState().nodeCount).toBe(5);
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(5);
+      expect(useGraphStore.getState().nodeCount).toBe(5);
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(5);
     });
   });
 
@@ -164,14 +159,14 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
       ];
 
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: types[i],
           displayName: `MixedNode-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      const graph = useCoreStore.getState().graph;
+      const graph = useGraphStore.getState().graph;
       expect(graph.nodes).toHaveLength(5);
 
       const nodeTypes = graph.nodes.map((n) => n.type).sort();
@@ -189,7 +184,7 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
       const createdNodes: ArchNode[] = [];
       for (let i = 0; i < 5; i++) {
-        const node = useCoreStore.getState().addNode({
+        const node = useGraphStore.getState().addNode({
           type: types[i],
           displayName: `MixedNode-${i}`,
           position: { x: i * 150, y: 0 },
@@ -207,43 +202,43 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
   describe('state consistency during rapid additions', () => {
     it('isDirty is set after first addition', () => {
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
 
-      useCoreStore.getState().addNode({
+      useGraphStore.getState().addNode({
         type: 'compute/service',
         displayName: 'First',
         position: { x: 0, y: 0 },
       });
 
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('nodeCount increments correctly for each addition', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
         });
-        expect(useCoreStore.getState().nodeCount).toBe(i + 1);
+        expect(useGraphStore.getState().nodeCount).toBe(i + 1);
       }
     });
 
     it('canUndo is true after additions', () => {
-      expect(useCoreStore.getState().canUndo).toBe(false);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
 
-      useCoreStore.getState().addNode({
+      useGraphStore.getState().addNode({
         type: 'compute/service',
         displayName: 'First',
         position: { x: 0, y: 0 },
       });
 
-      expect(useCoreStore.getState().canUndo).toBe(true);
+      expect(useHistoryStore.getState().canUndo).toBe(true);
     });
 
     it('undo history has entry for each addition', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
@@ -251,7 +246,7 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
       }
 
       // 1 initial + 5 additions = 6 total snapshots
-      const undoManager = useCoreStore.getState().undoManager!;
+      const undoManager = useEngineStore.getState().undoManager!;
       expect(undoManager.historyLength).toBe(6);
     });
   });
@@ -259,38 +254,38 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
   describe('rapid additions + undo/redo', () => {
     it('undo after rapid additions removes the last node', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(4);
-      expect(useCoreStore.getState().nodeCount).toBe(4);
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(4);
+      expect(useGraphStore.getState().nodeCount).toBe(4);
     });
 
     it('redo restores the last node after undo', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
         });
       }
 
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(4);
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(4);
 
-      useCoreStore.getState().redo();
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(5);
-      expect(useCoreStore.getState().nodeCount).toBe(5);
+      useHistoryStore.getState().redo();
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(5);
+      expect(useGraphStore.getState().nodeCount).toBe(5);
     });
 
     it('multiple undos after rapid additions work correctly', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
@@ -299,31 +294,31 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
       // Undo all 5 additions
       for (let i = 5; i > 0; i--) {
-        useCoreStore.getState().undo();
-        expect(useCoreStore.getState().graph.nodes).toHaveLength(i - 1);
-        expect(useCoreStore.getState().nodeCount).toBe(i - 1);
+        useHistoryStore.getState().undo();
+        expect(useGraphStore.getState().graph.nodes).toHaveLength(i - 1);
+        expect(useGraphStore.getState().nodeCount).toBe(i - 1);
       }
 
       // All nodes gone
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(0);
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(0);
     });
   });
 
   describe('rapid additions at scale', () => {
     it('adding 20 nodes preserves all of them', () => {
       for (let i = 0; i < 20; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `BulkNode-${i}`,
           position: { x: (i % 5) * 150, y: Math.floor(i / 5) * 150 },
         });
       }
 
-      expect(useCoreStore.getState().graph.nodes).toHaveLength(20);
-      expect(useCoreStore.getState().nodeCount).toBe(20);
+      expect(useGraphStore.getState().graph.nodes).toHaveLength(20);
+      expect(useGraphStore.getState().nodeCount).toBe(20);
 
       // Verify each display name
-      const names = useCoreStore
+      const names = useGraphStore
         .getState()
         .graph.nodes.map((n) => n.displayName)
         .sort();
@@ -334,14 +329,14 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
 
     it('each of 20 nodes has correct position', () => {
       for (let i = 0; i < 20; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `BulkNode-${i}`,
           position: { x: i * 100, y: 50 },
         });
       }
 
-      const graph = useCoreStore.getState().graph;
+      const graph = useGraphStore.getState().graph;
       expect(graph.nodes).toHaveLength(20);
 
       // Each node should have the position we assigned
@@ -357,12 +352,12 @@ describe("Feature #229: Rapid node additions don't lose data", () => {
   describe('edge count unchanged during node-only additions', () => {
     it('edge count stays at 0 when only adding nodes', () => {
       for (let i = 0; i < 5; i++) {
-        useCoreStore.getState().addNode({
+        useGraphStore.getState().addNode({
           type: 'compute/service',
           displayName: `Node-${i}`,
           position: { x: i * 150, y: 0 },
         });
-        expect(useCoreStore.getState().edgeCount).toBe(0);
+        expect(useGraphStore.getState().edgeCount).toBe(0);
       }
     });
   });

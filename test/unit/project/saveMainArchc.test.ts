@@ -104,23 +104,43 @@ vi.mock('@/store/analysisStore', () => {
 
 const testGraph = createEmptyGraph('SaveTestProject');
 
-vi.mock('@/store/coreStore', () => {
+vi.mock('@/store/graphStore', () => {
+  const store = {
+    _setGraph: mocks._setGraph,
+    graph: testGraph,
+    isDirty: true,
+  };
+  const useGraphStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: mocks.coreSetState },
+  );
+  return { useGraphStore };
+});
+
+vi.mock('@/store/fileStore', () => {
+  const store = {
+    _applyDecodedFile: mocks._applyDecodedFile,
+    fileCreatedAtMs: 1700000000000,
+  };
+  const useFileStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: mocks.coreSetState },
+  );
+  return { useFileStore };
+});
+
+vi.mock('@/store/engineStore', () => {
   const store = {
     textApi: {
       setGraph: mocks.setGraph,
       getGraph: vi.fn(() => testGraph),
     },
-    _applyDecodedFile: mocks._applyDecodedFile,
-    _setGraph: mocks._setGraph,
-    graph: testGraph,
-    isDirty: true,
-    fileCreatedAtMs: 1700000000000,
   };
-  const useCoreStore = Object.assign(
+  const useEngineStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
-    { getState: () => store, setState: mocks.coreSetState },
+    { getState: () => store, setState: vi.fn() },
   );
-  return { useCoreStore };
+  return { useEngineStore };
 });
 
 vi.mock('@/store/canvasStore', () => {

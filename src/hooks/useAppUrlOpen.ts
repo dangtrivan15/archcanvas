@@ -26,7 +26,7 @@
 
 import { useEffect, useRef } from 'react';
 import { isNative } from '@/core/platform/platformBridge';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
 
 /** The custom URL scheme registered in Info.plist */
 const CUSTOM_SCHEME = 'archcanvas://';
@@ -292,7 +292,7 @@ export function useAppUrlOpen(initialized: boolean): void {
       const filePath = params.get('file');
       if (filePath) {
         console.log(`[useAppUrlOpen] Web handoff — loading file from URL param: ${filePath}`);
-        const applyDecodedFile = useCoreStore.getState()._applyDecodedFile;
+        const applyDecodedFile = useFileStore.getState()._applyDecodedFile;
         handleRemoteFileUrl(filePath, applyDecodedFile);
       }
     }
@@ -304,7 +304,7 @@ export function useAppUrlOpen(initialized: boolean): void {
 
     let listenerHandle: { remove: () => Promise<void> } | null = null;
 
-    const applyDecodedFile = useCoreStore.getState()._applyDecodedFile;
+    const applyDecodedFile = useFileStore.getState()._applyDecodedFile;
 
     // Dynamic import of @capacitor/app (not available on web)
     const setup = async () => {
@@ -328,7 +328,7 @@ export function useAppUrlOpen(initialized: boolean): void {
       listenerHandle = await App.addListener('appUrlOpen', async (event) => {
         console.log(`[useAppUrlOpen] Received appUrlOpen: ${event.url}`);
         // Re-read the latest applyDecodedFile in case store was re-initialized
-        const currentApply = useCoreStore.getState()._applyDecodedFile;
+        const currentApply = useFileStore.getState()._applyDecodedFile;
         await routeIncomingUrl(event.url, currentApply);
       });
     };

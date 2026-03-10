@@ -9,7 +9,9 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
@@ -20,7 +22,7 @@ export function DeleteConfirmationDialog() {
   const deleteDialogInfo = useUIStore((s) => s.deleteDialogInfo);
   const closeDeleteDialog = useUIStore((s) => s.closeDeleteDialog);
   const showToast = useUIStore((s) => s.showToast);
-  const removeNode = useCoreStore((s) => s.removeNode);
+  const removeNode = useGraphStore((s) => s.removeNode);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>(deleteDialogOpen);
@@ -41,14 +43,14 @@ export function DeleteConfirmationDialog() {
 
     if (isMulti) {
       // Multi-node deletion: remove all nodes, single undo snapshot
-      const { textApi, undoManager } = useCoreStore.getState();
-      if (textApi && undoManager) {
+      const { textApi } = useEngineStore.getState();
+      if (textApi) {
         const nodeIds = deleteDialogInfo.nodeIds!;
         for (const nodeId of nodeIds) {
           textApi.removeNode(nodeId);
         }
         const updatedGraph = textApi.getGraph();
-        undoManager.snapshot(`Delete ${nodeIds.length} nodes`, updatedGraph);
+        useHistoryStore.getState().pushSnapshot(`Delete ${nodeIds.length} nodes`, updatedGraph);
 
         // Helper to count all nodes recursively
         const countAllNodes = (graph: typeof updatedGraph): number => {
@@ -63,13 +65,11 @@ export function DeleteConfirmationDialog() {
           return count;
         };
 
-        useCoreStore.setState({
+        useGraphStore.setState({
           graph: updatedGraph,
           isDirty: true,
           nodeCount: countAllNodes(updatedGraph),
           edgeCount: updatedGraph.edges.length,
-          canUndo: undoManager.canUndo,
-          canRedo: undoManager.canRedo,
         });
       }
       clearSelection();

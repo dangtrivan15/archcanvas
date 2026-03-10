@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { Pencil, StickyNote, Trash2 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findEdge } from '@/core/graph/graphEngine';
@@ -19,8 +19,8 @@ interface EdgeContextMenuProps {
 }
 
 export function EdgeContextMenu({ x, y, edgeId, onClose }: EdgeContextMenuProps) {
-  const graph = useCoreStore((s) => s.graph);
-  const removeEdge = useCoreStore((s) => s.removeEdge);
+  const graph = useGraphStore((s) => s.graph);
+  const removeEdge = useGraphStore((s) => s.removeEdge);
   const selectEdge = useCanvasStore((s) => s.selectEdge);
   const openRightPanel = useUIStore((s) => s.openRightPanel);
 

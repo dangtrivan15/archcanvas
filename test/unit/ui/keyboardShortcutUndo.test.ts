@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 
 // Mock the file I/O module
 vi.mock('@/core/storage/fileIO', async () => {
@@ -36,154 +39,160 @@ vi.mock('@/store/canvasStore', () => ({
 describe('Feature #209: Keyboard shortcut Ctrl+Z triggers undo', () => {
   beforeEach(() => {
     // Reset store to clean state
-    useCoreStore.setState({
-      initialized: false,
+    useGraphStore.setState({
       isDirty: false,
       graph: { name: 'Untitled Architecture', description: '', owners: [], nodes: [], edges: [] },
-      fileHandle: null,
-      fileName: 'Untitled Architecture',
       nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
+      edgeCount: 0
     });
-    useCoreStore.getState().initialize();
+    useFileStore.setState({
+      fileHandle: null,
+      fileName: 'Untitled Architecture'
+    });
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
+      canUndo: false,
+      canRedo: false
+    });
+    useEngineStore.getState().initialize();
   });
 
   // --- Undo Tests ---
 
   it('Ctrl+Z undoes "Add node" action (node count goes from 1 to 0)', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node
     store.addNode({ type: 'compute/service', displayName: 'Undo Test Service' });
-    expect(useCoreStore.getState().nodeCount).toBe(1);
-    expect(useCoreStore.getState().canUndo).toBe(true);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
+    expect(useHistoryStore.getState().canUndo).toBe(true);
 
     // Undo
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(0);
-    expect(useCoreStore.getState().graph.nodes).toHaveLength(0);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(0);
+    expect(useGraphStore.getState().graph.nodes).toHaveLength(0);
   });
 
   it('undo sets canUndo to false when no more history', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node then undo
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.getState().undo();
+    useHistoryStore.getState().undo();
 
-    expect(useCoreStore.getState().canUndo).toBe(false);
+    expect(useHistoryStore.getState().canUndo).toBe(false);
   });
 
   it('undo sets canRedo to true after undoing', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node then undo
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.getState().undo();
+    useHistoryStore.getState().undo();
 
-    expect(useCoreStore.getState().canRedo).toBe(true);
+    expect(useHistoryStore.getState().canRedo).toBe(true);
   });
 
   it('undo marks document as dirty', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Test' });
     // Reset dirty flag
-    useCoreStore.setState({ isDirty: false });
+    useGraphStore.setState({ isDirty: false });
 
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().isDirty).toBe(true);
   });
 
   it('undo does nothing when canUndo is false (no history)', () => {
-    expect(useCoreStore.getState().canUndo).toBe(false);
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    expect(useHistoryStore.getState().canUndo).toBe(false);
+    expect(useGraphStore.getState().nodeCount).toBe(0);
 
     // Try to undo when nothing to undo
-    useCoreStore.getState().undo();
+    useHistoryStore.getState().undo();
 
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    expect(useGraphStore.getState().nodeCount).toBe(0);
   });
 
   it('multiple undos revert multiple actions', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add two nodes
     store.addNode({ type: 'compute/service', displayName: 'First' });
-    expect(useCoreStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
 
-    useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Second' });
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Second' });
+    expect(useGraphStore.getState().nodeCount).toBe(2);
 
     // Undo second node
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(1);
-    expect(useCoreStore.getState().graph.nodes[0].displayName).toBe('First');
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().graph.nodes[0].displayName).toBe('First');
 
     // Undo first node
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(0);
   });
 
   // --- Redo Tests ---
 
   it('Ctrl+Shift+Z redoes undone action (node reappears)', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node, undo, then redo
     store.addNode({ type: 'compute/service', displayName: 'Redo Test Service' });
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(0);
 
-    useCoreStore.getState().redo();
-    expect(useCoreStore.getState().nodeCount).toBe(1);
-    expect(useCoreStore.getState().graph.nodes[0].displayName).toBe('Redo Test Service');
+    useHistoryStore.getState().redo();
+    expect(useGraphStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().graph.nodes[0].displayName).toBe('Redo Test Service');
   });
 
   it('redo sets canRedo to false when no more redo history', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.getState().undo();
-    useCoreStore.getState().redo();
+    useHistoryStore.getState().undo();
+    useHistoryStore.getState().redo();
 
-    expect(useCoreStore.getState().canRedo).toBe(false);
+    expect(useHistoryStore.getState().canRedo).toBe(false);
   });
 
   it('redo sets canUndo to true after redoing', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.getState().undo();
-    useCoreStore.getState().redo();
+    useHistoryStore.getState().undo();
+    useHistoryStore.getState().redo();
 
-    expect(useCoreStore.getState().canUndo).toBe(true);
+    expect(useHistoryStore.getState().canUndo).toBe(true);
   });
 
   it('redo marks document as dirty', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useCoreStore.getState().undo();
-    useCoreStore.setState({ isDirty: false });
+    useHistoryStore.getState().undo();
+    useGraphStore.setState({ isDirty: false });
 
-    useCoreStore.getState().redo();
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    useHistoryStore.getState().redo();
+    expect(useGraphStore.getState().isDirty).toBe(true);
   });
 
   it('redo does nothing when canRedo is false (no redo history)', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    expect(useCoreStore.getState().canRedo).toBe(false);
+    expect(useHistoryStore.getState().canRedo).toBe(false);
 
     // Try to redo when nothing to redo
-    useCoreStore.getState().redo();
+    useHistoryStore.getState().redo();
 
     // Node count unchanged
-    expect(useCoreStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
   });
 
   // --- Keyboard Event Detection Tests ---
@@ -287,72 +296,72 @@ describe('Feature #209: Keyboard shortcut Ctrl+Z triggers undo', () => {
   // --- Edge Cases ---
 
   it('undo + redo + undo cycle works correctly', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     store.addNode({ type: 'compute/service', displayName: 'Cycle Test' });
-    expect(useCoreStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
 
     // Undo
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(0);
 
     // Redo
-    useCoreStore.getState().redo();
-    expect(useCoreStore.getState().nodeCount).toBe(1);
+    useHistoryStore.getState().redo();
+    expect(useGraphStore.getState().nodeCount).toBe(1);
 
     // Undo again
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(0);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(0);
   });
 
   it('new action after undo discards redo future (branch behavior)', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add node A
     store.addNode({ type: 'compute/service', displayName: 'Node A' });
     // Add node B
-    useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Node B' });
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Node B' });
+    expect(useGraphStore.getState().nodeCount).toBe(2);
 
     // Undo node B
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().nodeCount).toBe(1);
-    expect(useCoreStore.getState().canRedo).toBe(true);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().nodeCount).toBe(1);
+    expect(useHistoryStore.getState().canRedo).toBe(true);
 
     // Add node C (this should discard the redo future of node B)
-    useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'Node C' });
-    expect(useCoreStore.getState().nodeCount).toBe(2);
-    expect(useCoreStore.getState().canRedo).toBe(false);
+    useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'Node C' });
+    expect(useGraphStore.getState().nodeCount).toBe(2);
+    expect(useHistoryStore.getState().canRedo).toBe(false);
 
     // Redo should do nothing since branch was discarded
-    useCoreStore.getState().redo();
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    useHistoryStore.getState().redo();
+    expect(useGraphStore.getState().nodeCount).toBe(2);
   });
 
   it('edge count updates correctly on undo/redo of edge operations', () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add two nodes
     const node1 = store.addNode({ type: 'compute/service', displayName: 'From' });
-    const node2 = useCoreStore.getState().addNode({ type: 'compute/service', displayName: 'To' });
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    const node2 = useGraphStore.getState().addNode({ type: 'compute/service', displayName: 'To' });
+    expect(useGraphStore.getState().nodeCount).toBe(2);
 
     // Add edge
-    useCoreStore.getState().addEdge({
+    useGraphStore.getState().addEdge({
       fromNode: node1!.id,
       toNode: node2!.id,
       type: 'sync',
     });
-    expect(useCoreStore.getState().edgeCount).toBe(1);
+    expect(useGraphStore.getState().edgeCount).toBe(1);
 
     // Undo edge
-    useCoreStore.getState().undo();
-    expect(useCoreStore.getState().edgeCount).toBe(0);
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    useHistoryStore.getState().undo();
+    expect(useGraphStore.getState().edgeCount).toBe(0);
+    expect(useGraphStore.getState().nodeCount).toBe(2);
 
     // Redo edge
-    useCoreStore.getState().redo();
-    expect(useCoreStore.getState().edgeCount).toBe(1);
+    useHistoryStore.getState().redo();
+    expect(useGraphStore.getState().edgeCount).toBe(1);
   });
 
   it('plain Z key without modifier does NOT trigger undo', () => {

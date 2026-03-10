@@ -7,13 +7,16 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCanvasStore, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useUIStore } from '@/store/uiStore';
 import { getShortcutManager } from '@/core/shortcuts/shortcutManager';
 import { getStaticCommands, searchCommands, getAllCommands } from '@/config/commandRegistry';
 
 beforeEach(() => {
-  useCoreStore.getState().initialize();
+  useEngineStore.getState().initialize();
   useCanvasStore.setState({
     viewport: { x: 0, y: 0, zoom: 1 },
     zoomInCounter: 0,

@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useUIStore } from '@/store/uiStore';
 
 // Mock the file I/O module
@@ -41,55 +44,61 @@ vi.mock('@/store/canvasStore', () => ({
 describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
   beforeEach(() => {
     // Reset stores
-    useCoreStore.setState({
-      initialized: false,
+    useGraphStore.setState({
       isDirty: false,
       graph: { name: 'Untitled Architecture', description: '', owners: [], nodes: [], edges: [] },
-      fileHandle: null,
-      fileName: 'Untitled Architecture',
       nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
+      edgeCount: 0
     });
-    useCoreStore.getState().initialize();
+    useFileStore.setState({
+      fileHandle: null,
+      fileName: 'Untitled Architecture'
+    });
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
+      canUndo: false,
+      canRedo: false
+    });
+    useEngineStore.getState().initialize();
     useUIStore.getState().clearFileOperationLoading();
   });
 
   it('saveFile is called when file handle exists and clears dirty state', async () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node to make dirty
     store.addNode({ type: 'compute/service', displayName: 'Test Service' });
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    expect(useGraphStore.getState().isDirty).toBe(true);
 
     // Set file handle (simulates previously saved file)
-    useCoreStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
 
     // Call saveFile directly (simulates Ctrl+S path)
-    await useCoreStore.getState().saveFile();
+    await useFileStore.getState().saveFile();
 
     // Verify dirty indicator cleared
-    expect(useCoreStore.getState().isDirty).toBe(false);
+    expect(useGraphStore.getState().isDirty).toBe(false);
   });
 
   it('saveFile falls back to saveFileAs when no file handle exists', async () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Add a node to make dirty
     store.addNode({ type: 'compute/service', displayName: 'Test Service' });
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    expect(useGraphStore.getState().isDirty).toBe(true);
 
     // No file handle - saveFile should fall back to saveFileAs
-    expect(useCoreStore.getState().fileHandle).toBeNull();
+    expect(useFileStore.getState().fileHandle).toBeNull();
 
     // Call saveFile
-    const result = await useCoreStore.getState().saveFile();
+    const result = await useFileStore.getState().saveFile();
 
     // saveFileAs was called (returns new file handle and name)
     expect(result).toBe(true);
-    expect(useCoreStore.getState().isDirty).toBe(false);
-    expect(useCoreStore.getState().fileName).toBe('test');
+    expect(useGraphStore.getState().isDirty).toBe(false);
+    expect(useFileStore.getState().fileName).toBe('test');
   });
 
   it('Ctrl+S preventDefault stops browser save dialog', () => {
@@ -171,21 +180,21 @@ describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
   });
 
   it('Ctrl+S on dirty file with handle saves and clears dirty indicator', async () => {
-    const store = useCoreStore.getState();
+    const store = useGraphStore.getState();
 
     // Setup: add node, set file handle
     store.addNode({ type: 'compute/service', displayName: 'Save Test' });
-    useCoreStore.setState({ fileHandle: { name: 'save-test.archc' } as any });
+    useFileStore.setState({ fileHandle: { name: 'save-test.archc' } as any });
 
     // Verify dirty
-    expect(useCoreStore.getState().isDirty).toBe(true);
-    expect(useCoreStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().isDirty).toBe(true);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
 
     // Save
-    const result = await useCoreStore.getState().saveFile();
+    const result = await useFileStore.getState().saveFile();
 
     // Verify
     expect(result).toBe(true);
-    expect(useCoreStore.getState().isDirty).toBe(false);
+    expect(useGraphStore.getState().isDirty).toBe(false);
   });
 });

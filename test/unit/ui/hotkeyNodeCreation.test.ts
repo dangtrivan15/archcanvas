@@ -28,13 +28,16 @@ import {
   SHORTCUT_CATEGORIES,
   getShortcutsByCategory,
 } from '@/config/keyboardShortcuts';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
 
 function resetStores() {
-  useCoreStore.getState().initialize();
+  useEngineStore.getState().initialize();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,
@@ -192,7 +195,7 @@ describe('Hotkey Node Creation - NodeDef Resolution', () => {
   beforeEach(resetStores);
 
   it('registry resolves compute/service for Service hotkey', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     expect(registry).toBeDefined();
     const nodeDef = registry!.resolve('compute/service');
     expect(nodeDef).toBeDefined();
@@ -200,35 +203,35 @@ describe('Hotkey Node Creation - NodeDef Resolution', () => {
   });
 
   it('registry resolves data/database for Database hotkey', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     const nodeDef = registry!.resolve('data/database');
     expect(nodeDef).toBeDefined();
     expect(nodeDef!.metadata.displayName).toBe('Database');
   });
 
   it('registry resolves messaging/message-queue for Queue hotkey', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     const nodeDef = registry!.resolve('messaging/message-queue');
     expect(nodeDef).toBeDefined();
     expect(nodeDef!.metadata.displayName).toBe('Message Queue');
   });
 
   it('registry resolves compute/api-gateway for Gateway hotkey', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     const nodeDef = registry!.resolve('compute/api-gateway');
     expect(nodeDef).toBeDefined();
     expect(nodeDef!.metadata.displayName).toBe('API Gateway');
   });
 
   it('registry resolves data/cache for Cache hotkey', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     const nodeDef = registry!.resolve('data/cache');
     expect(nodeDef).toBeDefined();
     expect(nodeDef!.metadata.displayName).toBe('Cache');
   });
 
   it('all HOTKEY_NODE_TYPE_MAP types are resolvable in registry', () => {
-    const { registry } = useCoreStore.getState();
+    const { registry } = useEngineStore.getState();
     expect(registry).toBeDefined();
     for (const [actionId, typeKey] of Object.entries(HOTKEY_NODE_TYPE_MAP)) {
       const nodeDef = registry!.resolve(typeKey);
@@ -243,7 +246,7 @@ describe('Hotkey Node Creation - Position Calculation', () => {
   beforeEach(resetStores);
 
   it('creates node at viewport center when no node is selected', () => {
-    const { addNode, graph } = useCoreStore.getState();
+    const { addNode, graph } = useGraphStore.getState();
     const initialCount = graph.nodes.length;
 
     const node = addNode({
@@ -255,12 +258,12 @@ describe('Hotkey Node Creation - Position Calculation', () => {
     expect(node).toBeDefined();
     expect(node!.position.x).toBe(500);
     expect(node!.position.y).toBe(300);
-    expect(useCoreStore.getState().graph.nodes.length).toBe(initialCount + 1);
+    expect(useGraphStore.getState().graph.nodes.length).toBe(initialCount + 1);
   });
 
   it('creates node offset +150px right when a node is selected', () => {
     // Create a "selected" node first
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const selectedNode = addNode({
       type: 'compute/service',
       displayName: 'Selected Service',
@@ -283,7 +286,7 @@ describe('Hotkey Node Creation - Position Calculation', () => {
   it('offset value is exactly 150px', () => {
     // The HOTKEY_NODE_OFFSET from the feature spec is 150px
     // Verify the handler uses 150 by checking source code pattern
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const baseNode = addNode({
       type: 'compute/service',
       displayName: 'Base',
@@ -304,7 +307,7 @@ describe('Hotkey Node Creation - Node Creation', () => {
   beforeEach(resetStores);
 
   it('addNode creates Service with correct type', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'compute/service',
       displayName: 'Service',
@@ -315,7 +318,7 @@ describe('Hotkey Node Creation - Node Creation', () => {
   });
 
   it('addNode creates Database with correct type', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'data/database',
       displayName: 'Database',
@@ -326,7 +329,7 @@ describe('Hotkey Node Creation - Node Creation', () => {
   });
 
   it('addNode creates Message Queue with correct type', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'messaging/message-queue',
       displayName: 'Message Queue',
@@ -337,7 +340,7 @@ describe('Hotkey Node Creation - Node Creation', () => {
   });
 
   it('addNode creates API Gateway with correct type', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'compute/api-gateway',
       displayName: 'API Gateway',
@@ -348,7 +351,7 @@ describe('Hotkey Node Creation - Node Creation', () => {
   });
 
   it('addNode creates Cache with correct type', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'data/cache',
       displayName: 'Cache',
@@ -359,23 +362,23 @@ describe('Hotkey Node Creation - Node Creation', () => {
   });
 
   it('node creation sets isDirty to true', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     addNode({
       type: 'compute/service',
       displayName: 'Service',
       position: { x: 0, y: 0 },
     });
-    expect(useCoreStore.getState().isDirty).toBe(true);
+    expect(useGraphStore.getState().isDirty).toBe(true);
   });
 
   it('node creation enables undo', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     addNode({
       type: 'compute/service',
       displayName: 'Service',
       position: { x: 0, y: 0 },
     });
-    expect(useCoreStore.getState().canUndo).toBe(true);
+    expect(useHistoryStore.getState().canUndo).toBe(true);
   });
 });
 
@@ -385,7 +388,7 @@ describe('Hotkey Node Creation - Auto-Rename', () => {
   beforeEach(resetStores);
 
   it('setPendingRenameNodeId sets the pending rename node', () => {
-    const { addNode } = useCoreStore.getState();
+    const { addNode } = useGraphStore.getState();
     const node = addNode({
       type: 'compute/service',
       displayName: 'Service',

@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -54,16 +57,22 @@ import {
 describe('Zustand Store Selectors', () => {
   beforeEach(() => {
     // Reset stores to initial state
-    useCoreStore.setState({
+    useGraphStore.setState({
       graph: { name: '', description: '', owners: [], nodes: [], edges: [], annotations: [] },
       isDirty: false,
-      fileName: 'Untitled Architecture',
-      initialized: false,
       nodeCount: 0,
-      edgeCount: 0,
-      isSaving: false,
+      edgeCount: 0
+    });
+    useFileStore.setState({
+      fileName: 'Untitled Architecture',
+      isSaving: false
+    });
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
       canUndo: false,
-      canRedo: false,
+      canRedo: false
     });
     useCanvasStore.setState({
       selectedNodeId: null,
@@ -104,36 +113,36 @@ describe('Zustand Store Selectors', () => {
 
   describe('Core Store Selectors', () => {
     it('selectGraph returns the graph', () => {
-      const state = useCoreStore.getState();
+      const state = useGraphStore.getState();
       expect(selectGraph(state)).toBe(state.graph);
     });
 
     it('selectIsDirty returns dirty state', () => {
-      expect(selectIsDirty(useCoreStore.getState())).toBe(false);
+      expect(selectIsDirty(useGraphStore.getState())).toBe(false);
     });
 
     it('selectFileName returns file name', () => {
-      expect(selectFileName(useCoreStore.getState())).toBe('Untitled Architecture');
+      expect(selectFileName(useFileStore.getState())).toBe('Untitled Architecture');
     });
 
     it('selectNodeCount returns node count', () => {
-      expect(selectNodeCount(useCoreStore.getState())).toBe(0);
+      expect(selectNodeCount(useGraphStore.getState())).toBe(0);
     });
 
     it('selectEdgeCount returns edge count', () => {
-      expect(selectEdgeCount(useCoreStore.getState())).toBe(0);
+      expect(selectEdgeCount(useGraphStore.getState())).toBe(0);
     });
 
     it('selectIsSaving returns saving state', () => {
-      expect(selectIsSaving(useCoreStore.getState())).toBe(false);
+      expect(selectIsSaving(useFileStore.getState())).toBe(false);
     });
 
     it('selectCanUndo returns undo availability', () => {
-      expect(selectCanUndo(useCoreStore.getState())).toBe(false);
+      expect(selectCanUndo(useHistoryStore.getState())).toBe(false);
     });
 
     it('selectCanRedo returns redo availability', () => {
-      expect(selectCanRedo(useCoreStore.getState())).toBe(false);
+      expect(selectCanRedo(useHistoryStore.getState())).toBe(false);
     });
   });
 
@@ -280,7 +289,7 @@ describe('Zustand Store Selectors', () => {
 describe('Store Architecture Audit', () => {
   it('coreStore selectedNodeId is derived from canvasStore, not duplicated', () => {
     // Verify coreStore does NOT have selection state — it lives in canvasStore
-    const coreState = useCoreStore.getState();
+    const coreState = useGraphStore.getState();
     expect(coreState).not.toHaveProperty('selectedNodeId');
     expect(coreState).not.toHaveProperty('selectedEdgeId');
   });
@@ -295,7 +304,7 @@ describe('Store Architecture Audit', () => {
   });
 
   it('stores have clear boundaries: coreStore handles graph, canvasStore handles viewport', () => {
-    const core = useCoreStore.getState();
+    const core = useGraphStore.getState();
     const canvas = useCanvasStore.getState();
 
     // Graph lives in coreStore
@@ -334,25 +343,25 @@ describe('Store Architecture Audit', () => {
   });
 
   it('nodeCount and edgeCount in coreStore track graph mutations', () => {
-    useCoreStore.getState().initialize();
-    const addNode = useCoreStore.getState().addNode;
+    useEngineStore.getState().initialize();
+    const addNode = useGraphStore.getState().addNode;
 
     addNode({ type: 'compute/service', displayName: 'Svc1', position: { x: 0, y: 0 } });
-    expect(useCoreStore.getState().nodeCount).toBe(1);
-    expect(useCoreStore.getState().edgeCount).toBe(0);
+    expect(useGraphStore.getState().nodeCount).toBe(1);
+    expect(useGraphStore.getState().edgeCount).toBe(0);
 
     addNode({ type: 'compute/service', displayName: 'Svc2', position: { x: 100, y: 0 } });
-    expect(useCoreStore.getState().nodeCount).toBe(2);
+    expect(useGraphStore.getState().nodeCount).toBe(2);
 
     // Add an edge
-    const graph = useCoreStore.getState().graph;
+    const graph = useGraphStore.getState().graph;
     if (graph.nodes.length >= 2) {
-      useCoreStore.getState().addEdge({
+      useGraphStore.getState().addEdge({
         fromNode: graph.nodes[0].id,
         toNode: graph.nodes[1].id,
         type: 'sync',
       });
-      expect(useCoreStore.getState().edgeCount).toBe(1);
+      expect(useGraphStore.getState().edgeCount).toBe(1);
     }
   });
 

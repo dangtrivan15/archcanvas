@@ -84,13 +84,15 @@ vi.mock('@/store/projectStore', () => ({
   ),
 }));
 
-// Mock coreStore (needed for isDirty check in auto-save)
-vi.mock('@/store/coreStore', () => ({
-  useCoreStore: Object.assign(
+// Mock graphStore (needed for isDirty check in auto-save)
+vi.mock('@/store/graphStore', () => ({
+  useGraphStore: Object.assign(
     () => ({}),
     {
       getState: () => ({
         isDirty: false,
+        _setGraph: vi.fn(),
+        graph: { name: '', description: '', owners: [], nodes: [], edges: [] },
       }),
     },
   ),

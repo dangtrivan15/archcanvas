@@ -5,7 +5,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -13,9 +16,9 @@ import { findNode } from '@/core/graph/graphEngine';
 
 // Helper: create a graph with group nodes (parent-child hierarchy)
 function setupNestedGraph() {
-  const store = useCoreStore.getState();
-  store.initialize();
-  store.newFile();
+  const store = useGraphStore.getState();
+  useEngineStore.getState().initialize();
+  useFileStore.getState().newFile();
 
   // Root level nodes
   const platform = store.addNode({
@@ -64,12 +67,12 @@ function setupNestedGraph() {
     }
   }
 
-  return useCoreStore.getState().graph;
+  return useGraphStore.getState().graph;
 }
 
 beforeEach(() => {
-  useCoreStore.getState().initialize();
-  useCoreStore.getState().newFile();
+  useEngineStore.getState().initialize();
+  useFileStore.getState().newFile();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,

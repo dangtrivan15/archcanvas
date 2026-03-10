@@ -69,7 +69,10 @@ vi.mock('@/core/layout/elkLayout', () => ({
 }));
 
 // Now import the modules
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { Toolbar } from '@/components/toolbar/Toolbar';
 
 describe('Feature #221: Tab navigation through toolbar items', () => {
@@ -84,23 +87,11 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
     });
 
     // Reset core store
-    useCoreStore.setState({
-      initialized: false,
-      isDirty: false,
-      isSaving: false,
-      fileHandle: null,
-      fileName: 'Untitled Architecture',
-      fileCreatedAtMs: null,
-      nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
-    });
-    useCoreStore.getState().initialize();
+    useGraphStore.setState({ isDirty: false, nodeCount: 0, edgeCount: 0 }); useFileStore.setState({ isSaving: false, fileHandle: null, fileName: 'Untitled Architecture', fileCreatedAtMs: null }); useEngineStore.setState({ initialized: false }); useHistoryStore.setState({ canUndo: false, canRedo: false });
+    useEngineStore.getState().initialize();
 
     // Add 2 nodes AFTER initialize so Connect button is enabled
-    useCoreStore.setState({
-      graph: {
+    useGraphStore.setState({      graph: {
         name: 'Test Architecture',
         description: '',
         owners: [],
@@ -131,8 +122,7 @@ describe('Feature #221: Tab navigation through toolbar items', () => {
         edges: [],
       },
       nodeCount: 2,
-      edgeCount: 0,
-    });
+      edgeCount: 0,});
   });
 
   afterEach(() => {

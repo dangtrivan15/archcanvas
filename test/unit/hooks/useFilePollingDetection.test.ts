@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import { FILE_CHANGED_EVENT } from '@/hooks/useFilePolling';
 import fs from 'fs';
 import path from 'path';
@@ -16,12 +19,13 @@ import path from 'path';
  */
 
 describe('External file modification detection (Feature #519)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import('@/store/coreStore');
-    useCoreStore = mod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore'); const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore; useGraphStoreRef = graphStoreMod.useGraphStore;
   });
 
   afterEach(() => {
@@ -30,46 +34,46 @@ describe('External file modification detection (Feature #519)', () => {
 
   describe('coreStore fileExternallyModified state', () => {
     it('initializes fileExternallyModified to false', () => {
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('can be set to true via setState', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
     });
 
     it('newFile clears fileExternallyModified to false', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().initialize();
-      useCoreStore.getState().newFile();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useEngineStore.getState().initialize();
+      useFileStore.getState().newFile();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('_applyDecodedFile clears fileExternallyModified to false', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().initialize();
+      useEngineStore.getState().initialize();
 
-      const emptyGraph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', null);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      const emptyGraph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', null);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('acknowledgeExternalModification clears the flag', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('acknowledgeExternalModification is a no-op when already false', () => {
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
   });
 
@@ -117,7 +121,7 @@ describe('External file modification detection (Feature #519)', () => {
 
     beforeEach(() => {
       storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
     });
@@ -158,7 +162,7 @@ describe('External file modification detection (Feature #519)', () => {
   describe('timestamp comparison flow', () => {
     it('open file sets fileLastModifiedMs via platform adapter', () => {
       const storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
       // _applyDecodedFile captures lastModified via getFileLastModified utility
@@ -168,7 +172,7 @@ describe('External file modification detection (Feature #519)', () => {
 
     it('save updates last-known timestamp to prevent false detection', () => {
       const storeSource = fs.readFileSync(
-        path.resolve(__dirname, '../../../src/store/coreStore.ts'),
+        path.resolve(__dirname, '../../../src/store/fileStore.ts'),
         'utf-8',
       );
       // Save reads back lastModified via platform adapter after writing
@@ -197,74 +201,64 @@ describe('External file modification detection (Feature #519)', () => {
   describe('dynamic state transitions', () => {
     it('simulates full detection flow: open → external modify → detect', () => {
       // 1. Open file: set handle and lastModifiedMs
-      useCoreStore.setState({
+      useFileStore.setState({
         fileHandle: { getFile: () => Promise.resolve({ lastModified: 1000, name: 'test.archc' }) },
         fileLastModifiedMs: 1000,
         fileExternallyModified: false,
       });
 
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
 
       // 2. Simulate external modification detection
-      useCoreStore.setState({
-        fileLastModifiedMs: 2000,
-        fileExternallyModified: true,
-      });
+      useFileStore.setState({ fileLastModifiedMs: 2000, fileExternallyModified: true });
 
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
-      expect(useCoreStore.getState().fileLastModifiedMs).toBe(2000);
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
+      expect(useFileStore.getState().fileLastModifiedMs).toBe(2000);
     });
 
     it('simulates save flow: no false positive', () => {
       // 1. File open with known timestamp
-      useCoreStore.setState({
-        fileLastModifiedMs: 1000,
-        fileExternallyModified: false,
-        isSaving: false,
-      });
+      useFileStore.setState({ fileLastModifiedMs: 1000, fileExternallyModified: false, isSaving: false });
 
       // 2. Save starts — isSaving set to true
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
 
       // 3. Save writes file, updating timestamp on disk
       // 4. Save reads back new timestamp and updates store
-      useCoreStore.setState({
-        fileLastModifiedMs: 1500,
-        isSaving: false,
-      });
+      useFileStore.setState({ fileLastModifiedMs: 1500, isSaving: false });
 
       // 5. Flag should NOT be set
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('simulates acknowledge after detection', () => {
       // 1. External modification detected
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
       // 2. User acknowledges
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('flag persists until explicitly cleared', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
+      useFileStore.setState({ fileExternallyModified: true });
 
       // Other state changes should not clear it
-      useCoreStore.setState({ isDirty: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useGraphStore.setState({ isDirty: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.setState({ fileLastModifiedMs: 3000 });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileLastModifiedMs: 3000 });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
     });
 
     it('open new file after detection clears the flag', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().initialize();
-      useCoreStore.getState().newFile();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useEngineStore.getState().initialize();
+      useFileStore.getState().newFile();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
   });
 });

@@ -14,7 +14,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { ArchGraph, ArchEdge, ArchNode } from '@/types/graph';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
 
@@ -94,7 +97,7 @@ describe('nestedCanvasStore - parent edge indicators', () => {
   beforeEach(() => {
     useNestedCanvasStore.getState().reset();
     // Set up the parent graph in coreStore so pushFile can capture edges
-    useCoreStore.getState()._setGraph(createParentGraph());
+    useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
   });
@@ -175,7 +178,7 @@ describe('nestedCanvasStore - parent edge indicators', () => {
     const childGraph = createChildGraph();
     useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
     // Push a second level
-    useCoreStore.getState()._setGraph(childGraph);
+    useGraphStore.getState()._setGraph(childGraph);
     useNestedCanvasStore.getState().pushFile('./inner.archc', createChildGraph());
 
     expect(useNestedCanvasStore.getState().fileStack.length).toBe(2);
@@ -202,7 +205,7 @@ describe('nestedCanvasStore - parent edge indicators', () => {
       edges: [createTestEdge('ex', 'ghost-node', 'container-x', 'sync')],
       annotations: [],
     };
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
 
     useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'container-x');
     const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
@@ -219,7 +222,7 @@ describe('ParentEdgeIndicators component structure', () => {
   });
 
   it('parentEdgeIndicators has correct shape for rendering', () => {
-    useCoreStore.getState()._setGraph(createParentGraph());
+    useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -239,7 +242,7 @@ describe('ParentEdgeIndicators component structure', () => {
   });
 
   it('indicators can be split into incoming and outgoing groups', () => {
-    useCoreStore.getState()._setGraph(createParentGraph());
+    useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -256,7 +259,7 @@ describe('ParentEdgeIndicators component structure', () => {
   });
 
   it('edge labels are preserved in indicators', () => {
-    useCoreStore.getState()._setGraph(createParentGraph());
+    useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -278,23 +281,23 @@ describe('ParentEdgeIndicators component structure', () => {
 describe('ParentEdgeIndicators navigation', () => {
   beforeEach(() => {
     useNestedCanvasStore.getState().reset();
-    useCoreStore.getState()._setGraph(createParentGraph());
+    useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
   });
 
   it('popFile restores parent graph when navigating back', () => {
     const parentGraph = createParentGraph();
-    useCoreStore.getState()._setGraph(parentGraph);
+    useGraphStore.getState()._setGraph(parentGraph);
 
     useNestedCanvasStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
 
     // Now inside nested - graph should be the child
-    expect(useCoreStore.getState().graph.name).toBe('Child Architecture');
+    expect(useGraphStore.getState().graph.name).toBe('Child Architecture');
 
     // Pop back
     useNestedCanvasStore.getState().popFile();
-    expect(useCoreStore.getState().graph.name).toBe('Parent Architecture');
+    expect(useGraphStore.getState().graph.name).toBe('Parent Architecture');
   });
 
   it('requestCenterOnNode is available on canvasStore for post-navigation centering', () => {
@@ -324,7 +327,7 @@ describe('ParentEdgeIndicators edge cases', () => {
       edges: [],
       annotations: [],
     };
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -344,7 +347,7 @@ describe('ParentEdgeIndicators edge cases', () => {
       edges: [createTestEdge('e1', 'source', 'target', 'async')],
       annotations: [],
     };
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -366,7 +369,7 @@ describe('ParentEdgeIndicators edge cases', () => {
       edges: [createTestEdge('e1', 'source', 'target', 'data-flow')],
       annotations: [],
     };
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
@@ -392,7 +395,7 @@ describe('ParentEdgeIndicators edge cases', () => {
       ],
       annotations: [],
     };
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 

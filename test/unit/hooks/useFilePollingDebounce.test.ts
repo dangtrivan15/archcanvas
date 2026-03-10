@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -14,13 +17,14 @@ import path from 'path';
  */
 
 describe('Debounce rapid consecutive external changes (Feature #529)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let hookSource: string;
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import('@/store/coreStore');
-    useCoreStore = mod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore'); const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore; useGraphStoreRef = graphStoreMod.useGraphStore;
     hookSource = fs.readFileSync(
       path.resolve(__dirname, '../../../src/hooks/useFilePolling.ts'),
       'utf-8',
@@ -184,32 +188,32 @@ describe('Debounce rapid consecutive external changes (Feature #529)', () => {
 
   describe('Step 8: Store state simulation — debounce timestamp updates', () => {
     it('rapid timestamp updates accumulate correctly in store', () => {
-      useCoreStore.setState({ fileLastModifiedMs: 1000 });
+      useFileStore.setState({ fileLastModifiedMs: 1000 });
 
       // Simulate 5 rapid external modifications (each poll updates timestamp)
-      useCoreStore.setState({ fileLastModifiedMs: 1100 });
-      useCoreStore.setState({ fileLastModifiedMs: 1200 });
-      useCoreStore.setState({ fileLastModifiedMs: 1300 });
-      useCoreStore.setState({ fileLastModifiedMs: 1400 });
-      useCoreStore.setState({ fileLastModifiedMs: 1500 });
+      useFileStore.setState({ fileLastModifiedMs: 1100 });
+      useFileStore.setState({ fileLastModifiedMs: 1200 });
+      useFileStore.setState({ fileLastModifiedMs: 1300 });
+      useFileStore.setState({ fileLastModifiedMs: 1400 });
+      useFileStore.setState({ fileLastModifiedMs: 1500 });
 
       // Final timestamp should be the last one
-      expect(useCoreStore.getState().fileLastModifiedMs).toBe(1500);
+      expect(useFileStore.getState().fileLastModifiedMs).toBe(1500);
     });
 
     it('_applyDecodedFile resets dirty state after debounced reload', () => {
-      useCoreStore.getState().initialize();
-      useCoreStore.setState({ isDirty: false, fileLastModifiedMs: 1000 });
+      useEngineStore.getState().initialize();
+      useGraphStore.setState({ isDirty: false, fileLastModifiedMs: 1000 });
 
       // Simulate rapid updates
-      useCoreStore.setState({ fileLastModifiedMs: 1500 });
+      useFileStore.setState({ fileLastModifiedMs: 1500 });
 
       // After debounce settles, _applyDecodedFile is called
-      const graph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(graph, 'test.archc', null);
+      const graph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(graph, 'test.archc', null);
 
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('single change still works (no debounce needed, just delayed)', async () => {

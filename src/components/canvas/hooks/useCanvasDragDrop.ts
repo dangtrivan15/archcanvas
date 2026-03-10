@@ -5,12 +5,13 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
 import { useUIStore } from '@/store/uiStore';
 
 export function useCanvasDragDrop() {
-  const addNode = useCoreStore((s) => s.addNode);
-  const loadFromDroppedFile = useCoreStore((s) => s.loadFromDroppedFile);
+  const addNode = useGraphStore((s) => s.addNode);
+  const loadFromDroppedFile = useFileStore((s) => s.loadFromDroppedFile);
   const showToast = useUIStore((s) => s.showToast);
   const { screenToFlowPosition } = useReactFlow();
 

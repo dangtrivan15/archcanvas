@@ -11,7 +11,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import {
   getShortcutManager,
@@ -38,9 +41,7 @@ function resetStores() {
     selectedNodeId: null,
     selectedEdgeId: null,
   });
-  useCoreStore.setState({
-    graph: createEmptyGraph(),
-  });
+  useGraphStore.setState({ graph: createEmptyGraph() });
   resetShortcutManager();
 }
 
@@ -198,14 +199,14 @@ describe('Inline Edit Confirmation and Reversion', () => {
     const node = createTestNode('node-1', 'Original Name');
     const graph = createEmptyGraph();
     graph.nodes.push(node);
-    useCoreStore.setState({ graph });
+    useGraphStore.setState({ graph });
 
     useUIStore.getState().setInlineEditNodeId('node-1');
     // Revert: just clear inline edit
     useUIStore.getState().clearInlineEdit();
 
     expect(useUIStore.getState().inlineEditNodeId).toBeNull();
-    expect(useCoreStore.getState().graph.nodes[0]!.displayName).toBe('Original Name');
+    expect(useGraphStore.getState().graph.nodes[0]!.displayName).toBe('Original Name');
   });
 
   it('inline edit does not affect right panel state', () => {
@@ -319,7 +320,7 @@ describe('Source code verification', () => {
   it('useInlineEdit uses coreStore.updateNode for applying changes', async () => {
     const fs = await import('fs');
     const source = fs.readFileSync('src/hooks/useInlineEdit.ts', 'utf8');
-    expect(source).toContain('useCoreStore.getState().updateNode');
+    expect(source).toContain('useGraphStore.getState().updateNode');
     expect(source).toContain('displayName');
   });
 
@@ -388,22 +389,15 @@ describe('coreStore.updateNode integration', () => {
     const undoManager = new UndoManager();
     undoManager.snapshot('Initial', graph);
 
-    useCoreStore.setState({
-      graph,
-      textApi,
-      undoManager,
-      canUndo: false,
-      canRedo: false,
-      isDirty: false,
-    });
+    useGraphStore.setState({ graph, isDirty: false }); useEngineStore.setState({ textApi, undoManager }); useHistoryStore.setState({ canUndo: false, canRedo: false });
 
     // Call updateNode
-    useCoreStore.getState().updateNode('node-1', { displayName: 'New Name' });
+    useGraphStore.getState().updateNode('node-1', { displayName: 'New Name' });
 
-    const updatedGraph = useCoreStore.getState().graph;
+    const updatedGraph = useGraphStore.getState().graph;
     expect(updatedGraph.nodes[0]!.displayName).toBe('New Name');
-    expect(useCoreStore.getState().isDirty).toBe(true);
-    expect(useCoreStore.getState().canUndo).toBe(true);
+    expect(useGraphStore.getState().isDirty).toBe(true);
+    expect(useHistoryStore.getState().canUndo).toBe(true);
   });
 
   it('updateNode does not change name if called with same value', () => {
@@ -416,18 +410,13 @@ describe('coreStore.updateNode integration', () => {
     const undoManager = new UndoManager();
     undoManager.snapshot('Initial', graph);
 
-    useCoreStore.setState({
-      graph,
-      textApi,
-      undoManager,
-      isDirty: false,
-    });
+    useGraphStore.setState({ graph, isDirty: false }); useEngineStore.setState({ textApi, undoManager });
 
     // The inline edit confirmEdit checks trimmedValue !== nodeData.displayName
     // before calling updateNode. So updateNode won't be called if name is the same.
     // Here we verify updateNode works when called anyway.
-    useCoreStore.getState().updateNode('node-1', { displayName: 'Same Name' });
-    expect(useCoreStore.getState().graph.nodes[0]!.displayName).toBe('Same Name');
+    useGraphStore.getState().updateNode('node-1', { displayName: 'Same Name' });
+    expect(useGraphStore.getState().graph.nodes[0]!.displayName).toBe('Same Name');
   });
 });
 
@@ -443,12 +432,12 @@ describe('Inline Edit Edge Cases', () => {
     const node = createTestNode('node-1', 'Test Service');
     const graph = createEmptyGraph();
     graph.nodes.push(node);
-    useCoreStore.setState({ graph });
+    useGraphStore.setState({ graph });
 
     useUIStore.getState().setInlineEditNodeId('node-1');
     // Simulate confirm with empty value - should just clear inline edit
     useUIStore.getState().clearInlineEdit();
-    expect(useCoreStore.getState().graph.nodes[0]!.displayName).toBe('Test Service');
+    expect(useGraphStore.getState().graph.nodes[0]!.displayName).toBe('Test Service');
   });
 
   it('whitespace-only input does not rename', () => {
@@ -456,8 +445,8 @@ describe('Inline Edit Edge Cases', () => {
     const node = createTestNode('node-1', 'Test Service');
     const graph = createEmptyGraph();
     graph.nodes.push(node);
-    useCoreStore.setState({ graph });
-    expect(useCoreStore.getState().graph.nodes[0]!.displayName).toBe('Test Service');
+    useGraphStore.setState({ graph });
+    expect(useGraphStore.getState().graph.nodes[0]!.displayName).toBe('Test Service');
   });
 
   it('inline edit can be activated on different nodes in sequence', () => {
