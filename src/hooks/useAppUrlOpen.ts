@@ -121,7 +121,7 @@ export function extractFilePathFromDeepLink(url: string): string | null {
 type ApplyDecodedFileFn = (
   graph: import('@/types/graph').ArchGraph,
   fileName: string,
-  fileHandle: unknown,
+  fileHandle: import('@/core/storage/types').StorageHandle | null,
   canvasState?: import('@/types/graph').SavedCanvasState,
   aiState?: import('@/core/storage/fileIO').AIStateData,
   createdAtMs?: number,
@@ -171,8 +171,8 @@ export async function handleFileUrl(
     // Decode the .archc binary data
     const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
 
-    // Apply to the store (same as openFile flow)
-    applyDecodedFile(graph, fileName, filePath, canvasState, aiState, createdAtMs);
+    // Apply to the store (same as openFile flow) — no StorageHandle for native file URLs
+    applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
 
     console.log(`[useAppUrlOpen] Successfully loaded: ${fileName}`);
     return true;
@@ -228,7 +228,7 @@ export async function handleRemoteFileUrl(
     const fileName = extractFileName(url);
     const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(data);
 
-    applyDecodedFile(graph, fileName, url, canvasState, aiState, createdAtMs);
+    applyDecodedFile(graph, fileName, null, canvasState, aiState, createdAtMs);
 
     console.log(`[useAppUrlOpen] Successfully loaded remote file: ${fileName}`);
     return true;

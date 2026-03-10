@@ -10,20 +10,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { useUIStore } from '@/store/uiStore';
-
-// Mock the file I/O module
-vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual('@/core/storage/fileIO');
-  return {
-    ...actual,
-    saveArchcFile: vi.fn().mockResolvedValue(true),
-    saveArchcFileAs: vi.fn().mockResolvedValue({
-      fileHandle: { name: 'test.archc' } as any,
-      fileName: 'test',
-    }),
-    openArchcFile: vi.fn().mockResolvedValue(null),
-  };
-});
+import type { StorageHandle } from '@/core/storage/types';
 
 // Mock the canvas store
 vi.mock('@/store/canvasStore', () => ({
@@ -36,8 +23,30 @@ vi.mock('@/store/canvasStore', () => ({
   },
 }));
 
+// Create mock StorageManager
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
+
+const mockSaveArchitecture = vi.fn().mockResolvedValue(fakeStorageHandle);
+const mockSaveArchitectureAs = vi.fn().mockResolvedValue({ handle: fakeStorageHandle });
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
 describe('Feature #196: Loading indicator during save operations', () => {
   beforeEach(() => {
+    // Reset mocks
+    mockSaveArchitecture.mockReset().mockResolvedValue(fakeStorageHandle);
+    mockSaveArchitectureAs.mockReset().mockResolvedValue({ handle: fakeStorageHandle });
+
     // Reset stores
     useGraphStore.setState({
       isDirty: false,
@@ -57,6 +66,8 @@ describe('Feature #196: Loading indicator during save operations', () => {
       canRedo: false
     });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
 
     // Reset loading state
     useUIStore.getState().clearFileOperationLoading();
@@ -66,7 +77,7 @@ describe('Feature #196: Loading indicator during save operations', () => {
     // Setup: add a node and set file handle
     const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     // Before save
     expect(useUIStore.getState().fileOperationLoading).toBe(false);
@@ -99,7 +110,7 @@ describe('Feature #196: Loading indicator during save operations', () => {
   it('loading state uses correct message for save operations', async () => {
     const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     // Track loading message changes
     const messages: string[] = [];
@@ -119,13 +130,12 @@ describe('Feature #196: Loading indicator during save operations', () => {
   });
 
   it('save error clears loading state', async () => {
-    // Mock saveArchcFile to throw
-    const { saveArchcFile } = await import('@/core/storage/fileIO');
-    (saveArchcFile as any).mockRejectedValueOnce(new Error('Write failed'));
+    // Mock storageManager.saveArchitecture to throw
+    mockSaveArchitecture.mockRejectedValueOnce(new Error('Write failed'));
 
     const store = useGraphStore.getState();
     store.addNode({ type: 'compute/service', displayName: 'Test' });
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     // Execute save (should fail)
     const result = await useFileStore.getState().saveFile();

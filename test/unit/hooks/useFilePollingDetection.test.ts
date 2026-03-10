@@ -166,7 +166,7 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
         'utf-8',
       );
       // _applyDecodedFile captures lastModified via getFileLastModified utility
-      expect(storeSource).toContain('getFileLastModified(fileHandle)');
+      expect(storeSource).toContain('getFileLastModified(');
       expect(storeSource).toContain('set({ fileLastModifiedMs: lastModified })');
     });
 
@@ -176,7 +176,7 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
         'utf-8',
       );
       // Save reads back lastModified via platform adapter after writing
-      expect(storeSource).toContain('getFileLastModified(fileHandle)');
+      expect(storeSource).toContain('getFileLastModified(');
       expect(storeSource).toContain('fileLastModifiedMs: savedLastModified');
     });
 

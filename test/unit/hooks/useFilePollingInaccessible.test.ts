@@ -157,10 +157,10 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       const fs = await import('fs');
       const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
-      // saveFileAs opens a new file picker — it doesn't rely on existing fileHandle
-      expect(source).toContain('saveArchcFileAs');
-      // After Save As, a new fileHandle is set
-      expect(source).toContain('fileHandle: result.fileHandle');
+      // saveFileAs opens a new save picker via storageManager — it doesn't rely on existing fileHandle
+      expect(source).toContain('storageManager.saveArchitectureAs(');
+      // After Save As, a new fileHandle is set from the StorageHandle
+      expect(source).toContain('fileHandle: result.handle');
     });
   });
 });

@@ -121,8 +121,8 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       expect(useFilePollingSource).toContain('if (saved)');
     });
 
-    it('coreStore.saveFileAs calls saveArchcFileAs from fileIO module', () => {
-      expect(coreStoreSource).toContain('saveArchcFileAs(');
+    it('coreStore.saveFileAs calls storageManager.saveArchitectureAs', () => {
+      expect(coreStoreSource).toContain('storageManager.saveArchitectureAs(');
     });
 
     it('coreStore.saveFileAs returns boolean (true on success, false on cancel)', () => {
@@ -142,13 +142,13 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   describe('Step 4: Local changes are saved to a new file with a new file handle', () => {
     it('saveFileAs updates store with new fileName from the save result', () => {
       expect(coreStoreSource).toMatch(
-        /saveFileAs[\s\S]*?fileName:\s*result\.fileName/,
+        /saveFileAs[\s\S]*?fileName:\s*result\.handle\.name/,
       );
     });
 
     it('saveFileAs updates store with new fileHandle from save result', () => {
       expect(coreStoreSource).toMatch(
-        /saveFileAs[\s\S]*?fileHandle:\s*result\.fileHandle/,
+        /saveFileAs[\s\S]*?fileHandle:\s*result\.handle/,
       );
     });
 
@@ -193,10 +193,10 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       expect(saveAsCopyBlock).not.toBeNull();
     });
 
-    it('onSaveAsCopy passes the original handle (not the copy handle) to _applyDecodedFile', () => {
-      // The original handle is passed so the user continues editing the original file
+    it('onSaveAsCopy passes the original storageHandle (not the copy handle) to _applyDecodedFile', () => {
+      // The original storageHandle is passed so the user continues editing the original file
       const applyCall = useFilePollingSource.match(
-        /onSaveAsCopy[\s\S]*?_applyDecodedFile\(\s*\n?\s*graph,\s*\n?\s*handle\.name,\s*\n?\s*handle,/,
+        /onSaveAsCopy[\s\S]*?_applyDecodedFile\(\s*\n?\s*graph,\s*\n?\s*handle\.name,\s*\n?\s*storageHandle,/,
       );
       expect(applyCall).not.toBeNull();
     });

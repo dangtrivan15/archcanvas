@@ -11,6 +11,7 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
+import type { StorageHandle } from '@/core/storage/types';
 
 // Mock the file I/O module
 vi.mock('@/core/storage/fileIO', async () => {
@@ -53,11 +54,31 @@ vi.mock('@/store/uiStore', () => ({
   },
 }));
 
+// Create mock StorageManager
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
+
+const mockSaveArchitecture = vi.fn().mockResolvedValue(fakeStorageHandle);
+const mockSaveArchitectureAs = vi.fn().mockResolvedValue({ handle: fakeStorageHandle });
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
 describe('Feature #154: Dirty state clears after save', () => {
   beforeEach(() => {
+    // Reset mocks
+    mockSaveArchitecture.mockReset().mockResolvedValue(fakeStorageHandle);
+    mockSaveArchitectureAs.mockReset().mockResolvedValue({ handle: fakeStorageHandle });
+
     // Reset the store to initial state
-    const store = useGraphStore.getState();
-    // Re-initialize if needed
     useGraphStore.setState({
       isDirty: false,
       graph: { name: 'Untitled Architecture', description: '', owners: [], nodes: [], edges: [] },
@@ -76,6 +97,8 @@ describe('Feature #154: Dirty state clears after save', () => {
       canRedo: false
     });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
   });
 
   it('isDirty starts as false for a new file', () => {
@@ -187,8 +210,8 @@ describe('Feature #154: Dirty state clears after save', () => {
     store.addNode({ type: 'compute/service', displayName: 'Test' });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Set a mock file handle so saveFile doesn't fall back to saveFileAs
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    // Set a mock StorageHandle so saveFile doesn't fall back to saveFileAs
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     const result = await useFileStore.getState().saveFile();
     expect(result).toBe(true);
@@ -214,27 +237,27 @@ describe('Feature #154: Dirty state clears after save', () => {
     expect(useGraphStore.getState().isDirty).toBe(false);
   });
 
-  it('save → mutate → isDirty transitions correctly', async () => {
+  it('save -> mutate -> isDirty transitions correctly', async () => {
     const store = useGraphStore.getState();
 
     // Start clean
     expect(useGraphStore.getState().isDirty).toBe(false);
 
-    // Add node → dirty
+    // Add node -> dirty
     store.addNode({ type: 'compute/service', displayName: 'Test' });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Save → clean
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    // Save -> clean
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
     await useFileStore.getState().saveFile();
     expect(useGraphStore.getState().isDirty).toBe(false);
 
-    // Update node → dirty again
+    // Update node -> dirty again
     const nodes = useGraphStore.getState().graph.nodes;
     useGraphStore.getState().updateNode(nodes[0].id, { displayName: 'Updated' });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Save again → clean again
+    // Save again -> clean again
     await useFileStore.getState().saveFile();
     expect(useGraphStore.getState().isDirty).toBe(false);
   });
@@ -242,19 +265,19 @@ describe('Feature #154: Dirty state clears after save', () => {
   it('multiple mutations keep isDirty true until save', async () => {
     const store = useGraphStore.getState();
 
-    // Add node → dirty
+    // Add node -> dirty
     const node = store.addNode({ type: 'compute/service', displayName: 'A' });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Add another node → still dirty
+    // Add another node -> still dirty
     useGraphStore.getState().addNode({ type: 'data/database', displayName: 'B' });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Update node args → still dirty
+    // Update node args -> still dirty
     useGraphStore.getState().updateNode(node!.id, { args: { language: 'Go' } });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Add a note → still dirty
+    // Add a note -> still dirty
     useGraphStore.getState().addNote({
       nodeId: node!.id,
       author: 'tester',
@@ -262,8 +285,8 @@ describe('Feature #154: Dirty state clears after save', () => {
     });
     expect(useGraphStore.getState().isDirty).toBe(true);
 
-    // Save → finally clean
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    // Save -> finally clean
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
     await useFileStore.getState().saveFile();
     expect(useGraphStore.getState().isDirty).toBe(false);
   });

@@ -65,14 +65,14 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       expect(hookSource).toMatch(/_applyDecodedFile\([\s\S]*?handle/);
     });
 
-    it('passes the same file handle during auto-reload (not null)', () => {
-      // The auto-reload should pass `handle` (the existing file handle), not null
+    it('passes the storageHandle during auto-reload (not null)', () => {
+      // The auto-reload should pass `storageHandle` (the existing storage handle), not null
       // This is important so polling continues after reload
       const autoReloadSection = hookSource.match(
         /!state\.isDirty[\s\S]*?_applyDecodedFile\([\s\S]*?\)/,
       );
       expect(autoReloadSection).not.toBeNull();
-      expect(autoReloadSection![0]).toContain('handle,');
+      expect(autoReloadSection![0]).toContain('storageHandle,');
       expect(autoReloadSection![0]).toContain('handle.name');
     });
 
