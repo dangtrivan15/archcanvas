@@ -16,7 +16,7 @@ import { getNodesAtLevel } from '@/core/graph/graphQuery';
 
 // Read source code for verification
 const coreStoreSrc = readFileSync(
-  resolve(__dirname, '../../../src/store/coreStore.ts'),
+  resolve(__dirname, '../../../src/store/graphStore.ts'),
   'utf-8',
 );
 
@@ -62,7 +62,7 @@ describe('Feature #513: Adding a new node triggers re-layout at current level', 
     });
 
     it('uses navigation path from useNavigationStore for correct level', () => {
-      expect(coreStoreSrc).toContain("import { useNavigationStore } from '@/store/navigationStore'");
+      expect(coreStoreSrc).toContain("import { useNavigationStore } from './navigationStore'");
       const addNodeImpl = coreStoreSrc.split('addNode: (params) =>')[1]?.split(/\n\s{2}\w+:/)[0] ?? '';
       expect(addNodeImpl).toContain('useNavigationStore.getState().path');
     });
@@ -265,8 +265,8 @@ describe('Feature #513: Adding a new node triggers re-layout at current level', 
   // ── Step 6: Navigation integration ────────────────────────────────────
 
   describe('Step 6: Navigation integration', () => {
-    it('coreStore imports useNavigationStore', () => {
-      expect(coreStoreSrc).toContain("import { useNavigationStore } from '@/store/navigationStore'");
+    it('graphStore imports useNavigationStore', () => {
+      expect(coreStoreSrc).toContain("import { useNavigationStore } from './navigationStore'");
     });
 
     it('auto-layout uses horizontal direction by default', () => {

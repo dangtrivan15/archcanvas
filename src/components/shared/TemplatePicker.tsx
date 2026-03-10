@@ -27,7 +27,10 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { getAvailableStacks, instantiateStack, type StackTemplate } from '@/stacks/stackLoader';
-import { useCoreStore } from '@/store/coreStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -67,8 +70,8 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
   const [selectedStack, setSelectedStack] = useState<StackTemplate | null>(null);
   const [importMode, setImportMode] = useState<ImportMode>('container');
   const stacks = getAvailableStacks();
-  const textApi = useCoreStore((s) => s.textApi);
-  const undoManager = useCoreStore((s) => s.undoManager);
+  const textApi = useEngineStore((s) => s.textApi);
+  const undoManager = useEngineStore((s) => s.undoManager);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const showToast = useUIStore((s) => s.showToast);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
@@ -87,14 +90,18 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
       undoManager.clear();
       undoManager.snapshot('Load stack template', graph);
 
-      useCoreStore.setState({
+      useGraphStore.setState({
         graph,
         isDirty: true,
+        nodeCount: graph.nodes.length,
+        edgeCount: graph.edges.length,
+      });
+      useFileStore.setState({
         fileName: template.metadata.displayName,
         fileHandle: null,
         fileCreatedAtMs: null,
-        nodeCount: graph.nodes.length,
-        edgeCount: graph.edges.length,
+      });
+      useHistoryStore.setState({
         canUndo: false,
         canRedo: false,
       });
@@ -152,7 +159,7 @@ function TemplatePickerContent({ onClose }: { onClose: () => void }) {
 
       undoManager.snapshot('Import template as container: ' + displayName, updatedGraph);
 
-      useCoreStore.setState({
+      useGraphStore.setState({
         graph: updatedGraph,
         isDirty: true,
         nodeCount: updatedGraph.nodes.length,

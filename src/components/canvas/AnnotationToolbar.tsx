@@ -7,7 +7,7 @@
 
 import { Eraser, Undo2, Trash2, X, Minus, Plus } from 'lucide-react';
 import { useAnnotationStore, ANNOTATION_COLORS } from '@/store/annotationStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 
 export function AnnotationToolbar() {
   const isDrawingMode = useAnnotationStore((s) => s.isDrawingMode);
@@ -19,8 +19,8 @@ export function AnnotationToolbar() {
   const setColor = useAnnotationStore((s) => s.setColor);
   const setStrokeWidth = useAnnotationStore((s) => s.setStrokeWidth);
   const popUndo = useAnnotationStore((s) => s.popUndo);
-  const removeAnnotation = useCoreStore((s) => s.removeAnnotation);
-  const clearAnnotations = useCoreStore((s) => s.clearAnnotations);
+  const removeAnnotation = useGraphStore((s) => s.removeAnnotation);
+  const clearAnnotations = useGraphStore((s) => s.clearAnnotations);
   const undoStackLength = useAnnotationStore((s) => s.undoStack.length);
 
   if (!isDrawingMode) return null;

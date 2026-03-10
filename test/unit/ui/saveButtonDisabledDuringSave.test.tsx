@@ -60,7 +60,10 @@ vi.mock('@/core/layout/elkLayout', () => ({
 }));
 
 // Now import the modules
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { FileMenu } from '@/components/toolbar/FileMenu';
 import { saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 
@@ -84,20 +87,26 @@ describe('Feature #215: Save button disabled during save operation', () => {
     mockSaveArchcFileAs.mockReset();
 
     // Reset core store
-    useCoreStore.setState({
-      initialized: false,
+    useGraphStore.setState({
       isDirty: false,
-      isSaving: false,
       graph: { name: 'Test Architecture', description: '', owners: [], nodes: [], edges: [] },
+      nodeCount: 0,
+      edgeCount: 0
+    });
+    useFileStore.setState({
+      isSaving: false,
       fileHandle: null,
       fileName: 'Untitled Architecture',
-      fileCreatedAtMs: null,
-      nodeCount: 0,
-      edgeCount: 0,
-      canUndo: false,
-      canRedo: false,
+      fileCreatedAtMs: null
     });
-    useCoreStore.getState().initialize();
+    useEngineStore.setState({
+      initialized: false
+    });
+    useHistoryStore.setState({
+      canUndo: false,
+      canRedo: false
+    });
+    useEngineStore.getState().initialize();
   });
 
   afterEach(() => {
@@ -115,7 +124,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
 
   describe('Save button disabled state when isSaving is true', () => {
     it('Save button is enabled when isSaving is false', () => {
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: false });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -123,7 +132,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save button is disabled when isSaving is true', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -131,7 +140,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save As button is enabled when isSaving is false', () => {
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: false });
       renderAndOpenMenu();
 
       const saveAsButton = screen.getByTestId('save-as-button');
@@ -139,7 +148,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save As button is disabled when isSaving is true', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveAsButton = screen.getByTestId('save-as-button');
@@ -149,7 +158,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
 
   describe('Save button shows loading indicator when saving', () => {
     it('shows "Save" text when not saving', () => {
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: false });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -158,7 +167,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('shows "Saving..." text when saving', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -166,7 +175,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('shows "Save As..." text when not saving', () => {
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: false });
       renderAndOpenMenu();
 
       const saveAsButton = screen.getByTestId('save-as-button');
@@ -175,7 +184,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('shows "Saving..." text on Save As button when saving', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveAsButton = screen.getByTestId('save-as-button');
@@ -183,7 +192,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save button has opacity-50 class when saving', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -191,7 +200,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save button has cursor-not-allowed class when saving', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -199,7 +208,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save button does not have opacity-50 when not saving', () => {
-      useCoreStore.setState({ isSaving: false });
+      useFileStore.setState({ isSaving: false });
       renderAndOpenMenu();
 
       const saveButton = screen.getByTestId('save-button');
@@ -210,7 +219,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
   describe('Clicking Save during save-in-progress has no effect', () => {
     it('clicking disabled Save button does not call saveFile', () => {
       // Set isSaving before rendering so button is disabled
-      useCoreStore.setState({ isSaving: true, fileHandle: fakeFileHandle });
+      useFileStore.setState({ isSaving: true, fileHandle: fakeFileHandle });
       mockSaveArchcFile.mockResolvedValue(undefined);
 
       renderAndOpenMenu();
@@ -225,7 +234,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('clicking disabled Save As button does not call saveFileAs', () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       mockSaveArchcFileAs.mockResolvedValue({ fileHandle: fakeFileHandle, fileName: 'test' });
 
       renderAndOpenMenu();
@@ -240,7 +249,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
   describe('Button re-enables after save completes', () => {
     it('Save button becomes enabled after isSaving changes to false', async () => {
       // Start with saving in progress
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       let saveButton = screen.getByTestId('save-button');
@@ -248,7 +257,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
 
       // Simulate save completing
       await act(async () => {
-        useCoreStore.setState({ isSaving: false });
+        useFileStore.setState({ isSaving: false });
       });
 
       saveButton = screen.getByTestId('save-button');
@@ -256,14 +265,14 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save As button becomes enabled after isSaving changes to false', async () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       let saveAsButton = screen.getByTestId('save-as-button');
       expect(saveAsButton).toBeDisabled();
 
       await act(async () => {
-        useCoreStore.setState({ isSaving: false });
+        useFileStore.setState({ isSaving: false });
       });
 
       saveAsButton = screen.getByTestId('save-as-button');
@@ -271,14 +280,14 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('text changes back from "Saving..." to "Save" after completion', async () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
       renderAndOpenMenu();
 
       let saveButton = screen.getByTestId('save-button');
       expect(saveButton.textContent).toContain('Saving...');
 
       await act(async () => {
-        useCoreStore.setState({ isSaving: false });
+        useFileStore.setState({ isSaving: false });
       });
 
       saveButton = screen.getByTestId('save-button');
@@ -297,11 +306,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
         await savePromise;
       });
 
-      useCoreStore.setState({
-        fileHandle: fakeFileHandle,
-        isDirty: true,
-        isSaving: false,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: fakeFileHandle, isSaving: false });
 
       renderAndOpenMenu();
       const saveButton = screen.getByTestId('save-button');
@@ -316,7 +321,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
       });
 
       // Button should now be disabled (isSaving became true in store)
-      expect(useCoreStore.getState().isSaving).toBe(true);
+      expect(useFileStore.getState().isSaving).toBe(true);
 
       // Complete the save
       await act(async () => {
@@ -326,17 +331,13 @@ describe('Feature #215: Save button disabled during save operation', () => {
       });
 
       // After save completes, isSaving should be false
-      expect(useCoreStore.getState().isSaving).toBe(false);
+      expect(useFileStore.getState().isSaving).toBe(false);
     });
 
     it('Save button re-enables after failed save', async () => {
       mockSaveArchcFile.mockRejectedValue(new Error('Disk full'));
 
-      useCoreStore.setState({
-        fileHandle: fakeFileHandle,
-        isDirty: true,
-        isSaving: false,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: fakeFileHandle, isSaving: false });
 
       renderAndOpenMenu();
 
@@ -348,23 +349,23 @@ describe('Feature #215: Save button disabled during save operation', () => {
       });
 
       // After error, isSaving should be false (re-enabled)
-      expect(useCoreStore.getState().isSaving).toBe(false);
+      expect(useFileStore.getState().isSaving).toBe(false);
     });
   });
 
   describe('Store-level isSaving guard integration', () => {
     it('saveFile returns false when isSaving is true', async () => {
-      useCoreStore.setState({ isSaving: true, fileHandle: fakeFileHandle });
+      useFileStore.setState({ isSaving: true, fileHandle: fakeFileHandle });
 
-      const result = await useCoreStore.getState().saveFile();
+      const result = await useFileStore.getState().saveFile();
       expect(result).toBe(false);
       expect(mockSaveArchcFile).not.toHaveBeenCalled();
     });
 
     it('saveFileAs returns false when isSaving is true', async () => {
-      useCoreStore.setState({ isSaving: true });
+      useFileStore.setState({ isSaving: true });
 
-      const result = await useCoreStore.getState().saveFileAs();
+      const result = await useFileStore.getState().saveFileAs();
       expect(result).toBe(false);
       expect(mockSaveArchcFileAs).not.toHaveBeenCalled();
     });

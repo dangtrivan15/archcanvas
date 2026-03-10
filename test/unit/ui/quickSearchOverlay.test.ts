@@ -6,16 +6,19 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { quickSearchNext, quickSearchPrev } from '@/components/shared/QuickSearchOverlay';
 
 // Helper: create a graph with multiple nodes for testing
 function setupGraphWithNodes() {
-  const store = useCoreStore.getState();
-  store.initialize();
-  store.newFile();
+  const store = useGraphStore.getState();
+  useEngineStore.getState().initialize();
+  useFileStore.getState().newFile();
 
   // Add test nodes
   store.addNode({
@@ -46,8 +49,8 @@ function setupGraphWithNodes() {
 }
 
 beforeEach(() => {
-  useCoreStore.getState().initialize();
-  useCoreStore.getState().newFile();
+  useEngineStore.getState().initialize();
+  useFileStore.getState().newFile();
   useCanvasStore.setState({
     selectedNodeId: null,
     selectedEdgeId: null,
@@ -111,7 +114,7 @@ describe('Quick Search Overlay - Fuzzy Search Algorithm', () => {
   it('exact match at start scores highest', () => {
     // Testing the fuzzy match behavior via node search
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
 
     // "API" should match "API Gateway" with a high score
     const apiNode = nodes.find((n) => n.displayName === 'API Gateway');
@@ -120,13 +123,13 @@ describe('Quick Search Overlay - Fuzzy Search Algorithm', () => {
 
   it('all nodes are returned when query is empty', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     expect(nodes.length).toBe(5);
   });
 
   it('fuzzy matching supports partial matches', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     // "OrdSvc" should fuzzy-match "Order Service" (O-r-d S-v-c)
     const orderNode = nodes.find((n) => n.displayName === 'Order Service');
     expect(orderNode).toBeDefined();
@@ -135,7 +138,7 @@ describe('Quick Search Overlay - Fuzzy Search Algorithm', () => {
 
   it('search is case-insensitive', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     // Both "api gateway" and "API Gateway" should be findable
     const apiNodes = nodes.filter((n) => n.displayName.toLowerCase().includes('api gateway'));
     expect(apiNodes.length).toBe(1);
@@ -145,7 +148,7 @@ describe('Quick Search Overlay - Fuzzy Search Algorithm', () => {
 describe('Quick Search Overlay - Jump to Node', () => {
   it('jumping selects the node', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const targetNode = nodes[0]!;
 
     // Simulate jump: select node + request center
@@ -155,7 +158,7 @@ describe('Quick Search Overlay - Jump to Node', () => {
 
   it('jumping requests center on node', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const targetNode = nodes[1]!;
 
     const initialCounter = useCanvasStore.getState().centerOnNodeCounter;
@@ -166,7 +169,7 @@ describe('Quick Search Overlay - Jump to Node', () => {
 
   it('jumping opens the right panel with properties', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const targetNode = nodes[0]!;
 
     useCanvasStore.getState().selectNode(targetNode.id);
@@ -188,7 +191,7 @@ describe('Quick Search Overlay - Jump to Node', () => {
 describe('Quick Search Overlay - n/N Navigation', () => {
   it('quickSearchNext cycles through results', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
 
     // Simulate having search results stored by manually selecting nodes
     // The quickSearchNext/quickSearchPrev functions use module-level state
@@ -199,7 +202,7 @@ describe('Quick Search Overlay - n/N Navigation', () => {
 
   it('quickSearchPrev cycles through results backwards', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
 
     useCanvasStore.getState().selectNode(nodes[2]!.id);
     expect(useCanvasStore.getState().selectedNodeId).toBe(nodes[2]!.id);
@@ -345,7 +348,7 @@ describe('Quick Search Overlay - useKeyboardShortcuts Integration', () => {
 describe('Quick Search Overlay - Node Collection', () => {
   it('collectAllNodes flattens nested nodes with parent context', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     // All 5 nodes should be at the top level
     expect(nodes.length).toBe(5);
     expect(nodes[0]!.displayName).toBe('API Gateway');
@@ -357,7 +360,7 @@ describe('Quick Search Overlay - Node Collection', () => {
 
   it('nodes have correct types', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const services = nodes.filter((n) => n.type === 'compute/service');
     const databases = nodes.filter((n) => n.type === 'data/database');
     expect(services.length).toBe(3);
@@ -368,7 +371,7 @@ describe('Quick Search Overlay - Node Collection', () => {
 describe('Quick Search Overlay - Center on Node via Canvas Store', () => {
   it('requestCenterOnNode increments counter and stores nodeId', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
     const targetNode = nodes[2]!;
 
     const before = useCanvasStore.getState().centerOnNodeCounter;
@@ -381,7 +384,7 @@ describe('Quick Search Overlay - Center on Node via Canvas Store', () => {
 
   it('multiple requestCenterOnNode calls increment counter each time', () => {
     setupGraphWithNodes();
-    const nodes = useCoreStore.getState().graph.nodes;
+    const nodes = useGraphStore.getState().graph.nodes;
 
     const before = useCanvasStore.getState().centerOnNodeCounter;
     useCanvasStore.getState().requestCenterOnNode(nodes[0]!.id);

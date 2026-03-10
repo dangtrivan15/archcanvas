@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Zap, Database } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useHaptics } from '@/hooks/useHaptics';
 
@@ -47,7 +47,7 @@ export function ConnectionTypeDialog() {
   const connectionDialogOpen = useUIStore((s) => s.connectionDialogOpen);
   const connectionDialogInfo = useUIStore((s) => s.connectionDialogInfo);
   const closeConnectionDialog = useUIStore((s) => s.closeConnectionDialog);
-  const addEdge = useCoreStore((s) => s.addEdge);
+  const addEdge = useGraphStore((s) => s.addEdge);
   const hapticActions = useHaptics();
 
   const [selectedType, setSelectedType] = useState<EdgeType>('sync');

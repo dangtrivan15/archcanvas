@@ -17,7 +17,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { TouchContextMenu, type ContextMenuItem } from './TouchContextMenu';
@@ -31,8 +31,8 @@ interface CanvasContextMenuProps {
 export function CanvasContextMenu({ x, y, onClose }: CanvasContextMenuProps) {
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
-  const autoLayout = useCoreStore((s) => s.autoLayout);
-  const addNode = useCoreStore((s) => s.addNode);
+  const autoLayout = useGraphStore((s) => s.autoLayout);
+  const addNode = useGraphStore((s) => s.addNode);
   const requestFitView = useCanvasStore((s) => s.requestFitView);
   const navigationPath = useNavigationStore((s) => s.path);
 

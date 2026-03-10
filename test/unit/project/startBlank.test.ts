@@ -65,7 +65,26 @@ vi.mock('@/store/uiStore', () => {
   return { useUIStore };
 });
 
-vi.mock('@/store/coreStore', () => {
+vi.mock('@/store/graphStore', () => {
+  const store = {
+    _setGraph: mocks._setGraph,
+    graph: {
+      name: 'Test',
+      description: '',
+      owners: [],
+      nodes: [],
+      edges: [],
+      annotations: [],
+    },
+  };
+  const useGraphStore = Object.assign(
+    (selector: (s: typeof store) => unknown) => selector(store),
+    { getState: () => store, setState: vi.fn() },
+  );
+  return { useGraphStore };
+});
+
+vi.mock('@/store/engineStore', () => {
   const store = {
     textApi: {
       setGraph: mocks.setGraph,
@@ -78,21 +97,12 @@ vi.mock('@/store/coreStore', () => {
         annotations: [],
       })),
     },
-    _setGraph: mocks._setGraph,
-    graph: {
-      name: 'Test',
-      description: '',
-      owners: [],
-      nodes: [],
-      edges: [],
-      annotations: [],
-    },
   };
-  const useCoreStore = Object.assign(
+  const useEngineStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
     { getState: () => store, setState: vi.fn() },
   );
-  return { useCoreStore };
+  return { useEngineStore };
 });
 
 describe('Feature #465: Start Blank .archc file creation', () => {

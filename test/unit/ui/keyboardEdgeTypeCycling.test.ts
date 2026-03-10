@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { getAllCommands, searchCommands } from '@/config/commandRegistry';
@@ -42,16 +45,7 @@ function setupStore(edgeType: EdgeType = 'sync') {
   const undoManager = new UndoManager();
   undoManager.snapshot('Initial state', graph);
 
-  useCoreStore.setState({
-    graph,
-    textApi,
-    undoManager,
-    nodeCount: 2,
-    edgeCount: 1,
-    isDirty: false,
-    canUndo: false,
-    canRedo: false,
-  });
+  useGraphStore.setState({ graph, nodeCount: 2, edgeCount: 1, isDirty: false }); useEngineStore.setState({ textApi, undoManager }); useHistoryStore.setState({ canUndo: false, canRedo: false });
 
   useCanvasStore.setState({
     selectedNodeId: null,
@@ -70,7 +64,7 @@ function setupStore(edgeType: EdgeType = 'sync') {
 
 describe('Keyboard Edge Type Cycling', () => {
   beforeEach(() => {
-    useCoreStore.setState(useCoreStore.getInitialState());
+    useGraphStore.setState(useGraphStore.getInitialState()); useEngineStore.setState(useEngineStore.getInitialState()); useFileStore.setState(useFileStore.getInitialState()); useHistoryStore.setState(useHistoryStore.getInitialState());
     useCanvasStore.setState(useCanvasStore.getInitialState());
     useUIStore.setState(useUIStore.getInitialState());
   });
@@ -90,24 +84,24 @@ describe('Keyboard Edge Type Cycling', () => {
       const { edge } = setupStore('sync');
       expect(edge.type).toBe('sync');
 
-      useCoreStore.getState().updateEdge(edge.id, { type: 'async' }, 'Change edge type to Async');
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      useGraphStore.getState().updateEdge(edge.id, { type: 'async' }, 'Change edge type to Async');
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('async');
     });
 
     it('cycles async → data-flow', () => {
       const { edge } = setupStore('async');
-      useCoreStore
+      useGraphStore
         .getState()
         .updateEdge(edge.id, { type: 'data-flow' }, 'Change edge type to Data Flow');
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('data-flow');
     });
 
     it('cycles data-flow → sync', () => {
       const { edge } = setupStore('data-flow');
-      useCoreStore.getState().updateEdge(edge.id, { type: 'sync' }, 'Change edge type to Sync');
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      useGraphStore.getState().updateEdge(edge.id, { type: 'sync' }, 'Change edge type to Sync');
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('sync');
     });
 
@@ -124,16 +118,16 @@ describe('Keyboard Edge Type Cycling', () => {
         const currentType = types[i]!;
         const nextType = types[(i + 1) % 3]!;
 
-        const currentEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+        const currentEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
         expect(currentEdge!.type).toBe(currentType);
 
-        useCoreStore
+        useGraphStore
           .getState()
           .updateEdge(edge.id, { type: nextType }, `Change edge type to ${typeLabels[nextType]}`);
       }
 
       // After 3 cycles, should be back to sync
-      const finalEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const finalEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(finalEdge!.type).toBe('sync');
     });
   });
@@ -141,44 +135,44 @@ describe('Keyboard Edge Type Cycling', () => {
   describe('Undo/Redo for edge type changes', () => {
     it('marks state as dirty after type change', () => {
       const { edge } = setupStore('sync');
-      expect(useCoreStore.getState().isDirty).toBe(false);
-      useCoreStore.getState().updateEdge(edge.id, { type: 'async' });
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(false);
+      useGraphStore.getState().updateEdge(edge.id, { type: 'async' });
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('sets canUndo to true after type change', () => {
       const { edge } = setupStore('sync');
-      expect(useCoreStore.getState().canUndo).toBe(false);
-      useCoreStore.getState().updateEdge(edge.id, { type: 'async' });
-      expect(useCoreStore.getState().canUndo).toBe(true);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+      useGraphStore.getState().updateEdge(edge.id, { type: 'async' });
+      expect(useHistoryStore.getState().canUndo).toBe(true);
     });
 
     it('undo reverts edge type to previous value', () => {
       const { edge } = setupStore('sync');
-      useCoreStore.getState().updateEdge(edge.id, { type: 'async' });
-      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('async');
+      useGraphStore.getState().updateEdge(edge.id, { type: 'async' });
+      expect(useGraphStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('async');
 
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('sync');
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('sync');
     });
 
     it('redo reapplies edge type change', () => {
       const { edge } = setupStore('sync');
-      useCoreStore.getState().updateEdge(edge.id, { type: 'data-flow' });
-      useCoreStore.getState().undo();
-      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('sync');
+      useGraphStore.getState().updateEdge(edge.id, { type: 'data-flow' });
+      useHistoryStore.getState().undo();
+      expect(useGraphStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe('sync');
 
-      useCoreStore.getState().redo();
-      expect(useCoreStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe(
+      useHistoryStore.getState().redo();
+      expect(useGraphStore.getState().graph.edges.find((e) => e.id === edge.id)!.type).toBe(
         'data-flow',
       );
     });
 
     it('undo snapshot has descriptive message', () => {
       const { edge } = setupStore('sync');
-      useCoreStore.getState().updateEdge(edge.id, { type: 'async' }, 'Change edge type to Async');
+      useGraphStore.getState().updateEdge(edge.id, { type: 'async' }, 'Change edge type to Async');
       // Check canUndo is true (snapshot was taken)
-      expect(useCoreStore.getState().canUndo).toBe(true);
+      expect(useHistoryStore.getState().canUndo).toBe(true);
     });
   });
 
@@ -267,7 +261,7 @@ describe('Keyboard Edge Type Cycling', () => {
       const commands = getAllCommands();
       const cmd = commands.find((c) => c.id === 'edge:set-sync')!;
       cmd.execute();
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('sync');
     });
 
@@ -276,7 +270,7 @@ describe('Keyboard Edge Type Cycling', () => {
       const commands = getAllCommands();
       const cmd = commands.find((c) => c.id === 'edge:set-async')!;
       cmd.execute();
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('async');
     });
 
@@ -285,7 +279,7 @@ describe('Keyboard Edge Type Cycling', () => {
       const commands = getAllCommands();
       const cmd = commands.find((c) => c.id === 'edge:set-data-flow')!;
       cmd.execute();
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('data-flow');
     });
 
@@ -294,7 +288,7 @@ describe('Keyboard Edge Type Cycling', () => {
       const commands = getAllCommands();
       const cmd = commands.find((c) => c.id === 'edge:cycle-type')!;
       cmd.execute();
-      const updatedEdge = useCoreStore.getState().graph.edges.find((e) => e.id === edge.id);
+      const updatedEdge = useGraphStore.getState().graph.edges.find((e) => e.id === edge.id);
       expect(updatedEdge!.type).toBe('async');
     });
   });
@@ -320,8 +314,8 @@ describe('Keyboard Edge Type Cycling', () => {
       expect(source.default).toContain("id: 'edge:set-data-flow'");
     });
 
-    it('coreStore has updateEdge method', async () => {
-      const source = await import('@/store/coreStore?raw');
+    it('graphStore has updateEdge method', async () => {
+      const source = await import('@/store/graphStore?raw');
       expect(source.default).toContain('updateEdge');
     });
 

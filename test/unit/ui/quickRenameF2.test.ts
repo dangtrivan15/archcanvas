@@ -18,7 +18,10 @@ import { KEYBOARD_SHORTCUTS } from '@/config/keyboardShortcuts';
 import { getStaticCommands, searchCommands } from '@/config/commandRegistry';
 import { useUIStore } from '@/store/uiStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import type { ArchNode } from '@/types/graph';
 
@@ -33,9 +36,7 @@ function resetStores() {
     selectedNodeId: null,
     selectedEdgeId: null,
   });
-  useCoreStore.setState({
-    graph: createEmptyGraph(),
-  });
+  useGraphStore.setState({ graph: createEmptyGraph() });
   resetShortcutManager();
 }
 
@@ -114,9 +115,7 @@ describe('Quick Rename (F2) - Rename Action Logic', () => {
 
   it('F2 with selected node sets pendingRenameNodeId', () => {
     const testNode = createTestNode();
-    useCoreStore.setState({
-      graph: { ...createEmptyGraph(), nodes: [testNode] },
-    });
+    useGraphStore.setState({      graph: { ...createEmptyGraph(), nodes: [testNode] },});
     useCanvasStore.setState({ selectedNodeId: 'node-1' });
 
     // Simulate what the keyboard handler does
@@ -239,9 +238,7 @@ describe('Quick Rename (F2) - Command Palette', () => {
 
   it('Rename Node command execute activates inline edit on the canvas node', () => {
     const testNode = createTestNode();
-    useCoreStore.setState({
-      graph: { ...createEmptyGraph(), nodes: [testNode] },
-    });
+    useGraphStore.setState({      graph: { ...createEmptyGraph(), nodes: [testNode] },});
     useCanvasStore.setState({ selectedNodeId: 'node-1' });
     useUIStore.setState({ rightPanelOpen: false, inlineEditNodeId: null });
 
@@ -271,9 +268,7 @@ describe('Quick Rename (F2) - Integration with existing rename mechanism', () =>
     // 2. F2 quick rename (sets it the same way)
     // Verify that the mechanism is the same
     const testNode = createTestNode();
-    useCoreStore.setState({
-      graph: { ...createEmptyGraph(), nodes: [testNode] },
-    });
+    useGraphStore.setState({      graph: { ...createEmptyGraph(), nodes: [testNode] },});
     useCanvasStore.setState({ selectedNodeId: 'node-1' });
 
     useUIStore.getState().setPendingRenameNodeId('node-1');

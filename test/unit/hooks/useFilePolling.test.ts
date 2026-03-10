@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FILE_POLL_INTERVAL_MS, FILE_CHANGED_EVENT } from '@/hooks/useFilePolling';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 
 /**
  * Tests for useFilePolling hook logic.
@@ -20,12 +23,15 @@ describe('useFilePolling', () => {
   });
 
   describe('coreStore fileLastModifiedMs', () => {
-    let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+    let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
 
     beforeEach(async () => {
       vi.resetModules();
-      const mod = await import('@/store/coreStore');
-      useCoreStore = mod.useCoreStore;
+      const fileStoreMod = await import('@/store/fileStore');
+      const graphStoreMod = await import('@/store/graphStore');
+      useFileStoreRef = fileStoreMod.useFileStore;
+      useGraphStoreRef = graphStoreMod.useGraphStore;
     });
 
     afterEach(() => {
@@ -33,43 +39,43 @@ describe('useFilePolling', () => {
     });
 
     it('initializes fileLastModifiedMs to null', () => {
-      const state = useCoreStore.getState();
+      const state = useFileStore.getState();
       expect(state.fileLastModifiedMs).toBeNull();
     });
 
     it('newFile resets fileLastModifiedMs to null', () => {
       // Set a value first
-      useCoreStore.setState({ fileLastModifiedMs: 12345 });
-      expect(useCoreStore.getState().fileLastModifiedMs).toBe(12345);
+      useFileStore.setState({ fileLastModifiedMs: 12345 });
+      expect(useFileStore.getState().fileLastModifiedMs).toBe(12345);
 
       // Initialize engines so newFile works
-      useCoreStore.getState().initialize();
+      useEngineStore.getState().initialize();
 
       // Call newFile
-      useCoreStore.getState().newFile();
-      expect(useCoreStore.getState().fileLastModifiedMs).toBeNull();
+      useFileStore.getState().newFile();
+      expect(useFileStore.getState().fileLastModifiedMs).toBeNull();
     });
 
     it('fileLastModifiedMs can be set and read', () => {
-      useCoreStore.setState({ fileLastModifiedMs: 1709942400000 });
-      expect(useCoreStore.getState().fileLastModifiedMs).toBe(1709942400000);
+      useFileStore.setState({ fileLastModifiedMs: 1709942400000 });
+      expect(useFileStore.getState().fileLastModifiedMs).toBe(1709942400000);
     });
 
     it('fileLastModifiedMs is cleared on _applyDecodedFile', () => {
-      useCoreStore.setState({ fileLastModifiedMs: 99999 });
-      useCoreStore.getState().initialize();
+      useFileStore.setState({ fileLastModifiedMs: 99999 });
+      useEngineStore.getState().initialize();
 
       const emptyGraph = { name: 'test', description: '', owners: [], nodes: [], edges: [], annotations: [] };
 
       // Call _applyDecodedFile with no file handle (e.g., loadFromUrl)
-      useCoreStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', null);
+      useFileStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', null);
 
       // Should be null since no file handle to read from
-      expect(useCoreStore.getState().fileLastModifiedMs).toBeNull();
+      expect(useFileStore.getState().fileLastModifiedMs).toBeNull();
     });
 
     it('_applyDecodedFile captures lastModified from file handle asynchronously', async () => {
-      useCoreStore.getState().initialize();
+      useEngineStore.getState().initialize();
 
       const mockFile = { lastModified: 1709942400000, name: 'test.archc', size: 100 };
       const mockHandle = {
@@ -80,14 +86,14 @@ describe('useFilePolling', () => {
 
       const emptyGraph = { name: 'test', description: '', owners: [], nodes: [], edges: [], annotations: [] };
 
-      useCoreStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', mockHandle);
+      useFileStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', mockHandle);
 
       // Initially null (async hasn't resolved)
-      expect(useCoreStore.getState().fileLastModifiedMs).toBeNull();
+      expect(useFileStore.getState().fileLastModifiedMs).toBeNull();
 
       // Wait for async getFile to resolve
       await vi.waitFor(() => {
-        expect(useCoreStore.getState().fileLastModifiedMs).toBe(1709942400000);
+        expect(useFileStore.getState().fileLastModifiedMs).toBe(1709942400000);
       });
 
       expect(mockHandle.getFile).toHaveBeenCalledOnce();
@@ -95,10 +101,11 @@ describe('useFilePolling', () => {
   });
 
   describe('hook source code structure', () => {
-    it('imports useCoreStore', async () => {
+    it('imports useFileStore and useGraphStore', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/hooks/useFilePolling.ts', 'utf-8');
-      expect(source).toContain("import { useCoreStore } from '@/store/coreStore'");
+      expect(source).toContain("import { useFileStore } from '@/store/fileStore'");
+      expect(source).toContain("import { useGraphStore } from '@/store/graphStore'");
     });
 
     it('uses setInterval for polling', async () => {
@@ -148,7 +155,7 @@ describe('useFilePolling', () => {
   describe('coreStore save updates fileLastModifiedMs', () => {
     it('saveFile path in coreStore reads lastModified after save', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       // After saveArchcFile, should refresh lastModified via platform adapter
       expect(source).toContain('Refresh lastModified timestamp after save');
       expect(source).toContain('getFileLastModified(fileHandle)');
@@ -156,7 +163,7 @@ describe('useFilePolling', () => {
 
     it('saveFileAs path captures lastModified from new handle', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       expect(source).toContain('newLastModifiedMs');
       expect(source).toContain('fileLastModifiedMs: newLastModifiedMs');
     });
@@ -215,12 +222,11 @@ describe('useFilePolling', () => {
       expect(source).toContain('fileLastModifiedMs === null');
 
       // Verify initial store state has both null
-      const mod = await import('@/store/coreStore');
-      const state = mod.useCoreStore.getState();
+      const fileMod = await import('@/store/fileStore');
       // After reset, both should be null
-      mod.useCoreStore.setState({ fileHandle: null, fileLastModifiedMs: null });
-      expect(mod.useCoreStore.getState().fileHandle).toBeNull();
-      expect(mod.useCoreStore.getState().fileLastModifiedMs).toBeNull();
+      fileMod.useFileStore.setState({ fileHandle: null, fileLastModifiedMs: null });
+      expect(fileMod.useFileStore.getState().fileHandle).toBeNull();
+      expect(fileMod.useFileStore.getState().fileLastModifiedMs).toBeNull();
     });
 
     it('Step 2: polling starts when file is opened (handle + timestamp set)', async () => {
@@ -231,7 +237,7 @@ describe('useFilePolling', () => {
       expect(source).toContain('intervalRef.current = setInterval(poll, FILE_POLL_INTERVAL_MS)');
 
       // Verify _applyDecodedFile sets fileHandle and captures fileLastModifiedMs async
-      const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const storeSource = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
       expect(storeSource).toContain('fileHandle');
       // The async block after _applyDecodedFile captures lastModified via platform adapter
       expect(storeSource).toContain('set({ fileLastModifiedMs: lastModified })');
@@ -239,47 +245,48 @@ describe('useFilePolling', () => {
 
     it('Step 3: polling stops when new file created (handle + timestamp cleared)', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // Extract the newFile block to verify both are cleared
       const newFileMatch = source.match(/newFile:[\s\S]*?fileHandle:\s*null[\s\S]*?fileLastModifiedMs:\s*null/);
       expect(newFileMatch).not.toBeNull();
     });
 
-    it('Step 3 (dynamic): newFile() sets both fileHandle and fileLastModifiedMs to null', () => {
+    it('Step 3 (dynamic): newFile() sets both fileHandle and fileLastModifiedMs to null', async () => {
       vi.resetModules();
       // Dynamically re-import to get fresh store
-      return import('@/store/coreStore').then((mod) => {
-        const store = mod.useCoreStore;
+      const fileMod = await import('@/store/fileStore');
+      const engineMod = await import('@/store/engineStore');
+      const fileStore = fileMod.useFileStore;
+      const engineStore = engineMod.useEngineStore;
 
-        // Simulate having an open file
-        const mockHandle = {
-          getFile: vi.fn().mockResolvedValue({ lastModified: 1000, name: 'a.archc', size: 10 }),
-          name: 'a.archc',
-          kind: 'file' as const,
-        };
-        store.setState({
-          fileHandle: mockHandle as unknown as FileSystemFileHandle,
-          fileLastModifiedMs: 1000,
-        });
-
-        expect(store.getState().fileHandle).not.toBeNull();
-        expect(store.getState().fileLastModifiedMs).not.toBeNull();
-
-        // Initialize so newFile works
-        store.getState().initialize();
-
-        // Call newFile
-        store.getState().newFile();
-
-        expect(store.getState().fileHandle).toBeNull();
-        expect(store.getState().fileLastModifiedMs).toBeNull();
+      // Simulate having an open file
+      const mockHandle = {
+        getFile: vi.fn().mockResolvedValue({ lastModified: 1000, name: 'a.archc', size: 10 }),
+        name: 'a.archc',
+        kind: 'file' as const,
+      };
+      fileStore.setState({
+        fileHandle: mockHandle as unknown as FileSystemFileHandle,
+        fileLastModifiedMs: 1000,
       });
+
+      expect(fileStore.getState().fileHandle).not.toBeNull();
+      expect(fileStore.getState().fileLastModifiedMs).not.toBeNull();
+
+      // Initialize so newFile works
+      engineStore.getState().initialize();
+
+      // Call newFile
+      fileStore.getState().newFile();
+
+      expect(fileStore.getState().fileHandle).toBeNull();
+      expect(fileStore.getState().fileLastModifiedMs).toBeNull();
     });
 
     it('Step 4: re-opening a file sets new fileHandle and triggers timestamp capture', async () => {
       const fs = await import('fs');
-      const storeSource = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const storeSource = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // _applyDecodedFile captures lastModified via platform adapter utility
       expect(storeSource).toContain('getFileLastModified(fileHandle)');
@@ -291,7 +298,7 @@ describe('useFilePolling', () => {
 
     it('Step 5: Save As sets new fileHandle and captures fileLastModifiedMs', async () => {
       const fs = await import('fs');
-      const source = fs.readFileSync('src/store/coreStore.ts', 'utf-8');
+      const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // saveFileAs captures lastModified from new handle
       expect(source).toContain('newLastModifiedMs');

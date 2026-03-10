@@ -10,7 +10,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Search, Box } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import { iconMap } from '@/components/nodes/GenericNode';
 import type { ArchNode } from '@/types/graph';
 
@@ -100,7 +101,7 @@ function fuzzyMatch(text: string, query: string): { indices: number[]; score: nu
  * Get the icon name for a node type from the NodeDef registry.
  */
 function getNodeIconName(nodeType: string): string | undefined {
-  const { registry } = useCoreStore.getState();
+  const { registry } = useEngineStore.getState();
   if (!registry) return undefined;
   const nodeDef = registry.resolve(nodeType);
   return nodeDef?.metadata?.icon;
@@ -157,7 +158,7 @@ let _lastSelectedIndex = 0;
 export function QuickSearchOverlay() {
   const open = useUIStore((s) => s.quickSearchOpen);
   const closeSearch = useUIStore((s) => s.closeQuickSearch);
-  const graph = useCoreStore((s) => s.graph);
+  const graph = useGraphStore((s) => s.graph);
   const selectNode = useCanvasStore((s) => s.selectNode);
   const requestCenterOnNode = useCanvasStore((s) => s.requestCenterOnNode);
 

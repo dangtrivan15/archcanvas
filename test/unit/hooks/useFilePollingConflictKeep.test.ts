@@ -9,6 +9,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useUIStore } from '@/store/uiStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -23,17 +26,20 @@ const USE_FILE_POLLING_PATH = path.resolve(
 );
 const CORE_STORE_PATH = path.resolve(
   __dirname,
-  '../../../src/store/coreStore.ts',
+  '../../../src/store/fileStore.ts',
 );
 
 describe('Feature #526: Keep your version dismisses notification', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let useUIStore: typeof import('@/store/uiStore').useUIStore;
 
   beforeEach(async () => {
     vi.resetModules();
-    const coreMod = await import('@/store/coreStore');
-    useCoreStore = coreMod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore');
+    const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore;
+    useGraphStoreRef = graphStoreMod.useGraphStore;
     const uiMod = await import('@/store/uiStore');
     useUIStore = uiMod.useUIStore;
   });
@@ -91,11 +97,11 @@ describe('Feature #526: Keep your version dismisses notification', () => {
     });
 
     it('acknowledgeExternalModification clears fileExternallyModified flag', () => {
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
 
     it('handleKeep does NOT call onReload (file is not re-read from disk)', () => {
@@ -150,17 +156,13 @@ describe('Feature #526: Keep your version dismisses notification', () => {
         edges: [],
         annotations: [],
       };
-      useCoreStore.setState({
-        graph: testGraph,
-        isDirty: true,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ graph: testGraph, isDirty: true }); useFileStore.setState({ fileExternallyModified: true });
 
       // Simulate "Keep your version" — calls acknowledgeExternalModification
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
 
       // Graph should be exactly the same
-      const currentGraph = useCoreStore.getState().graph;
+      const currentGraph = useGraphStore.getState().graph;
       expect(currentGraph.name).toBe('Modified Graph');
       expect(currentGraph.description).toBe('Has local changes');
       expect(currentGraph.nodes).toHaveLength(1);
@@ -189,16 +191,12 @@ describe('Feature #526: Keep your version dismisses notification', () => {
         edges: [],
         annotations: [],
       };
-      useCoreStore.setState({
-        graph: testGraph,
-        isDirty: true,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ graph: testGraph, isDirty: true }); useFileStore.setState({ fileExternallyModified: true });
 
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
 
-      expect(useCoreStore.getState().graph.nodes[0].position.x).toBe(42);
-      expect(useCoreStore.getState().graph.nodes[0].position.y).toBe(99);
+      expect(useGraphStore.getState().graph.nodes[0].position.x).toBe(42);
+      expect(useGraphStore.getState().graph.nodes[0].position.y).toBe(99);
     });
 
     it('edge data is preserved after acknowledging external modification', () => {
@@ -245,16 +243,12 @@ describe('Feature #526: Keep your version dismisses notification', () => {
         ],
         annotations: [],
       };
-      useCoreStore.setState({
-        graph: testGraph,
-        isDirty: true,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ graph: testGraph, isDirty: true }); useFileStore.setState({ fileExternallyModified: true });
 
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
 
-      expect(useCoreStore.getState().graph.edges).toHaveLength(1);
-      expect(useCoreStore.getState().graph.edges[0].label).toBe('API Call');
+      expect(useGraphStore.getState().graph.edges).toHaveLength(1);
+      expect(useGraphStore.getState().graph.edges[0].label).toBe('API Call');
     });
   });
 
@@ -262,15 +256,12 @@ describe('Feature #526: Keep your version dismisses notification', () => {
 
   describe('Step 4: isDirty remains true after "Keep your version"', () => {
     it('acknowledgeExternalModification does NOT set isDirty to false', () => {
-      useCoreStore.setState({
-        isDirty: true,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileExternallyModified: true });
 
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
 
       // isDirty must remain true — the user still has unsaved changes
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('acknowledgeExternalModification only clears fileExternallyModified', () => {
@@ -289,7 +280,7 @@ describe('Feature #526: Keep your version dismisses notification', () => {
     });
 
     it('closeConflictDialog does NOT touch isDirty state', () => {
-      useCoreStore.setState({ isDirty: true });
+      useGraphStore.setState({ isDirty: true });
       useUIStore.getState().openConflictDialog({
         fileName: 'test.archc',
         onReload: vi.fn(),
@@ -299,7 +290,7 @@ describe('Feature #526: Keep your version dismisses notification', () => {
       useUIStore.getState().closeConflictDialog();
 
       // Closing dialog must not modify coreStore isDirty
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
   });
 
@@ -317,18 +308,15 @@ describe('Feature #526: Keep your version dismisses notification', () => {
 
     it('fileExternallyModified is cleared after acknowledge, allowing re-detection', () => {
       // Simulate first conflict
-      useCoreStore.setState({
-        isDirty: true,
-        fileExternallyModified: true,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileExternallyModified: true });
 
       // User clicks "Keep your version"
-      useCoreStore.getState().acknowledgeExternalModification();
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      useFileStore.getState().acknowledgeExternalModification();
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
 
       // Simulate second external modification detected by polling
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
       // Can open a new conflict dialog
       useUIStore.getState().openConflictDialog({
@@ -352,7 +340,7 @@ describe('Feature #526: Keep your version dismisses notification', () => {
       expect(useUIStore.getState().conflictDialogOpen).toBe(true);
 
       // Dismiss first
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
       useUIStore.getState().closeConflictDialog();
       expect(useUIStore.getState().conflictDialogOpen).toBe(false);
 
@@ -406,14 +394,10 @@ describe('Feature #526: Keep your version dismisses notification', () => {
         edges: [],
         annotations: [],
       };
-      useCoreStore.setState({
-        graph: localGraph,
-        isDirty: true,
-        fileExternallyModified: false,
-      });
+      useGraphStore.setState({ graph: localGraph, isDirty: true }); useFileStore.setState({ fileExternallyModified: false });
 
       // 2. External modification detected by polling
-      useCoreStore.setState({ fileExternallyModified: true });
+      useFileStore.setState({ fileExternallyModified: true });
       useUIStore.getState().openConflictDialog({
         fileName: 'project.archc',
         onReload: vi.fn(),
@@ -422,18 +406,18 @@ describe('Feature #526: Keep your version dismisses notification', () => {
       expect(useUIStore.getState().conflictDialogOpen).toBe(true);
 
       // 3. User clicks "Keep your version"
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
       useUIStore.getState().closeConflictDialog();
 
       // 4. Verify state after "Keep your version"
       expect(useUIStore.getState().conflictDialogOpen).toBe(false);
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      expect(useCoreStore.getState().isDirty).toBe(true);
-      expect(useCoreStore.getState().graph.name).toBe('Local Changes');
-      expect(useCoreStore.getState().graph.nodes[0].displayName).toBe('My Work');
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().graph.name).toBe('Local Changes');
+      expect(useGraphStore.getState().graph.nodes[0].displayName).toBe('My Work');
 
       // 5. Another external modification — new conflict dialog can appear
-      useCoreStore.setState({ fileExternallyModified: true });
+      useFileStore.setState({ fileExternallyModified: true });
       useUIStore.getState().openConflictDialog({
         fileName: 'project.archc',
         onReload: vi.fn(),
@@ -442,10 +426,10 @@ describe('Feature #526: Keep your version dismisses notification', () => {
       expect(useUIStore.getState().conflictDialogOpen).toBe(true);
 
       // 6. Dismiss again
-      useCoreStore.getState().acknowledgeExternalModification();
+      useFileStore.getState().acknowledgeExternalModification();
       useUIStore.getState().closeConflictDialog();
       expect(useUIStore.getState().conflictDialogOpen).toBe(false);
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
   });
 });

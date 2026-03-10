@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import fs from 'fs';
 import path from 'path';
 
@@ -15,13 +18,14 @@ import path from 'path';
  */
 
 describe('Auto-reload on external modification (Feature #521)', () => {
-  let useCoreStore: typeof import('@/store/coreStore').useCoreStore;
+  let useFileStoreRef: typeof import('@/store/fileStore').useFileStore;
+let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
   let hookSource: string;
 
   beforeEach(async () => {
     vi.resetModules();
-    const mod = await import('@/store/coreStore');
-    useCoreStore = mod.useCoreStore;
+    const fileStoreMod = await import('@/store/fileStore'); const graphStoreMod = await import('@/store/graphStore');
+    useFileStoreRef = fileStoreMod.useFileStore; useGraphStoreRef = graphStoreMod.useGraphStore;
     hookSource = fs.readFileSync(
       path.resolve(__dirname, '../../../src/hooks/useFilePolling.ts'),
       'utf-8',
@@ -138,84 +142,74 @@ describe('Auto-reload on external modification (Feature #521)', () => {
     it('auto-reload clears fileExternallyModified via _applyDecodedFile', () => {
       // Simulate: file externally modified → auto-reload calls _applyDecodedFile
       // _applyDecodedFile should clear fileExternallyModified
-      useCoreStore.setState({ fileExternallyModified: true });
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
+      useFileStore.setState({ fileExternallyModified: true });
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
 
-      useCoreStore.getState().initialize();
-      const graph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(graph, 'test.archc', null);
+      useEngineStore.getState().initialize();
+      const graph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(graph, 'test.archc', null);
 
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
     });
 
     it('isDirty starts false on fresh file open', () => {
-      useCoreStore.getState().initialize();
-      const graph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(graph, 'test.archc', null);
+      useEngineStore.getState().initialize();
+      const graph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(graph, 'test.archc', null);
 
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
     });
 
     it('isDirty becomes true after graph mutation', () => {
-      useCoreStore.getState().initialize();
-      const graph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(graph, 'test.archc', null);
+      useEngineStore.getState().initialize();
+      const graph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(graph, 'test.archc', null);
 
       // Add a node to make it dirty
-      useCoreStore.getState().addNode({
+      useGraphStore.getState().addNode({
         type: 'service',
         displayName: 'Test Service',
       });
 
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('_applyDecodedFile resets isDirty to false (simulating reload)', () => {
-      useCoreStore.getState().initialize();
+      useEngineStore.getState().initialize();
 
       // Make dirty
-      useCoreStore.setState({ isDirty: true });
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      useGraphStore.setState({ isDirty: true });
+      expect(useGraphStore.getState().isDirty).toBe(true);
 
       // Reload via _applyDecodedFile
-      const graph = useCoreStore.getState().graph;
-      useCoreStore.getState()._applyDecodedFile(graph, 'reloaded.archc', null);
+      const graph = useGraphStore.getState().graph;
+      useFileStore.getState()._applyDecodedFile(graph, 'reloaded.archc', null);
 
-      expect(useCoreStore.getState().isDirty).toBe(false);
+      expect(useGraphStore.getState().isDirty).toBe(false);
     });
 
     it('when isDirty is true, fileExternallyModified is set (not auto-reload)', () => {
       // Simulate: isDirty is true, external modification detected
       // The polling should set fileExternallyModified instead of auto-reloading
-      useCoreStore.setState({
-        isDirty: true,
-        fileExternallyModified: false,
-      });
+      useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileExternallyModified: false });
 
       // Simulate what polling does in the isDirty=true path
-      useCoreStore.setState({
-        fileLastModifiedMs: 2000,
-        fileExternallyModified: true,
-      });
+      useFileStore.setState({ fileLastModifiedMs: 2000, fileExternallyModified: true });
 
-      expect(useCoreStore.getState().fileExternallyModified).toBe(true);
-      expect(useCoreStore.getState().isDirty).toBe(true);
+      expect(useFileStore.getState().fileExternallyModified).toBe(true);
+      expect(useGraphStore.getState().isDirty).toBe(true);
     });
 
     it('when isDirty is false, timestamp update does not set fileExternallyModified', () => {
       // Simulate: isDirty is false, auto-reload path
       // Only timestamp is updated (not the flag) before reload
-      useCoreStore.setState({
-        isDirty: false,
-        fileExternallyModified: false,
-        fileLastModifiedMs: 1000,
-      });
+      useGraphStore.setState({ isDirty: false }); useFileStore.setState({ fileExternallyModified: false, fileLastModifiedMs: 1000 });
 
       // Simulate what polling does: update timestamp only
-      useCoreStore.setState({ fileLastModifiedMs: 2000 });
+      useFileStore.setState({ fileLastModifiedMs: 2000 });
 
-      expect(useCoreStore.getState().fileExternallyModified).toBe(false);
+      expect(useFileStore.getState().fileExternallyModified).toBe(false);
     });
   });
 

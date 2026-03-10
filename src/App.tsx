@@ -1,7 +1,9 @@
 import { useEffect, useCallback } from 'react';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { ChevronRight, X } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore, LEFT_PANEL_COLLAPSE_THRESHOLD } from '@/store/uiStore';
 import { Toolbar } from '@/components/toolbar';
@@ -93,13 +95,13 @@ function ExternalAgentDialogConnected() {
 }
 
 export function App() {
-  const initialize = useCoreStore((s) => s.initialize);
-  const initialized = useCoreStore((s) => s.initialized);
-  const registry = useCoreStore((s) => s.registry);
-  const nodeCount = useCoreStore((s) => s.nodeCount);
-  const edgeCount = useCoreStore((s) => s.edgeCount);
-  const isDirty = useCoreStore((s) => s.isDirty);
-  const loadFromUrl = useCoreStore((s) => s.loadFromUrl);
+  const initialize = useEngineStore((s) => s.initialize);
+  const initialized = useEngineStore((s) => s.initialized);
+  const registry = useEngineStore((s) => s.registry);
+  const nodeCount = useGraphStore((s) => s.nodeCount);
+  const edgeCount = useGraphStore((s) => s.edgeCount);
+  const isDirty = useGraphStore((s) => s.isDirty);
+  const loadFromUrl = useFileStore((s) => s.loadFromUrl);
 
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);

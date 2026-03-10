@@ -36,7 +36,8 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useCoreStore } from '@/store/coreStore';
+import { useFileStore } from '@/store/fileStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
 import { decodeArchcData } from '@/core/storage/fileIO';
 
@@ -62,8 +63,8 @@ export interface FileChangedDetail {
 }
 
 export function useFilePolling() {
-  const fileHandle = useCoreStore((s) => s.fileHandle);
-  const fileLastModifiedMs = useCoreStore((s) => s.fileLastModifiedMs);
+  const fileHandle = useFileStore((s) => s.fileHandle);
+  const fileLastModifiedMs = useFileStore((s) => s.fileLastModifiedMs);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Tracks the first timestamp before the debounce burst started */
@@ -98,7 +99,7 @@ export function useFilePolling() {
       latestModified: number,
       previousModified: number,
     ) => {
-      const state = useCoreStore.getState();
+      const state = { ...useFileStore.getState(), ...useGraphStore.getState() };
 
       if (!state.isDirty) {
         // No unsaved local changes — auto-reload from disk
@@ -111,7 +112,7 @@ export function useFilePolling() {
             await decodeArchcData(data);
 
           // Re-apply the decoded file, keeping the same file handle
-          useCoreStore.getState()._applyDecodedFile(
+          useFileStore.getState()._applyDecodedFile(
             graph,
             handle.name,
             handle,
@@ -129,11 +130,11 @@ export function useFilePolling() {
         } catch (reloadErr) {
           console.error('[FilePolling] Auto-reload failed:', reloadErr);
           // Fall back to flagging as externally modified
-          useCoreStore.setState({ fileExternallyModified: true });
+          useFileStore.setState({ fileExternallyModified: true });
         }
       } else {
         // Has unsaved local changes — flag for manual resolution
-        useCoreStore.setState({
+        useFileStore.setState({
           fileExternallyModified: true,
         });
 
@@ -148,7 +149,7 @@ export function useFilePolling() {
               const data = new Uint8Array(await reloadFile.arrayBuffer());
               const { graph, canvasState, aiState, createdAtMs } =
                 await decodeArchcData(data);
-              useCoreStore.getState()._applyDecodedFile(
+              useFileStore.getState()._applyDecodedFile(
                 graph,
                 handle.name,
                 handle,
@@ -172,7 +173,7 @@ export function useFilePolling() {
           },
           onSaveAsCopy: async () => {
             // Save local changes to a new file, then reload from disk
-            const saved = await useCoreStore.getState().saveFileAs();
+            const saved = await useFileStore.getState().saveFileAs();
             if (saved) {
               // After saving the copy, reload the original file
               try {
@@ -180,7 +181,7 @@ export function useFilePolling() {
                 const data = new Uint8Array(await reloadFile.arrayBuffer());
                 const { graph, canvasState, aiState, createdAtMs } =
                   await decodeArchcData(data);
-                useCoreStore.getState()._applyDecodedFile(
+                useFileStore.getState()._applyDecodedFile(
                   graph,
                   handle.name,
                   handle,
@@ -223,14 +224,14 @@ export function useFilePolling() {
         // The save operation changes the file's lastModified, and the save flow
         // updates fileLastModifiedMs after writing. Without this guard, a poll
         // between write and timestamp update would incorrectly flag the change.
-        if (useCoreStore.getState().isSaving) {
+        if (useFileStore.getState().isSaving) {
           return;
         }
 
         const file = await handle.getFile();
         const currentModified = file.lastModified;
 
-        const state = useCoreStore.getState();
+        const state = { ...useFileStore.getState(), ...useGraphStore.getState() };
         if (currentModified !== state.fileLastModifiedMs) {
           // Record the original timestamp at the start of the burst
           if (burstStartTimestampRef.current === null) {
@@ -246,7 +247,7 @@ export function useFilePolling() {
           );
 
           // Update timestamp immediately to prevent re-triggering for the same change
-          useCoreStore.setState({ fileLastModifiedMs: currentModified });
+          useFileStore.setState({ fileLastModifiedMs: currentModified });
 
           // Reset the debounce timer — wait for changes to settle
           if (debounceRef.current) {
@@ -281,7 +282,7 @@ export function useFilePolling() {
         // Clear the file handle so the user can't save-in-place,
         // but they can still Save As to a new location.
         // Keep fileLastModifiedMs null so polling won't restart.
-        useCoreStore.setState({
+        useFileStore.setState({
           fileHandle: null,
           fileLastModifiedMs: null,
         });

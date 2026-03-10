@@ -2,8 +2,18 @@
  * Zustand stores barrel export.
  */
 
-export { useCoreStore } from './coreStore';
-export type { CoreStoreState } from './coreStore';
+// ─── Domain Stores (new) ─────────────────────────────────────
+export { useEngineStore } from './engineStore';
+export type { EngineStoreState } from './engineStore';
+
+export { useGraphStore } from './graphStore';
+export type { GraphStoreState } from './graphStore';
+
+export { useFileStore } from './fileStore';
+export type { FileStoreState } from './fileStore';
+
+export { useHistoryStore } from './historyStore';
+export type { HistoryStoreState } from './historyStore';
 
 export { useUIStore, computeDefaultLeftPanelWidth, computeDefaultRightPanelWidth } from './uiStore';
 export type { UIStoreState, DeleteDialogInfo, ConnectionDialogInfo, PlacementModeInfo, ConnectModeState, UnsavedChangesDialogInfo, ErrorDialogInfo, IntegrityWarningDialogInfo } from './uiStore';

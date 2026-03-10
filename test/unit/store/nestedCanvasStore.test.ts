@@ -14,7 +14,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import type { ArchGraph } from '@/types/graph';
 
 /** Helper to create a simple test graph. */
@@ -47,11 +50,7 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
     useNestedCanvasStore.setState({ fileStack: [], activeFilePath: null });
     useNavigationStore.setState({ path: [] });
     useCanvasStore.setState({ viewport: { x: 0, y: 0, zoom: 1 } });
-    useCoreStore.setState({
-      graph: makeGraph('root'),
-      nodeCount: 1,
-      edgeCount: 0,
-    });
+    useGraphStore.setState({ graph: makeGraph('root'), nodeCount: 1, edgeCount: 0 });
   });
 
   describe('initial state', () => {
@@ -79,7 +78,7 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
       expect(useNestedCanvasStore.getState().activeFilePath).toBe('child-a.archc');
 
       // coreStore should have the new graph
-      expect(useCoreStore.getState().graph.name).toBe('child-a');
+      expect(useGraphStore.getState().graph.name).toBe('child-a');
     });
 
     it('saves the current navigation path in the stack entry', () => {
@@ -127,11 +126,11 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
 
       expect(useNestedCanvasStore.getState().getDepth()).toBe(5);
       expect(useNestedCanvasStore.getState().activeFilePath).toBe('level5.archc');
-      expect(useCoreStore.getState().graph.name).toBe('level5');
+      expect(useGraphStore.getState().graph.name).toBe('level5');
     });
 
     it('preserves the graph snapshot in stack entry', () => {
-      const rootGraph = useCoreStore.getState().graph;
+      const rootGraph = useGraphStore.getState().graph;
       useNestedCanvasStore.getState().pushFile('child.archc', makeGraph('child'));
 
       const savedEntry = useNestedCanvasStore.getState().fileStack[0]!;
@@ -142,14 +141,14 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
 
   describe('popFile', () => {
     it('restores previous graph from stack', () => {
-      const rootGraph = useCoreStore.getState().graph;
+      const rootGraph = useGraphStore.getState().graph;
       useNestedCanvasStore.getState().pushFile('child.archc', makeGraph('child'));
 
       // Pop should restore the root graph
       const restored = useNestedCanvasStore.getState().popFile();
 
       expect(restored).not.toBeNull();
-      expect(useCoreStore.getState().graph.name).toBe(rootGraph.name);
+      expect(useGraphStore.getState().graph.name).toBe(rootGraph.name);
       expect(useNestedCanvasStore.getState().fileStack).toHaveLength(0);
     });
 
@@ -267,7 +266,7 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
 
   describe('popToRoot', () => {
     it('restores root file state from any depth', () => {
-      const rootGraph = useCoreStore.getState().graph;
+      const rootGraph = useGraphStore.getState().graph;
       useCanvasStore.getState().setViewport({ x: 42, y: 84, zoom: 0.5 });
       useNavigationStore.getState().zoomIn('root-child');
 
@@ -282,7 +281,7 @@ describe('Feature #450: Cross-File Navigation Stack', () => {
       expect(restored).not.toBeNull();
       expect(useNestedCanvasStore.getState().getDepth()).toBe(0);
       expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
-      expect(useCoreStore.getState().graph.name).toBe(rootGraph.name);
+      expect(useGraphStore.getState().graph.name).toBe(rootGraph.name);
       expect(useNavigationStore.getState().path).toEqual(['root-child']);
       expect(useCanvasStore.getState().viewport).toEqual({ x: 42, y: 84, zoom: 0.5 });
     });

@@ -5,7 +5,9 @@
 
 import { useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
@@ -22,9 +24,9 @@ import { formatBindingDisplay } from '@/core/input';
 import type { CanvasNode } from '@/types/canvas';
 
 export function useCanvasKeyboard(rfNodes: CanvasNode[]) {
-  const graph = useCoreStore((s) => s.graph);
-  const moveNodes = useCoreStore((s) => s.moveNodes);
-  const removeEdge = useCoreStore((s) => s.removeEdge);
+  const graph = useGraphStore((s) => s.graph);
+  const moveNodes = useGraphStore((s) => s.moveNodes);
+  const removeEdge = useGraphStore((s) => s.removeEdge);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const selectedEdgeId = useCanvasStore((s) => s.selectedEdgeId);
   const clearSelection = useCanvasStore((s) => s.clearSelection);
@@ -108,19 +110,17 @@ export function useCanvasKeyboard(rfNodes: CanvasNode[]) {
           showToast(`Deleted ${edgeLabel}. ${formatBindingDisplay('mod+z')} to undo`);
         } else {
           // Multi-edge deletion
-          const { textApi, undoManager } = useCoreStore.getState();
+          const { textApi, undoManager } = useEngineStore.getState();
           if (textApi && undoManager) {
             for (const edgeId of edgeIds) {
               textApi.removeEdge(edgeId);
             }
             const updatedGraph = textApi.getGraph();
-            undoManager.snapshot(`Delete ${edgeIds.length} edges`, updatedGraph);
-            useCoreStore.setState({
+            useHistoryStore.getState().pushSnapshot(`Delete ${edgeIds.length} edges`, updatedGraph);
+            useGraphStore.setState({
               graph: updatedGraph,
               isDirty: true,
               edgeCount: updatedGraph.edges.length,
-              canUndo: undoManager.canUndo,
-              canRedo: undoManager.canRedo,
             });
           }
           clearSelection();
@@ -339,7 +339,7 @@ export function useCanvasKeyboard(rfNodes: CanvasNode[]) {
       const dx = offset.dx * step;
       const dy = offset.dy * step;
 
-      const currentGraph = useCoreStore.getState().graph;
+      const currentGraph = useGraphStore.getState().graph;
       const moves: Array<{ nodeId: string; x: number; y: number }> = [];
 
       for (const nodeId of selectedIds) {

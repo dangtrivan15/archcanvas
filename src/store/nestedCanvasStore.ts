@@ -21,7 +21,7 @@ import { create } from 'zustand';
 import type { ArchGraph, ArchEdge, CanvasViewport } from '@/types/graph';
 import { useNavigationStore } from './navigationStore';
 import { useCanvasStore } from './canvasStore';
-import { useCoreStore } from './coreStore';
+import { useGraphStore } from './graphStore';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -168,7 +168,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
   parentEdgeIndicators: [],
 
   pushFile: (filePath, graph, containerNodeId, containerColor) => {
-    const { graph: currentGraph } = useCoreStore.getState();
+    const { graph: currentGraph } = useGraphStore.getState();
     const { path: currentNavPath } = useNavigationStore.getState();
     const { viewport: currentViewport } = useCanvasStore.getState();
 
@@ -193,7 +193,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     }));
 
     // Switch coreStore to the new file's graph
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
 
     // Reset navigation to root of the new file
     useNavigationStore.getState().zoomToRoot();
@@ -220,7 +220,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     });
 
     // Restore the graph
-    useCoreStore.getState()._setGraph(restored.graph);
+    useGraphStore.getState()._setGraph(restored.graph);
 
     // Restore navigation path within that file
     useNavigationStore.getState().zoomToLevel(restored.navigationPath);
@@ -249,7 +249,7 @@ export const useNestedCanvasStore = create<NestedCanvasStoreState>((set, get) =>
     });
 
     // Restore root graph
-    useCoreStore.getState()._setGraph(rootEntry.graph);
+    useGraphStore.getState()._setGraph(rootEntry.graph);
 
     // Restore root navigation path
     useNavigationStore.getState().zoomToLevel(rootEntry.navigationPath);

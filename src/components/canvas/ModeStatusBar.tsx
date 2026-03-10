@@ -5,7 +5,7 @@
  */
 
 import { useMemo } from 'react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { findNode } from '@/core/graph/graphEngine';
@@ -31,7 +31,7 @@ export function ModeStatusBar() {
   const navigationPath = useNavigationStore((s) => s.path);
   const zoomToLevel = useNavigationStore((s) => s.zoomToLevel);
   const zoomToRoot = useNavigationStore((s) => s.zoomToRoot);
-  const graph = useCoreStore((s) => s.graph);
+  const graph = useGraphStore((s) => s.graph);
 
   // Cross-file navigation stack
   const fileStack = useNestedCanvasStore((s) => s.fileStack);

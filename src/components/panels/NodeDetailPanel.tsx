@@ -27,7 +27,8 @@ import {
   RotateCcw,
   Terminal,
 } from 'lucide-react';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
+import { useEngineStore } from '@/store/engineStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { findNode } from '@/core/graph/graphEngine';
@@ -60,9 +61,9 @@ function renderMarkdown(content: string): string {
 type Tab = 'properties' | 'notes' | 'coderefs' | 'terminal';
 
 export function NodeDetailPanel() {
-  const graph = useCoreStore((s) => s.graph);
-  const addNote = useCoreStore((s) => s.addNote);
-  const registry = useCoreStore((s) => s.registry);
+  const graph = useGraphStore((s) => s.graph);
+  const addNote = useGraphStore((s) => s.addNote);
+  const registry = useEngineStore((s) => s.registry);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const closeRightPanel = useUIStore((s) => s.closeRightPanel);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
@@ -227,7 +228,7 @@ function PropertiesTab({
   node: NonNullable<ReturnType<typeof findNode>>;
   nodeDef?: NodeDef;
 }) {
-  const updateNode = useCoreStore((s) => s.updateNode);
+  const updateNode = useGraphStore((s) => s.updateNode);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const pendingRenameNodeId = useUIStore((s) => s.pendingRenameNodeId);
   const clearPendingRename = useUIStore((s) => s.clearPendingRename);
@@ -696,7 +697,7 @@ function PropertiesTab({
  * Includes a "Reset to default" button to clear custom color.
  */
 function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
-  const updateNodeColor = useCoreStore((s) => s.updateNodeColor);
+  const updateNodeColor = useGraphStore((s) => s.updateNodeColor);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -797,7 +798,7 @@ function NodeColorPicker({ node }: { node: NonNullable<ReturnType<typeof findNod
 }
 
 function CustomPropertiesSection({ node }: { node: NonNullable<ReturnType<typeof findNode>> }) {
-  const updateNode = useCoreStore((s) => s.updateNode);
+  const updateNode = useGraphStore((s) => s.updateNode);
   const selectedNodeId = useCanvasStore((s) => s.selectedNodeId);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -1057,8 +1058,8 @@ function NotesTab({
   onNoteAuthorChange: (v: string) => void;
   onAddNote: (tags?: string[]) => void;
 }) {
-  const removeNote = useCoreStore((s) => s.removeNote);
-  const updateNote = useCoreStore((s) => s.updateNote);
+  const removeNote = useGraphStore((s) => s.removeNote);
+  const updateNote = useGraphStore((s) => s.updateNote);
   const [isEditing, setIsEditing] = useState(false);
   const [contentError, setContentError] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -1412,7 +1413,7 @@ function CodeRefsTab({
   node: NonNullable<ReturnType<typeof findNode>>;
   nodeId: string;
 }) {
-  const addCodeRef = useCoreStore((s) => s.addCodeRef);
+  const addCodeRef = useGraphStore((s) => s.addCodeRef);
   const [isAdding, setIsAdding] = useState(false);
   const [path, setPath] = useState('');
   const [role, setRole] = useState<
