@@ -15,7 +15,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useCoreStore } from '@/store/coreStore';
+import { useGraphStore } from '@/store/graphStore';
 import type { ArchGraph } from '@/types/graph';
 import type {
   BreadcrumbEntry,
@@ -128,7 +128,7 @@ describe('P05-T1: Unified NavigationStore', () => {
       nodeDepth: 0,
     });
     useCanvasStore.setState({ viewport: { x: 0, y: 0, zoom: 1 } });
-    useCoreStore.setState({
+    useGraphStore.setState({
       graph: makeGraph('root'),
       nodeCount: 1,
       edgeCount: 0,
@@ -319,13 +319,13 @@ describe('P05-T1: Unified NavigationStore', () => {
       expect(useNavigationStore.getState().fileStack).toHaveLength(1);
       expect(useNavigationStore.getState().activeFilePath).toBe('child.archc');
       expect(useNavigationStore.getState().path).toEqual([]);
-      expect(useCoreStore.getState().graph.name).toBe('child');
+      expect(useGraphStore.getState().graph.name).toBe('child');
     });
 
     it('captures parent edge indicators when containerNodeId is provided', () => {
       // Set up a graph with edges
       const graphWithEdges = makeGraphWithEdges('root');
-      useCoreStore.setState({ graph: graphWithEdges });
+      useGraphStore.setState({ graph: graphWithEdges });
 
       const childGraph = makeGraph('child');
       useNavigationStore.getState().diveIntoFile(
@@ -481,16 +481,16 @@ describe('P05-T1: Unified NavigationStore', () => {
 
       expect(useNavigationStore.getState().fileStack).toHaveLength(1);
       expect(useNavigationStore.getState().activeFilePath).toBe('child.archc');
-      expect(useCoreStore.getState().graph.name).toBe('child');
+      expect(useGraphStore.getState().graph.name).toBe('child');
     });
 
     it('popFile restores parent state', () => {
-      const rootGraph = useCoreStore.getState().graph;
+      const rootGraph = useGraphStore.getState().graph;
       useNavigationStore.getState().pushFile('child.archc', makeGraph('child'));
 
       const restored = useNavigationStore.getState().popFile();
       expect(restored).not.toBeNull();
-      expect(useCoreStore.getState().graph.name).toBe(rootGraph.name);
+      expect(useGraphStore.getState().graph.name).toBe(rootGraph.name);
     });
 
     it('popFile returns null when empty', () => {
@@ -498,7 +498,7 @@ describe('P05-T1: Unified NavigationStore', () => {
     });
 
     it('popToRoot restores root state from any depth', () => {
-      const rootGraph = useCoreStore.getState().graph;
+      const rootGraph = useGraphStore.getState().graph;
       useCanvasStore.getState().setViewport({ x: 42, y: 84, zoom: 0.5 });
       useNavigationStore.getState().zoomIn('root-child');
 
@@ -508,7 +508,7 @@ describe('P05-T1: Unified NavigationStore', () => {
       const restored = useNavigationStore.getState().popToRoot();
       expect(restored).not.toBeNull();
       expect(useNavigationStore.getState().fileStack).toEqual([]);
-      expect(useCoreStore.getState().graph.name).toBe(rootGraph.name);
+      expect(useGraphStore.getState().graph.name).toBe(rootGraph.name);
       expect(useNavigationStore.getState().path).toEqual(['root-child']);
       expect(useCanvasStore.getState().viewport).toEqual({ x: 42, y: 84, zoom: 0.5 });
     });
@@ -621,7 +621,7 @@ describe('P05-T1: Unified NavigationStore', () => {
   describe('parent edge indicators', () => {
     it('captures incoming and outgoing edges on diveIntoFile', () => {
       const graphWithEdges = makeGraphWithEdges('root');
-      useCoreStore.setState({ graph: graphWithEdges });
+      useGraphStore.setState({ graph: graphWithEdges });
 
       useNavigationStore.getState().diveIntoFile(
         'child.archc',
@@ -643,7 +643,7 @@ describe('P05-T1: Unified NavigationStore', () => {
 
     it('clears indicators on popFile', () => {
       const graphWithEdges = makeGraphWithEdges('root');
-      useCoreStore.setState({ graph: graphWithEdges });
+      useGraphStore.setState({ graph: graphWithEdges });
 
       useNavigationStore.getState().diveIntoFile(
         'child.archc',

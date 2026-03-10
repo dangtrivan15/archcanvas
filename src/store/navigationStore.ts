@@ -48,7 +48,7 @@
 import { create } from 'zustand';
 import type { ArchGraph, ArchEdge, CanvasViewport } from '@/types/graph';
 import { useCanvasStore } from './canvasStore';
-import { useCoreStore } from './coreStore';
+import { useGraphStore } from './graphStore';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -354,7 +354,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
   diveIntoFile: (filePath, graph, containerNodeId, containerColor) => {
     const { path, fileStack, activeFilePath } = get();
-    const currentGraph = useCoreStore.getState().graph;
+    const currentGraph = useGraphStore.getState().graph;
     const { viewport: currentViewport } = useCanvasStore.getState();
 
     // Capture parent edges connecting to the container node
@@ -383,7 +383,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     });
 
     // Switch coreStore to the new file's graph
-    useCoreStore.getState()._setGraph(graph);
+    useGraphStore.getState()._setGraph(graph);
 
     // Fit the view to the new content
     useCanvasStore.getState().requestFitView();
@@ -483,7 +483,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     });
 
     // Restore the graph
-    useCoreStore.getState()._setGraph(restored.graph);
+    useGraphStore.getState()._setGraph(restored.graph);
 
     // Restore viewport
     useCanvasStore.getState().setViewport(restored.viewport);
@@ -516,7 +516,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     });
 
     // Restore root graph
-    useCoreStore.getState()._setGraph(rootEntry.graph);
+    useGraphStore.getState()._setGraph(rootEntry.graph);
 
     // Restore root viewport
     useCanvasStore.getState().setViewport(rootEntry.viewport);

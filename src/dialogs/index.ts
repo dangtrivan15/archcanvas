@@ -27,5 +27,5 @@ import './TemplateGallery';
 
 // Re-export the host component and registry utilities
 export { DialogHost } from './DialogHost';
-export { registerDialog, getDialog, getRegisteredDialogIds, clearRegistry } from './registry';
+export { registerDialog, getDialog, getRegisteredDialogIds, getRegisteredDialogs, clearRegistry } from './registry';
 export type { DialogId, DialogPropsMap, DialogConfig } from './types';

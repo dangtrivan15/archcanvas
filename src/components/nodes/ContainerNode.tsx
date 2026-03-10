@@ -215,13 +215,9 @@ function ContainerNodeComponent({ data, selected }: NodeProps<CanvasNode>) {
 
   // Click handler for dive-in (the entire preview surface triggers navigation)
   const handleDiveIn = useCallback(() => {
-    // Dispatch a custom event that Canvas.tsx can listen for
-    // This is the same pattern used by other node interactions
-    const event = new CustomEvent('archcanvas:container-dive-in', {
-      detail: { nodeId: nodeData.archNodeId, refSource: nodeData.refSource },
-      bubbles: true,
-    });
-    document.dispatchEvent(event);
+    if (nodeData.refSource) {
+      useCanvasStore.getState().requestDiveIn(nodeData.archNodeId, nodeData.refSource);
+    }
   }, [nodeData.archNodeId, nodeData.refSource]);
 
   // Style computations
