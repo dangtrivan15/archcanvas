@@ -40,6 +40,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
 import { decodeArchcData } from '@/core/storage/fileIO';
+import type { StorageHandle } from '@/core/storage/types';
 
 /** Polling interval in milliseconds */
 export const FILE_POLL_INTERVAL_MS = 1000;
@@ -72,7 +73,9 @@ export function useFilePolling() {
 
   useEffect(() => {
     // Only poll when we have both a file handle with getFile() and a baseline timestamp
-    const handle = fileHandle as FileSystemFileHandle | null;
+    // fileHandle is now a StorageHandle; extract the _internal FileSystemFileHandle
+    const storageHandle = fileHandle as StorageHandle | null;
+    const handle = storageHandle?._internal as FileSystemFileHandle | null;
     if (
       !handle ||
       typeof handle.getFile !== 'function' ||
@@ -111,11 +114,11 @@ export function useFilePolling() {
           const { graph, canvasState, aiState, createdAtMs } =
             await decodeArchcData(data);
 
-          // Re-apply the decoded file, keeping the same file handle
+          // Re-apply the decoded file, keeping the same storage handle
           useFileStore.getState()._applyDecodedFile(
             graph,
             handle.name,
-            handle,
+            storageHandle,
             canvasState,
             aiState,
             createdAtMs,
@@ -152,7 +155,7 @@ export function useFilePolling() {
               useFileStore.getState()._applyDecodedFile(
                 graph,
                 handle.name,
-                handle,
+                storageHandle,
                 canvasState,
                 aiState,
                 createdAtMs,
@@ -184,7 +187,7 @@ export function useFilePolling() {
                 useFileStore.getState()._applyDecodedFile(
                   graph,
                   handle.name,
-                  handle,
+                  storageHandle,
                   canvasState,
                   aiState,
                   createdAtMs,

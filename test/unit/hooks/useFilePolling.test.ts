@@ -78,15 +78,20 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       useEngineStore.getState().initialize();
 
       const mockFile = { lastModified: 1709942400000, name: 'test.archc', size: 100 };
-      const mockHandle = {
+      const mockFsHandle = {
         getFile: vi.fn().mockResolvedValue(mockFile),
         name: 'test.archc',
         kind: 'file' as const,
       };
+      const mockStorageHandle = {
+        backend: 'file-system-access',
+        name: 'test.archc',
+        _internal: mockFsHandle,
+      };
 
       const emptyGraph = { name: 'test', description: '', owners: [], nodes: [], edges: [], annotations: [] };
 
-      useFileStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', mockHandle);
+      useFileStore.getState()._applyDecodedFile(emptyGraph, 'test.archc', mockStorageHandle);
 
       // Initially null (async hasn't resolved)
       expect(useFileStore.getState().fileLastModifiedMs).toBeNull();
@@ -96,7 +101,7 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
         expect(useFileStore.getState().fileLastModifiedMs).toBe(1709942400000);
       });
 
-      expect(mockHandle.getFile).toHaveBeenCalledOnce();
+      expect(mockFsHandle.getFile).toHaveBeenCalledOnce();
     });
   });
 
@@ -156,9 +161,9 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
     it('saveFile path in coreStore reads lastModified after save', async () => {
       const fs = await import('fs');
       const source = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
-      // After saveArchcFile, should refresh lastModified via platform adapter
+      // After save, should refresh lastModified via platform adapter
       expect(source).toContain('Refresh lastModified timestamp after save');
-      expect(source).toContain('getFileLastModified(fileHandle)');
+      expect(source).toContain('getFileLastModified(');
     });
 
     it('saveFileAs path captures lastModified from new handle', async () => {
@@ -260,14 +265,18 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       const fileStore = fileMod.useFileStore;
       const engineStore = engineMod.useEngineStore;
 
-      // Simulate having an open file
-      const mockHandle = {
-        getFile: vi.fn().mockResolvedValue({ lastModified: 1000, name: 'a.archc', size: 10 }),
+      // Simulate having an open file with a StorageHandle
+      const mockStorageHandle = {
+        backend: 'file-system-access',
         name: 'a.archc',
-        kind: 'file' as const,
+        _internal: {
+          getFile: vi.fn().mockResolvedValue({ lastModified: 1000, name: 'a.archc', size: 10 }),
+          name: 'a.archc',
+          kind: 'file' as const,
+        },
       };
       fileStore.setState({
-        fileHandle: mockHandle as unknown as FileSystemFileHandle,
+        fileHandle: mockStorageHandle,
         fileLastModifiedMs: 1000,
       });
 
@@ -289,7 +298,7 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       const storeSource = fs.readFileSync('src/store/fileStore.ts', 'utf-8');
 
       // _applyDecodedFile captures lastModified via platform adapter utility
-      expect(storeSource).toContain('getFileLastModified(fileHandle)');
+      expect(storeSource).toContain('getFileLastModified(');
 
       // The hook uses both fileHandle and fileLastModifiedMs as dependencies
       const hookSource = fs.readFileSync('src/hooks/useFilePolling.ts', 'utf-8');
@@ -304,7 +313,7 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       expect(source).toContain('newLastModifiedMs');
       expect(source).toContain('fileLastModifiedMs: newLastModifiedMs');
       // And sets the new file handle
-      expect(source).toContain('fileHandle: result.fileHandle');
+      expect(source).toContain('fileHandle: result.handle');
     });
 
     it('useEffect cleanup clears interval when dependencies change', async () => {

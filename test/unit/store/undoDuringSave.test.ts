@@ -9,6 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
+import type { StorageHandle } from '@/core/storage/types';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
@@ -59,11 +60,25 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
-import { saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 import type { ArchGraph } from '@/types/graph';
 
-const mockSaveArchcFile = vi.mocked(saveArchcFile);
-const mockSaveArchcFileAs = vi.mocked(saveArchcFileAs);
+// Create mock StorageManager functions
+const mockSaveArchitecture = vi.fn();
+const mockSaveArchitectureAs = vi.fn();
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
 
 // Helper: create a graph with N nodes
 function createGraphWithNodes(count: number, baseName = 'Node'): ArchGraph {
@@ -91,8 +106,6 @@ function createGraphWithNodes(count: number, baseName = 'Node'): ArchGraph {
 }
 
 describe('Feature #228: Undo during save does not corrupt state', () => {
-  const fakeFileHandle = { name: 'test.archc' } as any as FileSystemFileHandle;
-
   beforeEach(() => {
     // Reset UI store
     useUIStore.setState({
@@ -103,12 +116,14 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
     });
 
     // Reset mocks
-    mockSaveArchcFile.mockReset();
-    mockSaveArchcFileAs.mockReset();
+    mockSaveArchitecture.mockReset();
+    mockSaveArchitectureAs.mockReset();
 
     // Reset core store
     useGraphStore.setState({ isDirty: false, graph: createGraphWithNodes(0), nodeCount: 0, edgeCount: 0 }); useFileStore.setState({ isSaving: false, fileHandle: null, fileName: 'Untitled Architecture', fileCreatedAtMs: null }); useEngineStore.setState({ initialized: false }); useHistoryStore.setState({ canUndo: false, canRedo: false });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
   });
 
   afterEach(() => {
@@ -118,16 +133,16 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
   describe('save captures graph at start, undo changes in-memory state', () => {
     it('save operation uses the graph captured at save start', async () => {
       const graph3Nodes = createGraphWithNodes(3);
-      useGraphStore.setState({ graph: graph3Nodes, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle });
+      useGraphStore.setState({ graph: graph3Nodes, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle });
 
       // Save resolves immediately
-      mockSaveArchcFile.mockResolvedValue(true);
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
 
       await useFileStore.getState().saveFile();
 
-      // saveArchcFile should have been called with the 3-node graph
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(1);
-      const savedGraph = mockSaveArchcFile.mock.calls[0][0];
+      // storageManager.saveArchitecture should have been called with the 3-node graph
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(1);
+      const savedGraph = mockSaveArchitecture.mock.calls[0][0];
       expect(savedGraph.nodes).toHaveLength(3);
     });
 
@@ -138,7 +153,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       const graph2 = createGraphWithNodes(2);
       const graph3 = createGraphWithNodes(3);
 
-      // Set up undo history: graph1 → graph2 → graph3 (current)
+      // Set up undo history: graph1 -> graph2 -> graph3 (current)
       store.undoManager!.snapshot('Initial', graph1);
       store.undoManager!.snapshot('Add node 2', graph2);
       store.undoManager!.snapshot('Add node 3', graph3);
@@ -146,14 +161,14 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       // TextApi needs the current graph
       store.textApi!.setGraph(graph3);
 
-      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true, canRedo: false });
+      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true, canRedo: false });
 
       // Make save hang until we resolve it
-      let resolveSave!: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolveSave = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
+      mockSaveArchitecture.mockReturnValue(savePromise);
 
       // Start save (captures graph3)
       const saveResult = useFileStore.getState().saveFile();
@@ -168,12 +183,12 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       expect(useGraphStore.getState().graph.nodes).toHaveLength(2);
       expect(useGraphStore.getState().nodeCount).toBe(2);
 
-      // But saveArchcFile was called with graph3 (3 nodes) - the original
-      const savedGraph = mockSaveArchcFile.mock.calls[0][0];
+      // But saveArchitecture was called with graph3 (3 nodes) - the original
+      const savedGraph = mockSaveArchitecture.mock.calls[0][0];
       expect(savedGraph.nodes).toHaveLength(3);
 
       // Complete the save
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // After save completes, in-memory graph should still be graph2 (undo result)
@@ -189,12 +204,12 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('Add node 2', graph2);
       store.textApi!.setGraph(graph2);
 
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
       // Slow save
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
@@ -202,12 +217,12 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       // Start save (captures graph2)
       const saveResult = useFileStore.getState().saveFile();
 
-      // Undo during save → in-memory changes to graph1
+      // Undo during save -> in-memory changes to graph1
       useHistoryStore.getState().undo();
       expect(useGraphStore.getState().isDirty).toBe(true);
 
       // Complete save
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // isDirty must remain true because in-memory (graph1) differs from saved file (graph2)
@@ -216,12 +231,12 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
 
     it('isDirty is false when no mutation happens during save', async () => {
       const graph2 = createGraphWithNodes(2);
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle });
 
-      mockSaveArchcFile.mockResolvedValue(true);
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
       await useFileStore.getState().saveFile();
 
-      // No undo during save → isDirty should be false
+      // No undo during save -> isDirty should be false
       expect(useGraphStore.getState().isDirty).toBe(false);
     });
   });
@@ -236,11 +251,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('3 nodes', graph3);
       store.textApi!.setGraph(graph3);
 
-      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
@@ -252,7 +267,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       expect(useGraphStore.getState().nodeCount).toBe(2);
       expect(useGraphStore.getState().graph.nodes).toHaveLength(2);
 
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // Still consistent after save completes
@@ -284,11 +299,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('With edge', graphWithEdge);
       store.textApi!.setGraph(graphWithEdge);
 
-      useGraphStore.setState({ graph: graphWithEdge, isDirty: true, nodeCount: 2, edgeCount: 1 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graphWithEdge, isDirty: true, nodeCount: 2, edgeCount: 1 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
@@ -300,7 +315,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       expect(useGraphStore.getState().edgeCount).toBe(0);
       expect(useGraphStore.getState().graph.edges).toHaveLength(0);
 
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // Still consistent
@@ -318,11 +333,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('3 nodes', graph3);
       store.textApi!.setGraph(graph3);
 
-      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true, canRedo: false });
+      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true, canRedo: false });
 
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
@@ -334,7 +349,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       expect(useHistoryStore.getState().canUndo).toBe(true);
       expect(useHistoryStore.getState().canRedo).toBe(true);
 
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // Undo/redo flags unchanged by save completion
@@ -353,28 +368,28 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('2 nodes', graph2);
       store.textApi!.setGraph(graph2);
 
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      // Undo first (before save) → graph1
+      // Undo first (before save) -> graph1
       useHistoryStore.getState().undo();
       expect(useGraphStore.getState().graph.nodes).toHaveLength(1);
 
       // Now start save with graph1
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
 
       const saveResult = useFileStore.getState().saveFile();
 
-      // Redo during save → graph2
+      // Redo during save -> graph2
       useHistoryStore.getState().redo();
       expect(useGraphStore.getState().graph.nodes).toHaveLength(2);
 
       // Complete save (saved graph1)
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // isDirty should be true because in-memory (graph2) != saved (graph1)
@@ -396,28 +411,28 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('4 nodes', graph4);
       store.textApi!.setGraph(graph4);
 
-      useGraphStore.setState({ graph: graph4, isDirty: true, nodeCount: 4 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph4, isDirty: true, nodeCount: 4 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((r) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((r) => {
           resolveSave = r;
         }),
       );
 
       const saveResult = useFileStore.getState().saveFile();
 
-      // Two undos during save: 4→3→2
+      // Two undos during save: 4->3->2
       useHistoryStore.getState().undo();
       expect(useGraphStore.getState().graph.nodes).toHaveLength(3);
       useHistoryStore.getState().undo();
       expect(useGraphStore.getState().graph.nodes).toHaveLength(2);
 
       // Save was called with original 4-node graph
-      expect(mockSaveArchcFile.mock.calls[0][0].nodes).toHaveLength(4);
+      expect(mockSaveArchitecture.mock.calls[0][0].nodes).toHaveLength(4);
 
       // Complete save
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // In-memory is graph2 (2 nodes), isDirty remains true
@@ -439,7 +454,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useHistoryStore.setState({ canUndo: true });
 
       let resolveSave!: (value: any) => void;
-      mockSaveArchcFileAs.mockReturnValue(
+      mockSaveArchitectureAs.mockReturnValue(
         new Promise((r) => {
           resolveSave = r;
         }),
@@ -452,7 +467,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       expect(useGraphStore.getState().graph.nodes).toHaveLength(1);
 
       // Complete save with file picker result
-      resolveSave({ fileHandle: fakeFileHandle, fileName: 'saved.archc' });
+      resolveSave({ handle: fakeStorageHandle });
       await saveResult;
 
       // isDirty true because in-memory (graph1) != saved (graph2)
@@ -471,7 +486,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useHistoryStore.setState({ canUndo: true });
 
       let resolveSave!: (value: any) => void;
-      mockSaveArchcFileAs.mockReturnValue(
+      mockSaveArchitectureAs.mockReturnValue(
         new Promise((r) => {
           resolveSave = r;
         }),
@@ -479,16 +494,16 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
 
       const saveResult = useFileStore.getState().saveFileAs();
 
-      // saveArchcFileAs was called with graph2 (2 nodes)
-      expect(mockSaveArchcFileAs.mock.calls[0][0].nodes).toHaveLength(2);
+      // saveArchitectureAs was called with graph2 (2 nodes)
+      expect(mockSaveArchitectureAs.mock.calls[0][0].nodes).toHaveLength(2);
 
-      // Undo during save → graph1
+      // Undo during save -> graph1
       useHistoryStore.getState().undo();
 
       // The save still uses the original graph2
       // (graph was captured before undo)
 
-      resolveSave({ fileHandle: fakeFileHandle, fileName: 'saved.archc' });
+      resolveSave({ handle: fakeStorageHandle });
       await saveResult;
 
       // In-memory state is graph1 (undone)
@@ -508,9 +523,9 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('3 nodes', graph3);
       store.textApi!.setGraph(graph3);
 
-      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph3, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      mockSaveArchcFile.mockResolvedValue(true);
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
       await useFileStore.getState().saveFile();
 
       // Undo history should be intact after save
@@ -528,9 +543,9 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('2 nodes', graph2);
       store.textApi!.setGraph(graph2);
 
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
-      mockSaveArchcFile.mockResolvedValue(true);
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
       await useFileStore.getState().saveFile();
 
       // isDirty is false after clean save
@@ -555,11 +570,11 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('2 nodes', graph2);
       store.textApi!.setGraph(graph2);
 
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
       let rejectSave!: (err: Error) => void;
-      mockSaveArchcFile.mockReturnValue(
-        new Promise<boolean>((_, reject) => {
+      mockSaveArchitecture.mockReturnValue(
+        new Promise<StorageHandle>((_, reject) => {
           rejectSave = reject;
         }),
       );
@@ -582,9 +597,9 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
     });
 
     it('save failure without undo keeps isDirty true', async () => {
-      useGraphStore.setState({ graph: createGraphWithNodes(2), isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle });
+      useGraphStore.setState({ graph: createGraphWithNodes(2), isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle });
 
-      mockSaveArchcFile.mockRejectedValue(new Error('Permission denied'));
+      mockSaveArchitecture.mockRejectedValue(new Error('Permission denied'));
       await useFileStore.getState().saveFile();
 
       // isDirty remains true (save failed, changes not persisted)
@@ -595,12 +610,12 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
   describe('graph reference integrity', () => {
     it('save captures graph reference, not a live pointer', async () => {
       const originalGraph = createGraphWithNodes(3);
-      useGraphStore.setState({ graph: originalGraph, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeFileHandle });
+      useGraphStore.setState({ graph: originalGraph, isDirty: true, nodeCount: 3 }); useFileStore.setState({ fileHandle: fakeStorageHandle });
 
       let capturedGraph: ArchGraph | null = null;
-      mockSaveArchcFile.mockImplementation(async (graph) => {
+      mockSaveArchitecture.mockImplementation(async (graph: ArchGraph) => {
         capturedGraph = graph;
-        return true;
+        return fakeStorageHandle;
       });
 
       // Start save
@@ -623,13 +638,13 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       store.undoManager!.snapshot('2 nodes', graph2);
       store.textApi!.setGraph(graph2);
 
-      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeFileHandle }); useHistoryStore.setState({ canUndo: true });
+      useGraphStore.setState({ graph: graph2, isDirty: true, nodeCount: 2 }); useFileStore.setState({ fileHandle: fakeStorageHandle }); useHistoryStore.setState({ canUndo: true });
 
       let capturedGraph: ArchGraph | null = null;
-      let resolveSave!: (value: boolean) => void;
-      mockSaveArchcFile.mockImplementation((graph) => {
+      let resolveSave!: (value: StorageHandle) => void;
+      mockSaveArchitecture.mockImplementation((graph: ArchGraph) => {
         capturedGraph = graph;
-        return new Promise<boolean>((r) => {
+        return new Promise<StorageHandle>((r) => {
           resolveSave = r;
         });
       });
@@ -637,7 +652,7 @@ describe('Feature #228: Undo during save does not corrupt state', () => {
       const saveResult = useFileStore.getState().saveFile();
       useHistoryStore.getState().undo();
 
-      resolveSave(true);
+      resolveSave(fakeStorageHandle);
       await saveResult;
 
       // Captured graph (saved) and current graph (after undo) are different objects

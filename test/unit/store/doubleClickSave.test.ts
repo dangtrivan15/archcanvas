@@ -8,6 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
+import type { StorageHandle } from '@/core/storage/types';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
@@ -58,15 +59,27 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
-import { saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 
-const mockSaveArchcFile = vi.mocked(saveArchcFile);
-const mockSaveArchcFileAs = vi.mocked(saveArchcFileAs);
+// Create mock StorageManager functions
+const mockSaveArchitecture = vi.fn();
+const mockSaveArchitectureAs = vi.fn();
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
+// Create a fake StorageHandle for testing save-in-place
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
 
 describe('Feature #212: Double-click save does not corrupt file', () => {
-  // Create a fake file handle for testing save-in-place
-  const fakeFileHandle = { name: 'test.archc' } as any as FileSystemFileHandle;
-
   beforeEach(() => {
     // Reset UI store
     useUIStore.setState({
@@ -77,8 +90,8 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     // Reset mock implementations
-    mockSaveArchcFile.mockReset();
-    mockSaveArchcFileAs.mockReset();
+    mockSaveArchitecture.mockReset();
+    mockSaveArchitectureAs.mockReset();
 
     // Reset core store
     useGraphStore.setState({
@@ -101,6 +114,8 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       canRedo: false
     });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager after initialization
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
   });
 
   afterEach(() => {
@@ -114,14 +129,14 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
 
     it('isSaving becomes true while save is in progress', async () => {
       // Make save take a while (never resolves in this test)
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
+      mockSaveArchitecture.mockReturnValue(savePromise);
 
       // Set up file handle so saveFile doesn't fall through to saveFileAs
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Start save (don't await)
       const saveResult = useFileStore.getState().saveFile();
@@ -130,7 +145,7 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       expect(useFileStore.getState().isSaving).toBe(true);
 
       // Resolve to let it complete
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       await saveResult;
 
       // isSaving should be false after saving completes
@@ -139,13 +154,13 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
 
     it('second saveFile() call returns false while first is in progress', async () => {
       // Make save take a while
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
+      mockSaveArchitecture.mockReturnValue(savePromise);
 
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Start first save
       const firstSave = useFileStore.getState().saveFile();
@@ -155,38 +170,38 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       expect(secondResult).toBe(false);
 
       // Resolve first save
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       await firstSave;
     });
 
-    it('saveArchcFile is called only once when save is triggered twice rapidly', async () => {
+    it('storageManager.saveArchitecture is called only once when save is triggered twice rapidly', async () => {
       // Make save resolve after a small delay
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
+      mockSaveArchitecture.mockReturnValue(savePromise);
 
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Trigger two saves rapidly
       const firstSave = useFileStore.getState().saveFile();
       const secondSave = useFileStore.getState().saveFile();
 
       // Only one actual save call should have been made
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(1);
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(1);
 
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       await firstSave;
       await secondSave;
 
       // Still only one save call
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(1);
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(1);
     });
 
     it('isSaving resets to false after successful save', async () => {
-      mockSaveArchcFile.mockResolvedValue(true);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       await useFileStore.getState().saveFile();
 
@@ -194,8 +209,8 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     it('isSaving resets to false after failed save', async () => {
-      mockSaveArchcFile.mockRejectedValue(new Error('Disk full'));
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockRejectedValue(new Error('Disk full'));
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       await useFileStore.getState().saveFile();
 
@@ -203,31 +218,31 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     it('can save again after first save completes', async () => {
-      mockSaveArchcFile.mockResolvedValue(true);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // First save
       const first = await useFileStore.getState().saveFile();
       expect(first).toBe(true);
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(1);
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(1);
 
       // Second save after first completes should work
       useGraphStore.setState({ isDirty: true });
       const second = await useFileStore.getState().saveFile();
       expect(second).toBe(true);
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(2);
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(2);
     });
 
     it('can save again after first save fails', async () => {
       // First save fails
-      mockSaveArchcFile.mockRejectedValueOnce(new Error('Disk full'));
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockRejectedValueOnce(new Error('Disk full'));
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       const first = await useFileStore.getState().saveFile();
       expect(first).toBe(false);
 
       // Second save should work
-      mockSaveArchcFile.mockResolvedValueOnce(true);
+      mockSaveArchitecture.mockResolvedValueOnce(fakeStorageHandle);
       useGraphStore.setState({ isDirty: true });
       const second = await useFileStore.getState().saveFile();
       expect(second).toBe(true);
@@ -240,7 +255,7 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       const savePromise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFileAs.mockReturnValue(savePromise);
+      mockSaveArchitectureAs.mockReturnValue(savePromise);
 
       // Start first save as
       const firstSave = useFileStore.getState().saveFileAs();
@@ -250,34 +265,34 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       expect(secondResult).toBe(false);
 
       // Resolve first
-      resolvePromise!({ fileHandle: fakeFileHandle, fileName: 'test.archc' });
+      resolvePromise!({ handle: fakeStorageHandle });
       await firstSave;
     });
 
-    it('saveArchcFileAs is called only once for rapid double-click', async () => {
+    it('storageManager.saveArchitectureAs is called only once for rapid double-click', async () => {
       let resolvePromise: (value: any) => void;
       const savePromise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFileAs.mockReturnValue(savePromise);
+      mockSaveArchitectureAs.mockReturnValue(savePromise);
 
       // Trigger two saves rapidly
       const firstSave = useFileStore.getState().saveFileAs();
       const secondSave = useFileStore.getState().saveFileAs();
 
       // Only one actual save call
-      expect(mockSaveArchcFileAs).toHaveBeenCalledTimes(1);
+      expect(mockSaveArchitectureAs).toHaveBeenCalledTimes(1);
 
-      resolvePromise!({ fileHandle: fakeFileHandle, fileName: 'test.archc' });
+      resolvePromise!({ handle: fakeStorageHandle });
       await firstSave;
       await secondSave;
 
-      expect(mockSaveArchcFileAs).toHaveBeenCalledTimes(1);
+      expect(mockSaveArchitectureAs).toHaveBeenCalledTimes(1);
     });
 
     it('isSaving resets to false after saveFileAs user cancels', async () => {
       // User cancels the file picker
-      mockSaveArchcFileAs.mockResolvedValue(null);
+      mockSaveArchitectureAs.mockResolvedValue(null);
 
       await useFileStore.getState().saveFileAs();
 
@@ -285,7 +300,7 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     it('isSaving resets to false after saveFileAs error', async () => {
-      mockSaveArchcFileAs.mockRejectedValue(new Error('Permission denied'));
+      mockSaveArchitectureAs.mockRejectedValue(new Error('Permission denied'));
 
       await useFileStore.getState().saveFileAs();
 
@@ -295,12 +310,12 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
 
   describe('cross-method save guard', () => {
     it('saveFileAs blocked while saveFile is in progress', async () => {
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockReturnValue(savePromise);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Start saveFile
       const firstSave = useFileStore.getState().saveFile();
@@ -308,9 +323,9 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       // Try saveFileAs while saveFile is running
       const secondResult = await useFileStore.getState().saveFileAs();
       expect(secondResult).toBe(false);
-      expect(mockSaveArchcFileAs).not.toHaveBeenCalled();
+      expect(mockSaveArchitectureAs).not.toHaveBeenCalled();
 
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       await firstSave;
     });
 
@@ -319,26 +334,26 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       const savePromise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFileAs.mockReturnValue(savePromise);
+      mockSaveArchitectureAs.mockReturnValue(savePromise);
 
       // Start saveFileAs
       const firstSave = useFileStore.getState().saveFileAs();
 
       // Try saveFile while saveFileAs is running
-      useFileStore.setState({ fileHandle: fakeFileHandle });
+      useFileStore.setState({ fileHandle: fakeStorageHandle });
       const secondResult = await useFileStore.getState().saveFile();
       expect(secondResult).toBe(false);
-      expect(mockSaveArchcFile).not.toHaveBeenCalled();
+      expect(mockSaveArchitecture).not.toHaveBeenCalled();
 
-      resolvePromise!({ fileHandle: fakeFileHandle, fileName: 'test.archc' });
+      resolvePromise!({ handle: fakeStorageHandle });
       await firstSave;
     });
   });
 
   describe('data integrity after save', () => {
     it('isDirty is correctly cleared after single save succeeds', async () => {
-      mockSaveArchcFile.mockResolvedValue(true);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       await useFileStore.getState().saveFile();
 
@@ -346,12 +361,12 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     it('isDirty remains true when second save is rejected', async () => {
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockReturnValue(savePromise);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // First save starts
       const firstSave = useFileStore.getState().saveFile();
@@ -362,14 +377,14 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       expect(useGraphStore.getState().isDirty).toBe(true);
 
       // First save completes → isDirty cleared
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       await firstSave;
       expect(useGraphStore.getState().isDirty).toBe(false);
     });
 
     it('graph state remains consistent after rapid save attempts', async () => {
-      mockSaveArchcFile.mockResolvedValue(true);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockResolvedValue(fakeStorageHandle);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       const graphBefore = useGraphStore.getState().graph;
 
@@ -382,26 +397,26 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
     });
 
     it('three rapid saves only execute one save operation', async () => {
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockReturnValue(savePromise);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Three rapid saves
       const save1 = useFileStore.getState().saveFile();
       const save2 = useFileStore.getState().saveFile();
       const save3 = useFileStore.getState().saveFile();
 
-      // Only one should actually call saveArchcFile
-      expect(mockSaveArchcFile).toHaveBeenCalledTimes(1);
+      // Only one should actually call saveArchitecture
+      expect(mockSaveArchitecture).toHaveBeenCalledTimes(1);
 
       // Save 2 and 3 should have returned false immediately
       expect(await save2).toBe(false);
       expect(await save3).toBe(false);
 
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       expect(await save1).toBe(true);
     });
   });
@@ -409,12 +424,12 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
   describe('console logging for rejected saves', () => {
     it('logs a message when duplicate save is rejected', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      let resolvePromise: (value: boolean) => void;
-      const savePromise = new Promise<boolean>((resolve) => {
+      let resolvePromise: (value: StorageHandle) => void;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
         resolvePromise = resolve;
       });
-      mockSaveArchcFile.mockReturnValue(savePromise);
-      useFileStore.setState({ fileHandle: fakeFileHandle }); useGraphStore.setState({ isDirty: true });
+      mockSaveArchitecture.mockReturnValue(savePromise);
+      useFileStore.setState({ fileHandle: fakeStorageHandle }); useGraphStore.setState({ isDirty: true });
 
       // Start first save
       useFileStore.getState().saveFile();
@@ -425,7 +440,7 @@ describe('Feature #212: Double-click save does not corrupt file', () => {
       // Should have logged a rejection message
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Save already in progress'));
 
-      resolvePromise!(true);
+      resolvePromise!(fakeStorageHandle);
       consoleSpy.mockRestore();
     });
   });

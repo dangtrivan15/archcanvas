@@ -13,14 +13,13 @@ import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { countAllNodes } from '@/core/graph/graphQuery';
 import { getFileLastModified } from '@/core/platform/fileSystemAdapter';
 import {
-  pickArchcFile,
   decodeArchcData,
-  saveArchcFile,
-  saveArchcFileAs,
   deriveSummaryFileName,
   saveSummaryMarkdown,
   graphToProto,
 } from '@/core/storage/fileIO';
+import type { AIStateData } from '@/core/storage/fileIO';
+import type { StorageHandle } from '@/core/storage/types';
 import { enqueueSave } from '@/core/sync/syncQueue';
 import { encode, CodecError, IntegrityError } from '@/core/storage/codec';
 import { needsAutoLayout } from '@/core/layout/positionDetection';
@@ -34,8 +33,8 @@ import { appEvents } from '@/events/appEvents';
 export interface FileStoreState {
   /** Display name of the current file (shown in title bar) */
   fileName: string;
-  /** File handle for save-in-place (FileSystemFileHandle on web, string path on native) */
-  fileHandle: unknown;
+  /** Storage handle for save-in-place (wraps FileSystemFileHandle, File, or in-memory slot) */
+  fileHandle: StorageHandle | null;
   /** File header timestamp (preserved across re-saves) */
   fileCreatedAtMs: number | null;
   /** Last-modified timestamp of the opened file (for external change detection) */
@@ -58,9 +57,9 @@ export interface FileStoreState {
   _applyDecodedFile: (
     graph: ArchGraph,
     fileName: string,
-    fileHandle: unknown,
+    fileHandle: StorageHandle | null,
     canvasState?: import('@/types/graph').SavedCanvasState,
-    _aiState?: import('@/core/storage/fileIO').AIStateData,
+    _aiState?: AIStateData,
     createdAtMs?: number,
   ) => void;
 }
@@ -162,7 +161,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     });
 
     // Capture the file's lastModified timestamp for external change polling
-    getFileLastModified(fileHandle)
+    getFileLastModified(fileHandle?._internal ?? null)
       .then((lastModified) => {
         if (lastModified !== null) {
           set({ fileLastModifiedMs: lastModified });
@@ -211,75 +210,74 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   },
 
   openFile: async () => {
-    const { textApi } = useEngineStore.getState();
-    if (!textApi) return false;
+    const { textApi, storageManager } = useEngineStore.getState();
+    if (!textApi || !storageManager) return false;
 
     try {
-      const picked = await pickArchcFile();
-      if (!picked) return false;
+      const openResult = await storageManager.openArchitecture();
+      if (!openResult) return false;
 
       appEvents.emit('file:loading', { message: 'Opening file...' });
 
-      try {
-        const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(picked.data);
-        get()._applyDecodedFile(
-          graph,
-          picked.fileName,
-          picked.fileHandle ?? null,
-          canvasState,
-          aiState,
-          createdAtMs,
-        );
-        appEvents.emit('file:loading-clear', {});
-        return true;
-      } catch (decodeErr) {
-        appEvents.emit('file:loading-clear', {});
-        if (decodeErr instanceof IntegrityError) {
-          console.warn('[FileStore] File integrity check failed:', decodeErr.message);
-          appEvents.emit('integrity-warning:show', {
-            message:
-              "The file's integrity checksum does not match its contents. " +
-              'The file may have been corrupted or modified outside of ArchCanvas. ' +
-              'Opening it anyway may result in unexpected behavior.',
-            onProceed: async () => {
-              try {
-                appEvents.emit('file:loading', { message: 'Opening file...' });
-                const { graph, canvasState, aiState, createdAtMs } = await decodeArchcData(
-                  picked.data,
-                  { skipChecksumVerification: true },
-                );
-                get()._applyDecodedFile(
-                  graph,
-                  picked.fileName,
-                  picked.fileHandle ?? null,
-                  canvasState,
-                  aiState,
-                  createdAtMs,
-                );
-                appEvents.emit('file:loading-clear', {});
-                console.log(`[FileStore] Opened file with skipped checksum: ${picked.fileName}`);
-              } catch (retryErr) {
-                appEvents.emit('file:loading-clear', {});
-                console.error(
-                  '[FileStore] Failed to open file even with skipped checksum:',
-                  retryErr,
-                );
-                appEvents.emit('error:show', {
-                  title: 'Failed to Open File',
-                  message:
-                    retryErr instanceof Error
-                      ? retryErr.message
-                      : 'Failed to decode the file contents.',
-                });
-              }
-            },
-          });
-          return false;
-        }
-        throw decodeErr;
-      }
+      const { result, handle } = openResult;
+      get()._applyDecodedFile(
+        result.graph,
+        handle.name,
+        handle,
+        result.canvasState,
+        result.aiState,
+        result.createdAtMs,
+      );
+      appEvents.emit('file:loading-clear', {});
+      return true;
     } catch (err) {
       appEvents.emit('file:loading-clear', {});
+
+      if (err instanceof IntegrityError) {
+        console.warn('[FileStore] File integrity check failed:', err.message);
+        appEvents.emit('integrity-warning:show', {
+          message:
+            "The file's integrity checksum does not match its contents. " +
+            'The file may have been corrupted or modified outside of ArchCanvas. ' +
+            'Opening it anyway may result in unexpected behavior.',
+          onProceed: async () => {
+            try {
+              appEvents.emit('file:loading', { message: 'Opening file...' });
+              const retryResult = await storageManager.openArchitecture(
+                undefined,
+                { skipChecksumVerification: true },
+              );
+              if (!retryResult) return;
+              const { result: r, handle: h } = retryResult;
+              get()._applyDecodedFile(
+                r.graph,
+                h.name,
+                h,
+                r.canvasState,
+                r.aiState,
+                r.createdAtMs,
+              );
+              appEvents.emit('file:loading-clear', {});
+              console.log(`[FileStore] Opened file with skipped checksum: ${h.name}`);
+            } catch (retryErr) {
+              appEvents.emit('file:loading-clear', {});
+              console.error(
+                '[FileStore] Failed to open file even with skipped checksum:',
+                retryErr,
+              );
+              appEvents.emit('error:show', {
+                title: 'Failed to Open File',
+                message:
+                  retryErr instanceof Error
+                    ? retryErr.message
+                    : 'Failed to decode the file contents.',
+              });
+            }
+          },
+        });
+        return false;
+      }
+
       console.error('[FileStore] Failed to open file:', err);
 
       if (err instanceof CodecError) {
@@ -339,11 +337,16 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       ...get(),
       graph: useGraphStore.getState().graph,
     };
-    const { exportApi } = useEngineStore.getState();
+    const { exportApi, storageManager } = useEngineStore.getState();
     const graphAtSaveStart = graph;
 
     if (!fileHandle) {
       return get().saveFileAs();
+    }
+
+    if (!storageManager) {
+      console.error('[FileStore] StorageManager not initialized');
+      return false;
     }
 
     set({ isSaving: true });
@@ -375,13 +378,20 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         }
       }
 
-      await saveArchcFile(graph, fileHandle, canvasState, aiState, fileCreatedAtMs ?? undefined);
+      const updatedHandle = await storageManager.saveArchitecture(graph, fileHandle, {
+        canvasState,
+        aiState,
+        createdAtMs: fileCreatedAtMs ?? undefined,
+      });
 
       // Refresh lastModified timestamp after save so polling doesn't false-alarm
-      const savedLastModified = await getFileLastModified(fileHandle);
+      const savedLastModified = await getFileLastModified(updatedHandle._internal);
       if (savedLastModified !== null) {
         set({ fileLastModifiedMs: savedLastModified });
       }
+
+      // Update handle in case backend returned an updated one
+      set({ fileHandle: updatedHandle });
 
       const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
       if (!fileCreatedAtMs) {
@@ -436,21 +446,24 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     const graph = useGraphStore.getState().graph;
     const { fileName, fileCreatedAtMs } = get();
-    const { exportApi } = useEngineStore.getState();
+    const { exportApi, storageManager } = useEngineStore.getState();
     const graphAtSaveStart = graph;
+
+    if (!storageManager) {
+      console.error('[FileStore] StorageManager not initialized');
+      return false;
+    }
 
     set({ isSaving: true });
 
     try {
       const canvasState = _getCanvasStateForSave();
       const aiState = undefined;
-      const result = await saveArchcFileAs(
-        graph,
-        fileName,
+      const result = await storageManager.saveArchitectureAs(graph, fileName, {
         canvasState,
         aiState,
-        fileCreatedAtMs ?? undefined,
-      );
+        createdAtMs: fileCreatedAtMs ?? undefined,
+      });
       if (!result) {
         set({ isSaving: false });
         return false;
@@ -461,12 +474,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       const graphChangedDuringSave = useGraphStore.getState().graph !== graphAtSaveStart;
       const newCreatedAtMs = fileCreatedAtMs ?? Date.now();
 
-      const newLastModifiedMs = await getFileLastModified(result.fileHandle);
+      const newLastModifiedMs = await getFileLastModified(result.handle._internal);
 
       useGraphStore.setState({ isDirty: graphChangedDuringSave });
       set({
-        fileName: result.fileName,
-        fileHandle: result.fileHandle ?? null,
+        fileName: result.handle.name,
+        fileHandle: result.handle,
         fileCreatedAtMs: newCreatedAtMs,
         fileLastModifiedMs: newLastModifiedMs,
       });
@@ -475,7 +488,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       if (exportApi) {
         try {
           const summaryContent = exportApi.generateSummaryWithMermaid(graph);
-          const summaryFileName = deriveSummaryFileName(result.fileName);
+          const summaryFileName = deriveSummaryFileName(result.handle.name);
           await saveSummaryMarkdown(summaryContent, summaryFileName);
         } catch (summaryErr) {
           console.warn('[FileStore] Failed to generate summary sidecar:', summaryErr);
@@ -485,15 +498,15 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       appEvents.emit('file:loading-clear', {});
       set({ isSaving: false });
 
-      if (!result.fileHandle) {
+      if (!result.handle._internal) {
         appEvents.emit('toast:show', {
-          message: `"${result.fileName}" downloaded to your browser's download folder`,
+          message: `"${result.handle.name}" downloaded to your browser's download folder`,
         });
       } else {
-        appEvents.emit('toast:show', { message: `Saved as "${result.fileName}"` });
+        appEvents.emit('toast:show', { message: `Saved as "${result.handle.name}"` });
       }
 
-      console.log(`[FileStore] File saved as: ${result.fileName}`);
+      console.log(`[FileStore] File saved as: ${result.handle.name}`);
       return true;
     } catch (err) {
       set({ isSaving: false });

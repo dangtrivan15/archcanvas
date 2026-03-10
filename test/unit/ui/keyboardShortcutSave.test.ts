@@ -12,20 +12,6 @@ import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { useUIStore } from '@/store/uiStore';
 
-// Mock the file I/O module
-vi.mock('@/core/storage/fileIO', async () => {
-  const actual = await vi.importActual('@/core/storage/fileIO');
-  return {
-    ...actual,
-    saveArchcFile: vi.fn().mockResolvedValue(true),
-    saveArchcFileAs: vi.fn().mockResolvedValue({
-      fileHandle: { name: 'test.archc' } as any,
-      fileName: 'test',
-    }),
-    openArchcFile: vi.fn().mockResolvedValue(null),
-  };
-});
-
 // Mock the canvas store
 vi.mock('@/store/canvasStore', () => ({
   useCanvasStore: {
@@ -37,12 +23,35 @@ vi.mock('@/store/canvasStore', () => ({
   },
 }));
 
+import type { StorageHandle } from '@/core/storage/types';
+
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
+
+const mockSaveArchitecture = vi.fn().mockResolvedValue(fakeStorageHandle);
+const mockSaveArchitectureAs = vi.fn().mockResolvedValue({ handle: fakeStorageHandle });
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
 // Import the hook to test (we'll call the handler directly)
 // Since useKeyboardShortcuts is a React hook, we test the logic by simulating
 // keyboard events on the document.
 
 describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
   beforeEach(() => {
+    // Reset mocks
+    mockSaveArchitecture.mockReset().mockResolvedValue(fakeStorageHandle);
+    mockSaveArchitectureAs.mockReset().mockResolvedValue({ handle: fakeStorageHandle });
+
     // Reset stores
     useGraphStore.setState({
       isDirty: false,
@@ -62,6 +71,8 @@ describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
       canRedo: false
     });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
     useUIStore.getState().clearFileOperationLoading();
   });
 
@@ -73,7 +84,7 @@ describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
     expect(useGraphStore.getState().isDirty).toBe(true);
 
     // Set file handle (simulates previously saved file)
-    useFileStore.setState({ fileHandle: { name: 'test.archc' } as any });
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     // Call saveFile directly (simulates Ctrl+S path)
     await useFileStore.getState().saveFile();
@@ -98,7 +109,7 @@ describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
     // saveFileAs was called (returns new file handle and name)
     expect(result).toBe(true);
     expect(useGraphStore.getState().isDirty).toBe(false);
-    expect(useFileStore.getState().fileName).toBe('test');
+    expect(useFileStore.getState().fileName).toBe('test.archc');
   });
 
   it('Ctrl+S preventDefault stops browser save dialog', () => {
@@ -184,7 +195,7 @@ describe('Feature #208: Keyboard shortcut Ctrl+S triggers save', () => {
 
     // Setup: add node, set file handle
     store.addNode({ type: 'compute/service', displayName: 'Save Test' });
-    useFileStore.setState({ fileHandle: { name: 'save-test.archc' } as any });
+    useFileStore.setState({ fileHandle: fakeStorageHandle });
 
     // Verify dirty
     expect(useGraphStore.getState().isDirty).toBe(true);

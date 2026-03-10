@@ -8,16 +8,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { useUIStore } from '@/store/uiStore';
 
-// Mock the fileIO module before importing coreStore
+// Mock the fileIO module (still needed for summary sidecar etc.)
 vi.mock('@/core/storage/fileIO', async () => {
   const actual =
     await vi.importActual<typeof import('@/core/storage/fileIO')>('@/core/storage/fileIO');
   return {
     ...actual,
-    saveArchcFile: vi.fn(),
-    saveArchcFileAs: vi.fn(),
-    openArchcFile: vi.fn(),
-    pickArchcFile: vi.fn(),
     deriveSummaryFileName: actual.deriveSummaryFileName,
     saveSummaryMarkdown: vi.fn(),
     decodeArchcData: vi.fn(),
@@ -65,13 +61,27 @@ import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { FileMenu } from '@/components/toolbar/FileMenu';
-import { saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
+import type { StorageHandle } from '@/core/storage/types';
 
-const mockSaveArchcFile = vi.mocked(saveArchcFile);
-const mockSaveArchcFileAs = vi.mocked(saveArchcFileAs);
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: { name: 'test.archc' },
+};
+
+const mockSaveArchitecture = vi.fn();
+const mockSaveArchitectureAs = vi.fn();
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
 
 describe('Feature #215: Save button disabled during save operation', () => {
-  const fakeFileHandle = { name: 'test.archc' } as any as FileSystemFileHandle;
+  const fakeFileHandle = fakeStorageHandle;
 
   beforeEach(() => {
     // Reset UI store
@@ -83,8 +93,8 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     // Reset mock implementations
-    mockSaveArchcFile.mockReset();
-    mockSaveArchcFileAs.mockReset();
+    mockSaveArchitecture.mockReset().mockResolvedValue(fakeStorageHandle);
+    mockSaveArchitectureAs.mockReset().mockResolvedValue({ handle: fakeStorageHandle });
 
     // Reset core store
     useGraphStore.setState({
@@ -107,6 +117,8 @@ describe('Feature #215: Save button disabled during save operation', () => {
       canRedo: false
     });
     useEngineStore.getState().initialize();
+    // Inject mock storageManager
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
   });
 
   afterEach(() => {
@@ -220,7 +232,6 @@ describe('Feature #215: Save button disabled during save operation', () => {
     it('clicking disabled Save button does not call saveFile', () => {
       // Set isSaving before rendering so button is disabled
       useFileStore.setState({ isSaving: true, fileHandle: fakeFileHandle });
-      mockSaveArchcFile.mockResolvedValue(undefined);
 
       renderAndOpenMenu();
       const saveButton = screen.getByTestId('save-button');
@@ -228,21 +239,20 @@ describe('Feature #215: Save button disabled during save operation', () => {
       // Try clicking the disabled button
       fireEvent.click(saveButton);
 
-      // saveArchcFile should not be called because the button is disabled
+      // storageManager.saveArchitecture should not be called because the button is disabled
       // AND the store-level guard prevents concurrent saves
-      expect(mockSaveArchcFile).not.toHaveBeenCalled();
+      expect(mockSaveArchitecture).not.toHaveBeenCalled();
     });
 
     it('clicking disabled Save As button does not call saveFileAs', () => {
       useFileStore.setState({ isSaving: true });
-      mockSaveArchcFileAs.mockResolvedValue({ fileHandle: fakeFileHandle, fileName: 'test' });
 
       renderAndOpenMenu();
       const saveAsButton = screen.getByTestId('save-as-button');
 
       fireEvent.click(saveAsButton);
 
-      expect(mockSaveArchcFileAs).not.toHaveBeenCalled();
+      expect(mockSaveArchitectureAs).not.toHaveBeenCalled();
     });
   });
 
@@ -299,11 +309,11 @@ describe('Feature #215: Save button disabled during save operation', () => {
   describe('Full save lifecycle with disabled state', () => {
     it('Save button disables during save and re-enables after successful save', async () => {
       let resolveSave: () => void;
-      const savePromise = new Promise<void>((resolve) => {
-        resolveSave = resolve;
+      const savePromise = new Promise<StorageHandle>((resolve) => {
+        resolveSave = () => resolve(fakeStorageHandle);
       });
-      mockSaveArchcFile.mockImplementation(async () => {
-        await savePromise;
+      mockSaveArchitecture.mockImplementation(async () => {
+        return savePromise;
       });
 
       useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: fakeFileHandle, isSaving: false });
@@ -335,7 +345,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
     });
 
     it('Save button re-enables after failed save', async () => {
-      mockSaveArchcFile.mockRejectedValue(new Error('Disk full'));
+      mockSaveArchitecture.mockRejectedValue(new Error('Disk full'));
 
       useGraphStore.setState({ isDirty: true }); useFileStore.setState({ fileHandle: fakeFileHandle, isSaving: false });
 
@@ -359,7 +369,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
 
       const result = await useFileStore.getState().saveFile();
       expect(result).toBe(false);
-      expect(mockSaveArchcFile).not.toHaveBeenCalled();
+      expect(mockSaveArchitecture).not.toHaveBeenCalled();
     });
 
     it('saveFileAs returns false when isSaving is true', async () => {
@@ -367,7 +377,7 @@ describe('Feature #215: Save button disabled during save operation', () => {
 
       const result = await useFileStore.getState().saveFileAs();
       expect(result).toBe(false);
-      expect(mockSaveArchcFileAs).not.toHaveBeenCalled();
+      expect(mockSaveArchitectureAs).not.toHaveBeenCalled();
     });
   });
 });

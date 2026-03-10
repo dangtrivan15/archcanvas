@@ -138,7 +138,7 @@ describe('Feature #292: handleFileUrl', () => {
     expect(mockApplyDecodedFile).toHaveBeenCalledWith(
       mockGraph,
       'project.archc',
-      'file:///path/to/project.archc',
+      null,
       undefined,
       undefined,
       1234567890,

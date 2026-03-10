@@ -112,10 +112,10 @@ let useGraphStoreRef: typeof import('@/store/graphStore').useGraphStore;
       );
     });
 
-    it('onReload passes the same file handle (not null) to preserve save-in-place', () => {
-      // The reload path passes handle (not null) so File System Access API continues working
+    it('onReload passes the storageHandle (not null) to preserve save-in-place', () => {
+      // The reload path passes storageHandle (not null) so File System Access API continues working
       const onReloadMatch = useFilePollingSource.match(
-        /onReload:\s*async\s*\(\)\s*=>\s*\{[\s\S]*?_applyDecodedFile\(\s*\n?\s*graph,\s*\n?\s*handle\.name,\s*\n?\s*handle,/,
+        /onReload:\s*async\s*\(\)\s*=>\s*\{[\s\S]*?_applyDecodedFile\(\s*\n?\s*graph,\s*\n?\s*handle\.name,\s*\n?\s*storageHandle,/,
       );
       expect(onReloadMatch).not.toBeNull();
     });

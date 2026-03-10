@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useUIStore } from '@/store/uiStore';
+import type { StorageHandle } from '@/core/storage/types';
 
 // Mock the fileIO module before importing coreStore
 vi.mock('@/core/storage/fileIO', async () => {
@@ -55,10 +56,25 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
-import { saveArchcFile, saveArchcFileAs } from '@/core/storage/fileIO';
 
-const mockSaveArchcFile = vi.mocked(saveArchcFile);
-const mockSaveArchcFileAs = vi.mocked(saveArchcFileAs);
+// Create mock StorageManager functions
+const mockSaveArchitecture = vi.fn();
+const mockSaveArchitectureAs = vi.fn();
+
+const mockStorageManager = {
+  saveArchitecture: mockSaveArchitecture,
+  saveArchitectureAs: mockSaveArchitectureAs,
+  openArchitecture: vi.fn(),
+  backendType: 'test',
+  capabilities: { supportsDirectWrite: true, supportsLastModified: false },
+};
+
+// Create a fake StorageHandle
+const fakeStorageHandle: StorageHandle = {
+  backend: 'test',
+  name: 'test.archc',
+  _internal: {},
+};
 
 describe('Feature #193: File save failure shows error toast', () => {
   beforeEach(() => {
@@ -69,24 +85,29 @@ describe('Feature #193: File save failure shows error toast', () => {
     });
 
     // Reset mock implementations
-    mockSaveArchcFile.mockReset();
-    mockSaveArchcFileAs.mockReset();
+    mockSaveArchitecture.mockReset();
+    mockSaveArchitectureAs.mockReset();
+
+    // Initialize engine and inject mock storageManager
+    useEngineStore.setState({ initialized: false });
+    useHistoryStore.setState({ canUndo: false, canRedo: false });
+    useEngineStore.getState().initialize();
+    useEngineStore.setState({ storageManager: mockStorageManager as any });
   });
 
   describe('saveFile() error handling', () => {
-    it('shows error dialog when saveArchcFile throws', async () => {
+    it('shows error dialog when storageManager.saveArchitecture throws', async () => {
       // Set up coreStore with a file handle (so it doesn't fall back to saveFileAs)
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
-      // Mock saveArchcFile to throw a permission error
-      mockSaveArchcFile.mockRejectedValue(new Error('Permission denied: cannot write to file'));
+      // Mock saveArchitecture to throw a permission error
+      mockSaveArchitecture.mockRejectedValue(new Error('Permission denied: cannot write to file'));
 
       // Attempt save
       const result = await useFileStore.getState().saveFile();
@@ -103,16 +124,15 @@ describe('Feature #193: File save failure shows error toast', () => {
     });
 
     it('keeps isDirty true when save fails', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
-      mockSaveArchcFile.mockRejectedValue(new Error('Disk full'));
+      mockSaveArchitecture.mockRejectedValue(new Error('Disk full'));
 
       await useFileStore.getState().saveFile();
 
@@ -121,16 +141,15 @@ describe('Feature #193: File save failure shows error toast', () => {
     });
 
     it('error message includes the actual error description', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
-      mockSaveArchcFile.mockRejectedValue(new Error('Network error: file system unavailable'));
+      mockSaveArchitecture.mockRejectedValue(new Error('Network error: file system unavailable'));
 
       await useFileStore.getState().saveFile();
 
@@ -139,17 +158,16 @@ describe('Feature #193: File save failure shows error toast', () => {
     });
 
     it('handles non-Error thrown values gracefully', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
       // Throw a string instead of an Error object
-      mockSaveArchcFile.mockRejectedValue('unexpected failure');
+      mockSaveArchitecture.mockRejectedValue('unexpected failure');
 
       await useFileStore.getState().saveFile();
 
@@ -160,16 +178,16 @@ describe('Feature #193: File save failure shows error toast', () => {
   });
 
   describe('saveFileAs() error handling', () => {
-    it('shows error dialog when saveArchcFileAs throws', async () => {
+    it('shows error dialog when storageManager.saveArchitectureAs throws', async () => {
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
+      });
+      useFileStore.setState({
         fileName: 'test.archc'
-    });
+      });
 
-      mockSaveArchcFileAs.mockRejectedValue(new Error('Failed to create writable stream'));
+      mockSaveArchitectureAs.mockRejectedValue(new Error('Failed to create writable stream'));
 
       const result = await useFileStore.getState().saveFileAs();
 
@@ -185,12 +203,12 @@ describe('Feature #193: File save failure shows error toast', () => {
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
+      });
+      useFileStore.setState({
         fileName: 'test.archc'
-    });
+      });
 
-      mockSaveArchcFileAs.mockRejectedValue(new Error('Storage quota exceeded'));
+      mockSaveArchitectureAs.mockRejectedValue(new Error('Storage quota exceeded'));
 
       await useFileStore.getState().saveFileAs();
 
@@ -201,13 +219,13 @@ describe('Feature #193: File save failure shows error toast', () => {
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
+      });
+      useFileStore.setState({
         fileName: 'test.archc'
-    });
+      });
 
       // Returning null means user cancelled
-      mockSaveArchcFileAs.mockResolvedValue(null);
+      mockSaveArchitectureAs.mockResolvedValue(null);
 
       const result = await useFileStore.getState().saveFileAs();
 
@@ -222,17 +240,16 @@ describe('Feature #193: File save failure shows error toast', () => {
 
   describe('user can retry save after failure', () => {
     it('subsequent save attempt succeeds after initial failure', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
       // First call fails
-      mockSaveArchcFile.mockRejectedValueOnce(new Error('Temporary lock'));
+      mockSaveArchitecture.mockRejectedValueOnce(new Error('Temporary lock'));
 
       const result1 = await useFileStore.getState().saveFile();
       expect(result1).toBe(false);
@@ -243,7 +260,7 @@ describe('Feature #193: File save failure shows error toast', () => {
       expect(useUIStore.getState().errorDialogOpen).toBe(false);
 
       // Second call succeeds
-      mockSaveArchcFile.mockResolvedValueOnce(true);
+      mockSaveArchitecture.mockResolvedValueOnce(fakeStorageHandle);
 
       const result2 = await useFileStore.getState().saveFile();
       expect(result2).toBe(true);
@@ -256,32 +273,30 @@ describe('Feature #193: File save failure shows error toast', () => {
 
   describe('error dialog content quality', () => {
     it('title is "Save Failed" for all save errors', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
-      mockSaveArchcFile.mockRejectedValue(new Error('any error'));
+      mockSaveArchitecture.mockRejectedValue(new Error('any error'));
       await useFileStore.getState().saveFile();
 
       expect(useUIStore.getState().errorDialogInfo?.title).toBe('Save Failed');
     });
 
     it('message starts with "Could not save the file:" for Error objects', async () => {
-      const fakeHandle = {} as FileSystemFileHandle;
       useGraphStore.setState({
         graph: { name: 'Test', description: '', owners: [], nodes: [], edges: [] },
         isDirty: true
-    });
-    useFileStore.setState({
-        fileHandle: fakeHandle
-    });
+      });
+      useFileStore.setState({
+        fileHandle: fakeStorageHandle
+      });
 
-      mockSaveArchcFile.mockRejectedValue(new Error('permission denied'));
+      mockSaveArchitecture.mockRejectedValue(new Error('permission denied'));
       await useFileStore.getState().saveFile();
 
       expect(useUIStore.getState().errorDialogInfo?.message).toMatch(/^Could not save the file:/);

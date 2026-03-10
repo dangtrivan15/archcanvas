@@ -12,6 +12,8 @@ import { UndoManager } from '@/core/history/undoManager';
 import { TextApi } from '@/api/textApi';
 import { RenderApi } from '@/api/renderApi';
 import { ExportApi } from '@/api/exportApi';
+import { StorageManager } from '@/core/storage/storageManager';
+import { createDefaultBackend } from '@/core/storage/backends/factory';
 import { initEventSubscriptions } from '@/events/appEvents';
 import { useGraphStore } from './graphStore';
 
@@ -29,6 +31,8 @@ export interface EngineStoreState {
   exportApi: ExportApi | null;
   /** Undo manager instance for snapshot-based history */
   undoManager: UndoManager | null;
+  /** Storage manager for file I/O (open, save, save as) */
+  storageManager: StorageManager | null;
 
   /** Initialize all core engines and wire them together. */
   initialize: () => void;
@@ -41,6 +45,7 @@ export const useEngineStore = create<EngineStoreState>((set, get) => ({
   renderApi: null,
   exportApi: null,
   undoManager: null,
+  storageManager: null,
 
   initialize: () => {
     const state = get();
@@ -66,6 +71,10 @@ export const useEngineStore = create<EngineStoreState>((set, get) => ({
     // 5. Take initial snapshot
     undoManager.snapshot('Initial state', graph);
 
+    // 6. Initialize Storage Manager
+    const backend = createDefaultBackend();
+    const storageManager = new StorageManager(backend);
+
     set({
       initialized: true,
       registry,
@@ -73,6 +82,7 @@ export const useEngineStore = create<EngineStoreState>((set, get) => ({
       renderApi,
       exportApi,
       undoManager,
+      storageManager,
     });
 
     // Ensure event subscriptions are active
