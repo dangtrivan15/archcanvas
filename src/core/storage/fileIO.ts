@@ -1,6 +1,16 @@
 /**
- * File I/O module for opening and saving .archc files.
- * Handles File System Access API with fallback, and proto-to-graph conversion.
+ * Proto conversion module: protobuf ↔ ArchGraph type conversion.
+ *
+ * Core functions (proto conversion):
+ *   - protoToGraph(), protoToGraphFull(), graphToProto()
+ *   - Type exports: UndoHistoryData, AIStateData, ProtoToGraphResult
+ *
+ * Utility functions:
+ *   - deriveSummaryFileName(), saveSummaryMarkdown()
+ *
+ * Deprecated (will be removed when fileStore migrates to StorageManager in P08-T3):
+ *   - decodeArchcData(), pickArchcFile(), openArchcFile(), saveArchcFile(), saveArchcFileAs()
+ *   - PickedFile type
  */
 
 import type {
@@ -572,11 +582,43 @@ function suggestionToProtoAISuggestion(sug: AISuggestion): archcanvas.IAISuggest
   };
 }
 
-// ─── File Open/Save Functions ────────────────────────────────────
+// ─── Sidecar Summary File ────────────────────────────────────────
+
+/**
+ * Derive the .summary.md filename from an .archc filename.
+ * e.g. "my-project.archc" → "my-project.summary.md"
+ */
+export function deriveSummaryFileName(archcFileName: string): string {
+  return archcFileName.replace(/\.archc$/, '.summary.md');
+}
+
+/**
+ * Save the .summary.md sidecar file alongside the .archc file.
+ * Delegates to the platform FileSystemAdapter's shareFile method.
+ * On web: triggers a Blob download. On native: uses Capacitor share/filesystem.
+ *
+ * @param content - The markdown summary content
+ * @param summaryFileName - The filename for the .summary.md file
+ */
+export async function saveSummaryMarkdown(content: string, summaryFileName: string): Promise<void> {
+  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
+  const adapter = await getFileSystemAdapter();
+  await adapter.shareFile(content, summaryFileName, 'text/markdown');
+  console.log(`[FileIO] Summary sidecar saved: ${summaryFileName}`);
+}
+
+// ─── Deprecated File Handle Functions ────────────────────────────
+//
+// These functions are deprecated and will be removed in a future version.
+// Use StorageManager (from './storageManager') with a StorageBackend instead.
+// They remain here temporarily for backwards compatibility with fileStore.ts
+// and will be replaced when fileStore is wired to StorageManager (P08-T3).
 
 /**
  * Decode raw .archc binary data into graph, canvas state, AI state, etc.
  * Useful for retrying with different decode options (e.g., skipChecksumVerification).
+ *
+ * @deprecated Use StorageManager.openArchitecture() or decode() + protoToGraphFull() directly.
  */
 export async function decodeArchcData(
   data: Uint8Array,
@@ -591,7 +633,11 @@ export async function decodeArchcData(
   return protoToGraphFull(decoded);
 }
 
-/** Result of picking a file (raw data, no decoding) */
+/**
+ * Result of picking a file (raw data, no decoding).
+ *
+ * @deprecated Use StorageManager with a StorageBackend instead.
+ */
 export interface PickedFile {
   data: Uint8Array;
   fileName: string;
@@ -607,8 +653,7 @@ export interface PickedFile {
  * Pick a .archc file from the user via the platform FileSystemAdapter.
  * Returns raw file data without decoding. Returns null if user cancels.
  *
- * On web: delegates to WebFileSystemAdapter (File System Access API + <input> fallback)
- * On native iOS: delegates to NativeFileSystemAdapter (Capacitor file picker)
+ * @deprecated Use StorageManager with a StorageBackend's openFilePicker() + read() instead.
  */
 export async function pickArchcFile(): Promise<PickedFile | null> {
   const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
@@ -627,6 +672,8 @@ export async function pickArchcFile(): Promise<PickedFile | null> {
 /**
  * Open a .archc file using the platform FileSystemAdapter.
  * Returns the decoded graph, filename, and canvas state.
+ *
+ * @deprecated Use StorageManager.openArchitecture() instead.
  */
 export async function openArchcFile(decodeOptions?: import('./codec').DecodeOptions): Promise<{
   graph: ArchGraph;
@@ -653,16 +700,11 @@ export async function openArchcFile(decodeOptions?: import('./codec').DecodeOpti
   };
 }
 
-// ─── File Save Functions ────────────────────────────────────────
-
 /**
  * Save the current graph to the existing file location (save in-place).
  * Delegates to the platform FileSystemAdapter.
  *
- * @param graph - The current architecture graph to save
- * @param fileHandle - Opaque handle from pickArchcFile or saveArchcFileAs (FileSystemFileHandle on web, path string on native)
- * @param canvasState - Optional canvas state (viewport, selection, panel layout)
- * @returns true if save succeeded
+ * @deprecated Use StorageManager.saveArchitecture() instead.
  */
 export async function saveArchcFile(
   graph: ArchGraph,
@@ -689,10 +731,7 @@ export async function saveArchcFile(
  * Save the current graph to a new file (Save As).
  * Opens a file save picker via the platform FileSystemAdapter.
  *
- * @param graph - The current architecture graph to save
- * @param suggestedName - Suggested filename (without extension)
- * @param canvasState - Optional canvas state (viewport, selection, panel layout)
- * @returns The new file handle and display name, or null if cancelled
+ * @deprecated Use StorageManager.saveArchitectureAs() instead.
  */
 export async function saveArchcFileAs(
   graph: ArchGraph,
@@ -724,29 +763,4 @@ export async function saveArchcFileAs(
     fileHandle: result.handle,
     fileName: result.fileName,
   };
-}
-
-// ─── Sidecar Summary File ────────────────────────────────────────
-
-/**
- * Derive the .summary.md filename from an .archc filename.
- * e.g. "my-project.archc" → "my-project.summary.md"
- */
-export function deriveSummaryFileName(archcFileName: string): string {
-  return archcFileName.replace(/\.archc$/, '.summary.md');
-}
-
-/**
- * Save the .summary.md sidecar file alongside the .archc file.
- * Delegates to the platform FileSystemAdapter's shareFile method.
- * On web: triggers a Blob download. On native: uses Capacitor share/filesystem.
- *
- * @param content - The markdown summary content
- * @param summaryFileName - The filename for the .summary.md file
- */
-export async function saveSummaryMarkdown(content: string, summaryFileName: string): Promise<void> {
-  const { getFileSystemAdapter } = await import('@/core/platform/fileSystemAdapter');
-  const adapter = await getFileSystemAdapter();
-  await adapter.shareFile(content, summaryFileName, 'text/markdown');
-  console.log(`[FileIO] Summary sidecar saved: ${summaryFileName}`);
 }

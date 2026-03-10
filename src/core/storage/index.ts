@@ -39,3 +39,8 @@ export type { OpenResult, SaveOptions, SaveAsResult } from './storageManager';
 
 // Backends
 export { InMemoryBackend } from './backends/inMemory';
+export { FileSystemAccessBackend } from './backends/fileSystemAccess';
+export { FileDownloadBackend } from './backends/fileDownload';
+
+// Backend factory
+export { createDefaultBackend } from './backends/factory';
