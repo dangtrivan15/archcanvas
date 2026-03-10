@@ -7,6 +7,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { XCircle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { registerDialog } from './registry';
 
 export function ErrorDialog() {
   const open = useUIStore((s) => s.errorDialogOpen);
@@ -107,3 +108,6 @@ export function ErrorDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'error', component: ErrorDialog });

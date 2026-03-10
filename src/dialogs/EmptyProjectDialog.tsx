@@ -10,6 +10,7 @@ import { useEffect, useCallback } from 'react';
 import { FolderOpen, Sparkles, Zap } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { registerDialog } from './registry';
 
 export function EmptyProjectDialog() {
   const open = useUIStore((s) => s.emptyProjectDialogOpen);
@@ -160,3 +161,6 @@ export function EmptyProjectDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'emptyProject', component: EmptyProjectDialog });
