@@ -13,6 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createEmptyGraph } from '@/core/graph/graphEngine';
 import { decode } from '@/core/storage/codec';
+import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 
 // ── Shared mocks ──
 
@@ -154,6 +155,8 @@ vi.mock('@/store/canvasStore', () => {
   const store = {
     viewport: { x: 0, y: 0, zoom: 1 },
     selectedNodeId: null,
+    requestFitView: vi.fn(),
+    setViewport: vi.fn(),
   };
   const useCanvasStore = Object.assign(
     (selector: (s: typeof store) => unknown) => selector(store),
@@ -403,36 +406,17 @@ describe('Feature #472: Save child .archc files on modification', () => {
   });
 
   describe('activeFilePath tracking via nestedCanvasStore', () => {
-    it('activeFilePath is set when pushing a file onto the stack', async () => {
-      // nestedCanvasStore imports canvasStore which needs requestFitView, setViewport
-      // and navigationStore which needs zoomToRoot, zoomToLevel
-      vi.doMock('@/store/canvasStore', () => {
-        const store = {
-          viewport: { x: 0, y: 0, zoom: 1 },
-          selectedNodeId: null,
-          requestFitView: vi.fn(),
-          setViewport: vi.fn(),
-        };
-        const useCanvasStore = Object.assign(
-          (selector: (s: typeof store) => unknown) => selector(store),
-          { getState: () => store, setState: vi.fn() },
-        );
-        return { useCanvasStore };
-      });
-      vi.doMock('@/store/navigationStore', () => {
-        const store = {
-          path: [],
-          zoomToRoot: vi.fn(),
-          zoomToLevel: vi.fn(),
-        };
-        const useNavigationStore = Object.assign(
-          (selector: (s: typeof store) => unknown) => selector(store),
-          { getState: () => store, setState: vi.fn() },
-        );
-        return { useNavigationStore };
-      });
+    it('activeFilePath is set when pushing a file onto the stack', () => {
+      // nestedCanvasStore is now a facade over the unified navigationStore.
+      // Test through the real store (not mocked), verifying activeFilePath tracking.
 
-      const { useNestedCanvasStore } = await import('@/store/nestedCanvasStore');
+      // Reset unified navigation store to clean state
+      useNestedCanvasStore.setState({
+        fileStack: [],
+        activeFilePath: null,
+        path: [],
+        parentEdgeIndicators: [],
+      });
 
       // Initially at root
       expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
@@ -444,10 +428,6 @@ describe('Feature #472: Save child .archc files on modification', () => {
       // After popping, should return to null (root)
       useNestedCanvasStore.getState().popFile();
       expect(useNestedCanvasStore.getState().activeFilePath).toBeNull();
-
-      // Clean up doMock
-      vi.doUnmock('@/store/canvasStore');
-      vi.doUnmock('@/store/navigationStore');
     });
   });
 });
