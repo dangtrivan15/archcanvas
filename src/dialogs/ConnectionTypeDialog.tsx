@@ -10,6 +10,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useHaptics } from '@/hooks/useHaptics';
+import { registerDialog } from './registry';
 
 type EdgeType = 'sync' | 'async' | 'data-flow';
 
@@ -225,3 +226,6 @@ export function ConnectionTypeDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'connection', component: ConnectionTypeDialog });

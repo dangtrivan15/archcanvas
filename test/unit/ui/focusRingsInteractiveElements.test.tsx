@@ -74,8 +74,8 @@ import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { Toolbar } from '@/components/toolbar/Toolbar';
 import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
-import { DeleteConfirmationDialog } from '@/components/shared/DeleteConfirmationDialog';
-import { ErrorDialog } from '@/components/shared/ErrorDialog';
+import { DeleteConfirmationDialog } from '@/dialogs/DeleteConfirmationDialog';
+import { ErrorDialog } from '@/dialogs/ErrorDialog';
 
 describe('Feature #222: Focus rings visible on interactive elements', () => {
   beforeEach(() => {

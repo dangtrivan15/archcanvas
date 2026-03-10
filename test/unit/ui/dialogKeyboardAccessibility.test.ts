@@ -58,7 +58,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
   });
 
   describe('DeleteConfirmationDialog keyboard support', () => {
-    const source = readSource('components/shared/DeleteConfirmationDialog.tsx');
+    const source = readSource('dialogs/DeleteConfirmationDialog.tsx');
 
     it('imports useFocusTrap hook', () => {
       expect(source).toContain("import { useFocusTrap } from '@/hooks/useFocusTrap'");
@@ -111,7 +111,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
   });
 
   describe('UnsavedChangesDialog keyboard support', () => {
-    const source = readSource('components/shared/UnsavedChangesDialog.tsx');
+    const source = readSource('dialogs/UnsavedChangesDialog.tsx');
 
     it('imports useFocusTrap hook', () => {
       expect(source).toContain("import { useFocusTrap } from '@/hooks/useFocusTrap'");
@@ -145,7 +145,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
   });
 
   describe('ConnectionTypeDialog keyboard support', () => {
-    const source = readSource('components/shared/ConnectionTypeDialog.tsx');
+    const source = readSource('dialogs/ConnectionTypeDialog.tsx');
 
     it('imports useFocusTrap hook', () => {
       expect(source).toContain("import { useFocusTrap } from '@/hooks/useFocusTrap'");
@@ -179,7 +179,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
   });
 
   describe('ErrorDialog keyboard support', () => {
-    const source = readSource('components/shared/ErrorDialog.tsx');
+    const source = readSource('dialogs/ErrorDialog.tsx');
 
     it('imports useFocusTrap hook', () => {
       expect(source).toContain("import { useFocusTrap } from '@/hooks/useFocusTrap'");
@@ -204,7 +204,7 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
   });
 
   describe('IntegrityWarningDialog keyboard support', () => {
-    const source = readSource('components/shared/IntegrityWarningDialog.tsx');
+    const source = readSource('dialogs/IntegrityWarningDialog.tsx');
 
     it('imports useFocusTrap hook', () => {
       expect(source).toContain("import { useFocusTrap } from '@/hooks/useFocusTrap'");
@@ -235,11 +235,11 @@ describe('Feature #225: Confirm dialog accessible via keyboard', () => {
 
   describe('All dialogs share common keyboard patterns', () => {
     const dialogs = [
-      { name: 'DeleteConfirmationDialog', path: 'components/shared/DeleteConfirmationDialog.tsx' },
-      { name: 'UnsavedChangesDialog', path: 'components/shared/UnsavedChangesDialog.tsx' },
-      { name: 'ConnectionTypeDialog', path: 'components/shared/ConnectionTypeDialog.tsx' },
-      { name: 'ErrorDialog', path: 'components/shared/ErrorDialog.tsx' },
-      { name: 'IntegrityWarningDialog', path: 'components/shared/IntegrityWarningDialog.tsx' },
+      { name: 'DeleteConfirmationDialog', path: 'dialogs/DeleteConfirmationDialog.tsx' },
+      { name: 'UnsavedChangesDialog', path: 'dialogs/UnsavedChangesDialog.tsx' },
+      { name: 'ConnectionTypeDialog', path: 'dialogs/ConnectionTypeDialog.tsx' },
+      { name: 'ErrorDialog', path: 'dialogs/ErrorDialog.tsx' },
+      { name: 'IntegrityWarningDialog', path: 'dialogs/IntegrityWarningDialog.tsx' },
     ];
 
     for (const dialog of dialogs) {
