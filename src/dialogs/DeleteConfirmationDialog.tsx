@@ -16,6 +16,7 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { usePlatformModifier } from '@/hooks/usePlatformModifier';
 import { useHaptics } from '@/hooks/useHaptics';
+import { registerDialog } from './registry';
 
 export function DeleteConfirmationDialog() {
   const deleteDialogOpen = useUIStore((s) => s.deleteDialogOpen);
@@ -230,3 +231,6 @@ export function DeleteConfirmationDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'delete', component: DeleteConfirmationDialog });

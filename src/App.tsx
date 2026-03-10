@@ -11,13 +11,7 @@ import { Canvas } from '@/components/canvas/Canvas';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { NodeDefBrowser } from '@/components/panels/NodeDefBrowser';
-import { DeleteConfirmationDialog } from '@/components/shared/DeleteConfirmationDialog';
-import { ConnectionTypeDialog } from '@/components/shared/ConnectionTypeDialog';
-import { UnsavedChangesDialog } from '@/components/shared/UnsavedChangesDialog';
-import { ErrorDialog } from '@/components/shared/ErrorDialog';
-import { IntegrityWarningDialog } from '@/components/shared/IntegrityWarningDialog';
-import { ConflictDialog } from '@/components/shared/ConflictDialog';
-import { EmptyProjectDialog } from '@/components/shared/EmptyProjectDialog';
+import { DialogHost } from '@/dialogs';
 import { AnalysisProgressDialog } from '@/components/shared/AnalysisProgressDialog';
 import { ExternalAgentDialog } from '@/components/shared/ExternalAgentDialog';
 import { useAnalysisStore } from '@/store/analysisStore';
@@ -330,26 +324,8 @@ export function App() {
           )}
         </div>
 
-        {/* Delete Confirmation Dialog (overlay) */}
-        <DeleteConfirmationDialog />
-
-        {/* Connection Type Dialog (overlay) */}
-        <ConnectionTypeDialog />
-
-        {/* Unsaved Changes Dialog (overlay) */}
-        <UnsavedChangesDialog />
-
-        {/* Error Dialog (overlay) */}
-        <ErrorDialog />
-
-        {/* Integrity Warning Dialog (overlay) */}
-        <IntegrityWarningDialog />
-
-        {/* File Conflict Dialog (overlay) */}
-        <ConflictDialog />
-
-        {/* Empty Project Onboarding Dialog (overlay) */}
-        <EmptyProjectDialog />
+        {/* Registry-managed dialogs (delete, connection, unsaved, error, integrity, conflict, empty-project) */}
+        <DialogHost />
 
         {/* Analysis Progress Dialog (overlay) */}
         <AnalysisProgressDialogConnected />

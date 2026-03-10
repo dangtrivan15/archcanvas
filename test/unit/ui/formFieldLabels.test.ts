@@ -144,7 +144,7 @@ describe('Feature #224: Form fields have associated labels', () => {
 
   describe('Dialog inputs', () => {
     it('edge label input has associated label via htmlFor', () => {
-      const source = readSource('components/shared/ConnectionTypeDialog.tsx');
+      const source = readSource('dialogs/ConnectionTypeDialog.tsx');
       expect(source).toContain('htmlFor="edge-label"');
       expect(source).toContain('id="edge-label"');
     });
@@ -179,7 +179,7 @@ describe('Feature #224: Form fields have associated labels', () => {
     });
 
     it('every label htmlFor matches an input id in ConnectionTypeDialog', () => {
-      const source = readSource('components/shared/ConnectionTypeDialog.tsx');
+      const source = readSource('dialogs/ConnectionTypeDialog.tsx');
       const htmlForMatches = source.matchAll(/htmlFor="([^"]+)"/g);
       for (const match of htmlForMatches) {
         const forValue = match[1];

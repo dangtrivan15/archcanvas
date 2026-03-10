@@ -24,7 +24,7 @@ const USE_FILE_POLLING_PATH = path.resolve(
 );
 const CONFLICT_DIALOG_PATH = path.resolve(
   __dirname,
-  '../../../src/components/shared/ConflictDialog.tsx',
+  '../../../src/dialogs/ConflictDialog.tsx',
 );
 const CORE_STORE_PATH = path.resolve(
   __dirname,

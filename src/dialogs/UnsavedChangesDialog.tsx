@@ -7,6 +7,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { registerDialog } from './registry';
 
 export function UnsavedChangesDialog() {
   const open = useUIStore((s) => s.unsavedChangesDialogOpen);
@@ -116,3 +117,6 @@ export function UnsavedChangesDialog() {
     </div>
   );
 }
+
+// Self-register with the dialog registry
+registerDialog({ id: 'unsavedChanges', component: UnsavedChangesDialog });

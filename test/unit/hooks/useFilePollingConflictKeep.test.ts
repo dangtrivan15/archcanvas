@@ -18,7 +18,7 @@ import path from 'path';
 // Source paths
 const CONFLICT_DIALOG_PATH = path.resolve(
   __dirname,
-  '../../../src/components/shared/ConflictDialog.tsx',
+  '../../../src/dialogs/ConflictDialog.tsx',
 );
 const USE_FILE_POLLING_PATH = path.resolve(
   __dirname,
