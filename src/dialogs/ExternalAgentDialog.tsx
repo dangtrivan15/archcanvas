@@ -11,6 +11,10 @@
  * The dialog monitors the coreStore graph state via Zustand subscription
  * and updates the node/edge counts in real-time as the external agent
  * adds items through the MCP server.
+ *
+ * This is a self-contained connected component that reads from uiStore.
+ * Previously, App.tsx held an `ExternalAgentDialogConnected` wrapper —
+ * that logic is now inlined here.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,37 +27,28 @@ import {
   Boxes,
   ArrowRightLeft,
 } from 'lucide-react';
-import { useGraphStore } from '@/store/graphStore';
+import { useCoreStore } from '@/store/coreStore';
+import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
-import { getClipboardAdapter } from '@/core/platform/clipboardAdapter';
-
-// ── Props ────────────────────────────────────────────────────────────────────
-
-export interface ExternalAgentDialogProps {
-  /** Whether the dialog is open */
-  open: boolean;
-  /** The copyable prompt text */
-  prompt: string;
-  /** Called when the user clicks "Done" */
-  onDone: () => void;
-  /** Called when the user clicks "Cancel" */
-  onCancel: () => void;
-}
+import { registerDialog } from './registry';
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function ExternalAgentDialog({
-  open,
-  prompt,
-  onDone,
-  onCancel,
-}: ExternalAgentDialogProps) {
+export function ExternalAgentDialog() {
+  // Read open/info directly from uiStore (no props needed)
+  const open = useUIStore((s) => s.externalAgentDialogOpen);
+  const dialogInfo = useUIStore((s) => s.externalAgentDialogInfo);
+
+  const prompt = dialogInfo?.prompt ?? '';
+  const onDone = dialogInfo?.onDone ?? (() => {});
+  const onCancel = dialogInfo?.onCancel ?? (() => {});
+
   const focusTrapRef = useFocusTrap<HTMLDivElement>(open);
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Monitor graph state for live progress
-  const nodeCount = useGraphStore((s) => {
+  const nodeCount = useCoreStore((s) => {
     // Count all nodes recursively
     let count = 0;
     const countNodes = (nodes: { children?: unknown[] }[]) => {
@@ -67,24 +62,39 @@ export function ExternalAgentDialog({
     countNodes(s.graph.nodes);
     return count;
   });
-  const edgeCount = useGraphStore((s) => s.graph.edges.length);
+  const edgeCount = useCoreStore((s) => s.graph.edges.length);
 
   const hasActivity = nodeCount > 0 || edgeCount > 0;
 
-  // Handle copy to clipboard via platform adapter
+  // Handle copy to clipboard
   const handleCopy = useCallback(async () => {
     try {
-      await getClipboardAdapter().copyText(prompt);
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch {
-      // Adapter handles fallbacks internally; ignore residual errors
+      // Fallback: create a temporary textarea
+      const textarea = document.createElement('textarea');
+      textarea.value = prompt;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     }
-    setCopied(true);
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-    }
-    copyTimeoutRef.current = setTimeout(() => {
-      setCopied(false);
-    }, 2000);
   }, [prompt]);
 
   // Clean up timeout on unmount
@@ -114,7 +124,7 @@ export function ExternalAgentDialog({
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [handleKeyDown]);
 
-  if (!open) return null;
+  if (!open || !dialogInfo) return null;
 
   return (
     <div
@@ -253,3 +263,6 @@ export function ExternalAgentDialog({
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'external-agent', component: ExternalAgentDialog });

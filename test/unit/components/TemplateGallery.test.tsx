@@ -242,7 +242,7 @@ vi.mock('@/stacks/stackLoader', () => ({
 }));
 
 // Must import after mocks
-const { TemplateGallery } = await import('@/components/shared/TemplateGallery');
+const { TemplateGallery } = await import('@/dialogs/TemplateGallery');
 
 describe('TemplateGallery', () => {
   it('renders the gallery dialog when open', async () => {

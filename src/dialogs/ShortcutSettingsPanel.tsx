@@ -15,6 +15,7 @@ import {
   eventToBindingString,
   type ShortcutAction,
 } from '@/core/shortcuts/shortcutManager';
+import { registerDialog } from './registry';
 
 /** Category colors */
 const CATEGORY_COLORS: Record<string, { color: string; bg: string }> = {
@@ -360,3 +361,6 @@ function ShortcutRow({
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'shortcut-settings', component: ShortcutSettingsPanel });

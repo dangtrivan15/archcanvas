@@ -17,6 +17,7 @@ import { Settings, X, RotateCcw, Palette, Vibrate } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { themes, themeIds } from '@/theme/themes';
+import { registerDialog } from './registry';
 
 export function SettingsDialog() {
   const open = useUIStore((s) => s.settingsDialogOpen);
@@ -221,3 +222,6 @@ export function SettingsDialog() {
     </div>
   );
 }
+
+// ── Self-registration ────────────────────────────────────────────────────────
+registerDialog({ id: 'settings', component: SettingsDialog });
