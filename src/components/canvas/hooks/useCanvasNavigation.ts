@@ -9,7 +9,6 @@ import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useContainerDiveIn } from '@/hooks/useContainerDiveIn';
 import { isActiveElementTextInput } from '@/core/input/focusZones';
 import { getNodesAtLevel } from '@/core/graph/graphQuery';
@@ -31,7 +30,7 @@ export function useCanvasNavigation(
   const placementMode = useUIStore((s) => s.placementMode);
 
   const [diveState, diveActions] = useContainerDiveIn();
-  const nestedDepth = useNestedCanvasStore((s) => s.fileStack.length);
+  const nestedDepth = useNavigationStore((s) => s.fileStack.length);
 
   // Store-based dive-in request (replaces DOM event)
   const diveInNodeId = useCanvasStore((s) => s.diveInNodeId);
@@ -114,7 +113,7 @@ export function useCanvasNavigation(
       ) {
         e.preventDefault();
         e.stopPropagation();
-        useNestedCanvasStore.getState().popToRoot();
+        useNavigationStore.getState().popToRoot();
       }
     };
     document.addEventListener('keydown', handleJumpToRoot, true);

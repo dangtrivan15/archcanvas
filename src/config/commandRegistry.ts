@@ -11,7 +11,6 @@ import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useUIStore } from '@/store/uiStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { formatBindingDisplay } from '@/core/input';
 
 export interface Command {
@@ -340,12 +339,12 @@ export function getStaticCommands(): Command[] {
       shortcut: 'Esc',
       keywords: ['pop', 'file', 'up', 'parent', 'back', 'nested', 'container', 'escape'],
       execute: () => {
-        const nestedStore = useNestedCanvasStore.getState();
+        const nestedStore = useNavigationStore.getState();
         if (nestedStore.getDepth() > 0) {
           nestedStore.popFile();
         }
       },
-      isEnabled: () => useNestedCanvasStore.getState().getDepth() > 0,
+      isEnabled: () => useNavigationStore.getState().getDepth() > 0,
     },
     {
       id: 'nav:nested-root',
@@ -354,12 +353,12 @@ export function getStaticCommands(): Command[] {
       shortcut: shortcut('mod+shift+home'),
       keywords: ['root', 'home', 'top', 'project', 'back', 'nested', 'pop all'],
       execute: () => {
-        const nestedStore = useNestedCanvasStore.getState();
+        const nestedStore = useNavigationStore.getState();
         if (nestedStore.getDepth() > 0) {
           nestedStore.popToRoot();
         }
       },
-      isEnabled: () => useNestedCanvasStore.getState().getDepth() > 0,
+      isEnabled: () => useNavigationStore.getState().getDepth() > 0,
     },
 
     // === Edge Type Operations ===

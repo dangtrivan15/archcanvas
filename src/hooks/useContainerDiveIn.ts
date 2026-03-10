@@ -15,7 +15,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { TransitionPhase } from '@/components/canvas/TransitionOverlay';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
 import { useProjectStore } from '@/store/projectStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useUIStore } from '@/store/uiStore';
@@ -193,7 +193,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
   const performDiveInSwitch = useCallback(
     async (filePath: string, containerNodeId?: string) => {
       const projectStore = useProjectStore.getState();
-      const nestedStore = useNestedCanvasStore.getState();
+      const nestedStore = useNavigationStore.getState();
 
       try {
         // Load the child file
@@ -224,7 +224,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
    */
   const autoSaveChildIfDirty = useCallback(async () => {
     const { isDirty } = useGraphStore.getState();
-    const nestedStore = useNestedCanvasStore.getState();
+    const nestedStore = useNavigationStore.getState();
     const activeFilePath = nestedStore.activeFilePath;
 
     if (isDirty && activeFilePath) {
@@ -246,7 +246,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
     (prefersReducedMotion: boolean) => {
       if (isAnimating) return;
 
-      const nestedStore = useNestedCanvasStore.getState();
+      const nestedStore = useNavigationStore.getState();
       if (nestedStore.getDepth() === 0) return; // already at root
 
       if (prefersReducedMotion) {
@@ -286,7 +286,7 @@ export function useContainerDiveIn(): [ContainerDiveInState, ContainerDiveInActi
       pendingDiveOutRef.current = false;
 
       autoSaveChildIfDirty().then(() => {
-        const nestedStore = useNestedCanvasStore.getState();
+        const nestedStore = useNavigationStore.getState();
         nestedStore.popFile();
 
         // Brief delay to let React Flow render restored nodes

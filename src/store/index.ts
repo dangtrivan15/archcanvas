@@ -41,8 +41,7 @@ export type { CanvasStoreState, LayoutSpacing } from './canvasStore';
 export { DEFAULT_LAYOUT_SPACING, ZOOM_STEP, ZOOM_MIN, ZOOM_MAX, ZOOM_DURATION } from './canvasStore';
 
 export { useNavigationStore } from './navigationStore';
-export type { NavigationStoreState } from './navigationStore';
-
+export type { NavigationStoreState, FileStackEntry, ParentEdgeIndicator } from './navigationStore';
 
 export { usePencilStore } from './pencilStore';
 export type { PencilStoreState, PencilTilt } from './pencilStore';
@@ -52,9 +51,6 @@ export type { AnnotationStoreState } from './annotationStore';
 
 export { useProjectStore } from './projectStore';
 export type { ProjectStoreState, LoadedFileEntry } from './projectStore';
-
-export { useNestedCanvasStore } from './nestedCanvasStore';
-export type { NestedCanvasStoreState, FileStackEntry, ParentEdgeIndicator } from './nestedCanvasStore';
 
 // Centralized selectors for granular subscriptions
 export * from './selectors';

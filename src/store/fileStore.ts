@@ -318,8 +318,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         appEvents.emit('file:loading', { message: 'Saving project...' });
 
         try {
-          const { useNestedCanvasStore } = await import('./nestedCanvasStore');
-          const activeFilePath = useNestedCanvasStore.getState().activeFilePath;
+          const { useNavigationStore } = await import('./navigationStore');
+          const activeFilePath = useNavigationStore.getState().activeFilePath;
 
           const result = activeFilePath
             ? await projectState.saveChildArchc(activeFilePath)

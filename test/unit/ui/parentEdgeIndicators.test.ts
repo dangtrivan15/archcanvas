@@ -13,12 +13,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { ArchGraph, ArchEdge, ArchNode } from '@/types/graph';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useEngineStore } from '@/store/engineStore';
 import { useHistoryStore } from '@/store/historyStore';
-import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -95,7 +94,7 @@ function createChildGraph(): ArchGraph {
 
 describe('nestedCanvasStore - parent edge indicators', () => {
   beforeEach(() => {
-    useNestedCanvasStore.getState().reset();
+    useNavigationStore.getState().reset();
     // Set up the parent graph in coreStore so pushFile can capture edges
     useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
@@ -103,22 +102,22 @@ describe('nestedCanvasStore - parent edge indicators', () => {
   });
 
   it('starts with empty parentEdgeIndicators', () => {
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('captures parent edges when pushFile is called with containerNodeId', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
 
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     expect(indicators).toHaveLength(3); // e1 (incoming), e2 (outgoing), e3 (outgoing)
   });
 
   it('correctly identifies incoming edges (to container)', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
 
-    const incoming = useNestedCanvasStore
+    const incoming = useNavigationStore
       .getState()
       .parentEdgeIndicators.filter((i) => i.direction === 'incoming');
     expect(incoming).toHaveLength(1);
@@ -130,9 +129,9 @@ describe('nestedCanvasStore - parent edge indicators', () => {
 
   it('correctly identifies outgoing edges (from container)', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
 
-    const outgoing = useNestedCanvasStore
+    const outgoing = useNavigationStore
       .getState()
       .parentEdgeIndicators.filter((i) => i.direction === 'outgoing');
     expect(outgoing).toHaveLength(2);
@@ -151,48 +150,48 @@ describe('nestedCanvasStore - parent edge indicators', () => {
 
   it('does not include edges unrelated to the container node', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
 
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     const edgeIds = indicators.map((i) => i.edge.id);
     expect(edgeIds).not.toContain('e4'); // api-gateway -> database
   });
 
   it('captures no indicators when pushFile is called without containerNodeId', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph);
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph);
 
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('clears indicators on popFile', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators.length).toBeGreaterThan(0);
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    expect(useNavigationStore.getState().parentEdgeIndicators.length).toBeGreaterThan(0);
 
-    useNestedCanvasStore.getState().popFile();
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    useNavigationStore.getState().popFile();
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('clears indicators on popToRoot', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
     // Push a second level
     useGraphStore.getState()._setGraph(childGraph);
-    useNestedCanvasStore.getState().pushFile('./inner.archc', createChildGraph());
+    useNavigationStore.getState().pushFile('./inner.archc', createChildGraph());
 
-    expect(useNestedCanvasStore.getState().fileStack.length).toBe(2);
+    expect(useNavigationStore.getState().fileStack.length).toBe(2);
 
-    useNestedCanvasStore.getState().popToRoot();
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    useNavigationStore.getState().popToRoot();
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('clears indicators on reset', () => {
     const childGraph = createChildGraph();
-    useNestedCanvasStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', childGraph, 'container-1');
 
-    useNestedCanvasStore.getState().reset();
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    useNavigationStore.getState().reset();
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('uses node ID as fallback name when node is not found', () => {
@@ -207,8 +206,8 @@ describe('nestedCanvasStore - parent edge indicators', () => {
     };
     useGraphStore.getState()._setGraph(graph);
 
-    useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'container-x');
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    useNavigationStore.getState().pushFile('./child.archc', createChildGraph(), 'container-x');
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     expect(indicators).toHaveLength(1);
     expect(indicators[0]!.connectedNodeName).toBe('ghost-node'); // Falls back to ID
   });
@@ -218,7 +217,7 @@ describe('nestedCanvasStore - parent edge indicators', () => {
 
 describe('ParentEdgeIndicators component structure', () => {
   beforeEach(() => {
-    useNestedCanvasStore.getState().reset();
+    useNavigationStore.getState().reset();
   });
 
   it('parentEdgeIndicators has correct shape for rendering', () => {
@@ -226,9 +225,9 @@ describe('ParentEdgeIndicators component structure', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
 
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
 
     // Each indicator has the required fields for rendering
     for (const ind of indicators) {
@@ -246,9 +245,9 @@ describe('ParentEdgeIndicators component structure', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
 
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     const incoming = indicators.filter((i) => i.direction === 'incoming');
     const outgoing = indicators.filter((i) => i.direction === 'outgoing');
 
@@ -263,9 +262,9 @@ describe('ParentEdgeIndicators component structure', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
 
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     const labeled = indicators.filter((i) => i.edge.label);
     expect(labeled.length).toBe(3); // 'REST', 'Events', 'Cache Write'
 
@@ -280,7 +279,7 @@ describe('ParentEdgeIndicators component structure', () => {
 
 describe('ParentEdgeIndicators navigation', () => {
   beforeEach(() => {
-    useNestedCanvasStore.getState().reset();
+    useNavigationStore.getState().reset();
     useGraphStore.getState()._setGraph(createParentGraph());
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
@@ -290,13 +289,13 @@ describe('ParentEdgeIndicators navigation', () => {
     const parentGraph = createParentGraph();
     useGraphStore.getState()._setGraph(parentGraph);
 
-    useNestedCanvasStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
+    useNavigationStore.getState().pushFile('./auth.archc', createChildGraph(), 'container-1');
 
     // Now inside nested - graph should be the child
     expect(useGraphStore.getState().graph.name).toBe('Child Architecture');
 
     // Pop back
-    useNestedCanvasStore.getState().popFile();
+    useNavigationStore.getState().popFile();
     expect(useGraphStore.getState().graph.name).toBe('Parent Architecture');
   });
 
@@ -315,7 +314,7 @@ describe('ParentEdgeIndicators navigation', () => {
 
 describe('ParentEdgeIndicators edge cases', () => {
   beforeEach(() => {
-    useNestedCanvasStore.getState().reset();
+    useNavigationStore.getState().reset();
   });
 
   it('handles container with no edges', () => {
@@ -331,8 +330,8 @@ describe('ParentEdgeIndicators edge cases', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'lonely');
-    expect(useNestedCanvasStore.getState().parentEdgeIndicators).toEqual([]);
+    useNavigationStore.getState().pushFile('./child.archc', createChildGraph(), 'lonely');
+    expect(useNavigationStore.getState().parentEdgeIndicators).toEqual([]);
   });
 
   it('handles container with only incoming edges', () => {
@@ -351,8 +350,8 @@ describe('ParentEdgeIndicators edge cases', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'target');
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    useNavigationStore.getState().pushFile('./child.archc', createChildGraph(), 'target');
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     expect(indicators).toHaveLength(1);
     expect(indicators[0]!.direction).toBe('incoming');
   });
@@ -373,8 +372,8 @@ describe('ParentEdgeIndicators edge cases', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'source');
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    useNavigationStore.getState().pushFile('./child.archc', createChildGraph(), 'source');
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     expect(indicators).toHaveLength(1);
     expect(indicators[0]!.direction).toBe('outgoing');
   });
@@ -399,8 +398,8 @@ describe('ParentEdgeIndicators edge cases', () => {
     useNavigationStore.getState().zoomToRoot();
     useCanvasStore.getState().setViewport({ x: 0, y: 0, zoom: 1 });
 
-    useNestedCanvasStore.getState().pushFile('./child.archc', createChildGraph(), 'server');
-    const indicators = useNestedCanvasStore.getState().parentEdgeIndicators;
+    useNavigationStore.getState().pushFile('./child.archc', createChildGraph(), 'server');
+    const indicators = useNavigationStore.getState().parentEdgeIndicators;
     expect(indicators).toHaveLength(3);
 
     const incoming = indicators.filter((i) => i.direction === 'incoming');

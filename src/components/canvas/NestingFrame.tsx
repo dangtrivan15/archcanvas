@@ -14,7 +14,6 @@
  */
 
 import { memo, useMemo } from 'react';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useUIStore } from '@/store/uiStore';
 
@@ -50,7 +49,7 @@ interface FrameLevel {
 // ─── Component ──────────────────────────────────────────────────
 
 function NestingFrameComponent() {
-  const fileStack = useNestedCanvasStore((s) => s.fileStack);
+  const fileStack = useNavigationStore((s) => s.fileStack);
   const navigationPath = useNavigationStore((s) => s.path);
   const nestingFrameEnabled = useUIStore((s) => s.nestingFrameEnabled);
   const nestingFrameThickness = useUIStore((s) => s.nestingFrameThickness);

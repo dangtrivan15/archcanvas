@@ -7,7 +7,6 @@
 import { useMemo } from 'react';
 import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { findNode } from '@/core/graph/graphEngine';
 
 /**
@@ -34,10 +33,10 @@ export function ModeStatusBar() {
   const graph = useGraphStore((s) => s.graph);
 
   // Cross-file navigation stack
-  const fileStack = useNestedCanvasStore((s) => s.fileStack);
-  const activeFilePath = useNestedCanvasStore((s) => s.activeFilePath);
-  const popFile = useNestedCanvasStore((s) => s.popFile);
-  const popToRoot = useNestedCanvasStore((s) => s.popToRoot);
+  const fileStack = useNavigationStore((s) => s.fileStack);
+  const activeFilePath = useNavigationStore((s) => s.activeFilePath);
+  const popFile = useNavigationStore((s) => s.popFile);
+  const popToRoot = useNavigationStore((s) => s.popToRoot);
 
   const fileDepth = fileStack.length;
 

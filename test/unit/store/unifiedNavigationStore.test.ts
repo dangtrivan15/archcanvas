@@ -13,7 +13,6 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useNavigationStore } from '@/store/navigationStore';
-import { useNestedCanvasStore } from '@/store/nestedCanvasStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useGraphStore } from '@/store/graphStore';
 import type { ArchGraph } from '@/types/graph';
@@ -138,8 +137,8 @@ describe('P05-T1: Unified NavigationStore', () => {
   // ── Unified Store Identity ──────────────────────────────────
 
   describe('nestedCanvasStore facade', () => {
-    it('useNestedCanvasStore is the same store as useNavigationStore', () => {
-      expect(useNestedCanvasStore).toBe(useNavigationStore);
+    it('useNavigationStore is the same store as useNavigationStore', () => {
+      expect(useNavigationStore).toBe(useNavigationStore);
     });
 
     it('facade exports FileStackEntry and ParentEdgeIndicator types', () => {

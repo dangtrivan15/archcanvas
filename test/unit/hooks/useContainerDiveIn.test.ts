@@ -38,7 +38,7 @@ const mockPopFile = vi.fn().mockReturnValue(null);
 const mockGetDepth = vi.fn().mockReturnValue(0);
 
 vi.mock('@/store/nestedCanvasStore', () => ({
-  useNestedCanvasStore: Object.assign(
+  useNavigationStore: Object.assign(
     (selector: (s: Record<string, unknown>) => unknown) => {
       const state = {
         fileStack: [],
