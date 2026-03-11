@@ -74,6 +74,8 @@ async function resolveRefs(
     // Diamond: already loaded via a different path — skip, no error
     if (loaded.has(ref)) continue;
 
+    // Mark as loaded before attempting read — if the file is missing or invalid,
+    // only the first reference reports an error; subsequent references skip silently.
     loaded.add(ref);
     ancestors.add(ref);
     const filePath = `.archcanvas/${ref}.yaml`;
