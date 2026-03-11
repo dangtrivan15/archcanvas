@@ -40,7 +40,7 @@ export class InMemoryFileSystem implements FileSystem {
     return false;
   }
 
-  async mkdir(): Promise<void> {
+  async mkdir(_path: string): Promise<void> {
     // No-op — directories are implicit in the file map
   }
 
