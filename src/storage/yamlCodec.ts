@@ -23,6 +23,13 @@ export class SerializeError extends Error {
   }
 }
 
+function formatPath(path: PropertyKey[]): string {
+  return path.reduce<string>((acc, segment) => {
+    if (typeof segment === 'number') return `${acc}[${segment}]`;
+    return acc ? `${acc}.${String(segment)}` : String(segment);
+  }, '');
+}
+
 export function parseCanvasFile(yamlContent: string): ParsedCanvas {
   const doc = parseDocument(yamlContent);
 
@@ -37,7 +44,7 @@ export function parseCanvasFile(yamlContent: string): ParsedCanvas {
 
   if (!result.success) {
     const issues = result.error.issues
-      .map((i) => `${i.path.map(String).join('.')}: ${i.message}`)
+      .map((i) => `${formatPath(i.path)}: ${i.message}`)
       .join(', ');
     throw new ParseError(`Schema validation failed: ${issues}`);
   }
@@ -53,7 +60,7 @@ export function serializeCanvasFile(
 
   if (!result.success) {
     const issues = result.error.issues
-      .map((i) => `${i.path.map(String).join('.')}: ${i.message}`)
+      .map((i) => `${formatPath(i.path)}: ${i.message}`)
       .join(', ');
     throw new SerializeError(`Schema validation failed: ${issues}`);
   }
@@ -70,12 +77,13 @@ export function serializeCanvasFile(
         }
       }
       // Remove keys that are no longer in data
+      // Collect first, then delete to avoid mutating during iteration
       const dataKeys = new Set(Object.keys(result.data));
-      for (const item of root.items) {
-        const rawKey = isScalar(item.key) ? item.key.value : item.key;
-        if (typeof rawKey === 'string' && !dataKeys.has(rawKey)) {
-          doc.delete(rawKey);
-        }
+      const keysToDelete = root.items
+        .map((item) => (isScalar(item.key) ? item.key.value : item.key))
+        .filter((k): k is string => typeof k === 'string' && !dataKeys.has(k));
+      for (const k of keysToDelete) {
+        doc.delete(k);
       }
     } else {
       doc.contents = doc.createNode(result.data);
