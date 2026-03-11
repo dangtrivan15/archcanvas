@@ -57,6 +57,9 @@ describe('Note', () => {
   it('rejects missing author', () => {
     expect(() => Note.parse({ content: 'test' })).toThrow();
   });
+  it('rejects missing content', () => {
+    expect(() => Note.parse({ author: 'van' })).toThrow();
+  });
 });
 
 describe('Position', () => {
