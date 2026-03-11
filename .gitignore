@@ -3,7 +3,9 @@ node_modules/
 
 # Build output
 dist/
-dev-dist/
+
+# Tauri
+src-tauri/target/
 
 # Environment
 .env
@@ -20,19 +22,11 @@ dev-dist/
 Thumbs.db
 
 # Testing
-.playwright-cli/
+.playwright-mcp/
 .playwright/
 test-results/
 playwright-report/
 tmp/
-
-# Autoforge
-.autoforge/
-features.db
-
-# Proto generated duplicates (only .pb.js/.pb.d.ts are tracked)
-src/proto/archcanvas.js
-src/proto/archcanvas.d.ts
 
 # Worktrees
 .worktrees/
@@ -40,4 +34,4 @@ src/proto/archcanvas.d.ts
 # Misc
 *.log
 coverage/
-.vite-cache/
+*.tsbuildinfo

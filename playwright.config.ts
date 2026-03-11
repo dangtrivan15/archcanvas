@@ -1,35 +1,29 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
-const chromiumArgs = ['--disable-dev-shm-usage'];
-if (process.env.CI) {
-  chromiumArgs.push('--no-sandbox');
-}
+process.env.SLOT_GUARD_POOL = "playwright";
 
 export default defineConfig({
-  testDir: './test/e2e',
-  fullyParallel: false,
+  testDir: "./test/e2e",
+  globalSetup: ["./test/setup/slotGuard.ts"],
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1,
-  reporter: 'html',
+  workers: process.env.CI ? 1 : undefined,
+  reporter: "html",
   use: {
-    baseURL: 'https://localhost:5173',
-    ignoreHTTPSErrors: true,
-    trace: 'on-first-retry',
-    launchOptions: {
-      args: chromiumArgs,
-    },
+    baseURL: "http://localhost:4173",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: {
-    command: 'npm run build && npx vite preview --port 5173',
-    url: 'https://localhost:5173',
-    ignoreHTTPSErrors: true,
-    reuseExistingServer: false,
+    command: "npm run build && npx vite preview",
+    url: "http://localhost:4173",
+    reuseExistingServer: !process.env.CI,
   },
 });

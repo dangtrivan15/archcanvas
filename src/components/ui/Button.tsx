@@ -1,60 +1,64 @@
-/**
- * Button - reusable button primitive with consistent variants.
- *
- * Variants:
- * - primary: main action (blue/iris)
- * - secondary: cancel/neutral action
- * - danger: destructive action (red/love)
- * - warning: caution action (amber/gold)
- * - ghost: transparent, icon-only or toolbar button
- *
- * All variants are theme-aware and include proper focus-visible styles.
- */
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "radix-ui"
 
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { cn } from "@/lib/utils"
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+const buttonVariants = cva(
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40",
+        outline:
+          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost:
+          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+        "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}
-
-const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    'text-white bg-iris border border-transparent hover:opacity-90 focus-visible:ring-iris',
-  secondary:
-    'text-foreground bg-surface border border-border hover:bg-highlight-low focus-visible:ring-ring',
-  danger:
-    'text-white bg-love border border-transparent hover:opacity-90 focus-visible:ring-love',
-  warning:
-    'text-white bg-gold border border-transparent hover:opacity-90 focus-visible:ring-gold',
-  ghost:
-    'text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent focus-visible:ring-ring',
-};
-
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-2.5 py-1 text-xs',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-2.5 text-base',
-};
-
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', className = '', children, type = 'button', ...rest },
-  ref,
-) {
-  const base =
-    'inline-flex items-center justify-center font-medium rounded-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none';
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+  }) {
+  const Comp = asChild ? Slot.Root : "button"
 
   return (
-    <button
-      ref={ref}
-      type={type}
-      className={`${base} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
-      {...rest}
-    >
-      {children}
-    </button>
-  );
-});
+    <Comp
+      data-slot="button"
+      data-variant={variant}
+      data-size={size}
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
