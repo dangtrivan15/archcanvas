@@ -1,0 +1,20 @@
+id: svc-api
+type: compute/service
+displayName: API Service
+description: Main API service
+args:
+  language: TypeScript
+  framework: Express
+
+nodes:
+  - id: handler
+    type: compute/function
+    displayName: Request Handler
+  - id: validator
+    type: compute/function
+    displayName: Input Validator
+
+edges:
+  - from: { node: handler, port: out }
+    to: { node: validator, port: in }
+    label: validate input

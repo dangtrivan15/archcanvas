@@ -1,0 +1,25 @@
+project:
+  name: Test Project
+  description: A test project
+
+nodes:
+  - id: svc-api
+    type: compute/service
+    displayName: API Service
+  - id: db-postgres
+    type: data/database
+    displayName: PostgreSQL
+    args:
+      engine: PostgreSQL
+      version: "16"
+
+entities:
+  - name: User
+    description: System user
+
+edges:
+  - from: { node: svc-api, port: http-out }
+    to: { node: db-postgres, port: query-in }
+    protocol: SQL
+    label: persist users
+    entities: [User]
