@@ -1,0 +1,331 @@
+@import "tailwindcss";
+
+/*
+ * Wire Tailwind CSS 4 dark: variant to the .dark class on <html>.
+ * The ThemeProvider sets/removes .dark based on the active theme,
+ * so this ensures dark:text-*, dark:bg-*, etc. all respond to theme switching.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Theme CSS custom properties.
+ * Initial values are the "dark" defaults — the ThemeProvider will override
+ * these at runtime via inline styles on :root when a theme is applied.
+ */
+:root {
+  --background: 240 10% 3.9%;
+  --surface: 240 6% 10%;
+  --text: 0 0% 98%;
+  --foreground: 0 0% 98%;
+  --subtle: 240 5% 65%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --highlight-low: 240 4% 16%;
+  --highlight-med: 240 4% 22%;
+  --highlight-high: 240 4% 28%;
+  --primary: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --accent: 240 3.7% 15.9%;
+  --border: 240 3.7% 15.9%;
+  --overlay: 240 10% 3.9%;
+  --ring: 240 4.9% 83.9%;
+  --love: 347 77% 50%;
+  --gold: 35 88% 55%;
+  --rose: 343 76% 68%;
+  --pine: 166 54% 46%;
+  --foam: 189 50% 55%;
+  --iris: 267 57% 63%;
+  --radius: 0.5rem;
+}
+
+/*
+ * Tailwind CSS 4 @theme — register CSS variables as Tailwind design tokens.
+ * This allows classes like bg-surface, text-muted, border-border, etc.
+ */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-surface: hsl(var(--surface));
+  --color-foreground: hsl(var(--foreground));
+  --color-text: hsl(var(--text));
+  --color-subtle: hsl(var(--subtle));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-highlight-low: hsl(var(--highlight-low));
+  --color-highlight-med: hsl(var(--highlight-med));
+  --color-highlight-high: hsl(var(--highlight-high));
+  --color-primary: hsl(var(--primary));
+  --color-secondary: hsl(var(--secondary));
+  --color-accent: hsl(var(--accent));
+  --color-border: hsl(var(--border));
+  --color-overlay: hsl(var(--overlay));
+  --color-ring: hsl(var(--ring));
+  --color-love: hsl(var(--love));
+  --color-gold: hsl(var(--gold));
+  --color-rose: hsl(var(--rose));
+  --color-pine: hsl(var(--pine));
+  --color-foam: hsl(var(--foam));
+  --color-iris: hsl(var(--iris));
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Global focus-visible styles for all interactive elements (accessibility) */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+/* ─── React Flow Theme Integration ─── */
+/* Controls panel respects active theme */
+.react-flow__controls {
+  background-color: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px hsl(var(--overlay) / 0.2);
+}
+
+.react-flow__controls button {
+  background-color: hsl(var(--surface));
+  border-bottom-color: hsl(var(--border));
+  color: hsl(var(--text));
+  fill: hsl(var(--text));
+}
+
+.react-flow__controls button:hover {
+  background-color: hsl(var(--highlight-low));
+}
+
+.react-flow__controls button svg {
+  fill: hsl(var(--text));
+}
+
+/* Edge labels follow theme */
+.react-flow__edge-textwrapper .react-flow__edge-text {
+  fill: hsl(var(--text));
+}
+
+/* Selection box follows theme accent */
+.react-flow__selection {
+  background: hsl(var(--iris) / 0.08);
+  border: 1px solid hsl(var(--iris) / 0.4);
+}
+
+/* Smooth transition for keyboard bulk node movement (Alt+Arrow) */
+.react-flow__node {
+  transition: transform 150ms ease-out;
+}
+
+/* Disable transition during drag to avoid lag */
+.react-flow__node.dragging {
+  transition: none;
+}
+
+/* ─── Connect Mode Visual Feedback ─── */
+/* Source node: green glow border (uses theme pine) */
+.react-flow__node.connect-mode-source {
+  box-shadow: 0 0 0 3px hsl(var(--pine)), 0 0 12px 4px hsl(var(--pine) / 0.4);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+/* Target candidate: accent highlight (uses theme iris) */
+.react-flow__node.connect-mode-target {
+  box-shadow: 0 0 0 2px hsl(var(--iris)), 0 0 8px 2px hsl(var(--iris) / 0.3);
+  border-radius: 8px;
+  z-index: 10;
+}
+
+/* ─── Safe Area Insets for iPad notch, home indicator, and status bar ─── */
+/* Requires <meta name="viewport" content="viewport-fit=cover"> in index.html */
+/* On desktop browsers, env(safe-area-inset-*) resolves to 0px (no effect) */
+
+/* Toolbar: respect top safe area (notch / status bar on iPads with Face ID) */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Footer / status bar: respect bottom safe area (home indicator) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Left panel: respect left safe area (landscape mode, camera on left) */
+.safe-area-left {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* Right panel: respect right safe area (landscape mode, camera on right) */
+.safe-area-right {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Combined safe area insets for the main layout container */
+.safe-area-insets {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* ─── Touch-Friendly Tap Targets (Apple HIG: 44x44pt minimum) ─── */
+/* Only applies on coarse-pointer (touch) devices; desktop remains compact */
+
+@media (pointer: coarse) {
+  /* Generic touch target: ensures 44x44px minimum for buttons and interactive elements */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Touch target for full-width menu/list items: ensures 44px row height */
+  .touch-target-row {
+    min-height: 44px;
+  }
+
+  /* Toolbar: taller header on touch devices */
+  .touch-toolbar {
+    min-height: 48px;
+  }
+}
+
+/* ─── Compact Viewport Dialog Adaptation ─── */
+/* On narrow viewports (iPad Slide Over / Split View 1/3), dialogs expand to
+   near-full-screen sheets so content doesn't overflow or clip. */
+@media (max-width: 599px) {
+  .compact-dialog-sheet {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* Parent overlay should align items to end (bottom) for sheet effect */
+  .compact-dialog-overlay {
+    align-items: flex-end !important;
+  }
+}
+
+/* ─── Status Bar Compact Mode ─── */
+/* Hide non-essential status bar items in narrow viewports */
+@media (max-width: 599px) {
+  .status-bar-compact-hide {
+    display: none !important;
+  }
+}
+
+/* ─── Pointer Cursor Adaptation for Trackpad/Mouse (iPadOS 13.4+) ─── */
+/* When a fine pointer (trackpad/mouse) with hover capability is detected,
+   adapt cursor styles for proper desktop-like feedback on iPad. */
+@media (pointer: fine) and (hover: hover) {
+  /* Canvas pane: crosshair cursor for precision placement */
+  .react-flow__pane {
+    cursor: crosshair;
+  }
+
+  /* Nodes: grab cursor to indicate draggable */
+  .react-flow__node {
+    cursor: grab;
+  }
+
+  /* Nodes while dragging: grabbing cursor */
+  .react-flow__node.dragging {
+    cursor: grabbing;
+  }
+
+  /* Edges: pointer cursor to indicate clickable */
+  .react-flow__edge {
+    cursor: pointer;
+  }
+
+  /* Selection area: crosshair for precise selection */
+  .react-flow__selectionpane {
+    cursor: crosshair;
+  }
+
+  /* Controls buttons: pointer cursor */
+  .react-flow__controls button {
+    cursor: pointer;
+  }
+
+  /* Port handles: crosshair for connection drawing */
+  .react-flow__handle {
+    cursor: crosshair;
+  }
+
+  /* MiniMap: move cursor for panning */
+  .react-flow__minimap {
+    cursor: move;
+  }
+
+  /* Node hover highlight: subtle iris border glow on hover */
+  .react-flow__node:hover:not(.selected) {
+    filter: drop-shadow(0 0 6px hsl(var(--iris) / 0.25));
+  }
+
+  /* Edge hover: thicken stroke on hover via CSS class */
+  .react-flow__edge:hover .react-flow__edge-path {
+    stroke-width: 3.5;
+  }
+
+  /* Edge hover interaction zone: widen transparent hit area for easier targeting */
+  .react-flow__edge-interaction {
+    stroke-width: 20;
+  }
+
+  /* Tooltips: visible only on hover-capable devices */
+  .pointer-tooltip {
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 150ms ease, visibility 150ms ease;
+    pointer-events: none;
+  }
+
+  /* Show tooltip on parent hover */
+  *:hover > .pointer-tooltip,
+  .pointer-tooltip-trigger:hover .pointer-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+/* ─── Nesting frame slide-in animation ─── */
+@keyframes nestingFrameSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ─── Touch-only devices: hide pointer-specific tooltips ─── */
+@media (pointer: coarse) and (hover: none) {
+  .pointer-tooltip {
+    display: none !important;
+  }
+}
