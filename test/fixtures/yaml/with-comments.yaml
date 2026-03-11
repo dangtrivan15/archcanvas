@@ -1,0 +1,9 @@
+# Project header comment
+project:
+  name: Commented Project
+
+# Infrastructure nodes
+nodes:
+  - id: svc-api
+    type: compute/service
+    displayName: API Service
