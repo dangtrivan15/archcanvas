@@ -7,6 +7,7 @@
   --color-muted: #27272a;
   --color-muted-foreground: #a1a1aa;
   --color-border: #27272a;
+  --color-input: #27272a;
   --color-ring: #d4d4d8;
   --color-primary: #fafafa;
   --color-primary-foreground: #18181b;
@@ -16,6 +17,10 @@
   --color-accent-foreground: #fafafa;
   --color-destructive: #7f1d1d;
   --color-destructive-foreground: #fafafa;
+  --color-popover: #18181b;
+  --color-popover-foreground: #fafafa;
+  --color-card: #18181b;
+  --color-card-foreground: #fafafa;
   --radius: 0.5rem;
 }
 
@@ -30,4 +35,28 @@ body {
 #root {
   height: 100vh;
   width: 100vw;
+}
+
+/* ReactFlow dark-theme overrides */
+.react-flow__controls {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  background-color: var(--color-muted);
+  border: 1px solid var(--color-border);
+  fill: var(--color-muted-foreground);
+  color: var(--color-muted-foreground);
+}
+
+.react-flow__controls-button:hover {
+  background-color: var(--color-accent);
+  fill: var(--color-accent-foreground);
+  color: var(--color-accent-foreground);
+}
+
+.react-flow__controls-button svg {
+  fill: inherit;
 }

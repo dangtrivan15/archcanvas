@@ -91,5 +91,5 @@ export function RightPanel() {
     );
   }
 
-  return <ScrollArea className="h-full">{content}</ScrollArea>;
+  return <ScrollArea className="h-full overflow-hidden">{content}</ScrollArea>;
 }
