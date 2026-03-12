@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
-import type { NodeChange, Connection } from '@xyflow/react';
+import type { Node as RFNode, NodeChange, Connection } from '@xyflow/react';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useGraphStore } from '@/store/graphStore';
-import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+import { useNavigationStore } from '@/store/navigationStore';
+import type { CanvasNodeData } from '../types';
 
 export function useCanvasInteractions() {
   const onNodesChange = useCallback((changes: NodeChange[]) => {
+    const canvasId = useNavigationStore.getState().currentCanvasId;
     for (const change of changes) {
       if (
         change.type === 'position' &&
@@ -14,12 +16,12 @@ export function useCanvasInteractions() {
       ) {
         useGraphStore
           .getState()
-          .updateNodePosition(ROOT_CANVAS_KEY, change.id, change.position);
+          .updateNodePosition(canvasId, change.id, change.position);
       }
     }
   }, []);
 
-  const onNodeClick = useCallback((_: React.MouseEvent, node: { id: string }) => {
+  const onNodeClick = useCallback((_: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
     useCanvasStore.getState().selectNodes([node.id]);
   }, []);
 
