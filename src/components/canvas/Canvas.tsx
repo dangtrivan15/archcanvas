@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow } from "@xyflow/react";
 import type { Node as RFNode, Edge as RFEdge } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
@@ -10,25 +10,74 @@ import { EdgeRenderer } from "../edges/EdgeRenderer";
 import { Breadcrumb } from "../shared/Breadcrumb";
 import { ContextMenu } from "../shared/ContextMenu";
 import type { ContextMenuState } from "../shared/ContextMenu";
+import { CommandPalette } from "../shared/CommandPalette";
 import type { CanvasNodeData, CanvasEdgeData } from "./types";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useGraphStore } from "@/store/graphStore";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useUiStore } from "@/store/uiStore";
+import { useFileStore } from "@/store/fileStore";
+import { computeLayout } from "@/core/layout/elk";
 
 const nodeTypes = { archNode: NodeRenderer };
 const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes, edges } = useCanvasRenderer();
-  useCanvasKeyboard();
   useCanvasNavigation();
+
+  // -------------------------------------------------------------------------
+  // Command palette state
+  // -------------------------------------------------------------------------
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+  // -------------------------------------------------------------------------
+  // Auto-layout
+  // -------------------------------------------------------------------------
+  const reactFlow = useReactFlow();
+
+  const handleAutoLayout = useCallback(async () => {
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const loaded = useFileStore.getState().getCanvas(canvasId);
+    if (!loaded) return;
+
+    const result = await computeLayout(loaded.data);
+    const gs = useGraphStore.getState();
+
+    for (const [nodeId, position] of result.positions) {
+      gs.updateNodePosition(canvasId, nodeId, position);
+    }
+
+    // Fit view after layout settles
+    requestAnimationFrame(() => reactFlow.fitView({ duration: 400 }));
+  }, [reactFlow]);
+
+  useCanvasKeyboard({ onOpenPalette: openPalette, onAutoLayout: handleAutoLayout });
+
+  // -------------------------------------------------------------------------
+  // Wire custom events dispatched by CommandPalette's ActionProvider and
+  // LeftToolbar buttons
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    const handleFitView = () => reactFlow.fitView({ duration: 300 });
+    const handleLayout = () => void handleAutoLayout();
+    const handleOpenPalette = () => openPalette();
+    window.addEventListener('archcanvas:fit-view', handleFitView);
+    window.addEventListener('archcanvas:auto-layout', handleLayout);
+    window.addEventListener('archcanvas:open-palette', handleOpenPalette);
+    return () => {
+      window.removeEventListener('archcanvas:fit-view', handleFitView);
+      window.removeEventListener('archcanvas:auto-layout', handleLayout);
+      window.removeEventListener('archcanvas:open-palette', handleOpenPalette);
+    };
+  }, [reactFlow, handleAutoLayout, openPalette]);
+
   const {
     onNodesChange, onNodeClick, onEdgeClick,
     onConnect, onConnectStart, onConnectEnd, onPaneClick,
   } = useCanvasInteractions();
-
-  const reactFlow = useReactFlow();
 
   // -------------------------------------------------------------------------
   // Context menu state
@@ -150,6 +199,8 @@ export function Canvas() {
           onEdgeDelete={handleEdgeDelete}
         />
       )}
+
+      <CommandPalette open={paletteOpen} onClose={closePalette} />
     </div>
   );
 }
