@@ -1,4 +1,4 @@
-import { produce } from 'immer';
+import { produceWithPatches } from 'immer';
 import type {
   CanvasFile,
   InlineNode,
@@ -29,11 +29,11 @@ export function addNode(
     warnings.push(...validateNode(node, registry));
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     (draft.nodes ??= []).push(node);
   });
 
-  return { ok: true, data, warnings };
+  return { ok: true, data, patches, inversePatches, warnings };
 }
 
 export function removeNode(
@@ -46,14 +46,14 @@ export function removeNode(
     return { ok: false, error: { code: 'NODE_NOT_FOUND', nodeId } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     draft.nodes = (draft.nodes ?? []).filter((n) => n.id !== nodeId);
     draft.edges = (draft.edges ?? []).filter(
       (e) => e.from.node !== nodeId && e.to.node !== nodeId,
     );
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 type InlineNodeUpdates = Partial<
@@ -77,7 +77,7 @@ export function updateNode(
     return { ok: false, error: { code: 'INVALID_REF_NODE_UPDATE' } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     const target = (draft.nodes ?? []).find((n) => n.id === nodeId)!;
     Object.assign(target, updates);
   });
@@ -88,7 +88,7 @@ export function updateNode(
     warnings.push(...validateNode(updatedNode, registry));
   }
 
-  return { ok: true, data, warnings };
+  return { ok: true, data, patches, inversePatches, warnings };
 }
 
 export function updateNodePosition(
@@ -102,12 +102,12 @@ export function updateNodePosition(
     return { ok: false, error: { code: 'NODE_NOT_FOUND', nodeId } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     const target = (draft.nodes ?? []).find((n) => n.id === nodeId)!;
     target.position = position;
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 // --- Edge Operations ---
@@ -152,11 +152,11 @@ export function addEdge(
     warnings.push(...validateEdge(edge, canvas, registry));
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     (draft.edges ??= []).push(edge);
   });
 
-  return { ok: true, data, warnings };
+  return { ok: true, data, patches, inversePatches, warnings };
 }
 
 export function removeEdge(
@@ -170,13 +170,13 @@ export function removeEdge(
     return { ok: false, error: { code: 'EDGE_NOT_FOUND', from, to } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     draft.edges = (draft.edges ?? []).filter(
       (e) => !(e.from.node === from && e.to.node === to),
     );
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 type EdgeUpdates = Partial<Pick<Edge, 'protocol' | 'label' | 'entities' | 'notes'>>;
@@ -193,14 +193,14 @@ export function updateEdge(
     return { ok: false, error: { code: 'EDGE_NOT_FOUND', from, to } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     const target = (draft.edges ?? []).find(
       (e) => e.from.node === from && e.to.node === to,
     )!;
     Object.assign(target, updates);
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 // --- Entity Operations ---
@@ -215,11 +215,11 @@ export function addEntity(
     return { ok: false, error: { code: 'DUPLICATE_ENTITY', name: entity.name } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     (draft.entities ??= []).push(entity);
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 export function removeEntity(
@@ -245,11 +245,11 @@ export function removeEntity(
     };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     draft.entities = (draft.entities ?? []).filter((e) => e.name !== entityName);
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
 type EntityUpdates = Partial<Pick<Entity, 'description' | 'codeRefs'>>;
@@ -265,10 +265,10 @@ export function updateEntity(
     return { ok: false, error: { code: 'ENTITY_NOT_FOUND', name: entityName } };
   }
 
-  const data = produce(canvas, (draft) => {
+  const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     const target = (draft.entities ?? []).find((e) => e.name === entityName)!;
     Object.assign(target, updates);
   });
 
-  return { ok: true, data, warnings: [] };
+  return { ok: true, data, patches, inversePatches, warnings: [] };
 }

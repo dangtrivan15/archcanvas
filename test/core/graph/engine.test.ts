@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { enablePatches, applyPatches } from 'immer';
 import {
   addNode,
   removeNode,
@@ -11,6 +12,8 @@ import {
   removeEntity,
   updateEntity,
 } from '@/core/graph/engine';
+
+enablePatches();
 import {
   makeCanvas,
   makeNode,
@@ -36,6 +39,9 @@ describe('addNode', () => {
     expect(result.data.nodes).toHaveLength(1);
     expect(result.data.nodes![0]).toEqual(node);
     expect(result.warnings).toEqual([]);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('collects warnings when registry is provided and node has issues', () => {
@@ -54,6 +60,9 @@ describe('addNode', () => {
       arg: 'runtime',
       reason: 'required argument missing',
     });
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('adds a ref node without validation', () => {
@@ -66,6 +75,9 @@ describe('addNode', () => {
     if (!result.ok) return;
     expect(result.data.nodes).toHaveLength(1);
     expect(result.warnings).toEqual([]);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns DUPLICATE_NODE_ID error for duplicate id', () => {
@@ -86,6 +98,9 @@ describe('addNode', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.nodes).toHaveLength(1);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 });
 
@@ -98,6 +113,9 @@ describe('removeNode', () => {
     if (!result.ok) return;
     expect(result.data.nodes).toHaveLength(1);
     expect(result.data.nodes![0].id).toBe('b');
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('cascade removes edges referencing the node', () => {
@@ -118,6 +136,9 @@ describe('removeNode', () => {
     expect(result.data.edges).toHaveLength(1);
     expect(result.data.edges![0].from.node).toBe('b');
     expect(result.data.edges![0].to.node).toBe('c');
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns NODE_NOT_FOUND for non-existent node', () => {
@@ -144,6 +165,9 @@ describe('updateNode', () => {
     expect(node.displayName).toBe('My Service');
     expect(node.description).toBe('Updated desc');
     expect(result.warnings).toEqual([]);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('collects warnings when updating args with registry', () => {
@@ -162,6 +186,9 @@ describe('updateNode', () => {
       arg: 'runtime',
       reason: 'invalid enum value, expected one of [node, go, rust]',
     });
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns INVALID_REF_NODE_UPDATE for ref nodes', () => {
@@ -192,6 +219,9 @@ describe('updateNodePosition', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.nodes![0].position).toEqual(position);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('updates position on ref node', () => {
@@ -202,6 +232,9 @@ describe('updateNodePosition', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.nodes![0].position).toEqual(position);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns NODE_NOT_FOUND for non-existent node', () => {
@@ -230,6 +263,9 @@ describe('addEdge', () => {
     if (!result.ok) return;
     expect(result.data.edges).toHaveLength(1);
     expect(result.warnings).toEqual([]);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('collects warnings when registry is provided', () => {
@@ -252,6 +288,9 @@ describe('addEdge', () => {
       port: 'http-in',
       expected: 'outbound',
     });
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns EDGE_ENDPOINT_NOT_FOUND for missing from node', () => {
@@ -316,6 +355,9 @@ describe('addEdge', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.edges).toHaveLength(1);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('skips endpoint check for @root/ on from side', () => {
@@ -329,6 +371,9 @@ describe('addEdge', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.edges).toHaveLength(1);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('initializes edges array when canvas has none', () => {
@@ -342,6 +387,9 @@ describe('addEdge', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.edges).toHaveLength(1);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 });
 
@@ -355,6 +403,9 @@ describe('removeEdge', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.edges).toHaveLength(0);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns EDGE_NOT_FOUND for non-existent edge', () => {
@@ -384,6 +435,9 @@ describe('updateEdge', () => {
     expect(edge.protocol).toBe('gRPC');
     expect(edge.label).toBe('orders stream');
     expect(edge.entities).toEqual(['Order']);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns EDGE_NOT_FOUND for non-existent edge', () => {
@@ -410,6 +464,9 @@ describe('addEntity', () => {
     if (!result.ok) return;
     expect(result.data.entities).toHaveLength(1);
     expect(result.data.entities![0]).toEqual(entity);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns DUPLICATE_ENTITY for duplicate name', () => {
@@ -428,6 +485,9 @@ describe('addEntity', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.entities).toHaveLength(1);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 });
 
@@ -439,6 +499,9 @@ describe('removeEntity', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.entities).toHaveLength(0);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns ENTITY_NOT_FOUND for non-existent entity', () => {
@@ -485,6 +548,9 @@ describe('updateEntity', () => {
     const entity = result.data.entities![0];
     expect(entity.description).toBe('An order entity');
     expect(entity.codeRefs).toEqual(['src/models/order.ts']);
+    expect(result.patches).toBeInstanceOf(Array);
+    expect(result.inversePatches).toBeInstanceOf(Array);
+    expect(result.patches.length).toBeGreaterThan(0);
   });
 
   it('returns ENTITY_NOT_FOUND for non-existent entity', () => {
@@ -494,6 +560,53 @@ describe('updateEntity', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toEqual({ code: 'ENTITY_NOT_FOUND', name: 'Nonexistent' });
+  });
+});
+
+// =====================================================================
+// Patch Round-Trip Tests
+// =====================================================================
+
+describe('patch round-trips', () => {
+  it('applying inversePatches to addNode result restores original canvas', () => {
+    const canvas = makeCanvas({ nodes: [makeNode({ id: 'existing' })] });
+    const node = makeNode({ id: 'new-node' });
+    const result = addNode(canvas, node);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const restored = applyPatches(result.data, result.inversePatches);
+    expect(restored.nodes).toHaveLength(canvas.nodes!.length);
+    expect(restored.nodes!.map((n) => n.id)).toEqual(canvas.nodes!.map((n) => n.id));
+  });
+
+  it('applying inversePatches to addEdge result restores original canvas', () => {
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'a' }), makeNode({ id: 'b' })],
+      edges: [],
+    });
+    const edge = makeEdge({ from: { node: 'a' }, to: { node: 'b' } });
+    const result = addEdge(canvas, edge);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const restored = applyPatches(result.data, result.inversePatches);
+    expect(restored.edges).toHaveLength(0);
+  });
+
+  it('applying inversePatches to addEntity result restores original canvas', () => {
+    const canvas = makeCanvas({ entities: [makeEntity({ name: 'Existing' })] });
+    const entity = makeEntity({ name: 'NewEntity' });
+    const result = addEntity(canvas, entity);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const restored = applyPatches(result.data, result.inversePatches);
+    expect(restored.entities).toHaveLength(1);
+    expect(restored.entities![0].name).toBe('Existing');
   });
 });
 
