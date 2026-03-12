@@ -1,3 +1,5 @@
+import { enablePatches } from 'immer';
+import { useEffect } from 'react';
 import { ReactFlowProvider } from "@xyflow/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -10,8 +12,13 @@ import { LeftToolbar } from "@/components/layout/LeftToolbar";
 import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { Canvas } from "@/components/canvas/Canvas";
+import { useRegistryStore } from '@/store/registryStore';
+
+enablePatches();
 
 export function App() {
+  useEffect(() => { useRegistryStore.getState().initialize(); }, []);
+
   return (
     <TooltipProvider delayDuration={300}>
       <ReactFlowProvider>
