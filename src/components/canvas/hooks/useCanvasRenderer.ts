@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
+import { useCanvasStore } from '@/store/canvasStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 
@@ -11,6 +12,7 @@ export function useCanvasRenderer(): {
 } {
   const canvas = useFileStore((s) => s.getCanvas(ROOT_CANVAS_KEY));
   const resolve = useRegistryStore((s) => s.resolve);
+  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
 
   const nodes = useMemo<RFNode<CanvasNodeData>[]>(() => {
     const rawNodes = canvas?.data.nodes ?? [];
@@ -20,7 +22,7 @@ export function useCanvasRenderer(): {
       const data: CanvasNodeData = {
         node,
         nodeDef,
-        isSelected: false,
+        isSelected: selectedNodeIds.has(node.id),
         isRef,
       };
       return {
@@ -30,7 +32,7 @@ export function useCanvasRenderer(): {
         data,
       };
     });
-  }, [canvas, resolve]);
+  }, [canvas, resolve, selectedNodeIds]);
 
   const edges = useMemo<RFEdge<CanvasEdgeData>[]>(() => {
     const rawEdges = canvas?.data.edges ?? [];
