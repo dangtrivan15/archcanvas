@@ -1,0 +1,290 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import type { CanvasNodeData } from '@/components/canvas/types';
+import type { NodeDef } from '@/types/nodeDefSchema';
+import type { InlineNode, RefNode } from '@/types/schema';
+
+// Mock @xyflow/react — Handle requires ReactFlow context which is not
+// available in unit tests. We replace it with a simple <div> that carries
+// the data-* attrs we need to assert on.
+vi.mock('@xyflow/react', () => ({
+  Handle: ({ type, position, id, title }: {
+    type: string;
+    position: string;
+    id?: string;
+    title?: string;
+  }) => (
+    <div
+      data-testid={`handle-${type}`}
+      data-handle-type={type}
+      data-handle-position={position}
+      data-handle-id={id}
+      data-handle-title={title}
+    />
+  ),
+  Position: { Left: 'left', Right: 'right' },
+}));
+
+// Mock fileStore so tests don't depend on a loaded project
+vi.mock('@/store/fileStore', () => ({
+  useFileStore: {
+    getState: () => ({
+      getCanvas: (id: string) => {
+        if (id === 'known-canvas') {
+          return { data: { displayName: 'Known Canvas' } };
+        }
+        return undefined;
+      },
+    }),
+  },
+}));
+
+// Import AFTER mocks are registered
+import { NodeRenderer } from '@/components/nodes/NodeRenderer';
+
+// ------------------------------------------------------------------ helpers
+
+function makeNodeDef(overrides: Partial<NodeDef['metadata']> = {}): NodeDef {
+  return {
+    kind: 'NodeDef',
+    apiVersion: 'v1',
+    metadata: {
+      name: 'service',
+      namespace: 'compute',
+      version: '1.0',
+      displayName: 'Service',
+      description: 'A compute service',
+      icon: '⚙',
+      shape: 'rectangle',
+      ...overrides,
+    },
+    spec: {},
+  };
+}
+
+function makeInlineNode(overrides: Partial<InlineNode> = {}): InlineNode {
+  return {
+    id: 'node-1',
+    type: 'compute/service',
+    displayName: 'My Service',
+    ...overrides,
+  };
+}
+
+function makeRefNode(overrides: Partial<RefNode> = {}): RefNode {
+  return {
+    id: 'ref-1',
+    ref: 'known-canvas',
+    ...overrides,
+  };
+}
+
+/**
+ * NodeProps from @xyflow/react contains many fields; the component only uses
+ * `data`, so we create a minimal props object.
+ */
+function makeProps(data: CanvasNodeData): { data: CanvasNodeData } {
+  return { data };
+}
+
+// ------------------------------------------------------------------ tests
+
+describe('NodeRenderer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders the displayName for an InlineNode', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ displayName: 'My API Service' }),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(container.textContent).toContain('My API Service');
+  });
+
+  it('falls back to node.id when displayName is missing', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ displayName: undefined }),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(container.textContent).toContain('node-1');
+  });
+
+  it('applies the correct shape class from NodeDef metadata', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef({ shape: 'cylinder' }),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('node-shape-cylinder');
+  });
+
+  it('defaults to rectangle shape when nodeDef is undefined', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('node-shape-rectangle');
+  });
+
+  it('applies selected class when isSelected is true', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: true,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('selected');
+  });
+
+  it('does not apply selected class when isSelected is false', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).not.toContain('selected');
+  });
+
+  it('renders ref-node class and resolves displayName from fileStore for ref nodes', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeRefNode({ ref: 'known-canvas' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: true,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('ref-node');
+    // displayName resolved from mocked fileStore
+    expect(container.textContent).toContain('Known Canvas');
+  });
+
+  it('falls back to ref id when canvas not found in fileStore', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeRefNode({ ref: 'unknown-canvas' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: true,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(container.textContent).toContain('unknown-canvas');
+  });
+
+  it('renders a warning indicator when nodeDef is undefined for inline node', () => {
+    render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(screen.getByRole('alert')).toBeDefined();
+    expect(screen.getByRole('alert').textContent).toContain('Unknown type');
+  });
+
+  it('does not render warning indicator when nodeDef is defined', () => {
+    render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('renders source and target handle elements', () => {
+    render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    expect(screen.getByTestId('handle-source')).toBeDefined();
+    expect(screen.getByTestId('handle-target')).toBeDefined();
+  });
+
+  it('renders named port handles when nodeDef defines ports', () => {
+    const nodeDef = makeNodeDef();
+    nodeDef.spec = {
+      ports: [
+        { name: 'http-in', direction: 'inbound', protocol: ['HTTP'] },
+        { name: 'grpc-in', direction: 'inbound', protocol: ['gRPC'] },
+        { name: 'http-out', direction: 'outbound', protocol: ['HTTP'] },
+      ],
+    };
+
+    render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef,
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+
+    // Named ports replace the default handles
+    const targets = screen.queryAllByTestId('handle-target');
+    const sources = screen.queryAllByTestId('handle-source');
+
+    // 2 inbound → 2 target handles; default single target should NOT be rendered
+    expect(targets).toHaveLength(2);
+    // 1 outbound → 1 source handle; default single source should NOT be rendered
+    expect(sources).toHaveLength(1);
+  });
+});
