@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -16,26 +15,8 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useHistoryStore } from "@/store/historyStore";
-import { useNavigationStore } from "@/store/navigationStore";
-import { useFileStore } from "@/store/fileStore";
-import { useGraphStore } from "@/store/graphStore";
-import { computeLayout } from "@/core/layout/elk";
 
 export function LeftToolbar() {
-  const handleAutoLayout = useCallback(async () => {
-    const canvasId = useNavigationStore.getState().currentCanvasId;
-    const loaded = useFileStore.getState().getCanvas(canvasId);
-    if (!loaded) return;
-
-    const result = await computeLayout(loaded.data);
-    const gs = useGraphStore.getState();
-
-    for (const [nodeId, position] of result.positions) {
-      gs.updateNodePosition(canvasId, nodeId, position);
-    }
-    window.dispatchEvent(new CustomEvent('archcanvas:fit-view'));
-  }, []);
-
   const tools = [
     { icon: MousePointer2, label: "Select", shortcut: "V", onClick: undefined as (() => void) | undefined },
     { icon: Hand, label: "Pan", shortcut: "H", onClick: undefined as (() => void) | undefined },
@@ -56,7 +37,7 @@ export function LeftToolbar() {
       icon: LayoutGrid,
       label: "Auto Layout",
       shortcut: "⌘⇧L",
-      onClick: handleAutoLayout,
+      onClick: () => window.dispatchEvent(new CustomEvent('archcanvas:auto-layout')),
     },
     {
       icon: Undo2,
