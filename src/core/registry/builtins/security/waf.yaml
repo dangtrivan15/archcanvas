@@ -1,0 +1,38 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: waf
+  namespace: security
+  version: "1.0.0"
+  displayName: WAF
+  description: "Web Application Firewall that inspects and filters HTTP traffic to protect against common web exploits."
+  icon: ShieldCheck
+  tags: [firewall, security, protection]
+  shape: stadium
+
+spec:
+  args:
+    - name: provider
+      type: enum
+      options: [AWS WAF, Cloudflare, ModSecurity, Imperva]
+      required: true
+    - name: ruleSet
+      type: enum
+      options: [OWASP, custom]
+      default: OWASP
+
+  ports:
+    - name: traffic-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+    - name: traffic-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+
+  ai:
+    context: "Web Application Firewall positioned at the network edge to inspect inbound traffic and block malicious requests before they reach application services."
+    reviewHints:
+      - "Verify OWASP Core Rule Set is enabled and up to date."
+      - "Check that rate limiting and bot detection rules are configured."
+      - "Ensure WAF logs are forwarded to the monitoring pipeline for incident response."

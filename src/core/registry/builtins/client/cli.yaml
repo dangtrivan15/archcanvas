@@ -1,0 +1,42 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: cli
+  namespace: client
+  version: "1.0.0"
+  displayName: CLI Tool
+  description: "A command-line interface tool for terminal-based interaction and automation."
+  icon: Terminal
+  tags: [cli, terminal, tool]
+  shape: rectangle
+
+spec:
+  args:
+    - name: language
+      type: enum
+      options: [TypeScript, Python, Go, Rust]
+      required: true
+      description: "Programming language used to build the CLI tool."
+    - name: packageManager
+      type: enum
+      options: [npm, pip, brew, cargo]
+      required: true
+      description: "Package manager used for distribution and installation."
+
+  ports:
+    - name: http-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+      description: "Outbound HTTP/HTTPS requests to remote APIs."
+    - name: stdin-in
+      direction: inbound
+      protocol: [Stdin]
+      description: "Inbound standard input for piped data or interactive prompts."
+
+  ai:
+    context: "A CLI tool node represents a terminal-based program that users invoke from the command line. It may call remote APIs over HTTP and accept input via stdin for scripting and automation workflows."
+    reviewHints:
+      - "Verify that the language and package manager are compatible (e.g., Go with brew, Rust with cargo)."
+      - "Ensure HTTP outbound connections target the correct API endpoints."
+      - "Consider whether the CLI needs interactive prompts or is designed for non-interactive piped usage."

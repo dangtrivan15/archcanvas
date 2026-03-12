@@ -1,0 +1,53 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: function
+  namespace: compute
+  version: "1.0.0"
+  displayName: Function
+  description: "A serverless function that runs on-demand in response to HTTP requests or events."
+  icon: Zap
+  tags: [serverless, lambda]
+  shape: rectangle
+
+spec:
+  args:
+    - name: runtime
+      type: enum
+      required: true
+      options: [Node.js, Python, Go, Java, Rust]
+      description: "Execution runtime for the function."
+    - name: memory
+      type: number
+      default: 256
+      description: "Allocated memory in MB."
+    - name: timeout
+      type: duration
+      default: "30s"
+      description: "Maximum execution time before the function is terminated."
+  ports:
+    - name: trigger-in
+      direction: inbound
+      protocol: [HTTP, Event]
+      description: "Receives invocations via HTTP requests or event triggers."
+    - name: invoke-out
+      direction: outbound
+      protocol: [HTTP]
+      description: "Calls downstream services or APIs during execution."
+  ai:
+    context: "A serverless function is an ephemeral compute unit suited for short-lived, stateless tasks. Review its resource limits, cold-start implications, and whether serverless is the right fit for the workload."
+    reviewHints:
+      - "Verify that the timeout is sufficient for the expected workload without being excessively generous."
+      - "Check whether memory allocation matches the function's resource needs to avoid throttling or waste."
+      - "Consider cold-start latency impact if this function is on a latency-sensitive path."
+
+variants:
+  - name: HTTP Handler
+    description: "A function triggered by HTTP requests, typically behind an API gateway."
+    args:
+      timeout: "10s"
+  - name: Event Processor
+    description: "A function triggered by events from queues, streams, or pub/sub topics."
+    args:
+      timeout: "60s"

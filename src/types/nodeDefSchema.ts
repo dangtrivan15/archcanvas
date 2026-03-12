@@ -1,0 +1,94 @@
+import { z } from 'zod/v4';
+import { PropertyMap } from './schema';
+
+// --- Enums ---
+
+export const ArgType = z.enum(['string', 'number', 'boolean', 'enum', 'duration']);
+export type ArgType = z.infer<typeof ArgType>;
+
+export const PortDirection = z.enum(['inbound', 'outbound']);
+export type PortDirection = z.infer<typeof PortDirection>;
+
+export const Shape = z.enum([
+  'rectangle',
+  'cylinder',
+  'hexagon',
+  'parallelogram',
+  'cloud',
+  'stadium',
+  'document',
+  'badge',
+  'container',
+]);
+export type Shape = z.infer<typeof Shape>;
+
+// --- Spec Components ---
+
+export const ArgDef = z.object({
+  name: z.string(),
+  type: ArgType,
+  required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+  default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  description: z.string().optional(),
+});
+export type ArgDef = z.infer<typeof ArgDef>;
+
+export const PortDef = z.object({
+  name: z.string(),
+  direction: PortDirection,
+  protocol: z.array(z.string()),
+  description: z.string().optional(),
+});
+export type PortDef = z.infer<typeof PortDef>;
+
+export const ChildConstraint = z.object({
+  nodedef: z.string(),
+  min: z.number().optional(),
+  max: z.number().optional(),
+});
+export type ChildConstraint = z.infer<typeof ChildConstraint>;
+
+export const AiHints = z.object({
+  context: z.string().optional(),
+  reviewHints: z.array(z.string()).optional(),
+});
+export type AiHints = z.infer<typeof AiHints>;
+
+export const Variant = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  args: PropertyMap,
+});
+export type Variant = z.infer<typeof Variant>;
+
+// --- Top-level ---
+
+export const NodeDefMetadata = z.object({
+  name: z.string(),
+  namespace: z.string(),
+  version: z.string(),
+  displayName: z.string(),
+  description: z.string(),
+  icon: z.string(),
+  tags: z.array(z.string()).optional(),
+  shape: Shape,
+});
+export type NodeDefMetadata = z.infer<typeof NodeDefMetadata>;
+
+export const NodeDefSpec = z.object({
+  args: z.array(ArgDef).optional(),
+  ports: z.array(PortDef).optional(),
+  children: z.array(ChildConstraint).optional(),
+  ai: AiHints.optional(),
+});
+export type NodeDefSpec = z.infer<typeof NodeDefSpec>;
+
+export const NodeDef = z.object({
+  kind: z.literal('NodeDef'),
+  apiVersion: z.literal('v1'),
+  metadata: NodeDefMetadata,
+  spec: NodeDefSpec,
+  variants: z.array(Variant).optional(),
+});
+export type NodeDef = z.infer<typeof NodeDef>;

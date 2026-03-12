@@ -1,0 +1,38 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: vault
+  namespace: security
+  version: "1.0.0"
+  displayName: Vault
+  description: "Secrets management and encryption service for storing and retrieving sensitive configuration values."
+  icon: Lock
+  tags: [secrets, encryption, vault]
+  shape: cylinder
+
+spec:
+  args:
+    - name: engine
+      type: enum
+      options: [HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, GCP Secret Manager]
+      required: true
+    - name: encryption
+      type: enum
+      options: [AES-256, RSA, ChaCha20]
+      default: AES-256
+
+  ports:
+    - name: secret-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+    - name: secret-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+
+  ai:
+    context: "Centralized secrets vault responsible for secure storage, rotation, and access control of sensitive credentials and configuration values."
+    reviewHints:
+      - "Confirm secret rotation policies are in place for all stored credentials."
+      - "Verify access control lists restrict vault reads to authorized services only."
+      - "Ensure encryption at rest and in transit are both enabled."
