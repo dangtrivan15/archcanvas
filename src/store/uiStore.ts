@@ -1,15 +1,40 @@
-import { create } from "zustand";
+import { create } from 'zustand';
+import type { PanelImperativeHandle } from 'react-resizable-panels';
 
 interface UiState {
-  leftPanelOpen: boolean;
-  rightPanelOpen: boolean;
+  setLeftPanelRef: (ref: PanelImperativeHandle | null) => void;
+  setRightPanelRef: (ref: PanelImperativeHandle | null) => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
+  openRightPanel: () => void;
 }
 
-export const useUiStore = create<UiState>((set) => ({
-  leftPanelOpen: true,
-  rightPanelOpen: true,
-  toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
-  toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+// Refs stored outside Zustand state — they're mutable handles, not
+// serializable state. Zustand only exposes the methods that act on them.
+let leftPanelRef: PanelImperativeHandle | null = null;
+let rightPanelRef: PanelImperativeHandle | null = null;
+
+export const useUiStore = create<UiState>(() => ({
+  setLeftPanelRef: (ref) => { leftPanelRef = ref; },
+  setRightPanelRef: (ref) => { rightPanelRef = ref; },
+
+  toggleLeftPanel: () => {
+    if (!leftPanelRef) return;
+    leftPanelRef.isCollapsed() ? leftPanelRef.expand() : leftPanelRef.collapse();
+  },
+
+  toggleRightPanel: () => {
+    if (!rightPanelRef) return;
+    rightPanelRef.isCollapsed() ? rightPanelRef.expand() : rightPanelRef.collapse();
+  },
+
+  openRightPanel: () => {
+    rightPanelRef?.expand();
+  },
 }));
+
+// For testing: allow resetting module-level refs
+export function _resetPanelRefs() {
+  leftPanelRef = null;
+  rightPanelRef = null;
+}

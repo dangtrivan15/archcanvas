@@ -129,20 +129,14 @@ export function Canvas() {
 
   const handleNodeEditProperties = useCallback((nodeId: string) => {
     useCanvasStore.getState().selectNodes([nodeId]);
-    const { rightPanelOpen } = useUiStore.getState();
-    if (!rightPanelOpen) {
-      useUiStore.getState().toggleRightPanel();
-    }
+    useUiStore.getState().openRightPanel();
   }, []);
 
   const handleNodeAddNote = useCallback((nodeId: string) => {
     // Select the node and open the right panel — Notes tab switching is a
     // future enhancement (the panel defaults to the Properties tab for now).
     useCanvasStore.getState().selectNodes([nodeId]);
-    const { rightPanelOpen } = useUiStore.getState();
-    if (!rightPanelOpen) {
-      useUiStore.getState().toggleRightPanel();
-    }
+    useUiStore.getState().openRightPanel();
   }, []);
 
   const handleNodeDelete = useCallback(() => {
@@ -156,10 +150,7 @@ export function Canvas() {
   const handleEdgeEdit = useCallback((edgeData: CanvasEdgeData) => {
     const { from, to } = edgeData.edge;
     useCanvasStore.getState().selectEdge(from.node, to.node);
-    const { rightPanelOpen } = useUiStore.getState();
-    if (!rightPanelOpen) {
-      useUiStore.getState().toggleRightPanel();
-    }
+    useUiStore.getState().openRightPanel();
   }, []);
 
   const handleEdgeDelete = useCallback((edgeData: CanvasEdgeData) => {
