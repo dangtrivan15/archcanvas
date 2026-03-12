@@ -101,6 +101,7 @@ export function Canvas() {
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
       e.preventDefault();
+      useCanvasStore.getState().selectNodes([node.id]);
       const nodeData = node.data as CanvasNodeData;
       const target = nodeData.isRef
         ? { kind: 'refNode' as const, nodeId: node.id, nodeData }
@@ -139,7 +140,8 @@ export function Canvas() {
     useUiStore.getState().openRightPanel();
   }, []);
 
-  const handleNodeDelete = useCallback(() => {
+  const handleNodeDelete = useCallback((nodeId: string) => {
+    useCanvasStore.getState().selectNodes([nodeId]);
     useCanvasStore.getState().deleteSelection();
   }, []);
 
