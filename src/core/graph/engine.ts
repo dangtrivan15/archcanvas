@@ -56,7 +56,7 @@ export function removeNode(
   return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
-type InlineNodeUpdates = Partial<
+export type InlineNodeUpdates = Partial<
   Pick<InlineNode, 'displayName' | 'description' | 'args' | 'position' | 'codeRefs' | 'notes'>
 >;
 
@@ -179,7 +179,7 @@ export function removeEdge(
   return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
-type EdgeUpdates = Partial<Pick<Edge, 'protocol' | 'label' | 'entities' | 'notes'>>;
+export type EdgeUpdates = Partial<Pick<Edge, 'protocol' | 'label' | 'entities' | 'notes'>>;
 
 export function updateEdge(
   canvas: CanvasFile,
@@ -252,7 +252,7 @@ export function removeEntity(
   return { ok: true, data, patches, inversePatches, warnings: [] };
 }
 
-type EntityUpdates = Partial<Pick<Entity, 'description' | 'codeRefs'>>;
+export type EntityUpdates = Partial<Pick<Entity, 'description' | 'codeRefs'>>;
 
 export function updateEntity(
   canvas: CanvasFile,
