@@ -55,7 +55,7 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
       }
 
       // Auto layout — Cmd+Shift+L
-      if (mod && e.shiftKey && e.key === 'L') {
+      if (mod && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
         e.preventDefault();
         onAutoLayout?.();
         return;
