@@ -1,0 +1,256 @@
+/* ArchCanvas node base and shape styles */
+/* Compatible with Tailwind 4 — uses CSS custom properties where helpful */
+
+/* ---------------------------------------------------------- */
+/* Base                                                        */
+/* ---------------------------------------------------------- */
+
+.arch-node {
+  background-color: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 120px;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #111827;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  position: relative;
+  cursor: default;
+  user-select: none;
+}
+
+/* ---------------------------------------------------------- */
+/* State modifiers                                            */
+/* ---------------------------------------------------------- */
+
+.arch-node.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.arch-node.ref-node {
+  border-style: dashed;
+  border-color: #6b7280;
+  background-color: #f9fafb;
+}
+
+.arch-node.ref-node.selected {
+  border-color: #2563eb;
+}
+
+.arch-node.unknown-type {
+  border-color: #f59e0b;
+  background-color: #fffbeb;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: rectangle (default)                                 */
+/* ---------------------------------------------------------- */
+
+.node-shape-rectangle {
+  /* No extra styling — the base .arch-node is already a rectangle */
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: cylinder (database, storage)                        */
+/* ---------------------------------------------------------- */
+
+.node-shape-cylinder {
+  border-radius: 50px / 8px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.node-shape-cylinder::before,
+.node-shape-cylinder::after {
+  content: '';
+  position: absolute;
+  left: -1.5px;
+  right: -1.5px;
+  height: 10px;
+  border: 1.5px solid inherit;
+  border-radius: 50%;
+}
+
+.node-shape-cylinder::before {
+  top: -5px;
+  border-color: inherit;
+  background: inherit;
+  border-bottom: none;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+
+.node-shape-cylinder::after {
+  bottom: -5px;
+  border-color: inherit;
+  background: inherit;
+  border-top: none;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: hexagon                                              */
+/* ---------------------------------------------------------- */
+
+.node-shape-hexagon {
+  clip-path: polygon(14% 0%, 86% 0%, 100% 50%, 86% 100%, 14% 100%, 0% 50%);
+  border-radius: 0;
+  border: none;
+  padding: 12px 24px;
+  min-width: 140px;
+  background-color: #ffffff;
+  /* Use outline simulation via box-shadow since clip-path hides the border */
+  /* Actual border is drawn using a pseudo element approach */
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: parallelogram                                        */
+/* ---------------------------------------------------------- */
+
+.node-shape-parallelogram {
+  clip-path: polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%);
+  border-radius: 0;
+  border: none;
+  padding: 10px 24px;
+  min-width: 140px;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: cloud                                                */
+/* ---------------------------------------------------------- */
+
+.node-shape-cloud {
+  border-radius: 50px;
+  border: 1.5px solid #d1d5db;
+  padding: 10px 20px;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: stadium (pill)                                       */
+/* ---------------------------------------------------------- */
+
+.node-shape-stadium {
+  border-radius: 9999px;
+  padding: 10px 20px;
+  min-width: 130px;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: document                                             */
+/* ---------------------------------------------------------- */
+
+.node-shape-document {
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  padding-bottom: 18px;
+}
+
+.node-shape-document::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -1.5px;
+  right: -1.5px;
+  height: 14px;
+  border-left: 1.5px solid #d1d5db;
+  border-right: 1.5px solid #d1d5db;
+  background: radial-gradient(ellipse 55% 100% at 50% 0%, transparent 70%, #d1d5db 70.5%, transparent 71%) no-repeat center / 100% 100%;
+  clip-path: none;
+  /* Wavy bottom: approximate with two ellipses */
+  border-bottom: none;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 40%,
+    #d1d5db 40%,
+    #d1d5db 41%
+  );
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: badge (chip / label)                                 */
+/* ---------------------------------------------------------- */
+
+.node-shape-badge {
+  border-radius: 9999px;
+  padding: 6px 16px;
+  min-width: 80px;
+  min-height: 36px;
+  text-align: center;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: container (group / subsystem)                        */
+/* ---------------------------------------------------------- */
+
+.node-shape-container {
+  border-radius: 8px;
+  border: 2px solid #d1d5db;
+  outline: 2px solid #d1d5db;
+  outline-offset: 3px;
+  padding: 14px 16px;
+  min-width: 180px;
+  min-height: 80px;
+  background-color: rgba(249, 250, 251, 0.7);
+}
+
+.node-shape-container.selected {
+  border-color: #2563eb;
+  outline-color: #2563eb;
+}
+
+/* ---------------------------------------------------------- */
+/* Inner layout helpers                                        */
+/* ---------------------------------------------------------- */
+
+.arch-node-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-header-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.arch-node-header-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-type {
+  font-size: 10px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #d97706;
+  background-color: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 2px;
+  align-self: flex-start;
+}

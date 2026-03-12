@@ -1,0 +1,61 @@
+/* Sync protocol: solid line, dark color */
+.edge-sync {
+  stroke: #374151;
+  stroke-width: 2px;
+  fill: none;
+}
+
+/* Async protocol: dashed line with animation, indigo color */
+.edge-async {
+  stroke: #6366f1;
+  stroke-width: 2px;
+  stroke-dasharray: 5, 5;
+  fill: none;
+  animation: dash-flow 1s linear infinite;
+}
+
+/* Default protocol: solid line, gray, thin */
+.edge-default {
+  stroke: #9ca3af;
+  stroke-width: 1px;
+  fill: none;
+}
+
+@keyframes dash-flow {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Edge label container */
+.edge-label {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Entity pills container */
+.entity-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+/* Individual entity pill */
+.entity-pill {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  padding: 0 4px;
+  font-size: 10px;
+  color: #6b7280;
+}
