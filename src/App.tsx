@@ -14,6 +14,7 @@ import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { Canvas } from "@/components/canvas/Canvas";
 import { useRegistryStore } from '@/store/registryStore';
+import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
 
 enablePatches();
@@ -22,7 +23,14 @@ export function App() {
   const leftPanelRef = useRef<PanelImperativeHandle>(null);
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
 
-  useEffect(() => { useRegistryStore.getState().initialize(); }, []);
+  useEffect(() => {
+    useRegistryStore.getState().initialize();
+    // Bootstrap an empty project so the canvas is immediately usable.
+    // A real "Open Project" flow will replace this with file-system-loaded data.
+    if (!useFileStore.getState().project) {
+      useFileStore.getState().initializeEmptyProject();
+    }
+  }, []);
 
   useEffect(() => {
     useUiStore.getState().setLeftPanelRef(leftPanelRef.current);
@@ -41,26 +49,26 @@ export function App() {
           <ResizablePanelGroup orientation="horizontal" className="flex-1">
             <ResizablePanel
               panelRef={leftPanelRef}
-              defaultSize={4}
-              minSize={3}
-              maxSize={12}
+              defaultSize="4%"
+              minSize="48px"
+              maxSize="12%"
               collapsible
-              collapsedSize={0}
+              collapsedSize="0px"
             >
               <LeftToolbar />
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={76}>
+            <ResizablePanel defaultSize="74%">
               <Canvas />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel
               panelRef={rightPanelRef}
-              defaultSize={20}
-              minSize={12}
-              maxSize={40}
+              defaultSize="22%"
+              minSize="180px"
+              maxSize="40%"
               collapsible
-              collapsedSize={0}
+              collapsedSize="0px"
             >
               <RightPanel />
             </ResizablePanel>

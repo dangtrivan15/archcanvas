@@ -140,10 +140,17 @@ const NodeTypeProvider: PaletteProvider = {
   onSelect(result: PaletteResult) {
     const typeKey = result.id.replace(/^nodetype:/, '');
     const canvasId = useNavigationStore.getState().currentCanvasId;
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    const existingCount = canvas?.data.nodes?.length ?? 0;
+
+    // Stagger new nodes so they don't stack on top of each other.
+    // Place in a grid pattern: 2 columns, 200px apart horizontally, 150px vertically.
+    const col = existingCount % 2;
+    const row = Math.floor(existingCount / 2);
     const newNode: Node = {
       id: `node-${crypto.randomUUID().slice(0, 8)}`,
       type: typeKey,
-      position: { x: 0, y: 0 },
+      position: { x: col * 300, y: row * 200 },
     };
     useGraphStore.getState().addNode(canvasId, newNode);
   },
@@ -300,17 +307,17 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       overlayClassName="fixed inset-0 z-40 bg-black/40"
       contentClassName="w-full max-w-xl"
     >
-      <div className="w-full max-w-xl rounded-lg border border-gray-200 bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-xl rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden">
         <Command.Input
           value={inputValue}
           onValueChange={setInputValue}
           placeholder="Type a command or search… (> actions, @ nodes, # entities)"
-          className="w-full border-b border-gray-200 px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+          className="w-full border-b border-border bg-popover px-4 py-3 text-sm text-popover-foreground outline-none placeholder:text-muted-foreground"
         />
 
         <Command.List className="max-h-80 overflow-y-auto p-1">
           {groups.length === 0 && (
-            <Command.Empty className="py-6 text-center text-sm text-gray-500">
+            <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
               No results found.
             </Command.Empty>
           )}
@@ -319,24 +326,24 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             <Command.Group
               key={provider.category}
               heading={provider.category}
-              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-gray-400 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
             >
               {results.map((result) => (
                 <Command.Item
                   key={result.id}
                   value={result.id}
                   onSelect={() => handleSelect(provider, result)}
-                  className="flex cursor-pointer items-center gap-3 rounded px-3 py-2 text-sm aria-selected:bg-blue-50 aria-selected:text-blue-700 data-[selected=true]:bg-blue-50 data-[selected=true]:text-blue-700 hover:bg-gray-50"
+                  className="flex cursor-pointer items-center gap-3 rounded px-3 py-2 text-sm text-popover-foreground aria-selected:bg-accent aria-selected:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground hover:bg-accent/50"
                 >
                   {result.icon && (
-                    <span className="shrink-0 text-base text-gray-400" aria-hidden>
+                    <span className="shrink-0 text-base text-muted-foreground" aria-hidden>
                       {result.icon}
                     </span>
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{result.title}</span>
                     {result.subtitle && (
-                      <span className="block truncate text-xs text-gray-400">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {result.subtitle}
                       </span>
                     )}

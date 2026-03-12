@@ -16,6 +16,7 @@ interface FileStoreState {
   error: string | null;
 
   openProject: (fs: FileSystem) => Promise<void>;
+  initializeEmptyProject: (name?: string) => void;
   saveCanvas: (fs: FileSystem, canvasId: string) => Promise<void>;
   saveAll: (fs: FileSystem) => Promise<void>;
   markDirty: (canvasId: string) => void;
@@ -29,6 +30,19 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   dirtyCanvases: new Set(),
   status: 'idle',
   error: null,
+
+  initializeEmptyProject: (name = 'Untitled Project') => {
+    const data: CanvasFile = {
+      project: { name, description: '' },
+      nodes: [],
+      entities: [],
+      edges: [],
+    };
+    const root: LoadedCanvas = { filePath: '', data, doc: undefined };
+    const canvases = new Map<string, LoadedCanvas>();
+    canvases.set(ROOT_CANVAS_KEY, root);
+    set({ project: { root, canvases, errors: [] }, status: 'loaded', dirtyCanvases: new Set(), error: null });
+  },
 
   openProject: async (fs) => {
     set({ status: 'loading', error: null });

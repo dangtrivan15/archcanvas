@@ -60,6 +60,7 @@ export function LeftToolbar() {
           <Tooltip key={label}>
             <TooltipTrigger asChild>
               <button
+                aria-label={`${label} (${shortcut})`}
                 className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                 onClick={onClick}
               >

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/menubar";
 import { useHistoryStore } from "@/store/historyStore";
 import { useCanvasStore } from "@/store/canvasStore";
+import { useFileStore } from "@/store/fileStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function TopMenubar() {
@@ -20,7 +21,7 @@ export function TopMenubar() {
       <MenubarMenu>
         <MenubarTrigger className="text-sm">File</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem>
+          <MenubarItem onClick={() => useFileStore.getState().initializeEmptyProject()}>
             New Project <MenubarShortcut>⌘N</MenubarShortcut>
           </MenubarItem>
           <MenubarItem>
