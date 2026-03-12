@@ -3,6 +3,7 @@ import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
 import type { PortDef } from '@/types/nodeDefSchema';
 import { useFileStore } from '@/store/fileStore';
+import { resolveIcon } from './iconMap';
 import './nodeShapes.css';
 
 type NodeRendererProps = NodeProps<RFNode<CanvasNodeData>>;
@@ -66,7 +67,12 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       {/* Header: icon + display name */}
       <div className="arch-node-header">
         <span className="arch-node-header-icon" aria-hidden="true">
-          {icon}
+          {(() => {
+            const IconComponent = resolveIcon(nodeDef?.metadata.icon);
+            return IconComponent
+              ? <IconComponent className="h-4 w-4 inline-block" />
+              : icon;
+          })()}
         </span>
         <span className="arch-node-header-name" title={displayName}>
           {displayName}
