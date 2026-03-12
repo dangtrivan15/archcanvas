@@ -1,3 +1,4 @@
+import type { Patch } from 'immer';
 import type { CanvasFile } from '@/types';
 
 // --- Error Codes (hard — block the operation) ---
@@ -16,7 +17,8 @@ export type EngineError =
       name: string;
       referencedBy: Array<{ from: string; to: string }>;
     }
-  | { code: 'INVALID_REF_NODE_UPDATE' };
+  | { code: 'INVALID_REF_NODE_UPDATE' }
+  | { code: 'CANVAS_NOT_FOUND'; canvasId: string };
 
 // --- Warning Codes (soft — operation succeeds) ---
 
@@ -35,7 +37,7 @@ export type EngineWarning =
 // --- Result Type ---
 
 export type EngineResult =
-  | { ok: true; data: CanvasFile; warnings: EngineWarning[] }
+  | { ok: true; data: CanvasFile; patches: Patch[]; inversePatches: Patch[]; warnings: EngineWarning[] }
   | { ok: false; error: EngineError };
 
 // --- Search Result ---
