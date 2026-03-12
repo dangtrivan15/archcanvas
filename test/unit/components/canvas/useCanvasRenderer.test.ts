@@ -61,7 +61,7 @@ describe('useCanvasRenderer', () => {
     const apiNode = nodes.find((n) => n.id === 'api');
     expect(apiNode).toBeDefined();
     expect(apiNode?.position).toEqual({ x: 10, y: 20 });
-    expect(apiNode?.type).toBe('default');
+    expect(apiNode?.type).toBe('archNode');
 
     const dbNode = nodes.find((n) => n.id === 'db');
     expect(dbNode).toBeDefined();

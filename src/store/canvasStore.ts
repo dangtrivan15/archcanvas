@@ -13,7 +13,7 @@ interface CanvasStoreState {
   selectEdge(from: string, to: string): void;
   clearSelection(): void;
   startDraftEdge(from: EdgeEndpoint): void;
-  completeDraftEdge(to: EdgeEndpoint): EngineResult;
+  completeDraftEdge(to: EdgeEndpoint, fromOverride?: EdgeEndpoint): EngineResult;
   cancelDraftEdge(): void;
   deleteSelection(): EngineResult | null;
 }
@@ -39,9 +39,9 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     set({ draftEdge: { from } });
   },
 
-  completeDraftEdge(to) {
+  completeDraftEdge(to, fromOverride) {
     const { draftEdge } = get();
-    const fromEndpoint = draftEdge?.from ?? { node: '' };
+    const fromEndpoint = fromOverride ?? draftEdge?.from ?? { node: '' };
     // Always clear draftEdge regardless of outcome
     set({ draftEdge: null });
     const canvasId = useNavigationStore.getState().currentCanvasId;

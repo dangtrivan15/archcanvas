@@ -24,7 +24,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes, edges } = useCanvasRenderer();
-  useCanvasNavigation();
+  const { diveIn } = useCanvasNavigation();
 
   // -------------------------------------------------------------------------
   // Command palette state
@@ -78,6 +78,13 @@ export function Canvas() {
     onNodesChange, onNodeClick, onEdgeClick,
     onConnect, onConnectStart, onConnectEnd, onPaneClick,
   } = useCanvasInteractions();
+
+  const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
+    const nodeData = node.data as CanvasNodeData;
+    if (nodeData.isRef) {
+      diveIn(node.id, node.position);
+    }
+  }, [diveIn]);
 
   // -------------------------------------------------------------------------
   // Context menu state
@@ -143,9 +150,8 @@ export function Canvas() {
   }, []);
 
   const handleRefNodeDiveIn = useCallback((nodeId: string) => {
-    useNavigationStore.getState().diveIn(nodeId);
-    reactFlow.fitView({ duration: 300 });
-  }, [reactFlow]);
+    diveIn(nodeId);
+  }, [diveIn]);
 
   const handleEdgeEdit = useCallback((edgeData: CanvasEdgeData) => {
     const { from, to } = edgeData.edge;
@@ -173,6 +179,7 @@ export function Canvas() {
         proOptions={{ hideAttribution: true }}
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
         onEdgeClick={onEdgeClick}
         onConnect={onConnect}
         onConnectStart={onConnectStart}

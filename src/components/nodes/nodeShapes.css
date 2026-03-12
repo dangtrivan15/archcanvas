@@ -72,7 +72,9 @@
   left: -1.5px;
   right: -1.5px;
   height: 10px;
-  border: 1.5px solid inherit;
+  border-width: 1.5px;
+  border-style: solid;
+  border-color: inherit;
   border-radius: 50%;
 }
 

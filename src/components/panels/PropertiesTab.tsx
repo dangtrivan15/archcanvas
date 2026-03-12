@@ -104,8 +104,18 @@ function renderArgInput(
         </select>
       );
 
-    case 'string':
     case 'duration':
+      return (
+        <input
+          type="text"
+          value={String(value ?? arg.default ?? '')}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="e.g. 30s, 5m, 1h"
+          className={inputClass}
+        />
+      );
+
+    case 'string':
     default:
       return (
         <input

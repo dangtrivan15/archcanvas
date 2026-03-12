@@ -34,7 +34,10 @@ export function useCanvasInteractions() {
 
   const onConnect = useCallback((connection: Connection) => {
     if (connection.source && connection.target) {
-      useCanvasStore.getState().completeDraftEdge({ node: connection.target });
+      useCanvasStore.getState().completeDraftEdge(
+        { node: connection.target },
+        { node: connection.source },
+      );
     }
   }, []);
 
