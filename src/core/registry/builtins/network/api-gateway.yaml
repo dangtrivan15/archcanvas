@@ -1,0 +1,40 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: api-gateway
+  namespace: network
+  version: "1.0.0"
+  displayName: API Gateway
+  description: "Centralized entry point that handles request routing, rate limiting, and authentication for backend services."
+  icon: Globe
+  tags: [gateway, routing, api]
+  shape: stadium
+
+spec:
+  args:
+    - name: provider
+      type: enum
+      options: [Kong, AWS API Gateway, Nginx, Envoy]
+    - name: rateLimit
+      type: number
+      default: 1000
+    - name: auth
+      type: enum
+      options: [none, api-key, oauth2, jwt]
+      default: none
+
+  ports:
+    - name: http-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+    - name: route-out
+      direction: outbound
+      protocol: [HTTP, HTTPS, gRPC]
+
+  ai:
+    context: "API gateway acting as a single entry point for client requests, providing cross-cutting concerns like rate limiting, authentication, and request routing to downstream services."
+    reviewHints:
+      - "Verify rate limit is appropriate for expected traffic volume."
+      - "Ensure auth mode matches the security requirements of downstream services."
+      - "Check that routing rules do not expose internal-only endpoints."

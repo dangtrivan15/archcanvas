@@ -1,0 +1,41 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: auth-provider
+  namespace: security
+  version: "1.0.0"
+  displayName: Auth Provider
+  description: "Authentication and identity provider for managing user credentials, tokens, and access policies."
+  icon: Shield
+  tags: [auth, identity, iam]
+  shape: rectangle
+
+spec:
+  args:
+    - name: protocol
+      type: enum
+      options: [OAuth2, OIDC, SAML, LDAP]
+      required: true
+    - name: provider
+      type: enum
+      options: [Auth0, Cognito, Keycloak, Okta, Custom]
+      required: true
+    - name: mfa
+      type: boolean
+      default: false
+
+  ports:
+    - name: auth-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+    - name: token-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+
+  ai:
+    context: "Centralized authentication provider handling user identity verification, token issuance, and session management across the system."
+    reviewHints:
+      - "Verify MFA is enabled for production environments handling sensitive data."
+      - "Ensure token expiration and refresh policies are configured appropriately."
+      - "Check that the chosen protocol matches downstream service requirements."

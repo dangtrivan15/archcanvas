@@ -1,0 +1,48 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: webhook
+  namespace: integration
+  version: "1.0.0"
+  displayName: Webhook
+  description: "Event-driven callback endpoint that delivers or receives HTTP notifications."
+  icon: Webhook
+  tags: [webhook, callback, event]
+  shape: rectangle
+
+spec:
+  args:
+    - name: method
+      type: enum
+      options: [POST, PUT, PATCH]
+      default: POST
+      description: "HTTP method used for webhook delivery."
+
+    - name: retries
+      type: number
+      default: 3
+      description: "Number of retry attempts on delivery failure."
+
+    - name: timeout
+      type: duration
+      default: "30s"
+      description: "Maximum time to wait for a delivery response before timing out."
+
+  ports:
+    - name: trigger-in
+      direction: inbound
+      protocol: [Event, HTTP]
+      description: "Incoming event or HTTP request that triggers the webhook."
+
+    - name: deliver-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+      description: "Outgoing HTTP delivery to the registered callback URL."
+
+  ai:
+    context: "Represents an asynchronous event notification channel. Review for idempotency, delivery guarantees, payload signature verification, and timeout/retry behaviour."
+    reviewHints:
+      - "Confirm that webhook payloads are signed (e.g. HMAC) so receivers can verify authenticity."
+      - "Ensure the retry policy uses exponential back-off to avoid overwhelming the target endpoint."
+      - "Check that failed deliveries are logged to a dead-letter queue for manual inspection."

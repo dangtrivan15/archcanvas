@@ -1,0 +1,41 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: monitoring
+  namespace: observability
+  version: "1.0.0"
+  displayName: Monitoring
+  description: "Metrics collection and alerting platform for tracking system health, performance, and SLA compliance."
+  icon: Activity
+  tags: [monitoring, metrics, alerting]
+  shape: rectangle
+
+spec:
+  args:
+    - name: platform
+      type: enum
+      options: [Prometheus, Datadog, CloudWatch, Grafana]
+      required: true
+      description: "Metrics and monitoring platform."
+    - name: scrapeInterval
+      type: duration
+      default: "15s"
+      description: "How frequently metrics are scraped or pushed from targets."
+
+  ports:
+    - name: metrics-in
+      direction: inbound
+      protocol: [Prometheus, StatsD, HTTP]
+      description: "Ingestion endpoint for metrics from instrumented services and exporters."
+    - name: alert-out
+      direction: outbound
+      protocol: [HTTP, SMTP, PagerDuty]
+      description: "Alert notification channel for threshold breaches and anomaly detection."
+
+  ai:
+    context: "Represents a metrics monitoring system that scrapes or receives numeric time-series data, evaluates alert rules, and notifies on-call responders. Typically paired with logging and tracing for full observability."
+    reviewHints:
+      - "Confirm scrape interval balances resolution needs against cardinality and storage costs."
+      - "Verify that alert thresholds have been tuned to avoid noise and alert fatigue."
+      - "Ensure critical services expose health and latency metrics at a minimum."

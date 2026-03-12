@@ -1,0 +1,54 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: database
+  namespace: data
+  version: "1.0.0"
+  displayName: Database
+  description: "Relational or document database for persistent structured data storage."
+  icon: Database
+  tags: [storage, persistence]
+  shape: cylinder
+
+spec:
+  args:
+    - name: engine
+      type: enum
+      required: true
+      options: [PostgreSQL, MySQL, MongoDB, SQLite, DynamoDB]
+      description: "Database engine type."
+    - name: version
+      type: string
+      required: false
+      description: "Engine version string (e.g. 16, 8.0, 7.0)."
+    - name: replicas
+      type: number
+      required: false
+      default: 1
+      description: "Number of read replicas."
+  ports:
+    - name: query-in
+      direction: inbound
+      protocol: [SQL, NoSQL]
+      description: "Accepts query traffic from application services."
+    - name: replication-out
+      direction: outbound
+      protocol: [Replication]
+      description: "Streams replication data to read replicas or standby nodes."
+  ai:
+    context: "Persistent data store. Consider connection pooling, failover strategy, and backup policy when reviewing."
+    reviewHints:
+      - "Verify that replicas > 0 when high-availability is required."
+      - "Check that the chosen engine version is still supported upstream."
+      - "Ensure connection limits are sized for expected concurrency."
+
+variants:
+  - name: Relational
+    description: "Traditional SQL database with ACID guarantees."
+    args:
+      engine: PostgreSQL
+  - name: Document Store
+    description: "Document-oriented NoSQL database for flexible schemas."
+    args:
+      engine: MongoDB

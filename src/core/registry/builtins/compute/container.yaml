@@ -1,0 +1,49 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: container
+  namespace: compute
+  version: "1.0.0"
+  displayName: Container
+  description: "A container runtime that groups and orchestrates services and functions within a shared deployment boundary."
+  icon: Container
+  tags: [docker, kubernetes]
+  shape: container
+
+spec:
+  args:
+    - name: image
+      type: string
+      required: true
+      description: "Container image reference (e.g., myregistry/myapp:latest)."
+    - name: cpu
+      type: string
+      default: "0.5"
+      description: "CPU resource request/limit in cores (e.g., 0.5, 1, 2)."
+    - name: memory_limit
+      type: string
+      default: "512Mi"
+      description: "Memory resource limit (e.g., 256Mi, 1Gi)."
+  ports:
+    - name: http-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+      description: "Receives incoming HTTP/HTTPS traffic routed to child services."
+    - name: http-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+      description: "Sends outbound HTTP/HTTPS traffic to external services or APIs."
+  children:
+    - nodedef: compute/service
+      min: 0
+      max: 10
+    - nodedef: compute/function
+      min: 0
+      max: 20
+  ai:
+    context: "A container represents a deployment boundary that groups related compute workloads. Review its resource allocations, child composition, and whether the container boundary reflects a meaningful ownership or scaling domain."
+    reviewHints:
+      - "Verify that CPU and memory limits are appropriate for the combined resource needs of all child workloads."
+      - "Check whether the container boundary aligns with a team ownership or independent deployment boundary."
+      - "Ensure the image reference uses a pinned tag or digest rather than 'latest' for production environments."

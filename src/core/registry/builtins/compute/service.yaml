@@ -1,0 +1,64 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: service
+  namespace: compute
+  version: "1.0.0"
+  displayName: Service
+  description: "A long-running backend service or microservice that exposes HTTP or gRPC endpoints."
+  icon: Server
+  tags: [backend, microservice]
+  shape: rectangle
+
+spec:
+  args:
+    - name: language
+      type: enum
+      required: true
+      options: [TypeScript, Python, Go, Java, Rust, "C#"]
+      description: "Primary programming language for the service."
+    - name: framework
+      type: string
+      description: "Web or RPC framework used (e.g., Express, FastAPI, Gin)."
+    - name: replicas
+      type: number
+      default: 1
+      description: "Number of running instances for horizontal scaling."
+  ports:
+    - name: http-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+      description: "Receives HTTP/HTTPS requests from clients or upstream services."
+    - name: http-out
+      direction: outbound
+      protocol: [HTTP, HTTPS]
+      description: "Sends HTTP/HTTPS requests to downstream services or APIs."
+    - name: grpc-in
+      direction: inbound
+      protocol: [gRPC]
+      description: "Receives gRPC calls from other services."
+    - name: grpc-out
+      direction: outbound
+      protocol: [gRPC]
+      description: "Sends gRPC calls to downstream services."
+  children:
+    - nodedef: compute/function
+      min: 0
+      max: 50
+  ai:
+    context: "A compute service represents a deployable backend unit that handles requests. Review its protocol choices, scaling configuration, and downstream dependencies for architectural consistency."
+    reviewHints:
+      - "Verify that replica count aligns with expected load and availability requirements."
+      - "Check whether both HTTP and gRPC ports are needed or if one protocol would simplify the design."
+      - "Ensure outbound connections match declared dependencies in the architecture diagram."
+
+variants:
+  - name: REST API
+    description: "A service exposing RESTful HTTP endpoints."
+    args:
+      framework: Express
+  - name: gRPC Service
+    description: "A service communicating primarily via gRPC."
+    args:
+      framework: gRPC
