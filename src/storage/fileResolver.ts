@@ -6,7 +6,7 @@ import { parseCanvasFile, serializeCanvasFile } from './yamlCodec';
 export interface LoadedCanvas {
   filePath: string;
   data: CanvasFile;
-  doc: Document;
+  doc: Document | undefined;
 }
 
 export interface ResolvedProject {
