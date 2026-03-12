@@ -37,7 +37,13 @@ export type EngineWarning =
 // --- Result Type ---
 
 export type EngineResult =
-  | { ok: true; data: CanvasFile; patches: Patch[]; inversePatches: Patch[]; warnings: EngineWarning[] }
+  | {
+      ok: true;
+      data: CanvasFile;
+      patches: Patch[];
+      inversePatches: Patch[];
+      warnings: EngineWarning[];
+    }
   | { ok: false; error: EngineError };
 
 // --- Search Result ---
