@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { EdgeEndpoint } from '@/types';
 import type { EngineResult } from '@/core/graph/types';
 import { useGraphStore } from './graphStore';
-import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+import { useNavigationStore } from './navigationStore';
 
 interface CanvasStoreState {
   selectedNodeIds: Set<string>;
@@ -44,7 +44,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     const fromEndpoint = draftEdge?.from ?? { node: '' };
     // Always clear draftEdge regardless of outcome
     set({ draftEdge: null });
-    const canvasId = ROOT_CANVAS_KEY; // Task 9 will replace with navigationStore.currentCanvasId
+    const canvasId = useNavigationStore.getState().currentCanvasId;
     return useGraphStore.getState().addEdge(canvasId, { from: fromEndpoint, to });
   },
 
@@ -55,7 +55,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   deleteSelection() {
     const { selectedNodeIds, selectedEdgeKeys } = get();
     const gs = useGraphStore.getState();
-    const canvasId = ROOT_CANVAS_KEY;
+    const canvasId = useNavigationStore.getState().currentCanvasId;
     let firstFailure: EngineResult | null = null;
 
     for (const nodeId of selectedNodeIds) {
