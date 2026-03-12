@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFileStore } from '@/store/fileStore';
@@ -27,7 +28,7 @@ export function RightPanel() {
 
   const totalSelected = selectedNodeIds.size + selectedEdgeKeys.size;
 
-  let content: React.ReactNode;
+  let content: ReactNode;
 
   if (totalSelected === 0) {
     content = (
@@ -43,7 +44,7 @@ export function RightPanel() {
     const allEdges = canvas?.data.edges ?? [];
     const edge = allEdges.find((e) => e.from.node === fromNode && e.to.node === toNode);
     if (edge) {
-      content = <EdgeDetailPanel edge={edge} canvasId={currentCanvasId} />;
+      content = <EdgeDetailPanel key={`${edge.from.node}→${edge.to.node}`} edge={edge} canvasId={currentCanvasId} />;
     } else {
       content = (
         <div className="p-4">
@@ -76,7 +77,7 @@ export function RightPanel() {
     const node = selectedInlineNodes[0];
     const nodeDef = resolve(node.type);
     content = (
-      <NodeDetailPanel node={node} nodeDef={nodeDef} canvasId={currentCanvasId} />
+      <NodeDetailPanel key={node.id} node={node} nodeDef={nodeDef} canvasId={currentCanvasId} />
     );
   } else {
     // Single RefNode selected — no inline editing

@@ -141,7 +141,7 @@ const NodeTypeProvider: PaletteProvider = {
     const typeKey = result.id.replace(/^nodetype:/, '');
     const canvasId = useNavigationStore.getState().currentCanvasId;
     const newNode: Node = {
-      id: `node-${Date.now()}`,
+      id: `node-${crypto.randomUUID().slice(0, 8)}`,
       type: typeKey,
       position: { x: 0, y: 0 },
     };

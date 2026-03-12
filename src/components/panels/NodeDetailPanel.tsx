@@ -37,9 +37,12 @@ export function NodeDetailPanel({ node, nodeDef, canvasId }: Props) {
           />
         ) : (
           <h3
-            className="font-medium text-sm cursor-pointer hover:text-blue-600"
+            className="font-medium text-sm cursor-pointer hover:text-blue-600 flex items-center gap-1.5"
             onClick={() => setEditingName(true)}
           >
+            {nodeDef?.metadata.icon && (
+              <span className="text-base" aria-hidden="true">{nodeDef.metadata.icon}</span>
+            )}
             {node.displayName ?? node.id}
           </h3>
         )}

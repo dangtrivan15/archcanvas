@@ -28,7 +28,7 @@ export function useCanvasRenderer(): {
       };
       return {
         id: node.id,
-        type: 'default',
+        type: 'archNode',
         position: node.position ?? { x: 0, y: 0 },
         data,
       };
@@ -51,7 +51,7 @@ export function useCanvasRenderer(): {
         id: `${edge.from.node}-${edge.to.node}`,
         source: edge.from.node,
         target: edge.to.node,
-        type: 'default',
+        type: 'archEdge',
         data,
       };
     });

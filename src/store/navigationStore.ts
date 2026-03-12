@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useFileStore } from './fileStore';
+import { useHistoryStore } from './historyStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 interface BreadcrumbEntry {
@@ -45,6 +46,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
     const displayName = targetCanvas.data.displayName ?? refNodeId;
 
+    useHistoryStore.getState().clear();
     set((state) => ({
       currentCanvasId: targetCanvasId,
       breadcrumb: [
@@ -60,10 +62,12 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
     const newBreadcrumb = breadcrumb.slice(0, -1);
     const parent = newBreadcrumb[newBreadcrumb.length - 1];
+    useHistoryStore.getState().clear();
     set({ breadcrumb: newBreadcrumb, currentCanvasId: parent.canvasId });
   },
 
   goToRoot() {
+    useHistoryStore.getState().clear();
     set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
   },
 
@@ -73,10 +77,12 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
     const newBreadcrumb = breadcrumb.slice(0, index + 1);
     const target = newBreadcrumb[index];
+    useHistoryStore.getState().clear();
     set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId });
   },
 
   navigateTo(canvasId) {
+    useHistoryStore.getState().clear();
     if (canvasId === ROOT_CANVAS_KEY) {
       set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
       return;
