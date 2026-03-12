@@ -1,20 +1,91 @@
 import { useEffect } from 'react';
 import { useHistoryStore } from '@/store/historyStore';
+import { useCanvasStore } from '@/store/canvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
+import { useFileStore } from '@/store/fileStore';
+import { listNodes } from '@/core/graph/query';
 
-export function useCanvasKeyboard() {
+interface KeyboardOptions {
+  onOpenPalette?: () => void;
+  onAutoLayout?: () => void;
+}
+
+export function useCanvasKeyboard(options?: KeyboardOptions) {
+  const { onOpenPalette, onAutoLayout } = options ?? {};
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
+
+      // Undo — Cmd+Z
       if (mod && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         useHistoryStore.getState().undo();
+        return;
       }
+
+      // Redo — Cmd+Shift+Z
       if (mod && e.key === 'z' && e.shiftKey) {
         e.preventDefault();
         useHistoryStore.getState().redo();
+        return;
+      }
+
+      // Delete selection — Delete or Backspace
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Don't intercept when focus is inside an input/textarea/contenteditable
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+        e.preventDefault();
+        useCanvasStore.getState().deleteSelection();
+        return;
+      }
+
+      // Command palette — Cmd+K
+      if (mod && e.key === 'k') {
+        e.preventDefault();
+        onOpenPalette?.();
+        return;
+      }
+
+      // Auto layout — Cmd+Shift+L
+      if (mod && e.shiftKey && e.key === 'L') {
+        e.preventDefault();
+        onAutoLayout?.();
+        return;
+      }
+
+      // Select all — Cmd+A
+      if (mod && e.key === 'a') {
+        e.preventDefault();
+        const canvasId = useNavigationStore.getState().currentCanvasId;
+        const canvas = useFileStore.getState().getCanvas(canvasId);
+        if (canvas) {
+          const nodes = listNodes(canvas.data);
+          useCanvasStore.getState().selectNodes(nodes.map((n) => n.id));
+        }
+        return;
+      }
+
+      // Escape — clear selection, or go up if nothing selected
+      if (e.key === 'Escape') {
+        const { selectedNodeIds, selectedEdgeKeys } = useCanvasStore.getState();
+        if (selectedNodeIds.size > 0 || selectedEdgeKeys.size > 0) {
+          useCanvasStore.getState().clearSelection();
+        } else {
+          useNavigationStore.getState().goUp();
+        }
+        return;
       }
     };
+
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [onOpenPalette, onAutoLayout]);
 }
