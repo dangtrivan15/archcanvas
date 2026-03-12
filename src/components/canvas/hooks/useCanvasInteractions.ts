@@ -9,14 +9,15 @@ export function useCanvasInteractions() {
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     const canvasId = useNavigationStore.getState().currentCanvasId;
     for (const change of changes) {
-      if (
-        change.type === 'position' &&
-        change.position &&
-        change.dragging === false
-      ) {
-        useGraphStore
-          .getState()
-          .updateNodePosition(canvasId, change.id, change.position);
+      if (change.type === 'position' && change.position) {
+        if (!change.dragging) {
+          // Drag ended: commit final position to the engine (creates undo entry)
+          useGraphStore
+            .getState()
+            .updateNodePosition(canvasId, change.id, change.position);
+        }
+        // During drag (change.dragging === true): do nothing here.
+        // ReactFlow manages the visual position internally via its own state.
       }
     }
   }, []);
