@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Command } from 'cmdk';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import type { Node, Entity } from '@/types';
@@ -279,10 +279,16 @@ function resolveProviders(raw: string): { providers: PaletteProvider[]; query: s
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
+  initialInput?: string;
 }
 
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose, initialInput = '' }: CommandPaletteProps) {
   const [inputValue, setInputValue] = useState('');
+
+  // Seed the input when the palette opens with a prefix (e.g. "@" from Add Node button)
+  useEffect(() => {
+    if (open) setInputValue(initialInput);
+  }, [open, initialInput]);
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow } from "@xyflow/react";
-import type { Node as RFNode, Edge as RFEdge } from "@xyflow/react";
+import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
+import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
@@ -24,15 +24,44 @@ const nodeTypes = { archNode: NodeRenderer };
 const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
-  const { nodes, edges } = useCanvasRenderer();
+  const { nodes: storeNodes, edges } = useCanvasRenderer();
   const { diveIn } = useCanvasNavigation();
   const toolMode = useToolStore((s) => s.mode);
+
+  // ---------------------------------------------------------------------------
+  // Local node state for smooth dragging.
+  // ReactFlow controlled mode requires ALL changes (including drag positions)
+  // to be applied via applyNodeChanges. We sync from the engine store whenever
+  // it changes, and apply drag changes locally for smooth visual feedback.
+  // ---------------------------------------------------------------------------
+  const [rfNodes, setRfNodes] = useState<RFNode<CanvasNodeData>[]>(storeNodes);
+
+  useEffect(() => {
+    setRfNodes(storeNodes);
+  }, [storeNodes]);
+
+  const onNodesChange = useCallback((changes: NodeChange<RFNode<CanvasNodeData>>[]) => {
+    // Apply ALL changes locally so ReactFlow can render smooth drag movement
+    setRfNodes((nds) => applyNodeChanges(changes, nds));
+
+    // Commit final position to the engine only when drag ends (creates undo entry)
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    for (const change of changes) {
+      if (change.type === 'position' && change.position && !change.dragging) {
+        useGraphStore.getState().updateNodePosition(canvasId, change.id, change.position);
+      }
+    }
+  }, []);
 
   // -------------------------------------------------------------------------
   // Command palette state
   // -------------------------------------------------------------------------
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const [paletteInitial, setPaletteInitial] = useState('');
+  const openPalette = useCallback((prefix = '') => {
+    setPaletteInitial(prefix);
+    setPaletteOpen(true);
+  }, []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
 
   // -------------------------------------------------------------------------
@@ -65,7 +94,10 @@ export function Canvas() {
   useEffect(() => {
     const handleFitView = () => reactFlow.fitView({ duration: 300 });
     const handleLayout = () => void handleAutoLayout();
-    const handleOpenPalette = () => openPalette();
+    const handleOpenPalette = (e: Event) => {
+      const prefix = (e as CustomEvent<{ prefix?: string }>).detail?.prefix ?? '';
+      openPalette(prefix);
+    };
     window.addEventListener('archcanvas:fit-view', handleFitView);
     window.addEventListener('archcanvas:auto-layout', handleLayout);
     window.addEventListener('archcanvas:open-palette', handleOpenPalette);
@@ -77,7 +109,7 @@ export function Canvas() {
   }, [reactFlow, handleAutoLayout, openPalette]);
 
   const {
-    onNodesChange, onNodeClick, onEdgeClick,
+    onNodeClick, onEdgeClick,
     onConnect, onConnectStart, onConnectEnd, onPaneClick,
   } = useCanvasInteractions();
 
@@ -166,13 +198,13 @@ export function Canvas() {
     <div className="relative h-full w-full">
       <Breadcrumb />
       <ReactFlow
-        nodes={nodes}
+        nodes={rfNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
-        panOnDrag={toolMode === 'pan'}
+        panOnDrag={toolMode === 'pan' ? true : [1, 2]}
         nodesDraggable={toolMode === 'select'}
         nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
         selectionOnDrag={toolMode === 'select'}
@@ -206,7 +238,7 @@ export function Canvas() {
         />
       )}
 
-      <CommandPalette open={paletteOpen} onClose={closePalette} />
+      <CommandPalette open={paletteOpen} onClose={closePalette} initialInput={paletteInitial} />
     </div>
   );
 }

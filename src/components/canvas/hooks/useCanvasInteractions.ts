@@ -1,26 +1,11 @@
 import { useCallback } from 'react';
-import type { Node as RFNode, NodeChange, Connection } from '@xyflow/react';
+import type { Node as RFNode, Connection } from '@xyflow/react';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useGraphStore } from '@/store/graphStore';
-import { useNavigationStore } from '@/store/navigationStore';
 import type { CanvasNodeData } from '../types';
 
 export function useCanvasInteractions() {
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    const canvasId = useNavigationStore.getState().currentCanvasId;
-    for (const change of changes) {
-      if (change.type === 'position' && change.position) {
-        if (!change.dragging) {
-          // Drag ended: commit final position to the engine (creates undo entry)
-          useGraphStore
-            .getState()
-            .updateNodePosition(canvasId, change.id, change.position);
-        }
-        // During drag (change.dragging === true): do nothing here.
-        // ReactFlow manages the visual position internally via its own state.
-      }
-    }
-  }, []);
+  // NOTE: onNodesChange is handled in Canvas.tsx (needs applyNodeChanges +
+  // local state for smooth drag). This hook only handles click/connect events.
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
     useCanvasStore.getState().selectNodes([node.id]);
@@ -63,7 +48,7 @@ export function useCanvasInteractions() {
   }, []);
 
   return {
-    onNodesChange, onNodeClick, onEdgeClick,
+    onNodeClick, onEdgeClick,
     onConnect, onConnectStart, onConnectEnd, onPaneClick,
   };
 }
