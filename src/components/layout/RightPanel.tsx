@@ -5,6 +5,7 @@ import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import type { InlineNode } from '@/types';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
+import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
   return 'type' in node && node.ref === undefined;
@@ -35,15 +36,29 @@ export function RightPanel() {
         <p className="mt-2 text-xs text-muted-foreground">Select a node to view its properties.</p>
       </div>
     );
-  } else if (selectedEdgeKeys.size > 0 && selectedNodeIds.size === 0) {
-    // Edge(s) selected — placeholder for Task 11
+  } else if (selectedEdgeKeys.size === 1 && selectedNodeIds.size === 0) {
+    // Single edge selected — resolve edge from canvas data
+    const edgeKey = [...selectedEdgeKeys][0];
+    const [fromNode, toNode] = edgeKey.split('→');
+    const allEdges = canvas?.data.edges ?? [];
+    const edge = allEdges.find((e) => e.from.node === fromNode && e.to.node === toNode);
+    if (edge) {
+      content = <EdgeDetailPanel edge={edge} canvasId={currentCanvasId} />;
+    } else {
+      content = (
+        <div className="p-4">
+          <p className="text-xs text-muted-foreground">Edge not found.</p>
+        </div>
+      );
+    }
+  } else if (selectedEdgeKeys.size > 1 && selectedNodeIds.size === 0) {
     const count = selectedEdgeKeys.size;
     content = (
       <div className="p-4">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          {count === 1 ? 'Edge Selected' : `${count} Edges Selected`}
-        </h3>
-        <p className="mt-2 text-xs text-muted-foreground">Edge detail panel coming in Task 11.</p>
+        <h3 className="text-sm font-medium text-muted-foreground">{count} Edges Selected</h3>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Select a single edge to view its properties.
+        </p>
       </div>
     );
   } else if (totalSelected > 1) {

@@ -3,6 +3,8 @@ import type { InlineNode } from '@/types';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import { useGraphStore } from '@/store/graphStore';
 import { PropertiesTab } from './PropertiesTab';
+import { NotesTab } from './NotesTab';
+import { CodeRefsTab } from './CodeRefsTab';
 
 interface Props {
   node: InlineNode;
@@ -70,10 +72,10 @@ export function NodeDetailPanel({ node, nodeDef, canvasId }: Props) {
           <PropertiesTab node={node} nodeDef={nodeDef} canvasId={canvasId} />
         )}
         {activeTab === 'notes' && (
-          <div className="text-xs text-gray-400">Notes coming in Task 11</div>
+          <NotesTab notes={node.notes ?? []} canvasId={canvasId} nodeId={node.id} />
         )}
         {activeTab === 'code' && (
-          <div className="text-xs text-gray-400">Code refs coming in Task 11</div>
+          <CodeRefsTab codeRefs={node.codeRefs ?? []} canvasId={canvasId} nodeId={node.id} />
         )}
       </div>
     </div>
