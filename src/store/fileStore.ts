@@ -87,8 +87,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     // Keep project.root in sync when the root canvas is updated.
     const nextRoot = canvasId === ROOT_CANVAS_KEY ? updatedCanvas : project.root;
 
-    set({ project: { ...project, root: nextRoot, canvases: nextCanvases } });
-    get().markDirty(canvasId);
+    const nextDirty = new Set(get().dirtyCanvases);
+    nextDirty.add(canvasId);
+    set({
+      project: { ...project, root: nextRoot, canvases: nextCanvases },
+      dirtyCanvases: nextDirty,
+    });
   },
 
   getCanvas: (canvasId) => {

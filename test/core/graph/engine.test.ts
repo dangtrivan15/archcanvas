@@ -12,8 +12,6 @@ import {
   removeEntity,
   updateEntity,
 } from '@/core/graph/engine';
-
-enablePatches();
 import {
   makeCanvas,
   makeNode,
@@ -23,6 +21,8 @@ import {
   serviceNodeDef,
   registryWith,
 } from './helpers';
+
+enablePatches();
 
 // =====================================================================
 // Node Operations

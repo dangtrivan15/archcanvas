@@ -43,9 +43,12 @@ describe('registryStore', () => {
       await useRegistryStore.getState().initialize();
       unsub();
 
-      expect(statusHistory).toContain('idle');
-      expect(statusHistory).toContain('loading');
-      expect(statusHistory).toContain('ready');
+      // Verify correct ordering: idle → loading → ready
+      const idleIdx = statusHistory.indexOf('idle');
+      const loadingIdx = statusHistory.indexOf('loading');
+      const readyIdx = statusHistory.indexOf('ready');
+      expect(idleIdx).toBeLessThan(loadingIdx);
+      expect(loadingIdx).toBeLessThan(readyIdx);
       // Final state must be ready
       expect(useRegistryStore.getState().status).toBe('ready');
     });
