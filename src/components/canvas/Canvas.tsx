@@ -16,6 +16,7 @@ import { useCanvasStore } from "@/store/canvasStore";
 import { useGraphStore } from "@/store/graphStore";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useUiStore } from "@/store/uiStore";
+import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { computeLayout } from "@/core/layout/elk";
 
@@ -25,6 +26,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 export function Canvas() {
   const { nodes, edges } = useCanvasRenderer();
   const { diveIn } = useCanvasNavigation();
+  const toolMode = useToolStore((s) => s.mode);
 
   // -------------------------------------------------------------------------
   // Command palette state
@@ -170,6 +172,10 @@ export function Canvas() {
         edgeTypes={edgeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
+        panOnDrag={toolMode === 'pan'}
+        nodesDraggable={toolMode === 'select'}
+        nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
+        selectionOnDrag={toolMode === 'select'}
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}

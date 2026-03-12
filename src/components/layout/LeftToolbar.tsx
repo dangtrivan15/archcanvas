@@ -15,18 +15,46 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useHistoryStore } from "@/store/historyStore";
+import { useToolStore } from "@/store/toolStore";
+import type { ToolMode } from "@/store/toolStore";
 
 export function LeftToolbar() {
-  const tools = [
-    { icon: MousePointer2, label: "Select", shortcut: "V", onClick: undefined as (() => void) | undefined },
-    { icon: Hand, label: "Pan", shortcut: "H", onClick: undefined as (() => void) | undefined },
+  const activeMode = useToolStore((s) => s.mode);
+
+  const tools: Array<{
+    icon: typeof MousePointer2;
+    label: string;
+    shortcut: string;
+    mode?: ToolMode;
+    onClick?: () => void;
+  }> = [
+    {
+      icon: MousePointer2,
+      label: "Select",
+      shortcut: "V",
+      mode: 'select',
+      onClick: () => useToolStore.getState().setMode('select'),
+    },
+    {
+      icon: Hand,
+      label: "Pan",
+      shortcut: "H",
+      mode: 'pan',
+      onClick: () => useToolStore.getState().setMode('pan'),
+    },
     {
       icon: Square,
       label: "Add Node",
       shortcut: "N",
       onClick: () => window.dispatchEvent(new CustomEvent('archcanvas:open-palette', { detail: { prefix: '@' } })),
     },
-    { icon: Cable, label: "Connect", shortcut: "C", onClick: undefined as (() => void) | undefined },
+    {
+      icon: Cable,
+      label: "Connect",
+      shortcut: "C",
+      mode: 'connect',
+      onClick: () => useToolStore.getState().setMode('connect'),
+    },
     {
       icon: Search,
       label: "Search",
@@ -56,12 +84,16 @@ export function LeftToolbar() {
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col items-center gap-1 p-2">
-        {tools.map(({ icon: Icon, label, shortcut, onClick }) => (
+        {tools.map(({ icon: Icon, label, shortcut, mode, onClick }) => (
           <Tooltip key={label}>
             <TooltipTrigger asChild>
               <button
                 aria-label={`${label} (${shortcut})`}
-                className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
+                  mode && activeMode === mode
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`}
                 onClick={onClick}
               >
                 <Icon className="h-4 w-4" />
