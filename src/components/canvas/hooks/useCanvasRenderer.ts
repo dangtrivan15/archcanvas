@@ -3,14 +3,15 @@ import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+import { useNavigationStore } from '@/store/navigationStore';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 
 export function useCanvasRenderer(): {
   nodes: RFNode<CanvasNodeData>[];
   edges: RFEdge<CanvasEdgeData>[];
 } {
-  const canvas = useFileStore((s) => s.getCanvas(ROOT_CANVAS_KEY));
+  const canvasId = useNavigationStore((s) => s.currentCanvasId);
+  const canvas = useFileStore((s) => s.getCanvas(canvasId));
   const resolve = useRegistryStore((s) => s.resolve);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
 

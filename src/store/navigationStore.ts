@@ -1,0 +1,98 @@
+import { create } from 'zustand';
+import { useFileStore } from './fileStore';
+import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+
+interface BreadcrumbEntry {
+  canvasId: string;
+  displayName: string;
+}
+
+interface NavigationStoreState {
+  currentCanvasId: string;
+  breadcrumb: BreadcrumbEntry[];
+
+  diveIn(refNodeId: string): void;
+  goUp(): void;
+  goToRoot(): void;
+  goToBreadcrumb(index: number): void;
+  navigateTo(canvasId: string): void;
+}
+
+const ROOT_ENTRY: BreadcrumbEntry = {
+  canvasId: ROOT_CANVAS_KEY,
+  displayName: 'Root',
+};
+
+export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
+  currentCanvasId: ROOT_CANVAS_KEY,
+  breadcrumb: [ROOT_ENTRY],
+
+  diveIn(refNodeId) {
+    const { currentCanvasId } = get();
+    const fileStore = useFileStore.getState();
+    const canvas = fileStore.getCanvas(currentCanvasId);
+    if (!canvas) return;
+
+    // Find the node with the given id
+    const node = (canvas.data.nodes ?? []).find((n) => n.id === refNodeId);
+    if (!node || !('ref' in node) || !node.ref) return;
+
+    const targetCanvasId = node.ref;
+
+    // Verify the target canvas exists
+    const targetCanvas = fileStore.getCanvas(targetCanvasId);
+    if (!targetCanvas) return;
+
+    const displayName = targetCanvas.data.displayName ?? refNodeId;
+
+    set((state) => ({
+      currentCanvasId: targetCanvasId,
+      breadcrumb: [
+        ...state.breadcrumb,
+        { canvasId: targetCanvasId, displayName },
+      ],
+    }));
+  },
+
+  goUp() {
+    const { breadcrumb } = get();
+    if (breadcrumb.length <= 1) return; // already at root, no-op
+
+    const newBreadcrumb = breadcrumb.slice(0, -1);
+    const parent = newBreadcrumb[newBreadcrumb.length - 1];
+    set({ breadcrumb: newBreadcrumb, currentCanvasId: parent.canvasId });
+  },
+
+  goToRoot() {
+    set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
+  },
+
+  goToBreadcrumb(index) {
+    const { breadcrumb } = get();
+    if (index < 0 || index >= breadcrumb.length) return;
+
+    const newBreadcrumb = breadcrumb.slice(0, index + 1);
+    const target = newBreadcrumb[index];
+    set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId });
+  },
+
+  navigateTo(canvasId) {
+    if (canvasId === ROOT_CANVAS_KEY) {
+      set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
+      return;
+    }
+
+    const fileStore = useFileStore.getState();
+    const targetCanvas = fileStore.getCanvas(canvasId);
+    const displayName = targetCanvas?.data.displayName ?? canvasId;
+
+    // Simplified breadcrumb: root + target (full path resolution not available yet)
+    set({
+      currentCanvasId: canvasId,
+      breadcrumb: [
+        ROOT_ENTRY,
+        { canvasId, displayName },
+      ],
+    });
+  },
+}));
