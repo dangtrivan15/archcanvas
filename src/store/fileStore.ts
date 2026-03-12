@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import type { FileSystem } from '../platform/fileSystem';
+import type { CanvasFile } from '../types';
 import {
   loadProject,
   saveCanvas as saveCanvasToFile,
+  ROOT_CANVAS_KEY,
   type LoadedCanvas,
   type ResolvedProject,
 } from '../storage/fileResolver';
@@ -17,6 +19,7 @@ interface FileStoreState {
   saveCanvas: (fs: FileSystem, canvasId: string) => Promise<void>;
   saveAll: (fs: FileSystem) => Promise<void>;
   markDirty: (canvasId: string) => void;
+  updateCanvasData: (canvasId: string, data: CanvasFile) => void;
   getCanvas: (canvasId: string) => LoadedCanvas | undefined;
   getRootCanvas: () => LoadedCanvas | undefined;
 }
@@ -62,6 +65,30 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const next = new Set(get().dirtyCanvases);
     next.add(canvasId);
     set({ dirtyCanvases: next });
+  },
+
+  updateCanvasData: (canvasId, data) => {
+    const { project } = get();
+    if (!project) return;
+
+    const canvas = project.canvases.get(canvasId);
+    if (!canvas) return;
+
+    // Update the canvas entry: replace data and clear the stale YAML Document AST
+    // so that the next save falls back to plain stringify rather than merging
+    // into a stale doc (which could corrupt the output).
+    const updatedCanvas: LoadedCanvas = { ...canvas, data, doc: undefined };
+
+    // Clone the Map and rebuild the project object so Zustand's shallow
+    // equality check detects the change and triggers a re-render.
+    const nextCanvases = new Map(project.canvases);
+    nextCanvases.set(canvasId, updatedCanvas);
+
+    // Keep project.root in sync when the root canvas is updated.
+    const nextRoot = canvasId === ROOT_CANVAS_KEY ? updatedCanvas : project.root;
+
+    set({ project: { ...project, root: nextRoot, canvases: nextCanvases } });
+    get().markDirty(canvasId);
   },
 
   getCanvas: (canvasId) => {

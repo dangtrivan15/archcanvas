@@ -126,4 +126,86 @@ describe('fileStore', () => {
       expect(root?.data.project?.name).toBe('Test');
     });
   });
+
+  describe('updateCanvasData', () => {
+    it('replaces canvas data and marks dirty', async () => {
+      await useFileStore.getState().openProject(fs);
+      const canvas = useFileStore.getState().getCanvas('svc-api')!;
+      const mutatedData = { ...canvas.data, displayName: 'Modified Service' };
+
+      useFileStore.getState().updateCanvasData('svc-api', mutatedData);
+
+      const updated = useFileStore.getState().getCanvas('svc-api')!;
+      expect(updated.data.displayName).toBe('Modified Service');
+      expect(useFileStore.getState().dirtyCanvases.has('svc-api')).toBe(true);
+    });
+
+    it('clears doc after updateCanvasData so saves use plain stringify', async () => {
+      await useFileStore.getState().openProject(fs);
+      const canvas = useFileStore.getState().getCanvas('svc-api')!;
+      expect(canvas.doc).toBeDefined();
+
+      const mutatedData = { ...canvas.data, displayName: 'Modified Service' };
+      useFileStore.getState().updateCanvasData('svc-api', mutatedData);
+
+      const updated = useFileStore.getState().getCanvas('svc-api')!;
+      expect(updated.doc).toBeUndefined();
+      expect(updated.data.displayName).toBe('Modified Service');
+
+      await useFileStore.getState().saveCanvas(fs, 'svc-api');
+      const written = await fs.readFile('.archcanvas/svc-api.yaml');
+      expect(written).toContain('Modified Service');
+    });
+
+    it('triggers Zustand re-render by creating a new project reference', async () => {
+      await useFileStore.getState().openProject(fs);
+      const projectBefore = useFileStore.getState().project;
+
+      const canvas = useFileStore.getState().getCanvas('svc-api')!;
+      const mutatedData = { ...canvas.data, displayName: 'New Name' };
+      useFileStore.getState().updateCanvasData('svc-api', mutatedData);
+
+      const projectAfter = useFileStore.getState().project;
+      expect(projectAfter).not.toBe(projectBefore);
+    });
+
+    it('updates root canvas via ROOT_CANVAS_KEY', async () => {
+      await useFileStore.getState().openProject(fs);
+      const root = useFileStore.getState().getRootCanvas()!;
+      const mutatedData = { ...root.data, displayName: 'Modified Root' };
+
+      useFileStore.getState().updateCanvasData(ROOT_CANVAS_KEY, mutatedData);
+
+      const updatedRoot = useFileStore.getState().getRootCanvas()!;
+      expect(updatedRoot.data.displayName).toBe('Modified Root');
+      expect(updatedRoot.doc).toBeUndefined();
+      expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(true);
+
+      // project.root and canvases.get(ROOT_CANVAS_KEY) should be the same object
+      const fromMap = useFileStore.getState().getCanvas(ROOT_CANVAS_KEY);
+      expect(fromMap).toBe(updatedRoot);
+    });
+
+    it('is a no-op for unknown canvasId', async () => {
+      await useFileStore.getState().openProject(fs);
+      const projectBefore = useFileStore.getState().project;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useFileStore.getState().updateCanvasData('nonexistent', {} as any);
+
+      expect(useFileStore.getState().project).toBe(projectBefore);
+      expect(useFileStore.getState().dirtyCanvases.has('nonexistent')).toBe(false);
+    });
+
+    it('is a no-op when no project is loaded', () => {
+      // store is in idle state with no project
+      expect(useFileStore.getState().project).toBeNull();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useFileStore.getState().updateCanvasData('svc-api', {} as any);
+
+      // Should not throw; state unchanged
+      expect(useFileStore.getState().project).toBeNull();
+    });
+  });
 });
