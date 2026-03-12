@@ -27,6 +27,8 @@ export function EdgeRenderer({
 
   const styleCategory = data?.styleCategory ?? 'default';
   const edge = data?.edge;
+  const hasRootFrom = edge?.from.node.startsWith('@root/');
+  const hasRootTo = edge?.to.node.startsWith('@root/');
 
   return (
     <>
@@ -36,6 +38,12 @@ export function EdgeRenderer({
         d={edgePath}
         markerEnd={markerEnd}
       />
+      {hasRootFrom && (
+        <circle cx={sourceX} cy={sourceY} r={6} className="ghost-marker" />
+      )}
+      {hasRootTo && (
+        <circle cx={targetX} cy={targetY} r={6} className="ghost-marker" />
+      )}
       {edge?.label && (
         <EdgeLabelRenderer>
           <div

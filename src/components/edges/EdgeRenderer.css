@@ -59,3 +59,11 @@
   font-size: 10px;
   color: #6b7280;
 }
+
+/* Ghost marker for @root/ cross-scope endpoints */
+.ghost-marker {
+  fill: #e5e7eb;
+  stroke: #9ca3af;
+  stroke-width: 1px;
+  stroke-dasharray: 3, 3;
+}

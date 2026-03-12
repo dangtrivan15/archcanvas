@@ -36,9 +36,28 @@ export function useCanvasInteractions() {
     }
   }, []);
 
+  const onConnectStart = useCallback(
+    (_: MouseEvent | TouchEvent, params: { nodeId: string | null }) => {
+      if (params.nodeId) {
+        useCanvasStore.getState().startDraftEdge({ node: params.nodeId });
+      }
+    },
+    [],
+  );
+
+  const onConnectEnd = useCallback(() => {
+    const { draftEdge } = useCanvasStore.getState();
+    if (draftEdge) {
+      useCanvasStore.getState().cancelDraftEdge();
+    }
+  }, []);
+
   const onPaneClick = useCallback(() => {
     useCanvasStore.getState().clearSelection();
   }, []);
 
-  return { onNodesChange, onNodeClick, onEdgeClick, onConnect, onPaneClick };
+  return {
+    onNodesChange, onNodeClick, onEdgeClick,
+    onConnect, onConnectStart, onConnectEnd, onPaneClick,
+  };
 }
