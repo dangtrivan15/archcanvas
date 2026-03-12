@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Command } from 'cmdk';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import type { Node, Entity } from '@/types';
 import { listNodes, listEntities, findEdgesReferencingEntity } from '@/core/graph/query';
 import { useFileStore } from '@/store/fileStore';
@@ -144,13 +145,23 @@ const NodeTypeProvider: PaletteProvider = {
     const canvas = useFileStore.getState().getCanvas(canvasId);
     const existingCount = canvas?.data.nodes?.length ?? 0;
 
+    // Resolve the NodeDef to get the display name
+    const nodeDef = useRegistryStore.getState().resolve(typeKey);
+    const baseName = nodeDef?.metadata.displayName ?? typeKey.split('/').pop() ?? 'Node';
+
+    // Count existing nodes of the same type to generate unique name
+    const sameTypeCount = (canvas?.data.nodes ?? []).filter(
+      (n) => 'type' in n && n.type === typeKey
+    ).length;
+    const displayName = sameTypeCount === 0 ? baseName : `${baseName} ${sameTypeCount + 1}`;
+
     // Stagger new nodes so they don't stack on top of each other.
-    // Place in a grid pattern: 2 columns, 200px apart horizontally, 150px vertically.
     const col = existingCount % 2;
     const row = Math.floor(existingCount / 2);
     const newNode: Node = {
       id: `node-${crypto.randomUUID().slice(0, 8)}`,
       type: typeKey,
+      displayName,
       position: { x: col * 300, y: row * 200 },
     };
     useGraphStore.getState().addNode(canvasId, newNode);
@@ -209,12 +220,14 @@ const ScopeProvider: PaletteProvider = {
     const results: PaletteResult[] = [];
 
     for (const [canvasId, loaded] of project.canvases) {
-      const displayName = loaded.data.displayName ?? canvasId;
+      const displayName = canvasId === '__root__'
+        ? 'Root'
+        : (loaded.data.displayName ?? canvasId);
       if (q === '' || displayName.toLowerCase().includes(q) || canvasId.toLowerCase().includes(q)) {
         results.push({
           id: `scope:${canvasId}`,
           title: displayName,
-          subtitle: canvasId,
+          subtitle: canvasId === '__root__' ? 'Root scope' : canvasId,
           icon: '⬜',
           category: 'Scopes',
         });
@@ -309,6 +322,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       contentClassName="w-full max-w-xl"
     >
       <div className="w-full max-w-xl rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden">
+        <VisuallyHidden.Root asChild>
+          <h2>Command palette</h2>
+        </VisuallyHidden.Root>
+        <VisuallyHidden.Root asChild>
+          <p>Search commands, nodes, and entities</p>
+        </VisuallyHidden.Root>
         <Command.Input
           value={inputValue}
           onValueChange={setInputValue}
