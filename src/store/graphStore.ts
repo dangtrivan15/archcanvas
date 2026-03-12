@@ -16,6 +16,7 @@ import {
 } from '@/core/graph/engine';
 import { useFileStore } from './fileStore';
 import { useRegistryStore } from './registryStore';
+import { useHistoryStore } from './historyStore';
 import type { CanvasFile } from '@/types';
 
 interface GraphStoreState {
@@ -51,6 +52,7 @@ function getRegistry() {
 function applyResult(canvasId: string, result: EngineResult): EngineResult {
   if (result.ok) {
     useFileStore.getState().updateCanvasData(canvasId, result.data);
+    useHistoryStore.getState().pushPatches(canvasId, result.patches, result.inversePatches);
   }
   return result;
 }
