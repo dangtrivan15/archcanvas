@@ -23,7 +23,7 @@ interface ContextMenuProps {
   onCanvasFitView: () => void;
   onNodeEditProperties: (nodeId: string) => void;
   onNodeAddNote: (nodeId: string) => void;
-  onNodeDelete: () => void;
+  onNodeDelete: (nodeId: string) => void;
   onRefNodeDiveIn: (nodeId: string) => void;
   onEdgeEdit: (edgeData: CanvasEdgeData) => void;
   onEdgeDelete: (edgeData: CanvasEdgeData) => void;
@@ -159,7 +159,7 @@ export function ContextMenu({
             label="Delete"
             danger
             onClick={() => {
-              onNodeDelete();
+              onNodeDelete(target.nodeId);
               onClose();
             }}
           />
@@ -180,7 +180,7 @@ export function ContextMenu({
             label="Delete"
             danger
             onClick={() => {
-              onNodeDelete();
+              onNodeDelete(target.nodeId);
               onClose();
             }}
           />
