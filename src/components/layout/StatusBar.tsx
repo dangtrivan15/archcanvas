@@ -24,8 +24,8 @@ export function StatusBar() {
         {loaded ? (
           <>
             <span>{scopeName}</span>
-            <span>{nodeCount} nodes</span>
-            <span>{edgeCount} edges</span>
+            <span>{nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}</span>
+            <span>{edgeCount} {edgeCount === 1 ? 'edge' : 'edges'}</span>
           </>
         ) : (
           <span>No project open</span>
