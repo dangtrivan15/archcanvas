@@ -220,6 +220,11 @@ vi.mock('@/store/registryStore', () => ({
             (d.metadata.displayName ?? '').toLowerCase().includes(q),
         );
       },
+      resolve: (typeKey: string) => {
+        return allNodeDefs.find(
+          (d) => `${d.metadata.namespace}/${d.metadata.name}` === typeKey,
+        ) ?? null;
+      },
     }),
   },
 }));
