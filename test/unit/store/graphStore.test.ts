@@ -333,6 +333,13 @@ describe('graphStore', () => {
     expect(edge?.label).toBe('REST');
   });
 
+  it('updateEdge marks canvas as dirty', () => {
+    useGraphStore.getState().updateEdge(ROOT_CANVAS_KEY, 'node-a', 'node-b', {
+      label: 'gRPC',
+    });
+    expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(true);
+  });
+
   // --- addEntity ---
 
   it('addEntity writes the entity to fileStore', () => {

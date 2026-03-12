@@ -16,6 +16,7 @@ import {
 } from '@/core/graph/engine';
 import { useFileStore } from './fileStore';
 import { useRegistryStore } from './registryStore';
+import type { CanvasFile } from '@/types';
 
 interface GraphStoreState {
   addNode(canvasId: string, node: Node): EngineResult;
@@ -30,12 +31,21 @@ interface GraphStoreState {
   updateEntity(canvasId: string, entityName: string, updates: EntityUpdates): EngineResult;
 }
 
-function getCanvas(canvasId: string): EngineResult | undefined {
+type ResolveResult =
+  | { data: CanvasFile; error?: undefined }
+  | { data?: undefined; error: EngineResult };
+
+function resolveCanvas(canvasId: string): ResolveResult {
   const canvas = useFileStore.getState().getCanvas(canvasId);
   if (!canvas) {
-    return { ok: false, error: { code: 'CANVAS_NOT_FOUND', canvasId } };
+    return { error: { ok: false, error: { code: 'CANVAS_NOT_FOUND', canvasId } } };
   }
-  return undefined;
+  return { data: canvas.data };
+}
+
+// null → undefined: engine accepts NodeDefRegistry | undefined
+function getRegistry() {
+  return useRegistryStore.getState().registry ?? undefined;
 }
 
 function applyResult(canvasId: string, result: EngineResult): EngineResult {
@@ -47,95 +57,62 @@ function applyResult(canvasId: string, result: EngineResult): EngineResult {
 
 export const useGraphStore = create<GraphStoreState>(() => ({
   addNode(canvasId, node) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const registry = useRegistryStore.getState().registry ?? undefined;
-    const result = engineAddNode(canvas.data, node, registry);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineAddNode(resolved.data, node, getRegistry()));
   },
 
   removeNode(canvasId, nodeId) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineRemoveNode(canvas.data, nodeId);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineRemoveNode(resolved.data, nodeId));
   },
 
   updateNode(canvasId, nodeId, updates) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const registry = useRegistryStore.getState().registry ?? undefined;
-    const result = engineUpdateNode(canvas.data, nodeId, updates, registry);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineUpdateNode(resolved.data, nodeId, updates, getRegistry()));
   },
 
   updateNodePosition(canvasId, nodeId, position) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineUpdateNodePosition(canvas.data, nodeId, position);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineUpdateNodePosition(resolved.data, nodeId, position));
   },
 
   addEdge(canvasId, edge) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const registry = useRegistryStore.getState().registry ?? undefined;
-    const result = engineAddEdge(canvas.data, edge, registry);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineAddEdge(resolved.data, edge, getRegistry()));
   },
 
   removeEdge(canvasId, from, to) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineRemoveEdge(canvas.data, from, to);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineRemoveEdge(resolved.data, from, to));
   },
 
   updateEdge(canvasId, from, to, updates) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineUpdateEdge(canvas.data, from, to, updates);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineUpdateEdge(resolved.data, from, to, updates));
   },
 
   addEntity(canvasId, entity) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineAddEntity(canvas.data, entity);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineAddEntity(resolved.data, entity));
   },
 
   removeEntity(canvasId, entityName) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineRemoveEntity(canvas.data, entityName);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineRemoveEntity(resolved.data, entityName));
   },
 
   updateEntity(canvasId, entityName, updates) {
-    const notFound = getCanvas(canvasId);
-    if (notFound) return notFound;
-
-    const canvas = useFileStore.getState().getCanvas(canvasId)!;
-    const result = engineUpdateEntity(canvas.data, entityName, updates);
-    return applyResult(canvasId, result);
+    const resolved = resolveCanvas(canvasId);
+    if (resolved.error) return resolved.error;
+    return applyResult(canvasId, engineUpdateEntity(resolved.data, entityName, updates));
   },
 }));
