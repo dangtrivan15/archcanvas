@@ -8,6 +8,7 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useHistoryStore } from '@/store/historyStore';
+import { resolveIcon } from '@/components/nodes/iconMap';
 
 // ---------------------------------------------------------------------------
 // Provider interfaces
@@ -328,11 +329,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   onSelect={() => handleSelect(provider, result)}
                   className="flex cursor-pointer items-center gap-3 rounded px-3 py-2 text-sm aria-selected:bg-blue-50 aria-selected:text-blue-700 data-[selected=true]:bg-blue-50 data-[selected=true]:text-blue-700 hover:bg-gray-50"
                 >
-                  {result.icon && (
-                    <span className="shrink-0 text-base text-gray-400" aria-hidden>
-                      {result.icon}
-                    </span>
-                  )}
+                  {result.icon && (() => {
+                    const Icon = resolveIcon(result.icon);
+                    return (
+                      <span className="shrink-0 text-base text-gray-400" aria-hidden>
+                        {Icon ? <Icon className="h-4 w-4" /> : result.icon}
+                      </span>
+                    );
+                  })()}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{result.title}</span>
                     {result.subtitle && (
