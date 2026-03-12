@@ -18,7 +18,7 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
 
   const addRef = () => {
     const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || codeRefs.includes(trimmed)) return;
     save([...codeRefs, trimmed]);
     setValue('');
     setShowInput(false);
@@ -43,7 +43,7 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
 
       {codeRefs.map((ref, i) => (
         <div
-          key={i}
+          key={ref}
           className="group flex items-center gap-1.5 rounded border px-2 py-1 text-xs hover:bg-gray-50"
         >
           {/* File icon */}

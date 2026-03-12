@@ -16,9 +16,11 @@ export type PropertyMap = z.infer<typeof PropertyMap>;
 // --- Annotations ---
 
 export const Note = z.object({
+  id: z.string().optional(),
   author: z.string(),
   content: z.string(),
   tags: z.array(z.string()).optional(),
+  createdAt: z.string().optional(),
 });
 export type Note = z.infer<typeof Note>;
 

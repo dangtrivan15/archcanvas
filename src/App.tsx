@@ -1,5 +1,6 @@
 import { enablePatches } from 'immer';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { ReactFlowProvider } from "@xyflow/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
@@ -13,11 +14,24 @@ import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { Canvas } from "@/components/canvas/Canvas";
 import { useRegistryStore } from '@/store/registryStore';
+import { useUiStore } from '@/store/uiStore';
 
 enablePatches();
 
 export function App() {
+  const leftPanelRef = useRef<PanelImperativeHandle>(null);
+  const rightPanelRef = useRef<PanelImperativeHandle>(null);
+
   useEffect(() => { useRegistryStore.getState().initialize(); }, []);
+
+  useEffect(() => {
+    useUiStore.getState().setLeftPanelRef(leftPanelRef.current);
+    useUiStore.getState().setRightPanelRef(rightPanelRef.current);
+    return () => {
+      useUiStore.getState().setLeftPanelRef(null);
+      useUiStore.getState().setRightPanelRef(null);
+    };
+  }, []);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -26,6 +40,7 @@ export function App() {
           <TopMenubar />
           <ResizablePanelGroup orientation="horizontal" className="flex-1">
             <ResizablePanel
+              panelRef={leftPanelRef}
               defaultSize={4}
               minSize={3}
               maxSize={12}
@@ -40,6 +55,7 @@ export function App() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel
+              panelRef={rightPanelRef}
               defaultSize={20}
               minSize={12}
               maxSize={40}

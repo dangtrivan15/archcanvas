@@ -60,6 +60,29 @@ describe('Note', () => {
   it('rejects missing content', () => {
     expect(() => Note.parse({ author: 'van' })).toThrow();
   });
+
+  it('accepts note with id and createdAt', () => {
+    const note = {
+      id: 'abc-123',
+      author: 'van',
+      content: 'test',
+      createdAt: '2026-03-12T10:00:00.000Z',
+    };
+    expect(Note.parse(note)).toEqual(note);
+  });
+
+  it('accepts note with id only (createdAt optional)', () => {
+    const note = { id: 'abc-123', author: 'van', content: 'test' };
+    expect(Note.parse(note)).toEqual(note);
+  });
+
+  it('preserves existing notes without id or createdAt', () => {
+    const legacy = { author: 'van', content: 'old note' };
+    const parsed = Note.parse(legacy);
+    expect(parsed).toEqual(legacy);
+    expect(parsed).not.toHaveProperty('id');
+    expect(parsed).not.toHaveProperty('createdAt');
+  });
 });
 
 describe('Position', () => {

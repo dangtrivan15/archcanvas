@@ -40,9 +40,11 @@ export function NotesTab(props: Props) {
   const commitAdd = () => {
     if (!form.content.trim()) return;
     const newNote: Note = {
+      id: crypto.randomUUID(),
       author: form.author.trim() || 'anonymous',
       content: form.content.trim(),
       tags: form.tags.trim() ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
+      createdAt: new Date().toISOString(),
     };
     saveNotes(props, [...notes, newNote]);
     setForm(emptyForm);
@@ -54,6 +56,7 @@ export function NotesTab(props: Props) {
     const updated = notes.map((n, i) => {
       if (i !== index) return n;
       return {
+        ...n, // preserves id, createdAt, and any other existing fields
         author: form.author.trim() || 'anonymous',
         content: form.content.trim(),
         tags: form.tags.trim() ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : undefined,
@@ -88,7 +91,7 @@ export function NotesTab(props: Props) {
       )}
 
       {notes.map((note, i) => (
-        <div key={i} className="group rounded border p-2 text-xs space-y-1">
+        <div key={note.id ?? `legacy-${i}`} className="group rounded border p-2 text-xs space-y-1">
           {editIndex === i ? (
             <NoteForm
               form={form}
