@@ -51,7 +51,7 @@ export function Canvas() {
     }
 
     // Fit view after layout settles
-    requestAnimationFrame(() => reactFlow.fitView({ duration: 400 }));
+    requestAnimationFrame(() => reactFlow.fitView({ duration: 400, padding: 0.15 }));
   }, [reactFlow]);
 
   useCanvasKeyboard({ onOpenPalette: openPalette, onAutoLayout: handleAutoLayout });
