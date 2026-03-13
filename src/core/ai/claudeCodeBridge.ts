@@ -341,6 +341,18 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             toolConfig: {
               askUserQuestion: { previewFormat: 'markdown' },
             },
+            hooks: {
+              PreToolUse: [{
+                matcher: 'Read|Glob|Grep',
+                hooks: [async () => ({
+                  hookSpecificOutput: {
+                    hookEventName: 'PreToolUse',
+                    permissionDecision: 'allow',
+                    permissionDecisionReason: 'Read-only tool auto-approved',
+                  },
+                })],
+              }],
+            },
             canUseTool: async (toolName, input, opts) => {
               const toolUseId = opts.toolUseID;
 
