@@ -34,7 +34,7 @@ export async function addNodeCommand(
   const displayName = options.name ?? nodeDef.metadata.displayName;
 
   // Parse --args as JSON if provided
-  let args: Record<string, unknown> | undefined;
+  let args: Record<string, string | number | boolean | string[]> | undefined;
   if (options.args) {
     try {
       args = JSON.parse(options.args);
