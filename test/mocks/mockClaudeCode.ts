@@ -11,7 +11,7 @@ export interface MockScenarioOptions {
 export interface PermissionScenarioOptions extends MockScenarioOptions {
   /** Called when the scenario reaches a permission_request point.
    *  Return `true` to approve, `false` to deny. */
-  onPermission?: (permissionId: string) => Promise<boolean>;
+  onPermission?: (id: string) => Promise<boolean>;
 }
 
 /** Options for the abort scenario. */
@@ -31,11 +31,11 @@ export async function* textStreaming(
 ): AsyncGenerator<ChatEvent> {
   const { requestId, delay = 0 } = opts;
 
-  yield { type: 'text', requestId, text: 'Let me ' };
+  yield { type: 'text', requestId, content: 'Let me ' };
   await wait(delay);
-  yield { type: 'text', requestId, text: 'analyze your ' };
+  yield { type: 'text', requestId, content: 'analyze your ' };
   await wait(delay);
-  yield { type: 'text', requestId, text: 'architecture.' };
+  yield { type: 'text', requestId, content: 'architecture.' };
   await wait(delay);
   yield { type: 'done', requestId };
 }
@@ -48,27 +48,27 @@ export async function* toolCallFlow(
   opts: PermissionScenarioOptions,
 ): AsyncGenerator<ChatEvent> {
   const { requestId, delay = 0, onPermission } = opts;
-  const permissionId = `perm-${requestId}`;
+  const id = `perm-${requestId}`;
   const callId = `call-${requestId}`;
 
-  yield { type: 'text', requestId, text: 'I will list the nodes.' };
+  yield { type: 'text', requestId, content: 'I will list the nodes.' };
   await wait(delay);
 
   yield {
     type: 'permission_request',
     requestId,
-    permissionId,
-    description: 'Run archcanvas list --json',
-    toolName: 'bash',
+    id,
+    command: 'Run archcanvas list --json',
+    tool: 'bash',
   };
   await wait(delay);
 
-  const approved = onPermission ? await onPermission(permissionId) : true;
+  const approved = onPermission ? await onPermission(id) : true;
 
   if (!approved) {
     // Caller denied — gracefully finish (shouldn't normally reach here;
     // use the permissionDenied scenario for that flow).
-    yield { type: 'text', requestId, text: 'Okay, I won\'t run that.' };
+    yield { type: 'text', requestId, content: 'Okay, I won\'t run that.' };
     await wait(delay);
     yield { type: 'done', requestId };
     return;
@@ -77,22 +77,22 @@ export async function* toolCallFlow(
   yield {
     type: 'tool_call',
     requestId,
-    toolName: 'bash',
+    name: 'bash',
     args: { command: 'archcanvas list --json' },
-    callId,
+    id: callId,
   };
   await wait(delay);
 
   yield {
     type: 'tool_result',
     requestId,
-    callId,
-    output: '{"nodes":["api-gateway","auth-service"]}',
+    id: callId,
+    result: '{"nodes":["api-gateway","auth-service"]}',
     isError: false,
   };
   await wait(delay);
 
-  yield { type: 'text', requestId, text: 'Found 2 nodes in your architecture.' };
+  yield { type: 'text', requestId, content: 'Found 2 nodes in your architecture.' };
   await wait(delay);
   yield { type: 'done', requestId };
 }
@@ -104,25 +104,25 @@ export async function* permissionDenied(
   opts: PermissionScenarioOptions,
 ): AsyncGenerator<ChatEvent> {
   const { requestId, delay = 0, onPermission } = opts;
-  const permissionId = `perm-${requestId}`;
+  const id = `perm-${requestId}`;
 
-  yield { type: 'text', requestId, text: 'I need to run a command.' };
+  yield { type: 'text', requestId, content: 'I need to run a command.' };
   await wait(delay);
 
   yield {
     type: 'permission_request',
     requestId,
-    permissionId,
-    description: 'Run archcanvas add-node --id svc --type compute/service --json',
-    toolName: 'bash',
+    id,
+    command: 'Run archcanvas add-node --id svc --type compute/service --json',
+    tool: 'bash',
   };
   await wait(delay);
 
-  const approved = onPermission ? await onPermission(permissionId) : false;
+  const approved = onPermission ? await onPermission(id) : false;
 
   if (approved) {
     // Shouldn't happen in the "denied" scenario, but handle gracefully.
-    yield { type: 'text', requestId, text: 'Running the command now.' };
+    yield { type: 'text', requestId, content: 'Running the command now.' };
     await wait(delay);
     yield { type: 'done', requestId };
     return;
@@ -130,7 +130,7 @@ export async function* permissionDenied(
 
   yield {
     type: 'text', requestId,
-    text: 'Understood, I won\'t make that change.',
+    content: 'Understood, I won\'t make that change.',
   };
   await wait(delay);
   yield { type: 'done', requestId };
@@ -146,7 +146,7 @@ export async function* clarifyingQuestion(
 
   yield {
     type: 'text', requestId,
-    text: 'Could you clarify which service you want to add?',
+    content: 'Could you clarify which service you want to add?',
   };
   await wait(delay);
   yield { type: 'done', requestId };
@@ -160,7 +160,7 @@ export async function* errorScenario(
 ): AsyncGenerator<ChatEvent> {
   const { requestId, delay = 0 } = opts;
 
-  yield { type: 'text', requestId, text: 'Processing your request...' };
+  yield { type: 'text', requestId, content: 'Processing your request...' };
   await wait(delay);
   yield {
     type: 'error', requestId,
@@ -177,9 +177,9 @@ export async function* abortMidStream(
 ): AsyncGenerator<ChatEvent> {
   const { requestId, delay = 0, signal } = opts;
 
-  yield { type: 'text', requestId, text: 'Starting analysis' };
+  yield { type: 'text', requestId, content: 'Starting analysis' };
   await wait(delay);
-  yield { type: 'text', requestId, text: ' of your system' };
+  yield { type: 'text', requestId, content: ' of your system' };
   await wait(delay);
 
   if (signal?.aborted) {
@@ -188,7 +188,7 @@ export async function* abortMidStream(
   }
 
   // In a real scenario more events would follow; the abort cuts them short.
-  yield { type: 'text', requestId, text: ' architecture.' };
+  yield { type: 'text', requestId, content: ' architecture.' };
   await wait(delay);
   yield { type: 'done', requestId };
 }
@@ -206,37 +206,37 @@ export async function* multipleMutations(
 
   yield {
     type: 'tool_call', requestId,
-    toolName: 'bash',
+    name: 'bash',
     args: { command: 'archcanvas add-node --id svc-a --type compute/service --json' },
-    callId: callId1,
+    id: callId1,
   };
   await wait(delay);
 
   yield {
     type: 'tool_result', requestId,
-    callId: callId1,
-    output: '{"ok":true,"nodeId":"svc-a"}',
+    id: callId1,
+    result: '{"ok":true,"nodeId":"svc-a"}',
     isError: false,
   };
   await wait(delay);
 
   yield {
     type: 'tool_call', requestId,
-    toolName: 'bash',
+    name: 'bash',
     args: { command: 'archcanvas add-edge --from svc-a --to db --json' },
-    callId: callId2,
+    id: callId2,
   };
   await wait(delay);
 
   yield {
     type: 'tool_result', requestId,
-    callId: callId2,
-    output: '{"ok":true}',
+    id: callId2,
+    result: '{"ok":true}',
     isError: false,
   };
   await wait(delay);
 
-  yield { type: 'text', requestId, text: 'Added service and connected it to the database.' };
+  yield { type: 'text', requestId, content: 'Added service and connected it to the database.' };
   await wait(delay);
   yield { type: 'done', requestId };
 }

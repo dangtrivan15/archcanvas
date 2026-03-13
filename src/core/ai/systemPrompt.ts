@@ -26,7 +26,7 @@ export function buildSystemPrompt(context: ProjectContext): string {
     `archcanvas describe [--id <nodeId>] [--scope <id>] --json`,
     `archcanvas search <query> --json`,
     `archcanvas add-node --id <id> --type <type> [--scope <id>] [--name <name>] --json`,
-    `archcanvas add-edge --from <nodeId> --to <nodeId> [--fromPort <port>] [--toPort <port>] [--protocol <p>] [--label <l>] --json`,
+    `archcanvas add-edge --from <nodeId> --to <nodeId> [--from-port <port>] [--to-port <port>] [--protocol <p>] [--label <l>] --json`,
     `archcanvas remove-node --id <id> [--scope <id>] --json`,
     `archcanvas remove-edge --from <nodeId> --to <nodeId> [--scope <id>] --json`,
     `archcanvas import --file <file> [--scope <id>] --json`,
