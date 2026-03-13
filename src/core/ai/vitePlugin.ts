@@ -64,6 +64,8 @@ export interface StoreActionResult {
 export interface AiBridgePluginOptions {
   /** Injectable SDK query function for bridge sessions. */
   queryFn?: SDKQueryFn;
+  /** Timeout (ms) for mutation relay to the browser. Defaults to MUTATION_TIMEOUT_MS (10 s). */
+  mutationTimeoutMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -154,11 +156,12 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
             }
 
             // Wait for browser response with timeout
+            const timeoutMs = pluginOptions?.mutationTimeoutMs ?? MUTATION_TIMEOUT_MS;
             const timer = setTimeout(() => {
               pendingMutations.delete(correlationId);
               res.writeHead(504, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_TIMEOUT', message: 'Browser did not respond in time' } }));
-            }, MUTATION_TIMEOUT_MS);
+            }, timeoutMs);
 
             pendingMutations.set(correlationId, {
               resolve: (result) => {
