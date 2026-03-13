@@ -19,7 +19,7 @@ export default defineConfig({
   build: {
     target: 'node20',
     outDir: 'dist',
-    emptyDir: false,
+    emptyOutDir: false,
     lib: {
       entry: path.resolve(__dirname, 'src/cli/index.ts'),
       formats: ['es'],
