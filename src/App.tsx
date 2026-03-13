@@ -13,6 +13,7 @@ import { LeftToolbar } from "@/components/layout/LeftToolbar";
 import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { Canvas } from "@/components/canvas/Canvas";
+import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
@@ -22,6 +23,38 @@ enablePatches();
 export function App() {
   const leftPanelRef = useRef<PanelImperativeHandle>(null);
   const rightPanelRef = useRef<PanelImperativeHandle>(null);
+
+  // C10: App-level keyboard shortcuts (Cmd+S, Cmd+O, Cmd+Shift+S)
+  useAppKeyboard();
+
+  // C8.2: Reactive document title — "● {name} — ArchCanvas" when dirty
+  const projectName = useFileStore(
+    (s) => s.project?.root.data.project?.name ?? null,
+  );
+  const dirtyCanvases = useFileStore((s) => s.dirtyCanvases);
+  const isDirty = dirtyCanvases.size > 0;
+
+  useEffect(() => {
+    if (!projectName) {
+      document.title = 'ArchCanvas';
+    } else if (isDirty) {
+      document.title = `\u25CF ${projectName} \u2014 ArchCanvas`;
+    } else {
+      document.title = `${projectName} \u2014 ArchCanvas`;
+    }
+  }, [projectName, isDirty]);
+
+  // C9.7: beforeunload — trigger native browser dialog when dirty
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (useFileStore.getState().isDirty()) {
+        e.preventDefault();
+        e.returnValue = true;
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   useEffect(() => {
     useRegistryStore.getState().initialize();

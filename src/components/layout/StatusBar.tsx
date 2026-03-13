@@ -18,7 +18,11 @@ export function StatusBar() {
     <div className="flex h-6 items-center justify-between border-t border-border bg-background px-3 text-xs text-muted-foreground">
       <div className="flex items-center gap-3">
         <span>ArchCanvas v0.1.0</span>
-        {isDirty && <span className="text-amber-500">●  Unsaved changes</span>}
+        {isDirty && (
+          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-500 font-medium">
+            Modified
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-3">
         {loaded ? (

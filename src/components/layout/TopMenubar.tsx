@@ -5,6 +5,9 @@ import {
   MenubarMenu,
   MenubarSeparator,
   MenubarShortcut,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { useHistoryStore } from "@/store/historyStore";
@@ -13,6 +16,8 @@ import { useFileStore } from "@/store/fileStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function TopMenubar() {
+  const recentProjects = useFileStore((s) => s.recentProjects);
+
   return (
     <Menubar className="rounded-none border-b border-border bg-background px-2">
       {/* ------------------------------------------------------------------ */}
@@ -24,18 +29,37 @@ export function TopMenubar() {
           <MenubarItem onClick={() => useFileStore.getState().initializeEmptyProject()}>
             New Project <MenubarShortcut>⌘N</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem>
+          <MenubarItem onClick={() => useFileStore.getState().open()}>
             Open... <MenubarShortcut>⌘O</MenubarShortcut>
           </MenubarItem>
+          <MenubarSub>
+            <MenubarSubTrigger>Open Recent</MenubarSubTrigger>
+            <MenubarSubContent>
+              {recentProjects.length === 0 ? (
+                <MenubarItem disabled>No recent projects</MenubarItem>
+              ) : (
+                recentProjects.map((rp) => (
+                  <MenubarItem
+                    key={rp.path}
+                    onClick={() => {
+                      // Recent projects are informational in web mode (C7.9) —
+                      // directory handles are not restorable. This is a placeholder
+                      // that will be wired to Tauri/Node re-open in a future task.
+                      console.log('[TopMenubar] Open recent:', rp.name, rp.path);
+                    }}
+                  >
+                    {rp.name}
+                  </MenubarItem>
+                ))
+              )}
+            </MenubarSubContent>
+          </MenubarSub>
           <MenubarSeparator />
-          <MenubarItem
-            onClick={() => {
-              // fileStore.saveAll requires a FileSystem — no-op until file
-              // system is provided via project open flow.
-              console.log('[TopMenubar] Save — no FileSystem attached yet');
-            }}
-          >
+          <MenubarItem onClick={() => useFileStore.getState().save()}>
             Save <MenubarShortcut>⌘S</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onClick={() => useFileStore.getState().saveAs()}>
+            Save As... <MenubarShortcut>⇧⌘S</MenubarShortcut>
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
