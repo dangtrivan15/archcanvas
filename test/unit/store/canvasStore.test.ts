@@ -4,6 +4,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useHistoryStore } from '@/store/historyStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import { serializeCanvasFile } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
@@ -201,5 +202,51 @@ describe('canvasStore', () => {
     if (result && !result.ok) {
       expect(result.error.code).toBe('NODE_NOT_FOUND');
     }
+  });
+
+  it('deleteSelection of multiple nodes produces a single undo entry', () => {
+    useHistoryStore.getState().clear();
+
+    // Select both seed nodes and delete
+    useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
+    useCanvasStore.getState().deleteSelection();
+
+    // Should be exactly 1 history entry, not 2
+    expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+
+    // Both nodes should be gone
+    const canvas = useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)!;
+    const ids = (canvas.data.nodes ?? []).map((n) => n.id);
+    expect(ids).not.toContain('node-a');
+    expect(ids).not.toContain('node-b');
+  });
+
+  it('single undo after multi-node delete restores all nodes', () => {
+    useHistoryStore.getState().clear();
+
+    useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
+    useCanvasStore.getState().deleteSelection();
+
+    // One undo should restore both nodes
+    useHistoryStore.getState().undo();
+
+    const canvas = useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)!;
+    const ids = (canvas.data.nodes ?? []).map((n) => n.id);
+    expect(ids).toContain('node-a');
+    expect(ids).toContain('node-b');
+  });
+
+  it('redo after batch-undo re-deletes all nodes', () => {
+    useHistoryStore.getState().clear();
+
+    useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
+    useCanvasStore.getState().deleteSelection();
+    useHistoryStore.getState().undo();
+    useHistoryStore.getState().redo();
+
+    const canvas = useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)!;
+    const ids = (canvas.data.nodes ?? []).map((n) => n.id);
+    expect(ids).not.toContain('node-a');
+    expect(ids).not.toContain('node-b');
   });
 });

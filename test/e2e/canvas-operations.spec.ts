@@ -202,6 +202,68 @@ test.describe("node positioning", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Batch undo — deleting multiple nodes undoes in a single Cmd+Z
+// ---------------------------------------------------------------------------
+
+test.describe("batch undo", () => {
+  test("select-all + delete undoes with a single Cmd+Z", async ({ page }) => {
+    await page.goto("/");
+
+    // Add 3 nodes
+    const nodeTypes = [
+      /Service compute\/service/,
+      /Database data\/database/,
+      /Message Queue messaging\/message-queue/,
+    ];
+    for (const pattern of nodeTypes) {
+      await page.keyboard.press("Meta+k");
+      await page.getByRole("option", { name: pattern }).click();
+      await page.waitForTimeout(200);
+    }
+    await expect(page.locator(".react-flow__node")).toHaveCount(3);
+
+    // Select all (Cmd+A) and delete
+    await page.keyboard.press("Meta+a");
+    await page.keyboard.press("Delete");
+    await expect(page.locator(".react-flow__node")).toHaveCount(0);
+    await expect(page.getByText(/0 nodes/)).toBeVisible();
+
+    // Single undo should restore all 3 nodes
+    await page.keyboard.press("Meta+z");
+    await expect(page.locator(".react-flow__node")).toHaveCount(3);
+    await expect(page.getByText(/3 nodes/)).toBeVisible();
+  });
+
+  test("redo after batch undo re-deletes all nodes", async ({ page }) => {
+    await page.goto("/");
+
+    // Add 2 nodes
+    await page.keyboard.press("Meta+k");
+    await page
+      .getByRole("option", { name: /Service compute\/service/ })
+      .click();
+    await page.waitForTimeout(200);
+    await page.keyboard.press("Meta+k");
+    await page
+      .getByRole("option", { name: /Database data\/database/ })
+      .click();
+    await page.waitForTimeout(200);
+    await expect(page.locator(".react-flow__node")).toHaveCount(2);
+
+    // Select all, delete, undo, redo
+    await page.keyboard.press("Meta+a");
+    await page.keyboard.press("Delete");
+    await expect(page.locator(".react-flow__node")).toHaveCount(0);
+
+    await page.keyboard.press("Meta+z");
+    await expect(page.locator(".react-flow__node")).toHaveCount(2);
+
+    await page.keyboard.press("Meta+Shift+z");
+    await expect(page.locator(".react-flow__node")).toHaveCount(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Panel toggles (View menu)
 // ---------------------------------------------------------------------------
 
