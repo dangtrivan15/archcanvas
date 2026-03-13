@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import type { FileSystem } from '../platform/fileSystem';
+import type { FilePicker } from '../platform/filePicker';
+import { createFilePicker } from '../platform/filePicker';
 import type { CanvasFile } from '../types';
 import {
   loadProject,
@@ -9,12 +11,109 @@ import {
   type ResolvedProject,
 } from '../storage/fileResolver';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+export interface RecentProject {
+  name: string;
+  path: string;       // fs path (Tauri/Node) or handle name (Web, informational only)
+  lastOpened: string;  // ISO timestamp
+}
+
+const RECENT_PROJECTS_KEY = 'archcanvas:recentProjects';
+const MAX_RECENT_PROJECTS = 5;
+
+// ---------------------------------------------------------------------------
+// localStorage helpers (safe for SSR / Node / test environments)
+// ---------------------------------------------------------------------------
+
+let _localStorage: Storage | null = null;
+
+/** Allow tests to inject a mock localStorage */
+export function setLocalStorage(storage: Storage | null): void {
+  _localStorage = storage;
+}
+
+function getStorage(): Storage | null {
+  if (_localStorage) return _localStorage;
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadRecentProjects(): RecentProject[] {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(RECENT_PROJECTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as RecentProject[];
+  } catch {
+    return [];
+  }
+}
+
+function persistRecentProjects(projects: RecentProject[]): void {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(projects));
+  } catch {
+    // Quota exceeded or storage unavailable — silently ignore
+  }
+}
+
+function addToRecent(
+  current: RecentProject[],
+  name: string,
+  path: string,
+): RecentProject[] {
+  const entry: RecentProject = {
+    name,
+    path,
+    lastOpened: new Date().toISOString(),
+  };
+  // Remove existing entry with the same path (dedup)
+  const filtered = current.filter((p) => p.path !== path);
+  // Add to front, enforce max
+  const next = [entry, ...filtered].slice(0, MAX_RECENT_PROJECTS);
+  persistRecentProjects(next);
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// FilePicker injection (configurable for tests)
+// ---------------------------------------------------------------------------
+
+let _filePicker: FilePicker | null = null;
+
+/** Inject a custom FilePicker (primarily for testing) */
+export function setFilePicker(picker: FilePicker | null): void {
+  _filePicker = picker;
+}
+
+function getFilePicker(): FilePicker {
+  return _filePicker ?? createFilePicker();
+}
+
+// ---------------------------------------------------------------------------
+// Store definition
+// ---------------------------------------------------------------------------
+
 interface FileStoreState {
   project: ResolvedProject | null;
   dirtyCanvases: Set<string>;
   status: 'idle' | 'loading' | 'loaded' | 'error';
   error: string | null;
+  fs: FileSystem | null;
+  recentProjects: RecentProject[];
 
+  // Existing methods
   openProject: (fs: FileSystem) => Promise<void>;
   initializeEmptyProject: (name?: string) => void;
   saveCanvas: (fs: FileSystem, canvasId: string) => Promise<void>;
@@ -23,6 +122,12 @@ interface FileStoreState {
   updateCanvasData: (canvasId: string, data: CanvasFile) => void;
   getCanvas: (canvasId: string) => LoadedCanvas | undefined;
   getRootCanvas: () => LoadedCanvas | undefined;
+
+  // New persistence methods (UI-only — CLI never calls these)
+  open: () => Promise<void>;
+  save: () => Promise<void>;
+  saveAs: () => Promise<void>;
+  isDirty: () => boolean;
 }
 
 export const useFileStore = create<FileStoreState>((set, get) => ({
@@ -30,6 +135,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   dirtyCanvases: new Set(),
   status: 'idle',
   error: null,
+  fs: null,
+  recentProjects: loadRecentProjects(),
 
   initializeEmptyProject: (name = 'Untitled Project') => {
     const data: CanvasFile = {
@@ -115,5 +222,58 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   getRootCanvas: () => {
     return get().project?.root;
+  },
+
+  // -----------------------------------------------------------------------
+  // Persistence UI methods (C7)
+  // -----------------------------------------------------------------------
+
+  open: async () => {
+    const picker = getFilePicker();
+    const fs = await picker.pickDirectory();
+    if (!fs) return; // user cancelled
+
+    await get().openProject(fs);
+
+    // Only store fs and update recents if the project loaded successfully
+    if (get().status === 'loaded') {
+      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
+      // Use project name as path identifier for recent projects
+      // (Web handles are not restorable — path is informational, C7.9)
+      const path = projectName;
+      set({
+        fs,
+        recentProjects: addToRecent(get().recentProjects, projectName, path),
+      });
+    }
+  },
+
+  save: async () => {
+    const { fs } = get();
+    if (!fs) {
+      // No FileSystem yet — fall through to saveAs (C7.3)
+      await get().saveAs();
+      return;
+    }
+    await get().saveAll(fs);
+  },
+
+  saveAs: async () => {
+    const picker = getFilePicker();
+    const newFs = await picker.pickDirectory();
+    if (!newFs) return; // user cancelled
+
+    await get().saveAll(newFs);
+
+    const projectName = get().project?.root.data.project?.name ?? 'Unknown';
+    const path = projectName;
+    set({
+      fs: newFs,
+      recentProjects: addToRecent(get().recentProjects, projectName, path),
+    });
+  },
+
+  isDirty: () => {
+    return get().dirtyCanvases.size > 0;
   },
 }));

@@ -1,6 +1,8 @@
 export type { FileSystem } from './fileSystem';
 export { InMemoryFileSystem } from './inMemoryFileSystem';
 export { WebFileSystem } from './webFileSystem';
+export type { FilePicker } from './filePicker';
+export { createFilePicker } from './filePicker';
 // TauriFileSystem is not statically exported because @tauri-apps/plugin-fs
 // is only available inside a Tauri build. Use createFileSystem() instead,
 // which dynamically imports the Tauri implementation when needed.
