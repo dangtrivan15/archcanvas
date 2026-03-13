@@ -1,0 +1,57 @@
+import { useGraphStore } from '@/store/graphStore';
+import { useFileStore } from '@/store/fileStore';
+import { loadContext, resolveCanvasId } from '../context';
+import { CLIError } from '../errors';
+import { printSuccess, type OutputOptions } from '../output';
+import type { Edge } from '@/types/schema';
+
+export interface AddEdgeOptions {
+  from: string;
+  to: string;
+  fromPort?: string;
+  toPort?: string;
+  protocol?: string;
+  label?: string;
+  scope?: string;
+  project?: string;
+}
+
+export async function addEdgeCommand(
+  options: AddEdgeOptions,
+  globalOptions: OutputOptions,
+): Promise<void> {
+  const ctx = await loadContext(options.project);
+
+  // Construct Edge (C5c.1)
+  const edge: Edge = {
+    from: { node: options.from, port: options.fromPort },
+    to: { node: options.to, port: options.toPort },
+    protocol: options.protocol,
+    label: options.label,
+  };
+
+  const canvasId = resolveCanvasId(options.scope);
+  const result = useGraphStore.getState().addEdge(canvasId, edge);
+
+  if (!result.ok) {
+    throw new CLIError(result.error.code, engineErrorMessage(result.error));
+  }
+
+  // Save after successful mutation (C11.1, C5c.2)
+  await useFileStore.getState().saveAll(ctx.fs);
+
+  // Output (C5c.4)
+  printSuccess(
+    { edge: { from: options.from, to: options.to, protocol: options.protocol, label: options.label } },
+    globalOptions,
+  );
+}
+
+/** Convert an engine error object to a human-readable message. */
+function engineErrorMessage(error: Record<string, unknown>): string {
+  const { code, ...rest } = error;
+  const details = Object.entries(rest)
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .join(', ');
+  return details ? `${String(code)}: ${details}` : String(code);
+}
