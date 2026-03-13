@@ -1,6 +1,9 @@
 ---
 name: playwright-cli
-description: Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, test web applications, or extract information from web pages.
+description: |
+  Use when the user needs to automate browser interactions — navigating websites, filling forms, taking screenshots,
+  testing web applications, or extracting information from web pages. Also use for visual verification of UI changes,
+  interactive debugging of web apps, or any task requiring a real browser.
 allowed-tools: Bash(playwright-cli:*)
 ---
 
@@ -300,52 +303,6 @@ npx playwright test --trace on                # with trace on failure
   won't find node labels. Use `page.evaluate()` for complex DOM queries.
 - File System Access API dialogs (open/save) can't be automated by Playwright.
   Test file operations via drag-and-drop or programmatic store manipulation.
-
-## Generic Examples
-
-### Form submission
-
-```bash
-playwright-cli open https://example.com/form
-playwright-cli snapshot
-
-playwright-cli fill e1 "user@example.com"
-playwright-cli fill e2 "password123"
-playwright-cli click e3
-playwright-cli snapshot
-playwright-cli close
-```
-
-### Multi-tab workflow
-
-```bash
-playwright-cli open https://example.com
-playwright-cli tab-new https://example.com/other
-playwright-cli tab-list
-playwright-cli tab-select 0
-playwright-cli snapshot
-playwright-cli close
-```
-
-### Debugging with DevTools
-
-```bash
-playwright-cli open https://example.com
-playwright-cli click e4
-playwright-cli fill e7 "test"
-playwright-cli console
-playwright-cli network
-playwright-cli close
-```
-
-```bash
-playwright-cli open https://example.com
-playwright-cli tracing-start
-playwright-cli click e4
-playwright-cli fill e7 "test"
-playwright-cli tracing-stop
-playwright-cli close
-```
 
 ## Specific tasks
 

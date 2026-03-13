@@ -1,6 +1,9 @@
 ---
 name: task-decomposition
-description: This skill MUST be used when planning any feature, task, or implementation work before invoking writing-plans. It decomposes large features into small, context-window-friendly tasks with explicit scope constraints, dependency graphs, and pre-scoped read sets. Trigger phrases include "plan this feature", "break this down", "decompose this task", "split into tasks", or any planning request that precedes implementation.
+description: |
+  Use when planning any feature, task, or implementation work before invoking writing-plans. MUST be activated before
+  writing-plans for any multi-file feature. Trigger phrases: "plan this feature", "break this down", "decompose this
+  task", "split into tasks", or any planning request that precedes implementation.
 ---
 
 # Task Decomposition
