@@ -4,20 +4,27 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useUiStore } from '@/store/uiStore';
 import type { InlineNode } from '@/types';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
+import { ChatPanel } from '@/components/panels/ChatPanel';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
   return 'type' in node && node.ref === undefined;
 }
 
 export function RightPanel() {
+  const rightPanelMode = useUiStore((s) => s.rightPanelMode);
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const canvas = useFileStore((s) => s.getCanvas(currentCanvasId));
   const resolve = useRegistryStore((s) => s.resolve);
+
+  if (rightPanelMode === 'chat') {
+    return <ChatPanel />;
+  }
 
   const allNodes = canvas?.data.nodes ?? [];
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useFileStore } from '@/store/fileStore';
+import { useUiStore } from '@/store/uiStore';
 
 /**
  * App-level keyboard shortcuts for persistence operations.
@@ -45,9 +46,24 @@ export function useAppKeyboard() {
         useFileStore.getState().open();
         return;
       }
+
+      // Cmd+Shift+I → toggle AI chat
+      if ((e.key === 'i' || e.key === 'I') && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().toggleChat();
+        return;
+      }
+    };
+
+    const handleToggleChat = () => {
+      useUiStore.getState().toggleChat();
     };
 
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('archcanvas:toggle-chat', handleToggleChat);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('archcanvas:toggle-chat', handleToggleChat);
+    };
   }, []);
 }
