@@ -15,7 +15,7 @@ Task 3: WebSocket Provider & chatStore      → blockedBy: [1], blocks: [4, 5, 7
 Task 4: Chat Panel UI Components            → blockedBy: [3], blocks: [5, 7]
 Task 5: UI Integration (Toggle & Keyboard)  → blockedBy: [4], blocks: [7]
 Task 6: CLI Bridge Detection & HTTP Client  → blockedBy: [2], blocks: [7]
-Task 7: Integration & E2E Tests             → blockedBy: [2, 3, 4, 5, 6]
+Task 7: Full-Flow E2E Tests                 → blockedBy: [2, 3, 4, 5, 6]
 
 ## Execution Strategy
 
@@ -27,12 +27,12 @@ Task 7: Integration & E2E Tests             → blockedBy: [2, 3, 4, 5, 6]
 
 ## Tasks
 
-| # | File | Scope | Write Files | Source LOC | Config LOC |
-|---|------|-------|-------------|------------|------------|
-| 1 | ./2026-03-13-i6a-task-1.md | Types, system prompt, mock SDK | 3 | ~240 | 0 |
-| 2 | ./2026-03-13-i6a-task-2.md | Claude Code bridge & Vite plugin | 4 | ~350 | ~18 |
-| 3 | ./2026-03-13-i6a-task-3.md | WebSocket provider & chatStore | 2 | ~230 | 0 |
-| 4 | ./2026-03-13-i6a-task-4.md | Chat panel UI components | 5 | ~330 | 0 |
-| 5 | ./2026-03-13-i6a-task-5.md | UI integration (toggle, toolbar, keyboard) | 4 | ~50 | 0 |
-| 6 | ./2026-03-13-i6a-task-6.md | CLI bridge detection & HTTP client | 6 | ~100 | 0 |
-| 7 | ./2026-03-13-i6a-task-7.md | Integration & E2E tests | 3+ | ~0 (test only) | 0 |
+| # | File | Scope | Write Files | Source LOC | Config LOC | Tests |
+|---|------|-------|-------------|------------|------------|-------|
+| 1 | ./2026-03-13-i6a-task-1.md | Types, system prompt, mock SDK | 3 | ~240 | 0 | Unit: prompt construction, mock scenarios |
+| 2 | ./2026-03-13-i6a-task-2.md | Claude Code bridge & Vite plugin | 4 | ~350 | ~18 | Unit: bridge sessions, WS/HTTP endpoints, timeout |
+| 3 | ./2026-03-13-i6a-task-3.md | WebSocket provider & chatStore | 2 | ~230 | 0 | Unit: event filtering, store state, reconnection |
+| 4 | ./2026-03-13-i6a-task-4.md | Chat panel UI components | 5 | ~330 | 0 | Unit: render, collapse, permission card, selector |
+| 5 | ./2026-03-13-i6a-task-5.md | UI integration (toggle, toolbar, keyboard) | 4 | ~50 | 0 | Unit: toggle state, panel expand, keyboard shortcut |
+| 6 | ./2026-03-13-i6a-task-6.md | CLI bridge detection & HTTP client | 6 | ~100 | 0 | Unit: detectBridge, bridgeMutate, fallback |
+| 7 | ./2026-03-13-i6a-task-7.md | Full-flow E2E tests | 1 | ~0 (test only) | 0 | E2E: chat toggle, panel layout, node selection |
