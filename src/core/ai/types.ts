@@ -135,6 +135,20 @@ export interface PermissionResponseClientMessage {
   type: 'permission_response';
   id: string;
   allowed: boolean;
+  /** When allowing, tell the SDK to permanently allow this tool pattern. */
+  updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+  /** When denying, interrupt the entire agent (not just skip this tool). */
+  interrupt?: boolean;
+}
+
+export interface SetPermissionModeClientMessage {
+  type: 'set_permission_mode';
+  mode: string;
+}
+
+export interface SetEffortClientMessage {
+  type: 'set_effort';
+  effort: string;
 }
 
 /**
@@ -153,7 +167,9 @@ export type ClientMessage =
   | AbortClientMessage
   | LoadHistoryClientMessage
   | PermissionResponseClientMessage
-  | QuestionResponseClientMessage;
+  | QuestionResponseClientMessage
+  | SetPermissionModeClientMessage
+  | SetEffortClientMessage;
 
 // --- Conversation ---
 
