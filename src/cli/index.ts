@@ -2,6 +2,11 @@
 import { Command } from 'commander';
 import { CLIError } from './errors';
 import { formatError } from './output';
+import { loadContext } from './context';
+import { listCommand } from './commands/list';
+import { describeCommand } from './commands/describe';
+import { searchCommand } from './commands/search';
+import { importCommand } from './commands/import';
 
 const program = new Command();
 
@@ -12,7 +17,7 @@ program
   .option('--json', 'Output in JSON format', false)
   .exitOverride(); // Throw instead of calling process.exit — our main() handles exits
 
-// --- Subcommands (stubs — filled in by Tasks 4–6) ---
+// --- Subcommands ---
 
 program
   .command('init')
@@ -73,8 +78,13 @@ program
   .description('List nodes, edges, and entities')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
   .option('--type <type>', 'Filter: nodes|edges|entities|all', 'all')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'list command not yet implemented');
+  .action(async (flags: { scope?: string; type: string }) => {
+    await loadContext(program.opts().project);
+    const isJson = program.opts().json === true;
+    listCommand(
+      { scope: flags.scope, type: flags.type as 'nodes' | 'edges' | 'entities' | 'all' },
+      { json: isJson },
+    );
   });
 
 program
@@ -82,8 +92,13 @@ program
   .description('Describe a node or the full architecture')
   .option('--id <id>', 'Node ID (omit for full architecture)')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'describe command not yet implemented');
+  .action(async (flags: { id?: string; scope?: string }) => {
+    await loadContext(program.opts().project);
+    const isJson = program.opts().json === true;
+    describeCommand(
+      { id: flags.id, scope: flags.scope },
+      { json: isJson },
+    );
   });
 
 program
@@ -91,8 +106,14 @@ program
   .description('Search nodes, edges, and entities')
   .argument('<query>', 'Search term')
   .option('--type <type>', 'Filter: nodes|edges|entities|all')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'search command not yet implemented');
+  .action(async (query: string, flags: { type?: string }) => {
+    await loadContext(program.opts().project);
+    const isJson = program.opts().json === true;
+    searchCommand(
+      query,
+      { type: flags.type as 'nodes' | 'edges' | 'entities' | 'all' | undefined },
+      { json: isJson },
+    );
   });
 
 program
@@ -100,8 +121,14 @@ program
   .description('Import nodes, edges, and entities from a YAML file')
   .requiredOption('--file <file>', 'Path to YAML file')
   .option('--scope <scope>', 'Target canvas scope (defaults to root)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'import command not yet implemented');
+  .action(async (flags: { file: string; scope?: string }) => {
+    const isJson = program.opts().json === true;
+    const ctx = await loadContext(program.opts().project);
+    await importCommand(
+      { file: flags.file, scope: flags.scope },
+      { json: isJson },
+      ctx,
+    );
   });
 
 // --- Top-level error handler ---
