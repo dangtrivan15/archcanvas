@@ -15,6 +15,9 @@ import type {
   ChatErrorEvent,
   StatusEvent,
   RateLimitEvent,
+  SetPermissionModeClientMessage,
+  SetEffortClientMessage,
+  PermissionResponseClientMessage,
 } from '@/core/ai/types';
 import {
   textStreaming,
@@ -185,6 +188,45 @@ describe('PermissionRequestEvent — expanded fields', () => {
     };
     expect(event.blockedPath).toBe('/src/main.ts');
     expect(event.decisionReason).toBe('Tool not in allow list');
+  });
+});
+
+// ===========================================================================
+// New client message types (Task 3)
+// ===========================================================================
+describe('New client message types', () => {
+  it('SetPermissionModeClientMessage is a valid ClientMessage', () => {
+    const msg: ClientMessage = {
+      type: 'set_permission_mode',
+      mode: 'acceptEdits',
+    };
+    expect(msg.type).toBe('set_permission_mode');
+  });
+
+  it('SetEffortClientMessage is a valid ClientMessage', () => {
+    const msg: ClientMessage = {
+      type: 'set_effort',
+      effort: 'high',
+    };
+    expect(msg.type).toBe('set_effort');
+  });
+
+  it('PermissionResponseClientMessage accepts updatedPermissions and interrupt', () => {
+    const msg: PermissionResponseClientMessage = {
+      type: 'permission_response',
+      id: 'perm-1',
+      allowed: true,
+      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+    };
+    expect(msg.updatedPermissions).toHaveLength(1);
+
+    const denyMsg: PermissionResponseClientMessage = {
+      type: 'permission_response',
+      id: 'perm-2',
+      allowed: false,
+      interrupt: true,
+    };
+    expect(denyMsg.interrupt).toBe(true);
   });
 });
 
