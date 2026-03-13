@@ -325,9 +325,14 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             // to ask clarifying questions.  Without it the tool is unavailable
             // and Claude can only proceed with assumptions.
             // See: https://platform.claude.com/docs/en/agent-sdk/user-input
-            allowedTools: ['Bash', 'Read', 'Glob', 'Grep', 'AskUserQuestion'],
+            allowedTools: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
             permissionMode,
             effort,
+            maxTurns: 50,
+            includePartialMessages: true,
+            toolConfig: {
+              askUserQuestion: { previewFormat: 'markdown' },
+            },
             canUseTool: async (toolName, input, opts) => {
               const toolUseId = opts.toolUseID;
 

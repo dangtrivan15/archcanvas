@@ -665,3 +665,39 @@ describe('BridgeSession — session settings', () => {
     session.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SDK options
+// ---------------------------------------------------------------------------
+describe('BridgeSession — SDK options', () => {
+  it('passes expanded allowedTools, maxTurns, includePartialMessages, and toolConfig', async () => {
+    const capturedArgs: Array<Record<string, unknown>> = [];
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return (async function* () {
+        yield sdkSystemInit('session-opts');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('test', testContext));
+    const opts = capturedArgs[0].options as Record<string, unknown>;
+    const allowedTools = opts.allowedTools as string[];
+    expect(allowedTools).toContain('Write');
+    expect(allowedTools).toContain('Edit');
+    expect(allowedTools).toContain('WebFetch');
+    expect(allowedTools).toContain('WebSearch');
+    expect(allowedTools).toContain('AskUserQuestion');
+    expect(allowedTools).toContain('Bash');
+    expect(allowedTools).toContain('Read');
+    expect(allowedTools).toContain('Glob');
+    expect(allowedTools).toContain('Grep');
+    expect(opts.maxTurns).toBe(50);
+    expect(opts.includePartialMessages).toBe(true);
+    expect(opts.effort).toBe('high');
+    expect(opts.toolConfig).toEqual({
+      askUserQuestion: { previewFormat: 'markdown' },
+    });
+    session.destroy();
+  });
+});
