@@ -7,33 +7,33 @@ interface ChatEventBase {
 
 export interface TextEvent extends ChatEventBase {
   type: 'text';
-  text: string;
+  content: string;
 }
 
 export interface ToolCallEvent extends ChatEventBase {
   type: 'tool_call';
-  toolName: string;
+  name: string;
   args: Record<string, unknown>;
-  callId: string;
+  id: string;
 }
 
 export interface ToolResultEvent extends ChatEventBase {
   type: 'tool_result';
-  callId: string;
-  output: string;
-  isError: boolean;
+  id: string;
+  result: string;
+  isError?: boolean;
 }
 
 export interface ThinkingEvent extends ChatEventBase {
   type: 'thinking';
-  text: string;
+  content: string;
 }
 
 export interface PermissionRequestEvent extends ChatEventBase {
   type: 'permission_request';
-  permissionId: string;
-  description: string;
-  toolName: string;
+  id: string;
+  command: string;
+  tool: string;
 }
 
 export interface DoneEvent extends ChatEventBase {
@@ -60,22 +60,23 @@ export type ChatEvent =
 export interface ChatClientMessage {
   type: 'chat';
   requestId: string;
-  message: string;
+  content: string;
+  context: ProjectContext;
 }
 
 export interface AbortClientMessage {
   type: 'abort';
-  requestId: string;
 }
 
 export interface LoadHistoryClientMessage {
   type: 'load_history';
+  messages: ChatMessage[];
 }
 
 export interface PermissionResponseClientMessage {
   type: 'permission_response';
-  permissionId: string;
-  approved: boolean;
+  id: string;
+  allowed: boolean;
 }
 
 export type ClientMessage =
@@ -105,10 +106,10 @@ export interface ProjectContext {
 // --- Chat Provider ---
 
 export interface ChatProvider {
-  id: string;
-  displayName: string;
-  available: boolean;
-  sendMessage(message: string, context: ProjectContext): AsyncIterable<ChatEvent>;
-  loadHistory(): Promise<ChatMessage[]>;
-  abort(requestId: string): void;
+  readonly id: string;
+  readonly displayName: string;
+  readonly available: boolean;
+  sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent>;
+  loadHistory(messages: ChatMessage[]): void;
+  abort(): void;
 }

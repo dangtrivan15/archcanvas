@@ -40,12 +40,17 @@ async function collect(gen: AsyncIterable<ChatEvent>): Promise<ChatEvent[]> {
 // ===========================================================================
 describe('AI types — compile-time checks', () => {
   it('ChatEvent discriminated union covers all 7 variants', () => {
+    const ctx: ProjectContext = {
+      projectName: 'Test',
+      projectPath: '/tmp',
+      currentScope: 'root',
+    };
     const events: ChatEvent[] = [
-      { type: 'text', requestId: 'r1', text: 'hello' },
-      { type: 'tool_call', requestId: 'r1', toolName: 'bash', args: {}, callId: 'c1' },
-      { type: 'tool_result', requestId: 'r1', callId: 'c1', output: '', isError: false },
-      { type: 'thinking', requestId: 'r1', text: '...' },
-      { type: 'permission_request', requestId: 'r1', permissionId: 'p1', description: 'run X', toolName: 'bash' },
+      { type: 'text', requestId: 'r1', content: 'hello' },
+      { type: 'tool_call', requestId: 'r1', name: 'bash', args: {}, id: 'c1' },
+      { type: 'tool_result', requestId: 'r1', id: 'c1', result: '' },
+      { type: 'thinking', requestId: 'r1', content: '...' },
+      { type: 'permission_request', requestId: 'r1', id: 'p1', command: 'run X', tool: 'bash' },
       { type: 'done', requestId: 'r1' },
       { type: 'error', requestId: 'r1', message: 'oops' },
     ];
@@ -60,11 +65,16 @@ describe('AI types — compile-time checks', () => {
   });
 
   it('ClientMessage discriminated union covers all 4 variants', () => {
+    const ctx: ProjectContext = {
+      projectName: 'Test',
+      projectPath: '/tmp',
+      currentScope: 'root',
+    };
     const messages: ClientMessage[] = [
-      { type: 'chat', requestId: 'r1', message: 'hello' },
-      { type: 'abort', requestId: 'r1' },
-      { type: 'load_history' },
-      { type: 'permission_response', permissionId: 'p1', approved: true },
+      { type: 'chat', requestId: 'r1', content: 'hello', context: ctx },
+      { type: 'abort' },
+      { type: 'load_history', messages: [] },
+      { type: 'permission_response', id: 'p1', allowed: true },
     ];
     expect(messages).toHaveLength(4);
   });
@@ -74,7 +84,7 @@ describe('AI types — compile-time checks', () => {
       role: 'assistant',
       content: 'Hello!',
       timestamp: Date.now(),
-      events: [{ type: 'text', requestId: 'r1', text: 'Hello!' }],
+      events: [{ type: 'text', requestId: 'r1', content: 'Hello!' }],
     };
     expect(msg.role).toBe('assistant');
     expect(msg.events).toHaveLength(1);
@@ -104,10 +114,10 @@ describe('AI types — compile-time checks', () => {
       id: 'mock',
       displayName: 'Mock Provider',
       available: true,
-      sendMessage: async function* (_msg, _ctx) {
+      sendMessage: async function* (_content, _ctx) {
         yield { type: 'done' as const, requestId: 'r1' };
       },
-      loadHistory: async () => [],
+      loadHistory: () => {},
       abort: () => {},
     };
     expect(_provider.id).toBe('mock');
@@ -119,6 +129,14 @@ describe('AI types — compile-time checks', () => {
 
     const errWithCode: ErrorEvent = { type: 'error', requestId: 'r1', message: 'fail', code: 'TIMEOUT' };
     expect(errWithCode.code).toBe('TIMEOUT');
+  });
+
+  it('ToolResultEvent isError field is optional', () => {
+    const res: ToolResultEvent = { type: 'tool_result', requestId: 'r1', id: 'c1', result: 'ok' };
+    expect(res.isError).toBeUndefined();
+
+    const resWithError: ToolResultEvent = { type: 'tool_result', requestId: 'r1', id: 'c1', result: 'fail', isError: true };
+    expect(resWithError.isError).toBe(true);
   });
 
   it('all ChatEvent variants carry requestId', () => {
@@ -207,10 +225,10 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toMatch(/add-edge\s+--from\s+<nodeId>\s+--to\s+<nodeId>/);
   });
 
-  it('add-edge signature includes --fromPort and --toPort flags', () => {
+  it('add-edge signature includes --from-port and --to-port flags', () => {
     const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toContain('--fromPort');
-    expect(prompt).toContain('--toPort');
+    expect(prompt).toContain('--from-port');
+    expect(prompt).toContain('--to-port');
   });
 
   it('remove-edge signature includes --from and --to flags', () => {
@@ -249,7 +267,7 @@ describe('Mock scenarios', () => {
       const events = await collect(textStreaming({ requestId }));
       const textEvents = events.filter((e): e is TextEvent => e.type === 'text');
       for (const te of textEvents) {
-        expect(te.text.length).toBeGreaterThan(0);
+        expect(te.content.length).toBeGreaterThan(0);
       }
     });
   });
@@ -268,24 +286,24 @@ describe('Mock scenarios', () => {
       ]);
     });
 
-    it('permission_request has a permissionId', async () => {
+    it('permission_request has an id', async () => {
       const events = await collect(
         toolCallFlow({ requestId, onPermission: async () => true }),
       );
       const perm = events.find(
         (e): e is PermissionRequestEvent => e.type === 'permission_request',
       )!;
-      expect(perm.permissionId).toBeTruthy();
-      expect(perm.toolName).toBe('bash');
+      expect(perm.id).toBeTruthy();
+      expect(perm.tool).toBe('bash');
     });
 
-    it('tool_call and tool_result share the same callId', async () => {
+    it('tool_call and tool_result share the same id', async () => {
       const events = await collect(
         toolCallFlow({ requestId, onPermission: async () => true }),
       );
       const call = events.find((e): e is ToolCallEvent => e.type === 'tool_call')!;
       const result = events.find((e): e is ToolResultEvent => e.type === 'tool_result')!;
-      expect(call.callId).toBe(result.callId);
+      expect(call.id).toBe(result.id);
     });
 
     it('defaults to approved when no onPermission provided', async () => {
@@ -325,7 +343,7 @@ describe('Mock scenarios', () => {
     it('text contains a question', async () => {
       const events = await collect(clarifyingQuestion({ requestId }));
       const text = events.find((e): e is TextEvent => e.type === 'text')!;
-      expect(text.text).toContain('?');
+      expect(text.content).toContain('?');
     });
   });
 
@@ -390,15 +408,15 @@ describe('Mock scenarios', () => {
       ]);
     });
 
-    it('each tool_call/tool_result pair shares a callId', async () => {
+    it('each tool_call/tool_result pair shares an id', async () => {
       const events = await collect(multipleMutations({ requestId }));
       const calls = events.filter((e): e is ToolCallEvent => e.type === 'tool_call');
       const results = events.filter((e): e is ToolResultEvent => e.type === 'tool_result');
       expect(calls).toHaveLength(2);
       expect(results).toHaveLength(2);
-      expect(calls[0].callId).toBe(results[0].callId);
-      expect(calls[1].callId).toBe(results[1].callId);
-      expect(calls[0].callId).not.toBe(calls[1].callId);
+      expect(calls[0].id).toBe(results[0].id);
+      expect(calls[1].id).toBe(results[1].id);
+      expect(calls[0].id).not.toBe(calls[1].id);
     });
 
     it('stamps requestId on all events', async () => {
