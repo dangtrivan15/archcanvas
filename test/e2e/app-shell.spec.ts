@@ -276,6 +276,7 @@ test.describe("toolbar accessibility", () => {
       "Auto Layout (⌘⇧L)",
       "Undo (⌘Z)",
       "Redo (⇧⌘Z)",
+      "AI Chat (⌘⇧I)",
     ];
 
     for (const label of expectedLabels) {
