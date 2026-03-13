@@ -18,7 +18,7 @@ import type { Plugin } from 'vite';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { ClientMessage, ChatEvent } from './types';
-import { createBridgeSession, type BridgeSession, type SDKQueryFn } from './claudeCodeBridge';
+import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermissionRequest } from './claudeCodeBridge';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -204,9 +204,16 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
       wss.on('connection', (ws: WebSocket) => {
         browserClients.add(ws);
 
-        // Create a bridge session for this client
+        // Create a bridge session for this client.
+        // Wire onPermissionRequest to forward permission events via WebSocket.
+        const onPermissionRequest: OnPermissionRequest = (event) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(event));
+          }
+        };
         const session = createBridgeSession({
           cwd: process.cwd(),
+          onPermissionRequest,
           ...(pluginOptions?.queryFn ? { queryFn: pluginOptions.queryFn } : {}),
         });
         sessions.set(ws, session);
