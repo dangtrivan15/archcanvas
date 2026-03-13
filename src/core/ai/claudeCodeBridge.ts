@@ -101,6 +101,8 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   let sessionId: string | undefined;
   let destroyed = false;
   const pendingPermissions = new Map<string, PendingPermission>();
+  // TODO: use for session context summary injection
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let conversationHistory: ChatMessage[] = [];
 
   async function resolveQueryFn(): Promise<SDKQueryFn> {

@@ -15,5 +15,5 @@
     "emitDeclarationOnly": true,
     "declaration": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts"]
+  "include": ["vite.config.ts", "vitest.config.ts", "src/core/ai/vitePlugin.ts", "src/core/ai/claudeCodeBridge.ts"]
 }

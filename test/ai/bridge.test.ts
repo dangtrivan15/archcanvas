@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   createBridgeSession,
-  type BridgeSession,
   type SDKQueryFn,
   type SDKMessage,
 } from '@/core/ai/claudeCodeBridge';
@@ -465,7 +464,7 @@ describe('BridgeSession — lifecycle', () => {
     const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
 
     // Start the stream to capture the canUseTool callback
-    const events = await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext));
     expect(canUseToolCallback).not.toBeNull();
 
     // Now simulate the SDK calling canUseTool

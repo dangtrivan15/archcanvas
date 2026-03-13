@@ -96,18 +96,18 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
     configureServer(server) {
       // --- HTTP middleware ---
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        const url = req.url ?? '';
+        const pathname = new URL(req.url ?? '', 'http://localhost').pathname;
 
         // Health check
-        if (req.method === 'GET' && url === HEALTH_PATH) {
+        if (req.method === 'GET' && pathname === HEALTH_PATH) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true }));
           return;
         }
 
         // Mutation endpoints
-        if (req.method === 'POST' && url.startsWith(API_PREFIX)) {
-          const route = url.slice(API_PREFIX.length);
+        if (req.method === 'POST' && pathname.startsWith(API_PREFIX)) {
+          const route = pathname.slice(API_PREFIX.length);
           const action = ROUTE_TO_ACTION[route];
 
           if (!action) {
