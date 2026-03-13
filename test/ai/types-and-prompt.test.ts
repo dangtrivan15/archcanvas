@@ -12,7 +12,7 @@ import type {
   ThinkingEvent,
   PermissionRequestEvent,
   DoneEvent,
-  ErrorEvent,
+  ChatErrorEvent,
 } from '@/core/ai/types';
 import {
   textStreaming,
@@ -40,11 +40,6 @@ async function collect(gen: AsyncIterable<ChatEvent>): Promise<ChatEvent[]> {
 // ===========================================================================
 describe('AI types — compile-time checks', () => {
   it('ChatEvent discriminated union covers all 7 variants', () => {
-    const ctx: ProjectContext = {
-      projectName: 'Test',
-      projectPath: '/tmp',
-      currentScope: 'root',
-    };
     const events: ChatEvent[] = [
       { type: 'text', requestId: 'r1', content: 'hello' },
       { type: 'tool_call', requestId: 'r1', name: 'bash', args: {}, id: 'c1' },
@@ -123,11 +118,11 @@ describe('AI types — compile-time checks', () => {
     expect(_provider.id).toBe('mock');
   });
 
-  it('ErrorEvent code field is optional', () => {
-    const err: ErrorEvent = { type: 'error', requestId: 'r1', message: 'fail' };
+  it('ChatErrorEvent code field is optional', () => {
+    const err: ChatErrorEvent = { type: 'error', requestId: 'r1', message: 'fail' };
     expect(err.code).toBeUndefined();
 
-    const errWithCode: ErrorEvent = { type: 'error', requestId: 'r1', message: 'fail', code: 'TIMEOUT' };
+    const errWithCode: ChatErrorEvent = { type: 'error', requestId: 'r1', message: 'fail', code: 'TIMEOUT' };
     expect(errWithCode.code).toBe('TIMEOUT');
   });
 
@@ -356,7 +351,7 @@ describe('Mock scenarios', () => {
 
     it('error event has message and code', async () => {
       const events = await collect(errorScenario({ requestId }));
-      const err = events.find((e): e is ErrorEvent => e.type === 'error')!;
+      const err = events.find((e): e is ChatErrorEvent => e.type === 'error')!;
       expect(err.message).toBe('Connection lost');
       expect(err.code).toBe('CONNECTION_ERROR');
     });
