@@ -17,8 +17,14 @@
 import type { Plugin } from 'vite';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage, ServerResponse } from 'http';
-import type { ClientMessage, ChatEvent } from './types';
-import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermissionRequest } from './claudeCodeBridge';
+import type {
+  ClientMessage,
+  ChatEvent,
+  SetPermissionModeClientMessage,
+  SetEffortClientMessage,
+  PermissionResponseClientMessage,
+} from './types';
+import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermissionRequest, type OnAskUserQuestion } from './claudeCodeBridge';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -94,6 +100,20 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
     name: 'archcanvas-ai-bridge',
 
     configureServer(server) {
+      // --- Guard against SDK unhandled rejections ---
+      // The Claude Agent SDK has a bug where handleControlRequest doesn't
+      // catch transport.write() errors after the session is aborted.  This
+      // causes an unhandled rejection ("Operation aborted") that crashes the
+      // Vite dev server.  We catch it here so the server stays up.
+      process.on('unhandledRejection', (reason: unknown) => {
+        if (reason instanceof Error && reason.message === 'Operation aborted') {
+          // Known SDK issue: safe to suppress during session cleanup.
+          return;
+        }
+        // Log unexpected rejections without crashing.
+        console.error('[archcanvas-ai-bridge] Unhandled rejection:', reason);
+      });
+
       // --- HTTP middleware ---
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const pathname = new URL(req.url ?? '', 'http://localhost').pathname;
@@ -207,16 +227,38 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
       wss.on('connection', (ws: WebSocket) => {
         browserClients.add(ws);
 
+        // Track the current client requestId so that side-channel events
+        // (permission_request, ask_user_question) can be remapped to the
+        // client's ULID.  Without this, the browser's event listener can't
+        // route these events because they arrive with the bridge's internal
+        // requestId instead of the client's.
+        let currentClientRequestId: string | undefined;
+
         // Create a bridge session for this client.
         // Wire onPermissionRequest to forward permission events via WebSocket.
         const onPermissionRequest: OnPermissionRequest = (event) => {
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(event));
+            const remapped = currentClientRequestId
+              ? { ...event, requestId: currentClientRequestId }
+              : event;
+            ws.send(JSON.stringify(remapped));
+          }
+        };
+        // Wire onAskUserQuestion to forward clarifying-question events via
+        // WebSocket.  The browser renders a question card and sends back
+        // a question_response message which we route to respondToQuestion().
+        const onAskUserQuestion: OnAskUserQuestion = (event) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            const remapped = currentClientRequestId
+              ? { ...event, requestId: currentClientRequestId }
+              : event;
+            ws.send(JSON.stringify(remapped));
           }
         };
         const session = createBridgeSession({
           cwd: process.cwd(),
           onPermissionRequest,
+          onAskUserQuestion,
           ...(pluginOptions?.queryFn ? { queryFn: pluginOptions.queryFn } : {}),
         });
         sessions.set(ws, session);
@@ -246,11 +288,17 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
 
           switch (clientMsg.type) {
             case 'chat': {
+              // Capture the client's requestId so side-channel callbacks
+              // (onPermissionRequest, onAskUserQuestion) can remap their
+              // events to match the client's event listener.
+              currentClientRequestId = clientMsg.requestId;
               try {
                 const stream = bridgeSession.sendMessage(clientMsg.content, clientMsg.context);
                 for await (const event of stream) {
                   if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify(event));
+                    // Remap bridge-internal requestId to the client's requestId
+                    // so the browser's event listener can route it correctly.
+                    ws.send(JSON.stringify({ ...event, requestId: clientMsg.requestId }));
                   }
                 }
               } catch (err) {
@@ -278,7 +326,36 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
             }
 
             case 'permission_response': {
-              bridgeSession.respondToPermission(clientMsg.id, clientMsg.allowed);
+              const permMsg = clientMsg as PermissionResponseClientMessage;
+              bridgeSession.respondToPermission(permMsg.id, permMsg.allowed, {
+                updatedPermissions: permMsg.updatedPermissions,
+                interrupt: permMsg.interrupt,
+              });
+              break;
+            }
+
+            case 'set_permission_mode': {
+              bridgeSession.setPermissionMode(
+                (clientMsg as SetPermissionModeClientMessage).mode,
+              );
+              break;
+            }
+
+            case 'set_effort': {
+              bridgeSession.setEffort(
+                (clientMsg as SetEffortClientMessage).effort,
+              );
+              break;
+            }
+
+            case 'question_response': {
+              // User answered an AskUserQuestion card.  Forward the answers
+              // record to the bridge, which unblocks the canUseTool callback
+              // and returns them to the SDK as updatedInput.
+              bridgeSession.respondToQuestion(
+                (clientMsg as any).id,
+                (clientMsg as any).answers,
+              );
               break;
             }
           }
