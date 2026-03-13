@@ -589,3 +589,59 @@ describe('aiBridgePlugin — permission relay', () => {
     await new Promise<void>(r => ws.on('close', r));
   });
 });
+
+describe('aiBridgePlugin — new client messages', () => {
+  let server: ReturnType<typeof createMockViteServer>;
+  let port: number;
+
+  beforeEach(async () => {
+    server = setupServer();
+    port = await startServer(server);
+  });
+
+  afterEach(async () => {
+    await stopServer(server);
+  });
+
+  it('set_permission_mode message does not crash the server', async () => {
+    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    await new Promise<void>((resolve) => ws.on('open', resolve));
+    ws.send(JSON.stringify({ type: 'set_permission_mode', mode: 'acceptEdits' }));
+    await new Promise(r => setTimeout(r, 50));
+    expect(ws.readyState).toBe(WebSocket.OPEN);
+    ws.close();
+    await new Promise<void>(r => ws.on('close', r));
+  });
+
+  it('set_effort message does not crash the server', async () => {
+    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    await new Promise<void>((resolve) => ws.on('open', resolve));
+    ws.send(JSON.stringify({ type: 'set_effort', effort: 'low' }));
+    await new Promise(r => setTimeout(r, 50));
+    expect(ws.readyState).toBe(WebSocket.OPEN);
+    ws.close();
+    await new Promise<void>(r => ws.on('close', r));
+  });
+
+  it('permission_response with updatedPermissions and interrupt does not crash', async () => {
+    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    await new Promise<void>((resolve) => ws.on('open', resolve));
+    ws.send(JSON.stringify({
+      type: 'permission_response',
+      id: 'perm-1',
+      allowed: true,
+      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+    }));
+    await new Promise(r => setTimeout(r, 50));
+    ws.send(JSON.stringify({
+      type: 'permission_response',
+      id: 'perm-2',
+      allowed: false,
+      interrupt: true,
+    }));
+    await new Promise(r => setTimeout(r, 50));
+    expect(ws.readyState).toBe(WebSocket.OPEN);
+    ws.close();
+    await new Promise<void>(r => ws.on('close', r));
+  });
+});
