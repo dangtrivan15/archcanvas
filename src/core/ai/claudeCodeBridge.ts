@@ -71,14 +71,28 @@ interface PendingPermission {
 // createBridgeSession
 // ---------------------------------------------------------------------------
 
+/**
+ * Callback invoked when the SDK needs a tool permission decision.
+ * The Vite plugin wires this to send the permission_request over WebSocket.
+ */
+export type OnPermissionRequest = (event: {
+  type: 'permission_request';
+  requestId: string;
+  id: string;
+  tool: string;
+  command: string;
+}) => void;
+
 export interface BridgeSessionOptions {
   cwd: string;
   /** Injectable SDK query function. Defaults to the real SDK at runtime. */
   queryFn?: SDKQueryFn;
+  /** Called when the SDK requests a tool permission decision. */
+  onPermissionRequest?: OnPermissionRequest;
 }
 
 export function createBridgeSession(options: BridgeSessionOptions): BridgeSession {
-  const { cwd } = options;
+  const { cwd, onPermissionRequest } = options;
 
   // Lazy-load real SDK only when no mock is provided
   let queryFn: SDKQueryFn | undefined = options.queryFn;
@@ -225,23 +239,27 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             allowedTools: ['Bash', 'Read', 'Glob', 'Grep'],
             permissionMode: 'default',
             canUseTool: async (toolName, input, opts) => {
-              // Emit a permission request and wait for user response
               const permId = opts.toolUseID;
               const command = typeof input.command === 'string'
                 ? input.command
                 : `${toolName}(${JSON.stringify(input)})`;
 
-              // Create a promise that will be resolved when respondToPermission is called
+              // Emit permission_request to the caller via side-channel callback.
+              // The Vite plugin wires this to send the event over WebSocket.
+              if (onPermissionRequest) {
+                onPermissionRequest({
+                  type: 'permission_request',
+                  requestId,
+                  id: permId,
+                  tool: toolName,
+                  command,
+                });
+              }
+
+              // Block the SDK until the user responds via respondToPermission()
               const permissionPromise = new Promise<boolean>((resolve) => {
                 pendingPermissions.set(permId, { resolve });
               });
-
-              // Note: The permission_request event is yielded in the main stream.
-              // We store the info so the stream can emit it.
-              // For the SDK, we block here until the user responds.
-              // But we need to get the event to the caller...
-              // The canUseTool callback blocks the SDK. We resolve it when
-              // respondToPermission is called externally.
 
               const allowed = await permissionPromise;
               pendingPermissions.delete(permId);

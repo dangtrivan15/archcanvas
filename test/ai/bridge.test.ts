@@ -486,6 +486,54 @@ describe('BridgeSession — lifecycle', () => {
     session.destroy();
   });
 
+  it('onPermissionRequest callback fires when canUseTool is invoked', async () => {
+    const permissionEvents: Array<{ id: string; tool: string; command: string }> = [];
+    let canUseToolCallback: ((
+      toolName: string,
+      input: Record<string, unknown>,
+      options: { signal: AbortSignal; toolUseID: string },
+    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>) | null = null;
+
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool ?? null;
+      return (async function* () {
+        yield sdkSystemInit('session-perm-cb');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({
+      cwd: '/tmp',
+      queryFn: mockQueryFn,
+      onPermissionRequest: (event) => {
+        permissionEvents.push(event);
+      },
+    });
+
+    await collect(session.sendMessage('test', testContext));
+
+    // Simulate SDK calling canUseTool
+    const permPromise = canUseToolCallback!(
+      'Bash',
+      { command: 'archcanvas list --json' },
+      { signal: new AbortController().signal, toolUseID: 'perm-cb-1' },
+    );
+
+    // The callback should have fired
+    expect(permissionEvents).toHaveLength(1);
+    expect(permissionEvents[0]).toMatchObject({
+      id: 'perm-cb-1',
+      tool: 'Bash',
+      command: 'archcanvas list --json',
+    });
+
+    // Clean up — respond so the promise resolves
+    session.respondToPermission('perm-cb-1', true);
+    await permPromise;
+
+    session.destroy();
+  });
+
   it('respondToPermission with denial returns deny result', async () => {
     let canUseToolCallback: ((
       toolName: string,
