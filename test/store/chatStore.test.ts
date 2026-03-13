@@ -393,11 +393,11 @@ describe('chatStore', () => {
       expect(useChatStore.getState().isStreaming).toBe(false);
     });
 
-    it('no-ops when no active provider', () => {
+    it('resets isStreaming even when no active provider', () => {
       useChatStore.setState({ isStreaming: true });
       useChatStore.getState().abort();
-      // isStreaming remains unchanged because there's no provider to abort
-      expect(useChatStore.getState().isStreaming).toBe(true);
+      // isStreaming is always reset to prevent stuck state
+      expect(useChatStore.getState().isStreaming).toBe(false);
     });
   });
 
