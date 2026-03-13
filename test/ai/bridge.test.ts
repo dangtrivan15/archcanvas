@@ -6,15 +6,13 @@ import {
   type SDKMessage,
 } from '@/core/ai/claudeCodeBridge';
 import type { ChatEvent, ProjectContext } from '@/core/ai/types';
-import {
-  textStreaming,
-  toolCallFlow,
-  permissionDenied,
-  clarifyingQuestion,
-  errorScenario,
-  abortMidStream,
-  multipleMutations,
-} from '../mocks/mockClaudeCode';
+
+// NOTE: The Task 1 mock scenarios (test/mocks/mockClaudeCode.ts) emit
+// post-translation ChatEvent objects. The bridge's job is to translate
+// pre-translation SDK messages (SDKMessage) into ChatEvents. Therefore these
+// tests use inline SDK-shaped message generators (sdkSystemInit, sdkAssistantText,
+// etc.) to exercise the bridge's translation layer directly, rather than the
+// Task 1 mocks which would bypass it.
 
 // ---------------------------------------------------------------------------
 // Helper: collect all events from an async iterable

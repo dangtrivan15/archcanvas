@@ -483,6 +483,47 @@ describe('aiBridgePlugin — HTTP mutation relay', () => {
     await new Promise<void>(r => browser.on('close', r));
   });
 
+  it('returns 504 BRIDGE_TIMEOUT when browser does not respond in time', async () => {
+    // Use a short timeout so the test doesn't have to wait 10 seconds.
+    // We create a separate server with a tiny mutationTimeoutMs.
+    const shortTimeoutServer = createMockViteServer();
+    const shortTimeoutPlugin = aiBridgePlugin({
+      queryFn: createMockSDKQueryFn(),
+      mutationTimeoutMs: 100,
+    });
+    const configureFn = (shortTimeoutPlugin as Plugin & { configureServer: (s: unknown) => void }).configureServer;
+    configureFn!.call(shortTimeoutPlugin, shortTimeoutServer as unknown as ViteDevServer);
+
+    const shortPort = await startServer(shortTimeoutServer);
+
+    try {
+      const browser = new WebSocket(`ws://localhost:${shortPort}/__archcanvas_ai`);
+      await new Promise<void>((resolve) => browser.on('open', resolve));
+
+      // Browser receives the store_action but never sends store_action_result
+      browser.on('message', () => {
+        // Deliberately do nothing — simulate a non-responsive browser
+      });
+
+      const resp = await httpRequest(
+        shortPort,
+        'POST',
+        '/__archcanvas_ai/api/add-node',
+        JSON.stringify({ id: 'svc-timeout', type: 'compute/service' }),
+      );
+
+      expect(resp.status).toBe(504);
+      const body = JSON.parse(resp.body);
+      expect(body.ok).toBe(false);
+      expect(body.error.code).toBe('BRIDGE_TIMEOUT');
+
+      browser.close();
+      await new Promise<void>(r => browser.on('close', r));
+    } finally {
+      await stopServer(shortTimeoutServer);
+    }
+  });
+
   it('forwards browser error responses to HTTP client', async () => {
     const browser = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => browser.on('open', resolve));
