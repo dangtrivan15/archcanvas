@@ -2,6 +2,10 @@
 import { Command } from 'commander';
 import { CLIError } from './errors';
 import { formatError } from './output';
+import { addNodeCommand } from './commands/add-node';
+import { addEdgeCommand } from './commands/add-edge';
+import { removeNodeCommand } from './commands/remove-node';
+import { removeEdgeCommand } from './commands/remove-edge';
 
 const program = new Command();
 
@@ -12,7 +16,7 @@ program
   .option('--json', 'Output in JSON format', false)
   .exitOverride(); // Throw instead of calling process.exit — our main() handles exits
 
-// --- Subcommands (stubs — filled in by Tasks 4–6) ---
+// --- Subcommands ---
 
 program
   .command('init')
@@ -31,8 +35,12 @@ program
   .option('--name <name>', 'Display name')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
   .option('--args <json>', 'Node args as JSON string')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'add-node command not yet implemented');
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent!.opts();
+    await addNodeCommand(
+      { ...opts, project: globalOpts.project },
+      { json: globalOpts.json },
+    );
   });
 
 program
@@ -45,8 +53,12 @@ program
   .option('--protocol <protocol>', 'Protocol label')
   .option('--label <label>', 'Edge label')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'add-edge command not yet implemented');
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent!.opts();
+    await addEdgeCommand(
+      { ...opts, project: globalOpts.project },
+      { json: globalOpts.json },
+    );
   });
 
 program
@@ -54,8 +66,12 @@ program
   .description('Remove a node from the canvas')
   .requiredOption('--id <id>', 'Node ID to remove')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'remove-node command not yet implemented');
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent!.opts();
+    await removeNodeCommand(
+      { ...opts, project: globalOpts.project },
+      { json: globalOpts.json },
+    );
   });
 
 program
@@ -64,8 +80,12 @@ program
   .requiredOption('--from <from>', 'Source node ID')
   .requiredOption('--to <to>', 'Target node ID')
   .option('--scope <scope>', 'Canvas scope (defaults to root)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'remove-edge command not yet implemented');
+  .action(async (opts, cmd) => {
+    const globalOpts = cmd.parent!.opts();
+    await removeEdgeCommand(
+      { ...opts, project: globalOpts.project },
+      { json: globalOpts.json },
+    );
   });
 
 program
