@@ -58,21 +58,32 @@ export async function bridgeMutate(
   action: string,
   args: Record<string, unknown>,
 ): Promise<{ ok: boolean; [key: string]: unknown }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+
   let res: Response;
   try {
     res = await fetch(`${bridgeUrl}/api/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(args),
+      signal: controller.signal,
     });
   } catch (err) {
     throw new CLIError(
       'BRIDGE_ERROR',
       `Bridge request failed: ${err instanceof Error ? err.message : String(err)}`,
     );
+  } finally {
+    clearTimeout(timer);
   }
 
-  const body = await res.json() as { ok: boolean; error?: { code: string; message: string }; [key: string]: unknown };
+  let body: { ok: boolean; error?: { code: string; message: string }; [key: string]: unknown };
+  try {
+    body = await res.json() as typeof body;
+  } catch {
+    throw new CLIError('BRIDGE_ERROR', `Bridge returned non-JSON response (HTTP ${res.status})`);
+  }
 
   if (!res.ok) {
     const code = body.error?.code ?? 'BRIDGE_ERROR';
