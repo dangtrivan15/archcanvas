@@ -35,3 +35,5 @@ tmp/
 *.log
 coverage/
 *.tsbuildinfo
+.claude/worktrees
+.superpowers/brainstorm
