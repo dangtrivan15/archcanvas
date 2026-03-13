@@ -1,7 +1,14 @@
-import serviceYaml from './service.yaml?raw';
-import functionYaml from './function.yaml?raw';
-import workerYaml from './worker.yaml?raw';
-import containerYaml from './container.yaml?raw';
-import cronJobYaml from './cron-job.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { serviceDef } from './service';
+import { functionDef } from './function';
+import { workerDef } from './worker';
+import { containerDef } from './container';
+import { cronJobDef } from './cronJob';
 
-export const computeYamls = [serviceYaml, functionYaml, workerYaml, containerYaml, cronJobYaml];
+export const computeDefs: NodeDef[] = [
+  serviceDef,
+  functionDef,
+  workerDef,
+  containerDef,
+  cronJobDef,
+];

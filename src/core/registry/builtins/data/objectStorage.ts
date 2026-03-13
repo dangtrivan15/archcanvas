@@ -1,0 +1,63 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const objectStorageDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'object-storage',
+    namespace: 'data',
+    version: '1.0.0',
+    displayName: 'Object Storage',
+    description:
+      'Blob and file storage for unstructured data such as images, backups, and artifacts.',
+    icon: 'HardDrive',
+    tags: ['storage', 'blob', 'files'],
+    shape: 'cylinder',
+  },
+  spec: {
+    args: [
+      {
+        name: 'provider',
+        type: 'enum',
+        required: true,
+        options: ['S3', 'GCS', 'Azure Blob', 'MinIO'],
+        description:
+          'Cloud or self-hosted object storage provider.',
+      },
+      {
+        name: 'versioning',
+        type: 'boolean',
+        required: false,
+        default: false,
+        description:
+          'Enable object versioning for point-in-time recovery.',
+      },
+    ],
+    ports: [
+      {
+        name: 'storage-in',
+        direction: 'inbound',
+        protocol: ['S3', 'HTTP'],
+        description:
+          'Accepts upload and retrieval requests from services.',
+      },
+      {
+        name: 'cdn-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'HTTPS'],
+        description:
+          'Serves objects through a CDN or direct HTTPS endpoint.',
+      },
+    ],
+    children: [],
+    ai: {
+      context:
+        'Large-object durable storage. Review bucket policies, encryption at rest, and lifecycle rules.',
+      reviewHints: [
+        'Ensure bucket access policies follow least-privilege principles.',
+        'Verify that versioning is enabled when regulatory or compliance retention is required.',
+        'Check that lifecycle rules exist to transition or expire stale objects.',
+      ],
+    },
+  },
+};

@@ -1,5 +1,10 @@
-import loggingYaml from './logging.yaml?raw';
-import monitoringYaml from './monitoring.yaml?raw';
-import tracingYaml from './tracing.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { loggingDef } from './logging';
+import { monitoringDef } from './monitoring';
+import { tracingDef } from './tracing';
 
-export const observabilityYamls = [loggingYaml, monitoringYaml, tracingYaml];
+export const observabilityDefs: NodeDef[] = [
+  loggingDef,
+  monitoringDef,
+  tracingDef,
+];

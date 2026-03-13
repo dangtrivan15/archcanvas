@@ -1,21 +1,22 @@
-import { computeYamls } from './compute';
-import { dataYamls } from './data';
-import { messagingYamls } from './messaging';
-import { networkYamls } from './network';
-import { clientYamls } from './client';
-import { integrationYamls } from './integration';
-import { securityYamls } from './security';
-import { observabilityYamls } from './observability';
-import { aiYamls } from './ai';
+import type { NodeDef } from '../../../types/nodeDefSchema';
+import { computeDefs } from './compute';
+import { dataDefs } from './data';
+import { messagingDefs } from './messaging';
+import { networkDefs } from './network';
+import { clientDefs } from './client';
+import { integrationDefs } from './integration';
+import { securityDefs } from './security';
+import { observabilityDefs } from './observability';
+import { aiDefs } from './ai';
 
-export const builtinYamlStrings: string[] = [
-  ...computeYamls,
-  ...dataYamls,
-  ...messagingYamls,
-  ...networkYamls,
-  ...clientYamls,
-  ...integrationYamls,
-  ...securityYamls,
-  ...observabilityYamls,
-  ...aiYamls,
+export const builtinNodeDefs: NodeDef[] = [
+  ...computeDefs,
+  ...dataDefs,
+  ...messagingDefs,
+  ...networkDefs,
+  ...clientDefs,
+  ...integrationDefs,
+  ...securityDefs,
+  ...observabilityDefs,
+  ...aiDefs,
 ];

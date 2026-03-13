@@ -1,5 +1,10 @@
-import authProviderYaml from './auth-provider.yaml?raw';
-import vaultYaml from './vault.yaml?raw';
-import wafYaml from './waf.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { authProviderDef } from './authProvider';
+import { vaultDef } from './vault';
+import { wafDef } from './waf';
 
-export const securityYamls = [authProviderYaml, vaultYaml, wafYaml];
+export const securityDefs: NodeDef[] = [
+  authProviderDef,
+  vaultDef,
+  wafDef,
+];

@@ -1,6 +1,12 @@
-import messageQueueYaml from './message-queue.yaml?raw';
-import eventBusYaml from './event-bus.yaml?raw';
-import streamProcessorYaml from './stream-processor.yaml?raw';
-import notificationYaml from './notification.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { messageQueueDef } from './messageQueue';
+import { eventBusDef } from './eventBus';
+import { streamProcessorDef } from './streamProcessor';
+import { notificationDef } from './notification';
 
-export const messagingYamls = [messageQueueYaml, eventBusYaml, streamProcessorYaml, notificationYaml];
+export const messagingDefs: NodeDef[] = [
+  messageQueueDef,
+  eventBusDef,
+  streamProcessorDef,
+  notificationDef,
+];
