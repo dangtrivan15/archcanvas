@@ -446,11 +446,8 @@ describe('BridgeSession — lifecycle', () => {
     // This test verifies the permission flow through canUseTool.
     // We create a mock that invokes canUseTool, which creates a pending promise.
     // The test then calls respondToPermission to resolve it.
-    let canUseToolCallback: ((
-      toolName: string,
-      input: Record<string, unknown>,
-      options: { signal: AbortSignal; toolUseID: string },
-    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
 
     const mockQueryFn: SDKQueryFn = (args) => {
       canUseToolCallback = args.options?.canUseTool ?? null;
@@ -485,11 +482,8 @@ describe('BridgeSession — lifecycle', () => {
 
   it('onPermissionRequest callback fires when canUseTool is invoked', async () => {
     const permissionEvents: Array<{ id: string; tool: string; command: string }> = [];
-    let canUseToolCallback: ((
-      toolName: string,
-      input: Record<string, unknown>,
-      options: { signal: AbortSignal; toolUseID: string },
-    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
 
     const mockQueryFn: SDKQueryFn = (args) => {
       canUseToolCallback = args.options?.canUseTool ?? null;
@@ -532,11 +526,8 @@ describe('BridgeSession — lifecycle', () => {
   });
 
   it('respondToPermission with denial returns deny result', async () => {
-    let canUseToolCallback: ((
-      toolName: string,
-      input: Record<string, unknown>,
-      options: { signal: AbortSignal; toolUseID: string },
-    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
 
     const mockQueryFn: SDKQueryFn = (args) => {
       canUseToolCallback = args.options?.canUseTool ?? null;
@@ -564,11 +555,8 @@ describe('BridgeSession — lifecycle', () => {
   });
 
   it('destroy() resolves pending permissions with false', async () => {
-    let canUseToolCallback: ((
-      toolName: string,
-      input: Record<string, unknown>,
-      options: { signal: AbortSignal; toolUseID: string },
-    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
 
     const mockQueryFn: SDKQueryFn = (args) => {
       canUseToolCallback = args.options?.canUseTool ?? null;

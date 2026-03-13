@@ -9,6 +9,7 @@ import type {
   ChatEvent,
   ChatMessage,
   ProjectContext,
+  AskUserQuestion,
 } from './types';
 import { buildSystemPrompt } from './systemPrompt';
 
@@ -30,11 +31,37 @@ export type SDKQueryFn = (args: {
     resume?: string;
     allowedTools?: string[];
     permissionMode?: string;
+    maxTurns?: number;
+    effort?: 'low' | 'medium' | 'high' | 'max';
+    includePartialMessages?: boolean;
+    toolConfig?: {
+      askUserQuestion?: {
+        previewFormat?: 'markdown' | 'html';
+      };
+    };
+    hooks?: Record<string, Array<{
+      matcher?: string;
+      hooks: Array<(
+        input: Record<string, unknown>,
+        toolUseID: string | undefined,
+        options: { signal: AbortSignal },
+      ) => Promise<Record<string, unknown>>>;
+    }>>;
     canUseTool?: (
       toolName: string,
       input: Record<string, unknown>,
-      options: { signal: AbortSignal; toolUseID: string },
-    ) => Promise<{ behavior: 'allow' } | { behavior: 'deny'; message: string }>;
+      options: {
+        signal: AbortSignal;
+        toolUseID: string;
+        suggestions?: Array<{ tool: string; permission: string }>;
+        blockedPath?: string;
+        decisionReason?: string;
+        agentID?: string;
+      },
+    ) => Promise<
+      | { behavior: 'allow'; updatedInput?: Record<string, unknown>; updatedPermissions?: Array<{ tool: string; permission: string }> }
+      | { behavior: 'deny'; message: string; interrupt?: boolean }
+    >;
   };
 }) => AsyncIterable<SDKMessage>;
 
@@ -54,6 +81,8 @@ export interface BridgeSession {
     context: ProjectContext,
   ): AsyncIterable<ChatEvent>;
   respondToPermission(id: string, allowed: boolean): void;
+  /** Provide the user's answers to an AskUserQuestion card. */
+  respondToQuestion(id: string, answers: Record<string, string>): void;
   loadHistory(messages: ChatMessage[]): void;
   abort(): void;
   destroy(): void;
@@ -65,6 +94,16 @@ export interface BridgeSession {
 
 interface PendingPermission {
   resolve: (allowed: boolean) => void;
+}
+
+/**
+ * Pending question: the canUseTool callback is blocked inside a Promise
+ * waiting for the user's answer selections.  When the browser sends a
+ * question_response message, we resolve this Promise with the answers
+ * record and canUseTool returns `{ behavior: 'allow', updatedInput }`.
+ */
+interface PendingQuestion {
+  resolve: (answers: Record<string, string>) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,16 +122,36 @@ export type OnPermissionRequest = (event: {
   command: string;
 }) => void;
 
+/**
+ * Callback invoked when Claude calls AskUserQuestion — the SDK's built-in
+ * tool for clarifying questions.
+ *
+ * Unlike a regular permission request (allow/deny), AskUserQuestion needs
+ * the user's actual answer selections.  The Vite plugin wires this to send
+ * an ask_user_question event over WebSocket; the browser renders a question
+ * card and the user's selections come back via respondToQuestion().
+ *
+ * See: https://platform.claude.com/docs/en/agent-sdk/user-input
+ */
+export type OnAskUserQuestion = (event: {
+  type: 'ask_user_question';
+  requestId: string;
+  id: string;
+  questions: AskUserQuestion[];
+}) => void;
+
 export interface BridgeSessionOptions {
   cwd: string;
   /** Injectable SDK query function. Defaults to the real SDK at runtime. */
   queryFn?: SDKQueryFn;
   /** Called when the SDK requests a tool permission decision. */
   onPermissionRequest?: OnPermissionRequest;
+  /** Called when Claude calls AskUserQuestion and needs user input. */
+  onAskUserQuestion?: OnAskUserQuestion;
 }
 
 export function createBridgeSession(options: BridgeSessionOptions): BridgeSession {
-  const { cwd, onPermissionRequest } = options;
+  const { cwd, onPermissionRequest, onAskUserQuestion } = options;
 
   // Lazy-load real SDK only when no mock is provided
   let queryFn: SDKQueryFn | undefined = options.queryFn;
@@ -101,11 +160,19 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   let sessionId: string | undefined;
   let destroyed = false;
   const pendingPermissions = new Map<string, PendingPermission>();
-  // TODO: use for session context summary injection
-  let _conversationHistory: ChatMessage[] = [];
+  const pendingQuestions = new Map<string, PendingQuestion>();
+  // TODO: store conversation history for session context summary injection.
 
   async function resolveQueryFn(): Promise<SDKQueryFn> {
     if (queryFn) return queryFn;
+
+    // Strip environment variables that cause the SDK to detect a nested
+    // Claude Code session.  When ArchCanvas's dev server is launched from
+    // within Claude Code (common during development), these vars are set
+    // and the SDK refuses to spawn a subprocess.
+    delete process.env.CLAUDECODE;
+    delete process.env.CLAUDE_CODE_ENTRYPOINT;
+
     // Dynamic import so the real SDK is only loaded at runtime in Node.js
     const sdk = await import('@anthropic-ai/claude-agent-sdk');
     queryFn = sdk.query as unknown as SDKQueryFn;
@@ -149,6 +216,12 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               if (block.type === 'text' && block.text) {
                 yield { type: 'text', requestId, content: block.text };
               } else if (block.type === 'tool_use') {
+                // AskUserQuestion tool_use blocks are handled specially:
+                // the canUseTool callback (below) emits an ask_user_question
+                // event and waits for the user's answers.  We still yield
+                // the tool_call here so the UI can show what tool was used,
+                // but the interactive question card comes from the event
+                // emitted inside canUseTool.
                 yield {
                   type: 'tool_call',
                   requestId,
@@ -237,10 +310,65 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             cwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
-            allowedTools: ['Bash', 'Read', 'Glob', 'Grep'],
+            // AskUserQuestion must be in allowedTools for Claude to be able
+            // to ask clarifying questions.  Without it the tool is unavailable
+            // and Claude can only proceed with assumptions.
+            // See: https://platform.claude.com/docs/en/agent-sdk/user-input
+            allowedTools: ['Bash', 'Read', 'Glob', 'Grep', 'AskUserQuestion'],
             permissionMode: 'default',
             canUseTool: async (toolName, input, opts) => {
-              const permId = opts.toolUseID;
+              const toolUseId = opts.toolUseID;
+
+              // -----------------------------------------------------------------
+              // AskUserQuestion — Claude's clarifying-question tool.
+              //
+              // The SDK calls canUseTool for AskUserQuestion just like any other
+              // tool.  But instead of a simple allow/deny gate, we need the
+              // user's actual answers.  The official SDK pattern is:
+              //
+              //   return {
+              //     behavior: 'allow',
+              //     updatedInput: {
+              //       questions: <pass-through from input>,
+              //       answers:   { "question text": "selected label", ... }
+              //     }
+              //   }
+              //
+              // We emit an ask_user_question event to the browser (which shows
+              // a question card), wait for the user's answer selections via
+              // respondToQuestion(), and return them in the updatedInput.
+              //
+              // See: https://platform.claude.com/docs/en/agent-sdk/user-input
+              // -----------------------------------------------------------------
+              if (toolName === 'AskUserQuestion') {
+                const questions = (input.questions ?? []) as AskUserQuestion[];
+
+                // Emit the question event to the browser via side-channel.
+                if (onAskUserQuestion) {
+                  onAskUserQuestion({
+                    type: 'ask_user_question',
+                    requestId,
+                    id: toolUseId,
+                    questions,
+                  });
+                }
+
+                // Block the SDK until the user answers via respondToQuestion().
+                const answers = await new Promise<Record<string, string>>((resolve) => {
+                  pendingQuestions.set(toolUseId, { resolve });
+                });
+                pendingQuestions.delete(toolUseId);
+
+                // Return the user's answers in the format the SDK expects.
+                return {
+                  behavior: 'allow' as const,
+                  updatedInput: { questions, answers },
+                };
+              }
+
+              // -----------------------------------------------------------------
+              // Regular tool permission request (Bash, Write, etc.)
+              // -----------------------------------------------------------------
               const command = typeof input.command === 'string'
                 ? input.command
                 : `${toolName}(${JSON.stringify(input)})`;
@@ -251,19 +379,17 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
                 onPermissionRequest({
                   type: 'permission_request',
                   requestId,
-                  id: permId,
+                  id: toolUseId,
                   tool: toolName,
                   command,
                 });
               }
 
               // Block the SDK until the user responds via respondToPermission()
-              const permissionPromise = new Promise<boolean>((resolve) => {
-                pendingPermissions.set(permId, { resolve });
+              const allowed = await new Promise<boolean>((resolve) => {
+                pendingPermissions.set(toolUseId, { resolve });
               });
-
-              const allowed = await permissionPromise;
-              pendingPermissions.delete(permId);
+              pendingPermissions.delete(toolUseId);
 
               if (allowed) {
                 return { behavior: 'allow' as const };
@@ -295,10 +421,16 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       }
     },
 
-    loadHistory(messages: ChatMessage[]): void {
-      _conversationHistory = messages;
+    respondToQuestion(id: string, answers: Record<string, string>): void {
+      const pending = pendingQuestions.get(id);
+      if (pending) {
+        pending.resolve(answers);
+      }
+    },
+
+    loadHistory(_messages: ChatMessage[]): void {
       // The session resume mechanism handles history internally via sessionId.
-      // This stores messages for potential future use (e.g., summary injection).
+      // TODO: store messages for context summary injection.
     },
 
     abort(): void {
@@ -320,7 +452,11 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         pending.resolve(false);
       }
       pendingPermissions.clear();
-      _conversationHistory = [];
+      // Reject any pending questions with empty answers
+      for (const [, pending] of pendingQuestions) {
+        pending.resolve({});
+      }
+      pendingQuestions.clear();
     },
   };
 }
