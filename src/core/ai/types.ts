@@ -34,6 +34,51 @@ export interface PermissionRequestEvent extends ChatEventBase {
   id: string;
   command: string;
   tool: string;
+  /** File path that triggered the permission request (from SDK canUseTool options). */
+  blockedPath?: string;
+  /** Explains why this permission request was triggered. */
+  decisionReason?: string;
+}
+
+// ---------------------------------------------------------------------------
+// AskUserQuestion — Claude's clarifying-question tool.
+//
+// When Claude calls AskUserQuestion, the SDK invokes canUseTool with the
+// question payload.  Instead of a simple allow/deny, we need the user's
+// actual answer.  The bridge emits this event so the browser can show an
+// interactive question card; the user's selections are sent back as a
+// QuestionResponseClientMessage, and the bridge returns them to the SDK
+// via `{ behavior: 'allow', updatedInput: { questions, answers } }`.
+//
+// See: https://platform.claude.com/docs/en/agent-sdk/user-input
+// ---------------------------------------------------------------------------
+
+/** A single option within an AskUserQuestion question. */
+export interface AskUserQuestionOption {
+  label: string;
+  description: string;
+  /** Optional HTML/markdown preview (only present when toolConfig.askUserQuestion.previewFormat is set). */
+  preview?: string;
+}
+
+/** A single question from the AskUserQuestion tool. */
+export interface AskUserQuestion {
+  question: string;
+  header: string;
+  options: AskUserQuestionOption[];
+  multiSelect: boolean;
+}
+
+/**
+ * Emitted when Claude calls AskUserQuestion and needs the user to pick
+ * from options (or type a free-text "Other" answer).
+ */
+export interface AskUserQuestionEvent extends ChatEventBase {
+  type: 'ask_user_question';
+  /** The tool_use ID — used to correlate the response. */
+  id: string;
+  /** The full array of questions Claude wants answered. */
+  questions: AskUserQuestion[];
 }
 
 export interface DoneEvent extends ChatEventBase {
@@ -52,6 +97,7 @@ export type ChatEvent =
   | ToolResultEvent
   | ThinkingEvent
   | PermissionRequestEvent
+  | AskUserQuestionEvent
   | DoneEvent
   | ChatErrorEvent;
 
@@ -79,11 +125,23 @@ export interface PermissionResponseClientMessage {
   allowed: boolean;
 }
 
+/**
+ * Sent by the browser when the user answers an AskUserQuestion card.
+ * `answers` is a record of question text → selected label(s) (or free text).
+ * Matches the SDK's expected response format for canUseTool + AskUserQuestion.
+ */
+export interface QuestionResponseClientMessage {
+  type: 'question_response';
+  id: string;
+  answers: Record<string, string>;
+}
+
 export type ClientMessage =
   | ChatClientMessage
   | AbortClientMessage
   | LoadHistoryClientMessage
-  | PermissionResponseClientMessage;
+  | PermissionResponseClientMessage
+  | QuestionResponseClientMessage;
 
 // --- Conversation ---
 

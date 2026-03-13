@@ -143,6 +143,25 @@ describe('AI types — compile-time checks', () => {
 });
 
 // ===========================================================================
+// PermissionRequestEvent — expanded fields (Task 1)
+// ===========================================================================
+describe('PermissionRequestEvent — expanded fields', () => {
+  it('accepts blockedPath, decisionReason, and interrupt fields', () => {
+    const event: PermissionRequestEvent = {
+      type: 'permission_request',
+      requestId: 'req-1',
+      id: 'perm-1',
+      command: 'echo hi',
+      tool: 'Bash',
+      blockedPath: '/src/main.ts',
+      decisionReason: 'Tool not in allow list',
+    };
+    expect(event.blockedPath).toBe('/src/main.ts');
+    expect(event.decisionReason).toBe('Tool not in allow list');
+  });
+});
+
+// ===========================================================================
 // buildSystemPrompt
 // ===========================================================================
 describe('buildSystemPrompt', () => {
