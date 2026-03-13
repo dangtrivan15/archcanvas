@@ -1,7 +1,7 @@
-#!/usr/bin/env node
 import { Command } from 'commander';
 import { CLIError } from './errors';
 import { formatError } from './output';
+import { initCommand } from './commands/init';
 
 const program = new Command();
 
@@ -19,8 +19,9 @@ program
   .description('Initialize a new ArchCanvas project')
   .option('--name <name>', 'Project name (defaults to directory name)')
   .option('--path <path>', 'Target directory (defaults to cwd)')
-  .action(async () => {
-    throw new CLIError('INVALID_ARGS', 'init command not yet implemented');
+  .action(async (options) => {
+    const globalOpts = program.opts();
+    await initCommand(options, { json: globalOpts.json === true });
   });
 
 program
