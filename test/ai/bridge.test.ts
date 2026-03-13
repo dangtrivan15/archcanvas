@@ -624,3 +624,44 @@ describe('BridgeSession — lifecycle', () => {
     session.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Session settings
+// ---------------------------------------------------------------------------
+describe('BridgeSession — session settings', () => {
+  it('setPermissionMode changes the mode for subsequent queries', async () => {
+    const capturedArgs: Array<Record<string, unknown>> = [];
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return (async function* () {
+        yield sdkSystemInit('session-mode');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('first', testContext));
+    expect((capturedArgs[0].options as Record<string, unknown>)?.permissionMode).toBe('default');
+    session.setPermissionMode('acceptEdits');
+    await collect(session.sendMessage('second', testContext));
+    expect((capturedArgs[1].options as Record<string, unknown>)?.permissionMode).toBe('acceptEdits');
+    session.destroy();
+  });
+
+  it('setEffort changes the effort for subsequent queries', async () => {
+    const capturedArgs: Array<Record<string, unknown>> = [];
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return (async function* () {
+        yield sdkSystemInit('session-effort');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('first', testContext));
+    expect((capturedArgs[0].options as Record<string, unknown>)?.effort).toBe('high');
+    session.setEffort('low');
+    await collect(session.sendMessage('second', testContext));
+    expect((capturedArgs[1].options as Record<string, unknown>)?.effort).toBe('low');
+    session.destroy();
+  });
+});
