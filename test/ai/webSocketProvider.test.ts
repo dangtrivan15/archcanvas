@@ -126,7 +126,8 @@ vi.mock('@/store/fileStore', () => ({
 // ---------------------------------------------------------------------------
 
 let provider: WebSocketClaudeCodeProvider;
-const TEST_URL = 'ws://localhost:5173/__archcanvas_ai';
+const BRIDGE_PORT = process.env.ARCHCANVAS_BRIDGE_PORT ?? '5173';
+const TEST_URL = `ws://localhost:${BRIDGE_PORT}/__archcanvas_ai`;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -598,6 +599,71 @@ describe('WebSocketClaudeCodeProvider', () => {
       const response = JSON.parse(ws.sent[0]);
       expect(response.result.ok).toBe(false);
       expect(response.result.error.code).toBe('NO_FILESYSTEM');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // New methods: sendSetPermissionMode, sendSetEffort
+  // -----------------------------------------------------------------------
+
+  describe('sendSetPermissionMode', () => {
+    it('sends correct message', () => {
+      const sent: string[] = [];
+      const provider2 = new WebSocketClaudeCodeProvider();
+      (provider2 as any).ws = {
+        readyState: WebSocket.OPEN,
+        send: (data: string) => sent.push(data),
+      };
+      provider2.sendSetPermissionMode('acceptEdits');
+      expect(sent).toHaveLength(1);
+      expect(JSON.parse(sent[0])).toEqual({
+        type: 'set_permission_mode',
+        mode: 'acceptEdits',
+      });
+    });
+  });
+
+  describe('sendSetEffort', () => {
+    it('sends correct message', () => {
+      const sent: string[] = [];
+      const provider2 = new WebSocketClaudeCodeProvider();
+      (provider2 as any).ws = {
+        readyState: WebSocket.OPEN,
+        send: (data: string) => sent.push(data),
+      };
+      provider2.sendSetEffort('low');
+      expect(sent).toHaveLength(1);
+      expect(JSON.parse(sent[0])).toEqual({
+        type: 'set_effort',
+        effort: 'low',
+      });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // New event types: status, rate_limit
+  // -----------------------------------------------------------------------
+
+  describe('new event types', () => {
+    it('routes status and rate_limit events through the existing event handler', () => {
+      const ws = connectProvider();
+      const received: Array<Record<string, unknown>> = [];
+      (provider as any).eventListeners.set('req-status', (event: Record<string, unknown>) => {
+        received.push(event);
+      });
+      ws.simulateMessage(JSON.stringify({
+        type: 'status',
+        requestId: 'req-status',
+        message: 'Reading file...',
+      }));
+      ws.simulateMessage(JSON.stringify({
+        type: 'rate_limit',
+        requestId: 'req-status',
+        message: 'Rate limited, retrying in 5s',
+      }));
+      expect(received).toHaveLength(2);
+      expect(received[0].type).toBe('status');
+      expect(received[1].type).toBe('rate_limit');
     });
   });
 

@@ -112,6 +112,25 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     this.send({ type: 'permission_response', id, allowed });
   }
 
+  /**
+   * Send the user's answers to an AskUserQuestion card back to the bridge.
+   * The bridge uses these to build the `updatedInput.answers` record that
+   * the SDK expects: `{ "question text": "selected label", ... }`.
+   */
+  sendQuestionResponse(id: string, answers: Record<string, string>): void {
+    this.send({ type: 'question_response', id, answers });
+  }
+
+  /** Change the permission mode for the current bridge session. */
+  sendSetPermissionMode(mode: string): void {
+    this.send({ type: 'set_permission_mode', mode });
+  }
+
+  /** Change the effort level for the current bridge session. */
+  sendSetEffort(effort: string): void {
+    this.send({ type: 'set_effort', effort });
+  }
+
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
