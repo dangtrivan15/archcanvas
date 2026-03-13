@@ -14,7 +14,8 @@ export interface FilePicker {
 class WebFilePicker implements FilePicker {
   async pickDirectory(): Promise<FileSystem | null> {
     try {
-      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
       const { WebFileSystem } = await import('./webFileSystem');
       return new WebFileSystem(handle);
     } catch {

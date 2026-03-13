@@ -60,7 +60,7 @@ test.describe("menubar", () => {
     await expect(
       page.getByRole("menuitem", { name: /New Project/ }),
     ).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: /Save/ })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /^Save ⌘S$/ })).toBeVisible();
   });
 
   test("Edit menu opens with Undo/Redo items", async ({ page }) => {

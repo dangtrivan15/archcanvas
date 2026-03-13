@@ -34,7 +34,7 @@ test.describe("project bootstrap", () => {
     await expect(page.locator(".react-flow__node")).toHaveCount(1);
 
     // Status bar should reflect the new node
-    await expect(page.getByText(/1 nodes/)).toBeVisible();
+    await expect(page.getByText(/1 nodes?/)).toBeVisible();
   });
 
   test("add multiple nodes via command palette", async ({ page }) => {
