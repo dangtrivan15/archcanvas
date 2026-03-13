@@ -796,3 +796,43 @@ describe('BridgeSession — respondToPermission options', () => {
     session.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Auto-approve hooks
+// ---------------------------------------------------------------------------
+describe('BridgeSession — auto-approve hooks', () => {
+  it('passes PreToolUse hooks in SDK options that match Read|Glob|Grep', async () => {
+    const capturedArgs: Array<Record<string, unknown>> = [];
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return (async function* () {
+        yield sdkSystemInit('session-hooks');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('test', testContext));
+    const opts = capturedArgs[0].options as Record<string, unknown>;
+    const hooks = opts.hooks as Record<string, Array<{ matcher?: string; hooks: Array<(...args: unknown[]) => Promise<unknown>> }>>;
+    expect(hooks).toBeDefined();
+    expect(hooks.PreToolUse).toBeDefined();
+    expect(hooks.PreToolUse).toHaveLength(1);
+    expect(hooks.PreToolUse[0].matcher).toBe('Read|Glob|Grep');
+    expect(hooks.PreToolUse[0].hooks).toHaveLength(1);
+    // Call the hook and verify it returns auto-approve
+    const hookFn = hooks.PreToolUse[0].hooks[0];
+    const result = await hookFn(
+      { hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: '/test.ts' } },
+      'tool-use-1',
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: 'allow',
+        permissionDecisionReason: 'Read-only tool auto-approved',
+      },
+    });
+    session.destroy();
+  });
+});
