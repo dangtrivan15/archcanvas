@@ -190,21 +190,28 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
 
   private async handleStoreAction(msg: StoreActionMessage): Promise<void> {
     const { action, args, correlationId } = msg;
-    const graphStore = useGraphStore.getState();
-    const fileStore = useFileStore.getState();
 
     let result: unknown;
     try {
-      // Route to the correct graphStore method
-      const method = graphStore[action as keyof typeof graphStore];
-      if (typeof method !== 'function') {
-        result = { ok: false, error: { code: 'UNKNOWN_ACTION', message: `Unknown action: ${action}` } };
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = (method as (...a: any[]) => unknown)(...Object.values(args));
+      result = this.dispatchStoreAction(action, args);
+
+      // Unknown action — return immediately without attempting save
+      if (
+        result &&
+        typeof result === 'object' &&
+        'ok' in result &&
+        (result as { ok: boolean }).ok === false
+      ) {
+        this.send({
+          type: 'store_action_result',
+          correlationId,
+          result,
+        } satisfies StoreActionResultMessage);
+        return;
       }
 
       // Persist if filesystem is available
+      const fileStore = useFileStore.getState();
       if (fileStore.fs) {
         await fileStore.save();
       } else {
@@ -222,6 +229,23 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
       correlationId,
       result,
     } satisfies StoreActionResultMessage);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private dispatchStoreAction(action: string, args: Record<string, unknown>): unknown {
+    const gs = useGraphStore.getState();
+    switch (action) {
+      case 'addNode':
+        return gs.addNode(args.canvasId as string, args.node as any);
+      case 'addEdge':
+        return gs.addEdge(args.canvasId as string, args.edge as any);
+      case 'removeNode':
+        return gs.removeNode(args.canvasId as string, args.nodeId as string);
+      case 'removeEdge':
+        return gs.removeEdge(args.canvasId as string, args.from as string, args.to as string);
+      default:
+        return { ok: false, error: { code: 'UNKNOWN_ACTION', message: `Unknown action: ${action}` } };
+    }
   }
 
   private createEventStream(requestId: string): AsyncIterable<ChatEvent> {

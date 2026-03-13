@@ -96,14 +96,18 @@ class MockWebSocket {
 // ---------------------------------------------------------------------------
 
 const mockAddNode = vi.fn().mockReturnValue({ ok: true, data: {} });
+const mockAddEdge = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockRemoveNode = vi.fn().mockReturnValue({ ok: true, data: {} });
+const mockRemoveEdge = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockSave = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/store/graphStore', () => ({
   useGraphStore: {
     getState: () => ({
       addNode: mockAddNode,
+      addEdge: mockAddEdge,
       removeNode: mockRemoveNode,
+      removeEdge: mockRemoveEdge,
     }),
   },
 }));
@@ -131,7 +135,9 @@ beforeEach(() => {
   vi.stubGlobal('WebSocket', MockWebSocket);
   provider = new WebSocketClaudeCodeProvider();
   mockAddNode.mockClear();
+  mockAddEdge.mockClear();
   mockRemoveNode.mockClear();
+  mockRemoveEdge.mockClear();
   mockSave.mockClear();
 });
 

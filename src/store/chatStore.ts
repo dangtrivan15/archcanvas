@@ -7,8 +7,6 @@ import type {
 } from '@/core/ai/types';
 import { useFileStore } from './fileStore';
 import { useNavigationStore } from './navigationStore';
-import type { WebSocketClaudeCodeProvider } from '@/core/ai/webSocketProvider';
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -166,20 +164,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const provider = providers.get(activeProviderId);
     if (!provider) return;
 
-    // Cast to WebSocketClaudeCodeProvider to access sendPermissionResponse
-    const wsProvider = provider as unknown as WebSocketClaudeCodeProvider;
-    if (typeof wsProvider.sendPermissionResponse === 'function') {
-      wsProvider.sendPermissionResponse(id, allowed);
+    // Duck-type check: only WebSocket-backed providers expose sendPermissionResponse
+    if ('sendPermissionResponse' in provider && typeof (provider as any).sendPermissionResponse === 'function') {
+      (provider as any).sendPermissionResponse(id, allowed);
     }
   },
 
   abort() {
     const { activeProviderId, providers } = get();
+    set({ isStreaming: false }); // Always reset, even if no provider
     if (!activeProviderId) return;
 
     const provider = providers.get(activeProviderId);
     provider?.abort();
-    set({ isStreaming: false });
   },
 
   clearHistory() {
