@@ -18,3 +18,12 @@ export class CLIError extends Error {
     this.name = 'CLIError';
   }
 }
+
+/** Convert an engine error object to a human-readable message. */
+export function engineErrorMessage(error: Record<string, unknown>): string {
+  const { code, ...rest } = error;
+  const details = Object.entries(rest)
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .join(', ');
+  return details ? `${String(code)}: ${details}` : String(code);
+}

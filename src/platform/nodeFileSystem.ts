@@ -10,7 +10,11 @@ export class NodeFileSystem implements FileSystem {
   }
 
   private resolvePath(path: string): string {
-    return resolve(this.rootPath, path);
+    const full = resolve(this.rootPath, path);
+    if (!full.startsWith(this.rootPath + '/') && full !== this.rootPath) {
+      throw new Error(`Path traversal detected: '${path}' escapes root '${this.rootPath}'`);
+    }
+    return full;
   }
 
   async readFile(path: string): Promise<string> {
