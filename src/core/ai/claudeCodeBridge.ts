@@ -101,8 +101,14 @@ export interface BridgeSession {
 // Internal state
 // ---------------------------------------------------------------------------
 
+interface PermissionResponse {
+  allowed: boolean;
+  updatedPermissions?: Array<{ tool: string; permission: string }>;
+  interrupt?: boolean;
+}
+
 interface PendingPermission {
-  resolve: (allowed: boolean) => void;
+  resolve: (response: PermissionResponse) => void;
 }
 
 /**
@@ -407,15 +413,22 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               }
 
               // Block the SDK until the user responds via respondToPermission()
-              const allowed = await new Promise<boolean>((resolve) => {
+              const response = await new Promise<PermissionResponse>((resolve) => {
                 pendingPermissions.set(toolUseId, { resolve });
               });
               pendingPermissions.delete(toolUseId);
 
-              if (allowed) {
-                return { behavior: 'allow' as const };
+              if (response.allowed) {
+                return {
+                  behavior: 'allow' as const,
+                  ...(response.updatedPermissions ? { updatedPermissions: response.updatedPermissions } : {}),
+                };
               } else {
-                return { behavior: 'deny' as const, message: 'User denied permission' };
+                return {
+                  behavior: 'deny' as const,
+                  message: 'User denied permission',
+                  ...(response.interrupt ? { interrupt: response.interrupt } : {}),
+                };
               }
             },
           },
@@ -435,10 +448,21 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       }
     },
 
-    respondToPermission(id: string, allowed: boolean): void {
+    respondToPermission(
+      id: string,
+      allowed: boolean,
+      options?: {
+        updatedPermissions?: Array<{ tool: string; permission: string }>;
+        interrupt?: boolean;
+      },
+    ): void {
       const pending = pendingPermissions.get(id);
       if (pending) {
-        pending.resolve(allowed);
+        pending.resolve({
+          allowed,
+          updatedPermissions: options?.updatedPermissions,
+          interrupt: options?.interrupt,
+        });
       }
     },
 
@@ -478,7 +502,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       }
       // Reject any pending permissions
       for (const [, pending] of pendingPermissions) {
-        pending.resolve(false);
+        pending.resolve({ allowed: false });
       }
       pendingPermissions.clear();
       // Reject any pending questions with empty answers
