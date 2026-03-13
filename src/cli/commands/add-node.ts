@@ -1,7 +1,7 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
-import { loadContext, resolveCanvasId } from '../context';
+import { loadContext, resolveCanvasId, bridgeMutate } from '../context';
 import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 import type { InlineNode } from '@/types/schema';
@@ -52,15 +52,26 @@ export async function addNodeCommand(
   };
 
   const canvasId = resolveCanvasId(options.scope);
-  const result = useGraphStore.getState().addNode(canvasId, node);
 
-  if (!result.ok) {
-    throw new CLIError(result.error.code, engineErrorMessage(result.error));
+  if (ctx.bridgeUrl) {
+    // Route through the running dev-server bridge
+    const result = await bridgeMutate(ctx.bridgeUrl, 'add-node', {
+      canvasId,
+      node,
+    });
+    printSuccess(result, globalOptions);
+  } else {
+    // Local store mutation path
+    const result = useGraphStore.getState().addNode(canvasId, node);
+
+    if (!result.ok) {
+      throw new CLIError(result.error.code, engineErrorMessage(result.error));
+    }
+
+    // Save after successful mutation (C11.1, C5b.2)
+    await useFileStore.getState().saveAll(ctx.fs);
+
+    // Output (C5b.6)
+    printSuccess({ node: { id: options.id, type: options.type, displayName } }, globalOptions);
   }
-
-  // Save after successful mutation (C11.1, C5b.2)
-  await useFileStore.getState().saveAll(ctx.fs);
-
-  // Output (C5b.6)
-  printSuccess({ node: { id: options.id, type: options.type, displayName } }, globalOptions);
 }

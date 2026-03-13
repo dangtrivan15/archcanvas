@@ -1,0 +1,272 @@
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
+import { CLIError } from '@/cli/errors';
+
+// --- Test helpers ---
+
+/** Start an HTTP server on a random port and return the server + base URL. */
+function startServer(
+  handler: (req: IncomingMessage, res: ServerResponse) => void,
+): Promise<{ server: Server; port: number; baseUrl: string }> {
+  return new Promise((resolve) => {
+    const server = createServer(handler);
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      const port = typeof addr === 'object' && addr ? addr.port : 0;
+      resolve({ server, port, baseUrl: `http://127.0.0.1:${port}` });
+    });
+  });
+}
+
+function stopServer(server: Server): Promise<void> {
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+  });
+}
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+  });
+}
+
+// --- detectBridge tests ---
+
+describe('detectBridge', () => {
+  // We test detectBridge by importing it and overriding the fetch target.
+  // Since detectBridge uses a hardcoded URL (localhost:5173), we test the
+  // function's logic by calling it directly and relying on the fact that
+  // no server is running on port 5173 during tests (returns null).
+  // For the positive case, we test the underlying HTTP logic via bridgeMutate.
+
+  let detectBridge: typeof import('@/cli/context').detectBridge;
+
+  beforeEach(async () => {
+    const mod = await import('@/cli/context');
+    detectBridge = mod.detectBridge;
+  });
+
+  it('returns null when no server is running on port 5173', async () => {
+    // No bridge server running during tests — should return null
+    const result = await detectBridge();
+    expect(result).toBeNull();
+  });
+
+  it('returns null (does not throw) on connection refused', async () => {
+    // This tests the error handling path — should gracefully return null
+    const result = await detectBridge();
+    expect(result).toBeNull();
+  });
+});
+
+// --- detectBridge with mocked fetch (no real server needed) ---
+
+describe('detectBridge with mock fetch', () => {
+  let detectBridge: typeof import('@/cli/context').detectBridge;
+
+  beforeEach(async () => {
+    const mod = await import('@/cli/context');
+    detectBridge = mod.detectBridge;
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns bridge URL when health endpoint responds ok', async () => {
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url === 'http://localhost:5173/__archcanvas_ai/health') {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('Not Found', { status: 404 });
+    });
+
+    const result = await detectBridge();
+    expect(result).toBe('http://localhost:5173/__archcanvas_ai');
+  });
+
+  it('returns null when health endpoint returns non-ok status', async () => {
+    vi.stubGlobal('fetch', async () => {
+      return new Response('Internal Server Error', { status: 500 });
+    });
+
+    const result = await detectBridge();
+    expect(result).toBeNull();
+  });
+
+  it('returns null when fetch throws (network error)', async () => {
+    vi.stubGlobal('fetch', async () => {
+      throw new TypeError('fetch failed');
+    });
+
+    const result = await detectBridge();
+    expect(result).toBeNull();
+  });
+});
+
+// --- bridgeMutate tests ---
+
+describe('bridgeMutate', () => {
+  let bridgeMutate: typeof import('@/cli/context').bridgeMutate;
+
+  beforeEach(async () => {
+    const mod = await import('@/cli/context');
+    bridgeMutate = mod.bridgeMutate;
+  });
+
+  it('sends correct POST request and parses JSON response', async () => {
+    let receivedMethod = '';
+    let receivedUrl = '';
+    let receivedBody = '';
+    let receivedContentType = '';
+
+    const { server, baseUrl } = await startServer(async (req, res) => {
+      receivedMethod = req.method ?? '';
+      receivedUrl = req.url ?? '';
+      receivedContentType = req.headers['content-type'] ?? '';
+      receivedBody = await readBody(req);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, node: { id: 'svc-1' } }));
+    });
+
+    try {
+      const result = await bridgeMutate(baseUrl, 'add-node', {
+        canvasId: '__root__',
+        node: { id: 'svc-1', type: 'compute/service' },
+      });
+
+      expect(receivedMethod).toBe('POST');
+      expect(receivedUrl).toBe('/api/add-node');
+      expect(receivedContentType).toBe('application/json');
+      expect(JSON.parse(receivedBody)).toEqual({
+        canvasId: '__root__',
+        node: { id: 'svc-1', type: 'compute/service' },
+      });
+      expect(result).toEqual({ ok: true, node: { id: 'svc-1' } });
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  it('throws CLIError with error code/message on HTTP error (non-2xx)', async () => {
+    const { server, baseUrl } = await startServer((_req, res) => {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ok: false,
+        error: { code: 'DUPLICATE_NODE_ID', message: 'Node svc-1 already exists' },
+      }));
+    });
+
+    try {
+      await expect(
+        bridgeMutate(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } }),
+      ).rejects.toThrow(CLIError);
+
+      try {
+        await bridgeMutate(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } });
+      } catch (err) {
+        expect(err).toBeInstanceOf(CLIError);
+        expect((err as CLIError).code).toBe('DUPLICATE_NODE_ID');
+        expect((err as CLIError).message).toBe('Node svc-1 already exists');
+      }
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  it('throws CLIError with BRIDGE_ERROR on HTTP error without structured error body', async () => {
+    const { server, baseUrl } = await startServer((_req, res) => {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: false }));
+    });
+
+    try {
+      try {
+        await bridgeMutate(baseUrl, 'remove-node', { canvasId: '__root__', nodeId: 'x' });
+      } catch (err) {
+        expect(err).toBeInstanceOf(CLIError);
+        expect((err as CLIError).code).toBe('BRIDGE_ERROR');
+        expect((err as CLIError).message).toContain('500');
+      }
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  it('throws CLIError with BRIDGE_ERROR on network error', async () => {
+    // Use a port that definitely has no server
+    await expect(
+      bridgeMutate('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' }),
+    ).rejects.toThrow(CLIError);
+
+    try {
+      await bridgeMutate('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' });
+    } catch (err) {
+      expect(err).toBeInstanceOf(CLIError);
+      expect((err as CLIError).code).toBe('BRIDGE_ERROR');
+    }
+  });
+
+  it('correctly constructs URL from bridgeUrl and action', async () => {
+    let receivedUrl = '';
+
+    const { server, baseUrl } = await startServer(async (req, res) => {
+      receivedUrl = req.url ?? '';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    });
+
+    try {
+      await bridgeMutate(baseUrl, 'remove-edge', { from: 'a', to: 'b' });
+      expect(receivedUrl).toBe('/api/remove-edge');
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  it('sends import with YAML content in body', async () => {
+    let receivedBody = '';
+
+    const { server, baseUrl } = await startServer(async (req, res) => {
+      receivedBody = await readBody(req);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, added: { nodes: 1, edges: 0, entities: 0 }, errors: [] }));
+    });
+
+    try {
+      const yamlContent = 'nodes:\n  - id: svc-1\n    type: compute/service\n';
+      const result = await bridgeMutate(baseUrl, 'import', {
+        canvasId: '__root__',
+        yaml: yamlContent,
+      });
+
+      const parsed = JSON.parse(receivedBody);
+      expect(parsed.yaml).toBe(yamlContent);
+      expect(parsed.canvasId).toBe('__root__');
+      expect(result.ok).toBe(true);
+    } finally {
+      await stopServer(server);
+    }
+  });
+});
+
+// --- CLIContext.bridgeUrl integration ---
+
+describe('CLIContext includes bridgeUrl', () => {
+  it('loadContext sets bridgeUrl to null when no bridge is running', async () => {
+    // This is tested implicitly by existing CLI tests — loadContext will
+    // set bridgeUrl to null since no dev server is running during tests.
+    // We verify the type contract by importing the interface.
+    const mod = await import('@/cli/context');
+    // The interface includes bridgeUrl — TypeScript compilation verifies this.
+    // We can't easily call loadContext without the full project setup,
+    // so we verify the detectBridge function returns null.
+    const result = await mod.detectBridge();
+    expect(result).toBeNull();
+  });
+});

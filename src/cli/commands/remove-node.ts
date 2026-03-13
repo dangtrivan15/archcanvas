@@ -1,6 +1,6 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
-import { loadContext, resolveCanvasId } from '../context';
+import { loadContext, resolveCanvasId, bridgeMutate } from '../context';
 import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 
@@ -17,15 +17,26 @@ export async function removeNodeCommand(
   const ctx = await loadContext(options.project);
 
   const canvasId = resolveCanvasId(options.scope);
-  const result = useGraphStore.getState().removeNode(canvasId, options.id);
 
-  if (!result.ok) {
-    throw new CLIError(result.error.code, engineErrorMessage(result.error));
+  if (ctx.bridgeUrl) {
+    // Route through the running dev-server bridge
+    const result = await bridgeMutate(ctx.bridgeUrl, 'remove-node', {
+      canvasId,
+      nodeId: options.id,
+    });
+    printSuccess(result, globalOptions);
+  } else {
+    // Local store mutation path
+    const result = useGraphStore.getState().removeNode(canvasId, options.id);
+
+    if (!result.ok) {
+      throw new CLIError(result.error.code, engineErrorMessage(result.error));
+    }
+
+    // Save after successful mutation (C11.1, C5d.2)
+    await useFileStore.getState().saveAll(ctx.fs);
+
+    // Output — confirmation (C5d.1)
+    printSuccess({ removed: { id: options.id } }, globalOptions);
   }
-
-  // Save after successful mutation (C11.1, C5d.2)
-  await useFileStore.getState().saveAll(ctx.fs);
-
-  // Output — confirmation (C5d.1)
-  printSuccess({ removed: { id: options.id } }, globalOptions);
 }
