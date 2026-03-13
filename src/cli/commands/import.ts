@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { useFileStore } from '@/store/fileStore';
 import { useGraphStore } from '@/store/graphStore';
-import { resolveCanvasId } from '../context';
+import { resolveCanvasId, bridgeMutate } from '../context';
 import { CLIError } from '../errors';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
@@ -46,6 +46,17 @@ export async function importCommand(
     );
   }
 
+  if (ctx.bridgeUrl) {
+    // Route through the running dev-server bridge — send raw YAML content
+    const result = await bridgeMutate(ctx.bridgeUrl, 'import', {
+      canvasId,
+      yaml: fileContent,
+    });
+    printSuccess(result, options);
+    return;
+  }
+
+  // Local store mutation path
   let parsed: Record<string, unknown>;
   try {
     parsed = parseYaml(fileContent) as Record<string, unknown>;

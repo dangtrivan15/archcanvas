@@ -1,6 +1,6 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
-import { loadContext, resolveCanvasId } from '../context';
+import { loadContext, resolveCanvasId, bridgeMutate } from '../context';
 import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 import type { Edge } from '@/types/schema';
@@ -31,18 +31,29 @@ export async function addEdgeCommand(
   };
 
   const canvasId = resolveCanvasId(options.scope);
-  const result = useGraphStore.getState().addEdge(canvasId, edge);
 
-  if (!result.ok) {
-    throw new CLIError(result.error.code, engineErrorMessage(result.error));
+  if (ctx.bridgeUrl) {
+    // Route through the running dev-server bridge
+    const result = await bridgeMutate(ctx.bridgeUrl, 'add-edge', {
+      canvasId,
+      edge,
+    });
+    printSuccess(result, globalOptions);
+  } else {
+    // Local store mutation path
+    const result = useGraphStore.getState().addEdge(canvasId, edge);
+
+    if (!result.ok) {
+      throw new CLIError(result.error.code, engineErrorMessage(result.error));
+    }
+
+    // Save after successful mutation (C11.1, C5c.2)
+    await useFileStore.getState().saveAll(ctx.fs);
+
+    // Output (C5c.4)
+    printSuccess(
+      { edge: { from: options.from, to: options.to, protocol: options.protocol, label: options.label } },
+      globalOptions,
+    );
   }
-
-  // Save after successful mutation (C11.1, C5c.2)
-  await useFileStore.getState().saveAll(ctx.fs);
-
-  // Output (C5c.4)
-  printSuccess(
-    { edge: { from: options.from, to: options.to, protocol: options.protocol, label: options.label } },
-    globalOptions,
-  );
 }
