@@ -13,6 +13,8 @@ import type {
   PermissionRequestEvent,
   DoneEvent,
   ChatErrorEvent,
+  StatusEvent,
+  RateLimitEvent,
 } from '@/core/ai/types';
 import {
   textStreaming,
@@ -139,6 +141,31 @@ describe('AI types — compile-time checks', () => {
     const event: ChatEvent = { type: 'done', requestId: 'r1' };
     // Access requestId without narrowing — this is the key compile-time check
     expect(event.requestId).toBe('r1');
+  });
+});
+
+// ===========================================================================
+// StatusEvent and RateLimitEvent (Task 2)
+// ===========================================================================
+describe('StatusEvent', () => {
+  it('is a valid ChatEvent variant', () => {
+    const event: ChatEvent = {
+      type: 'status',
+      requestId: 'req-1',
+      message: 'Reading file...',
+    };
+    expect(event.type).toBe('status');
+  });
+});
+
+describe('RateLimitEvent', () => {
+  it('is a valid ChatEvent variant', () => {
+    const event: ChatEvent = {
+      type: 'rate_limit',
+      requestId: 'req-1',
+      message: 'Rate limited, retrying in 5s',
+    };
+    expect(event.type).toBe('rate_limit');
   });
 });
 

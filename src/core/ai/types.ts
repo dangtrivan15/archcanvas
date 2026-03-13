@@ -81,6 +81,16 @@ export interface AskUserQuestionEvent extends ChatEventBase {
   questions: AskUserQuestion[];
 }
 
+export interface StatusEvent extends ChatEventBase {
+  type: 'status';
+  message: string;
+}
+
+export interface RateLimitEvent extends ChatEventBase {
+  type: 'rate_limit';
+  message: string;
+}
+
 export interface DoneEvent extends ChatEventBase {
   type: 'done';
 }
@@ -98,6 +108,8 @@ export type ChatEvent =
   | ThinkingEvent
   | PermissionRequestEvent
   | AskUserQuestionEvent
+  | StatusEvent
+  | RateLimitEvent
   | DoneEvent
   | ChatErrorEvent;
 
