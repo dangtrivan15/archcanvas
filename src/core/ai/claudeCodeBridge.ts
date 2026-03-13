@@ -80,10 +80,19 @@ export interface BridgeSession {
     content: string,
     context: ProjectContext,
   ): AsyncIterable<ChatEvent>;
-  respondToPermission(id: string, allowed: boolean): void;
+  respondToPermission(
+    id: string,
+    allowed: boolean,
+    options?: {
+      updatedPermissions?: Array<{ tool: string; permission: string }>;
+      interrupt?: boolean;
+    },
+  ): void;
   /** Provide the user's answers to an AskUserQuestion card. */
   respondToQuestion(id: string, answers: Record<string, string>): void;
   loadHistory(messages: ChatMessage[]): void;
+  setPermissionMode(mode: string): void;
+  setEffort(effort: string): void;
   abort(): void;
   destroy(): void;
 }
@@ -159,6 +168,8 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   let abortController: AbortController | null = null;
   let sessionId: string | undefined;
   let destroyed = false;
+  let permissionMode = 'default';
+  let effort: 'low' | 'medium' | 'high' | 'max' = 'high';
   const pendingPermissions = new Map<string, PendingPermission>();
   const pendingQuestions = new Map<string, PendingQuestion>();
   // TODO: store conversation history for session context summary injection.
@@ -315,7 +326,8 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             // and Claude can only proceed with assumptions.
             // See: https://platform.claude.com/docs/en/agent-sdk/user-input
             allowedTools: ['Bash', 'Read', 'Glob', 'Grep', 'AskUserQuestion'],
-            permissionMode: 'default',
+            permissionMode,
+            effort,
             canUseTool: async (toolName, input, opts) => {
               const toolUseId = opts.toolUseID;
 
@@ -431,6 +443,14 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
     loadHistory(_messages: ChatMessage[]): void {
       // The session resume mechanism handles history internally via sessionId.
       // TODO: store messages for context summary injection.
+    },
+
+    setPermissionMode(mode: string): void {
+      permissionMode = mode;
+    },
+
+    setEffort(newEffort: string): void {
+      effort = newEffort as 'low' | 'medium' | 'high' | 'max';
     },
 
     abort(): void {
