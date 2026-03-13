@@ -187,6 +187,18 @@ describe('ChatPanel', () => {
     expect(screen.queryByLabelText('Send message')).not.toBeInTheDocument();
   });
 
+  it('disables input while streaming', () => {
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+      isStreaming: true,
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Chat input')).toBeDisabled();
+  });
+
   it('dispatches archcanvas:toggle-chat on close', () => {
     const handler = vi.fn();
     window.addEventListener('archcanvas:toggle-chat', handler);
