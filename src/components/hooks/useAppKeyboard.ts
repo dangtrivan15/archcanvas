@@ -25,21 +25,22 @@ export function useAppKeyboard() {
       if (!mod) return;
 
       // C10.1: Cmd+S → save()
-      if (e.key === 's' && !e.shiftKey) {
+      // Note: check both cases — e.key is uppercase when Shift is held
+      if ((e.key === 's' || e.key === 'S') && !e.shiftKey) {
         e.preventDefault();
         useFileStore.getState().save();
         return;
       }
 
       // C10.3: Cmd+Shift+S → saveAs()
-      if (e.key === 's' && e.shiftKey) {
+      if ((e.key === 's' || e.key === 'S') && e.shiftKey) {
         e.preventDefault();
         useFileStore.getState().saveAs();
         return;
       }
 
       // C10.2: Cmd+O → open()
-      if (e.key === 'o' && !e.shiftKey) {
+      if ((e.key === 'o' || e.key === 'O') && !e.shiftKey) {
         e.preventDefault();
         useFileStore.getState().open();
         return;

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { FileSystem } from '../platform/fileSystem';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import type { NodeDefRegistry } from '@/core/registry/core';
-import { builtinNodeDefs, createRegistry } from '@/core/registry';
+import { loadBuiltins, createRegistry } from '@/core/registry';
 
 interface RegistryStoreState {
   registry: NodeDefRegistry | null;
@@ -22,12 +22,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   initialize: async (_fs?: FileSystem) => {
     set({ status: 'loading' });
     try {
-      // Build builtins map from static TS objects (no YAML parsing)
-      const builtins = new Map<string, NodeDef>();
-      for (const def of builtinNodeDefs) {
-        const key = `${def.metadata.namespace}/${def.metadata.name}`;
-        builtins.set(key, def);
-      }
+      const builtins = loadBuiltins();
       // Project-local loading is deferred — pass empty map for now
       const { registry } = createRegistry(builtins, new Map());
       set({ registry, status: 'ready' });

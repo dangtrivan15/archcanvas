@@ -1,7 +1,7 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { loadContext, resolveCanvasId } from '../context';
-import { CLIError } from '../errors';
+import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 
 export interface RemoveEdgeOptions {
@@ -29,13 +29,4 @@ export async function removeEdgeCommand(
 
   // Output (C5e.4)
   printSuccess({ removed: { from: options.from, to: options.to } }, globalOptions);
-}
-
-/** Convert an engine error object to a human-readable message. */
-function engineErrorMessage(error: Record<string, unknown>): string {
-  const { code, ...rest } = error;
-  const details = Object.entries(rest)
-    .map(([k, v]) => `${k}=${String(v)}`)
-    .join(', ');
-  return details ? `${String(code)}: ${details}` : String(code);
 }

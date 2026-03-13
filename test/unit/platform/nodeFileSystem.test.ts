@@ -174,5 +174,23 @@ describe('NodeFileSystem', () => {
       await fs.writeFile('.hidden', 'secret');
       expect(await fs.readFile('.hidden')).toBe('secret');
     });
+
+    it('rejects paths that escape root via ..', async () => {
+      await expect(fs.readFile('../../etc/passwd')).rejects.toThrow(
+        /Path traversal detected/,
+      );
+    });
+
+    it('rejects absolute paths outside root', async () => {
+      await expect(fs.readFile('/etc/passwd')).rejects.toThrow(
+        /Path traversal detected/,
+      );
+    });
+
+    it('rejects parent-escaping writeFile', async () => {
+      await expect(
+        fs.writeFile('../escape.txt', 'bad'),
+      ).rejects.toThrow(/Path traversal detected/);
+    });
   });
 });

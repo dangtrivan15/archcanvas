@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, CommanderError } from 'commander';
 import { CLIError } from './errors';
 import { formatError } from './output';
 import { loadContext } from './context';
@@ -19,6 +19,7 @@ program
   .description('ArchCanvas — architecture-as-code CLI')
   .version('0.1.0')
   .option('--json', 'Output in JSON format', false)
+  .option('--project <path>', 'Path to project directory')
   .exitOverride(); // Throw instead of calling process.exit — our main() handles exits
 
 // --- Subcommands ---
@@ -158,6 +159,11 @@ async function main(): Promise<void> {
   try {
     await program.parseAsync(process.argv);
   } catch (err) {
+    // CommanderError from --help, --version, or missing required option
+    if (err instanceof CommanderError) {
+      process.exit(err.exitCode);
+    }
+
     const isJson = program.opts().json === true;
 
     if (err instanceof CLIError) {

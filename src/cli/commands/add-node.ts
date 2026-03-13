@@ -2,7 +2,7 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { loadContext, resolveCanvasId } from '../context';
-import { CLIError } from '../errors';
+import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 import type { InlineNode } from '@/types/schema';
 
@@ -63,13 +63,4 @@ export async function addNodeCommand(
 
   // Output (C5b.6)
   printSuccess({ node: { id: options.id, type: options.type, displayName } }, globalOptions);
-}
-
-/** Convert an engine error object to a human-readable message. */
-function engineErrorMessage(error: Record<string, unknown>): string {
-  const { code, ...rest } = error;
-  const details = Object.entries(rest)
-    .map(([k, v]) => `${k}=${String(v)}`)
-    .join(', ');
-  return details ? `${String(code)}: ${details}` : String(code);
 }
