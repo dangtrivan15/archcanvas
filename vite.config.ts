@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { aiBridgePlugin } from "./src/core/ai/vitePlugin";
 import path from "path";
 import fs from "fs";
 const host = process.env.TAURI_DEV_HOST;
@@ -74,7 +75,7 @@ function serverGuard(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [serverGuard(), react(), tailwindcss()],
+  plugins: [serverGuard(), aiBridgePlugin(), react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -85,16 +86,24 @@ export default defineConfig({
       // Tauri packages are only available inside the Tauri runtime and are
       // imported dynamically behind `__TAURI_INTERNALS__` guards. Externalise
       // them so the web-only production build doesn't fail on missing deps.
+      //
+      // AI bridge modules (claudeCodeBridge, vitePlugin) and their Node.js-only
+      // dependencies are server-side only and must never enter the browser bundle.
       external: [
         "@tauri-apps/plugin-fs",
         "@tauri-apps/api/path",
         "@tauri-apps/plugin-dialog",
+        "@anthropic-ai/claude-agent-sdk",
+        "ws",
       ],
     },
   },
   clearScreen: false,
   server: {
     port: 5173,
+    // strictPort: true is required — the AI bridge (CLI's detectBridge) and
+    // WebSocket provider hardcode port 5173. If Vite falls back to another port,
+    // bridge detection will silently fail. See docs/specs/2026-03-13-i6a-*.md.
     strictPort: true,
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 5174 } : undefined,
