@@ -19,7 +19,7 @@ test.describe("chat panel toggle", () => {
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
     // Chat panel header should appear
-    const chatHeader = page.getByText("AI Chat", { exact: true }).first();
+    const chatHeader = page.getByRole("heading", { name: "AI Chat" });
     await expect(chatHeader).toBeVisible();
   });
 
@@ -33,7 +33,7 @@ test.describe("chat panel toggle", () => {
     // Open chat
     await chatButton.click();
     await expect(
-      page.getByText("AI Chat", { exact: true }).first(),
+      page.getByRole("heading", { name: "AI Chat" }),
     ).toBeVisible();
 
     // Close chat — click again
@@ -51,7 +51,7 @@ test.describe("chat panel toggle", () => {
     await page.keyboard.press("Meta+Shift+i");
 
     // Chat panel header should appear
-    const chatHeader = page.getByText("AI Chat", { exact: true }).first();
+    const chatHeader = page.getByRole("heading", { name: "AI Chat" });
     await expect(chatHeader).toBeVisible();
   });
 
@@ -61,7 +61,7 @@ test.describe("chat panel toggle", () => {
     // Open
     await page.keyboard.press("Meta+Shift+i");
     await expect(
-      page.getByText("AI Chat", { exact: true }).first(),
+      page.getByRole("heading", { name: "AI Chat" }),
     ).toBeVisible();
 
     // Close
@@ -85,7 +85,7 @@ test.describe("chat panel layout", () => {
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
     // Verify the "AI Chat" heading is visible
-    const chatHeader = page.getByText("AI Chat", { exact: true }).first();
+    const chatHeader = page.getByRole("heading", { name: "AI Chat" });
     await expect(chatHeader).toBeVisible();
   });
 
@@ -141,7 +141,7 @@ test.describe("chat toggle and node selection interaction", () => {
     // Open chat panel
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
     await expect(
-      page.getByText("AI Chat", { exact: true }).first(),
+      page.getByRole("heading", { name: "AI Chat" }),
     ).toBeVisible();
 
     // Close chat panel
@@ -161,11 +161,15 @@ test.describe("chat toggle and node selection interaction", () => {
     await page.locator(".react-flow__node").first().click();
 
     // NodeDetailPanel should appear (not the generic Detail Panel heading)
-    // The NodeDetailPanel renders the node's displayName or id
     const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
     await expect(
       rightPanel.getByRole("heading", { name: "Detail Panel" }),
     ).not.toBeVisible();
+
+    // NodeDetailPanel renders a tab bar — verify "properties" tab is present
+    await expect(
+      rightPanel.getByRole("button", { name: /properties/i }),
+    ).toBeVisible();
   });
 
   test("opening chat while node is selected replaces detail panel", async ({
@@ -178,13 +182,13 @@ test.describe("chat toggle and node selection interaction", () => {
     await page
       .getByRole("option", { name: /Service compute\/service/ })
       .click();
-    await page.waitForTimeout(200);
+    await expect(page.locator(".react-flow__node")).toHaveCount(1);
     await page.locator(".react-flow__node").first().click();
 
     // Open chat — should replace node details with chat
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
     await expect(
-      page.getByText("AI Chat", { exact: true }).first(),
+      page.getByRole("heading", { name: "AI Chat" }),
     ).toBeVisible();
 
     // Close chat — node detail panel should return
@@ -196,6 +200,11 @@ test.describe("chat toggle and node selection interaction", () => {
     await expect(
       rightPanel.getByRole("heading", { name: "Detail Panel" }),
     ).not.toBeVisible();
+
+    // NodeDetailPanel renders a tab bar — verify "properties" tab is present
+    await expect(
+      rightPanel.getByRole("button", { name: /properties/i }),
+    ).toBeVisible();
   });
 });
 
@@ -212,27 +221,27 @@ test.describe("panel collapse interaction", () => {
     // Collapse the right panel via the View menu
     await page.getByRole("menuitem", { name: "View" }).click();
     await page.getByRole("menuitem", { name: "Toggle Right Panel" }).click();
-    await page.waitForTimeout(300);
 
     const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
-    const collapsedWidth = await rightPanel.evaluate(
-      (el) => el.getBoundingClientRect().width,
-    );
-    expect(collapsedWidth).toBe(0);
+    await expect
+      .poll(async () =>
+        rightPanel.evaluate((el) => el.getBoundingClientRect().width),
+      )
+      .toBe(0);
 
     // Click AI Chat — should expand right panel AND show chat
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
-    await page.waitForTimeout(300);
 
     // Panel should be expanded
-    const expandedWidth = await rightPanel.evaluate(
-      (el) => el.getBoundingClientRect().width,
-    );
-    expect(expandedWidth).toBeGreaterThan(0);
+    await expect
+      .poll(async () =>
+        rightPanel.evaluate((el) => el.getBoundingClientRect().width),
+      )
+      .toBeGreaterThan(0);
 
     // Chat panel should be visible
     await expect(
-      page.getByText("AI Chat", { exact: true }).first(),
+      page.getByRole("heading", { name: "AI Chat" }),
     ).toBeVisible();
   });
 
@@ -244,22 +253,31 @@ test.describe("panel collapse interaction", () => {
     // Collapse right panel
     await page.getByRole("menuitem", { name: "View" }).click();
     await page.getByRole("menuitem", { name: "Toggle Right Panel" }).click();
-    await page.waitForTimeout(300);
+
+    const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
+    await expect
+      .poll(async () =>
+        rightPanel.evaluate((el) => el.getBoundingClientRect().width),
+      )
+      .toBe(0);
 
     // Open chat (also expands)
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
-    await page.waitForTimeout(300);
+    await expect
+      .poll(async () =>
+        rightPanel.evaluate((el) => el.getBoundingClientRect().width),
+      )
+      .toBeGreaterThan(0);
 
     // Close chat
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
-    await page.waitForTimeout(300);
 
     // Panel should remain expanded
-    const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
-    const width = await rightPanel.evaluate(
-      (el) => el.getBoundingClientRect().width,
-    );
-    expect(width).toBeGreaterThan(0);
+    await expect
+      .poll(async () =>
+        rightPanel.evaluate((el) => el.getBoundingClientRect().width),
+      )
+      .toBeGreaterThan(0);
 
     // Should show details mode
     await expect(
@@ -280,10 +298,8 @@ test.describe("chat button visual state", () => {
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
 
-    // Default state: text-muted-foreground, no bg-accent
-    const className = await chatButton.getAttribute("class");
-    expect(className).toContain("text-muted-foreground");
-    expect(className).not.toMatch(/\bbg-accent\b/);
+    // Default state: no data-active attribute
+    await expect(chatButton).not.toHaveAttribute("data-active");
   });
 
   test("AI Chat button has active state when chat is open", async ({
@@ -296,9 +312,8 @@ test.describe("chat button visual state", () => {
     // Open chat
     await chatButton.click();
 
-    // Active state: bg-accent, not text-muted-foreground
-    const className = await chatButton.getAttribute("class");
-    expect(className).toContain("bg-accent");
+    // Active state: data-active="true"
+    await expect(chatButton).toHaveAttribute("data-active", "true");
   });
 
   test("AI Chat button returns to default state after toggling off", async ({
@@ -311,14 +326,11 @@ test.describe("chat button visual state", () => {
     // Open chat
     await chatButton.click();
     // Verify active
-    let className = await chatButton.getAttribute("class");
-    expect(className).toContain("bg-accent");
+    await expect(chatButton).toHaveAttribute("data-active", "true");
 
     // Close chat
     await chatButton.click();
     // Verify default
-    className = await chatButton.getAttribute("class");
-    expect(className).toContain("text-muted-foreground");
-    expect(className).not.toMatch(/\bbg-accent\b/);
+    await expect(chatButton).not.toHaveAttribute("data-active");
   });
 });
