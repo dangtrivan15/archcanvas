@@ -40,7 +40,7 @@ export interface DoneEvent extends ChatEventBase {
   type: 'done';
 }
 
-export interface ErrorEvent extends ChatEventBase {
+export interface ChatErrorEvent extends ChatEventBase {
   type: 'error';
   message: string;
   code?: string;
@@ -53,7 +53,7 @@ export type ChatEvent =
   | ThinkingEvent
   | PermissionRequestEvent
   | DoneEvent
-  | ErrorEvent;
+  | ChatErrorEvent;
 
 // --- Client Messages (client → server) ---
 
