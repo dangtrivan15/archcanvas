@@ -2,7 +2,6 @@ import { ulid } from 'ulid';
 import type {
   ChatProvider,
   ChatEvent,
-  ChatErrorEvent,
   ChatMessage,
   ProjectContext,
 } from './types';
@@ -82,7 +81,8 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     const ws = this.ws;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       async function* errorStream(): AsyncIterable<ChatEvent> {
-        yield { type: 'error', requestId: '', message: 'Not connected to AI bridge' } as ChatErrorEvent;
+        const err: ChatEvent = { type: 'error', requestId: '', message: 'Not connected to AI bridge' };
+        yield err;
       }
       return errorStream();
     }
