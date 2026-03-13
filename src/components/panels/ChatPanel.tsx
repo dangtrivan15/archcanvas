@@ -114,7 +114,7 @@ export function ChatPanel() {
                 ? 'Type a message... (Enter to send)'
                 : 'Waiting for AI connection...'
             }
-            disabled={!activeProvider?.available}
+            disabled={isStreaming || !activeProvider?.available}
             rows={1}
             className="flex-1 resize-none rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
             aria-label="Chat input"
