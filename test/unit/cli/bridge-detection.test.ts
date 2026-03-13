@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { CLIError } from '@/cli/errors';
 
@@ -61,50 +61,51 @@ describe('detectBridge', () => {
   });
 });
 
-// --- detectBridge with mock server on port 5173 ---
+// --- detectBridge with mocked fetch (no real server needed) ---
 
-describe('detectBridge with mock server', () => {
-  let server: Server;
+describe('detectBridge with mock fetch', () => {
   let detectBridge: typeof import('@/cli/context').detectBridge;
-
-  beforeAll(async () => {
-    // Start a mock server on port 5173 to simulate the bridge
-    server = createServer((req, res) => {
-      if (req.url === '/__archcanvas_ai/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true }));
-      } else {
-        res.writeHead(404);
-        res.end();
-      }
-    });
-    await new Promise<void>((resolve, reject) => {
-      server.on('error', (err: NodeJS.ErrnoException) => {
-        if (err.code === 'EADDRINUSE') {
-          // Port 5173 is already in use (e.g., dev server running) — skip
-          reject(new Error('Port 5173 already in use — skipping mock server tests'));
-        } else {
-          reject(err);
-        }
-      });
-      server.listen(5173, '127.0.0.1', resolve);
-    });
-  });
-
-  afterAll(async () => {
-    if (server?.listening) {
-      await stopServer(server);
-    }
-  });
 
   beforeEach(async () => {
     const mod = await import('@/cli/context');
     detectBridge = mod.detectBridge;
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('returns bridge URL when health endpoint responds ok', async () => {
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url === 'http://localhost:5173/__archcanvas_ai/health') {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('Not Found', { status: 404 });
+    });
+
     const result = await detectBridge();
     expect(result).toBe('http://localhost:5173/__archcanvas_ai');
+  });
+
+  it('returns null when health endpoint returns non-ok status', async () => {
+    vi.stubGlobal('fetch', async () => {
+      return new Response('Internal Server Error', { status: 500 });
+    });
+
+    const result = await detectBridge();
+    expect(result).toBeNull();
+  });
+
+  it('returns null when fetch throws (network error)', async () => {
+    vi.stubGlobal('fetch', async () => {
+      throw new TypeError('fetch failed');
+    });
+
+    const result = await detectBridge();
+    expect(result).toBeNull();
   });
 });
 
