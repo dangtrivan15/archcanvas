@@ -1,0 +1,64 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const vectorStoreDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'vector-store',
+    namespace: 'ai',
+    version: '1.0.0',
+    displayName: 'Vector Store',
+    description:
+      'Vector database for storing and querying high-dimensional embeddings',
+    icon: 'Boxes',
+    tags: ['ai', 'embeddings', 'vector'],
+    shape: 'cylinder',
+  },
+  spec: {
+    args: [
+      {
+        name: 'engine',
+        type: 'enum',
+        options: ['Pinecone', 'Weaviate', 'Qdrant', 'ChromaDB', 'pgvector'],
+        required: true,
+      },
+      {
+        name: 'dimensions',
+        type: 'number',
+        default: 1536,
+      },
+      {
+        name: 'metric',
+        type: 'enum',
+        options: ['cosine', 'euclidean', 'dot-product'],
+        default: 'cosine',
+      },
+    ],
+    ports: [
+      {
+        name: 'embed-in',
+        direction: 'inbound',
+        protocol: ['HTTP', 'gRPC'],
+      },
+      {
+        name: 'query-in',
+        direction: 'inbound',
+        protocol: ['HTTP', 'gRPC'],
+      },
+      {
+        name: 'query-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'gRPC'],
+      },
+    ],
+    ai: {
+      context:
+        'Stores vector embeddings and supports similarity search for retrieval-augmented generation, semantic search, and recommendation systems.',
+      reviewHints: [
+        'Confirm that the dimensions value matches the output size of the upstream embedding model',
+        "Verify the chosen distance metric aligns with the embedding model's training objective",
+        "Check that the engine's index type and scaling configuration meet latency requirements",
+      ],
+    },
+  },
+};

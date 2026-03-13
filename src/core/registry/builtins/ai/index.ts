@@ -1,6 +1,12 @@
-import llmProviderYaml from './llm-provider.yaml?raw';
-import vectorStoreYaml from './vector-store.yaml?raw';
-import agentYaml from './agent.yaml?raw';
-import ragPipelineYaml from './rag-pipeline.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { llmProviderDef } from './llmProvider';
+import { vectorStoreDef } from './vectorStore';
+import { agentDef } from './agent';
+import { ragPipelineDef } from './ragPipeline';
 
-export const aiYamls = [llmProviderYaml, vectorStoreYaml, agentYaml, ragPipelineYaml];
+export const aiDefs: NodeDef[] = [
+  llmProviderDef,
+  vectorStoreDef,
+  agentDef,
+  ragPipelineDef,
+];

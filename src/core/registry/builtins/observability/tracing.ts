@@ -1,0 +1,61 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const tracingDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'tracing',
+    namespace: 'observability',
+    version: '1.0.0',
+    displayName: 'Tracing',
+    description:
+      'Distributed tracing platform for capturing end-to-end request flows across service boundaries.',
+    icon: 'Route',
+    tags: ['tracing', 'distributed', 'apm'],
+    shape: 'rectangle',
+  },
+  spec: {
+    args: [
+      {
+        name: 'platform',
+        type: 'enum',
+        options: ['Jaeger', 'Zipkin', 'Tempo', 'X-Ray', 'Datadog'],
+        required: true,
+        description:
+          'Distributed tracing backend or managed APM service.',
+      },
+      {
+        name: 'samplingRate',
+        type: 'number',
+        default: 1,
+        description:
+          'Fraction of requests to trace (0 to 1). A value of 1 means all requests are traced.',
+      },
+    ],
+    ports: [
+      {
+        name: 'trace-in',
+        direction: 'inbound',
+        protocol: ['OTLP', 'HTTP', 'gRPC'],
+        description:
+          'Ingestion endpoint for trace spans from instrumented services.',
+      },
+      {
+        name: 'trace-out',
+        direction: 'outbound',
+        protocol: ['OTLP', 'HTTP'],
+        description:
+          'Forwarding endpoint for trace data to downstream collectors or analysis tools.',
+      },
+    ],
+    ai: {
+      context:
+        'Represents a distributed tracing backend that collects spans from instrumented services, correlates them into traces, and provides latency analysis. Essential for debugging request flows in microservice architectures.',
+      reviewHints: [
+        'Verify that sampling rate is appropriate for traffic volume and debugging needs.',
+        'Ensure trace context propagation headers are consistent across all services.',
+        'Check that span attributes include enough context for root-cause analysis without leaking PII.',
+      ],
+    },
+  },
+};

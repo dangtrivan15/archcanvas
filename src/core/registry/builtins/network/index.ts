@@ -1,5 +1,10 @@
-import apiGatewayYaml from './api-gateway.yaml?raw';
-import loadBalancerYaml from './load-balancer.yaml?raw';
-import cdnYaml from './cdn.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { apiGatewayDef } from './apiGateway';
+import { loadBalancerDef } from './loadBalancer';
+import { cdnDef } from './cdn';
 
-export const networkYamls = [apiGatewayYaml, loadBalancerYaml, cdnYaml];
+export const networkDefs: NodeDef[] = [
+  apiGatewayDef,
+  loadBalancerDef,
+  cdnDef,
+];
