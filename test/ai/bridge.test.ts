@@ -743,3 +743,56 @@ describe('BridgeSession — permission context forwarding', () => {
     session.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// respondToPermission options
+// ---------------------------------------------------------------------------
+describe('BridgeSession — respondToPermission options', () => {
+  it('respondToPermission with updatedPermissions returns them in allow result', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-upd-perms');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('test', testContext));
+    const permPromise = canUseToolCallback!(
+      'Bash', { command: 'echo hi' },
+      { signal: new AbortController().signal, toolUseID: 'perm-upd-1' },
+    );
+    session.respondToPermission('perm-upd-1', true, {
+      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+    });
+    const result = await permPromise;
+    expect(result.behavior).toBe('allow');
+    expect(result.updatedPermissions).toEqual([{ tool: 'Bash', permission: 'allow' }]);
+    session.destroy();
+  });
+
+  it('respondToPermission with interrupt returns it in deny result', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-interrupt');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('test', testContext));
+    const permPromise = canUseToolCallback!(
+      'Bash', { command: 'rm -rf /' },
+      { signal: new AbortController().signal, toolUseID: 'perm-int-1' },
+    );
+    session.respondToPermission('perm-int-1', false, { interrupt: true });
+    const result = await permPromise;
+    expect(result.behavior).toBe('deny');
+    expect(result.interrupt).toBe(true);
+    session.destroy();
+  });
+});
