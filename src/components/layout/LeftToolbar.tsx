@@ -13,19 +13,23 @@ import {
   Undo2,
   Redo2,
   LayoutGrid,
+  MessageSquare,
 } from "lucide-react";
 import { useHistoryStore } from "@/store/historyStore";
 import { useToolStore } from "@/store/toolStore";
 import type { ToolMode } from "@/store/toolStore";
+import { useUiStore } from "@/store/uiStore";
 
 export function LeftToolbar() {
   const activeMode = useToolStore((s) => s.mode);
+  const rightPanelMode = useUiStore((s) => s.rightPanelMode);
 
   const tools: Array<{
     icon: typeof MousePointer2;
     label: string;
     shortcut: string;
     mode?: ToolMode;
+    active?: boolean;
     onClick?: () => void;
   }> = [
     {
@@ -79,20 +83,29 @@ export function LeftToolbar() {
       shortcut: "⇧⌘Z",
       onClick: () => useHistoryStore.getState().redo(),
     },
+    {
+      icon: MessageSquare,
+      label: "AI Chat",
+      shortcut: "⌘⇧I",
+      active: rightPanelMode === 'chat',
+      onClick: () => useUiStore.getState().toggleChat(),
+    },
   ];
 
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col items-center gap-1 p-2">
-        {tools.map(({ icon: Icon, label, shortcut, mode, onClick }) => (
+        {tools.map(({ icon: Icon, label, shortcut, mode, active, onClick }) => (
           <Tooltip key={label}>
             <TooltipTrigger asChild>
               <button
                 aria-label={`${label} (${shortcut})`}
                 className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
-                  mode && activeMode === mode
+                  active
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    : mode && activeMode === mode
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 }`}
                 onClick={onClick}
               >
