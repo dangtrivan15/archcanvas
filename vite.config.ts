@@ -80,6 +80,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      // Tauri packages are only available inside the Tauri runtime and are
+      // imported dynamically behind `__TAURI_INTERNALS__` guards. Externalise
+      // them so the web-only production build doesn't fail on missing deps.
+      external: [
+        "@tauri-apps/plugin-fs",
+        "@tauri-apps/api/path",
+        "@tauri-apps/plugin-dialog",
+      ],
+    },
+  },
   clearScreen: false,
   server: {
     port: 5173,
