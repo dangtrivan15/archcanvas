@@ -100,7 +100,7 @@ export function LeftToolbar() {
             <TooltipTrigger asChild>
               <button
                 aria-label={`${label} (${shortcut})`}
-                data-active={mode && activeMode === mode ? "true" : undefined}
+                data-active={active || (mode && activeMode === mode) ? "true" : undefined}
                 className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
                   active
                     ? 'bg-accent text-accent-foreground'
