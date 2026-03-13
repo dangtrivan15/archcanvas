@@ -1,6 +1,12 @@
-import databaseYaml from './database.yaml?raw';
-import cacheYaml from './cache.yaml?raw';
-import objectStorageYaml from './object-storage.yaml?raw';
-import searchIndexYaml from './search-index.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { databaseDef } from './database';
+import { cacheDef } from './cache';
+import { objectStorageDef } from './objectStorage';
+import { searchIndexDef } from './searchIndex';
 
-export const dataYamls = [databaseYaml, cacheYaml, objectStorageYaml, searchIndexYaml];
+export const dataDefs: NodeDef[] = [
+  databaseDef,
+  cacheDef,
+  objectStorageDef,
+  searchIndexDef,
+];

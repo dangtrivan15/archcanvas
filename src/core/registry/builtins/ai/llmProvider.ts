@@ -1,0 +1,63 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const llmProviderDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'llm-provider',
+    namespace: 'ai',
+    version: '1.0.0',
+    displayName: 'LLM Provider',
+    description:
+      'Large language model provider for text generation and completion tasks',
+    icon: 'Brain',
+    tags: ['ai', 'llm', 'language-model'],
+    shape: 'cloud',
+  },
+  spec: {
+    args: [
+      {
+        name: 'provider',
+        type: 'enum',
+        options: ['OpenAI', 'Anthropic', 'Google', 'Mistral', 'Ollama'],
+        required: true,
+      },
+      {
+        name: 'model',
+        type: 'string',
+        default: 'gpt-4',
+      },
+      {
+        name: 'temperature',
+        type: 'number',
+        default: 0.7,
+      },
+      {
+        name: 'maxTokens',
+        type: 'number',
+        default: 4096,
+      },
+    ],
+    ports: [
+      {
+        name: 'prompt-in',
+        direction: 'inbound',
+        protocol: ['HTTP', 'HTTPS'],
+      },
+      {
+        name: 'completion-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'HTTPS'],
+      },
+    ],
+    ai: {
+      context:
+        'Represents a hosted or self-hosted large language model endpoint used for text generation, chat completion, and instruction-following tasks.',
+      reviewHints: [
+        'Verify that the selected provider supports the specified model identifier',
+        "Check that temperature and maxTokens values are within the provider's accepted ranges",
+        'Ensure API key or authentication configuration is available for the chosen provider',
+      ],
+    },
+  },
+};

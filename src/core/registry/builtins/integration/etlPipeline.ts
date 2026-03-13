@@ -1,0 +1,61 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const etlPipelineDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'etl-pipeline',
+    namespace: 'integration',
+    version: '1.0.0',
+    displayName: 'ETL Pipeline',
+    description:
+      'Extract-Transform-Load pipeline that moves and reshapes data between sources and sinks.',
+    icon: 'ArrowRightLeft',
+    tags: ['etl', 'data-pipeline', 'transform'],
+    shape: 'hexagon',
+  },
+  spec: {
+    args: [
+      {
+        name: 'engine',
+        type: 'enum',
+        options: ['Airflow', 'dbt', 'Spark', 'Dagster'],
+        required: true,
+        description:
+          'Orchestration or processing engine that runs the pipeline.',
+      },
+      {
+        name: 'schedule',
+        type: 'string',
+        default: '0 0 * * *',
+        description:
+          'Cron expression defining the pipeline execution schedule.',
+      },
+    ],
+    ports: [
+      {
+        name: 'source-in',
+        direction: 'inbound',
+        protocol: ['SQL', 'S3', 'HTTP'],
+        description:
+          'Data source from which records are extracted.',
+      },
+      {
+        name: 'sink-out',
+        direction: 'outbound',
+        protocol: ['SQL', 'S3', 'HTTP'],
+        description:
+          'Data sink to which transformed records are loaded.',
+      },
+    ],
+    ai: {
+      context:
+        'Represents a batch or streaming data pipeline. Review for data-quality checks, schema evolution handling, idempotent re-runs, and observability of each ETL stage.',
+      reviewHints: [
+        'Verify that the pipeline is idempotent so re-runs do not produce duplicate records in the sink.',
+        'Check for schema-drift detection between source and sink to catch breaking changes early.',
+        'Ensure monitoring and alerting are in place for pipeline failures and SLA breaches.',
+      ],
+    },
+  },
+};

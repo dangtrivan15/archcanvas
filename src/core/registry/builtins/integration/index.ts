@@ -1,5 +1,10 @@
-import thirdPartyApiYaml from './third-party-api.yaml?raw';
-import webhookYaml from './webhook.yaml?raw';
-import etlPipelineYaml from './etl-pipeline.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { thirdPartyApiDef } from './thirdPartyApi';
+import { webhookDef } from './webhook';
+import { etlPipelineDef } from './etlPipeline';
 
-export const integrationYamls = [thirdPartyApiYaml, webhookYaml, etlPipelineYaml];
+export const integrationDefs: NodeDef[] = [
+  thirdPartyApiDef,
+  webhookDef,
+  etlPipelineDef,
+];

@@ -1,7 +1,9 @@
 import type { FileSystem } from '@/platform/fileSystem';
 import type { NodeDef } from '@/types';
 import { parseNodeDef } from './validator';
-import { builtinYamlStrings } from './builtins';
+import { builtinNodeDefs } from './builtins';
+
+export { builtinNodeDefs } from './builtins';
 
 export interface LoadProjectLocalResult {
   nodeDefs: Map<string, NodeDef>;
@@ -11,13 +13,9 @@ export interface LoadProjectLocalResult {
 export function loadBuiltins(): Map<string, NodeDef> {
   const map = new Map<string, NodeDef>();
 
-  for (const yamlStr of builtinYamlStrings) {
-    const result = parseNodeDef(yamlStr);
-    if ('error' in result) {
-      throw new Error(`Invalid built-in NodeDef: ${result.error}`);
-    }
-    const key = `${result.nodeDef.metadata.namespace}/${result.nodeDef.metadata.name}`;
-    map.set(key, result.nodeDef);
+  for (const def of builtinNodeDefs) {
+    const key = `${def.metadata.namespace}/${def.metadata.name}`;
+    map.set(key, def);
   }
 
   return map;

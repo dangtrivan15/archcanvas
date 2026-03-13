@@ -1,5 +1,10 @@
-import webAppYaml from './web-app.yaml?raw';
-import mobileAppYaml from './mobile-app.yaml?raw';
-import cliYaml from './cli.yaml?raw';
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+import { webAppDef } from './webApp';
+import { mobileAppDef } from './mobileApp';
+import { cliDef } from './cli';
 
-export const clientYamls = [webAppYaml, mobileAppYaml, cliYaml];
+export const clientDefs: NodeDef[] = [
+  webAppDef,
+  mobileAppDef,
+  cliDef,
+];
