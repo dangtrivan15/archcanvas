@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import http from 'http';
 import { WebSocket } from 'ws';
 import { aiBridgePlugin, type StoreActionResult } from '@/core/ai/vitePlugin';
