@@ -257,6 +257,130 @@ describe('historyStore', () => {
     });
   });
 
+  describe('batch operations', () => {
+    it('beginBatch + commitBatch merges multiple pushes into one undo entry', () => {
+      const hs = useHistoryStore.getState();
+      hs.beginBatch();
+
+      // Add two nodes — each goes through graphStore which calls pushPatches
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'batch-a',
+        type: 'compute/service',
+        displayName: 'Batch A',
+        position: { x: 0, y: 0 },
+      });
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'batch-b',
+        type: 'compute/service',
+        displayName: 'Batch B',
+        position: { x: 10, y: 10 },
+      });
+
+      // During batch, nothing should be on the undo stack yet
+      expect(useHistoryStore.getState().undoStack).toHaveLength(0);
+
+      hs.commitBatch();
+
+      // After commit, exactly one entry on the stack
+      expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+    });
+
+    it('single undo after batch reverses all batched operations', () => {
+      const hs = useHistoryStore.getState();
+      const nodes = () => useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)?.data.nodes ?? [];
+
+      hs.beginBatch();
+
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'batch-x',
+        type: 'compute/service',
+        displayName: 'Batch X',
+        position: { x: 0, y: 0 },
+      });
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'batch-y',
+        type: 'compute/service',
+        displayName: 'Batch Y',
+        position: { x: 10, y: 10 },
+      });
+
+      hs.commitBatch();
+
+      // Both nodes exist
+      expect(nodes().some((n) => n.id === 'batch-x')).toBe(true);
+      expect(nodes().some((n) => n.id === 'batch-y')).toBe(true);
+
+      // Single undo removes both
+      hs.undo();
+
+      expect(nodes().some((n) => n.id === 'batch-x')).toBe(false);
+      expect(nodes().some((n) => n.id === 'batch-y')).toBe(false);
+    });
+
+    it('redo after batch undo restores all batched operations', () => {
+      const hs = useHistoryStore.getState();
+      const nodes = () => useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)?.data.nodes ?? [];
+
+      hs.beginBatch();
+
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'redo-a',
+        type: 'compute/service',
+        displayName: 'Redo A',
+        position: { x: 0, y: 0 },
+      });
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'redo-b',
+        type: 'compute/service',
+        displayName: 'Redo B',
+        position: { x: 10, y: 10 },
+      });
+
+      hs.commitBatch();
+      hs.undo();
+
+      // Both gone
+      expect(nodes().some((n) => n.id === 'redo-a')).toBe(false);
+      expect(nodes().some((n) => n.id === 'redo-b')).toBe(false);
+
+      // Redo brings both back
+      hs.redo();
+
+      expect(nodes().some((n) => n.id === 'redo-a')).toBe(true);
+      expect(nodes().some((n) => n.id === 'redo-b')).toBe(true);
+    });
+
+    it('commitBatch with empty buffer is a no-op', () => {
+      const hs = useHistoryStore.getState();
+      hs.beginBatch();
+      hs.commitBatch();
+
+      expect(useHistoryStore.getState().undoStack).toHaveLength(0);
+      expect(useHistoryStore.getState().canUndo).toBe(false);
+    });
+
+    it('commitBatch with single entry does not require merging', () => {
+      const hs = useHistoryStore.getState();
+      hs.beginBatch();
+
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'solo',
+        type: 'compute/service',
+        displayName: 'Solo',
+        position: { x: 0, y: 0 },
+      });
+
+      hs.commitBatch();
+
+      expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+
+      // Undo should work correctly
+      hs.undo();
+      const nodes = useFileStore.getState().getCanvas(ROOT_CANVAS_KEY)?.data.nodes ?? [];
+      expect(nodes.some((n) => n.id === 'solo')).toBe(false);
+    });
+  });
+
   describe('clear', () => {
     it('empties both stacks and resets canUndo/canRedo', () => {
       useHistoryStore.getState().pushPatches(ROOT_CANVAS_KEY, [], []);

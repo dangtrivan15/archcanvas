@@ -12,6 +12,9 @@ interface HistoryEntry {
   inversePatches: Patch[];
 }
 
+// Module-level batch buffer — not reactive state, purely internal coordination
+let batchBuffer: HistoryEntry[] | null = null;
+
 interface HistoryStoreState {
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
@@ -19,6 +22,8 @@ interface HistoryStoreState {
   canRedo: boolean;
 
   pushPatches(canvasId: string, patches: Patch[], inversePatches: Patch[]): void;
+  beginBatch(): void;
+  commitBatch(): void;
   undo(): void;
   redo(): void;
   clear(): void;
@@ -31,6 +36,12 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
   canRedo: false,
 
   pushPatches(canvasId, patches, inversePatches) {
+    // If batching, accumulate instead of pushing to the stack
+    if (batchBuffer !== null) {
+      batchBuffer.push({ canvasId, patches, inversePatches });
+      return;
+    }
+
     const { undoStack } = get();
     const entry: HistoryEntry = { canvasId, patches, inversePatches };
     const next = [...undoStack, entry];
@@ -46,6 +57,30 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
       canUndo: next.length > 0,
       canRedo: false,
     });
+  },
+
+  beginBatch() {
+    batchBuffer = [];
+  },
+
+  commitBatch() {
+    const buf = batchBuffer;
+    batchBuffer = null;
+
+    if (!buf || buf.length === 0) return;
+
+    // Single entry → push directly, no merging needed
+    if (buf.length === 1) {
+      get().pushPatches(buf[0].canvasId, buf[0].patches, buf[0].inversePatches);
+      return;
+    }
+
+    // Merge: forward patches in order, inverse patches in reverse order
+    const canvasId = buf[0].canvasId;
+    const mergedPatches = buf.flatMap((e) => e.patches);
+    const mergedInverse = buf.slice().reverse().flatMap((e) => e.inversePatches);
+
+    get().pushPatches(canvasId, mergedPatches, mergedInverse);
   },
 
   undo() {

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { EdgeEndpoint } from '@/types';
 import type { EngineResult } from '@/core/graph/types';
 import { useGraphStore } from './graphStore';
+import { useHistoryStore } from './historyStore';
 import { useNavigationStore } from './navigationStore';
 
 interface CanvasStoreState {
@@ -55,8 +56,12 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   deleteSelection() {
     const { selectedNodeIds, selectedEdgeKeys } = get();
     const gs = useGraphStore.getState();
+    const hs = useHistoryStore.getState();
     const canvasId = useNavigationStore.getState().currentCanvasId;
     let firstFailure: EngineResult | null = null;
+
+    // Batch all deletions so they produce a single undo entry
+    hs.beginBatch();
 
     for (const nodeId of selectedNodeIds) {
       const result = gs.removeNode(canvasId, nodeId);
@@ -72,6 +77,8 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
         firstFailure = result;
       }
     }
+
+    hs.commitBatch();
 
     set({ selectedNodeIds: new Set(), selectedEdgeKeys: new Set() });
     return firstFailure;
