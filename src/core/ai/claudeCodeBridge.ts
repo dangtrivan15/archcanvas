@@ -129,6 +129,8 @@ export type OnPermissionRequest = (event: {
   id: string;
   tool: string;
   command: string;
+  blockedPath?: string;
+  decisionReason?: string;
 }) => void;
 
 /**
@@ -399,6 +401,8 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
                   id: toolUseId,
                   tool: toolName,
                   command,
+                  ...(opts.blockedPath ? { blockedPath: opts.blockedPath } : {}),
+                  ...(opts.decisionReason ? { decisionReason: opts.decisionReason } : {}),
                 });
               }
 
