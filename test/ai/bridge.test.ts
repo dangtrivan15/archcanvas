@@ -701,3 +701,45 @@ describe('BridgeSession — SDK options', () => {
     session.destroy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Permission context forwarding
+// ---------------------------------------------------------------------------
+describe('BridgeSession — permission context forwarding', () => {
+  it('onPermissionRequest receives blockedPath and decisionReason from canUseTool', async () => {
+    const permissionEvents: Array<Record<string, unknown>> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-context');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({
+      cwd: '/tmp',
+      queryFn: mockQueryFn,
+      onPermissionRequest: (event) => {
+        permissionEvents.push(event);
+      },
+    });
+    await collect(session.sendMessage('test', testContext));
+    const permPromise = canUseToolCallback!(
+      'Write',
+      { file_path: '/src/main.ts', content: 'hello' },
+      {
+        signal: new AbortController().signal,
+        toolUseID: 'perm-ctx-1',
+        blockedPath: '/src/main.ts',
+        decisionReason: 'Write tool requires permission',
+      },
+    );
+    expect(permissionEvents).toHaveLength(1);
+    expect(permissionEvents[0].blockedPath).toBe('/src/main.ts');
+    expect(permissionEvents[0].decisionReason).toBe('Write tool requires permission');
+    session.respondToPermission('perm-ctx-1', true);
+    await permPromise;
+    session.destroy();
+  });
+});
