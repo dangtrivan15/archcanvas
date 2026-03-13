@@ -1,0 +1,60 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const workerDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'worker',
+    namespace: 'compute',
+    version: '1.0.0',
+    displayName: 'Worker',
+    description:
+      'A background worker that processes tasks asynchronously from queues or event streams.',
+    icon: 'Cog',
+    tags: ['background', 'async'],
+    shape: 'rectangle',
+  },
+  spec: {
+    args: [
+      {
+        name: 'language',
+        type: 'enum',
+        required: true,
+        options: ['TypeScript', 'Python', 'Go', 'Java'],
+        description: 'Primary programming language for the worker.',
+      },
+      {
+        name: 'concurrency',
+        type: 'number',
+        default: 1,
+        description:
+          'Number of tasks processed in parallel by a single worker instance.',
+      },
+    ],
+    ports: [
+      {
+        name: 'task-in',
+        direction: 'inbound',
+        protocol: ['Queue', 'Event'],
+        description:
+          'Receives tasks from message queues or event streams.',
+      },
+      {
+        name: 'http-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'HTTPS'],
+        description:
+          'Calls downstream services or APIs during task processing.',
+      },
+    ],
+    ai: {
+      context:
+        'A worker handles asynchronous background processing. Review its concurrency settings, failure handling strategy, and whether the chosen queue protocol matches the upstream producer.',
+      reviewHints: [
+        'Verify that concurrency level accounts for resource constraints and downstream rate limits.',
+        'Ensure dead-letter or retry strategies are considered for failed task processing.',
+        'Check that the inbound protocol (Queue vs Event) matches the producing system\'s delivery semantics.',
+      ],
+    },
+  },
+};

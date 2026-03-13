@@ -1,0 +1,62 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const mobileAppDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'mobile-app',
+    namespace: 'client',
+    version: '1.0.0',
+    displayName: 'Mobile Application',
+    description:
+      'A native or cross-platform mobile application for iOS and Android devices.',
+    icon: 'Smartphone',
+    tags: ['mobile', 'app'],
+    shape: 'rectangle',
+  },
+  spec: {
+    args: [
+      {
+        name: 'platform',
+        type: 'enum',
+        options: ['iOS', 'Android', 'React Native', 'Flutter'],
+        required: true,
+        description:
+          'Target platform or cross-platform framework.',
+      },
+      {
+        name: 'language',
+        type: 'enum',
+        options: ['Swift', 'Kotlin', 'TypeScript', 'Dart'],
+        required: true,
+        description:
+          'Primary programming language for the application.',
+      },
+    ],
+    ports: [
+      {
+        name: 'http-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'HTTPS'],
+        description:
+          'Outbound HTTP/HTTPS requests to backend APIs.',
+      },
+      {
+        name: 'push-in',
+        direction: 'inbound',
+        protocol: ['Push'],
+        description:
+          'Inbound push notifications from a notification service.',
+      },
+    ],
+    ai: {
+      context:
+        "A mobile application node represents a native or cross-platform app running on a user's device. It communicates with backend services over HTTP and can receive push notifications for real-time updates.",
+      reviewHints: [
+        'Confirm that the platform choice matches the language (e.g., Swift for iOS, Dart for Flutter).',
+        'Ensure push notification inbound port is connected to a notification provider node.',
+        'Consider offline-first data strategies if the app must work without network connectivity.',
+      ],
+    },
+  },
+};

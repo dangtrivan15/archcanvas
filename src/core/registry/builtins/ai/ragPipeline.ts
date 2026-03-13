@@ -1,0 +1,67 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const ragPipelineDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'rag-pipeline',
+    namespace: 'ai',
+    version: '1.0.0',
+    displayName: 'RAG Pipeline',
+    description:
+      'Retrieval-augmented generation pipeline for grounding LLM responses in source documents',
+    icon: 'Layers',
+    tags: ['ai', 'rag', 'retrieval'],
+    shape: 'hexagon',
+  },
+  spec: {
+    args: [
+      {
+        name: 'chunkSize',
+        type: 'number',
+        default: 512,
+      },
+      {
+        name: 'overlap',
+        type: 'number',
+        default: 50,
+      },
+      {
+        name: 'embedModel',
+        type: 'string',
+        default: 'text-embedding-3-small',
+      },
+    ],
+    ports: [
+      {
+        name: 'doc-in',
+        direction: 'inbound',
+        protocol: ['HTTP', 'S3'],
+      },
+      {
+        name: 'query-in',
+        direction: 'inbound',
+        protocol: ['HTTP'],
+      },
+      {
+        name: 'vector-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'gRPC'],
+      },
+      {
+        name: 'llm-out',
+        direction: 'outbound',
+        protocol: ['HTTP', 'HTTPS'],
+      },
+    ],
+    ai: {
+      context:
+        'Ingests documents, splits them into chunks, generates embeddings, and orchestrates retrieval-augmented generation by combining retrieved context with user queries before sending to an LLM.',
+      reviewHints: [
+        'Verify that overlap is less than chunkSize to avoid degenerate chunking',
+        "Confirm the embedModel output dimensions match the connected vector store's dimensions",
+        'Check that doc-in accepts the expected document formats for the ingestion pipeline',
+      ],
+    },
+  },
+};

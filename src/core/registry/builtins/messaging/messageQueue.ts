@@ -1,0 +1,59 @@
+import type { NodeDef } from '../../../../types/nodeDefSchema';
+
+export const messageQueueDef: NodeDef = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'message-queue',
+    namespace: 'messaging',
+    version: '1.0.0',
+    displayName: 'Message Queue',
+    description:
+      'Asynchronous message queue for decoupled point-to-point or pub/sub communication between services.',
+    icon: 'MessageSquare',
+    tags: ['async', 'messaging', 'queue'],
+    shape: 'parallelogram',
+  },
+  spec: {
+    args: [
+      {
+        name: 'engine',
+        type: 'enum',
+        options: ['RabbitMQ', 'SQS', 'Kafka', 'ActiveMQ'],
+        description: 'Message broker engine.',
+      },
+      {
+        name: 'durability',
+        type: 'boolean',
+        default: true,
+        description:
+          'Whether messages are persisted to disk for durability.',
+      },
+    ],
+    ports: [
+      {
+        name: 'publish-in',
+        direction: 'inbound',
+        protocol: ['AMQP', 'SQS'],
+        description:
+          'Inbound port for publishing messages to the queue.',
+      },
+      {
+        name: 'consume-out',
+        direction: 'outbound',
+        protocol: ['AMQP', 'SQS'],
+        description:
+          'Outbound port for consuming messages from the queue.',
+      },
+    ],
+    ai: {
+      context:
+        'A message queue decouples producers from consumers, enabling asynchronous communication. Messages are buffered in the broker and delivered based on the chosen pattern (point-to-point or pub/sub). Consider durability, ordering guarantees, and dead-letter handling when reviewing.',
+      reviewHints: [
+        'Verify dead-letter queue or retry policy is configured for failed message handling.',
+        "Check whether message ordering guarantees match the application's requirements.",
+        'Ensure durability setting aligns with the criticality of the data being transmitted.',
+      ],
+    },
+  },
+};
