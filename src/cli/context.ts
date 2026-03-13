@@ -9,6 +9,78 @@ import { CLIError } from './errors';
 
 export interface CLIContext {
   fs: FileSystem;
+  bridgeUrl: string | null;
+}
+
+/**
+ * The base URL for the AI bridge endpoint.
+ * The dev server uses `strictPort: true` in vite.config.ts, so port 5173 is
+ * guaranteed — if the port is taken the server refuses to start rather than
+ * picking a random one. This makes the health-check URL deterministic.
+ */
+const BRIDGE_BASE_URL = 'http://localhost:5173/__archcanvas_ai';
+
+/**
+ * Probe the dev-server bridge health endpoint.
+ *
+ * Returns the bridge base URL if the dev server is running and the AI bridge
+ * plugin is active, or `null` if the server is unreachable / times out.
+ */
+export async function detectBridge(): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch(`${BRIDGE_BASE_URL}/health`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      return BRIDGE_BASE_URL;
+    }
+    return null;
+  } catch {
+    // Network error or abort — bridge not available
+    return null;
+  }
+}
+
+/**
+ * Send a mutation request to the bridge HTTP API.
+ *
+ * @param bridgeUrl - The bridge base URL (from `detectBridge()`).
+ * @param action    - The API action name (e.g. 'add-node', 'remove-edge').
+ * @param args      - The JSON body to POST.
+ * @returns The parsed JSON response.
+ * @throws {CLIError} on HTTP errors (non-2xx) or network failures.
+ */
+export async function bridgeMutate(
+  bridgeUrl: string,
+  action: string,
+  args: Record<string, unknown>,
+): Promise<{ ok: boolean; [key: string]: unknown }> {
+  let res: Response;
+  try {
+    res = await fetch(`${bridgeUrl}/api/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+  } catch (err) {
+    throw new CLIError(
+      'BRIDGE_ERROR',
+      `Bridge request failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  const body = await res.json() as { ok: boolean; error?: { code: string; message: string }; [key: string]: unknown };
+
+  if (!res.ok) {
+    const code = body.error?.code ?? 'BRIDGE_ERROR';
+    const message = body.error?.message ?? `Bridge returned HTTP ${res.status}`;
+    throw new CLIError(code, message);
+  }
+
+  return body;
 }
 
 /**
@@ -52,7 +124,10 @@ export async function loadContext(
   // Initialize the NodeDef registry (builtins from static TS objects)
   await useRegistryStore.getState().initialize();
 
-  return { fs };
+  // Probe for a running dev-server bridge (non-blocking fallback to null)
+  const bridgeUrl = await detectBridge();
+
+  return { fs, bridgeUrl };
 }
 
 /**
