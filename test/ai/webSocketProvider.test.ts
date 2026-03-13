@@ -214,7 +214,7 @@ describe('WebSocketClaudeCodeProvider', () => {
     });
 
     it('disconnect() prevents auto-reconnect', () => {
-      const ws = connectProvider();
+      connectProvider();
       provider.disconnect();
       // After disconnect, no new WebSocket should be created
       const countBefore = MockWebSocket.instances.length;
@@ -260,7 +260,6 @@ describe('WebSocketClaudeCodeProvider', () => {
 
     it('caps backoff at 30s', () => {
       const ws = connectProvider();
-      const initialCount = MockWebSocket.instances.length;
 
       // Simulate many failed reconnects to exceed max backoff
       let currentWs = ws;
@@ -384,11 +383,15 @@ describe('WebSocketClaudeCodeProvider', () => {
       expect(events[1].type).toBe('error');
     });
 
-    it('returns empty iterable when not connected', async () => {
+    it('yields error event when not connected', async () => {
       // Don't connect
       const stream = provider.sendMessage('Hello', defaultContext);
       const events = await collectEvents(stream);
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('error');
+      if (events[0].type === 'error') {
+        expect(events[0].message).toBe('Not connected to AI bridge');
+      }
     });
 
     it('yields multiple text events incrementally', async () => {
@@ -575,10 +578,8 @@ describe('WebSocketClaudeCodeProvider', () => {
     it('returns error when no filesystem is available', async () => {
       // Override fileStore mock to have no fs
       const { useFileStore } = await import('@/store/fileStore');
-      vi.spyOn(useFileStore, 'getState').mockReturnValue({
-        fs: null,
-        save: mockSave,
-      } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(useFileStore, 'getState').mockReturnValue({ fs: null, save: mockSave } as any);
 
       const ws = connectProvider();
 

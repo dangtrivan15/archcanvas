@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type {
   ChatProvider,
   ChatMessage,
-  ChatEvent,
   ProjectContext,
 } from '@/core/ai/types';
 import { useFileStore } from './fileStore';

@@ -333,6 +333,7 @@ describe('chatStore', () => {
         displayName: 'Thrower',
         available: true,
         sendMessage(): AsyncIterable<ChatEvent> {
+          // eslint-disable-next-line require-yield
           async function* gen(): AsyncGenerator<ChatEvent> {
             throw new Error('Stream exploded');
           }
