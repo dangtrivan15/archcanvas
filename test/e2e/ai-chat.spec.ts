@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoApp } from "./e2e-helpers";
 
 // ---------------------------------------------------------------------------
 // 1. Chat panel toggle
@@ -6,14 +7,14 @@ import { test, expect } from "@playwright/test";
 
 test.describe("chat panel toggle", () => {
   test("AI Chat button exists in left toolbar", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
     await expect(chatButton).toBeVisible();
   });
 
   test("clicking AI Chat button opens chat panel", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Click AI Chat button
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
@@ -26,7 +27,7 @@ test.describe("chat panel toggle", () => {
   test("clicking AI Chat button again returns to details mode", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
 
@@ -46,7 +47,7 @@ test.describe("chat panel toggle", () => {
   });
 
   test("Cmd+Shift+I opens chat panel", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.keyboard.press("Meta+Shift+i");
 
@@ -56,7 +57,7 @@ test.describe("chat panel toggle", () => {
   });
 
   test("Cmd+Shift+I again closes chat panel", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Open
     await page.keyboard.press("Meta+Shift+i");
@@ -80,7 +81,7 @@ test.describe("chat panel toggle", () => {
 
 test.describe("chat panel layout", () => {
   test("chat panel shows header with AI Chat text", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
@@ -90,7 +91,7 @@ test.describe("chat panel layout", () => {
   });
 
   test("chat panel shows provider selector with disconnected provider", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
@@ -103,7 +104,7 @@ test.describe("chat panel layout", () => {
   });
 
   test("chat panel has input textarea", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
@@ -112,7 +113,7 @@ test.describe("chat panel layout", () => {
   });
 
   test("chat panel has send button", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
@@ -121,7 +122,7 @@ test.describe("chat panel layout", () => {
   });
 
   test("chat panel has close button", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
@@ -138,7 +139,7 @@ test.describe("chat toggle and node selection interaction", () => {
   test("closing chat returns to details, then node selection shows NodeDetailPanel", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Open chat panel
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
@@ -177,7 +178,7 @@ test.describe("chat toggle and node selection interaction", () => {
   test("opening chat while node is selected replaces detail panel", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add and select a node
     await page.keyboard.press("Meta+k");
@@ -218,7 +219,7 @@ test.describe("panel collapse interaction", () => {
   test("clicking AI Chat when right panel is collapsed expands it and shows chat", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Collapse the right panel via the View menu
     await page.getByRole("menuitem", { name: "View" }).click();
@@ -250,7 +251,7 @@ test.describe("panel collapse interaction", () => {
   test("closing chat after collapse-open shows details mode and remains expanded", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Collapse right panel
     await page.getByRole("menuitem", { name: "View" }).click();
@@ -296,7 +297,7 @@ test.describe("chat button visual state", () => {
   test("AI Chat button is in default state when chat is closed", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
 
@@ -307,7 +308,7 @@ test.describe("chat button visual state", () => {
   test("AI Chat button has active state when chat is open", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
 
@@ -321,7 +322,7 @@ test.describe("chat button visual state", () => {
   test("AI Chat button returns to default state after toggling off", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const chatButton = page.getByRole("button", { name: "AI Chat (⌘⇧I)" });
 

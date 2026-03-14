@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoApp, resetToEmptyProject } from "./e2e-helpers";
 
 // ---------------------------------------------------------------------------
 // Fix 4: Empty project bootstrap — canvas is immediately usable
@@ -6,7 +7,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("project bootstrap", () => {
   test("app starts with a loaded project (not idle)", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Status bar should show scope info, not "No project open"
     // Scope to the status bar (bottom bar) to avoid matching breadcrumb "Root"
@@ -18,7 +19,7 @@ test.describe("project bootstrap", () => {
   test("add node via command palette creates a node on canvas", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Start with 0 nodes
     const initialCount = await page.locator(".react-flow__node").count();
@@ -38,7 +39,7 @@ test.describe("project bootstrap", () => {
   });
 
   test("add multiple nodes via command palette", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const nodeTypes = [
       /Service compute\/service/,
@@ -58,7 +59,7 @@ test.describe("project bootstrap", () => {
   });
 
   test("New Project resets the canvas", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add a node first
     await page.keyboard.press("Meta+k");
@@ -67,9 +68,9 @@ test.describe("project bootstrap", () => {
       .click();
     await expect(page.locator(".react-flow__node")).toHaveCount(1);
 
-    // File → New Project
-    await page.getByRole("menuitem", { name: "File" }).click();
-    await page.getByRole("menuitem", { name: /New Project/ }).click();
+    // Reset via store (File > New Project now opens a native dialog
+    // which can't be automated in Playwright)
+    await resetToEmptyProject(page);
 
     // Canvas should be empty again
     await expect(page.locator(".react-flow__node")).toHaveCount(0);
@@ -83,7 +84,7 @@ test.describe("project bootstrap", () => {
 
 test.describe("context menu actions", () => {
   test("Add Node opens the command palette", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Right-click canvas
     const canvas = page.locator(".react-flow");
@@ -100,7 +101,7 @@ test.describe("context menu actions", () => {
   });
 
   test("Add Node → select type creates a node", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Right-click → Add Node → select Database
     const canvas = page.locator(".react-flow");
@@ -114,7 +115,7 @@ test.describe("context menu actions", () => {
   });
 
   test("Fit View resets the viewport", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const canvas = page.locator(".react-flow");
     await canvas.click({ button: "right", position: { x: 400, y: 300 } });
@@ -128,7 +129,7 @@ test.describe("context menu actions", () => {
   });
 
   test("Auto Layout dispatches event without error", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add a node so auto-layout has something to work with
     await page.keyboard.press("Meta+k");
@@ -159,7 +160,7 @@ test.describe("context menu actions", () => {
 
 test.describe("node positioning", () => {
   test("multiple nodes are placed at different positions", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add two nodes
     await page.keyboard.press("Meta+k");
@@ -207,7 +208,7 @@ test.describe("node positioning", () => {
 
 test.describe("batch undo", () => {
   test("select-all + delete undoes with a single Cmd+Z", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add 3 nodes
     const nodeTypes = [
@@ -235,7 +236,7 @@ test.describe("batch undo", () => {
   });
 
   test("redo after batch undo re-deletes all nodes", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add 2 nodes
     await page.keyboard.press("Meta+k");
@@ -269,7 +270,7 @@ test.describe("batch undo", () => {
 
 test.describe("panel toggles", () => {
   test("Toggle Left Panel collapses and expands", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const leftPanel = page.locator('[data-slot="resizable-panel"]').first();
 
@@ -301,7 +302,7 @@ test.describe("panel toggles", () => {
   });
 
   test("Toggle Right Panel collapses and expands", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
 

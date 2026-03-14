@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoApp, resetToEmptyProject } from "./e2e-helpers";
 
 // ---------------------------------------------------------------------------
 // C8: Dirty indicator — status bar badge + document title
@@ -8,7 +9,7 @@ test.describe("dirty indicator", () => {
   test("clean state — no Modified badge and title is plain", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Status bar should NOT show the "Modified" badge
     const statusBar = page.locator("div.h-6.border-t");
@@ -25,7 +26,7 @@ test.describe("dirty indicator", () => {
   test("adding a node shows Modified badge and bullet in title", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Add a node to make the project dirty
     await page.keyboard.press("Meta+k");
@@ -45,7 +46,7 @@ test.describe("dirty indicator", () => {
   });
 
   test("New Project resets dirty state", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Make dirty
     await page.keyboard.press("Meta+k");
@@ -57,9 +58,9 @@ test.describe("dirty indicator", () => {
     const statusBar = page.locator("div.h-6.border-t");
     await expect(statusBar.getByText("Modified")).toBeVisible();
 
-    // File → New Project clears dirty state
-    await page.getByRole("menuitem", { name: "File" }).click();
-    await page.getByRole("menuitem", { name: /New Project/ }).click();
+    // Reset via store (File > New Project now opens a native dialog
+    // which can't be automated in Playwright)
+    await resetToEmptyProject(page);
     await page.waitForTimeout(300);
 
     await expect(statusBar.getByText("Modified")).not.toBeVisible();
@@ -78,7 +79,7 @@ test.describe("file menu persistence items", () => {
   test("Save and Save As menu items exist with correct shortcuts", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "File" }).click();
     const content = page.locator('[data-slot="menubar-content"]');
@@ -96,7 +97,7 @@ test.describe("file menu persistence items", () => {
   });
 
   test("Open menu item exists with correct shortcut", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "File" }).click();
 
@@ -106,7 +107,7 @@ test.describe("file menu persistence items", () => {
   });
 
   test("Open Recent submenu is present", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "File" }).click();
 
@@ -125,7 +126,7 @@ test.describe("save keyboard shortcut", () => {
   test("Cmd+S triggers save flow (no crash when no FileSystem)", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Make dirty first
     await page.keyboard.press("Meta+k");
@@ -163,7 +164,7 @@ test.describe("beforeunload handler", () => {
   test("beforeunload handler is registered on the window", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
     // Wait for the app to fully initialize
     await page.waitForTimeout(500);
 
@@ -199,7 +200,7 @@ test.describe("beforeunload handler", () => {
   test("beforeunload handler prevents navigation when dirty", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     // Make the project dirty
     await page.keyboard.press("Meta+k");

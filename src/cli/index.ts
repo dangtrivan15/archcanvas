@@ -11,6 +11,7 @@ import { listCommand } from './commands/list';
 import { describeCommand } from './commands/describe';
 import { searchCommand } from './commands/search';
 import { importCommand } from './commands/import';
+import { catalogCommand } from './commands/catalog';
 
 const program = new Command();
 
@@ -150,6 +151,19 @@ program
       { file: flags.file, scope: flags.scope },
       { json: isJson },
       ctx,
+    );
+  });
+
+program
+  .command('catalog')
+  .description('List all registered node types')
+  .option('--namespace <ns>', 'Filter by namespace')
+  .action(async (flags: { namespace?: string }) => {
+    await loadContext(program.opts().project);
+    const isJson = program.opts().json === true;
+    catalogCommand(
+      { namespace: flags.namespace },
+      { json: isJson },
     );
   });
 
