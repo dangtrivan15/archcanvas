@@ -16,6 +16,8 @@ interface ChatState {
   activeProviderId: string | null;
   providers: Map<string, ChatProvider>;
   error: string | null;
+  /** Latest status message from the AI (e.g., "Reading file..."). Cleared on done/error. */
+  statusMessage: string | null;
 
   registerProvider(provider: ChatProvider): void;
   setActiveProvider(id: string): void;
@@ -67,6 +69,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activeProviderId: null,
   providers: new Map(),
   error: null,
+  statusMessage: null,
 
   registerProvider(provider: ChatProvider) {
     const next = new Map(get().providers);
@@ -113,6 +116,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [...state.messages, userMessage],
       isStreaming: true,
       error: null,
+      statusMessage: null,
     }));
 
     // Build context from other stores
@@ -138,9 +142,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         // Track all events
         assistantMessage.events!.push(event);
 
+        // Handle status events — show latest status message
+        if (event.type === 'status') {
+          set({ statusMessage: event.message });
+        }
+
+        // Handle rate_limit events — show as temporary warning without stopping the stream
+        if (event.type === 'rate_limit') {
+          set({ error: event.message });
+        }
+
         // Handle error events
         if (event.type === 'error') {
-          set({ error: event.message });
+          set({ error: event.message, statusMessage: null });
+        }
+
+        // Clear status on done
+        if (event.type === 'done') {
+          set({ statusMessage: null });
         }
 
         // Update messages with current assistant message state
@@ -161,7 +180,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      set({ isStreaming: false });
+      set({ isStreaming: false, statusMessage: null });
     }
   },
 
@@ -208,6 +227,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearHistory() {
-    set({ messages: [], error: null });
+    set({ messages: [], error: null, statusMessage: null });
   },
 }));

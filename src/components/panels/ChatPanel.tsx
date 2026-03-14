@@ -7,6 +7,7 @@ export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
   const isStreaming = useChatStore((s) => s.isStreaming);
   const error = useChatStore((s) => s.error);
+  const statusMessage = useChatStore((s) => s.statusMessage);
   const providers = useChatStore((s) => s.providers);
   const activeProviderId = useChatStore((s) => s.activeProviderId);
 
@@ -94,7 +95,7 @@ export function ChatPanel() {
         {isStreaming && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-foreground" />
-            <span>AI is responding...</span>
+            <span>{statusMessage ?? 'AI is responding...'}</span>
           </div>
         )}
 

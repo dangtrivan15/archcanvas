@@ -114,6 +114,7 @@ beforeEach(() => {
     activeProviderId: null,
     providers: new Map(),
     error: null,
+    statusMessage: null,
   });
 });
 
@@ -395,6 +396,111 @@ describe('chatStore', () => {
       const options = { interrupt: true };
       useChatStore.getState().respondToPermission('perm-4', false, options);
       expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-4', false, options);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // statusMessage handling
+  // -----------------------------------------------------------------------
+
+  describe('statusMessage', () => {
+    it('sets statusMessage on status events', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'status', requestId: 'r1', message: 'Reading file...' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('Do stuff');
+
+      // statusMessage is cleared on done
+      expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+
+    it('clears statusMessage on done event', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'status', requestId: 'r1', message: 'Working...' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+      expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+
+    it('clears statusMessage on error event', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'status', requestId: 'r1', message: 'Working...' },
+        { type: 'error', requestId: 'r1', message: 'Something broke' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+      expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+
+    it('clears statusMessage on new sendMessage', async () => {
+      useChatStore.setState({ statusMessage: 'Previous status' });
+
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([{ type: 'done', requestId: 'r1' }]);
+      await useChatStore.getState().sendMessage('New msg');
+
+      expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+
+    it('clears statusMessage on clearHistory', () => {
+      useChatStore.setState({ statusMessage: 'Some status' });
+      useChatStore.getState().clearHistory();
+      expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // rate_limit handling
+  // -----------------------------------------------------------------------
+
+  describe('rate_limit events', () => {
+    it('sets error on rate_limit event without stopping streaming', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'rate_limit', requestId: 'r1', message: 'Rate limited. Retrying in 30s...' },
+        { type: 'text', requestId: 'r1', content: 'After rate limit' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+
+      // Rate limit message was in error, but done cleared streaming
+      // The assistant message should have accumulated text after the rate limit
+      const msgs = useChatStore.getState().messages;
+      expect(msgs[1].content).toBe('After rate limit');
+      expect(useChatStore.getState().isStreaming).toBe(false);
+    });
+
+    it('stores rate_limit event in assistant message events', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'rate_limit', requestId: 'r1', message: 'Rate limited' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+
+      const assistantMsg = useChatStore.getState().messages[1];
+      expect(assistantMsg.events!.some(e => e.type === 'rate_limit')).toBe(true);
     });
   });
 

@@ -151,6 +151,97 @@ function sdkResultError(subtype: string, errors: string[]): SDKMessage {
   };
 }
 
+function sdkStreamEvent(deltaType: string, delta: Record<string, string>): SDKMessage {
+  return {
+    type: 'stream_event',
+    uuid: `se-${Date.now()}`,
+    session_id: 'test-session',
+    event: {
+      type: 'content_block_delta',
+      delta: { type: deltaType, ...delta },
+    },
+  };
+}
+
+function sdkStreamEventOther(eventType: string): SDKMessage {
+  return {
+    type: 'stream_event',
+    uuid: `se-${Date.now()}`,
+    session_id: 'test-session',
+    event: { type: eventType },
+  };
+}
+
+function sdkStatus(message: string): SDKMessage {
+  return {
+    type: 'status',
+    uuid: `st-${Date.now()}`,
+    session_id: 'test-session',
+    message,
+  };
+}
+
+function sdkToolProgress(content: string): SDKMessage {
+  return {
+    type: 'tool_progress',
+    uuid: `tp-${Date.now()}`,
+    session_id: 'test-session',
+    content,
+    tool_use_id: 'tool-1',
+  };
+}
+
+function sdkRateLimit(message: string): SDKMessage {
+  return {
+    type: 'rate_limit',
+    uuid: `rl-${Date.now()}`,
+    session_id: 'test-session',
+    message,
+  };
+}
+
+function sdkPromptSuggestion(suggestions: string[]): SDKMessage {
+  return {
+    type: 'prompt_suggestion',
+    uuid: `ps-${Date.now()}`,
+    session_id: 'test-session',
+    suggestions,
+  };
+}
+
+/** Assistant message with both text and tool_use blocks (common in final messages). */
+function sdkAssistantMixed(
+  text: string,
+  toolName: string,
+  toolInput: Record<string, unknown>,
+  toolId: string,
+): SDKMessage {
+  return {
+    type: 'assistant',
+    uuid: `ast-${Date.now()}`,
+    session_id: 'test-session',
+    message: {
+      content: [
+        { type: 'text', text },
+        { type: 'tool_use', name: toolName, input: toolInput, id: toolId },
+      ],
+    },
+    parent_tool_use_id: null,
+  };
+}
+
+function sdkAssistantThinking(thinkingText: string): SDKMessage {
+  return {
+    type: 'assistant',
+    uuid: `ast-${Date.now()}`,
+    session_id: 'test-session',
+    message: {
+      content: [{ type: 'thinking', text: thinkingText }],
+    },
+    parent_tool_use_id: null,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Scenario 1: Text streaming
 // ---------------------------------------------------------------------------
@@ -833,6 +924,371 @@ describe('BridgeSession — auto-approve hooks', () => {
         permissionDecisionReason: 'Read-only tool auto-approved',
       },
     });
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Streaming text via stream_event
+// ---------------------------------------------------------------------------
+describe('BridgeSession — stream_event translation', () => {
+  it('yields TextEvents from text_delta stream events', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-stream-1');
+        yield sdkStreamEvent('text_delta', { text: 'Hello ' });
+        yield sdkStreamEvent('text_delta', { text: 'world' });
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('hi', testContext));
+
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(2);
+    expect(textEvents[0]).toMatchObject({ type: 'text', content: 'Hello ' });
+    expect(textEvents[1]).toMatchObject({ type: 'text', content: 'world' });
+    expect(events.some(e => e.type === 'done')).toBe(true);
+
+    session.destroy();
+  });
+
+  it('yields ThinkingEvents from thinking_delta stream events', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-stream-think');
+        yield sdkStreamEvent('thinking_delta', { thinking: 'Let me consider...' });
+        yield sdkStreamEvent('thinking_delta', { thinking: ' the options.' });
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('think', testContext));
+
+    const thinkingEvents = events.filter(e => e.type === 'thinking');
+    expect(thinkingEvents).toHaveLength(2);
+    expect(thinkingEvents[0]).toMatchObject({ type: 'thinking', content: 'Let me consider...' });
+    expect(thinkingEvents[1]).toMatchObject({ type: 'thinking', content: ' the options.' });
+
+    session.destroy();
+  });
+
+  it('skips non-content_block_delta stream events', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-stream-skip');
+        yield sdkStreamEventOther('message_start');
+        yield sdkStreamEventOther('content_block_start');
+        yield sdkStreamEvent('text_delta', { text: 'Only this' });
+        yield sdkStreamEventOther('content_block_stop');
+        yield sdkStreamEventOther('message_stop');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(1);
+    expect(textEvents[0]).toMatchObject({ content: 'Only this' });
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// No double text: streaming + final assistant message
+// ---------------------------------------------------------------------------
+describe('BridgeSession — no double text', () => {
+  it('skips text from final assistant message when stream_event deltas were received', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-no-double');
+        // Streaming deltas first
+        yield sdkStreamEvent('text_delta', { text: 'Hello ' });
+        yield sdkStreamEvent('text_delta', { text: 'world' });
+        // Final assistant message (same text, plus a tool_use)
+        yield sdkAssistantMixed('Hello world', 'Bash', { command: 'ls' }, 'call-1');
+        yield sdkUserToolResult('call-1', 'file.txt');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('hi', testContext));
+
+    // Text should appear only from streaming (2 deltas), not from the final assistant message
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(2);
+    expect(textEvents[0]).toMatchObject({ content: 'Hello ' });
+    expect(textEvents[1]).toMatchObject({ content: 'world' });
+
+    // But tool_use from the final assistant message should still be emitted
+    const toolCallEvents = events.filter(e => e.type === 'tool_call');
+    expect(toolCallEvents).toHaveLength(1);
+    expect(toolCallEvents[0]).toMatchObject({ name: 'Bash', id: 'call-1' });
+
+    // And tool_result should come through
+    const toolResultEvents = events.filter(e => e.type === 'tool_result');
+    expect(toolResultEvents).toHaveLength(1);
+
+    session.destroy();
+  });
+
+  it('skips thinking from final assistant message when stream_event deltas were received', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-no-double-think');
+        // Streaming thinking deltas
+        yield sdkStreamEvent('thinking_delta', { thinking: 'Hmm...' });
+        // Final assistant message with the complete thinking block
+        yield sdkAssistantThinking('Hmm...');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('think', testContext));
+
+    // Thinking should appear only once (from streaming)
+    const thinkingEvents = events.filter(e => e.type === 'thinking');
+    expect(thinkingEvents).toHaveLength(1);
+    expect(thinkingEvents[0]).toMatchObject({ content: 'Hmm...' });
+
+    session.destroy();
+  });
+
+  it('emits text from assistant message when no stream_event deltas were received', async () => {
+    // Fallback: if the SDK doesn't emit stream_events, the assistant message text is used
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-fallback');
+        yield sdkAssistantText('No streaming here.');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('hi', testContext));
+
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(1);
+    expect(textEvents[0]).toMatchObject({ content: 'No streaming here.' });
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Status messages
+// ---------------------------------------------------------------------------
+describe('BridgeSession — status messages', () => {
+  it('yields StatusEvent from SDK status messages', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-status');
+        yield sdkStatus('Reading file...');
+        yield sdkStatus('Running command...');
+        yield sdkAssistantText('Done.');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('do stuff', testContext));
+
+    const statusEvents = events.filter(e => e.type === 'status');
+    expect(statusEvents).toHaveLength(2);
+    expect(statusEvents[0]).toMatchObject({ type: 'status', message: 'Reading file...' });
+    expect(statusEvents[1]).toMatchObject({ type: 'status', message: 'Running command...' });
+
+    session.destroy();
+  });
+
+  it('skips status messages with empty content', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-status-empty');
+        yield { type: 'status', uuid: 'st-1', session_id: 'test', message: '' };
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const statusEvents = events.filter(e => e.type === 'status');
+    expect(statusEvents).toHaveLength(0);
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool progress
+// ---------------------------------------------------------------------------
+describe('BridgeSession — tool_progress messages', () => {
+  it('yields StatusEvent from SDK tool_progress messages', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-progress');
+        yield sdkToolProgress('Building project...');
+        yield sdkToolProgress('Compilation complete.');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('build', testContext));
+
+    const statusEvents = events.filter(e => e.type === 'status');
+    expect(statusEvents).toHaveLength(2);
+    expect(statusEvents[0]).toMatchObject({ type: 'status', message: 'Building project...' });
+    expect(statusEvents[1]).toMatchObject({ type: 'status', message: 'Compilation complete.' });
+
+    session.destroy();
+  });
+
+  it('falls back to message field when content is missing', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-progress-msg');
+        yield { type: 'tool_progress', uuid: 'tp-1', session_id: 'test', message: 'via message field', tool_use_id: 'tool-1' };
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const statusEvents = events.filter(e => e.type === 'status');
+    expect(statusEvents).toHaveLength(1);
+    expect(statusEvents[0]).toMatchObject({ message: 'via message field' });
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rate limit
+// ---------------------------------------------------------------------------
+describe('BridgeSession — rate_limit messages', () => {
+  it('yields RateLimitEvent from SDK rate_limit messages', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-ratelimit');
+        yield sdkRateLimit('Rate limited. Retrying in 30s...');
+        yield sdkAssistantText('After rate limit.');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
+    expect(rateLimitEvents).toHaveLength(1);
+    expect(rateLimitEvents[0]).toMatchObject({
+      type: 'rate_limit',
+      message: 'Rate limited. Retrying in 30s...',
+    });
+
+    // Streaming should continue after rate limit
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(1);
+    expect(events.some(e => e.type === 'done')).toBe(true);
+
+    session.destroy();
+  });
+
+  it('uses default message when rate_limit has no message', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-ratelimit-default');
+        yield { type: 'rate_limit', uuid: 'rl-1', session_id: 'test' };
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
+    expect(rateLimitEvents).toHaveLength(1);
+    expect(rateLimitEvents[0]).toMatchObject({
+      type: 'rate_limit',
+      message: 'Rate limit reached. Waiting...',
+    });
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Prompt suggestions (ignored)
+// ---------------------------------------------------------------------------
+describe('BridgeSession — prompt_suggestion messages', () => {
+  it('ignores prompt_suggestion messages (no events emitted)', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-suggestions');
+        yield sdkAssistantText('Here is my answer.');
+        yield sdkPromptSuggestion(['Tell me more', 'Show details']);
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    // Should only have text + done, no prompt_suggestion events
+    expect(events.map(e => e.type)).toEqual(['text', 'done']);
+
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Full streaming scenario (stream_event + status + tool_use + result)
+// ---------------------------------------------------------------------------
+describe('BridgeSession — full streaming scenario', () => {
+  it('handles a realistic mix of stream_event, status, assistant, and result', async () => {
+    const mockQueryFn: SDKQueryFn = () => {
+      return (async function* () {
+        yield sdkSystemInit('session-full');
+        // Streaming text deltas
+        yield sdkStreamEvent('text_delta', { text: 'I will ' });
+        yield sdkStreamEvent('text_delta', { text: 'read your file.' });
+        // Status while reading
+        yield sdkStatus('Reading file...');
+        // Final assistant message (text already streamed, but has tool_use)
+        yield sdkAssistantMixed('I will read your file.', 'Read', { file_path: '/src/main.ts' }, 'read-1');
+        yield sdkUserToolResult('read-1', 'export function main() {}');
+        // More streaming for the follow-up
+        yield sdkStreamEvent('text_delta', { text: 'Found the main function.' });
+        yield sdkAssistantText('Found the main function.');
+        yield sdkResultSuccess();
+      })();
+    };
+
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const events = await collect(session.sendMessage('read main', testContext));
+
+    const types = events.map(e => e.type);
+    // Stream deltas, status, tool_call (from assistant), tool_result, more stream delta, done
+    expect(types).toEqual([
+      'text',        // 'I will '
+      'text',        // 'read your file.'
+      'status',      // 'Reading file...'
+      'tool_call',   // Read tool (from final assistant, text skipped)
+      'tool_result', // tool result
+      'text',        // 'Found the main function.' (streamed delta)
+      'done',        // Final assistant text skipped (hasStreamedText), then done
+    ]);
+
     session.destroy();
   });
 });
