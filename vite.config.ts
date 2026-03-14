@@ -117,7 +117,8 @@ export default defineConfig({
         "**/scripts/**",
         "**/playwright-report/**",
         "**/test-results/**",
-        "**/.archcanvas"
+        "**/.archcanvas",
+        "**/.archcanvas/**"
       ],
     },
   },
