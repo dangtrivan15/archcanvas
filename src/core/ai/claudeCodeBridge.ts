@@ -206,6 +206,14 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
     sdkStream: AsyncIterable<SDKMessage>,
     requestId: string,
   ): AsyncGenerator<ChatEvent> {
+    // Track whether we received streaming deltas via stream_event messages.
+    // When includePartialMessages is true, the SDK emits both incremental
+    // stream_event messages AND the final assistant message. We use this flag
+    // to skip re-emitting text/thinking from the final assistant message
+    // (which would cause double-counting), while still processing tool_use
+    // blocks from it.
+    let hasStreamedText = false;
+
     for await (const msg of sdkStream) {
       if (destroyed) return;
 
@@ -219,8 +227,29 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           break;
         }
 
+        case 'stream_event': {
+          // Partial assistant message — extract incremental text/thinking deltas.
+          // The SDK wraps Anthropic BetaRawMessageStreamEvent objects.
+          const event = msg.event as {
+            type?: string;
+            delta?: { type?: string; text?: string; thinking?: string };
+          } | undefined;
+          if (event?.type === 'content_block_delta' && event.delta) {
+            if (event.delta.type === 'text_delta' && event.delta.text) {
+              hasStreamedText = true;
+              yield { type: 'text', requestId, content: event.delta.text };
+            } else if (event.delta.type === 'thinking_delta' && event.delta.thinking) {
+              hasStreamedText = true;
+              yield { type: 'thinking', requestId, content: event.delta.thinking };
+            }
+          }
+          break;
+        }
+
         case 'assistant': {
-          // Extract text and tool_use blocks from the assistant message
+          // Extract text and tool_use blocks from the assistant message.
+          // If we already streamed text/thinking via stream_event deltas,
+          // skip re-emitting those block types to avoid double-counting.
           const message = msg.message as {
             content?: Array<{
               type: string;
@@ -233,7 +262,10 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           if (message?.content && Array.isArray(message.content)) {
             for (const block of message.content) {
               if (block.type === 'text' && block.text) {
-                yield { type: 'text', requestId, content: block.text };
+                // Only emit text if we haven't already streamed it
+                if (!hasStreamedText) {
+                  yield { type: 'text', requestId, content: block.text };
+                }
               } else if (block.type === 'tool_use') {
                 // AskUserQuestion tool_use blocks are handled specially:
                 // the canUseTool callback (below) emits an ask_user_question
@@ -249,7 +281,10 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
                   id: block.id ?? '',
                 };
               } else if (block.type === 'thinking' && block.text) {
-                yield { type: 'thinking', requestId, content: block.text };
+                // Only emit thinking if we haven't already streamed it
+                if (!hasStreamedText) {
+                  yield { type: 'thinking', requestId, content: block.text };
+                }
               }
             }
           }
@@ -299,8 +334,45 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           break;
         }
 
+        case 'status': {
+          // Status updates (e.g., "Reading file...", "Running command...")
+          const statusMsg = typeof msg.message === 'string' ? msg.message : '';
+          if (statusMsg) {
+            yield { type: 'status', requestId, message: statusMsg };
+          }
+          break;
+        }
+
+        case 'tool_progress': {
+          // Live output from running tools (e.g., streaming bash output)
+          const progressContent = typeof msg.content === 'string'
+            ? msg.content
+            : typeof msg.message === 'string'
+              ? msg.message
+              : '';
+          if (progressContent) {
+            yield { type: 'status', requestId, message: progressContent };
+          }
+          break;
+        }
+
+        case 'rate_limit': {
+          // Rate limit warnings from the API
+          const rateLimitMsg = typeof msg.message === 'string'
+            ? msg.message
+            : 'Rate limit reached. Waiting...';
+          yield { type: 'rate_limit', requestId, message: rateLimitMsg };
+          break;
+        }
+
+        case 'prompt_suggestion': {
+          // Suggested next prompts — captured in event stream but not rendered yet.
+          // Future: render as clickable chips below the message.
+          break;
+        }
+
         default:
-          // Other SDK message types (stream_event, status, etc.) — skip
+          // Unknown SDK message types — skip silently
           break;
       }
     }

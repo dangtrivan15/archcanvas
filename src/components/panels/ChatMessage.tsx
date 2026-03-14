@@ -6,6 +6,8 @@ import type {
   ToolResultEvent,
   AskUserQuestionEvent,
   PermissionRequestEvent,
+  StatusEvent,
+  RateLimitEvent,
 } from '@/core/ai/types';
 import { ChatToolCall } from './ChatToolCall';
 import { ChatPermissionCard } from './ChatPermissionCard';
@@ -101,6 +103,10 @@ function EventsList({ events }: { events: ChatEvent[] }) {
             );
           case 'thinking':
             return <ThinkingBlock key={`think-${idx}`} content={ev.content} />;
+          case 'status':
+            return <StatusLine key={`status-${idx}`} message={(ev as StatusEvent).message} />;
+          case 'rate_limit':
+            return <RateLimitBadge key={`ratelimit-${idx}`} message={(ev as RateLimitEvent).message} />;
           // text, tool_result, done, error — not rendered as standalone blocks
           default:
             return null;
@@ -132,6 +138,32 @@ function ThinkingBlock({ content }: { content: string }) {
           {content}
         </p>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status line (dimmed, with subtle spinner)
+// ---------------------------------------------------------------------------
+
+function StatusLine({ message }: { message: string }) {
+  return (
+    <div className="my-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <span className="inline-block h-2 w-2 animate-spin rounded-full border border-muted-foreground border-t-transparent" />
+      <span className="italic">{message}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rate limit warning badge (yellow)
+// ---------------------------------------------------------------------------
+
+function RateLimitBadge({ message }: { message: string }) {
+  return (
+    <div className="my-0.5 inline-flex items-center gap-1 rounded-sm bg-yellow-900/40 px-1.5 py-0.5 text-[11px] text-yellow-300">
+      <span aria-hidden="true">&#x26A0;</span>
+      <span>{message}</span>
     </div>
   );
 }
