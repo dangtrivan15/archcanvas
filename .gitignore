@@ -35,5 +35,6 @@ tmp/
 *.log
 coverage/
 *.tsbuildinfo
+src/**/*.d.ts
 .claude/worktrees
 .superpowers/brainstorm
