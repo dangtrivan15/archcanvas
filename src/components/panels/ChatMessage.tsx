@@ -100,6 +100,7 @@ function EventsList({ events }: { events: ChatEvent[] }) {
                 command={ev.command}
                 blockedPath={(ev as PermissionRequestEvent).blockedPath}
                 decisionReason={(ev as PermissionRequestEvent).decisionReason}
+                permissionSuggestions={(ev as PermissionRequestEvent).permissionSuggestions}
               />
             );
           case 'ask_user_question':
