@@ -9,6 +9,14 @@ import { describeCommand } from '@/cli/commands/describe';
 import { CLIError } from '@/cli/errors';
 import type { CanvasFile } from '@/types/schema';
 
+vi.mock('@/cli/context', async () => {
+  const actual = await vi.importActual('@/cli/context');
+  return {
+    ...actual,
+    loadContext: vi.fn().mockResolvedValue({ fs: null, bridgeUrl: null }),
+  };
+});
+
 enablePatches();
 
 const seedData: CanvasFile = {
@@ -90,10 +98,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.1: describes single node with full details
-  it('describes a node by ID with type, displayName, args, edges, notes, codeRefs', () => {
+  it('describes a node by ID with type, displayName, args, edges, notes, codeRefs', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'svc-api' }, { json: true });
+      await describeCommand({ id: 'svc-api' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.node.id).toBe('svc-api');
@@ -109,10 +117,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.1: ports resolved from NodeDef registry
-  it('includes ports from the NodeDef registry', () => {
+  it('includes ports from the NodeDef registry', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'svc-api' }, { json: true });
+      await describeCommand({ id: 'svc-api' }, { json: true });
       const result = JSON.parse(capture.output);
       // compute/service has ports defined in the builtin registry
       expect(result.node.ports).toBeDefined();
@@ -123,10 +131,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.1: connected edges are filtered from canvas edges
-  it('only includes edges connected to the specified node', () => {
+  it('only includes edges connected to the specified node', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'svc-db' }, { json: true });
+      await describeCommand({ id: 'svc-db' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.node.connectedEdges).toHaveLength(1);
       expect(result.node.connectedEdges[0].to).toBe('svc-db');
@@ -136,10 +144,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.2: describes full architecture when no ID
-  it('describes full architecture (project name, counts per scope)', () => {
+  it('describes full architecture (project name, counts per scope)', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({}, { json: true });
+      await describeCommand({}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.project).toBe('DescribeTest');
@@ -158,10 +166,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.3: for ref nodes with children, includes child canvas counts
-  it('includes child canvas data for ref nodes', () => {
+  it('includes child canvas data for ref nodes', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({}, { json: true });
+      await describeCommand({}, { json: true });
       const result = JSON.parse(capture.output);
 
       // The child-canvas scope should be present
@@ -174,10 +182,10 @@ describe('describeCommand', () => {
   });
 
   // C5g.4: JSON output is proper shape
-  it('json output has ok: true and node or scopes data', () => {
+  it('json output has ok: true and node or scopes data', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'svc-api' }, { json: true });
+      await describeCommand({ id: 'svc-api' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result).toHaveProperty('node');
@@ -187,37 +195,33 @@ describe('describeCommand', () => {
   });
 
   // Error case: unknown node ID
-  it('throws NODE_NOT_FOUND for unknown node ID', () => {
-    expect(() => {
-      describeCommand({ id: 'nonexistent' }, { json: true });
-    }).toThrow(CLIError);
+  it('throws NODE_NOT_FOUND for unknown node ID', async () => {
+    await expect(describeCommand({ id: 'nonexistent' }, { json: true })).rejects.toThrow(CLIError);
 
     try {
-      describeCommand({ id: 'nonexistent' }, { json: true });
+      await describeCommand({ id: 'nonexistent' }, { json: true });
     } catch (err) {
       expect((err as CLIError).code).toBe('NODE_NOT_FOUND');
     }
   });
 
   // Error case: unknown scope
-  it('throws CANVAS_NOT_FOUND for unknown scope', () => {
-    expect(() => {
-      describeCommand({ id: 'svc-api', scope: 'nonexistent' }, { json: true });
-    }).toThrow(CLIError);
+  it('throws CANVAS_NOT_FOUND for unknown scope', async () => {
+    await expect(describeCommand({ id: 'svc-api', scope: 'nonexistent' }, { json: true })).rejects.toThrow(CLIError);
 
     try {
-      describeCommand({ id: 'svc-api', scope: 'nonexistent' }, { json: true });
+      await describeCommand({ id: 'svc-api', scope: 'nonexistent' }, { json: true });
     } catch (err) {
       expect((err as CLIError).code).toBe('CANVAS_NOT_FOUND');
     }
   });
 
   // C11.2: describe does NOT save
-  it('does not call saveAll (read-only)', () => {
+  it('does not call saveAll (read-only)', async () => {
     const saveAllSpy = vi.spyOn(useFileStore.getState(), 'saveAll');
     const capture = captureStdout();
     try {
-      describeCommand({}, { json: true });
+      await describeCommand({}, { json: true });
       expect(saveAllSpy).not.toHaveBeenCalled();
     } finally {
       capture.restore();
@@ -226,10 +230,10 @@ describe('describeCommand', () => {
   });
 
   // Human output for describe node
-  it('produces human-readable output when json=false for node', () => {
+  it('produces human-readable output when json=false for node', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'svc-api' }, { json: false });
+      await describeCommand({ id: 'svc-api' }, { json: false });
       expect(capture.output).toBeTruthy();
       expect(() => JSON.parse(capture.output)).toThrow();
     } finally {
@@ -238,10 +242,10 @@ describe('describeCommand', () => {
   });
 
   // Describe a ref node
-  it('describes a ref node with ref field', () => {
+  it('describes a ref node with ref field', async () => {
     const capture = captureStdout();
     try {
-      describeCommand({ id: 'child-scope' }, { json: true });
+      await describeCommand({ id: 'child-scope' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.node.id).toBe('child-scope');

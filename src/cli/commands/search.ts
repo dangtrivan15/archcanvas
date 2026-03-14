@@ -1,4 +1,5 @@
 import { useFileStore } from '@/store/fileStore';
+import { loadContext, bridgeRequest } from '../context';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
 import type { Node, Edge, Entity } from '@/types';
@@ -13,11 +14,20 @@ interface SearchResultItem {
   item: Record<string, unknown>;
 }
 
-export function searchCommand(
+export async function searchCommand(
   query: string,
   flags: SearchFlags,
   options: OutputOptions,
-): void {
+  projectPath?: string,
+): Promise<void> {
+  const ctx = await loadContext(projectPath);
+
+  if (ctx.bridgeUrl) {
+    const result = await bridgeRequest(ctx.bridgeUrl, 'search', { query, type: flags.type });
+    printSuccess(result.data ?? result, options);
+    return;
+  }
+
   const project = useFileStore.getState().project;
   if (!project) {
     printSuccess({ results: [] }, options);

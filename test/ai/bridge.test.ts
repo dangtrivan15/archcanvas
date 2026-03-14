@@ -1,10 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   createBridgeSession,
   type SDKQueryFn,
   type SDKMessage,
 } from '@/core/ai/claudeCodeBridge';
 import type { ChatEvent, ProjectContext } from '@/core/ai/types';
+
+// ---------------------------------------------------------------------------
+// Isolated temp directory per test — prevents cross-test permission pollution
+// ---------------------------------------------------------------------------
+let testCwd: string;
+
+beforeEach(async () => {
+  testCwd = await mkdtemp(join(tmpdir(), 'archcanvas-bridge-test-'));
+});
+
+afterEach(async () => {
+  await rm(testCwd, { recursive: true, force: true });
+});
 
 // NOTE: The Task 1 mock scenarios (test/mocks/mockClaudeCode.ts) emit
 // post-translation ChatEvent objects. The bridge's job is to translate
@@ -63,7 +79,7 @@ function sdkSystemInit(sessionId: string): SDKMessage {
     uuid: 'sys-uuid',
     tools: ['Bash'],
     model: 'claude-sonnet-4-20250514',
-    cwd: '/tmp',
+    cwd: testCwd,
     mcp_servers: [],
     permissionMode: 'default',
     slash_commands: [],
@@ -243,21 +259,70 @@ function sdkAssistantThinking(thinkingText: string): SDKMessage {
 }
 
 // ---------------------------------------------------------------------------
+// Test session factory — reduces boilerplate for the common pattern:
+//   create session → collect events → assert → destroy
+// ---------------------------------------------------------------------------
+
+type CanUseToolFn = (
+  toolName: string,
+  input: Record<string, unknown>,
+  opts: {
+    signal: AbortSignal;
+    toolUseID: string;
+    suggestions?: unknown[];
+    blockedPath?: string;
+    decisionReason?: string;
+  },
+) => Promise<{ behavior: string; updatedInput?: unknown; updatedPermissions?: unknown[]; message?: string; interrupt?: boolean }>;
+
+function setupSession(opts?: {
+  yields?: SDKMessage[];
+  onPermissionRequest?: (event: Record<string, unknown>) => void;
+  onAskUserQuestion?: (event: Record<string, unknown>) => void;
+  cwd?: string;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let canUseTool: any = null;
+  const capturedArgs: Array<Record<string, unknown>> = [];
+
+  const queryFn: SDKQueryFn = (args) => {
+    canUseTool = args.options?.canUseTool;
+    capturedArgs.push(args as Record<string, unknown>);
+    return (async function* () {
+      yield sdkSystemInit(`s-${Date.now()}`);
+      if (opts?.yields) {
+        yield* opts.yields;
+      }
+      yield sdkResultSuccess();
+    })();
+  };
+
+  const session = createBridgeSession({
+    cwd: opts?.cwd ?? testCwd,
+    queryFn,
+    ...(opts?.onPermissionRequest && { onPermissionRequest: opts.onPermissionRequest }),
+    ...(opts?.onAskUserQuestion && { onAskUserQuestion: opts.onAskUserQuestion }),
+  });
+
+  return {
+    session,
+    canUseTool: () => canUseTool as CanUseToolFn,
+    capturedArgs,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Scenario 1: Text streaming
 // ---------------------------------------------------------------------------
 describe('BridgeSession — Scenario 1: textStreaming', () => {
   it('translates SDK text messages into ChatEvent text + done', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-1');
-        yield sdkAssistantText('Let me ');
-        yield sdkAssistantText('analyze your ');
-        yield sdkAssistantText('architecture.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkAssistantText('Let me '),
+        sdkAssistantText('analyze your '),
+        sdkAssistantText('architecture.'),
+      ],
+    });
     const events = await collect(session.sendMessage('hello', testContext));
 
     const textEvents = events.filter(e => e.type === 'text');
@@ -282,18 +347,14 @@ describe('BridgeSession — Scenario 1: textStreaming', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — Scenario 2: toolCallFlow', () => {
   it('translates SDK tool_use and tool_result messages', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-2');
-        yield sdkAssistantText('I will list the nodes.');
-        yield sdkAssistantToolUse('bash', { command: 'archcanvas list --json' }, 'call-1');
-        yield sdkUserToolResult('call-1', '{"nodes":["api-gateway","auth-service"]}');
-        yield sdkAssistantText('Found 2 nodes in your architecture.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkAssistantText('I will list the nodes.'),
+        sdkAssistantToolUse('bash', { command: 'archcanvas list --json' }, 'call-1'),
+        sdkUserToolResult('call-1', '{"nodes":["api-gateway","auth-service"]}'),
+        sdkAssistantText('Found 2 nodes in your architecture.'),
+      ],
+    });
     const events = await collect(session.sendMessage('list my nodes', testContext));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'I will list the nodes.' });
@@ -311,17 +372,13 @@ describe('BridgeSession — Scenario 2: toolCallFlow', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — Scenario 3: permissionDenied', () => {
   it('translates SDK denial into text and done events', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-3');
-        yield sdkAssistantText('I need to run a command.');
+    const { session } = setupSession({
+      yields: [
+        sdkAssistantText('I need to run a command.'),
         // In real SDK, canUseTool would block. Here we simulate denial outcome.
-        yield sdkAssistantText("Understood, I won't make that change.");
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+        sdkAssistantText("Understood, I won't make that change."),
+      ],
+    });
     const events = await collect(session.sendMessage('add a service', testContext));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'I need to run a command.' });
@@ -337,15 +394,9 @@ describe('BridgeSession — Scenario 3: permissionDenied', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — Scenario 4: clarifyingQuestion', () => {
   it('translates a single text message and done', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-4');
-        yield sdkAssistantText('Could you clarify which service you want to add?');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [sdkAssistantText('Could you clarify which service you want to add?')],
+    });
     const events = await collect(session.sendMessage('add a service', testContext));
 
     expect(events).toHaveLength(2);
@@ -372,7 +423,7 @@ describe('BridgeSession — Scenario 5: errorScenario', () => {
       })();
     };
 
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     const events = await collect(session.sendMessage('analyze', testContext));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'Processing your request...' });
@@ -412,7 +463,7 @@ describe('BridgeSession — Scenario 6: abortMidStream', () => {
       })();
     };
 
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     const events: ChatEvent[] = [];
 
     // We need to consume the stream async and abort once we see the first text.
@@ -443,19 +494,15 @@ describe('BridgeSession — Scenario 6: abortMidStream', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — Scenario 7: multipleMutations', () => {
   it('translates multiple tool_use + tool_result pairs', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-7');
-        yield sdkAssistantToolUse('bash', { command: 'archcanvas add-node --id svc-a --type compute/service --json' }, 'call-1');
-        yield sdkUserToolResult('call-1', '{"ok":true,"nodeId":"svc-a"}');
-        yield sdkAssistantToolUse('bash', { command: 'archcanvas add-edge --from svc-a --to db --json' }, 'call-2');
-        yield sdkUserToolResult('call-2', '{"ok":true}');
-        yield sdkAssistantText('Added service and connected it to the database.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkAssistantToolUse('bash', { command: 'archcanvas add-node --id svc-a --type compute/service --json' }, 'call-1'),
+        sdkUserToolResult('call-1', '{"ok":true,"nodeId":"svc-a"}'),
+        sdkAssistantToolUse('bash', { command: 'archcanvas add-edge --from svc-a --to db --json' }, 'call-2'),
+        sdkUserToolResult('call-2', '{"ok":true}'),
+        sdkAssistantText('Added service and connected it to the database.'),
+      ],
+    });
     const events = await collect(session.sendMessage('add service and connect', testContext));
 
     // Expected: tool_call, tool_result, tool_call, tool_result, text, done
@@ -498,14 +545,7 @@ describe('BridgeSession — lifecycle', () => {
   });
 
   it('throws after destroy()', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-destroyed');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession();
     session.destroy();
 
     await expect(async () => {
@@ -520,7 +560,7 @@ describe('BridgeSession — lifecycle', () => {
       })();
     };
 
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
 
     // Should not throw
     expect(() => {
@@ -537,26 +577,16 @@ describe('BridgeSession — lifecycle', () => {
     // This test verifies the permission flow through canUseTool.
     // We create a mock that invokes canUseTool, which creates a pending promise.
     // The test then calls respondToPermission to resolve it.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool ?? null;
-      return (async function* () {
-        yield sdkSystemInit('session-perm');
-        yield sdkAssistantText('Done.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession({
+      yields: [sdkAssistantText('Done.')],
+    });
 
     // Start the stream to capture the canUseTool callback
     await collect(session.sendMessage('test', testContext));
-    expect(canUseToolCallback).not.toBeNull();
+    expect(canUseTool()).not.toBeNull();
 
     // Now simulate the SDK calling canUseTool
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash',
       { command: 'echo hi' },
       { signal: new AbortController().signal, toolUseID: 'perm-123' },
@@ -573,29 +603,16 @@ describe('BridgeSession — lifecycle', () => {
 
   it('onPermissionRequest callback fires when canUseTool is invoked', async () => {
     const permissionEvents: Array<{ id: string; tool: string; command: string }> = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool ?? null;
-      return (async function* () {
-        yield sdkSystemInit('session-perm-cb');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({
-      cwd: '/tmp',
-      queryFn: mockQueryFn,
+    const { session, canUseTool } = setupSession({
       onPermissionRequest: (event) => {
-        permissionEvents.push(event);
+        permissionEvents.push(event as { id: string; tool: string; command: string });
       },
     });
 
     await collect(session.sendMessage('test', testContext));
 
     // Simulate SDK calling canUseTool
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash',
       { command: 'archcanvas list --json' },
       { signal: new AbortController().signal, toolUseID: 'perm-cb-1' },
@@ -617,21 +634,10 @@ describe('BridgeSession — lifecycle', () => {
   });
 
   it('respondToPermission with denial returns deny result', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool ?? null;
-      return (async function* () {
-        yield sdkSystemInit('session-perm-deny');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession();
     await collect(session.sendMessage('test', testContext));
 
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash',
       { command: 'rm -rf /' },
       { signal: new AbortController().signal, toolUseID: 'perm-456' },
@@ -646,21 +652,10 @@ describe('BridgeSession — lifecycle', () => {
   });
 
   it('destroy() resolves pending permissions with false', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool ?? null;
-      return (async function* () {
-        yield sdkSystemInit('session-perm-destroy');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession();
     await collect(session.sendMessage('test', testContext));
 
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash',
       { command: 'echo hi' },
       { signal: new AbortController().signal, toolUseID: 'perm-789' },
@@ -678,7 +673,7 @@ describe('BridgeSession — lifecycle', () => {
       throw new Error('SDK initialization failed');
     };
 
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     const events = await collect(session.sendMessage('test', testContext));
 
     expect(events).toHaveLength(1);
@@ -702,7 +697,7 @@ describe('BridgeSession — lifecycle', () => {
       })();
     };
 
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
 
     // First call — no resume
     await collect(session.sendMessage('first', testContext));
@@ -729,7 +724,7 @@ describe('BridgeSession — session settings', () => {
         yield sdkResultSuccess();
       })();
     };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     await collect(session.sendMessage('first', testContext));
     expect((capturedArgs[0].options as Record<string, unknown>)?.permissionMode).toBe('default');
     session.setPermissionMode('acceptEdits');
@@ -747,7 +742,7 @@ describe('BridgeSession — session settings', () => {
         yield sdkResultSuccess();
       })();
     };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     await collect(session.sendMessage('first', testContext));
     expect((capturedArgs[0].options as Record<string, unknown>)?.effort).toBe('high');
     session.setEffort('low');
@@ -762,15 +757,7 @@ describe('BridgeSession — session settings', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — SDK options', () => {
   it('passes tools (not allowedTools), maxTurns, includePartialMessages, and toolConfig', async () => {
-    const capturedArgs: Array<Record<string, unknown>> = [];
-    const mockQueryFn: SDKQueryFn = (args) => {
-      capturedArgs.push(args as Record<string, unknown>);
-      return (async function* () {
-        yield sdkSystemInit('session-opts');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, capturedArgs } = setupSession();
     await collect(session.sendMessage('test', testContext));
     const opts = capturedArgs[0].options as Record<string, unknown>;
     // Tools should be in `tools` (available to the model), NOT `allowedTools`
@@ -802,24 +789,13 @@ describe('BridgeSession — SDK options', () => {
 describe('BridgeSession — permission context forwarding', () => {
   it('onPermissionRequest receives blockedPath and decisionReason from canUseTool', async () => {
     const permissionEvents: Array<Record<string, unknown>> = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-context');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({
-      cwd: '/tmp',
-      queryFn: mockQueryFn,
+    const { session, canUseTool } = setupSession({
       onPermissionRequest: (event) => {
         permissionEvents.push(event);
       },
     });
     await collect(session.sendMessage('test', testContext));
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Write',
       { file_path: '/src/main.ts', content: 'hello' },
       {
@@ -844,18 +820,7 @@ describe('BridgeSession — permission context forwarding', () => {
 describe('BridgeSession — permission suggestion forwarding', () => {
   it('forwards opts.suggestions as permissionSuggestions in onPermissionRequest', async () => {
     const permissionEvents: Array<Record<string, unknown>> = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-suggestions');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({
-      cwd: '/tmp',
-      queryFn: mockQueryFn,
+    const { session, canUseTool } = setupSession({
       onPermissionRequest: (event) => {
         permissionEvents.push(event);
       },
@@ -865,7 +830,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
       { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow' as const, destination: 'localSettings' },
       { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test' }], behavior: 'allow' as const, destination: 'localSettings' },
     ];
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash', { command: 'npm test' },
       {
         signal: new AbortController().signal,
@@ -882,24 +847,13 @@ describe('BridgeSession — permission suggestion forwarding', () => {
 
   it('omits permissionSuggestions when opts.suggestions is undefined', async () => {
     const permissionEvents: Array<Record<string, unknown>> = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-no-sug');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({
-      cwd: '/tmp',
-      queryFn: mockQueryFn,
+    const { session, canUseTool } = setupSession({
       onPermissionRequest: (event) => {
         permissionEvents.push(event);
       },
     });
     await collect(session.sendMessage('test', testContext));
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash', { command: 'echo hi' },
       { signal: new AbortController().signal, toolUseID: 'perm-nosug-1' },
     );
@@ -912,18 +866,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
 
   it('forwards addDirectories suggestions from opts.suggestions', async () => {
     const permissionEvents: Array<Record<string, unknown>> = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-dir-sug');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({
-      cwd: '/tmp',
-      queryFn: mockQueryFn,
+    const { session, canUseTool } = setupSession({
       onPermissionRequest: (event) => {
         permissionEvents.push(event);
       },
@@ -932,7 +875,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
     const suggestions = [
       { type: 'addDirectories' as const, directories: ['/Users/x/project/src'], destination: 'localSettings' },
     ];
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Write', { file_path: '/Users/x/project/src/foo.ts', content: 'bar' },
       {
         signal: new AbortController().signal,
@@ -955,18 +898,9 @@ describe('BridgeSession — permission suggestion forwarding', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — respondToPermission options', () => {
   it('respondToPermission with updatedPermissions returns SDK-shaped suggestions in allow result', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-upd-perms');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession();
     await collect(session.sendMessage('test', testContext));
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash', { command: 'npm test' },
       { signal: new AbortController().signal, toolUseID: 'perm-upd-1' },
     );
@@ -983,18 +917,9 @@ describe('BridgeSession — respondToPermission options', () => {
   });
 
   it('respondToPermission with addDirectories suggestion returns it in allow result', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-add-dirs');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession();
     await collect(session.sendMessage('test', testContext));
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Write', { file_path: '/src/foo.ts', content: 'bar' },
       { signal: new AbortController().signal, toolUseID: 'perm-dir-1' },
     );
@@ -1010,18 +935,9 @@ describe('BridgeSession — respondToPermission options', () => {
   });
 
   it('respondToPermission with interrupt returns it in deny result', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let canUseToolCallback: any = null;
-    const mockQueryFn: SDKQueryFn = (args) => {
-      canUseToolCallback = args.options?.canUseTool;
-      return (async function* () {
-        yield sdkSystemInit('session-interrupt');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, canUseTool } = setupSession();
     await collect(session.sendMessage('test', testContext));
-    const permPromise = canUseToolCallback!(
+    const permPromise = canUseTool()(
       'Bash', { command: 'rm -rf /' },
       { signal: new AbortController().signal, toolUseID: 'perm-int-1' },
     );
@@ -1038,15 +954,7 @@ describe('BridgeSession — respondToPermission options', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — no custom hooks', () => {
   it('does not pass PreToolUse hooks (relies on SDK built-in permissions)', async () => {
-    const capturedArgs: Array<Record<string, unknown>> = [];
-    const mockQueryFn: SDKQueryFn = (args) => {
-      capturedArgs.push(args as Record<string, unknown>);
-      return (async function* () {
-        yield sdkSystemInit('session-hooks');
-        yield sdkResultSuccess();
-      })();
-    };
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session, capturedArgs } = setupSession();
     await collect(session.sendMessage('test', testContext));
     const opts = capturedArgs[0].options as Record<string, unknown>;
     expect(opts.hooks).toBeUndefined();
@@ -1059,16 +967,12 @@ describe('BridgeSession — no custom hooks', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — stream_event translation', () => {
   it('yields TextEvents from text_delta stream events', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-stream-1');
-        yield sdkStreamEvent('text_delta', { text: 'Hello ' });
-        yield sdkStreamEvent('text_delta', { text: 'world' });
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkStreamEvent('text_delta', { text: 'Hello ' }),
+        sdkStreamEvent('text_delta', { text: 'world' }),
+      ],
+    });
     const events = await collect(session.sendMessage('hi', testContext));
 
     const textEvents = events.filter(e => e.type === 'text');
@@ -1081,16 +985,12 @@ describe('BridgeSession — stream_event translation', () => {
   });
 
   it('yields ThinkingEvents from thinking_delta stream events', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-stream-think');
-        yield sdkStreamEvent('thinking_delta', { thinking: 'Let me consider...' });
-        yield sdkStreamEvent('thinking_delta', { thinking: ' the options.' });
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkStreamEvent('thinking_delta', { thinking: 'Let me consider...' }),
+        sdkStreamEvent('thinking_delta', { thinking: ' the options.' }),
+      ],
+    });
     const events = await collect(session.sendMessage('think', testContext));
 
     const thinkingEvents = events.filter(e => e.type === 'thinking');
@@ -1102,19 +1002,15 @@ describe('BridgeSession — stream_event translation', () => {
   });
 
   it('skips non-content_block_delta stream events', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-stream-skip');
-        yield sdkStreamEventOther('message_start');
-        yield sdkStreamEventOther('content_block_start');
-        yield sdkStreamEvent('text_delta', { text: 'Only this' });
-        yield sdkStreamEventOther('content_block_stop');
-        yield sdkStreamEventOther('message_stop');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkStreamEventOther('message_start'),
+        sdkStreamEventOther('content_block_start'),
+        sdkStreamEvent('text_delta', { text: 'Only this' }),
+        sdkStreamEventOther('content_block_stop'),
+        sdkStreamEventOther('message_stop'),
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     const textEvents = events.filter(e => e.type === 'text');
@@ -1130,20 +1026,16 @@ describe('BridgeSession — stream_event translation', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — no double text', () => {
   it('skips text from final assistant message when stream_event deltas were received', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-no-double');
+    const { session } = setupSession({
+      yields: [
         // Streaming deltas first
-        yield sdkStreamEvent('text_delta', { text: 'Hello ' });
-        yield sdkStreamEvent('text_delta', { text: 'world' });
+        sdkStreamEvent('text_delta', { text: 'Hello ' }),
+        sdkStreamEvent('text_delta', { text: 'world' }),
         // Final assistant message (same text, plus a tool_use)
-        yield sdkAssistantMixed('Hello world', 'Bash', { command: 'ls' }, 'call-1');
-        yield sdkUserToolResult('call-1', 'file.txt');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+        sdkAssistantMixed('Hello world', 'Bash', { command: 'ls' }, 'call-1'),
+        sdkUserToolResult('call-1', 'file.txt'),
+      ],
+    });
     const events = await collect(session.sendMessage('hi', testContext));
 
     // Text should appear only from streaming (2 deltas), not from the final assistant message
@@ -1165,18 +1057,14 @@ describe('BridgeSession — no double text', () => {
   });
 
   it('skips thinking from final assistant message when stream_event deltas were received', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-no-double-think');
+    const { session } = setupSession({
+      yields: [
         // Streaming thinking deltas
-        yield sdkStreamEvent('thinking_delta', { thinking: 'Hmm...' });
+        sdkStreamEvent('thinking_delta', { thinking: 'Hmm...' }),
         // Final assistant message with the complete thinking block
-        yield sdkAssistantThinking('Hmm...');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+        sdkAssistantThinking('Hmm...'),
+      ],
+    });
     const events = await collect(session.sendMessage('think', testContext));
 
     // Thinking should appear only once (from streaming)
@@ -1189,15 +1077,9 @@ describe('BridgeSession — no double text', () => {
 
   it('emits text from assistant message when no stream_event deltas were received', async () => {
     // Fallback: if the SDK doesn't emit stream_events, the assistant message text is used
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-fallback');
-        yield sdkAssistantText('No streaming here.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [sdkAssistantText('No streaming here.')],
+    });
     const events = await collect(session.sendMessage('hi', testContext));
 
     const textEvents = events.filter(e => e.type === 'text');
@@ -1213,17 +1095,13 @@ describe('BridgeSession — no double text', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — status messages', () => {
   it('yields StatusEvent from SDK status messages', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-status');
-        yield sdkStatus('Reading file...');
-        yield sdkStatus('Running command...');
-        yield sdkAssistantText('Done.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkStatus('Reading file...'),
+        sdkStatus('Running command...'),
+        sdkAssistantText('Done.'),
+      ],
+    });
     const events = await collect(session.sendMessage('do stuff', testContext));
 
     const statusEvents = events.filter(e => e.type === 'status');
@@ -1235,15 +1113,11 @@ describe('BridgeSession — status messages', () => {
   });
 
   it('skips status messages with empty content', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-status-empty');
-        yield { type: 'status', uuid: 'st-1', session_id: 'test', message: '' };
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        { type: 'status', uuid: 'st-1', session_id: 'test', message: '' } as SDKMessage,
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     const statusEvents = events.filter(e => e.type === 'status');
@@ -1258,16 +1132,12 @@ describe('BridgeSession — status messages', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — tool_progress messages', () => {
   it('yields StatusEvent from SDK tool_progress messages', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-progress');
-        yield sdkToolProgress('Building project...');
-        yield sdkToolProgress('Compilation complete.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkToolProgress('Building project...'),
+        sdkToolProgress('Compilation complete.'),
+      ],
+    });
     const events = await collect(session.sendMessage('build', testContext));
 
     const statusEvents = events.filter(e => e.type === 'status');
@@ -1279,15 +1149,11 @@ describe('BridgeSession — tool_progress messages', () => {
   });
 
   it('falls back to message field when content is missing', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-progress-msg');
-        yield { type: 'tool_progress', uuid: 'tp-1', session_id: 'test', message: 'via message field', tool_use_id: 'tool-1' };
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        { type: 'tool_progress', uuid: 'tp-1', session_id: 'test', message: 'via message field', tool_use_id: 'tool-1' } as SDKMessage,
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     const statusEvents = events.filter(e => e.type === 'status');
@@ -1303,16 +1169,12 @@ describe('BridgeSession — tool_progress messages', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — rate_limit messages', () => {
   it('yields RateLimitEvent from SDK rate_limit messages', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-ratelimit');
-        yield sdkRateLimit('Rate limited. Retrying in 30s...');
-        yield sdkAssistantText('After rate limit.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkRateLimit('Rate limited. Retrying in 30s...'),
+        sdkAssistantText('After rate limit.'),
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
@@ -1331,15 +1193,11 @@ describe('BridgeSession — rate_limit messages', () => {
   });
 
   it('uses default message when rate_limit has no message', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-ratelimit-default');
-        yield { type: 'rate_limit', uuid: 'rl-1', session_id: 'test' };
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        { type: 'rate_limit', uuid: 'rl-1', session_id: 'test' } as SDKMessage,
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
@@ -1358,16 +1216,12 @@ describe('BridgeSession — rate_limit messages', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — prompt_suggestion messages', () => {
   it('ignores prompt_suggestion messages (no events emitted)', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-suggestions');
-        yield sdkAssistantText('Here is my answer.');
-        yield sdkPromptSuggestion(['Tell me more', 'Show details']);
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    const { session } = setupSession({
+      yields: [
+        sdkAssistantText('Here is my answer.'),
+        sdkPromptSuggestion(['Tell me more', 'Show details']),
+      ],
+    });
     const events = await collect(session.sendMessage('test', testContext));
 
     // Should only have text + done, no prompt_suggestion events
@@ -1382,25 +1236,21 @@ describe('BridgeSession — prompt_suggestion messages', () => {
 // ---------------------------------------------------------------------------
 describe('BridgeSession — full streaming scenario', () => {
   it('handles a realistic mix of stream_event, status, assistant, and result', async () => {
-    const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
-        yield sdkSystemInit('session-full');
+    const { session } = setupSession({
+      yields: [
         // Streaming text deltas
-        yield sdkStreamEvent('text_delta', { text: 'I will ' });
-        yield sdkStreamEvent('text_delta', { text: 'read your file.' });
+        sdkStreamEvent('text_delta', { text: 'I will ' }),
+        sdkStreamEvent('text_delta', { text: 'read your file.' }),
         // Status while reading
-        yield sdkStatus('Reading file...');
+        sdkStatus('Reading file...'),
         // Final assistant message (text already streamed, but has tool_use)
-        yield sdkAssistantMixed('I will read your file.', 'Read', { file_path: '/src/main.ts' }, 'read-1');
-        yield sdkUserToolResult('read-1', 'export function main() {}');
+        sdkAssistantMixed('I will read your file.', 'Read', { file_path: '/src/main.ts' }, 'read-1'),
+        sdkUserToolResult('read-1', 'export function main() {}'),
         // More streaming for the follow-up
-        yield sdkStreamEvent('text_delta', { text: 'Found the main function.' });
-        yield sdkAssistantText('Found the main function.');
-        yield sdkResultSuccess();
-      })();
-    };
-
-    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+        sdkStreamEvent('text_delta', { text: 'Found the main function.' }),
+        sdkAssistantText('Found the main function.'),
+      ],
+    });
     const events = await collect(session.sendMessage('read main', testContext));
 
     const types = events.map(e => e.type);

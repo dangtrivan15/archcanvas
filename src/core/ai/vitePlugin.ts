@@ -12,6 +12,10 @@
  *   POST /__archcanvas_ai/api/remove-node
  *   POST /__archcanvas_ai/api/remove-edge
  *   POST /__archcanvas_ai/api/import
+ *   POST /__archcanvas_ai/api/list
+ *   POST /__archcanvas_ai/api/describe
+ *   POST /__archcanvas_ai/api/search
+ *   POST /__archcanvas_ai/api/catalog
  */
 
 import type { Plugin } from 'vite';
@@ -34,15 +38,21 @@ import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermis
 const WS_PATH = '/__archcanvas_ai';
 const API_PREFIX = '/__archcanvas_ai/api/';
 const HEALTH_PATH = '/__archcanvas_ai/health';
-const MUTATION_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 /** Maps HTTP route segments to store action names sent to the browser. */
 const ROUTE_TO_ACTION: Record<string, string> = {
+  // writes
   'add-node': 'addNode',
   'add-edge': 'addEdge',
   'remove-node': 'removeNode',
   'remove-edge': 'removeEdge',
   'import': 'import',
+  // reads
+  'list': 'list',
+  'describe': 'describe',
+  'search': 'search',
+  'catalog': 'catalog',
 };
 
 // ---------------------------------------------------------------------------
@@ -71,8 +81,8 @@ export interface StoreActionResult {
 export interface AiBridgePluginOptions {
   /** Injectable SDK query function for bridge sessions. */
   queryFn?: SDKQueryFn;
-  /** Timeout (ms) for mutation relay to the browser. Defaults to MUTATION_TIMEOUT_MS (10 s). */
-  mutationTimeoutMs?: number;
+  /** Timeout (ms) for request relay to the browser. Defaults to REQUEST_TIMEOUT_MS (10 s). */
+  requestTimeoutMs?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,8 +95,8 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
   /** Active browser WebSocket connections. */
   const browserClients = new Set<WebSocket>();
 
-  /** Pending HTTP mutation requests waiting for browser response. */
-  const pendingMutations = new Map<
+  /** Pending HTTP requests waiting for browser response. */
+  const pendingRequests = new Map<
     string,
     {
       resolve: (result: StoreActionResult) => void;
@@ -182,17 +192,17 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
             }
 
             // Wait for browser response with timeout
-            const timeoutMs = pluginOptions?.mutationTimeoutMs ?? MUTATION_TIMEOUT_MS;
+            const timeoutMs = pluginOptions?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
             const timer = setTimeout(() => {
-              pendingMutations.delete(correlationId);
+              pendingRequests.delete(correlationId);
               res.writeHead(504, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_TIMEOUT', message: 'Browser did not respond in time' } }));
             }, timeoutMs);
 
-            pendingMutations.set(correlationId, {
+            pendingRequests.set(correlationId, {
               resolve: (result) => {
                 clearTimeout(timer);
-                pendingMutations.delete(correlationId);
+                pendingRequests.delete(correlationId);
                 let status: number;
                 if (result.ok) {
                   status = 200;
@@ -286,7 +296,7 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
           // Handle store_action_result from browser (response to mutation relay)
           if ('type' in msg && (msg as StoreActionResult).type === 'store_action_result') {
             const result = msg as StoreActionResult;
-            const pending = pendingMutations.get(result.correlationId);
+            const pending = pendingRequests.get(result.correlationId);
             if (pending) {
               pending.resolve(result);
             }
@@ -380,7 +390,7 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
           }
 
           // Reject any pending mutations that were waiting on this client
-          for (const [id, pending] of pendingMutations) {
+          for (const [id, pending] of pendingRequests) {
             clearTimeout(pending.timer);
             pending.resolve({
               type: 'store_action_result',

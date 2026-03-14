@@ -9,7 +9,6 @@ import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { importCommand } from '@/cli/commands/import';
 import { CLIError } from '@/cli/errors';
 import type { CanvasFile } from '@/types/schema';
-import type { CLIContext } from '@/cli/context';
 
 // Mock node:fs/promises readFile
 const mockReadFile = vi.fn<(path: string, encoding: string) => Promise<string>>();
@@ -22,6 +21,19 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
       readFile: (path: string, encoding: string) => mockReadFile(path, encoding),
     },
     readFile: (path: string, encoding: string) => mockReadFile(path, encoding),
+  };
+});
+
+// Import tests need a real fs for saveAll — use a shared ref the mock can access
+let inMemFs: InMemoryFileSystem;
+
+vi.mock('@/cli/context', async () => {
+  const actual = await vi.importActual('@/cli/context');
+  return {
+    ...actual,
+    loadContext: vi.fn().mockImplementation(() =>
+      Promise.resolve({ fs: inMemFs, bridgeUrl: null }),
+    ),
   };
 });
 
@@ -38,9 +50,7 @@ function makeMainYaml(): string {
   return serializeCanvasFile(seedData);
 }
 
-let inMemFs: InMemoryFileSystem;
-
-async function setupStores(): Promise<CLIContext> {
+async function setupStores(): Promise<void> {
   useFileStore.setState({
     project: null,
     dirtyCanvases: new Set(),
@@ -53,8 +63,6 @@ async function setupStores(): Promise<CLIContext> {
 
   await useFileStore.getState().openProject(inMemFs);
   await useRegistryStore.getState().initialize();
-
-  return { fs: inMemFs };
 }
 
 function captureStdout(): { output: string; restore: () => void } {
@@ -91,11 +99,9 @@ entities:
 `;
 
 describe('importCommand', () => {
-  let ctx: CLIContext;
-
   beforeEach(async () => {
     vi.clearAllMocks();
-    ctx = await setupStores();
+    await setupStores();
   });
 
   // C5i.1, C5i.2: imports nodes, edges, entities from YAML
@@ -104,7 +110,7 @@ describe('importCommand', () => {
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/import.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/import.yaml' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.added.nodes).toBe(2);
@@ -140,7 +146,7 @@ nodes:
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/dupes.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/dupes.yaml' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       // First node succeeds, second is duplicate, third succeeds
@@ -160,9 +166,9 @@ nodes:
     const saveAllSpy = vi.spyOn(useFileStore.getState(), 'saveAll');
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/import.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/import.yaml' }, { json: true });
       expect(saveAllSpy).toHaveBeenCalledTimes(1);
-      expect(saveAllSpy).toHaveBeenCalledWith(ctx.fs);
+      expect(saveAllSpy).toHaveBeenCalledWith(inMemFs);
     } finally {
       capture.restore();
       saveAllSpy.mockRestore();
@@ -175,7 +181,7 @@ nodes:
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/import.yaml' }, { json: false }, ctx);
+      await importCommand({ file: '/tmp/import.yaml' }, { json: false });
       expect(capture.output).toBeTruthy();
       expect(() => JSON.parse(capture.output)).toThrow();
     } finally {
@@ -189,7 +195,7 @@ nodes:
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/import.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/import.yaml' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.added).toHaveProperty('nodes');
@@ -206,11 +212,11 @@ nodes:
     mockReadFile.mockRejectedValue(new Error('ENOENT: no such file'));
 
     await expect(
-      importCommand({ file: '/tmp/missing.yaml' }, { json: true }, ctx),
+      importCommand({ file: '/tmp/missing.yaml' }, { json: true }),
     ).rejects.toThrow(CLIError);
 
     try {
-      await importCommand({ file: '/tmp/missing.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/missing.yaml' }, { json: true });
     } catch (err) {
       expect((err as CLIError).code).toBe('INVALID_ARGS');
     }
@@ -221,7 +227,7 @@ nodes:
     mockReadFile.mockResolvedValue('}{not valid yaml{{');
 
     await expect(
-      importCommand({ file: '/tmp/bad.yaml' }, { json: true }, ctx),
+      importCommand({ file: '/tmp/bad.yaml' }, { json: true }),
     ).rejects.toThrow(CLIError);
   });
 
@@ -230,11 +236,11 @@ nodes:
     mockReadFile.mockResolvedValue(validImportYaml);
 
     await expect(
-      importCommand({ file: '/tmp/import.yaml', scope: 'nonexistent' }, { json: true }, ctx),
+      importCommand({ file: '/tmp/import.yaml', scope: 'nonexistent' }, { json: true }),
     ).rejects.toThrow(CLIError);
 
     try {
-      await importCommand({ file: '/tmp/import.yaml', scope: 'nonexistent' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/import.yaml', scope: 'nonexistent' }, { json: true });
     } catch (err) {
       expect((err as CLIError).code).toBe('CANVAS_NOT_FOUND');
     }
@@ -252,7 +258,7 @@ nodes:
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/nodes-only.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/nodes-only.yaml' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.added.nodes).toBe(1);
@@ -277,7 +283,7 @@ edges:
 
     const capture = captureStdout();
     try {
-      await importCommand({ file: '/tmp/bad-edges.yaml' }, { json: true }, ctx);
+      await importCommand({ file: '/tmp/bad-edges.yaml' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.added.edges).toBe(0);

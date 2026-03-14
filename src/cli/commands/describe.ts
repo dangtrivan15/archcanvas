@@ -1,7 +1,7 @@
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
-import { resolveCanvasId } from '../context';
+import { loadContext, resolveCanvasId, bridgeRequest } from '../context';
 import { CLIError } from '../errors';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
@@ -12,7 +12,17 @@ export interface DescribeFlags {
   scope?: string;
 }
 
-export function describeCommand(flags: DescribeFlags, options: OutputOptions): void {
+export async function describeCommand(flags: DescribeFlags, options: OutputOptions, projectPath?: string): Promise<void> {
+  const ctx = await loadContext(projectPath);
+
+  if (ctx.bridgeUrl) {
+    const result = await bridgeRequest(ctx.bridgeUrl, 'describe', {
+      canvasId: resolveCanvasId(flags.scope),
+      id: flags.id,
+    });
+    printSuccess(result.data ?? result, options);
+    return;
+  }
   if (flags.id) {
     describeNode(flags.id, flags.scope, options);
   } else {
