@@ -23,6 +23,7 @@ import type {
   SetPermissionModeClientMessage,
   SetEffortClientMessage,
   PermissionResponseClientMessage,
+  QuestionResponseClientMessage,
 } from './types';
 import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermissionRequest, type OnAskUserQuestion } from './claudeCodeBridge';
 
@@ -96,23 +97,28 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
   /** Bridge sessions keyed by WebSocket client. */
   const sessions = new Map<WebSocket, BridgeSession>();
 
+  // --- Guard against SDK unhandled rejections ---
+  // The Claude Agent SDK has a bug where handleControlRequest doesn't
+  // catch transport.write() errors after the session is aborted.  This
+  // causes an unhandled rejection ("Operation aborted") that crashes the
+  // Vite dev server.  We catch it here so the server stays up.
+  //
+  // Extracted as a named reference so it can be removed on server close,
+  // preventing listener leaks across test runs / HMR restarts.
+  const rejectionHandler = (reason: unknown) => {
+    if (reason instanceof Error && reason.message === 'Operation aborted') {
+      // Known SDK issue: safe to suppress during session cleanup.
+      return;
+    }
+    // Log unexpected rejections without crashing.
+    console.error('[archcanvas-ai-bridge] Unhandled rejection:', reason);
+  };
+
   return {
     name: 'archcanvas-ai-bridge',
 
     configureServer(server) {
-      // --- Guard against SDK unhandled rejections ---
-      // The Claude Agent SDK has a bug where handleControlRequest doesn't
-      // catch transport.write() errors after the session is aborted.  This
-      // causes an unhandled rejection ("Operation aborted") that crashes the
-      // Vite dev server.  We catch it here so the server stays up.
-      process.on('unhandledRejection', (reason: unknown) => {
-        if (reason instanceof Error && reason.message === 'Operation aborted') {
-          // Known SDK issue: safe to suppress during session cleanup.
-          return;
-        }
-        // Log unexpected rejections without crashing.
-        console.error('[archcanvas-ai-bridge] Unhandled rejection:', reason);
-      });
+      process.on('unhandledRejection', rejectionHandler);
 
       // --- HTTP middleware ---
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
@@ -212,6 +218,12 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
       // --- WebSocket server ---
       const httpServer = server.httpServer;
       if (!httpServer) return;
+
+      // Clean up the unhandledRejection listener when the server shuts down
+      // to prevent listener leaks across test runs / HMR restarts.
+      httpServer.on('close', () => {
+        process.off('unhandledRejection', rejectionHandler);
+      });
 
       wss = new WebSocketServer({ noServer: true });
 
@@ -352,10 +364,8 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
               // User answered an AskUserQuestion card.  Forward the answers
               // record to the bridge, which unblocks the canUseTool callback
               // and returns them to the SDK as updatedInput.
-              bridgeSession.respondToQuestion(
-                (clientMsg as any).id,
-                (clientMsg as any).answers,
-              );
+              const qMsg = clientMsg as QuestionResponseClientMessage;
+              bridgeSession.respondToQuestion(qMsg.id, qMsg.answers);
               break;
             }
           }
