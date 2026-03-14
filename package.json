@@ -13,6 +13,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:cli": "vitest run --project cli",
     "test:e2e": "npm run build && playwright test",
     "lint": "eslint src/"
   },

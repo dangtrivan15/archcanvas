@@ -13,6 +13,7 @@ import type {
   PermissionSuggestion,
 } from './types';
 import { buildSystemPrompt } from './systemPrompt';
+import { loadPermissions, savePermission, isAutoApproved } from './permissionStore';
 
 // ---------------------------------------------------------------------------
 // SDK function type — dependency injection for testability
@@ -184,6 +185,9 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   const pendingPermissions = new Map<string, PendingPermission>();
   const pendingQuestions = new Map<string, PendingQuestion>();
   // TODO: store conversation history for session context summary injection.
+
+  // Load persisted "Always Allow" rules from disk
+  let savedPermissions = loadPermissions(cwd);
 
   async function resolveQueryFn(): Promise<SDKQueryFn> {
     if (queryFn) return queryFn;
@@ -474,6 +478,12 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               // -----------------------------------------------------------------
               // Regular tool permission request (Bash, Write, etc.)
               // -----------------------------------------------------------------
+
+              // Auto-approve if the tool matches a saved "Always Allow" rule
+              if (isAutoApproved(savedPermissions, toolName, input)) {
+                return { behavior: 'allow' as const, updatedInput: input };
+              }
+
               const command = typeof input.command === 'string'
                 ? input.command
                 : `${toolName}(${JSON.stringify(input)})`;
@@ -539,6 +549,14 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         interrupt?: boolean;
       },
     ): void {
+      // Persist "Always Allow" rules to disk and update in-memory cache
+      if (options?.updatedPermissions) {
+        for (const perm of options.updatedPermissions) {
+          savePermission(cwd, perm);
+        }
+        savedPermissions = loadPermissions(cwd);
+      }
+
       const pending = pendingPermissions.get(id);
       if (pending) {
         pending.resolve({
