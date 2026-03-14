@@ -325,6 +325,11 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         const sdkStream = fn({
           prompt: content,
           options: {
+            // We use a custom system prompt (not the SDK's preset) because the
+            // preset would override our ArchCanvas-specific context (CLI commands,
+            // project info).  Future: consider `{ type: 'preset', preset:
+            // 'claude_code', append: buildSystemPrompt(context) }` to get the
+            // full Claude Code prompt + our additions.
             systemPrompt,
             cwd,
             abortController,
