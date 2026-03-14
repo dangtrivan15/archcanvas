@@ -524,17 +524,60 @@ describe('WebSocketClaudeCodeProvider', () => {
   });
 
   // -----------------------------------------------------------------------
-  // abort
+  // interrupt
   // -----------------------------------------------------------------------
 
-  describe('abort', () => {
-    it('sends abort message over WebSocket', () => {
+  describe('interrupt', () => {
+    it('sends interrupt message over WebSocket', () => {
       const ws = connectProvider();
-      provider.abort();
+      provider.interrupt();
       expect(ws.sent.length).toBe(1);
 
       const msg = JSON.parse(ws.sent[0]);
-      expect(msg.type).toBe('abort');
+      expect(msg.type).toBe('interrupt');
+    });
+
+    it('terminates the active event stream immediately', async () => {
+      connectProvider();
+      const stream = provider.sendMessage('hello', defaultContext);
+
+      // Interrupt before any events arrive — the stream should terminate
+      // without ever receiving a done/error event from the server
+      provider.interrupt();
+
+      const events: ChatEvent[] = [];
+      for await (const event of stream) {
+        events.push(event);
+      }
+
+      // Stream terminated cleanly with no events
+      expect(events.length).toBe(0);
+    });
+
+    it('ignores events arriving after interrupt', async () => {
+      const ws = connectProvider();
+      const stream = provider.sendMessage('hello', defaultContext);
+
+      const chatMsg = JSON.parse(ws.sent[0]);
+      const requestId = chatMsg.requestId;
+
+      // Interrupt immediately
+      provider.interrupt();
+
+      // Simulate events arriving after interrupt (from server-side lag)
+      ws.simulateMessage(JSON.stringify({
+        type: 'text',
+        requestId,
+        content: 'late text',
+      }));
+
+      const events: ChatEvent[] = [];
+      for await (const event of stream) {
+        events.push(event);
+      }
+
+      // No events should be collected — interrupt happened before any were queued
+      expect(events.length).toBe(0);
     });
   });
 

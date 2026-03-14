@@ -54,6 +54,9 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
   // Listeners keyed by requestId, for routing incoming ChatEvents
   private eventListeners = new Map<string, (event: ChatEvent) => void>();
 
+  /** Abort callback for the current event stream (set during sendMessage). */
+  private currentStreamAbort: (() => void) | null = null;
+
   get available(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
   }
@@ -102,15 +105,24 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
       }),
     );
 
-    return this.createEventStream(requestId);
+    const { stream, abort } = this.createEventStream(requestId);
+    this.currentStreamAbort = abort;
+    return stream;
   }
 
   loadHistory(messages: ChatMessage[]): void {
     this.send({ type: 'load_history', messages });
   }
 
-  abort(): void {
-    this.send({ type: 'abort' });
+  interrupt(): void {
+    // Immediately terminate the browser-side event stream so the
+    // for-await loop in chatStore.sendMessage breaks right away.
+    if (this.currentStreamAbort) {
+      this.currentStreamAbort();
+      this.currentStreamAbort = null;
+    }
+    // Tell the server to interrupt the SDK turn (preserves session context)
+    this.send({ type: 'interrupt' });
   }
 
   /** Send a permission response back to the bridge. */
@@ -600,15 +612,17 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     return { nodeTypes };
   }
 
-  private createEventStream(requestId: string): AsyncIterable<ChatEvent> {
+  private createEventStream(requestId: string): { stream: AsyncIterable<ChatEvent>; abort: () => void } {
     const listeners = this.eventListeners;
 
     // Use a queue-based approach for the async generator
     const queue: ChatEvent[] = [];
     let resolve: (() => void) | null = null;
     let done = false;
+    let aborted = false;
 
     const listener = (event: ChatEvent) => {
+      if (aborted) return;
       queue.push(event);
       if (resolve) {
         resolve();
@@ -621,27 +635,39 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
 
     listeners.set(requestId, listener);
 
+    /** Immediately terminate the generator. */
+    const abort = () => {
+      aborted = true;
+      done = true;
+      // Unblock the generator if it's awaiting the next event
+      if (resolve) {
+        resolve();
+        resolve = null;
+      }
+    };
+
     async function* generator(): AsyncGenerator<ChatEvent> {
       try {
-        while (true) {
-          while (queue.length > 0) {
+        while (!aborted) {
+          while (queue.length > 0 && !aborted) {
             const event = queue.shift()!;
             yield event;
             if (event.type === 'done' || event.type === 'error') {
               return;
             }
           }
-          if (done) return;
+          if (done || aborted) return;
           // Wait for the next event
           await new Promise<void>((r) => {
             resolve = r;
           });
+          if (aborted) return;
         }
       } finally {
         listeners.delete(requestId);
       }
     }
 
-    return generator();
+    return { stream: generator(), abort };
   }
 }

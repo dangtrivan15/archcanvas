@@ -48,14 +48,19 @@ export function ChatPanel() {
       e.preventDefault();
       handleSend();
     }
+    // Escape to stop streaming
+    if (e.key === 'Escape' && isStreaming) {
+      e.preventDefault();
+      handleInterrupt();
+    }
   };
 
   const handleClose = () => {
     window.dispatchEvent(new CustomEvent('archcanvas:toggle-chat'));
   };
 
-  const handleAbort = () => {
-    useChatStore.getState().abort();
+  const handleInterrupt = () => {
+    useChatStore.getState().interrupt();
   };
 
   return (
@@ -148,7 +153,7 @@ export function ChatPanel() {
           />
           {isStreaming ? (
             <button
-              onClick={handleAbort}
+              onClick={handleInterrupt}
               className="shrink-0 rounded bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/80"
               aria-label="Stop"
             >
