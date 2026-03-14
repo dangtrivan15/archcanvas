@@ -42,6 +42,8 @@ function createMockProvider(
   loadHistoryCalled: ChatMessage[] | null;
   emitEvents: (events: ChatEvent[]) => void;
   sendPermissionResponse: ReturnType<typeof vi.fn>;
+  sendSetPermissionMode: ReturnType<typeof vi.fn>;
+  sendSetEffort: ReturnType<typeof vi.fn>;
 } {
   const sentMessages: Array<{ content: string; context: ProjectContext }> = [];
   let abortCalled = false;
@@ -57,6 +59,8 @@ function createMockProvider(
     abortCalled,
     loadHistoryCalled,
     sendPermissionResponse: vi.fn(),
+    sendSetPermissionMode: vi.fn(),
+    sendSetEffort: vi.fn(),
 
     emitEvents(events: ChatEvent[]) {
       if (eventResolver) {
@@ -115,6 +119,8 @@ beforeEach(() => {
     providers: new Map(),
     error: null,
     statusMessage: null,
+    permissionMode: 'default',
+    effort: 'high',
   });
 });
 
@@ -461,6 +467,94 @@ describe('chatStore', () => {
       useChatStore.setState({ statusMessage: 'Some status' });
       useChatStore.getState().clearHistory();
       expect(useChatStore.getState().statusMessage).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // setPermissionMode
+  // -----------------------------------------------------------------------
+
+  describe('setPermissionMode', () => {
+    it('updates permissionMode state', () => {
+      useChatStore.getState().setPermissionMode('plan');
+      expect(useChatStore.getState().permissionMode).toBe('plan');
+    });
+
+    it('delegates to provider sendSetPermissionMode', () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      useChatStore.getState().setPermissionMode('acceptEdits');
+      expect(provider.sendSetPermissionMode).toHaveBeenCalledWith('acceptEdits');
+    });
+
+    it('updates state even when no active provider', () => {
+      useChatStore.getState().setPermissionMode('dontAsk');
+      expect(useChatStore.getState().permissionMode).toBe('dontAsk');
+    });
+
+    it('does not throw when provider lacks sendSetPermissionMode', () => {
+      const bareProvider: ChatProvider = {
+        id: 'bare',
+        displayName: 'Bare',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        abort: vi.fn(),
+      };
+      useChatStore.getState().registerProvider(bareProvider);
+
+      // Should not throw
+      useChatStore.getState().setPermissionMode('plan');
+      expect(useChatStore.getState().permissionMode).toBe('plan');
+    });
+
+    it('defaults to "default"', () => {
+      expect(useChatStore.getState().permissionMode).toBe('default');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // setEffort
+  // -----------------------------------------------------------------------
+
+  describe('setEffort', () => {
+    it('updates effort state', () => {
+      useChatStore.getState().setEffort('low');
+      expect(useChatStore.getState().effort).toBe('low');
+    });
+
+    it('delegates to provider sendSetEffort', () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      useChatStore.getState().setEffort('max');
+      expect(provider.sendSetEffort).toHaveBeenCalledWith('max');
+    });
+
+    it('updates state even when no active provider', () => {
+      useChatStore.getState().setEffort('medium');
+      expect(useChatStore.getState().effort).toBe('medium');
+    });
+
+    it('does not throw when provider lacks sendSetEffort', () => {
+      const bareProvider: ChatProvider = {
+        id: 'bare',
+        displayName: 'Bare',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        abort: vi.fn(),
+      };
+      useChatStore.getState().registerProvider(bareProvider);
+
+      // Should not throw
+      useChatStore.getState().setEffort('low');
+      expect(useChatStore.getState().effort).toBe('low');
+    });
+
+    it('defaults to "high"', () => {
+      expect(useChatStore.getState().effort).toBe('high');
     });
   });
 

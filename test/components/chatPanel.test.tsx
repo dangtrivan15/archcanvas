@@ -82,6 +82,8 @@ beforeEach(() => {
     activeProviderId: null,
     providers: new Map(),
     error: null,
+    permissionMode: 'default',
+    effort: 'high',
   });
 });
 
@@ -208,6 +210,126 @@ describe('ChatPanel', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     window.removeEventListener('archcanvas:toggle-chat', handler);
+  });
+});
+
+// ===========================================================================
+// ChatPanel — Permission Mode & Effort Selectors
+// ===========================================================================
+
+describe('ChatPanel — Permission Mode Selector', () => {
+  it('renders permission mode dropdown with default value', () => {
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Permission mode') as HTMLSelectElement;
+    expect(select).toBeInTheDocument();
+    expect(select.value).toBe('default');
+  });
+
+  it('shows all four permission modes (excludes bypassPermissions)', () => {
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Permission mode') as HTMLSelectElement;
+    const options = select.querySelectorAll('option');
+    expect(options).toHaveLength(4);
+
+    const values = Array.from(options).map((o) => o.value);
+    expect(values).toEqual(['default', 'acceptEdits', 'plan', 'dontAsk']);
+
+    const labels = Array.from(options).map((o) => o.textContent);
+    expect(labels).toEqual(['Default', 'Auto-edit', 'Plan only', 'Strict']);
+  });
+
+  it('calls setPermissionMode on change', () => {
+    const setPermissionModeSpy = vi.fn();
+    useChatStore.setState({ setPermissionMode: setPermissionModeSpy } as any);
+
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Permission mode') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'plan' } });
+
+    expect(setPermissionModeSpy).toHaveBeenCalledWith('plan');
+  });
+
+  it('is disabled during streaming', () => {
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+      isStreaming: true,
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Permission mode')).toBeDisabled();
+  });
+
+  it('is enabled when not streaming', () => {
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Permission mode')).not.toBeDisabled();
+  });
+
+  it('reflects current store value', () => {
+    useChatStore.setState({ permissionMode: 'acceptEdits' });
+
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Permission mode') as HTMLSelectElement;
+    expect(select.value).toBe('acceptEdits');
+  });
+});
+
+describe('ChatPanel — Effort Selector', () => {
+  it('renders effort dropdown with default value', () => {
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
+    expect(select).toBeInTheDocument();
+    expect(select.value).toBe('high');
+  });
+
+  it('shows all four effort levels', () => {
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
+    const options = select.querySelectorAll('option');
+    expect(options).toHaveLength(4);
+
+    const values = Array.from(options).map((o) => o.value);
+    expect(values).toEqual(['low', 'medium', 'high', 'max']);
+
+    const labels = Array.from(options).map((o) => o.textContent);
+    expect(labels).toEqual(['Quick', 'Medium', 'Thorough', 'Maximum']);
+  });
+
+  it('calls setEffort on change', () => {
+    const setEffortSpy = vi.fn();
+    useChatStore.setState({ setEffort: setEffortSpy } as any);
+
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: 'max' } });
+
+    expect(setEffortSpy).toHaveBeenCalledWith('max');
+  });
+
+  it('is disabled during streaming', () => {
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+      isStreaming: true,
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Effort level')).toBeDisabled();
+  });
+
+  it('is enabled when not streaming', () => {
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Effort level')).not.toBeDisabled();
+  });
+
+  it('reflects current store value', () => {
+    useChatStore.setState({ effort: 'low' });
+
+    render(<ChatPanel />);
+    const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
+    expect(select.value).toBe('low');
   });
 });
 
