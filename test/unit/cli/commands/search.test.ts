@@ -8,6 +8,14 @@ import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { searchCommand } from '@/cli/commands/search';
 import type { CanvasFile } from '@/types/schema';
 
+vi.mock('@/cli/context', async () => {
+  const actual = await vi.importActual('@/cli/context');
+  return {
+    ...actual,
+    loadContext: vi.fn().mockResolvedValue({ fs: null, bridgeUrl: null }),
+  };
+});
+
 enablePatches();
 
 const seedData: CanvasFile = {
@@ -85,11 +93,11 @@ describe('searchCommand', () => {
   });
 
   // C5h.1: searches across all loaded scopes
-  it('finds nodes across all loaded scopes', () => {
+  it('finds nodes across all loaded scopes', async () => {
     const capture = captureStdout();
     try {
       // "api" should match in root (svc-api) and child (inner-api)
-      searchCommand('api', {}, { json: true });
+      await searchCommand('api', {}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       const nodeResults = result.results.filter((r: Record<string, unknown>) => r.type === 'node');
@@ -104,10 +112,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.2: matches on node IDs
-  it('matches on node ID', () => {
+  it('matches on node ID', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('svc-db', { type: 'nodes' }, { json: true });
+      await searchCommand('svc-db', { type: 'nodes' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results).toHaveLength(1);
       expect(result.results[0].item.id).toBe('svc-db');
@@ -117,10 +125,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.2: matches on displayName
-  it('matches on displayName', () => {
+  it('matches on displayName', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('Order Worker', {}, { json: true });
+      await searchCommand('Order Worker', {}, { json: true });
       const result = JSON.parse(capture.output);
       const nodeResults = result.results.filter((r: Record<string, unknown>) => r.type === 'node');
       expect(nodeResults.some((r: Record<string, unknown>) =>
@@ -132,10 +140,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.2: matches on type
-  it('matches on node type', () => {
+  it('matches on node type', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('compute/service', { type: 'nodes' }, { json: true });
+      await searchCommand('compute/service', { type: 'nodes' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results.length).toBeGreaterThanOrEqual(1);
       expect(result.results.every((r: Record<string, unknown>) =>
@@ -147,10 +155,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.2: matches on entity names
-  it('matches on entity name', () => {
+  it('matches on entity name', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('Order', { type: 'entities' }, { json: true });
+      await searchCommand('Order', { type: 'entities' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results).toHaveLength(1);
       expect(result.results[0].item.name).toBe('Order');
@@ -160,10 +168,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.2: matches on edge labels
-  it('matches on edge label', () => {
+  it('matches on edge label', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('dispatches', { type: 'edges' }, { json: true });
+      await searchCommand('dispatches', { type: 'edges' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results).toHaveLength(1);
       expect(result.results[0].item.label).toBe('dispatches orders');
@@ -173,10 +181,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.3: case-insensitive substring matching
-  it('case-insensitive matching', () => {
+  it('case-insensitive matching', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('MAIN DATABASE', { type: 'nodes' }, { json: true });
+      await searchCommand('MAIN DATABASE', { type: 'nodes' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results.length).toBeGreaterThanOrEqual(1);
       expect(result.results[0].item.id).toBe('svc-db');
@@ -186,10 +194,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.4: results include scope
-  it('results include scope (canvasId)', () => {
+  it('results include scope (canvasId)', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('inner-api', {}, { json: true });
+      await searchCommand('inner-api', {}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results).toHaveLength(1);
       expect(result.results[0].scope).toBe('child-canvas');
@@ -199,10 +207,10 @@ describe('searchCommand', () => {
   });
 
   // C5h.5: JSON output shape
-  it('json output has { results: [{ type, scope, item }] }', () => {
+  it('json output has { results: [{ type, scope, item }] }', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('api', {}, { json: true });
+      await searchCommand('api', {}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(Array.isArray(result.results)).toBe(true);
@@ -217,10 +225,10 @@ describe('searchCommand', () => {
   });
 
   // Type filter works
-  it('filters by type flag', () => {
+  it('filters by type flag', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('order', { type: 'entities' }, { json: true });
+      await searchCommand('order', { type: 'entities' }, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results.every((r: Record<string, unknown>) => r.type === 'entity')).toBe(true);
     } finally {
@@ -229,10 +237,10 @@ describe('searchCommand', () => {
   });
 
   // No matches returns empty results
-  it('returns empty results for non-matching query', () => {
+  it('returns empty results for non-matching query', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('zzznonexistent', {}, { json: true });
+      await searchCommand('zzznonexistent', {}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.results).toHaveLength(0);
@@ -242,11 +250,11 @@ describe('searchCommand', () => {
   });
 
   // C11.2: search does NOT save
-  it('does not call saveAll (read-only)', () => {
+  it('does not call saveAll (read-only)', async () => {
     const saveAllSpy = vi.spyOn(useFileStore.getState(), 'saveAll');
     const capture = captureStdout();
     try {
-      searchCommand('api', {}, { json: true });
+      await searchCommand('api', {}, { json: true });
       expect(saveAllSpy).not.toHaveBeenCalled();
     } finally {
       capture.restore();
@@ -255,10 +263,10 @@ describe('searchCommand', () => {
   });
 
   // Edge matching on endpoint node names
-  it('matches on edge endpoint node names', () => {
+  it('matches on edge endpoint node names', async () => {
     const capture = captureStdout();
     try {
-      searchCommand('svc-api', { type: 'edges' }, { json: true });
+      await searchCommand('svc-api', { type: 'edges' }, { json: true });
       const result = JSON.parse(capture.output);
       // svc-api is the from node on 2 edges
       expect(result.results.length).toBe(2);

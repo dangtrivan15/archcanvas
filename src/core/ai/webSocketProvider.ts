@@ -7,6 +7,10 @@ import type {
 } from './types';
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
+import { useRegistryStore } from '@/store/registryStore';
+import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+import type { InlineNode, Node, Edge, Entity } from '@/types/schema';
+import type { NodeDef } from '@/types/nodeDefSchema';
 
 // ---------------------------------------------------------------------------
 // Internal message types (bridge <-> browser, not part of public ChatEvent)
@@ -216,43 +220,12 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     }
   }
 
-  private async handleStoreAction(msg: StoreActionMessage): Promise<void> {
+  private handleStoreAction(msg: StoreActionMessage): void {
     const { action, args, correlationId } = msg;
 
     let result: unknown;
     try {
       result = this.dispatchStoreAction(action, args);
-
-      // Unknown action or engine error — return immediately without attempting save
-      if (
-        result &&
-        typeof result === 'object' &&
-        'ok' in result &&
-        (result as { ok: boolean }).ok === false
-      ) {
-        const errResult = result as { ok: false; error: { code: string; message: string } };
-        this.send({
-          type: 'store_action_result',
-          correlationId,
-          ok: false,
-          error: errResult.error,
-        } satisfies StoreActionResultMessage);
-        return;
-      }
-
-      // Persist if filesystem is available
-      const fileStore = useFileStore.getState();
-      if (fileStore.fs) {
-        await fileStore.save();
-      } else {
-        this.send({
-          type: 'store_action_result',
-          correlationId,
-          ok: false,
-          error: { code: 'NO_FILESYSTEM', message: 'No filesystem available for persistence' },
-        } satisfies StoreActionResultMessage);
-        return;
-      }
     } catch (err) {
       this.send({
         type: 'store_action_result',
@@ -263,6 +236,24 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
       return;
     }
 
+    // Dispatch returned an error result
+    if (
+      result &&
+      typeof result === 'object' &&
+      'ok' in result &&
+      (result as { ok: boolean }).ok === false
+    ) {
+      const errResult = result as { ok: false; error: { code: string; message: string } };
+      this.send({
+        type: 'store_action_result',
+        correlationId,
+        ok: false,
+        error: errResult.error,
+      } satisfies StoreActionResultMessage);
+      return;
+    }
+
+    // No auto-save — dirty tracking marks the canvas, user saves via Cmd+S
     this.send({
       type: 'store_action_result',
       correlationId,
@@ -273,19 +264,340 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private dispatchStoreAction(action: string, args: Record<string, unknown>): unknown {
-    const gs = useGraphStore.getState();
     switch (action) {
+      // --- Write actions ---
       case 'addNode':
-        return gs.addNode(args.canvasId as string, args.node as any);
+        return this.dispatchAddNode(args);
       case 'addEdge':
-        return gs.addEdge(args.canvasId as string, args.edge as any);
+        return useGraphStore.getState().addEdge(args.canvasId as string, args.edge as any);
       case 'removeNode':
-        return gs.removeNode(args.canvasId as string, args.nodeId as string);
+        return useGraphStore.getState().removeNode(args.canvasId as string, args.nodeId as string);
       case 'removeEdge':
-        return gs.removeEdge(args.canvasId as string, args.from as string, args.to as string);
+        return useGraphStore.getState().removeEdge(args.canvasId as string, args.from as string, args.to as string);
+      case 'import':
+        return this.dispatchImport(args);
+
+      // --- Read actions ---
+      case 'list':
+        return this.dispatchList(args);
+      case 'describe':
+        return this.dispatchDescribe(args);
+      case 'search':
+        return this.dispatchSearch(args);
+      case 'catalog':
+        return this.dispatchCatalog(args);
+
       default:
         return { ok: false, error: { code: 'UNKNOWN_ACTION', message: `Unknown action: ${action}` } };
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Write action dispatchers
+  // -------------------------------------------------------------------------
+
+  /**
+   * addNode with enrichment: validates type against registry (with fuzzy
+   * matching), resolves displayName from NodeDef, constructs InlineNode.
+   */
+  private dispatchAddNode(args: Record<string, unknown>): unknown {
+    const canvasId = args.canvasId as string;
+    let type = args.type as string;
+    const id = args.id as string;
+    const name = args.name as string | undefined;
+    const rawArgs = args.args as string | undefined;
+
+    const registry = useRegistryStore.getState();
+    let nodeDef = registry.resolve(type);
+
+    // Dot→slash substitution (e.g., "compute.service" → "compute/service")
+    if (!nodeDef && type.includes('.')) {
+      const slashVariant = type.replaceAll('.', '/');
+      nodeDef = registry.resolve(slashVariant);
+      if (nodeDef) {
+        type = slashVariant;
+      }
+    }
+
+    if (!nodeDef) {
+      const hints: string[] = [
+        `Node type '${type}' is not registered.`,
+        `Node types use the format \`namespace/name\` (e.g., compute/service).`,
+      ];
+
+      // Fuzzy search for suggestions
+      const words = type.split(/[/.]/);
+      const candidates = new Map<string, NodeDef>();
+      for (const word of words) {
+        if (word.length === 0) continue;
+        for (const def of registry.search(word)) {
+          const key = `${def.metadata.namespace}/${def.metadata.name}`;
+          candidates.set(key, def);
+        }
+      }
+      if (words.length >= 1 && words[0].length > 0) {
+        for (const def of registry.listByNamespace(words[0])) {
+          const key = `${def.metadata.namespace}/${def.metadata.name}`;
+          candidates.set(key, def);
+        }
+      }
+      const similar = Array.from(candidates.values()).slice(0, 3);
+      if (similar.length > 0) {
+        hints.push(`Similar types: ${similar.map((d) => `${d.metadata.namespace}/${d.metadata.name}`).join(', ')}`);
+      }
+      if (type.includes('.')) {
+        hints.push(`Did you mean '${type.replaceAll('.', '/')}'?`);
+      }
+      hints.push(`Run \`archcanvas catalog --json\` to see all available types.`);
+
+      return { ok: false, error: { code: 'UNKNOWN_NODE_TYPE', message: hints.join(' ') } };
+    }
+
+    // Resolve displayName from NodeDef if name not provided
+    const displayName = name ?? nodeDef.metadata.displayName;
+
+    // Parse --args JSON if provided as string
+    let parsedArgs: Record<string, string | number | boolean | string[]> | undefined;
+    if (rawArgs) {
+      try {
+        parsedArgs = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs as Record<string, string | number | boolean | string[]>;
+      } catch {
+        return { ok: false, error: { code: 'INVALID_ARGS', message: `Invalid JSON for args: ${rawArgs}` } };
+      }
+    }
+
+    const node: InlineNode = { id, type, displayName, args: parsedArgs };
+    return useGraphStore.getState().addNode(canvasId, node);
+  }
+
+  /** Import pre-parsed nodes/edges/entities into a canvas. */
+  private dispatchImport(args: Record<string, unknown>): unknown {
+    const canvasId = args.canvasId as string;
+    const nodes = (args.nodes as Node[] | undefined) ?? [];
+    const edges = (args.edges as Edge[] | undefined) ?? [];
+    const entities = (args.entities as Entity[] | undefined) ?? [];
+
+    // Validate canvas exists
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    if (!canvas) {
+      return { ok: false, error: { code: 'CANVAS_NOT_FOUND', message: `Canvas '${canvasId}' not found.` } };
+    }
+
+    const added = { nodes: 0, edges: 0, entities: 0 };
+    const errors: { type: string; item: unknown; error: string }[] = [];
+    const gs = useGraphStore.getState();
+
+    for (const node of nodes) {
+      const result = gs.addNode(canvasId, node);
+      if (result.ok) { added.nodes++; }
+      else { errors.push({ type: 'node', item: node, error: `${result.error.code}` }); }
+    }
+    for (const edge of edges) {
+      const result = gs.addEdge(canvasId, edge);
+      if (result.ok) { added.edges++; }
+      else { errors.push({ type: 'edge', item: edge, error: `${result.error.code}` }); }
+    }
+    for (const entity of entities) {
+      const result = gs.addEntity(canvasId, entity);
+      if (result.ok) { added.entities++; }
+      else { errors.push({ type: 'entity', item: entity, error: `${result.error.code}` }); }
+    }
+
+    return { added, errors };
+  }
+
+  // -------------------------------------------------------------------------
+  // Read action dispatchers
+  // -------------------------------------------------------------------------
+
+  /** List nodes/edges/entities in a canvas. */
+  private dispatchList(args: Record<string, unknown>): unknown {
+    const canvasId = (args.canvasId as string | undefined) ?? ROOT_CANVAS_KEY;
+    const typeFilter = (args.type as string | undefined) ?? 'all';
+
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    if (!canvas) {
+      return { ok: false, error: { code: 'CANVAS_NOT_FOUND', message: `Canvas '${canvasId}' not found.` } };
+    }
+
+    const data = canvas.data;
+    const result: Record<string, unknown> = {};
+
+    if (typeFilter === 'all' || typeFilter === 'nodes') {
+      result.nodes = (data.nodes ?? []).map((n: Node) => ({
+        id: n.id,
+        type: 'type' in n ? n.type : `ref:${'ref' in n ? n.ref : ''}`,
+        displayName: 'displayName' in n ? n.displayName : undefined,
+      }));
+    }
+    if (typeFilter === 'all' || typeFilter === 'edges') {
+      result.edges = (data.edges ?? []).map((e: Edge) => ({
+        from: e.from.node,
+        to: e.to.node,
+        label: e.label,
+        protocol: e.protocol,
+      }));
+    }
+    if (typeFilter === 'all' || typeFilter === 'entities') {
+      result.entities = (data.entities ?? []).map((e: Entity) => ({
+        name: e.name,
+        description: e.description,
+      }));
+    }
+
+    return result;
+  }
+
+  /** Describe a node or the full architecture. */
+  private dispatchDescribe(args: Record<string, unknown>): unknown {
+    const nodeId = args.id as string | undefined;
+
+    if (nodeId) {
+      const canvasId = (args.canvasId as string | undefined) ?? ROOT_CANVAS_KEY;
+      const canvas = useFileStore.getState().getCanvas(canvasId);
+      if (!canvas) {
+        return { ok: false, error: { code: 'CANVAS_NOT_FOUND', message: `Canvas '${canvasId}' not found.` } };
+      }
+
+      const nodes = canvas.data.nodes ?? [];
+      const node = nodes.find((n: Node) => n.id === nodeId);
+      if (!node) {
+        return { ok: false, error: { code: 'NODE_NOT_FOUND', message: `Node '${nodeId}' not found in canvas '${canvasId}'.` } };
+      }
+
+      const edges = canvas.data.edges ?? [];
+      const connectedEdges = edges
+        .filter((e: Edge) => e.from.node === nodeId || e.to.node === nodeId)
+        .map((e: Edge) => ({ from: e.from.node, to: e.to.node, label: e.label, protocol: e.protocol }));
+
+      const result: Record<string, unknown> = { id: node.id };
+      if ('type' in node) {
+        result.type = node.type;
+        result.displayName = node.displayName;
+        result.args = node.args;
+        result.notes = node.notes;
+        result.codeRefs = node.codeRefs;
+        const nodeDef = useRegistryStore.getState().resolve(node.type);
+        if (nodeDef) { result.ports = nodeDef.spec.ports; }
+      } else if ('ref' in node) {
+        result.ref = node.ref;
+      }
+      result.connectedEdges = connectedEdges;
+
+      return { node: result };
+    }
+
+    // Describe full architecture
+    const project = useFileStore.getState().project;
+    if (!project) {
+      return { ok: false, error: { code: 'PROJECT_LOAD_FAILED', message: 'No project loaded.' } };
+    }
+
+    const rootCanvas = project.canvases.get(ROOT_CANVAS_KEY);
+    const projectName = rootCanvas?.data.project?.name ?? 'Unknown';
+    const scopes: Record<string, unknown>[] = [];
+
+    for (const [cid, cv] of project.canvases) {
+      const d = cv.data;
+      const scopeInfo: Record<string, unknown> = {
+        canvasId: cid,
+        nodeCount: (d.nodes ?? []).length,
+        edgeCount: (d.edges ?? []).length,
+        entityCount: (d.entities ?? []).length,
+      };
+
+      // Include child canvas data for ref nodes (matching CLI describe output)
+      if (cid !== ROOT_CANVAS_KEY) {
+        const refNodes = (d.nodes ?? []).filter((n: Node) => 'ref' in n);
+        if (refNodes.length > 0) {
+          scopeInfo.childRefs = refNodes.map((n: Node) => {
+            const ref = 'ref' in n ? n.ref : '';
+            const childCanvas = project.canvases.get(ref);
+            return {
+              ref,
+              nodeCount: childCanvas ? (childCanvas.data.nodes ?? []).length : 0,
+              edgeCount: childCanvas ? (childCanvas.data.edges ?? []).length : 0,
+            };
+          });
+        }
+      }
+
+      scopes.push(scopeInfo);
+    }
+
+    return { project: projectName, scopes };
+  }
+
+  /** Search across all canvases. */
+  private dispatchSearch(args: Record<string, unknown>): unknown {
+    const query = (args.query as string).toLowerCase();
+    const typeFilter = (args.type as string | undefined) ?? 'all';
+    const project = useFileStore.getState().project;
+
+    if (!project) {
+      return { results: [] };
+    }
+
+    const results: { type: string; scope: string; item: Record<string, unknown> }[] = [];
+
+    for (const [canvasId, canvas] of project.canvases) {
+      const data = canvas.data;
+
+      if (typeFilter === 'all' || typeFilter === 'nodes') {
+        for (const node of data.nodes ?? []) {
+          const fields = [node.id, 'displayName' in node ? node.displayName : undefined, 'type' in node ? node.type : undefined];
+          if (fields.some((f) => f?.toLowerCase().includes(query))) {
+            results.push({
+              type: 'node', scope: canvasId,
+              item: { id: node.id, type: 'type' in node ? node.type : `ref:${'ref' in node ? node.ref : ''}`, displayName: 'displayName' in node ? node.displayName : undefined },
+            });
+          }
+        }
+      }
+
+      if (typeFilter === 'all' || typeFilter === 'edges') {
+        for (const edge of data.edges ?? []) {
+          const fields = [edge.label, edge.from.node, edge.to.node];
+          if (fields.some((f) => f?.toLowerCase().includes(query))) {
+            results.push({
+              type: 'edge', scope: canvasId,
+              item: { from: edge.from.node, to: edge.to.node, label: edge.label, protocol: edge.protocol },
+            });
+          }
+        }
+      }
+
+      if (typeFilter === 'all' || typeFilter === 'entities') {
+        for (const entity of data.entities ?? []) {
+          const fields = [entity.name, entity.description];
+          if (fields.some((f) => f?.toLowerCase().includes(query))) {
+            results.push({
+              type: 'entity', scope: canvasId,
+              item: { name: entity.name, description: entity.description },
+            });
+          }
+        }
+      }
+    }
+
+    return { results };
+  }
+
+  /** List all registered node types. */
+  private dispatchCatalog(args: Record<string, unknown>): unknown {
+    const namespace = args.namespace as string | undefined;
+    const registry = useRegistryStore.getState();
+    const allDefs = namespace ? registry.listByNamespace(namespace) : registry.list();
+
+    const nodeTypes = allDefs.map((def) => ({
+      type: `${def.metadata.namespace}/${def.metadata.name}`,
+      displayName: def.metadata.displayName,
+      namespace: def.metadata.namespace,
+      description: def.metadata.description,
+      tags: def.metadata.tags ?? [],
+    }));
+
+    return { nodeTypes };
   }
 
   private createEventStream(requestId: string): AsyncIterable<ChatEvent> {

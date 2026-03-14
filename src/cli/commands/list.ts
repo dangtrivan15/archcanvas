@@ -1,5 +1,5 @@
 import { useFileStore } from '@/store/fileStore';
-import { resolveCanvasId } from '../context';
+import { loadContext, resolveCanvasId, bridgeRequest } from '../context';
 import { CLIError } from '../errors';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
@@ -10,8 +10,16 @@ export interface ListFlags {
   type: 'nodes' | 'edges' | 'entities' | 'all';
 }
 
-export function listCommand(flags: ListFlags, options: OutputOptions): void {
+export async function listCommand(flags: ListFlags, options: OutputOptions, projectPath?: string): Promise<void> {
+  const ctx = await loadContext(projectPath);
   const canvasId = resolveCanvasId(flags.scope);
+
+  if (ctx.bridgeUrl) {
+    const result = await bridgeRequest(ctx.bridgeUrl, 'list', { canvasId, type: flags.type });
+    printSuccess(result.data ?? result, options);
+    return;
+  }
+
   const canvas = useFileStore.getState().getCanvas(canvasId);
 
   if (!canvas) {

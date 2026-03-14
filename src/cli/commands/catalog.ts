@@ -1,4 +1,5 @@
 import { useRegistryStore } from '@/store/registryStore';
+import { loadContext, bridgeRequest } from '../context';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
 
@@ -6,7 +7,14 @@ export interface CatalogFlags {
   namespace?: string;
 }
 
-export function catalogCommand(flags: CatalogFlags, options: OutputOptions): void {
+export async function catalogCommand(flags: CatalogFlags, options: OutputOptions, projectPath?: string): Promise<void> {
+  const ctx = await loadContext(projectPath);
+
+  if (ctx.bridgeUrl) {
+    const result = await bridgeRequest(ctx.bridgeUrl, 'catalog', { namespace: flags.namespace });
+    printSuccess(result.data ?? result, options);
+    return;
+  }
   const allDefs = flags.namespace
     ? useRegistryStore.getState().listByNamespace(flags.namespace)
     : useRegistryStore.getState().list();

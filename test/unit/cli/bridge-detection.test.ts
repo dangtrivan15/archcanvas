@@ -108,14 +108,14 @@ describe('detectBridge with mock fetch', () => {
   });
 });
 
-// --- bridgeMutate tests ---
+// --- bridgeRequest tests ---
 
-describe('bridgeMutate', () => {
-  let bridgeMutate: typeof import('@/cli/context').bridgeMutate;
+describe('bridgeRequest', () => {
+  let bridgeRequest: typeof import('@/cli/context').bridgeRequest;
 
   beforeEach(async () => {
     const mod = await import('@/cli/context');
-    bridgeMutate = mod.bridgeMutate;
+    bridgeRequest = mod.bridgeRequest;
   });
 
   it('sends correct POST request and parses JSON response', async () => {
@@ -134,7 +134,7 @@ describe('bridgeMutate', () => {
     });
 
     try {
-      const result = await bridgeMutate(baseUrl, 'add-node', {
+      const result = await bridgeRequest(baseUrl, 'add-node', {
         canvasId: '__root__',
         node: { id: 'svc-1', type: 'compute/service' },
       });
@@ -163,11 +163,11 @@ describe('bridgeMutate', () => {
 
     try {
       await expect(
-        bridgeMutate(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } }),
+        bridgeRequest(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } }),
       ).rejects.toThrow(CLIError);
 
       try {
-        await bridgeMutate(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } });
+        await bridgeRequest(baseUrl, 'add-node', { canvasId: '__root__', node: { id: 'svc-1' } });
       } catch (err) {
         expect(err).toBeInstanceOf(CLIError);
         expect((err as CLIError).code).toBe('DUPLICATE_NODE_ID');
@@ -186,7 +186,7 @@ describe('bridgeMutate', () => {
 
     try {
       try {
-        await bridgeMutate(baseUrl, 'remove-node', { canvasId: '__root__', nodeId: 'x' });
+        await bridgeRequest(baseUrl, 'remove-node', { canvasId: '__root__', nodeId: 'x' });
       } catch (err) {
         expect(err).toBeInstanceOf(CLIError);
         expect((err as CLIError).code).toBe('BRIDGE_ERROR');
@@ -200,11 +200,11 @@ describe('bridgeMutate', () => {
   it('throws CLIError with BRIDGE_ERROR on network error', async () => {
     // Use a port that definitely has no server
     await expect(
-      bridgeMutate('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' }),
+      bridgeRequest('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' }),
     ).rejects.toThrow(CLIError);
 
     try {
-      await bridgeMutate('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' });
+      await bridgeRequest('http://127.0.0.1:19999', 'add-node', { canvasId: '__root__' });
     } catch (err) {
       expect(err).toBeInstanceOf(CLIError);
       expect((err as CLIError).code).toBe('BRIDGE_ERROR');
@@ -221,14 +221,14 @@ describe('bridgeMutate', () => {
     });
 
     try {
-      await bridgeMutate(baseUrl, 'remove-edge', { from: 'a', to: 'b' });
+      await bridgeRequest(baseUrl, 'remove-edge', { from: 'a', to: 'b' });
       expect(receivedUrl).toBe('/api/remove-edge');
     } finally {
       await stopServer(server);
     }
   });
 
-  it('sends import with YAML content in body', async () => {
+  it('sends import with pre-parsed data in body', async () => {
     let receivedBody = '';
 
     const { server, baseUrl } = await startServer(async (req, res) => {
@@ -238,14 +238,16 @@ describe('bridgeMutate', () => {
     });
 
     try {
-      const yamlContent = 'nodes:\n  - id: svc-1\n    type: compute/service\n';
-      const result = await bridgeMutate(baseUrl, 'import', {
+      const nodes = [{ id: 'svc-1', type: 'compute/service', displayName: 'Service' }];
+      const result = await bridgeRequest(baseUrl, 'import', {
         canvasId: '__root__',
-        yaml: yamlContent,
+        nodes,
+        edges: [],
+        entities: [],
       });
 
       const parsed = JSON.parse(receivedBody);
-      expect(parsed.yaml).toBe(yamlContent);
+      expect(parsed.nodes).toEqual(nodes);
       expect(parsed.canvasId).toBe('__root__');
       expect(result.ok).toBe(true);
     } finally {

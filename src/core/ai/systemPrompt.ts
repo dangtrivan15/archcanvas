@@ -46,6 +46,13 @@ export function buildSystemPrompt(context: ProjectContext): string {
     `- When the user asks to modify the architecture, use add-node, add-edge, remove-node, or remove-edge.`,
     `- When the user asks questions about the architecture, use list, describe, or search first.`,
     `- Explain what you are doing and why before executing commands.`,
+    ``,
+    `## Important: Changes Are Not Auto-Saved`,
+    ``,
+    `When you execute commands, changes are applied to the in-memory canvas state only.`,
+    `They are NOT automatically saved to disk. The user will save when they are ready`,
+    `(e.g., Cmd+S). Do not tell the user that changes have been "saved" — instead confirm`,
+    `that changes have been "applied" to the canvas.`,
   ];
 
   return lines.join('\n');

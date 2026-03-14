@@ -1,7 +1,7 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
-import { loadContext, resolveCanvasId, bridgeMutate } from '../context';
+import { loadContext, resolveCanvasId, bridgeRequest } from '../context';
 import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 import type { InlineNode } from '@/types/schema';
@@ -21,6 +21,22 @@ export async function addNodeCommand(
   globalOptions: OutputOptions,
 ): Promise<void> {
   const ctx = await loadContext(options.project);
+  const canvasId = resolveCanvasId(options.scope);
+
+  if (ctx.bridgeUrl) {
+    // Bridge mode — send raw args, browser handles validation + enrichment
+    const result = await bridgeRequest(ctx.bridgeUrl, 'add-node', {
+      canvasId,
+      id: options.id,
+      type: options.type,
+      name: options.name,
+      args: options.args,
+    });
+    printSuccess(result, globalOptions);
+    return;
+  }
+
+  // Non-bridge path — local validation + mutation + save
 
   // Validate --type exists in registry (C5b.4)
   const registry = useRegistryStore.getState();
@@ -103,27 +119,16 @@ export async function addNodeCommand(
     args,
   };
 
-  const canvasId = resolveCanvasId(options.scope);
+  // Local store mutation path
+  const result = useGraphStore.getState().addNode(canvasId, node);
 
-  if (ctx.bridgeUrl) {
-    // Route through the running dev-server bridge
-    const result = await bridgeMutate(ctx.bridgeUrl, 'add-node', {
-      canvasId,
-      node,
-    });
-    printSuccess(result, globalOptions);
-  } else {
-    // Local store mutation path
-    const result = useGraphStore.getState().addNode(canvasId, node);
-
-    if (!result.ok) {
-      throw new CLIError(result.error.code, engineErrorMessage(result.error));
-    }
-
-    // Save after successful mutation (C11.1, C5b.2)
-    await useFileStore.getState().saveAll(ctx.fs);
-
-    // Output (C5b.6)
-    printSuccess({ node: { id: options.id, type: options.type, displayName } }, globalOptions);
+  if (!result.ok) {
+    throw new CLIError(result.error.code, engineErrorMessage(result.error));
   }
+
+  // Save after successful mutation (C11.1, C5b.2)
+  await useFileStore.getState().saveAll(ctx.fs!);
+
+  // Output (C5b.6)
+  printSuccess({ node: { id: options.id, type: options.type, displayName } }, globalOptions);
 }

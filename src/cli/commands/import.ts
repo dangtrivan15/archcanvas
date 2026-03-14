@@ -3,16 +3,16 @@ import { resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { useFileStore } from '@/store/fileStore';
 import { useGraphStore } from '@/store/graphStore';
-import { resolveCanvasId, bridgeMutate } from '../context';
+import { loadContext, resolveCanvasId, bridgeRequest } from '../context';
 import { CLIError } from '../errors';
 import type { OutputOptions } from '../output';
 import { printSuccess } from '../output';
-import type { CLIContext } from '../context';
 import type { Node, Edge, Entity } from '@/types';
 
 export interface ImportFlags {
   file: string;
   scope?: string;
+  project?: string;
 }
 
 interface ImportError {
@@ -24,17 +24,11 @@ interface ImportError {
 export async function importCommand(
   flags: ImportFlags,
   options: OutputOptions,
-  ctx: CLIContext,
 ): Promise<void> {
+  const ctx = await loadContext(flags.project);
   const canvasId = resolveCanvasId(flags.scope);
 
-  // Verify the canvas exists
-  const canvas = useFileStore.getState().getCanvas(canvasId);
-  if (!canvas) {
-    throw new CLIError('CANVAS_NOT_FOUND', `Canvas '${canvasId}' not found.`);
-  }
-
-  // Read and parse the YAML file
+  // Read and parse the YAML file (needed for both bridge and local paths)
   const filePath = resolve(flags.file);
   let fileContent: string;
   try {
@@ -46,17 +40,6 @@ export async function importCommand(
     );
   }
 
-  if (ctx.bridgeUrl) {
-    // Route through the running dev-server bridge — send raw YAML content
-    const result = await bridgeMutate(ctx.bridgeUrl, 'import', {
-      canvasId,
-      yaml: fileContent,
-    });
-    printSuccess(result, options);
-    return;
-  }
-
-  // Local store mutation path
   let parsed: Record<string, unknown>;
   try {
     parsed = parseYaml(fileContent) as Record<string, unknown>;
@@ -74,6 +57,24 @@ export async function importCommand(
   const nodes = (parsed.nodes as Node[] | undefined) ?? [];
   const edges = (parsed.edges as Edge[] | undefined) ?? [];
   const entities = (parsed.entities as Entity[] | undefined) ?? [];
+
+  if (ctx.bridgeUrl) {
+    // Bridge mode — send pre-parsed data, browser handles merging
+    const result = await bridgeRequest(ctx.bridgeUrl, 'import', {
+      canvasId,
+      nodes,
+      edges,
+      entities,
+    });
+    printSuccess(result, options);
+    return;
+  }
+
+  // Non-bridge path — verify canvas exists locally
+  const canvas = useFileStore.getState().getCanvas(canvasId);
+  if (!canvas) {
+    throw new CLIError('CANVAS_NOT_FOUND', `Canvas '${canvasId}' not found.`);
+  }
 
   const added = { nodes: 0, edges: 0, entities: 0 };
   const errors: ImportError[] = [];
@@ -122,7 +123,7 @@ export async function importCommand(
   }
 
   // Save once at end (C11.1, C5i.4)
-  await useFileStore.getState().saveAll(ctx.fs);
+  await useFileStore.getState().saveAll(ctx.fs!);
 
   printSuccess({ added, errors }, options);
 }

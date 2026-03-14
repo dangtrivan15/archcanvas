@@ -97,6 +97,7 @@ class MockWebSocket {
 
 const mockAddNode = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockAddEdge = vi.fn().mockReturnValue({ ok: true, data: {} });
+const mockAddEntity = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockRemoveNode = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockRemoveEdge = vi.fn().mockReturnValue({ ok: true, data: {} });
 const mockSave = vi.fn().mockResolvedValue(undefined);
@@ -106,19 +107,48 @@ vi.mock('@/store/graphStore', () => ({
     getState: () => ({
       addNode: mockAddNode,
       addEdge: mockAddEdge,
+      addEntity: mockAddEntity,
       removeNode: mockRemoveNode,
       removeEdge: mockRemoveEdge,
     }),
   },
 }));
 
+const mockGetCanvas = vi.fn().mockReturnValue({ data: { nodes: [], edges: [], entities: [] } });
+let mockProject: unknown = null;
+
 vi.mock('@/store/fileStore', () => ({
   useFileStore: {
     getState: () => ({
       fs: {},
       save: mockSave,
+      getCanvas: (...args: unknown[]) => mockGetCanvas(...args),
+      get project() { return mockProject; },
     }),
   },
+}));
+
+const mockResolve = vi.fn().mockReturnValue({
+  metadata: { namespace: 'compute', name: 'service', displayName: 'Service', description: '', tags: [] },
+  spec: { ports: [] },
+});
+const mockRegistrySearch = vi.fn().mockReturnValue([]);
+const mockListByNamespace = vi.fn().mockReturnValue([]);
+const mockRegistryList = vi.fn().mockReturnValue([]);
+
+vi.mock('@/store/registryStore', () => ({
+  useRegistryStore: {
+    getState: () => ({
+      resolve: mockResolve,
+      search: mockRegistrySearch,
+      listByNamespace: mockListByNamespace,
+      list: mockRegistryList,
+    }),
+  },
+}));
+
+vi.mock('@/storage/fileResolver', () => ({
+  ROOT_CANVAS_KEY: '__root__',
 }));
 
 // ---------------------------------------------------------------------------
@@ -140,6 +170,18 @@ beforeEach(() => {
   mockRemoveNode.mockClear();
   mockRemoveEdge.mockClear();
   mockSave.mockClear();
+  mockAddEntity.mockClear();
+  mockGetCanvas.mockClear();
+  mockGetCanvas.mockReturnValue({ data: { nodes: [], edges: [], entities: [] } });
+  mockProject = null;
+  mockResolve.mockClear();
+  mockResolve.mockReturnValue({
+    metadata: { namespace: 'compute', name: 'service', displayName: 'Service', description: '', tags: [] },
+    spec: { ports: [] },
+  });
+  mockRegistrySearch.mockClear();
+  mockListByNamespace.mockClear();
+  mockRegistryList.mockClear();
 });
 
 afterEach(() => {
@@ -564,19 +606,23 @@ describe('WebSocketClaudeCodeProvider', () => {
         JSON.stringify({
           type: 'store_action',
           action: 'addNode',
-          args: { canvasId: '@root', node: { id: 'svc-1', type: 'compute/service' } },
+          args: { canvasId: '@root', id: 'svc-1', type: 'compute/service' },
           correlationId: 'corr-1',
         }),
       );
 
-      // Wait for async handler to complete
+      // Wait for handler to complete
       await vi.advanceTimersByTimeAsync(0);
 
+      // addNode is called with enriched InlineNode (displayName resolved from registry)
       expect(mockAddNode).toHaveBeenCalledWith('@root', {
         id: 'svc-1',
         type: 'compute/service',
+        displayName: 'Service',
+        args: undefined,
       });
-      expect(mockSave).toHaveBeenCalled();
+      // No auto-save — dirty tracking handles persistence
+      expect(mockSave).not.toHaveBeenCalled();
 
       // Check response sent back
       expect(ws.sent.length).toBe(1);
@@ -609,29 +655,475 @@ describe('WebSocketClaudeCodeProvider', () => {
       expect(response.error.code).toBe('UNKNOWN_ACTION');
     });
 
-    it('returns error when no filesystem is available', async () => {
-      // Override fileStore mock to have no fs
-      const { useFileStore } = await import('@/store/fileStore');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.spyOn(useFileStore, 'getState').mockReturnValue({ fs: null, save: mockSave } as any);
+    // NO_FILESYSTEM test removed — auto-save was removed per ephemeral bridge design.
+    // Dirty tracking marks canvases; user saves via Cmd+S.
+  });
 
+  // -----------------------------------------------------------------------
+  // Dispatcher: addNode enrichment
+  // -----------------------------------------------------------------------
+
+  describe('addNode enrichment', () => {
+    it('returns UNKNOWN_NODE_TYPE with suggestions when type is not registered', async () => {
+      mockResolve.mockReturnValue(null);
+      mockRegistrySearch.mockReturnValue([
+        { metadata: { namespace: 'compute', name: 'service', displayName: 'Service', description: '', tags: [] }, spec: {} },
+      ]);
       const ws = connectProvider();
-
-      ws.simulateMessage(
-        JSON.stringify({
-          type: 'store_action',
-          action: 'addNode',
-          args: { canvasId: '@root', node: { id: 'x', type: 'compute/service' } },
-          correlationId: 'corr-3',
-        }),
-      );
-
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'addNode',
+        args: { canvasId: '__root__', id: 'x', type: 'compute/nonexistent' },
+        correlationId: 'enrich-1',
+      }));
       await vi.advanceTimersByTimeAsync(0);
 
-      expect(ws.sent.length).toBe(1);
-      const response = JSON.parse(ws.sent[0]);
-      expect(response.ok).toBe(false);
-      expect(response.error.code).toBe('NO_FILESYSTEM');
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('UNKNOWN_NODE_TYPE');
+      expect(r.error.message).toContain('compute/service');
+    });
+
+    it('resolves dot→slash substitution for type', async () => {
+      // First resolve returns null (dot format), second returns the nodeDef (slash format)
+      mockResolve
+        .mockReturnValueOnce(null)
+        .mockReturnValueOnce({
+          metadata: { namespace: 'compute', name: 'service', displayName: 'Service', description: '', tags: [] },
+          spec: { ports: [] },
+        });
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'addNode',
+        args: { canvasId: '__root__', id: 'svc-dot', type: 'compute.service' },
+        correlationId: 'enrich-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockAddNode).toHaveBeenCalledWith('__root__', expect.objectContaining({
+        id: 'svc-dot', type: 'compute/service', displayName: 'Service',
+      }));
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+    });
+
+    it('uses provided name instead of registry displayName', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'addNode',
+        args: { canvasId: '__root__', id: 'svc-named', type: 'compute/service', name: 'My API' },
+        correlationId: 'enrich-3',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockAddNode).toHaveBeenCalledWith('__root__', expect.objectContaining({
+        displayName: 'My API',
+      }));
+    });
+
+    it('returns INVALID_ARGS for malformed args JSON', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'addNode',
+        args: { canvasId: '__root__', id: 'x', type: 'compute/service', args: '{bad json' },
+        correlationId: 'enrich-4',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('INVALID_ARGS');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Dispatcher: import
+  // -----------------------------------------------------------------------
+
+  describe('import dispatcher', () => {
+    it('imports pre-parsed nodes/edges/entities and returns counts', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'import',
+        args: {
+          canvasId: '__root__',
+          nodes: [{ id: 'n1', type: 'compute/service', displayName: 'N1' }],
+          edges: [{ from: { node: 'n1' }, to: { node: 'n2' } }],
+          entities: [{ name: 'E1', description: 'Entity' }],
+        },
+        correlationId: 'imp-1',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockAddNode).toHaveBeenCalledTimes(1);
+      expect(mockAddEdge).toHaveBeenCalledTimes(1);
+      expect(mockAddEntity).toHaveBeenCalledTimes(1);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.added).toEqual({ nodes: 1, edges: 1, entities: 1 });
+      expect(r.data.errors).toEqual([]);
+    });
+
+    it('returns CANVAS_NOT_FOUND when canvas does not exist', async () => {
+      mockGetCanvas.mockReturnValue(null);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'import',
+        args: { canvasId: 'nonexistent', nodes: [], edges: [], entities: [] },
+        correlationId: 'imp-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('CANVAS_NOT_FOUND');
+    });
+
+    it('collects errors without stopping on first failure', async () => {
+      mockAddNode.mockReturnValue({ ok: false, error: { code: 'DUPLICATE_NODE_ID' } });
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'import',
+        args: {
+          canvasId: '__root__',
+          nodes: [
+            { id: 'dup1', type: 'compute/service', displayName: 'Dup1' },
+            { id: 'dup2', type: 'compute/service', displayName: 'Dup2' },
+          ],
+          edges: [], entities: [],
+        },
+        correlationId: 'imp-3',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.added.nodes).toBe(0);
+      expect(r.data.errors).toHaveLength(2);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Dispatcher: list
+  // -----------------------------------------------------------------------
+
+  describe('list dispatcher', () => {
+    const canvasData = {
+      data: {
+        nodes: [
+          { id: 'svc-1', type: 'compute/service', displayName: 'API' },
+          { id: 'db-1', type: 'data/database', displayName: 'DB' },
+        ],
+        edges: [
+          { from: { node: 'svc-1' }, to: { node: 'db-1' }, label: 'reads', protocol: 'TCP' },
+        ],
+        entities: [
+          { name: 'Order', description: 'An order' },
+        ],
+      },
+    };
+
+    it('lists all items by default', async () => {
+      mockGetCanvas.mockReturnValue(canvasData);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'list',
+        args: { canvasId: '__root__' },
+        correlationId: 'list-1',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.nodes).toHaveLength(2);
+      expect(r.data.edges).toHaveLength(1);
+      expect(r.data.entities).toHaveLength(1);
+    });
+
+    it('filters by type=nodes', async () => {
+      mockGetCanvas.mockReturnValue(canvasData);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'list',
+        args: { canvasId: '__root__', type: 'nodes' },
+        correlationId: 'list-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.nodes).toHaveLength(2);
+      expect(r.data.edges).toBeUndefined();
+      expect(r.data.entities).toBeUndefined();
+    });
+
+    it('returns CANVAS_NOT_FOUND for unknown canvas', async () => {
+      mockGetCanvas.mockReturnValue(null);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'list',
+        args: { canvasId: 'nope' },
+        correlationId: 'list-3',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('CANVAS_NOT_FOUND');
+    });
+
+    it('formats node output with id, type, displayName', async () => {
+      mockGetCanvas.mockReturnValue(canvasData);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'list',
+        args: { canvasId: '__root__', type: 'nodes' },
+        correlationId: 'list-4',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.data.nodes[0]).toEqual({ id: 'svc-1', type: 'compute/service', displayName: 'API' });
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Dispatcher: describe
+  // -----------------------------------------------------------------------
+
+  describe('describe dispatcher', () => {
+    const canvasData = {
+      data: {
+        nodes: [
+          { id: 'svc-1', type: 'compute/service', displayName: 'API', args: { lang: 'TS' }, notes: [], codeRefs: ['src/api.ts'] },
+          { id: 'db-1', type: 'data/database', displayName: 'DB' },
+        ],
+        edges: [
+          { from: { node: 'svc-1' }, to: { node: 'db-1' }, label: 'reads', protocol: 'TCP' },
+        ],
+        entities: [],
+      },
+    };
+
+    it('describes a node by ID with connected edges and ports', async () => {
+      mockGetCanvas.mockReturnValue(canvasData);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'describe',
+        args: { canvasId: '__root__', id: 'svc-1' },
+        correlationId: 'desc-1',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.node.id).toBe('svc-1');
+      expect(r.data.node.type).toBe('compute/service');
+      expect(r.data.node.displayName).toBe('API');
+      expect(r.data.node.args).toEqual({ lang: 'TS' });
+      expect(r.data.node.codeRefs).toEqual(['src/api.ts']);
+      expect(r.data.node.connectedEdges).toHaveLength(1);
+      expect(r.data.node.ports).toEqual([]);
+    });
+
+    it('returns NODE_NOT_FOUND for unknown node ID', async () => {
+      mockGetCanvas.mockReturnValue(canvasData);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'describe',
+        args: { canvasId: '__root__', id: 'nonexistent' },
+        correlationId: 'desc-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('NODE_NOT_FOUND');
+    });
+
+    it('describes full architecture when no id is given', async () => {
+      mockProject = {
+        canvases: new Map([
+          ['__root__', { data: { project: { name: 'TestProj' }, nodes: [{ id: 'a' }], edges: [], entities: [] } }],
+          ['child', { data: { nodes: [{ id: 'b' }, { id: 'c' }], edges: [{ from: { node: 'b' }, to: { node: 'c' } }], entities: [] } }],
+        ]),
+      };
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'describe',
+        args: {},
+        correlationId: 'desc-3',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.project).toBe('TestProj');
+      expect(r.data.scopes).toHaveLength(2);
+      expect(r.data.scopes[0].nodeCount).toBe(1);
+      expect(r.data.scopes[1].nodeCount).toBe(2);
+      expect(r.data.scopes[1].edgeCount).toBe(1);
+    });
+
+    it('returns PROJECT_LOAD_FAILED when no project', async () => {
+      mockProject = null;
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'describe',
+        args: {},
+        correlationId: 'desc-4',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(false);
+      expect(r.error.code).toBe('PROJECT_LOAD_FAILED');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Dispatcher: search
+  // -----------------------------------------------------------------------
+
+  describe('search dispatcher', () => {
+    beforeEach(() => {
+      mockProject = {
+        canvases: new Map([
+          ['__root__', {
+            data: {
+              nodes: [
+                { id: 'svc-api', type: 'compute/service', displayName: 'API Service' },
+                { id: 'db-main', type: 'data/database', displayName: 'Main DB' },
+              ],
+              edges: [
+                { from: { node: 'svc-api' }, to: { node: 'db-main' }, label: 'reads from' },
+              ],
+              entities: [
+                { name: 'Order', description: 'Customer order' },
+              ],
+            },
+          }],
+        ]),
+      };
+    });
+
+    it('searches across nodes by displayName', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'search',
+        args: { query: 'Main DB' },
+        correlationId: 'search-1',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.results).toHaveLength(1);
+      expect(r.data.results[0].type).toBe('node');
+      expect(r.data.results[0].item.id).toBe('db-main');
+    });
+
+    it('is case-insensitive', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'search',
+        args: { query: 'main db' },
+        correlationId: 'search-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.data.results).toHaveLength(1);
+    });
+
+    it('filters by type', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'search',
+        args: { query: 'order', type: 'entities' },
+        correlationId: 'search-3',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.data.results).toHaveLength(1);
+      expect(r.data.results[0].type).toBe('entity');
+    });
+
+    it('returns empty results for non-matching query', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'search',
+        args: { query: 'zzzznotfound' },
+        correlationId: 'search-4',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.results).toHaveLength(0);
+    });
+
+    it('searches edge labels', async () => {
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'search',
+        args: { query: 'reads' },
+        correlationId: 'search-5',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.data.results.some((item: { type: string }) => item.type === 'edge')).toBe(true);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Dispatcher: catalog
+  // -----------------------------------------------------------------------
+
+  describe('catalog dispatcher', () => {
+    const mockDefs = [
+      { metadata: { namespace: 'compute', name: 'service', displayName: 'Service', description: 'A service', tags: ['core'] } },
+      { metadata: { namespace: 'data', name: 'database', displayName: 'Database', description: 'A database', tags: [] } },
+    ];
+
+    it('returns all node types', async () => {
+      mockRegistryList.mockReturnValue(mockDefs);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'catalog',
+        args: {},
+        correlationId: 'cat-1',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.ok).toBe(true);
+      expect(r.data.nodeTypes).toHaveLength(2);
+      expect(r.data.nodeTypes[0]).toEqual({
+        type: 'compute/service',
+        displayName: 'Service',
+        namespace: 'compute',
+        description: 'A service',
+        tags: ['core'],
+      });
+    });
+
+    it('filters by namespace', async () => {
+      mockListByNamespace.mockReturnValue([mockDefs[1]]);
+      const ws = connectProvider();
+      ws.simulateMessage(JSON.stringify({
+        type: 'store_action', action: 'catalog',
+        args: { namespace: 'data' },
+        correlationId: 'cat-2',
+      }));
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(mockListByNamespace).toHaveBeenCalledWith('data');
+      const r = JSON.parse(ws.sent[0]);
+      expect(r.data.nodeTypes).toHaveLength(1);
+      expect(r.data.nodeTypes[0].type).toBe('data/database');
     });
   });
 

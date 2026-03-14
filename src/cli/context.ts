@@ -8,7 +8,7 @@ import { ROOT_CANVAS_KEY } from '../storage/fileResolver';
 import { CLIError } from './errors';
 
 export interface CLIContext {
-  fs: FileSystem;
+  fs: FileSystem | null;
   bridgeUrl: string | null;
 }
 
@@ -49,15 +49,15 @@ export async function detectBridge(): Promise<string | null> {
 }
 
 /**
- * Send a mutation request to the bridge HTTP API.
+ * Send a request to the bridge HTTP API (reads and writes).
  *
  * @param bridgeUrl - The bridge base URL (from `detectBridge()`).
- * @param action    - The API action name (e.g. 'add-node', 'remove-edge').
+ * @param action    - The API action name (e.g. 'add-node', 'list', 'catalog').
  * @param args      - The JSON body to POST.
  * @returns The parsed JSON response.
  * @throws {CLIError} on HTTP errors (non-2xx) or network failures.
  */
-export async function bridgeMutate(
+export async function bridgeRequest(
   bridgeUrl: string,
   action: string,
   args: Record<string, unknown>,
@@ -101,11 +101,17 @@ export async function bridgeMutate(
 /**
  * Load the project context for CLI commands.
  *
+ * When bridge is detected, the CLI is a thin transport layer — all logic
+ * (validation, enrichment, reads, writes) happens in the browser's
+ * in-memory stores. We skip filesystem creation, project loading, and
+ * registry initialization.
+ *
+ * When no bridge:
  * 1. Resolve the project root (explicit path or walk cwd upward for .archcanvas/).
  * 2. Create a NodeFileSystem via the universal factory.
  * 3. Open the project via fileStore.
  * 4. Initialize the registry (builtins from TS objects).
- * 5. Return { fs }.
+ * 5. Return { fs, bridgeUrl: null }.
  */
 export async function loadContext(
   projectPath?: string,
@@ -121,6 +127,13 @@ export async function loadContext(
     );
   }
 
+  // Detect bridge early — if found, skip all expensive operations
+  const bridgeUrl = await detectBridge();
+  if (bridgeUrl) {
+    return { fs: null, bridgeUrl };
+  }
+
+  // No bridge — load project locally
   const fs = await createFileSystem(resolvedPath);
 
   // Open the project via fileStore
@@ -139,10 +152,7 @@ export async function loadContext(
   // Initialize the NodeDef registry (builtins from static TS objects)
   await useRegistryStore.getState().initialize();
 
-  // Probe for a running dev-server bridge (non-blocking fallback to null)
-  const bridgeUrl = await detectBridge();
-
-  return { fs, bridgeUrl };
+  return { fs, bridgeUrl: null };
 }
 
 /**

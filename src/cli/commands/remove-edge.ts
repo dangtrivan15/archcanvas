@@ -1,6 +1,6 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
-import { loadContext, resolveCanvasId, bridgeMutate } from '../context';
+import { loadContext, resolveCanvasId, bridgeRequest } from '../context';
 import { CLIError, engineErrorMessage } from '../errors';
 import { printSuccess, type OutputOptions } from '../output';
 
@@ -21,7 +21,7 @@ export async function removeEdgeCommand(
 
   if (ctx.bridgeUrl) {
     // Route through the running dev-server bridge
-    const result = await bridgeMutate(ctx.bridgeUrl, 'remove-edge', {
+    const result = await bridgeRequest(ctx.bridgeUrl, 'remove-edge', {
       canvasId,
       from: options.from,
       to: options.to,
@@ -36,7 +36,7 @@ export async function removeEdgeCommand(
     }
 
     // Save after successful mutation (C11.1, C5e.2)
-    await useFileStore.getState().saveAll(ctx.fs);
+    await useFileStore.getState().saveAll(ctx.fs!);
 
     // Output (C5e.4)
     printSuccess({ removed: { from: options.from, to: options.to } }, globalOptions);

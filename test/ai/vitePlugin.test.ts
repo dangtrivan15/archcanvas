@@ -485,11 +485,11 @@ describe('aiBridgePlugin — HTTP mutation relay', () => {
 
   it('returns 504 BRIDGE_TIMEOUT when browser does not respond in time', async () => {
     // Use a short timeout so the test doesn't have to wait 10 seconds.
-    // We create a separate server with a tiny mutationTimeoutMs.
+    // We create a separate server with a tiny requestTimeoutMs.
     const shortTimeoutServer = createMockViteServer();
     const shortTimeoutPlugin = aiBridgePlugin({
       queryFn: createMockSDKQueryFn(),
-      mutationTimeoutMs: 100,
+      requestTimeoutMs: 100,
     });
     const configureFn = (shortTimeoutPlugin as Plugin & { configureServer: (s: unknown) => void }).configureServer;
     configureFn!.call(shortTimeoutPlugin, shortTimeoutServer as unknown as ViteDevServer);
