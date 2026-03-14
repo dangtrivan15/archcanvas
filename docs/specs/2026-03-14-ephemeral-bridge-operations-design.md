@@ -22,7 +22,7 @@ When bridge is NOT detected, CLI continues to operate as a standalone tool: load
 
 **File:** `src/core/ai/webSocketProvider.ts`
 
-In `handleStoreAction()`, remove the `fileStore.save()` call and the `NO_FILESYSTEM` error path. After dispatching a store action, send the result back immediately.
+In `handleStoreAction()`, remove the `fileStore.save()` call (line 246) and the `NO_FILESYSTEM` error path (lines 248-254). After dispatching a store action successfully, send the `store_action_result` response immediately — the existing success-send block (lines 266-271) moves up to fill the gap left by the removed save block.
 
 Dirty tracking still works naturally: `graphStore.addNode()` → `fileStore.updateCanvasData()` marks the canvas dirty → UI shows unsaved indicator. User saves via Cmd+S when ready.
 
@@ -47,6 +47,8 @@ No bridge (unchanged):
 ```
 
 When bridge is active, the CLI does not need filesystem, project data, or registry — the browser has all of this.
+
+**Type change:** `CLIContext.fs` becomes `FileSystem | null`. In the non-bridge path, `fs` is always non-null — write commands guard with `if (ctx.bridgeUrl)` before touching `ctx.fs`, so TypeScript narrowing handles it. Each `saveAll(ctx.fs)` call is inside an `else` branch where `bridgeUrl` is null, guaranteeing `fs` is non-null. Add a `!` assertion or explicit guard at each call site.
 
 ### 3. Extend HTTP API with Read Routes
 
@@ -82,11 +84,13 @@ Expand `dispatchStoreAction()` with:
 - `list` — read from `fileStore`, format `{ nodes, edges, entities }` matching CLI output shape
 - `describe` — read node/architecture from `fileStore` + `registryStore`, format matching CLI output
 - `search` — search across all canvases in `fileStore.project`
-- `catalog` — read from `registryStore`
+- `catalog` — read from `registryStore` (browser registry includes both built-in types and any project-local overrides from the layered registry)
+
+**Note:** `useRegistryStore` must be added to the imports in `webSocketProvider.ts` (currently only imports `useGraphStore` and `useFileStore`).
 
 **Write action enrichment:**
-- `addNode` — validate type against registry (with fuzzy matching and suggestions), resolve `displayName` from `NodeDef` if not provided, then call `graphStore.addNode()`
-- `import` — receive pre-parsed nodes/edges/entities, merge into stores via graphStore
+- `addNode` — receives raw CLI args `{ canvasId, id, type, name?, args? }` (not a pre-constructed `InlineNode`). The browser dispatcher validates type against registry (with fuzzy matching and suggestions), resolves `displayName` from `NodeDef` if `name` is not provided, constructs the `InlineNode`, then calls `graphStore.addNode()`. This replaces the validation + node construction logic currently in `add-node.ts` lines 27-104 — in bridge mode, the CLI moves the bridge guard before all validation and sends raw args directly. The non-bridge path retains the existing local validation.
+- `import` — receive pre-parsed nodes/edges/entities, merge into stores via graphStore (iterating each item and calling `graphStore.addNode/addEdge/addEntity`)
 
 Each action returns data in the same shape the CLI currently outputs, so `bridgeRequest()` responses are format-identical regardless of path.
 
@@ -127,25 +131,42 @@ that changes have been "applied" to the canvas.
 
 **File:** `src/cli/commands/import.ts`
 
+The import command already uses `node:fs/promises` `readFile()` directly (not the `FileSystem` abstraction) to read the source file. This works regardless of whether `ctx.fs` is null in bridge mode.
+
 When bridge detected:
-1. CLI parses the source `.archcanvas` file locally (CLI has filesystem access via `loadContext()` — but wait, in bridge mode `fs` is null)
-2. Use a dedicated filesystem just for reading the import file (not the project filesystem)
-3. Send parsed nodes/edges/entities through `bridgeRequest(ctx.bridgeUrl, 'import', { canvasId, nodes, edges, entities })`
+1. CLI reads and parses the source YAML file locally using `readFile()` from `node:fs/promises` (already the current pattern — no change needed for file reading)
+2. CLI parses the YAML into structured `{ nodes, edges, entities }` arrays (currently this parsing only happens in the non-bridge path — move it before the bridge guard)
+3. Send parsed data through `bridgeRequest(ctx.bridgeUrl, 'import', { canvasId, nodes, edges, entities })`
+
+**Canvas existence check:** The current code checks `fileStore.getCanvas(canvasId)` before the bridge guard (line 32-35). In bridge mode, `fileStore` has no project loaded, so this check always fails. Move the canvas existence check inside the non-bridge path — the browser-side dispatcher validates canvas existence using its own in-memory state.
+
+**Wire format change:** The current bridge path sends raw YAML (`{ canvasId, yaml: fileContent }`). The new bridge path sends pre-parsed data (`{ canvasId, nodes, edges, entities }`). This is a breaking change to the import wire format, but since the current browser dispatcher doesn't handle `import` at all (returns `UNKNOWN_ACTION`), there is no backward compatibility concern.
 
 The browser receives structured data and merges via graphStore. No filesystem access needed on the browser side.
 
-**Note:** The import command is the one exception where the CLI still needs filesystem access in bridge mode — but only to read the *source* file, not the project files. This is a one-off `fs.readFile()` on the import path, not a full `loadContext()` load.
+### 9. `init` Command — No Change
+
+**File:** `src/cli/commands/init.ts`
+
+`init` does not call `loadContext()` — it creates a new project from scratch, writing `.archcanvas/main.yaml` to disk. This command always writes to disk regardless of bridge state, which is correct: creating a new project is a filesystem operation, not a canvas mutation. No bridge routing needed.
+
+### 10. Bridge Disconnect During In-Flight Requests
+
+The existing vite plugin `ws.on('close')` handler already rejects all entries in `pendingMutations` when the browser disconnects. Since read requests reuse the same `pendingMutations` map and relay mechanism, they are automatically covered. A read request in-flight during disconnect receives a `BRIDGE_DISCONNECTED` error response just like a mutation would.
+
+**Naming:** The `pendingMutations` map now handles both reads and writes. Rename to `pendingRequests` for clarity. Also rename related identifiers: `MUTATION_TIMEOUT_MS` → `REQUEST_TIMEOUT_MS`, `mutationTimeoutMs` → `requestTimeoutMs`.
 
 ## Data Flow Diagrams
 
 ### Write (bridge detected)
 ```
 CLI (raw args)
-  → bridgeRequest(POST /api/add-node, { id, type, name? })
+  → bridgeRequest(POST /api/add-node, { canvasId, id, type, name?, args? })
     → Vite plugin relays via WebSocket
       → Browser dispatchStoreAction('addNode', args)
-        → Validate type (registry, fuzzy matching)
-        → Resolve displayName
+        → Validate type (registry, fuzzy matching, suggestions)
+        → Resolve displayName from NodeDef if name not provided
+        → Construct InlineNode
         → graphStore.addNode() → fileStore.updateCanvasData() (marks dirty)
         → Return { ok, data } or { ok: false, error: { code, message } }
       → WebSocket response
@@ -189,18 +210,18 @@ CLI
 
 | File | Change |
 |------|--------|
-| `src/core/ai/webSocketProvider.ts` | Remove auto-save, expand dispatcher with reads + write enrichment |
-| `src/core/ai/vitePlugin.ts` | Add read routes to `ROUTE_TO_ACTION` |
-| `src/cli/context.ts` | Reorder `loadContext()`, rename `bridgeMutate` → `bridgeRequest` |
-| `src/cli/commands/add-node.ts` | Simplify bridge path (send raw args, no local validation) |
-| `src/cli/commands/add-edge.ts` | Simplify bridge path |
-| `src/cli/commands/remove-node.ts` | Simplify bridge path |
-| `src/cli/commands/remove-edge.ts` | Simplify bridge path |
+| `src/core/ai/webSocketProvider.ts` | Remove auto-save, add `useRegistryStore` import, expand dispatcher with reads + write enrichment |
+| `src/core/ai/vitePlugin.ts` | Add read routes to `ROUTE_TO_ACTION`, rename `pendingMutations` → `pendingRequests` |
+| `src/cli/context.ts` | Reorder `loadContext()`, `CLIContext.fs` becomes `FileSystem \| null`, rename `bridgeMutate` → `bridgeRequest` |
+| `src/cli/commands/add-node.ts` | Bridge path sends raw args, skip local validation; non-bridge path unchanged |
+| `src/cli/commands/add-edge.ts` | Bridge path sends raw args; non-bridge path unchanged |
+| `src/cli/commands/remove-node.ts` | Bridge path sends raw args; non-bridge path unchanged |
+| `src/cli/commands/remove-edge.ts` | Bridge path sends raw args; non-bridge path unchanged |
 | `src/cli/commands/list.ts` | Add bridge guard, call `loadContext()` internally |
 | `src/cli/commands/describe.ts` | Add bridge guard, call `loadContext()` internally |
 | `src/cli/commands/search.ts` | Add bridge guard, call `loadContext()` internally |
 | `src/cli/commands/catalog.ts` | Add bridge guard, call `loadContext()` internally |
-| `src/cli/commands/import.ts` | Parse file locally, send parsed data via bridge |
+| `src/cli/commands/import.ts` | Move YAML parsing before bridge guard, send parsed `{ nodes, edges, entities }` via bridge (wire format change from `{ yaml }`) |
 | `src/cli/index.ts` | Update read command wiring (commands now self-contained) |
 | `src/core/ai/systemPrompt.ts` | Add "changes not auto-saved" note |
 
@@ -208,6 +229,7 @@ CLI
 
 - Existing tests for the non-bridge path should remain green (no behavioral change)
 - Bridge path tests in `test/ai/bridge.test.ts` need updating — remove save assertions, add read action tests
-- `test/ai/webSocketProvider.test.ts` — test new dispatcher cases (list, describe, search, catalog, enriched addNode)
-- `test/ai/vitePlugin.test.ts` — test new read routes
+- `test/ai/webSocketProvider.test.ts` — test new dispatcher cases (list, describe, search, catalog, enriched addNode with fuzzy matching)
+- `test/ai/vitePlugin.test.ts` — test new read routes, verify `pendingRequests` rename
 - CLI integration tests — verify read commands route through bridge when detected
+- Import tests — verify new wire format (`nodes/edges/entities` instead of `yaml`)
