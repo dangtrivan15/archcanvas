@@ -364,12 +364,14 @@ describe('ChatPermissionCard', () => {
     expect(screen.getByText('rm -rf /tmp')).toBeInTheDocument();
   });
 
-  it('shows Approve and Deny buttons', () => {
+  it('shows Approve, Always Allow, Deny, and Deny & Stop buttons', () => {
     render(
       <ChatPermissionCard id="p1" tool="Bash" command="echo hi" />,
     );
     expect(screen.getByText('Approve')).toBeInTheDocument();
+    expect(screen.getByText('Always Allow')).toBeInTheDocument();
     expect(screen.getByText('Deny')).toBeInTheDocument();
+    expect(screen.getByText('Deny & Stop')).toBeInTheDocument();
   });
 
   it('calls respondToPermission and shows Approved on approve', () => {
@@ -402,6 +404,103 @@ describe('ChatPermissionCard', () => {
 
     expect(respondSpy).toHaveBeenCalledWith('p2', false);
     expect(screen.getByText('Denied')).toBeInTheDocument();
+  });
+
+  it('shows blockedPath when present', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Edit"
+        command="edit file"
+        blockedPath="/src/app.ts"
+      />,
+    );
+    expect(screen.getByText('/src/app.ts')).toBeInTheDocument();
+    expect(screen.getByText('File:')).toBeInTheDocument();
+  });
+
+  it('does not show File: line when blockedPath is absent', () => {
+    render(
+      <ChatPermissionCard id="p1" tool="Bash" command="ls" />,
+    );
+    expect(screen.queryByText('File:')).not.toBeInTheDocument();
+  });
+
+  it('shows decisionReason when present', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="rm file"
+        decisionReason="This tool is not in the allow list"
+      />,
+    );
+    expect(screen.getByText(/This tool is not in the allow list/)).toBeInTheDocument();
+  });
+
+  it('does not show Reason: line when decisionReason is absent', () => {
+    render(
+      <ChatPermissionCard id="p1" tool="Bash" command="ls" />,
+    );
+    expect(screen.queryByText(/Reason:/)).not.toBeInTheDocument();
+  });
+
+  it('sends updatedPermissions on Always Allow click', () => {
+    const respondSpy = vi.fn();
+    useChatStore.setState({
+      respondToPermission: respondSpy,
+    } as any);
+
+    render(
+      <ChatPermissionCard id="p1" tool="Bash" command="echo hi" />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+
+    expect(respondSpy).toHaveBeenCalledWith('p1', true, {
+      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+    });
+    expect(screen.getByText('Always Allowed')).toBeInTheDocument();
+  });
+
+  it('sends interrupt on Deny & Stop click', () => {
+    const respondSpy = vi.fn();
+    useChatStore.setState({
+      respondToPermission: respondSpy,
+    } as any);
+
+    render(
+      <ChatPermissionCard id="p1" tool="Bash" command="rm -rf /" />,
+    );
+    fireEvent.click(screen.getByText('Deny & Stop'));
+
+    expect(respondSpy).toHaveBeenCalledWith('p1', false, { interrupt: true });
+    expect(screen.getByText('Denied & Stopped')).toBeInTheDocument();
+  });
+
+  it('has a visually distinct left border', () => {
+    const { container } = render(
+      <ChatPermissionCard id="p1" tool="Bash" command="echo hi" />,
+    );
+    const card = container.firstElementChild!;
+    expect(card.className).toContain('border-l-4');
+    expect(card.className).toContain('border-yellow-500');
+  });
+
+  it('renders permission_request with blockedPath and decisionReason in ChatMessage', () => {
+    const events = [
+      {
+        type: 'permission_request' as const,
+        requestId: 'r1',
+        id: 'perm1',
+        tool: 'Edit',
+        command: 'edit /src/app.ts',
+        blockedPath: '/src/app.ts',
+        decisionReason: 'File outside project directory',
+      },
+    ];
+    render(<ChatMessage message={makeAssistantMessage('', events)} />);
+    expect(screen.getByText('/src/app.ts')).toBeInTheDocument();
+    expect(screen.getByText(/File outside project directory/)).toBeInTheDocument();
   });
 });
 

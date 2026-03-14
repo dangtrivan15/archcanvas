@@ -361,7 +361,7 @@ describe('chatStore', () => {
       useChatStore.getState().registerProvider(provider);
 
       useChatStore.getState().respondToPermission('perm-1', true);
-      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-1', true);
+      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-1', true, undefined);
     });
 
     it('passes denied response', () => {
@@ -369,12 +369,32 @@ describe('chatStore', () => {
       useChatStore.getState().registerProvider(provider);
 
       useChatStore.getState().respondToPermission('perm-2', false);
-      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-2', false);
+      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-2', false, undefined);
     });
 
     it('no-ops when no active provider', () => {
       // Should not throw
       useChatStore.getState().respondToPermission('perm-1', true);
+    });
+
+    it('forwards updatedPermissions option', () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      const options = {
+        updatedPermissions: [{ tool: 'Bash', permission: 'allow' as const }],
+      };
+      useChatStore.getState().respondToPermission('perm-3', true, options);
+      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-3', true, options);
+    });
+
+    it('forwards interrupt option', () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      const options = { interrupt: true };
+      useChatStore.getState().respondToPermission('perm-4', false, options);
+      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-4', false, options);
     });
   });
 

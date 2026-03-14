@@ -518,6 +518,38 @@ describe('WebSocketClaudeCodeProvider', () => {
       const msg = JSON.parse(ws.sent[0]);
       expect(msg.allowed).toBe(false);
     });
+
+    it('includes updatedPermissions when provided', () => {
+      const ws = connectProvider();
+      provider.sendPermissionResponse('perm-3', true, {
+        updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+      });
+      const msg = JSON.parse(ws.sent[0]);
+      expect(msg.type).toBe('permission_response');
+      expect(msg.id).toBe('perm-3');
+      expect(msg.allowed).toBe(true);
+      expect(msg.updatedPermissions).toEqual([{ tool: 'Bash', permission: 'allow' }]);
+      expect(msg.interrupt).toBeUndefined();
+    });
+
+    it('includes interrupt when provided', () => {
+      const ws = connectProvider();
+      provider.sendPermissionResponse('perm-4', false, { interrupt: true });
+      const msg = JSON.parse(ws.sent[0]);
+      expect(msg.type).toBe('permission_response');
+      expect(msg.id).toBe('perm-4');
+      expect(msg.allowed).toBe(false);
+      expect(msg.interrupt).toBe(true);
+      expect(msg.updatedPermissions).toBeUndefined();
+    });
+
+    it('omits optional fields when options not provided', () => {
+      const ws = connectProvider();
+      provider.sendPermissionResponse('perm-5', true);
+      const msg = JSON.parse(ws.sent[0]);
+      expect(msg).not.toHaveProperty('updatedPermissions');
+      expect(msg).not.toHaveProperty('interrupt');
+    });
   });
 
   // -----------------------------------------------------------------------

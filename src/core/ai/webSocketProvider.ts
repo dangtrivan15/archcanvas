@@ -108,8 +108,21 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
   }
 
   /** Send a permission response back to the bridge. */
-  sendPermissionResponse(id: string, allowed: boolean): void {
-    this.send({ type: 'permission_response', id, allowed });
+  sendPermissionResponse(
+    id: string,
+    allowed: boolean,
+    options?: {
+      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      interrupt?: boolean;
+    },
+  ): void {
+    this.send({
+      type: 'permission_response',
+      id,
+      allowed,
+      ...(options?.updatedPermissions && { updatedPermissions: options.updatedPermissions }),
+      ...(options?.interrupt !== undefined && { interrupt: options.interrupt }),
+    });
   }
 
   /**
