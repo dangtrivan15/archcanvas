@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { builtinModules } from 'node:module';
+import { chmod } from 'node:fs/promises';
 import path from 'path';
 
 /**
@@ -10,7 +11,17 @@ import path from 'path';
  * Externals: all node:* builtins
  * Bundles: commander, yaml, zod, immer, zustand, and all src/ imports
  */
+function chmodPlugin(): Plugin {
+  return {
+    name: 'chmod-cli',
+    closeBundle: async () => {
+      await chmod(path.resolve(__dirname, 'dist/cli.js'), 0o755);
+    },
+  };
+}
+
 export default defineConfig({
+  plugins: [chmodPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
