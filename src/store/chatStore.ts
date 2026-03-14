@@ -3,6 +3,7 @@ import type {
   ChatProvider,
   ChatMessage,
   ProjectContext,
+  PermissionSuggestion,
 } from '@/core/ai/types';
 import { useFileStore } from './fileStore';
 import { useNavigationStore } from './navigationStore';
@@ -30,7 +31,7 @@ interface ChatState {
     id: string,
     allowed: boolean,
     options?: {
-      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      updatedPermissions?: PermissionSuggestion[];
       interrupt?: boolean;
     },
   ): void;
@@ -198,7 +199,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     id: string,
     allowed: boolean,
     options?: {
-      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      updatedPermissions?: PermissionSuggestion[];
       interrupt?: boolean;
     },
   ) {

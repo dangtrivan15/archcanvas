@@ -10,6 +10,7 @@ import type {
   ChatMessage,
   ProjectContext,
   AskUserQuestion,
+  PermissionSuggestion,
 } from './types';
 import { buildSystemPrompt } from './systemPrompt';
 
@@ -53,13 +54,13 @@ export type SDKQueryFn = (args: {
       options: {
         signal: AbortSignal;
         toolUseID: string;
-        suggestions?: Array<{ tool: string; permission: string }>;
+        suggestions?: PermissionSuggestion[];
         blockedPath?: string;
         decisionReason?: string;
         agentID?: string;
       },
     ) => Promise<
-      | { behavior: 'allow'; updatedInput?: Record<string, unknown>; updatedPermissions?: Array<{ tool: string; permission: string }> }
+      | { behavior: 'allow'; updatedInput?: Record<string, unknown>; updatedPermissions?: PermissionSuggestion[] }
       | { behavior: 'deny'; message: string; interrupt?: boolean }
     >;
   };
@@ -84,7 +85,7 @@ export interface BridgeSession {
     id: string,
     allowed: boolean,
     options?: {
-      updatedPermissions?: Array<{ tool: string; permission: string }>;
+      updatedPermissions?: PermissionSuggestion[];
       interrupt?: boolean;
     },
   ): void;
@@ -103,7 +104,7 @@ export interface BridgeSession {
 
 interface PermissionResponse {
   allowed: boolean;
-  updatedPermissions?: Array<{ tool: string; permission: string }>;
+  updatedPermissions?: PermissionSuggestion[];
   interrupt?: boolean;
 }
 
@@ -137,6 +138,7 @@ export type OnPermissionRequest = (event: {
   command: string;
   blockedPath?: string;
   decisionReason?: string;
+  permissionSuggestions?: PermissionSuggestion[];
 }) => void;
 
 /**
@@ -490,6 +492,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               // Emit permission_request to the caller via side-channel callback.
               // The Vite plugin wires this to send the event over WebSocket.
               if (onPermissionRequest) {
+                const suggestions = opts.suggestions as PermissionSuggestion[] | undefined;
                 onPermissionRequest({
                   type: 'permission_request',
                   requestId,
@@ -498,6 +501,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
                   command,
                   ...(opts.blockedPath ? { blockedPath: opts.blockedPath } : {}),
                   ...(opts.decisionReason ? { decisionReason: opts.decisionReason } : {}),
+                  ...(suggestions?.length ? { permissionSuggestions: suggestions } : {}),
                 });
               }
 
@@ -510,6 +514,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               if (response.allowed) {
                 return {
                   behavior: 'allow' as const,
+                  updatedInput: input,
                   ...(response.updatedPermissions ? { updatedPermissions: response.updatedPermissions } : {}),
                 };
               } else {
@@ -541,7 +546,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       id: string,
       allowed: boolean,
       options?: {
-        updatedPermissions?: Array<{ tool: string; permission: string }>;
+        updatedPermissions?: PermissionSuggestion[];
         interrupt?: boolean;
       },
     ): void {

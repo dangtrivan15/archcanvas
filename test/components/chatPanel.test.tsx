@@ -569,7 +569,7 @@ describe('ChatPermissionCard', () => {
     expect(screen.queryByText(/Reason:/)).not.toBeInTheDocument();
   });
 
-  it('sends updatedPermissions on Always Allow click', () => {
+  it('sends fallback addRules on Always Allow when no suggestions', () => {
     const respondSpy = vi.fn();
     useChatStore.setState({
       respondToPermission: respondSpy,
@@ -581,9 +581,192 @@ describe('ChatPermissionCard', () => {
     fireEvent.click(screen.getByText('Always Allow'));
 
     expect(respondSpy).toHaveBeenCalledWith('p1', true, {
-      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash' }], behavior: 'allow', destination: 'localSettings' }],
     });
     expect(screen.getByText('Always Allowed')).toBeInTheDocument();
+  });
+
+  it('shows chip selector when Always Allow clicked with suggestions', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test --ci"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm run test' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+
+    // Chips appear
+    expect(screen.getByText('npm test:*')).toBeInTheDocument();
+    expect(screen.getByText('npm run test')).toBeInTheDocument();
+    expect(screen.getByText('Custom...')).toBeInTheDocument();
+    // Confirm and Cancel buttons appear
+    expect(screen.getByText('Confirm')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    // Original 4 buttons are hidden
+    expect(screen.queryByText('Approve')).not.toBeInTheDocument();
+    expect(screen.queryByText('Deny')).not.toBeInTheDocument();
+  });
+
+  it('shows addDirectories suggestions with directory path labels', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Write"
+        command="write file"
+        permissionSuggestions={[
+          { type: 'addDirectories', directories: ['/Users/x/project/src'], destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+
+    expect(screen.getByText('/Users/x/project/src')).toBeInTheDocument();
+  });
+
+  it('Confirm sends selected suggestion as updatedPermissions', () => {
+    const respondSpy = vi.fn();
+    useChatStore.setState({
+      respondToPermission: respondSpy,
+    } as any);
+
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+    // First chip is auto-selected — click Confirm
+    fireEvent.click(screen.getByText('Confirm'));
+
+    expect(respondSpy).toHaveBeenCalledWith('p1', true, {
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' }],
+    });
+    expect(screen.getByText('Always Allowed')).toBeInTheDocument();
+  });
+
+  it('clicking a different chip selects it', () => {
+    const respondSpy = vi.fn();
+    useChatStore.setState({
+      respondToPermission: respondSpy,
+    } as any);
+
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test --ci"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm run test' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+    // Click the second chip
+    fireEvent.click(screen.getByText('npm run test'));
+    fireEvent.click(screen.getByText('Confirm'));
+
+    expect(respondSpy).toHaveBeenCalledWith('p1', true, {
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm run test' }], behavior: 'allow', destination: 'localSettings' }],
+    });
+  });
+
+  it('Custom chip reveals text input', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+    fireEvent.click(screen.getByText('Custom...'));
+
+    const input = screen.getByPlaceholderText('Enter custom rule pattern...');
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveValue('npm test:*');
+  });
+
+  it('Custom edit builds a custom suggestion on Confirm', () => {
+    const respondSpy = vi.fn();
+    useChatStore.setState({
+      respondToPermission: respondSpy,
+    } as any);
+
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+    fireEvent.click(screen.getByText('Custom...'));
+
+    const input = screen.getByPlaceholderText('Enter custom rule pattern...');
+    fireEvent.change(input, { target: { value: 'npm run:*' } });
+    fireEvent.click(screen.getByText('Confirm'));
+
+    expect(respondSpy).toHaveBeenCalledWith('p1', true, {
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm run:*' }], behavior: 'allow', destination: 'localSettings' }],
+    });
+  });
+
+  it('Cancel returns to initial button state', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="npm test"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+    expect(screen.getByText('Confirm')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Cancel'));
+
+    // Back to original buttons
+    expect(screen.getByText('Approve')).toBeInTheDocument();
+    expect(screen.getByText('Always Allow')).toBeInTheDocument();
+    expect(screen.getByText('Deny')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm')).not.toBeInTheDocument();
+  });
+
+  it('handles empty rules array gracefully', () => {
+    render(
+      <ChatPermissionCard
+        id="p1"
+        tool="Bash"
+        command="echo hi"
+        permissionSuggestions={[
+          { type: 'addRules', rules: [], behavior: 'allow', destination: 'localSettings' },
+        ]}
+      />,
+    );
+    fireEvent.click(screen.getByText('Always Allow'));
+
+    // Should render "tool (any)" label without crashing
+    expect(screen.getByText('tool (any)')).toBeInTheDocument();
   });
 
   it('sends interrupt on Deny & Stop click', () => {

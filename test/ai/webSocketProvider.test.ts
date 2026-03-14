@@ -519,16 +519,16 @@ describe('WebSocketClaudeCodeProvider', () => {
       expect(msg.allowed).toBe(false);
     });
 
-    it('includes updatedPermissions when provided', () => {
+    it('includes updatedPermissions when provided with SDK-shaped suggestions', () => {
       const ws = connectProvider();
       provider.sendPermissionResponse('perm-3', true, {
-        updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+        updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' }],
       });
       const msg = JSON.parse(ws.sent[0]);
       expect(msg.type).toBe('permission_response');
       expect(msg.id).toBe('perm-3');
       expect(msg.allowed).toBe(true);
-      expect(msg.updatedPermissions).toEqual([{ tool: 'Bash', permission: 'allow' }]);
+      expect(msg.updatedPermissions).toEqual([{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' }]);
       expect(msg.interrupt).toBeUndefined();
     });
 
