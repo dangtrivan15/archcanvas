@@ -6,11 +6,13 @@ import { ChatMessage } from '@/components/panels/ChatMessage';
 import { ChatToolCall } from '@/components/panels/ChatToolCall';
 import { ChatPermissionCard } from '@/components/panels/ChatPermissionCard';
 import { ChatProviderSelector } from '@/components/panels/ChatProviderSelector';
+import { ChatQuestionCard } from '@/components/panels/ChatQuestionCard';
 import type {
   ChatMessage as ChatMessageType,
   ChatProvider,
   ToolCallEvent,
   ToolResultEvent,
+  AskUserQuestion,
 } from '@/core/ai/types';
 
 // ---------------------------------------------------------------------------
@@ -695,5 +697,183 @@ describe('ChatProviderSelector', () => {
 
     // Verify provider was switched
     expect(useChatStore.getState().activeProviderId).toBe('b');
+  });
+});
+
+// ===========================================================================
+// ChatQuestionCard — Preview Rendering
+// ===========================================================================
+
+describe('ChatQuestionCard — preview rendering', () => {
+  const questionWithPreviews: AskUserQuestion[] = [
+    {
+      question: 'Which database should we use?',
+      header: 'Database Choice',
+      multiSelect: false,
+      options: [
+        {
+          label: 'PostgreSQL',
+          description: 'Relational database',
+          preview: '```sql\nCREATE TABLE users (\n  id SERIAL PRIMARY KEY\n);\n```',
+        },
+        {
+          label: 'MongoDB',
+          description: 'Document database',
+          preview: '```json\n{ "_id": "abc", "name": "test" }\n```',
+        },
+        {
+          label: 'SQLite',
+          description: 'Embedded database',
+          // No preview — should render normally without a preview block
+        },
+      ],
+    },
+  ];
+
+  it('does not render previews when no option is selected', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    // Preview containers should not exist
+    expect(screen.queryByTestId('preview-PostgreSQL')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('preview-MongoDB')).not.toBeInTheDocument();
+  });
+
+  it('renders preview when an option with preview is selected', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    // Click PostgreSQL
+    fireEvent.click(screen.getByText('PostgreSQL'));
+    // Preview should appear
+    const previewContainer = screen.getByTestId('preview-PostgreSQL');
+    expect(previewContainer).toBeInTheDocument();
+    const pre = previewContainer.querySelector('pre');
+    expect(pre).toBeInTheDocument();
+    expect(pre!.textContent).toContain('CREATE TABLE users');
+  });
+
+  it('renders preview content as plain text in a <pre> block (no HTML injection)', () => {
+    const xssQuestion: AskUserQuestion[] = [
+      {
+        question: 'Pick one',
+        header: 'XSS Test',
+        multiSelect: false,
+        options: [
+          {
+            label: 'Evil',
+            description: 'Contains HTML',
+            preview: '<script>alert("xss")</script><img src=x onerror=alert(1)>',
+          },
+        ],
+      },
+    ];
+    render(<ChatQuestionCard id="q-xss" questions={xssQuestion} />);
+    fireEvent.click(screen.getByText('Evil'));
+    const previewContainer = screen.getByTestId('preview-Evil');
+    const pre = previewContainer.querySelector('pre');
+    // The content should be rendered as plain text, not parsed as HTML
+    expect(pre!.textContent).toContain('<script>alert("xss")</script>');
+    // No actual script element should exist
+    expect(previewContainer.querySelector('script')).toBeNull();
+    expect(previewContainer.querySelector('img')).toBeNull();
+  });
+
+  it('does not render preview for options without a preview field', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    // Click SQLite (has no preview)
+    fireEvent.click(screen.getByText('SQLite'));
+    // No preview container for SQLite
+    expect(screen.queryByTestId('preview-SQLite')).not.toBeInTheDocument();
+    // Other previews should also not be shown (they aren't selected)
+    expect(screen.queryByTestId('preview-PostgreSQL')).not.toBeInTheDocument();
+  });
+
+  it('preview container has max-height and overflow-y auto', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    fireEvent.click(screen.getByText('PostgreSQL'));
+    const pre = screen.getByTestId('preview-PostgreSQL').querySelector('pre')!;
+    expect(pre.style.maxHeight).toBe('200px');
+    expect(pre.style.whiteSpace).toBe('pre-wrap');
+    expect(pre.className).toContain('overflow-y-auto');
+  });
+
+  it('preview container has a border', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    fireEvent.click(screen.getByText('PostgreSQL'));
+    const container = screen.getByTestId('preview-PostgreSQL');
+    expect(container.className).toContain('border');
+    expect(container.className).toContain('rounded');
+  });
+
+  it('switches preview when selecting a different option (single-select)', () => {
+    render(<ChatQuestionCard id="q1" questions={questionWithPreviews} />);
+    // Select PostgreSQL first
+    fireEvent.click(screen.getByText('PostgreSQL'));
+    expect(screen.getByTestId('preview-PostgreSQL')).toBeInTheDocument();
+    expect(screen.queryByTestId('preview-MongoDB')).not.toBeInTheDocument();
+    // Switch to MongoDB
+    fireEvent.click(screen.getByText('MongoDB'));
+    expect(screen.queryByTestId('preview-PostgreSQL')).not.toBeInTheDocument();
+    expect(screen.getByTestId('preview-MongoDB')).toBeInTheDocument();
+    const pre = screen.getByTestId('preview-MongoDB').querySelector('pre')!;
+    expect(pre.textContent).toContain('"_id": "abc"');
+  });
+
+  it('shows multiple previews in multi-select mode', () => {
+    const multiQuestion: AskUserQuestion[] = [
+      {
+        question: 'Which tools?',
+        header: 'Tools',
+        multiSelect: true,
+        options: [
+          { label: 'ESLint', description: 'Linter', preview: 'eslint config preview' },
+          { label: 'Prettier', description: 'Formatter', preview: 'prettier config preview' },
+          { label: 'TypeScript', description: 'Type checker' },
+        ],
+      },
+    ];
+    render(<ChatQuestionCard id="q-multi" questions={multiQuestion} />);
+    // Select both ESLint and Prettier
+    fireEvent.click(screen.getByText('ESLint'));
+    fireEvent.click(screen.getByText('Prettier'));
+    // Both previews should be visible
+    expect(screen.getByTestId('preview-ESLint')).toBeInTheDocument();
+    expect(screen.getByTestId('preview-Prettier')).toBeInTheDocument();
+    // TypeScript has no preview field, so no container for it even if selected
+    fireEvent.click(screen.getByText('TypeScript'));
+    expect(screen.queryByTestId('preview-TypeScript')).not.toBeInTheDocument();
+  });
+
+  it('hides preview when option is deselected in multi-select mode', () => {
+    const multiQuestion: AskUserQuestion[] = [
+      {
+        question: 'Which tools?',
+        header: 'Tools',
+        multiSelect: true,
+        options: [
+          { label: 'ESLint', description: 'Linter', preview: 'eslint config preview' },
+        ],
+      },
+    ];
+    render(<ChatQuestionCard id="q-toggle" questions={multiQuestion} />);
+    // Select then deselect
+    fireEvent.click(screen.getByText('ESLint'));
+    expect(screen.getByTestId('preview-ESLint')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('ESLint'));
+    expect(screen.queryByTestId('preview-ESLint')).not.toBeInTheDocument();
+  });
+
+  it('renders ask_user_question with previews in ChatMessage', () => {
+    const events = [
+      {
+        type: 'ask_user_question' as const,
+        requestId: 'r1',
+        id: 'q-in-msg',
+        questions: questionWithPreviews,
+      },
+    ];
+    render(<ChatMessage message={makeAssistantMessage('', events)} />);
+    // The question card should be rendered
+    expect(screen.getByText(/Which database should we use/)).toBeInTheDocument();
+    // Click an option to show its preview
+    fireEvent.click(screen.getByText('PostgreSQL'));
+    expect(screen.getByTestId('preview-PostgreSQL')).toBeInTheDocument();
   });
 });
