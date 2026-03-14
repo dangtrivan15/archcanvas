@@ -30,6 +30,7 @@ export type SDKQueryFn = (args: {
     abortController?: AbortController;
     resume?: string;
     allowedTools?: string[];
+    tools?: string[];
     permissionMode?: string;
     maxTurns?: number;
     effort?: 'low' | 'medium' | 'high' | 'max';
@@ -406,29 +407,17 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             cwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
-            // AskUserQuestion must be in allowedTools for Claude to be able
-            // to ask clarifying questions.  Without it the tool is unavailable
-            // and Claude can only proceed with assumptions.
-            // See: https://platform.claude.com/docs/en/agent-sdk/user-input
-            allowedTools: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
+            // `tools` controls which tools are *available* to the model.
+            // `allowedTools` would auto-approve them (skipping canUseTool),
+            // which is NOT what we want — we need canUseTool to gate every
+            // tool invocation so the user can approve/deny in the UI.
+            tools: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
             permissionMode,
             effort,
             maxTurns: 50,
             includePartialMessages: true,
             toolConfig: {
               askUserQuestion: { previewFormat: 'markdown' },
-            },
-            hooks: {
-              PreToolUse: [{
-                matcher: 'Read|Glob|Grep',
-                hooks: [async () => ({
-                  hookSpecificOutput: {
-                    hookEventName: 'PreToolUse',
-                    permissionDecision: 'allow',
-                    permissionDecisionReason: 'Read-only tool auto-approved',
-                  },
-                })],
-              }],
             },
             canUseTool: async (toolName, input, opts) => {
               const toolUseId = opts.toolUseID;
@@ -510,6 +499,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               if (response.allowed) {
                 return {
                   behavior: 'allow' as const,
+                  updatedInput: input,
                   ...(response.updatedPermissions ? { updatedPermissions: response.updatedPermissions } : {}),
                 };
               } else {

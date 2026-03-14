@@ -246,6 +246,56 @@ describe('chatStore', () => {
       ]);
     });
 
+    it('splits assistant messages when text arrives after tool results', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      // Simulate: thinking → text → tool_call → tool_result → text (new turn) → done
+      provider.emitEvents([
+        { type: 'thinking', requestId: 'r1', content: 'Planning...' },
+        { type: 'text', requestId: 'r1', content: 'Let me check.' },
+        { type: 'tool_call', requestId: 'r1', id: 'tc-1', name: 'Bash', args: { command: 'ls' } },
+        { type: 'tool_result', requestId: 'r1', id: 'tc-1', result: 'file.txt' },
+        { type: 'text', requestId: 'r1', content: 'I found file.txt' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('What files exist?');
+
+      const msgs = useChatStore.getState().messages;
+      // user + 2 assistant messages
+      expect(msgs).toHaveLength(3);
+      expect(msgs[0].role).toBe('user');
+      // First assistant message: initial text + tool call cycle
+      expect(msgs[1].role).toBe('assistant');
+      expect(msgs[1].content).toBe('Let me check.');
+      expect(msgs[1].events!.map(e => e.type)).toEqual([
+        'thinking', 'text', 'tool_call', 'tool_result',
+      ]);
+      // Second assistant message: follow-up response
+      expect(msgs[2].role).toBe('assistant');
+      expect(msgs[2].content).toBe('I found file.txt');
+      expect(msgs[2].events!.map(e => e.type)).toEqual(['text', 'done']);
+    });
+
+    it('does not split when no tool results precede text', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'thinking', requestId: 'r1', content: 'Hmm' },
+        { type: 'text', requestId: 'r1', content: 'Hello ' },
+        { type: 'text', requestId: 'r1', content: 'world' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('Hi');
+
+      const msgs = useChatStore.getState().messages;
+      expect(msgs).toHaveLength(2); // user + 1 assistant
+      expect(msgs[1].content).toBe('Hello world');
+    });
+
     it('sets isStreaming during iteration', async () => {
       const provider = createMockProvider('p1');
       useChatStore.getState().registerProvider(provider);

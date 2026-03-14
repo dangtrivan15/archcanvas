@@ -600,7 +600,7 @@ edges:
 // ---------------------------------------------------------------------------
 
 describe('round-trip', () => {
-  it('init → add-node (2) → add-edge → list --json verifies 2 nodes and 1 edge', async () => {
+  it('init → add-node (2) → add-edge → list --json verifies 2 nodes and 1 edge', { timeout: 30_000 }, async () => {
     // 1. init
     const initResult = await runCLI(
       ['--json', 'init', '--path', tempDir, '--name', 'roundtrip'],

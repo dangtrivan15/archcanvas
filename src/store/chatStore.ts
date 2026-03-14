@@ -132,25 +132,54 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Build context from other stores
     const context = assembleContext();
 
-    // Prepare assistant message (will be built incrementally)
-    const assistantMessage: ChatMessage = {
+    // Index in messages[] where this stream's assistant messages begin
+    const streamStartIdx = get().messages.length;
+    // Completed assistant messages from this stream (split on tool cycles)
+    const completedMessages: ChatMessage[] = [];
+    // Current in-progress assistant message
+    let currentMsg: ChatMessage = {
       role: 'assistant',
       content: '',
       events: [],
       timestamp: Date.now(),
     };
+    // Whether we've seen a tool_result since the last message split
+    let hasCompletedToolCycle = false;
 
     try {
       const stream = provider.sendMessage(content, context);
 
       for await (const event of stream) {
+        // Split into a new message when text/thinking arrives after tool results.
+        // This makes conversations feel more natural: tool-use in one bubble,
+        // the follow-up response in the next.
+        if (
+          (event.type === 'text' || event.type === 'thinking') &&
+          hasCompletedToolCycle &&
+          currentMsg.events!.length > 0
+        ) {
+          completedMessages.push({ ...currentMsg });
+          currentMsg = {
+            role: 'assistant',
+            content: '',
+            events: [],
+            timestamp: Date.now(),
+          };
+          hasCompletedToolCycle = false;
+        }
+
         // Accumulate text content
         if (event.type === 'text') {
-          assistantMessage.content += event.content;
+          currentMsg.content += event.content;
+        }
+
+        // Track tool_result for message splitting
+        if (event.type === 'tool_result') {
+          hasCompletedToolCycle = true;
         }
 
         // Track all events
-        assistantMessage.events!.push(event);
+        currentMsg.events!.push(event);
 
         // Handle status events — show latest status message
         if (event.type === 'status') {
@@ -172,17 +201,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
           set({ statusMessage: null });
         }
 
-        // Update messages with current assistant message state
+        // Update messages: replace everything from streamStartIdx onwards
         set((state) => {
-          const msgs = [...state.messages];
-          // Replace or append the assistant message at the end
-          const lastIdx = msgs.length - 1;
-          if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
-            msgs[lastIdx] = { ...assistantMessage };
-          } else {
-            msgs.push({ ...assistantMessage });
-          }
-          return { messages: msgs };
+          const before = state.messages.slice(0, streamStartIdx);
+          return {
+            messages: [...before, ...completedMessages, { ...currentMsg }],
+          };
         });
       }
     } catch (err) {

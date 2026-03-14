@@ -15,6 +15,12 @@ export default defineConfig({
     setupFiles: ["./test/setup.ts"],
     globalSetup: ["./test/setup/slotGuard.ts"],
     include: ["test/**/*.test.{ts,tsx}"],
-    env: { SLOT_GUARD_POOL: "vitest" },
+    env: {
+      SLOT_GUARD_POOL: "vitest",
+      // Mirror real architecture: bridge port = app port.
+      // 4173 matches the Playwright test server (vite preview), which has
+      // no bridge plugin — so detectBridge() reliably returns null.
+      ARCHCANVAS_BRIDGE_PORT: "4173",
+    },
   },
 });

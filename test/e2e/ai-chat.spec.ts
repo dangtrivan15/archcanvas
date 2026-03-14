@@ -89,15 +89,17 @@ test.describe("chat panel layout", () => {
     await expect(chatHeader).toBeVisible();
   });
 
-  test("chat panel shows provider selector", async ({ page }) => {
+  test("chat panel shows provider selector with disconnected provider", async ({ page }) => {
     await page.goto("/");
 
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
 
-    // In production build (vite preview), no WebSocket provider is registered.
-    // The ChatProviderSelector renders "No providers" when the provider list
-    // is empty.
-    await expect(page.getByText("No providers")).toBeVisible();
+    // The WebSocket provider is always registered (even in vite preview),
+    // but the bridge endpoint doesn't exist in preview mode so it stays
+    // disconnected (○ = not available).
+    const selector = page.getByLabel("AI provider");
+    await expect(selector).toBeVisible();
+    await expect(selector).toContainText("Claude Code");
   });
 
   test("chat panel has input textarea", async ({ page }) => {

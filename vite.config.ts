@@ -46,7 +46,7 @@ function serverGuard(): Plugin {
           fs.readFileSync(pidFile, "utf-8").trim(),
           10,
         );
-        if (!isNaN(existing) && isAlive(existing)) {
+        if (!isNaN(existing) && existing !== process.pid && isAlive(existing)) {
           console.error(
             `\n  Dev server already running (PID ${existing}).` +
               `\n  Stop it first, or remove tmp/archcanvas-dev-server.pid if stale.\n`,
