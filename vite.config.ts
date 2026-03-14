@@ -108,7 +108,17 @@ export default defineConfig({
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 5174 } : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: [
+        "**/src-tauri/**",
+        "**/test/**",
+        "**/docs/**",
+        "**/bak/**",
+        "**/tmp/**",
+        "**/scripts/**",
+        "**/playwright-report/**",
+        "**/test-results/**",
+        "**/.archcanvas"
+      ],
     },
   },
 });

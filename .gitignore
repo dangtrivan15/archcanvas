@@ -40,3 +40,6 @@ src/**/*.d.ts
 .superpowers/brainstorm
 
 .playwright-cli
+
+# AI permission persistence
+.archcanvas/permissions.json

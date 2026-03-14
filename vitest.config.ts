@@ -11,10 +11,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: ["./test/setup.ts"],
     globalSetup: ["./test/setup/slotGuard.ts"],
-    include: ["test/**/*.test.{ts,tsx}"],
     env: {
       SLOT_GUARD_POOL: "vitest",
       // Mirror real architecture: bridge port = app port.
@@ -22,5 +19,25 @@ export default defineConfig({
       // no bridge plugin — so detectBridge() reliably returns null.
       ARCHCANVAS_BRIDGE_PORT: "4173",
     },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "jsdom",
+          setupFiles: ["./test/setup.ts"],
+          include: ["test/**/*.test.{ts,tsx}"],
+          exclude: ["test/cli/**"],
+        },
+      },
+      {
+        test: {
+          name: "cli",
+          environment: "node",
+          include: ["test/cli/**/*.test.{ts,tsx}"],
+          globalSetup: ["./test/setup/cliBuild.ts"],
+        },
+      },
+    ],
   },
 });
