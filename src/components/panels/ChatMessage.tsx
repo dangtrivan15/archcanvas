@@ -4,9 +4,12 @@ import type {
   ChatEvent,
   ToolCallEvent,
   ToolResultEvent,
+  AskUserQuestionEvent,
+  PermissionRequestEvent,
 } from '@/core/ai/types';
 import { ChatToolCall } from './ChatToolCall';
 import { ChatPermissionCard } from './ChatPermissionCard';
+import { ChatQuestionCard } from './ChatQuestionCard';
 
 interface Props {
   message: ChatMessageType;
@@ -84,6 +87,16 @@ function EventsList({ events }: { events: ChatEvent[] }) {
                 id={ev.id}
                 tool={ev.tool}
                 command={ev.command}
+                blockedPath={(ev as PermissionRequestEvent).blockedPath}
+                decisionReason={(ev as PermissionRequestEvent).decisionReason}
+              />
+            );
+          case 'ask_user_question':
+            return (
+              <ChatQuestionCard
+                key={`q-${(ev as AskUserQuestionEvent).id}-${idx}`}
+                id={(ev as AskUserQuestionEvent).id}
+                questions={(ev as AskUserQuestionEvent).questions}
               />
             );
           case 'thinking':

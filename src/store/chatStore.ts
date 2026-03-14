@@ -20,7 +20,16 @@ interface ChatState {
   registerProvider(provider: ChatProvider): void;
   setActiveProvider(id: string): void;
   sendMessage(content: string): Promise<void>;
-  respondToPermission(id: string, allowed: boolean): void;
+  respondToPermission(
+    id: string,
+    allowed: boolean,
+    options?: {
+      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      interrupt?: boolean;
+    },
+  ): void;
+  /** Send user's answers to an AskUserQuestion card back to the bridge. */
+  respondToQuestion(id: string, answers: Record<string, string>): void;
   abort(): void;
   clearHistory(): void;
 }
@@ -156,7 +165,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  respondToPermission(id: string, allowed: boolean) {
+  respondToPermission(
+    id: string,
+    allowed: boolean,
+    options?: {
+      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      interrupt?: boolean;
+    },
+  ) {
     const { activeProviderId, providers } = get();
     if (!activeProviderId) return;
 
@@ -165,7 +181,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // Duck-type check: only WebSocket-backed providers expose sendPermissionResponse
     if ('sendPermissionResponse' in provider && typeof (provider as any).sendPermissionResponse === 'function') {
-      (provider as any).sendPermissionResponse(id, allowed);
+      (provider as any).sendPermissionResponse(id, allowed, options);
+    }
+  },
+
+  respondToQuestion(id: string, answers: Record<string, string>) {
+    const { activeProviderId, providers } = get();
+    if (!activeProviderId) return;
+
+    const provider = providers.get(activeProviderId);
+    if (!provider) return;
+
+    // Duck-type check: only WebSocket-backed providers expose sendQuestionResponse
+    if ('sendQuestionResponse' in provider && typeof (provider as any).sendQuestionResponse === 'function') {
+      (provider as any).sendQuestionResponse(id, answers);
     }
   },
 
