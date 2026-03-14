@@ -566,7 +566,7 @@ describe('BridgeSession — lifecycle', () => {
     session.respondToPermission('perm-123', true);
 
     const result = await permPromise;
-    expect(result).toEqual({ behavior: 'allow' });
+    expect(result).toEqual({ behavior: 'allow', updatedInput: { command: 'echo hi' } });
 
     session.destroy();
   });
@@ -836,10 +836,122 @@ describe('BridgeSession — permission context forwarding', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Permission suggestion forwarding
+// ---------------------------------------------------------------------------
+describe('BridgeSession — permission suggestion forwarding', () => {
+  it('forwards opts.suggestions as permissionSuggestions in onPermissionRequest', async () => {
+    const permissionEvents: Array<Record<string, unknown>> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-suggestions');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({
+      cwd: '/tmp',
+      queryFn: mockQueryFn,
+      onPermissionRequest: (event) => {
+        permissionEvents.push(event);
+      },
+    });
+    await collect(session.sendMessage('test', testContext));
+    const suggestions = [
+      { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow' as const, destination: 'localSettings' },
+      { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test' }], behavior: 'allow' as const, destination: 'localSettings' },
+    ];
+    const permPromise = canUseToolCallback!(
+      'Bash', { command: 'npm test' },
+      {
+        signal: new AbortController().signal,
+        toolUseID: 'perm-sug-1',
+        suggestions,
+      },
+    );
+    expect(permissionEvents).toHaveLength(1);
+    expect(permissionEvents[0].permissionSuggestions).toEqual(suggestions);
+    session.respondToPermission('perm-sug-1', true);
+    await permPromise;
+    session.destroy();
+  });
+
+  it('omits permissionSuggestions when opts.suggestions is undefined', async () => {
+    const permissionEvents: Array<Record<string, unknown>> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-no-sug');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({
+      cwd: '/tmp',
+      queryFn: mockQueryFn,
+      onPermissionRequest: (event) => {
+        permissionEvents.push(event);
+      },
+    });
+    await collect(session.sendMessage('test', testContext));
+    const permPromise = canUseToolCallback!(
+      'Bash', { command: 'echo hi' },
+      { signal: new AbortController().signal, toolUseID: 'perm-nosug-1' },
+    );
+    expect(permissionEvents).toHaveLength(1);
+    expect(permissionEvents[0].permissionSuggestions).toBeUndefined();
+    session.respondToPermission('perm-nosug-1', true);
+    await permPromise;
+    session.destroy();
+  });
+
+  it('forwards addDirectories suggestions from opts.suggestions', async () => {
+    const permissionEvents: Array<Record<string, unknown>> = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-dir-sug');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({
+      cwd: '/tmp',
+      queryFn: mockQueryFn,
+      onPermissionRequest: (event) => {
+        permissionEvents.push(event);
+      },
+    });
+    await collect(session.sendMessage('test', testContext));
+    const suggestions = [
+      { type: 'addDirectories' as const, directories: ['/Users/x/project/src'], destination: 'localSettings' },
+    ];
+    const permPromise = canUseToolCallback!(
+      'Write', { file_path: '/Users/x/project/src/foo.ts', content: 'bar' },
+      {
+        signal: new AbortController().signal,
+        toolUseID: 'perm-dirsug-1',
+        suggestions,
+        blockedPath: '/Users/x/project/src',
+      },
+    );
+    expect(permissionEvents).toHaveLength(1);
+    expect(permissionEvents[0].permissionSuggestions).toEqual(suggestions);
+    expect(permissionEvents[0].blockedPath).toBe('/Users/x/project/src');
+    session.respondToPermission('perm-dirsug-1', true);
+    await permPromise;
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // respondToPermission options
 // ---------------------------------------------------------------------------
 describe('BridgeSession — respondToPermission options', () => {
-  it('respondToPermission with updatedPermissions returns them in allow result', async () => {
+  it('respondToPermission with updatedPermissions returns SDK-shaped suggestions in allow result', async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let canUseToolCallback: any = null;
     const mockQueryFn: SDKQueryFn = (args) => {
@@ -852,15 +964,44 @@ describe('BridgeSession — respondToPermission options', () => {
     const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
     await collect(session.sendMessage('test', testContext));
     const permPromise = canUseToolCallback!(
-      'Bash', { command: 'echo hi' },
+      'Bash', { command: 'npm test' },
       { signal: new AbortController().signal, toolUseID: 'perm-upd-1' },
     );
     session.respondToPermission('perm-upd-1', true, {
-      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' }],
     });
     const result = await permPromise;
     expect(result.behavior).toBe('allow');
-    expect(result.updatedPermissions).toEqual([{ tool: 'Bash', permission: 'allow' }]);
+    expect(result.updatedPermissions).toEqual([
+      { type: 'addRules', rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow', destination: 'localSettings' },
+    ]);
+    session.destroy();
+  });
+
+  it('respondToPermission with addDirectories suggestion returns it in allow result', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let canUseToolCallback: any = null;
+    const mockQueryFn: SDKQueryFn = (args) => {
+      canUseToolCallback = args.options?.canUseTool;
+      return (async function* () {
+        yield sdkSystemInit('session-add-dirs');
+        yield sdkResultSuccess();
+      })();
+    };
+    const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
+    await collect(session.sendMessage('test', testContext));
+    const permPromise = canUseToolCallback!(
+      'Write', { file_path: '/src/foo.ts', content: 'bar' },
+      { signal: new AbortController().signal, toolUseID: 'perm-dir-1' },
+    );
+    session.respondToPermission('perm-dir-1', true, {
+      updatedPermissions: [{ type: 'addDirectories', directories: ['/src'], destination: 'localSettings' }],
+    });
+    const result = await permPromise;
+    expect(result.behavior).toBe('allow');
+    expect(result.updatedPermissions).toEqual([
+      { type: 'addDirectories', directories: ['/src'], destination: 'localSettings' },
+    ]);
     session.destroy();
   });
 

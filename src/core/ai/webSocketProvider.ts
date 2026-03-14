@@ -112,7 +112,7 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     id: string,
     allowed: boolean,
     options?: {
-      updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+      updatedPermissions?: import('./types').PermissionSuggestion[];
       interrupt?: boolean;
     },
   ): void {

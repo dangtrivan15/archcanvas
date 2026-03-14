@@ -384,12 +384,12 @@ describe('chatStore', () => {
       useChatStore.getState().respondToPermission('perm-1', true);
     });
 
-    it('forwards updatedPermissions option', () => {
+    it('forwards updatedPermissions option with SDK-shaped suggestions', () => {
       const provider = createMockProvider('p1');
       useChatStore.getState().registerProvider(provider);
 
       const options = {
-        updatedPermissions: [{ tool: 'Bash', permission: 'allow' as const }],
+        updatedPermissions: [{ type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow' as const, destination: 'localSettings' }],
       };
       useChatStore.getState().respondToPermission('perm-3', true, options);
       expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-3', true, options);

@@ -29,6 +29,32 @@ export interface ThinkingEvent extends ChatEventBase {
   content: string;
 }
 
+// ---------------------------------------------------------------------------
+// Permission suggestions — SDK-shaped discriminated union
+//
+// The SDK computes tool-appropriate permission suggestions in the canUseTool
+// callback's `opts.suggestions` parameter.  We forward them to the UI so the
+// user can pick/edit a rule before confirming "Always Allow".
+//
+// We support the two variants that appear in practice: 'addRules' (Bash,
+// WebFetch, WebSearch, MCP, Skills) and 'addDirectories' (file tools with
+// blockedPath).  Other SDK variants (replaceRules, removeRules, setMode,
+// removeDirectories) never appear in permission suggestions.
+// ---------------------------------------------------------------------------
+
+export type PermissionSuggestion =
+  | {
+      type: 'addRules';
+      rules: Array<{ toolName: string; ruleContent?: string }>;
+      behavior: 'allow' | 'deny' | 'ask';
+      destination: string;
+    }
+  | {
+      type: 'addDirectories';
+      directories: Array<string>;
+      destination: string;
+    };
+
 export interface PermissionRequestEvent extends ChatEventBase {
   type: 'permission_request';
   id: string;
@@ -38,6 +64,8 @@ export interface PermissionRequestEvent extends ChatEventBase {
   blockedPath?: string;
   /** Explains why this permission request was triggered. */
   decisionReason?: string;
+  /** SDK-computed permission suggestions for "Always Allow" chip selector. */
+  permissionSuggestions?: PermissionSuggestion[];
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +164,7 @@ export interface PermissionResponseClientMessage {
   id: string;
   allowed: boolean;
   /** When allowing, tell the SDK to permanently allow this tool pattern. */
-  updatedPermissions?: Array<{ tool: string; permission: 'allow' }>;
+  updatedPermissions?: PermissionSuggestion[];
   /** When denying, interrupt the entire agent (not just skip this tool). */
   interrupt?: boolean;
 }
