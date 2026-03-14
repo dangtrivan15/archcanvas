@@ -18,6 +18,10 @@ interface ChatState {
   error: string | null;
   /** Latest status message from the AI (e.g., "Reading file..."). Cleared on done/error. */
   statusMessage: string | null;
+  /** Current permission mode for the AI session. */
+  permissionMode: string;
+  /** Current effort level for the AI session. */
+  effort: string;
 
   registerProvider(provider: ChatProvider): void;
   setActiveProvider(id: string): void;
@@ -32,6 +36,10 @@ interface ChatState {
   ): void;
   /** Send user's answers to an AskUserQuestion card back to the bridge. */
   respondToQuestion(id: string, answers: Record<string, string>): void;
+  /** Change the permission mode and notify the active provider. */
+  setPermissionMode(mode: string): void;
+  /** Change the effort level and notify the active provider. */
+  setEffort(effort: string): void;
   abort(): void;
   clearHistory(): void;
 }
@@ -70,6 +78,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   providers: new Map(),
   error: null,
   statusMessage: null,
+  permissionMode: 'default',
+  effort: 'high',
 
   registerProvider(provider: ChatProvider) {
     const next = new Map(get().providers);
@@ -214,6 +224,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Duck-type check: only WebSocket-backed providers expose sendQuestionResponse
     if ('sendQuestionResponse' in provider && typeof (provider as any).sendQuestionResponse === 'function') {
       (provider as any).sendQuestionResponse(id, answers);
+    }
+  },
+
+  setPermissionMode(mode: string) {
+    set({ permissionMode: mode });
+
+    const { activeProviderId, providers } = get();
+    if (!activeProviderId) return;
+
+    const provider = providers.get(activeProviderId);
+    if (!provider) return;
+
+    // Duck-type check: only WebSocket-backed providers expose sendSetPermissionMode
+    if ('sendSetPermissionMode' in provider && typeof (provider as any).sendSetPermissionMode === 'function') {
+      (provider as any).sendSetPermissionMode(mode);
+    }
+  },
+
+  setEffort(effort: string) {
+    set({ effort });
+
+    const { activeProviderId, providers } = get();
+    if (!activeProviderId) return;
+
+    const provider = providers.get(activeProviderId);
+    if (!provider) return;
+
+    // Duck-type check: only WebSocket-backed providers expose sendSetEffort
+    if ('sendSetEffort' in provider && typeof (provider as any).sendSetEffort === 'function') {
+      (provider as any).sendSetEffort(effort);
     }
   },
 

@@ -10,6 +10,8 @@ export function ChatPanel() {
   const statusMessage = useChatStore((s) => s.statusMessage);
   const providers = useChatStore((s) => s.providers);
   const activeProviderId = useChatStore((s) => s.activeProviderId);
+  const permissionMode = useChatStore((s) => s.permissionMode);
+  const effort = useChatStore((s) => s.effort);
 
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -63,6 +65,30 @@ export function ChatPanel() {
         <h3 className="text-sm font-medium">AI Chat</h3>
         <div className="flex items-center gap-2">
           <ChatProviderSelector />
+          <select
+            value={permissionMode}
+            onChange={(e) => useChatStore.getState().setPermissionMode(e.target.value)}
+            disabled={isStreaming}
+            className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
+            aria-label="Permission mode"
+          >
+            <option value="default">Default</option>
+            <option value="acceptEdits">Auto-edit</option>
+            <option value="plan">Plan only</option>
+            <option value="dontAsk">Strict</option>
+          </select>
+          <select
+            value={effort}
+            onChange={(e) => useChatStore.getState().setEffort(e.target.value)}
+            disabled={isStreaming}
+            className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
+            aria-label="Effort level"
+          >
+            <option value="low">Quick</option>
+            <option value="medium">Medium</option>
+            <option value="high">Thorough</option>
+            <option value="max">Maximum</option>
+          </select>
           <button
             onClick={handleClose}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
