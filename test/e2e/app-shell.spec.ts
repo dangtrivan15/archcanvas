@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { gotoApp } from "./e2e-helpers";
 
 // ---------------------------------------------------------------------------
 // Fix 1: CSS Theme Variables
@@ -6,7 +7,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("theme variables", () => {
   test("all required CSS color variables are defined", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const vars = await page.evaluate(() => {
       const style = getComputedStyle(document.documentElement);
@@ -43,7 +44,7 @@ test.describe("theme variables", () => {
 
 test.describe("menubar", () => {
   test("File menu opens with opaque popover background", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "File" }).click();
     const content = page.locator('[data-slot="menubar-content"]');
@@ -64,7 +65,7 @@ test.describe("menubar", () => {
   });
 
   test("Edit menu opens with Undo/Redo items", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "Edit" }).click();
     const content = page.locator('[data-slot="menubar-content"]');
@@ -79,7 +80,7 @@ test.describe("menubar", () => {
   });
 
   test("View menu opens with panel toggles and actions", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.getByRole("menuitem", { name: "View" }).click();
     const content = page.locator('[data-slot="menubar-content"]');
@@ -100,7 +101,7 @@ test.describe("menubar", () => {
 
 test.describe("command palette", () => {
   test("opens with dark popover background on Cmd+K", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.keyboard.press("Meta+k");
 
@@ -117,7 +118,7 @@ test.describe("command palette", () => {
   });
 
   test("shows Actions and Node Types sections", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.keyboard.press("Meta+k");
 
@@ -130,7 +131,7 @@ test.describe("command palette", () => {
   });
 
   test("closes on Escape", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     await page.keyboard.press("Meta+k");
     const paletteInput = page.locator("[cmdk-input]");
@@ -149,7 +150,7 @@ test.describe("context menu", () => {
   test("opens with dark background on canvas right-click", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const canvas = page.locator(".react-flow");
     await canvas.click({ button: "right", position: { x: 400, y: 300 } });
@@ -167,7 +168,7 @@ test.describe("context menu", () => {
   });
 
   test("has Add Node, Auto Layout, and Fit View items", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const canvas = page.locator(".react-flow");
     await canvas.click({ button: "right", position: { x: 400, y: 300 } });
@@ -195,7 +196,7 @@ test.describe("reactflow controls", () => {
   test("control buttons are visible with non-white background", async ({
     page,
   }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const zoomIn = page.getByRole("button", { name: "Zoom In" });
     await expect(zoomIn).toBeVisible();
@@ -215,7 +216,7 @@ test.describe("reactflow controls", () => {
 
 test.describe("panel sizing", () => {
   test("left panel is wide enough to show toolbar icons", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const leftPanel = page.locator('[data-slot="resizable-panel"]').first();
     const width = await leftPanel.evaluate(
@@ -226,7 +227,7 @@ test.describe("panel sizing", () => {
   });
 
   test("right panel is wide enough to show detail text", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const rightPanel = page.locator('[data-slot="resizable-panel"]').last();
     const width = await rightPanel.evaluate(
@@ -248,7 +249,7 @@ test.describe("panel sizing", () => {
 
 test.describe("resize handles", () => {
   test("resize handles are visible between panels", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const handles = page.locator('[data-slot="resizable-handle"]');
     await expect(handles).toHaveCount(2);
@@ -265,7 +266,7 @@ test.describe("resize handles", () => {
 
 test.describe("toolbar accessibility", () => {
   test("left toolbar buttons have aria-labels", async ({ page }) => {
-    await page.goto("/");
+    await gotoApp(page);
 
     const expectedLabels = [
       "Select (V)",

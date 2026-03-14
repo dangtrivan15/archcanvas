@@ -283,7 +283,7 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('--json');
   });
 
-  // --- All 9 CLI command signatures ---
+  // --- All 10 CLI command signatures ---
   const commandSignatures = [
     ['list', 'archcanvas list'],
     ['describe', 'archcanvas describe'],
@@ -294,6 +294,7 @@ describe('buildSystemPrompt', () => {
     ['remove-edge', 'archcanvas remove-edge'],
     ['import', 'archcanvas import'],
     ['init', 'archcanvas init'],
+    ['catalog', 'archcanvas catalog'],
   ] as const;
 
   for (const [name, signature] of commandSignatures) {

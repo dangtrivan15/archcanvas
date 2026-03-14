@@ -26,7 +26,7 @@ export function TopMenubar() {
       <MenubarMenu>
         <MenubarTrigger className="text-sm">File</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem onClick={() => useFileStore.getState().initializeEmptyProject()}>
+          <MenubarItem onClick={() => useFileStore.getState().newProject()}>
             New Project <MenubarShortcut>⌘N</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onClick={() => useFileStore.getState().open()}>

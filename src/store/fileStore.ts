@@ -124,11 +124,20 @@ interface FileStoreState {
   getRootCanvas: () => LoadedCanvas | undefined;
 
   // New persistence methods (UI-only — CLI never calls these)
+  newProject: () => Promise<void>;
   open: () => Promise<void>;
   save: () => Promise<void>;
   saveAs: () => Promise<void>;
   isDirty: () => boolean;
 }
+
+// Expose store on window for E2E test access (Playwright can't import bundled modules)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const exposeStore = (store: any) => {
+  if (typeof window !== 'undefined') {
+    (window as any).__archcanvas_fileStore__ = store;
+  }
+};
 
 export const useFileStore = create<FileStoreState>((set, get) => ({
   project: null,
@@ -228,6 +237,33 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // Persistence UI methods (C7)
   // -----------------------------------------------------------------------
 
+  newProject: async () => {
+    const picker = getFilePicker();
+    const fs = await picker.pickDirectory();
+    if (!fs) return; // user cancelled
+
+    // If .archcanvas/main.yaml already exists, treat as "open existing"
+    if (await fs.exists('.archcanvas/main.yaml')) {
+      await get().openProject(fs);
+    } else {
+      // Scaffold new project
+      await fs.mkdir('.archcanvas');
+      const template = `project:\n  name: "New Project"\n  description: ""\n  version: "1.0.0"\n\nnodes: []\nedges: []\nentities: []\n`;
+      await fs.writeFile('.archcanvas/main.yaml', template);
+      await get().openProject(fs);
+    }
+
+    // Only store fs and update recents if the project loaded successfully
+    if (get().status === 'loaded') {
+      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
+      const path = projectName;
+      set({
+        fs,
+        recentProjects: addToRecent(get().recentProjects, projectName, path),
+      });
+    }
+  },
+
   open: async () => {
     const picker = getFilePicker();
     const fs = await picker.pickDirectory();
@@ -277,3 +313,5 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     return get().dirtyCanvases.size > 0;
   },
 }));
+
+exposeStore(useFileStore);

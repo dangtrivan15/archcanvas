@@ -12,6 +12,7 @@ import { TopMenubar } from "@/components/layout/TopMenubar";
 import { LeftToolbar } from "@/components/layout/LeftToolbar";
 import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
+import { ProjectGate } from "@/components/layout/ProjectGate";
 import { Canvas } from "@/components/canvas/Canvas";
 import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
@@ -30,6 +31,9 @@ export function App() {
 
   // I6a: Bootstrap AI chat WebSocket provider
   useAiProvider();
+
+  // Project gate: check if a filesystem is bound
+  const fs = useFileStore((s) => s.fs);
 
   // C8.2: Reactive document title — "● {name} — ArchCanvas" when dirty
   const projectName = useFileStore(
@@ -62,11 +66,6 @@ export function App() {
 
   useEffect(() => {
     useRegistryStore.getState().initialize();
-    // Bootstrap an empty project so the canvas is immediately usable.
-    // A real "Open Project" flow will replace this with file-system-loaded data.
-    if (!useFileStore.getState().project) {
-      useFileStore.getState().initializeEmptyProject();
-    }
   }, []);
 
   useEffect(() => {
@@ -77,6 +76,11 @@ export function App() {
       useUiStore.getState().setRightPanelRef(null);
     };
   }, []);
+
+  // If no filesystem is bound, show the project gate
+  if (!fs) {
+    return <ProjectGate />;
+  }
 
   return (
     <TooltipProvider delayDuration={300}>
