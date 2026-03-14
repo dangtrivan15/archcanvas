@@ -38,7 +38,7 @@ function createMockProvider(
   overrides: Partial<ChatProvider> = {},
 ): ChatProvider & {
   sentMessages: Array<{ content: string; context: ProjectContext }>;
-  abortCalled: boolean;
+  interruptCalled: boolean;
   loadHistoryCalled: ChatMessage[] | null;
   emitEvents: (events: ChatEvent[]) => void;
   sendPermissionResponse: ReturnType<typeof vi.fn>;
@@ -46,7 +46,7 @@ function createMockProvider(
   sendSetEffort: ReturnType<typeof vi.fn>;
 } {
   const sentMessages: Array<{ content: string; context: ProjectContext }> = [];
-  let abortCalled = false;
+  let interruptCalled = false;
   let loadHistoryCalled: ChatMessage[] | null = null;
   let eventResolver: ((events: ChatEvent[]) => void) | null = null;
   let pendingEvents: ChatEvent[] | null = null;
@@ -56,7 +56,7 @@ function createMockProvider(
     displayName: `Mock ${id}`,
     available: true,
     sentMessages,
-    abortCalled,
+    interruptCalled,
     loadHistoryCalled,
     sendPermissionResponse: vi.fn(),
     sendSetPermissionMode: vi.fn(),
@@ -96,9 +96,9 @@ function createMockProvider(
       provider.loadHistoryCalled = messages;
     },
 
-    abort() {
-      abortCalled = true;
-      provider.abortCalled = true;
+    interrupt() {
+      interruptCalled = true;
+      provider.interruptCalled = true;
     },
 
     ...overrides,
@@ -397,7 +397,7 @@ describe('chatStore', () => {
           return gen();
         },
         loadHistory() {},
-        abort() {},
+        interrupt() {},
       };
 
       useChatStore.getState().registerProvider(throwingProvider);
@@ -550,7 +550,7 @@ describe('chatStore', () => {
         available: true,
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
-        abort: vi.fn(),
+        interrupt: vi.fn(),
       };
       useChatStore.getState().registerProvider(bareProvider);
 
@@ -594,7 +594,7 @@ describe('chatStore', () => {
         available: true,
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
-        abort: vi.fn(),
+        interrupt: vi.fn(),
       };
       useChatStore.getState().registerProvider(bareProvider);
 
@@ -649,24 +649,24 @@ describe('chatStore', () => {
   });
 
   // -----------------------------------------------------------------------
-  // abort
+  // interrupt
   // -----------------------------------------------------------------------
 
-  describe('abort', () => {
-    it('calls provider.abort() and sets isStreaming to false', () => {
+  describe('interrupt', () => {
+    it('calls provider.interrupt() and sets isStreaming to false', () => {
       const provider = createMockProvider('p1');
       useChatStore.getState().registerProvider(provider);
       useChatStore.setState({ isStreaming: true });
 
-      useChatStore.getState().abort();
+      useChatStore.getState().interrupt();
 
-      expect(provider.abortCalled).toBe(true);
+      expect(provider.interruptCalled).toBe(true);
       expect(useChatStore.getState().isStreaming).toBe(false);
     });
 
     it('resets isStreaming even when no active provider', () => {
       useChatStore.setState({ isStreaming: true });
-      useChatStore.getState().abort();
+      useChatStore.getState().interrupt();
       // isStreaming is always reset to prevent stuck state
       expect(useChatStore.getState().isStreaming).toBe(false);
     });

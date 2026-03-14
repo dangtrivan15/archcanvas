@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   createBridgeSession,
   type SDKQueryFn,
+  type SDKQuery,
   type SDKMessage,
 } from '@/core/ai/claudeCodeBridge';
 import type { ChatEvent, ProjectContext } from '@/core/ai/types';
@@ -188,31 +189,24 @@ function sdkStreamEventOther(eventType: string): SDKMessage {
   };
 }
 
-function sdkStatus(message: string): SDKMessage {
-  return {
-    type: 'status',
-    uuid: `st-${Date.now()}`,
-    session_id: 'test-session',
-    message,
-  };
-}
-
-function sdkToolProgress(content: string): SDKMessage {
+function sdkToolProgress(): SDKMessage {
   return {
     type: 'tool_progress',
     uuid: `tp-${Date.now()}`,
     session_id: 'test-session',
-    content,
     tool_use_id: 'tool-1',
-  };
+    tool_name: 'Bash',
+    parent_tool_use_id: null,
+    elapsed_time_seconds: 1,
+  } as unknown as SDKMessage;
 }
 
-function sdkRateLimit(message: string): SDKMessage {
+function sdkRateLimit(status: 'rejected' | 'allowed_warning' | 'allowed' = 'rejected'): SDKMessage {
   return {
-    type: 'rate_limit',
+    type: 'rate_limit_event',
     uuid: `rl-${Date.now()}`,
     session_id: 'test-session',
-    message,
+    rate_limit_info: { status },
   };
 }
 
@@ -275,6 +269,13 @@ type CanUseToolFn = (
   },
 ) => Promise<{ behavior: string; updatedInput?: unknown; updatedPermissions?: unknown[]; message?: string; interrupt?: boolean }>;
 
+/** Wrap an async generator into an SDKQuery with a no-op interrupt(). */
+function toSDKQuery(gen: AsyncGenerator<SDKMessage>): SDKQuery {
+  const query = gen as unknown as SDKQuery;
+  (query as unknown as Record<string, unknown>).interrupt = async () => {};
+  return query;
+}
+
 function setupSession(opts?: {
   yields?: SDKMessage[];
   onPermissionRequest?: (event: Record<string, unknown>) => void;
@@ -288,13 +289,13 @@ function setupSession(opts?: {
   const queryFn: SDKQueryFn = (args) => {
     canUseTool = args.options?.canUseTool;
     capturedArgs.push(args as Record<string, unknown>);
-    return (async function* () {
+    return toSDKQuery((async function* () {
       yield sdkSystemInit(`s-${Date.now()}`);
       if (opts?.yields) {
         yield* opts.yields;
       }
       yield sdkResultSuccess();
-    })();
+    })());
   };
 
   const session = createBridgeSession({
@@ -416,11 +417,11 @@ describe('BridgeSession — Scenario 4: clarifyingQuestion', () => {
 describe('BridgeSession — Scenario 5: errorScenario', () => {
   it('translates SDK error result into error ChatEvent', async () => {
     const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkSystemInit('session-5');
         yield sdkAssistantText('Processing your request...');
         yield sdkResultError('error_during_execution', ['Connection lost']);
-      })();
+      })());
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
@@ -438,51 +439,48 @@ describe('BridgeSession — Scenario 5: errorScenario', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Scenario 6: Abort mid-stream
+// Scenario 6: Interrupt mid-stream
 // ---------------------------------------------------------------------------
-describe('BridgeSession — Scenario 6: abortMidStream', () => {
-  it('stops yielding events after abort() is called', async () => {
+describe('BridgeSession — Scenario 6: interruptMidStream', () => {
+  it('calls query.interrupt() and resolves pending permissions', async () => {
+    let interruptCalled = false;
     let resolveGate: (() => void) | null = null;
     const gate = new Promise<void>(resolve => { resolveGate = resolve; });
 
-    const mockQueryFn: SDKQueryFn = (args) => {
-      const abortController = args.options?.abortController;
-      return (async function* () {
+    const mockQueryFn: SDKQueryFn = () => {
+      const gen = (async function* () {
         yield sdkSystemInit('session-6');
         yield sdkAssistantText('Starting analysis');
-        // Pause here — the test will abort and then open the gate
+        // Pause here — the test will interrupt and then open the gate
         await gate;
-        // After abort, the real SDK would stop. We check abortController.
-        if (abortController?.signal.aborted) {
-          yield sdkResultSuccess();
-          return;
-        }
-        yield sdkAssistantText(' of your system');
-        yield sdkAssistantText(' architecture.');
         yield sdkResultSuccess();
       })();
+
+      // Attach interrupt() method to make it an SDKQuery
+      const query = gen as unknown as SDKQuery;
+      (query as unknown as Record<string, unknown>).interrupt = async () => { interruptCalled = true; };
+      return query;
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     const events: ChatEvent[] = [];
 
-    // We need to consume the stream async and abort once we see the first text.
-    // The generator is paused at the gate, so we abort first, then open the gate.
     const stream = session.sendMessage('analyze', testContext);
     for await (const event of stream) {
       events.push(event);
       if (event.type === 'text' && event.content === 'Starting analysis') {
-        // Abort first, then release the gate
-        session.abort();
+        // Interrupt, then release the gate so the generator can finish
+        session.interrupt();
         resolveGate!();
       }
     }
 
-    // Should have: text('Starting analysis') + done
-    // The second and third text events should NOT appear
+    expect(interruptCalled).toBe(true);
+    // Text event should be present
     const textEvents = events.filter(e => e.type === 'text');
     expect(textEvents).toHaveLength(1);
     expect(textEvents[0]).toMatchObject({ content: 'Starting analysis' });
+    // The generator finishes naturally with done
     expect(events.some(e => e.type === 'done')).toBe(true);
 
     session.destroy();
@@ -526,10 +524,10 @@ describe('BridgeSession — lifecycle', () => {
 
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as { prompt: string; options?: Record<string, unknown> });
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkSystemInit('session-lifecycle');
         yield sdkResultSuccess();
-      })();
+      })());
     };
 
     const session = createBridgeSession({ cwd: '/my/project', queryFn: mockQueryFn });
@@ -555,9 +553,9 @@ describe('BridgeSession — lifecycle', () => {
 
   it('loadHistory stores messages without error', () => {
     const mockQueryFn: SDKQueryFn = () => {
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkResultSuccess();
-      })();
+      })());
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
@@ -691,10 +689,10 @@ describe('BridgeSession — lifecycle', () => {
 
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as Record<string, unknown>);
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkSystemInit('session-resume-test');
         yield sdkResultSuccess();
-      })();
+      })());
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
@@ -719,10 +717,10 @@ describe('BridgeSession — session settings', () => {
     const capturedArgs: Array<Record<string, unknown>> = [];
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as Record<string, unknown>);
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkSystemInit('session-mode');
         yield sdkResultSuccess();
-      })();
+      })());
     };
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     await collect(session.sendMessage('first', testContext));
@@ -737,10 +735,10 @@ describe('BridgeSession — session settings', () => {
     const capturedArgs: Array<Record<string, unknown>> = [];
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as Record<string, unknown>);
-      return (async function* () {
+      return toSDKQuery((async function* () {
         yield sdkSystemInit('session-effort');
         yield sdkResultSuccess();
-      })();
+      })());
     };
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     await collect(session.sendMessage('first', testContext));
@@ -1091,74 +1089,22 @@ describe('BridgeSession — no double text', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Status messages
-// ---------------------------------------------------------------------------
-describe('BridgeSession — status messages', () => {
-  it('yields StatusEvent from SDK status messages', async () => {
-    const { session } = setupSession({
-      yields: [
-        sdkStatus('Reading file...'),
-        sdkStatus('Running command...'),
-        sdkAssistantText('Done.'),
-      ],
-    });
-    const events = await collect(session.sendMessage('do stuff', testContext));
-
-    const statusEvents = events.filter(e => e.type === 'status');
-    expect(statusEvents).toHaveLength(2);
-    expect(statusEvents[0]).toMatchObject({ type: 'status', message: 'Reading file...' });
-    expect(statusEvents[1]).toMatchObject({ type: 'status', message: 'Running command...' });
-
-    session.destroy();
-  });
-
-  it('skips status messages with empty content', async () => {
-    const { session } = setupSession({
-      yields: [
-        { type: 'status', uuid: 'st-1', session_id: 'test', message: '' } as SDKMessage,
-      ],
-    });
-    const events = await collect(session.sendMessage('test', testContext));
-
-    const statusEvents = events.filter(e => e.type === 'status');
-    expect(statusEvents).toHaveLength(0);
-
-    session.destroy();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Tool progress
 // ---------------------------------------------------------------------------
 describe('BridgeSession — tool_progress messages', () => {
-  it('yields StatusEvent from SDK tool_progress messages', async () => {
+  it('does not yield status events (SDK type has no user-facing content)', async () => {
     const { session } = setupSession({
       yields: [
-        sdkToolProgress('Building project...'),
-        sdkToolProgress('Compilation complete.'),
+        sdkToolProgress(),
+        sdkAssistantText('Done.'),
       ],
     });
     const events = await collect(session.sendMessage('build', testContext));
 
+    // tool_progress messages are acknowledged but don't produce status events
     const statusEvents = events.filter(e => e.type === 'status');
-    expect(statusEvents).toHaveLength(2);
-    expect(statusEvents[0]).toMatchObject({ type: 'status', message: 'Building project...' });
-    expect(statusEvents[1]).toMatchObject({ type: 'status', message: 'Compilation complete.' });
-
-    session.destroy();
-  });
-
-  it('falls back to message field when content is missing', async () => {
-    const { session } = setupSession({
-      yields: [
-        { type: 'tool_progress', uuid: 'tp-1', session_id: 'test', message: 'via message field', tool_use_id: 'tool-1' } as SDKMessage,
-      ],
-    });
-    const events = await collect(session.sendMessage('test', testContext));
-
-    const statusEvents = events.filter(e => e.type === 'status');
-    expect(statusEvents).toHaveLength(1);
-    expect(statusEvents[0]).toMatchObject({ message: 'via message field' });
+    expect(statusEvents).toHaveLength(0);
+    expect(events.some(e => e.type === 'text')).toBe(true);
 
     session.destroy();
   });
@@ -1168,34 +1114,11 @@ describe('BridgeSession — tool_progress messages', () => {
 // Rate limit
 // ---------------------------------------------------------------------------
 describe('BridgeSession — rate_limit messages', () => {
-  it('yields RateLimitEvent from SDK rate_limit messages', async () => {
+  it('yields RateLimitEvent from SDK rate_limit_event (rejected)', async () => {
     const { session } = setupSession({
       yields: [
-        sdkRateLimit('Rate limited. Retrying in 30s...'),
+        sdkRateLimit('rejected'),
         sdkAssistantText('After rate limit.'),
-      ],
-    });
-    const events = await collect(session.sendMessage('test', testContext));
-
-    const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
-    expect(rateLimitEvents).toHaveLength(1);
-    expect(rateLimitEvents[0]).toMatchObject({
-      type: 'rate_limit',
-      message: 'Rate limited. Retrying in 30s...',
-    });
-
-    // Streaming should continue after rate limit
-    const textEvents = events.filter(e => e.type === 'text');
-    expect(textEvents).toHaveLength(1);
-    expect(events.some(e => e.type === 'done')).toBe(true);
-
-    session.destroy();
-  });
-
-  it('uses default message when rate_limit has no message', async () => {
-    const { session } = setupSession({
-      yields: [
-        { type: 'rate_limit', uuid: 'rl-1', session_id: 'test' } as SDKMessage,
       ],
     });
     const events = await collect(session.sendMessage('test', testContext));
@@ -1206,6 +1129,43 @@ describe('BridgeSession — rate_limit messages', () => {
       type: 'rate_limit',
       message: 'Rate limit reached. Waiting...',
     });
+
+    // Streaming should continue after rate limit
+    const textEvents = events.filter(e => e.type === 'text');
+    expect(textEvents).toHaveLength(1);
+    expect(events.some(e => e.type === 'done')).toBe(true);
+
+    session.destroy();
+  });
+
+  it('yields warning for allowed_warning status', async () => {
+    const { session } = setupSession({
+      yields: [
+        sdkRateLimit('allowed_warning'),
+      ],
+    });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
+    expect(rateLimitEvents).toHaveLength(1);
+    expect(rateLimitEvents[0]).toMatchObject({
+      type: 'rate_limit',
+      message: 'Approaching rate limit',
+    });
+
+    session.destroy();
+  });
+
+  it('skips allowed status (no warning needed)', async () => {
+    const { session } = setupSession({
+      yields: [
+        sdkRateLimit('allowed'),
+      ],
+    });
+    const events = await collect(session.sendMessage('test', testContext));
+
+    const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
+    expect(rateLimitEvents).toHaveLength(0);
 
     session.destroy();
   });
@@ -1235,14 +1195,12 @@ describe('BridgeSession — prompt_suggestion messages', () => {
 // Full streaming scenario (stream_event + status + tool_use + result)
 // ---------------------------------------------------------------------------
 describe('BridgeSession — full streaming scenario', () => {
-  it('handles a realistic mix of stream_event, status, assistant, and result', async () => {
+  it('handles a realistic mix of stream_event, assistant, tool, and result', async () => {
     const { session } = setupSession({
       yields: [
         // Streaming text deltas
         sdkStreamEvent('text_delta', { text: 'I will ' }),
         sdkStreamEvent('text_delta', { text: 'read your file.' }),
-        // Status while reading
-        sdkStatus('Reading file...'),
         // Final assistant message (text already streamed, but has tool_use)
         sdkAssistantMixed('I will read your file.', 'Read', { file_path: '/src/main.ts' }, 'read-1'),
         sdkUserToolResult('read-1', 'export function main() {}'),
@@ -1254,11 +1212,10 @@ describe('BridgeSession — full streaming scenario', () => {
     const events = await collect(session.sendMessage('read main', testContext));
 
     const types = events.map(e => e.type);
-    // Stream deltas, status, tool_call (from assistant), tool_result, more stream delta, done
+    // Stream deltas, tool_call (from assistant), tool_result, more stream delta, done
     expect(types).toEqual([
       'text',        // 'I will '
       'text',        // 'read your file.'
-      'status',      // 'Reading file...'
       'tool_call',   // Read tool (from final assistant, text skipped)
       'tool_result', // tool result
       'text',        // 'Found the main function.' (streamed delta)

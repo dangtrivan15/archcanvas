@@ -337,8 +337,8 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
               break;
             }
 
-            case 'abort': {
-              bridgeSession.abort();
+            case 'interrupt': {
+              bridgeSession.interrupt();
               break;
             }
 

@@ -150,8 +150,8 @@ export interface ChatClientMessage {
   context: ProjectContext;
 }
 
-export interface AbortClientMessage {
-  type: 'abort';
+export interface InterruptClientMessage {
+  type: 'interrupt';
 }
 
 export interface LoadHistoryClientMessage {
@@ -192,7 +192,7 @@ export interface QuestionResponseClientMessage {
 
 export type ClientMessage =
   | ChatClientMessage
-  | AbortClientMessage
+  | InterruptClientMessage
   | LoadHistoryClientMessage
   | PermissionResponseClientMessage
   | QuestionResponseClientMessage
@@ -225,5 +225,6 @@ export interface ChatProvider {
   readonly available: boolean;
   sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent>;
   loadHistory(messages: ChatMessage[]): void;
-  abort(): void;
+  /** Interrupt the current turn. Stops streaming but preserves session context. */
+  interrupt(): void;
 }

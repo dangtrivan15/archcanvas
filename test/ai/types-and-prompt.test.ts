@@ -72,7 +72,7 @@ describe('AI types — compile-time checks', () => {
     };
     const messages: ClientMessage[] = [
       { type: 'chat', requestId: 'r1', content: 'hello', context: ctx },
-      { type: 'abort' },
+      { type: 'interrupt' },
       { type: 'load_history', messages: [] },
       { type: 'permission_response', id: 'p1', allowed: true },
     ];

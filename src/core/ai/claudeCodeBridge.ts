@@ -12,67 +12,31 @@ import type {
   AskUserQuestion,
   PermissionSuggestion,
 } from './types';
+import type {
+  Query,
+  SDKMessage,
+  Options as SDKOptions,
+  PermissionMode,
+  PermissionUpdate,
+} from '@anthropic-ai/claude-agent-sdk';
 import { buildSystemPrompt } from './systemPrompt';
 import { loadPermissions, savePermission, isAutoApproved } from './permissionStore';
 
 // ---------------------------------------------------------------------------
-// SDK function type — dependency injection for testability
+// SDK types — re-exported for tests and other modules
 // ---------------------------------------------------------------------------
 
+export type { Query as SDKQuery, SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+
 /**
- * Minimal shape of the SDK `query` function we depend on.
+ * Shape of the SDK `query` function. Uses the SDK's own `Options` and `Query` types.
  * The real implementation comes from `@anthropic-ai/claude-agent-sdk`.
  * Tests inject a mock that conforms to this interface.
  */
 export type SDKQueryFn = (args: {
   prompt: string;
-  options?: {
-    systemPrompt?: string;
-    cwd?: string;
-    abortController?: AbortController;
-    resume?: string;
-    allowedTools?: string[];
-    tools?: string[];
-    permissionMode?: string;
-    maxTurns?: number;
-    effort?: 'low' | 'medium' | 'high' | 'max';
-    includePartialMessages?: boolean;
-    toolConfig?: {
-      askUserQuestion?: {
-        previewFormat?: 'markdown' | 'html';
-      };
-    };
-    hooks?: Record<string, Array<{
-      matcher?: string;
-      hooks: Array<(
-        input: Record<string, unknown>,
-        toolUseID: string | undefined,
-        options: { signal: AbortSignal },
-      ) => Promise<Record<string, unknown>>>;
-    }>>;
-    canUseTool?: (
-      toolName: string,
-      input: Record<string, unknown>,
-      options: {
-        signal: AbortSignal;
-        toolUseID: string;
-        suggestions?: PermissionSuggestion[];
-        blockedPath?: string;
-        decisionReason?: string;
-        agentID?: string;
-      },
-    ) => Promise<
-      | { behavior: 'allow'; updatedInput?: Record<string, unknown>; updatedPermissions?: PermissionSuggestion[] }
-      | { behavior: 'deny'; message: string; interrupt?: boolean }
-    >;
-  };
-}) => AsyncIterable<SDKMessage>;
-
-/** Minimal SDK message shape we translate from. */
-export interface SDKMessage {
-  type: string;
-  [key: string]: unknown;
-}
+  options?: SDKOptions;
+}) => Query;
 
 // ---------------------------------------------------------------------------
 // BridgeSession interface
@@ -96,7 +60,8 @@ export interface BridgeSession {
   loadHistory(messages: ChatMessage[]): void;
   setPermissionMode(mode: string): void;
   setEffort(effort: string): void;
-  abort(): void;
+  /** Interrupt the current turn via the SDK's native interrupt(). Preserves session context. */
+  interrupt(): void;
   destroy(): void;
 }
 
@@ -178,9 +143,11 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   let queryFn: SDKQueryFn | undefined = options.queryFn;
 
   let abortController: AbortController | null = null;
+  /** The active SDK Query object — holds the interrupt() method. */
+  let activeQuery: Query | null = null;
   let sessionId: string | undefined;
   let destroyed = false;
-  let permissionMode = 'default';
+  let permissionMode: PermissionMode = 'default';
   let effort: 'low' | 'medium' | 'high' | 'max' = 'high';
   const pendingPermissions = new Map<string, PendingPermission>();
   const pendingQuestions = new Map<string, PendingQuestion>();
@@ -201,7 +168,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
 
     // Dynamic import so the real SDK is only loaded at runtime in Node.js
     const sdk = await import('@anthropic-ai/claude-agent-sdk');
-    queryFn = sdk.query as unknown as SDKQueryFn;
+    queryFn = sdk.query as SDKQueryFn;
     return queryFn;
   }
 
@@ -226,21 +193,21 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
 
       switch (msg.type) {
         case 'system': {
-          // Capture session ID for potential resume
-          if (msg.subtype === 'init' && typeof msg.session_id === 'string') {
+          // SDKSystemMessage (subtype: 'init') and SDKStatusMessage (subtype: 'status')
+          // both have type: 'system'. We only need the session ID from init.
+          if ('subtype' in msg && msg.subtype === 'init') {
             sessionId = msg.session_id;
           }
-          // System messages are internal; don't forward to client
           break;
         }
 
         case 'stream_event': {
-          // Partial assistant message — extract incremental text/thinking deltas.
-          // The SDK wraps Anthropic BetaRawMessageStreamEvent objects.
+          // SDKPartialAssistantMessage — incremental text/thinking deltas.
+          // The event field is a BetaRawMessageStreamEvent from the Anthropic API.
           const event = msg.event as {
             type?: string;
             delta?: { type?: string; text?: string; thinking?: string };
-          } | undefined;
+          };
           if (event?.type === 'content_block_delta' && event.delta) {
             if (event.delta.type === 'text_delta' && event.delta.text) {
               hasStreamedText = true;
@@ -254,43 +221,27 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         }
 
         case 'assistant': {
-          // Extract text and tool_use blocks from the assistant message.
+          // SDKAssistantMessage — msg.message is a BetaMessage with content blocks.
           // If we already streamed text/thinking via stream_event deltas,
           // skip re-emitting those block types to avoid double-counting.
-          const message = msg.message as {
-            content?: Array<{
-              type: string;
-              text?: string;
-              id?: string;
-              name?: string;
-              input?: Record<string, unknown>;
-            }>;
-          };
-          if (message?.content && Array.isArray(message.content)) {
-            for (const block of message.content) {
-              if (block.type === 'text' && block.text) {
-                // Only emit text if we haven't already streamed it
+          const content = msg.message?.content;
+          if (Array.isArray(content)) {
+            for (const block of content) {
+              if (block.type === 'text' && 'text' in block) {
                 if (!hasStreamedText) {
                   yield { type: 'text', requestId, content: block.text };
                 }
-              } else if (block.type === 'tool_use') {
-                // AskUserQuestion tool_use blocks are handled specially:
-                // the canUseTool callback (below) emits an ask_user_question
-                // event and waits for the user's answers.  We still yield
-                // the tool_call here so the UI can show what tool was used,
-                // but the interactive question card comes from the event
-                // emitted inside canUseTool.
+              } else if (block.type === 'tool_use' && 'name' in block) {
                 yield {
                   type: 'tool_call',
                   requestId,
-                  name: block.name ?? 'unknown',
-                  args: block.input ?? {},
-                  id: block.id ?? '',
+                  name: block.name,
+                  args: (block.input ?? {}) as Record<string, unknown>,
+                  id: block.id,
                 };
-              } else if (block.type === 'thinking' && block.text) {
-                // Only emit thinking if we haven't already streamed it
+              } else if (block.type === 'thinking' && 'thinking' in block) {
                 if (!hasStreamedText) {
-                  yield { type: 'thinking', requestId, content: block.text };
+                  yield { type: 'thinking', requestId, content: block.thinking };
                 }
               }
             }
@@ -299,24 +250,18 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         }
 
         case 'user': {
-          // User messages may contain tool_results (from the SDK's tool loop)
-          const userMsg = msg.message as {
-            content?: Array<{
-              type: string;
-              tool_use_id?: string;
-              content?: string;
-              is_error?: boolean;
-            }>;
-          };
-          if (userMsg?.content && Array.isArray(userMsg.content)) {
-            for (const block of userMsg.content) {
-              if (block.type === 'tool_result') {
+          // SDKUserMessage — may contain tool_result blocks from the SDK's tool loop.
+          const content = msg.message?.content;
+          if (Array.isArray(content)) {
+            for (const block of content) {
+              if (typeof block === 'object' && 'type' in block && block.type === 'tool_result') {
+                const toolResult = block as { tool_use_id: string; content?: unknown; is_error?: boolean };
                 yield {
                   type: 'tool_result',
                   requestId,
-                  id: block.tool_use_id ?? '',
-                  result: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-                  isError: block.is_error,
+                  id: toolResult.tool_use_id ?? '',
+                  result: typeof toolResult.content === 'string' ? toolResult.content : JSON.stringify(toolResult.content),
+                  isError: toolResult.is_error,
                 };
               }
             }
@@ -325,61 +270,48 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         }
 
         case 'result': {
-          const subtype = msg.subtype as string;
-          if (subtype === 'success') {
+          // SDKResultMessage = SDKResultSuccess | SDKResultError
+          if (msg.subtype === 'success') {
             yield { type: 'done', requestId };
           } else {
-            // Error result
-            const errors = (msg.errors as string[] | undefined) ?? [];
+            // msg is now narrowed to SDKResultError which has `errors: string[]`
             yield {
               type: 'error',
               requestId,
-              message: errors.join('; ') || `Session ended: ${subtype}`,
-              code: subtype,
+              message: msg.errors.join('; ') || `Session ended: ${msg.subtype}`,
+              code: msg.subtype,
             };
           }
           break;
         }
 
-        case 'status': {
-          // Status updates (e.g., "Reading file...", "Running command...")
-          const statusMsg = typeof msg.message === 'string' ? msg.message : '';
-          if (statusMsg) {
-            yield { type: 'status', requestId, message: statusMsg };
-          }
-          break;
-        }
-
         case 'tool_progress': {
-          // Live output from running tools (e.g., streaming bash output)
-          const progressContent = typeof msg.content === 'string'
-            ? msg.content
-            : typeof msg.message === 'string'
-              ? msg.message
-              : '';
-          if (progressContent) {
-            yield { type: 'status', requestId, message: progressContent };
-          }
+          // SDKToolProgressMessage — live output from running tools.
+          // The SDK type doesn't carry a user-facing message; tool progress
+          // is communicated via tool_name and elapsed_time_seconds.
           break;
         }
 
-        case 'rate_limit': {
-          // Rate limit warnings from the API
-          const rateLimitMsg = typeof msg.message === 'string'
-            ? msg.message
-            : 'Rate limit reached. Waiting...';
-          yield { type: 'rate_limit', requestId, message: rateLimitMsg };
+        case 'rate_limit_event': {
+          // SDKRateLimitEvent — rate limit warnings from the API.
+          const info = msg.rate_limit_info;
+          if (info.status === 'rejected' || info.status === 'allowed_warning') {
+            const rateLimitMsg = info.status === 'rejected'
+              ? 'Rate limit reached. Waiting...'
+              : 'Approaching rate limit';
+            yield { type: 'rate_limit', requestId, message: rateLimitMsg };
+          }
           break;
         }
 
         case 'prompt_suggestion': {
-          // Suggested next prompts — captured in event stream but not rendered yet.
+          // Suggested next prompts — not rendered yet.
           // Future: render as clickable chips below the message.
           break;
         }
 
         default:
-          // Unknown SDK message types — skip silently
+          // Other SDK message types (auth_status, hook_*, task_*, etc.) — skip
           break;
       }
     }
@@ -401,7 +333,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       try {
         const fn = await resolveQueryFn();
 
-        const sdkStream = fn({
+        const sdkQuery = fn({
           prompt: content,
           options: {
             // We use a custom system prompt (not the SDK's preset) because the
@@ -491,6 +423,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               // Emit permission_request to the caller via side-channel callback.
               // The Vite plugin wires this to send the event over WebSocket.
               if (onPermissionRequest) {
+                // SDK suggestions are PermissionUpdate[]; cast to our UI type
                 const suggestions = opts.suggestions as PermissionSuggestion[] | undefined;
                 onPermissionRequest({
                   type: 'permission_request',
@@ -511,10 +444,13 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               pendingPermissions.delete(toolUseId);
 
               if (response.allowed) {
+                // Cast PermissionSuggestion[] → PermissionUpdate[] at the bridge boundary.
+                // Our UI type is a subset of the SDK type; the cast is safe.
+                const updatedPermissions = response.updatedPermissions as PermissionUpdate[] | undefined;
                 return {
                   behavior: 'allow' as const,
                   updatedInput: input,
-                  ...(response.updatedPermissions ? { updatedPermissions: response.updatedPermissions } : {}),
+                  ...(updatedPermissions ? { updatedPermissions } : {}),
                 };
               } else {
                 return {
@@ -527,7 +463,8 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           },
         });
 
-        yield* translateSDKStream(sdkStream, requestId);
+        activeQuery = sdkQuery;
+        yield* translateSDKStream(sdkQuery, requestId);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         yield {
@@ -537,6 +474,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           code: 'BRIDGE_ERROR',
         };
       } finally {
+        activeQuery = null;
         abortController = null;
       }
     },
@@ -580,27 +518,41 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
     },
 
     setPermissionMode(mode: string): void {
-      permissionMode = mode;
+      permissionMode = mode as PermissionMode;
     },
 
     setEffort(newEffort: string): void {
       effort = newEffort as 'low' | 'medium' | 'high' | 'max';
     },
 
-    abort(): void {
-      if (abortController) {
-        abortController.abort();
-        abortController = null;
+    interrupt(): void {
+      // Use the SDK's native interrupt() — stops the current turn while
+      // preserving session context for subsequent resume.
+      if (activeQuery) {
+        activeQuery.interrupt().catch(() => {
+          // Interrupt may fail if the query already finished — safe to ignore.
+        });
       }
+      // Also resolve any pending permission/question prompts so the SDK
+      // isn't stuck waiting for user input that will never come.
+      for (const [, pending] of pendingPermissions) {
+        pending.resolve({ allowed: false, interrupt: true });
+      }
+      pendingPermissions.clear();
+      for (const [, pending] of pendingQuestions) {
+        pending.resolve({});
+      }
+      pendingQuestions.clear();
     },
 
     destroy(): void {
       destroyed = true;
-      // Abort any in-flight request
+      // Abort any in-flight request (hard kill on disconnect)
       if (abortController) {
         abortController.abort();
         abortController = null;
       }
+      activeQuery = null;
       // Reject any pending permissions
       for (const [, pending] of pendingPermissions) {
         pending.resolve({ allowed: false });

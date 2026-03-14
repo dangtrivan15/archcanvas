@@ -266,11 +266,11 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
     await new Promise<void>(r => ws.on('close', r));
   });
 
-  it('handles abort message without crashing', async () => {
+  it('handles interrupt message without crashing', async () => {
     const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
-    ws.send(JSON.stringify({ type: 'abort' }));
+    ws.send(JSON.stringify({ type: 'interrupt' }));
     await new Promise(r => setTimeout(r, 50));
     expect(ws.readyState).toBe(WebSocket.OPEN);
 

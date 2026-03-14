@@ -41,7 +41,8 @@ interface ChatState {
   setPermissionMode(mode: string): void;
   /** Change the effort level and notify the active provider. */
   setEffort(effort: string): void;
-  abort(): void;
+  /** Interrupt the current turn. Stops streaming but preserves session context. */
+  interrupt(): void;
   clearHistory(): void;
 }
 
@@ -282,13 +283,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  abort() {
+  interrupt() {
     const { activeProviderId, providers } = get();
     set({ isStreaming: false }); // Always reset, even if no provider
     if (!activeProviderId) return;
 
     const provider = providers.get(activeProviderId);
-    provider?.abort();
+    provider?.interrupt();
   },
 
   clearHistory() {
