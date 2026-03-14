@@ -6,7 +6,6 @@ import type {
   ToolResultEvent,
   AskUserQuestionEvent,
   PermissionRequestEvent,
-  StatusEvent,
   RateLimitEvent,
 } from '@/core/ai/types';
 import { ChatToolCall } from './ChatToolCall';
@@ -61,6 +60,14 @@ export function ChatMessage({ message }: Props) {
 // ---------------------------------------------------------------------------
 
 function EventsList({ events }: { events: ChatEvent[] }) {
+  // Merge all thinking events into a single collapsible block
+  let thinkingContent = '';
+  for (const ev of events) {
+    if (ev.type === 'thinking') {
+      thinkingContent += ev.content;
+    }
+  }
+
   // Build a map of tool_result events keyed by their id, so we can pair them
   // with tool_call events.
   const resultMap = new Map<string, ToolResultEvent>();
@@ -72,6 +79,8 @@ function EventsList({ events }: { events: ChatEvent[] }) {
 
   return (
     <div className="mt-1.5 space-y-1">
+      {/* Single thinking block for all thinking in this message */}
+      {thinkingContent && <ThinkingBlock content={thinkingContent} />}
       {events.map((ev, idx) => {
         switch (ev.type) {
           case 'tool_call':
@@ -101,12 +110,10 @@ function EventsList({ events }: { events: ChatEvent[] }) {
                 questions={(ev as AskUserQuestionEvent).questions}
               />
             );
-          case 'thinking':
-            return <ThinkingBlock key={`think-${idx}`} content={ev.content} />;
-          case 'status':
-            return <StatusLine key={`status-${idx}`} message={(ev as StatusEvent).message} />;
           case 'rate_limit':
             return <RateLimitBadge key={`ratelimit-${idx}`} message={(ev as RateLimitEvent).message} />;
+          // thinking — rendered as merged block above
+          // status — shown in the streaming indicator, not duplicated here
           // text, tool_result, done, error — not rendered as standalone blocks
           default:
             return null;
@@ -138,19 +145,6 @@ function ThinkingBlock({ content }: { content: string }) {
           {content}
         </p>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Status line (dimmed, with subtle spinner)
-// ---------------------------------------------------------------------------
-
-function StatusLine({ message }: { message: string }) {
-  return (
-    <div className="my-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-      <span className="inline-block h-2 w-2 animate-spin rounded-full border border-muted-foreground border-t-transparent" />
-      <span className="italic">{message}</span>
     </div>
   );
 }

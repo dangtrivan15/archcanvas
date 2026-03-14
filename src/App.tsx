@@ -14,6 +14,7 @@ import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { Canvas } from "@/components/canvas/Canvas";
 import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
+import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
@@ -26,6 +27,9 @@ export function App() {
 
   // C10: App-level keyboard shortcuts (Cmd+S, Cmd+O, Cmd+Shift+S)
   useAppKeyboard();
+
+  // I6a: Bootstrap AI chat WebSocket provider
+  useAiProvider();
 
   // C8.2: Reactive document title — "● {name} — ArchCanvas" when dirty
   const projectName = useFileStore(

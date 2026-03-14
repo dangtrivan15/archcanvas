@@ -17,8 +17,12 @@ export interface CLIContext {
  * The dev server uses `strictPort: true` in vite.config.ts, so port 5173 is
  * guaranteed — if the port is taken the server refuses to start rather than
  * picking a random one. This makes the health-check URL deterministic.
+ *
+ * Override via ARCHCANVAS_BRIDGE_PORT for testing (e.g. 4173 to match the
+ * Playwright test server port, where no bridge plugin is active).
  */
-const BRIDGE_BASE_URL = 'http://localhost:5173/__archcanvas_ai';
+const BRIDGE_PORT = process.env.ARCHCANVAS_BRIDGE_PORT ?? '5173';
+const BRIDGE_BASE_URL = `http://localhost:${BRIDGE_PORT}/__archcanvas_ai`;
 
 /**
  * Probe the dev-server bridge health endpoint.

@@ -583,7 +583,8 @@ describe('WebSocketClaudeCodeProvider', () => {
       const response = JSON.parse(ws.sent[0]);
       expect(response.type).toBe('store_action_result');
       expect(response.correlationId).toBe('corr-1');
-      expect(response.result).toEqual({ ok: true, data: {} });
+      expect(response.ok).toBe(true);
+      expect(response.data).toEqual({ ok: true, data: {} });
     });
 
     it('returns error for unknown store action', async () => {
@@ -604,8 +605,8 @@ describe('WebSocketClaudeCodeProvider', () => {
       const response = JSON.parse(ws.sent[0]);
       expect(response.type).toBe('store_action_result');
       expect(response.correlationId).toBe('corr-2');
-      expect(response.result.ok).toBe(false);
-      expect(response.result.error.code).toBe('UNKNOWN_ACTION');
+      expect(response.ok).toBe(false);
+      expect(response.error.code).toBe('UNKNOWN_ACTION');
     });
 
     it('returns error when no filesystem is available', async () => {
@@ -629,8 +630,8 @@ describe('WebSocketClaudeCodeProvider', () => {
 
       expect(ws.sent.length).toBe(1);
       const response = JSON.parse(ws.sent[0]);
-      expect(response.result.ok).toBe(false);
-      expect(response.result.error.code).toBe('NO_FILESYSTEM');
+      expect(response.ok).toBe(false);
+      expect(response.error.code).toBe('NO_FILESYSTEM');
     });
   });
 

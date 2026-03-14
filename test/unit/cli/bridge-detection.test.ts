@@ -35,11 +35,8 @@ function readBody(req: IncomingMessage): Promise<string> {
 // --- detectBridge tests ---
 
 describe('detectBridge', () => {
-  // We test detectBridge by importing it and overriding the fetch target.
-  // Since detectBridge uses a hardcoded URL (localhost:5173), we test the
-  // function's logic by calling it directly and relying on the fact that
-  // no server is running on port 5173 during tests (returns null).
-  // For the positive case, we test the underlying HTTP logic via bridgeMutate.
+  // vitest.config.ts sets ARCHCANVAS_BRIDGE_URL to an unused port (19876),
+  // so detectBridge will never collide with a running dev server.
 
   let detectBridge: typeof import('@/cli/context').detectBridge;
 
@@ -48,7 +45,7 @@ describe('detectBridge', () => {
     detectBridge = mod.detectBridge;
   });
 
-  it('returns null when no server is running on port 5173', async () => {
+  it('returns null when no server is running on the bridge port', async () => {
     // No bridge server running during tests — should return null
     const result = await detectBridge();
     expect(result).toBeNull();
@@ -76,8 +73,10 @@ describe('detectBridge with mock fetch', () => {
   });
 
   it('returns bridge URL when health endpoint responds ok', async () => {
+    const bridgePort = process.env.ARCHCANVAS_BRIDGE_PORT ?? '5173';
+    const expectedUrl = `http://localhost:${bridgePort}/__archcanvas_ai`;
     vi.stubGlobal('fetch', async (url: string) => {
-      if (url === 'http://localhost:5173/__archcanvas_ai/health') {
+      if (url === `${expectedUrl}/health`) {
         return new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -87,7 +86,7 @@ describe('detectBridge with mock fetch', () => {
     });
 
     const result = await detectBridge();
-    expect(result).toBe('http://localhost:5173/__archcanvas_ai');
+    expect(result).toBe(expectedUrl);
   });
 
   it('returns null when health endpoint returns non-ok status', async () => {

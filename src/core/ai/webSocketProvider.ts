@@ -22,7 +22,9 @@ interface StoreActionMessage {
 interface StoreActionResultMessage {
   type: 'store_action_result';
   correlationId: string;
-  result: unknown;
+  ok: boolean;
+  data?: unknown;
+  error?: { code: string; message: string };
 }
 
 // ---------------------------------------------------------------------------
@@ -221,17 +223,19 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     try {
       result = this.dispatchStoreAction(action, args);
 
-      // Unknown action — return immediately without attempting save
+      // Unknown action or engine error — return immediately without attempting save
       if (
         result &&
         typeof result === 'object' &&
         'ok' in result &&
         (result as { ok: boolean }).ok === false
       ) {
+        const errResult = result as { ok: false; error: { code: string; message: string } };
         this.send({
           type: 'store_action_result',
           correlationId,
-          result,
+          ok: false,
+          error: errResult.error,
         } satisfies StoreActionResultMessage);
         return;
       }
@@ -241,19 +245,29 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
       if (fileStore.fs) {
         await fileStore.save();
       } else {
-        result = { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No filesystem available for persistence' } };
+        this.send({
+          type: 'store_action_result',
+          correlationId,
+          ok: false,
+          error: { code: 'NO_FILESYSTEM', message: 'No filesystem available for persistence' },
+        } satisfies StoreActionResultMessage);
+        return;
       }
     } catch (err) {
-      result = {
+      this.send({
+        type: 'store_action_result',
+        correlationId,
         ok: false,
         error: { code: 'STORE_ACTION_ERROR', message: err instanceof Error ? err.message : String(err) },
-      };
+      } satisfies StoreActionResultMessage);
+      return;
     }
 
     this.send({
       type: 'store_action_result',
       correlationId,
-      result,
+      ok: true,
+      data: result,
     } satisfies StoreActionResultMessage);
   }
 

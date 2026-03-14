@@ -566,7 +566,7 @@ describe('BridgeSession — lifecycle', () => {
     session.respondToPermission('perm-123', true);
 
     const result = await permPromise;
-    expect(result).toEqual({ behavior: 'allow' });
+    expect(result).toEqual({ behavior: 'allow', updatedInput: { command: 'echo hi' } });
 
     session.destroy();
   });
@@ -761,7 +761,7 @@ describe('BridgeSession — session settings', () => {
 // SDK options
 // ---------------------------------------------------------------------------
 describe('BridgeSession — SDK options', () => {
-  it('passes expanded allowedTools, maxTurns, includePartialMessages, and toolConfig', async () => {
+  it('passes tools (not allowedTools), maxTurns, includePartialMessages, and toolConfig', async () => {
     const capturedArgs: Array<Record<string, unknown>> = [];
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as Record<string, unknown>);
@@ -773,16 +773,19 @@ describe('BridgeSession — SDK options', () => {
     const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
     await collect(session.sendMessage('test', testContext));
     const opts = capturedArgs[0].options as Record<string, unknown>;
-    const allowedTools = opts.allowedTools as string[];
-    expect(allowedTools).toContain('Write');
-    expect(allowedTools).toContain('Edit');
-    expect(allowedTools).toContain('WebFetch');
-    expect(allowedTools).toContain('WebSearch');
-    expect(allowedTools).toContain('AskUserQuestion');
-    expect(allowedTools).toContain('Bash');
-    expect(allowedTools).toContain('Read');
-    expect(allowedTools).toContain('Glob');
-    expect(allowedTools).toContain('Grep');
+    // Tools should be in `tools` (available to the model), NOT `allowedTools`
+    // (which would auto-approve them and skip canUseTool permission checks).
+    const tools = opts.tools as string[];
+    expect(tools).toContain('Write');
+    expect(tools).toContain('Edit');
+    expect(tools).toContain('WebFetch');
+    expect(tools).toContain('WebSearch');
+    expect(tools).toContain('AskUserQuestion');
+    expect(tools).toContain('Bash');
+    expect(tools).toContain('Read');
+    expect(tools).toContain('Glob');
+    expect(tools).toContain('Grep');
+    expect(opts.allowedTools).toBeUndefined();
     expect(opts.maxTurns).toBe(50);
     expect(opts.includePartialMessages).toBe(true);
     expect(opts.effort).toBe('high');
@@ -860,6 +863,7 @@ describe('BridgeSession — respondToPermission options', () => {
     });
     const result = await permPromise;
     expect(result.behavior).toBe('allow');
+    expect(result.updatedInput).toEqual({ command: 'echo hi' });
     expect(result.updatedPermissions).toEqual([{ tool: 'Bash', permission: 'allow' }]);
     session.destroy();
   });
@@ -889,10 +893,10 @@ describe('BridgeSession — respondToPermission options', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Auto-approve hooks
+// No custom hooks — SDK .claude permissions are the sole authority
 // ---------------------------------------------------------------------------
-describe('BridgeSession — auto-approve hooks', () => {
-  it('passes PreToolUse hooks in SDK options that match Read|Glob|Grep', async () => {
+describe('BridgeSession — no custom hooks', () => {
+  it('does not pass PreToolUse hooks (relies on SDK built-in permissions)', async () => {
     const capturedArgs: Array<Record<string, unknown>> = [];
     const mockQueryFn: SDKQueryFn = (args) => {
       capturedArgs.push(args as Record<string, unknown>);
@@ -904,26 +908,7 @@ describe('BridgeSession — auto-approve hooks', () => {
     const session = createBridgeSession({ cwd: '/tmp', queryFn: mockQueryFn });
     await collect(session.sendMessage('test', testContext));
     const opts = capturedArgs[0].options as Record<string, unknown>;
-    const hooks = opts.hooks as Record<string, Array<{ matcher?: string; hooks: Array<(...args: unknown[]) => Promise<unknown>> }>>;
-    expect(hooks).toBeDefined();
-    expect(hooks.PreToolUse).toBeDefined();
-    expect(hooks.PreToolUse).toHaveLength(1);
-    expect(hooks.PreToolUse[0].matcher).toBe('Read|Glob|Grep');
-    expect(hooks.PreToolUse[0].hooks).toHaveLength(1);
-    // Call the hook and verify it returns auto-approve
-    const hookFn = hooks.PreToolUse[0].hooks[0];
-    const result = await hookFn(
-      { hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: '/test.ts' } },
-      'tool-use-1',
-      { signal: new AbortController().signal },
-    );
-    expect(result).toEqual({
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'allow',
-        permissionDecisionReason: 'Read-only tool auto-approved',
-      },
-    });
+    expect(opts.hooks).toBeUndefined();
     session.destroy();
   });
 });

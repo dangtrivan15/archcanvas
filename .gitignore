@@ -38,3 +38,5 @@ coverage/
 src/**/*.d.ts
 .claude/worktrees
 .superpowers/brainstorm
+
+.playwright-cli
