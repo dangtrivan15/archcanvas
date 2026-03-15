@@ -22,14 +22,12 @@ export async function gotoApp(page: Page): Promise<void> {
     // E2E tests don't persist files — the stub is sufficient.
     store.setState({
       fs: {
+        getName: () => 'test-project',
         readFile: async () => '',
         writeFile: async () => {},
         exists: async () => false,
         mkdir: async () => {},
-        readDir: async () => [],
-        stat: async () => ({ isFile: true, isDirectory: false }),
-        remove: async () => {},
-        rename: async () => {},
+        listFiles: async () => [],
       },
     });
   });
@@ -49,6 +47,34 @@ export async function resetToEmptyProject(page: Page): Promise<void> {
     store.getState().initializeEmptyProject();
     // Clear dirty canvases and keep the stub fs
     store.setState({ dirtyCanvases: new Set() });
+  });
+  await page.waitForTimeout(100);
+}
+
+/**
+ * Set up the app in needs_onboarding state (simulating opening an empty directory).
+ * The wizard should appear instead of the canvas.
+ */
+export async function gotoEmptyProject(page: Page): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const store = (window as any).__archcanvas_fileStore__;
+    if (!store) throw new Error('fileStore not exposed on window');
+
+    store.setState({
+      fs: {
+        getName: () => 'test-project',
+        readFile: async () => '',
+        writeFile: async () => {},
+        exists: async () => false,
+        mkdir: async () => {},
+        listFiles: async () => [],
+      },
+      status: 'needs_onboarding',
+      project: null,
+      error: null,
+    });
   });
   await page.waitForTimeout(100);
 }

@@ -13,6 +13,7 @@ import { LeftToolbar } from "@/components/layout/LeftToolbar";
 import { RightPanel } from "@/components/layout/RightPanel";
 import { StatusBar } from "@/components/layout/StatusBar";
 import { ProjectGate } from "@/components/layout/ProjectGate";
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { Canvas } from "@/components/canvas/Canvas";
 import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
@@ -34,6 +35,7 @@ export function App() {
 
   // Project gate: check if a filesystem is bound
   const fs = useFileStore((s) => s.fs);
+  const status = useFileStore((s) => s.status);
 
   // C8.2: Reactive document title — "● {name} — ArchCanvas" when dirty
   const projectName = useFileStore(
@@ -82,6 +84,11 @@ export function App() {
   // If no filesystem is bound, show the project gate
   if (!fs) {
     return <ProjectGate />;
+  }
+
+  // If the project directory is empty, show the onboarding wizard
+  if (status === 'needs_onboarding') {
+    return <OnboardingWizard />;
   }
 
   return (
