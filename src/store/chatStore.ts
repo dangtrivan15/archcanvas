@@ -169,6 +169,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     };
     // Whether we've seen a tool_result since the last message split
     let hasCompletedToolCycle = false;
+    // Set when auto-continue triggers — prevents outer finally from clobbering
+    // state that the recursive call already cleaned up.
+    let autoContinued = false;
 
     try {
       const stream = provider.sendMessage(content, context);
@@ -246,6 +249,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ statusMessage: `Continuing analysis (${count + 1}/3)...` });
         // Reset isStreaming so the recursive call can re-enter streaming mode
         set({ isStreaming: false });
+        autoContinued = true;
         await get()._sendMessageInternal('Continue');
         return;
       }
@@ -254,7 +258,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      set({ isStreaming: false, statusMessage: null, warning: null });
+      if (!autoContinued) {
+        set({ isStreaming: false, statusMessage: null, warning: null });
+      }
     }
   },
 
