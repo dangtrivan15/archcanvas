@@ -12,6 +12,7 @@ vi.mock('@/store/fileStore', () => ({
     vi.fn((sel: any) =>
       sel({
         completeOnboarding: mockCompleteOnboarding,
+        fs: null,
       }),
     ),
     {
@@ -108,6 +109,10 @@ describe('OnboardingWizard', () => {
     const textarea = screen.getByPlaceholderText('Describe what this project does...');
     fireEvent.change(textarea, { target: { value: 'My cool project' } });
 
+    // Fill project path (required)
+    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app');
+    fireEvent.change(pathInput, { target: { value: '/home/user/my-app' } });
+
     // Select a tech
     fireEvent.click(screen.getByText('TypeScript'));
 
@@ -119,6 +124,7 @@ describe('OnboardingWizard', () => {
       techStack: ['TypeScript'],
       explorationDepth: 'full',
       focusDirs: '',
+      projectPath: '/home/user/my-app',
     });
   });
 });

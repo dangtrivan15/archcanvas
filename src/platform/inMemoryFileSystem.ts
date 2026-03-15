@@ -10,6 +10,10 @@ export class InMemoryFileSystem implements FileSystem {
     return this.name;
   }
 
+  getPath(): string | null {
+    return null;
+  }
+
   /** Make writeFile throw for the given path (for testing partial-failure scenarios). */
   failOnWrite(path: string): void {
     this._failPaths.add(path);

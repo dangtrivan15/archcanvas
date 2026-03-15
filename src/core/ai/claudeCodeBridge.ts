@@ -342,7 +342,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             // 'claude_code', append: buildSystemPrompt(context) }` to get the
             // full Claude Code prompt + our additions.
             systemPrompt,
-            cwd,
+            cwd: context.projectPath || cwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
             // `tools` controls which tools are *available* to the model.

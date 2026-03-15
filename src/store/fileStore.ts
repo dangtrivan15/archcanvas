@@ -112,6 +112,7 @@ export interface SurveyData {
   explorationDepth: 'full' | 'top-level' | 'custom';
   customDepth?: number;
   focusDirs: string;
+  projectPath: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +126,8 @@ interface FileStoreState {
   error: string | null;
   fs: FileSystem | null;
   recentProjects: RecentProject[];
+  /** Absolute filesystem path to the project root. Null until set (Web users must set manually). */
+  projectPath: string | null;
 
   // Existing methods
   openProject: (fs: FileSystem) => Promise<void>;
@@ -135,6 +138,8 @@ interface FileStoreState {
   updateCanvasData: (canvasId: string, data: Canvas) => void;
   getCanvas: (canvasId: string) => LoadedCanvas | undefined;
   getRootCanvas: () => LoadedCanvas | undefined;
+  /** Set the project's absolute filesystem path (for AI CWD and system prompt). */
+  setProjectPath: (path: string) => void;
 
   // New persistence methods (UI-only — CLI never calls these)
   newProject: () => Promise<void>;
@@ -159,6 +164,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   error: null,
   fs: null,
   recentProjects: loadRecentProjects(),
+  projectPath: null,
 
   initializeEmptyProject: (name = 'Untitled Project') => {
     const data: Canvas = {
@@ -176,6 +182,13 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   openProject: async (fs) => {
     set({ status: 'loading', error: null });
     try {
+      // Auto-set projectPath from fs if available (Node/Tauri).
+      // If null (Web/InMemory), do NOT overwrite — preserve any manually-set path.
+      const fsPath = fs.getPath();
+      if (fsPath) {
+        set({ projectPath: fsPath });
+      }
+
       // 1. Check if .archcanvas/ exists
       const dirExists = await fs.exists('.archcanvas');
       if (!dirExists) {
@@ -282,11 +295,21 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     return get().project?.root;
   },
 
+  setProjectPath: (path: string) => {
+    set({ projectPath: path });
+  },
+
   // -----------------------------------------------------------------------
   // Persistence UI methods (C7)
   // -----------------------------------------------------------------------
 
   newProject: async () => {
+    // One project per tab: if a project is already loaded, open a new tab instead
+    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
+      window.open(`${window.location.origin}${window.location.pathname}?action=new`, '_blank');
+      return;
+    }
+
     const picker = getFilePicker();
     const fs = await picker.pickDirectory();
     if (!fs) return; // user cancelled
@@ -301,6 +324,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   },
 
   open: async () => {
+    // One project per tab: if a project is already loaded, open a new tab instead
+    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
+      window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
+      return;
+    }
+
     const picker = getFilePicker();
     const fs = await picker.pickDirectory();
     if (!fs) return; // user cancelled
@@ -356,8 +385,10 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       set({ recentProjects: addToRecent(get().recentProjects, name, name) });
     }
 
-    // 5. AI path: open chat + send init prompt
-    if (type === 'ai' && survey && get().status === 'loaded') {
+    // 5. AI path: set projectPath from survey, open chat + send init prompt
+    if (get().status === 'loaded' && type === 'ai' && survey) {
+      get().setProjectPath(survey.projectPath);
+
       const { useUiStore } = await import('./uiStore');
       useUiStore.getState().toggleChat();
       // Wait for next tick so assembleContext() reads valid project state

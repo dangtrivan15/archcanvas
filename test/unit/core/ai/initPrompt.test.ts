@@ -8,6 +8,7 @@ function makeSurvey(overrides: Partial<SurveyData> = {}): SurveyData {
     techStack: ['TypeScript', 'React'],
     explorationDepth: 'full',
     focusDirs: '',
+    projectPath: '/home/user/projects/my-app',
     ...overrides,
   };
 }
@@ -64,5 +65,18 @@ describe('assembleInitPrompt', () => {
     const survey = makeSurvey({ focusDirs: '' });
     const prompt = assembleInitPrompt('MyProject', survey);
     expect(prompt).toContain('Explore the entire project directory');
+  });
+
+  it('includes project path in the prompt', () => {
+    const survey = makeSurvey({ projectPath: '/home/user/my-app' });
+    const prompt = assembleInitPrompt('MyProject', survey);
+    expect(prompt).toContain('Project path: /home/user/my-app');
+  });
+
+  it('includes IMPORTANT directive about project path', () => {
+    const survey = makeSurvey({ projectPath: '/home/user/my-app' });
+    const prompt = assembleInitPrompt('MyProject', survey);
+    expect(prompt).toContain('IMPORTANT: The project to analyze is located at "/home/user/my-app"');
+    expect(prompt).toContain("Explore THAT directory, not the ArchCanvas tool's own source code.");
   });
 });

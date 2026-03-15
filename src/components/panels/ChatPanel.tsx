@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { useFileStore } from '@/store/fileStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
 
@@ -13,6 +14,9 @@ export function ChatPanel() {
   const activeProviderId = useChatStore((s) => s.activeProviderId);
   const permissionMode = useChatStore((s) => s.permissionMode);
   const effort = useChatStore((s) => s.effort);
+
+  const projectPath = useFileStore((s) => s.projectPath);
+  const [pathInput, setPathInput] = useState('');
 
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +58,8 @@ export function ChatPanel() {
   const activeProvider = activeProviderId
     ? providers.get(activeProviderId)
     : undefined;
-  const canSend = !isStreaming && !!activeProvider?.available && input.trim().length > 0;
+  const needsPath = !projectPath && !!activeProvider?.available;
+  const canSend = !isStreaming && !!activeProvider?.available && input.trim().length > 0 && !needsPath;
 
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
@@ -163,6 +168,35 @@ export function ChatPanel() {
 
       {/* Footer / Input */}
       <div className="border-t border-border p-2">
+        {/* Inline path input — shown when projectPath is null and provider is connected */}
+        {needsPath && (
+          <div className="mb-2 flex gap-2" data-testid="path-input-bar">
+            <input
+              type="text"
+              value={pathInput}
+              onChange={(e) => setPathInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && pathInput.trim()) {
+                  useFileStore.getState().setProjectPath(pathInput.trim());
+                }
+              }}
+              placeholder="/Users/you/projects/my-app"
+              className="flex-1 rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+              aria-label="Project path"
+            />
+            <button
+              onClick={() => {
+                if (pathInput.trim()) {
+                  useFileStore.getState().setProjectPath(pathInput.trim());
+                }
+              }}
+              disabled={!pathInput.trim()}
+              className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
+            >
+              Set
+            </button>
+          </div>
+        )}
         <div className="flex gap-2">
           <textarea
             ref={textareaRef}
@@ -174,7 +208,7 @@ export function ChatPanel() {
                 ? 'Type a message... (Enter to send)'
                 : 'Waiting for AI connection...'
             }
-            disabled={isStreaming || !activeProvider?.available}
+            disabled={isStreaming || !activeProvider?.available || needsPath}
             rows={1}
             className="flex-1 resize-none rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
             aria-label="Chat input"

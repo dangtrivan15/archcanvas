@@ -84,6 +84,7 @@ const defaultSurvey: SurveyData = {
   techStack: ['TypeScript', 'React'],
   explorationDepth: 'full',
   focusDirs: 'src/',
+  projectPath: '/home/user/projects/my-app',
 };
 
 // ---------------------------------------------------------------------------
@@ -99,6 +100,7 @@ describe('fileStore — onboarding', () => {
       error: null,
       fs: null,
       recentProjects: [],
+      projectPath: null,
     });
 
     setFilePicker(null);
@@ -408,6 +410,113 @@ describe('fileStore — onboarding', () => {
       const recents = useFileStore.getState().recentProjects;
       expect(recents.length).toBe(1);
       expect(recents[0].name).toBe('OnboardedProject');
+    });
+  });
+
+  // =========================================================================
+  // projectPath — plumbing
+  // =========================================================================
+
+  describe('projectPath', () => {
+    it('is null initially', () => {
+      expect(useFileStore.getState().projectPath).toBeNull();
+    });
+
+    it('setProjectPath sets the path', () => {
+      useFileStore.getState().setProjectPath('/home/user/my-project');
+      expect(useFileStore.getState().projectPath).toBe('/home/user/my-project');
+    });
+
+    it('openProject does NOT overwrite projectPath for InMemoryFileSystem (getPath returns null)', async () => {
+      // Manually set a projectPath first
+      useFileStore.setState({ projectPath: '/manually/set/path' });
+
+      const fs = createSeededFs('Test');
+      await useFileStore.getState().openProject(fs);
+
+      // InMemoryFileSystem.getPath() returns null, so projectPath should be preserved
+      expect(useFileStore.getState().projectPath).toBe('/manually/set/path');
+    });
+
+    it('completeOnboarding (ai) sets projectPath from survey', async () => {
+      const fs = new InMemoryFileSystem('AIProject');
+      useFileStore.setState({ fs, status: 'needs_onboarding' });
+
+      await useFileStore.getState().completeOnboarding('ai', defaultSurvey);
+
+      // Wait for setTimeout(0) callback
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(useFileStore.getState().projectPath).toBe('/home/user/projects/my-app');
+    });
+
+    it('completeOnboarding (blank) does NOT set projectPath', async () => {
+      const fs = new InMemoryFileSystem('BlankProject');
+      useFileStore.setState({ fs, status: 'needs_onboarding' });
+
+      await useFileStore.getState().completeOnboarding('blank');
+
+      expect(useFileStore.getState().projectPath).toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // One project per tab
+  // =========================================================================
+
+  describe('one project per tab', () => {
+    it('open() calls window.open when fs is already set', async () => {
+      const seededFs = createSeededFs('Existing');
+      useFileStore.setState({ fs: seededFs, status: 'loaded' });
+
+      const mockWindowOpen = vi.fn();
+      const origOpen = globalThis.window?.open;
+      globalThis.window = Object.create(globalThis.window ?? {});
+      Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
+      Object.defineProperty(globalThis.window, 'location', {
+        value: { origin: 'http://localhost:5173', pathname: '/' },
+        writable: true,
+      });
+
+      await useFileStore.getState().open();
+
+      expect(mockWindowOpen).toHaveBeenCalledWith('http://localhost:5173/?action=open', '_blank');
+
+      // Restore
+      if (origOpen) {
+        Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+      }
+    });
+
+    it('newProject() calls window.open when fs is already set', async () => {
+      const seededFs = createSeededFs('Existing');
+      useFileStore.setState({ fs: seededFs, status: 'loaded' });
+
+      const mockWindowOpen = vi.fn();
+      const origOpen = globalThis.window?.open;
+      Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
+      Object.defineProperty(globalThis.window, 'location', {
+        value: { origin: 'http://localhost:5173', pathname: '/' },
+        writable: true,
+      });
+
+      await useFileStore.getState().newProject();
+
+      expect(mockWindowOpen).toHaveBeenCalledWith('http://localhost:5173/?action=new', '_blank');
+
+      // Restore
+      if (origOpen) {
+        Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+      }
+    });
+
+    it('open() proceeds normally when fs is null', async () => {
+      const seededFs = createSeededFs('Normal');
+      setFilePicker(createMockPicker(seededFs));
+
+      await useFileStore.getState().open();
+
+      expect(useFileStore.getState().status).toBe('loaded');
     });
   });
 });

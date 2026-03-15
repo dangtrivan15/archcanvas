@@ -21,6 +21,10 @@ export function assembleInitPrompt(projectName: string, survey: SurveyData): str
 Project: ${projectName}
 Description: ${survey.description}
 Tech stack: ${techStackText}
+Project path: ${survey.projectPath}
+
+IMPORTANT: The project to analyze is located at "${survey.projectPath}".
+Explore THAT directory, not the ArchCanvas tool's own source code.
 
 Exploration instructions:
 - Depth: ${depthText}

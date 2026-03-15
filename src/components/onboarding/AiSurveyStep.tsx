@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useChatStore } from '@/store/chatStore';
+import { useFileStore } from '@/store/fileStore';
 import type { SurveyData } from '@/store/fileStore';
 
 interface AiSurveyStepProps {
@@ -22,7 +23,11 @@ const TECH_STACK_OPTIONS = [
 ];
 
 export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
+  // Pre-fill project path from fs.getPath() if available (Node/Tauri)
+  const fsPath = useFileStore((s) => s.fs?.getPath() ?? '');
+
   const [description, setDescription] = useState('');
+  const [projectPath, setProjectPath] = useState(fsPath);
   const [techStack, setTechStack] = useState<string[]>([]);
   const [explorationDepth, setExplorationDepth] = useState<'full' | 'top-level' | 'custom'>('full');
   const [customDepth, setCustomDepth] = useState(3);
@@ -35,7 +40,7 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
     return false;
   });
 
-  const canStart = description.trim().length > 0 && aiAvailable;
+  const canStart = description.trim().length > 0 && projectPath.trim().length > 0 && aiAvailable;
 
   function toggleTech(tech: string) {
     setTechStack((prev) =>
@@ -50,6 +55,7 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
       explorationDepth,
       ...(explorationDepth === 'custom' ? { customDepth } : {}),
       focusDirs: focusDirs.trim(),
+      projectPath: projectPath.trim(),
     };
     onStart(survey);
   }
@@ -84,6 +90,21 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe what this project does..."
           rows={3}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+
+      {/* Project Path */}
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="project-path" className="text-sm font-medium">
+          Project Path <span className="text-red-400">*</span>
+        </label>
+        <input
+          id="project-path"
+          type="text"
+          value={projectPath}
+          onChange={(e) => setProjectPath(e.target.value)}
+          placeholder="/Users/you/projects/my-app"
           className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
