@@ -245,10 +245,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
         lastEvent.message.toLowerCase().includes('max turn') &&
         count < 3
       ) {
-        set({ _autoContinueCount: count + 1, error: null });
-        set({ statusMessage: `Continuing analysis (${count + 1}/3)...` });
-        // Reset isStreaming so the recursive call can re-enter streaming mode
-        set({ isStreaming: false });
+        // Reset state in a single set() call: increment counter, clear error,
+        // show progress status, and reset isStreaming so the recursive call
+        // can re-enter streaming mode.
+        set({
+          _autoContinueCount: count + 1,
+          error: null,
+          statusMessage: `Continuing analysis (${count + 1}/3)...`,
+          isStreaming: false,
+        });
         autoContinued = true;
         await get()._sendMessageInternal('Continue');
         return;
