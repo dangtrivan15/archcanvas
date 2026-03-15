@@ -26,10 +26,14 @@ interface ChatState {
   permissionMode: string;
   /** Current effort level for the AI session. */
   effort: string;
+  /** Internal auto-continue counter. Resets per user-initiated message. */
+  _autoContinueCount: number;
 
   registerProvider(provider: ChatProvider): void;
   setActiveProvider(id: string): void;
   sendMessage(content: string): Promise<void>;
+  /** Internal helper for message sending with auto-continue support. */
+  _sendMessageInternal(content: string): Promise<void>;
   respondToPermission(
     id: string,
     allowed: boolean,
@@ -86,6 +90,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   statusMessage: null,
   permissionMode: 'default',
   effort: 'high',
+  _autoContinueCount: 0,
 
   registerProvider(provider: ChatProvider) {
     const next = new Map(get().providers);
@@ -105,6 +110,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   async sendMessage(content: string) {
+    set({ _autoContinueCount: 0 });
+    await get()._sendMessageInternal(content);
+  },
+
+  async _sendMessageInternal(content: string) {
     // Guard: project path required for AI CWD
     const projectPath = useFileStore.getState().projectPath;
     if (!projectPath) {
@@ -222,6 +232,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
             messages: [...before, ...completedMessages, { ...currentMsg }],
           };
         });
+      }
+
+      // Auto-continue on max-turns exhaustion (up to 3 times per user message)
+      const lastEvent = currentMsg.events?.at(-1);
+      const count = get()._autoContinueCount;
+      if (
+        lastEvent?.type === 'error' &&
+        lastEvent.message.toLowerCase().includes('max turn') &&
+        count < 3
+      ) {
+        set({ _autoContinueCount: count + 1, error: null });
+        set({ statusMessage: `Continuing analysis (${count + 1}/3)...` });
+        // Reset isStreaming so the recursive call can re-enter streaming mode
+        set({ isStreaming: false });
+        await get()._sendMessageInternal('Continue');
+        return;
       }
     } catch (err) {
       set({

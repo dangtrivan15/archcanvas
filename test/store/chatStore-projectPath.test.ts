@@ -95,6 +95,7 @@ beforeEach(() => {
     statusMessage: null,
     permissionMode: 'default',
     effort: 'high',
+    _autoContinueCount: 0,
   });
 });
 
