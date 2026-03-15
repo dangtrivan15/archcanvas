@@ -38,7 +38,7 @@ export async function addEdgeCommand(
       canvasId,
       edge,
     });
-    printSuccess(result, globalOptions);
+    printSuccess(result.data!, globalOptions);
   } else {
     // Local store mutation path
     const result = useGraphStore.getState().addEdge(canvasId, edge);

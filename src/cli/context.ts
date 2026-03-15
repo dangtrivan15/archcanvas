@@ -61,7 +61,7 @@ export async function bridgeRequest(
   bridgeUrl: string,
   action: string,
   args: Record<string, unknown>,
-): Promise<{ ok: boolean; [key: string]: unknown }> {
+): Promise<{ ok: boolean; data?: Record<string, unknown>; error?: { code: string; message: string } }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
 
@@ -82,7 +82,7 @@ export async function bridgeRequest(
     clearTimeout(timer);
   }
 
-  let body: { ok: boolean; error?: { code: string; message: string }; [key: string]: unknown };
+  let body: { ok: boolean; data?: Record<string, unknown>; error?: { code: string; message: string } };
   try {
     body = await res.json() as typeof body;
   } catch {

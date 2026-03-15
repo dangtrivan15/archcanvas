@@ -20,7 +20,7 @@ export async function describeCommand(flags: DescribeFlags, options: OutputOptio
       canvasId: resolveCanvasId(flags.scope),
       id: flags.id,
     });
-    printSuccess(result.data ?? result, options);
+    printSuccess(result.data!, options);
     return;
   }
   if (flags.id) {
