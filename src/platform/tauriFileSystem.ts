@@ -11,6 +11,11 @@ import { join } from '@tauri-apps/api/path';
 export class TauriFileSystem implements FileSystem {
   constructor(private rootPath: string) {}
 
+  getName(): string {
+    const segments = this.rootPath.replace(/[\\/]+$/, '').split(/[\\/]/);
+    return segments[segments.length - 1] || this.rootPath;
+  }
+
   private async resolve(path: string): Promise<string> {
     return join(this.rootPath, path);
   }
