@@ -1,5 +1,5 @@
 import { readFile, writeFile, readdir, stat, mkdir } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve, basename } from 'node:path';
 import type { FileSystem } from './fileSystem';
 
 export class NodeFileSystem implements FileSystem {
@@ -7,6 +7,10 @@ export class NodeFileSystem implements FileSystem {
 
   constructor(root: string) {
     this.rootPath = resolve(root);
+  }
+
+  getName(): string {
+    return basename(this.rootPath);
   }
 
   private resolvePath(path: string): string {

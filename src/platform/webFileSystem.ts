@@ -3,6 +3,10 @@ import type { FileSystem } from './fileSystem';
 export class WebFileSystem implements FileSystem {
   constructor(private rootHandle: FileSystemDirectoryHandle) {}
 
+  getName(): string {
+    return this.rootHandle.name;
+  }
+
   async readFile(path: string): Promise<string> {
     const { dir, fileName } = await this.resolve(path);
     const fileHandle = await dir.getFileHandle(fileName);

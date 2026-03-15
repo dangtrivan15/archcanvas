@@ -4,6 +4,12 @@ export class InMemoryFileSystem implements FileSystem {
   private files = new Map<string, string>();
   private _failPaths = new Set<string>();
 
+  constructor(private name: string = 'untitled') {}
+
+  getName(): string {
+    return this.name;
+  }
+
   /** Make writeFile throw for the given path (for testing partial-failure scenarios). */
   failOnWrite(path: string): void {
     this._failPaths.add(path);
