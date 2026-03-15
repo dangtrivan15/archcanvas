@@ -71,7 +71,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard />);
     expect(screen.getByText('Welcome to ArchCanvas')).toBeInTheDocument();
     expect(screen.getByText('Blank Canvas')).toBeInTheDocument();
-    expect(screen.getByText('AI Analysis')).toBeInTheDocument();
+    expect(screen.getByText('AI Analyze')).toBeInTheDocument();
   });
 
   it('clicking "Blank Canvas" calls completeOnboarding("blank")', () => {
@@ -80,16 +80,16 @@ describe('OnboardingWizard', () => {
     expect(mockCompleteOnboarding).toHaveBeenCalledWith('blank');
   });
 
-  it('clicking "AI Analysis" advances to Step 2', () => {
+  it('clicking "AI Analyze" advances to Step 2', () => {
     render(<OnboardingWizard />);
-    fireEvent.click(screen.getByText('AI Analysis'));
+    fireEvent.click(screen.getByText('AI Analyze'));
     expect(screen.getByText('Configure AI Analysis')).toBeInTheDocument();
   });
 
   it('Step 2 "Back" button returns to Step 1', () => {
     render(<OnboardingWizard />);
     // Advance to Step 2
-    fireEvent.click(screen.getByText('AI Analysis'));
+    fireEvent.click(screen.getByText('AI Analyze'));
     expect(screen.getByText('Configure AI Analysis')).toBeInTheDocument();
 
     // Go back
@@ -102,7 +102,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard />);
 
     // Advance to Step 2
-    fireEvent.click(screen.getByText('AI Analysis'));
+    fireEvent.click(screen.getByText('AI Analyze'));
 
     // Fill description
     const textarea = screen.getByPlaceholderText('Describe what this project does...');

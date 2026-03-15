@@ -23,6 +23,25 @@ export function InitMethodStep({ onBlankCanvas, onAiAnalyze }: InitMethodStepPro
       </div>
 
       <div className="flex gap-4">
+        {/* AI Analyze card */}
+        <button
+          onClick={onAiAnalyze}
+          className="flex w-64 flex-col items-center gap-3 rounded-lg border border-border bg-background p-6 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <div className="text-4xl">🤖</div>
+          <div className="text-center">
+            <div className="font-semibold">AI Analyze</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Let AI scan your codebase and propose an architecture. You'll watch it build in real-time.
+            </p>
+            {!aiAvailable && (
+              <p className="mt-1 text-xs text-muted-foreground opacity-60" data-testid="ai-hint">
+                Requires AI connection
+              </p>
+            )}
+          </div>
+        </button>
+
         {/* Blank Canvas card */}
         <button
           onClick={onBlankCanvas}
@@ -32,27 +51,8 @@ export function InitMethodStep({ onBlankCanvas, onAiAnalyze }: InitMethodStepPro
           <div className="text-center">
             <div className="font-semibold">Blank Canvas</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              Start from scratch and build your diagram manually
+              Start with an empty canvas. Add nodes manually or ask AI later via the chat panel.
             </p>
-          </div>
-        </button>
-
-        {/* AI Analyze card */}
-        <button
-          onClick={onAiAnalyze}
-          className="flex w-64 flex-col items-center gap-3 rounded-lg border border-border bg-background p-6 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <div className="text-4xl">🤖</div>
-          <div className="text-center">
-            <div className="font-semibold">AI Analysis</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Let AI explore your codebase and generate a diagram
-            </p>
-            {!aiAvailable && (
-              <p className="mt-1 text-xs text-muted-foreground opacity-60" data-testid="ai-hint">
-                Requires AI connection
-              </p>
-            )}
           </div>
         </button>
       </div>
