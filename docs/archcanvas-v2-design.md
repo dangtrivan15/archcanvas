@@ -861,6 +861,22 @@ New categories are added by registering new providers, not by modifying the pale
 | **Code scaffolding** | AI generates boilerplate from architecture (Dockerfiles, service stubs, API contracts). |
 | **Registry governance** | Namespaces, verified publishers, versioning, deprecation. npm-like ecosystem. |
 
+### Critical Gap: AI Bridge in Production Builds
+
+> **Status**: Must be resolved in I7 (Packaging & Polish) — blocks AI features outside `vite dev`.
+
+The AI bridge (WebSocket + HTTP endpoints) currently only runs via the Vite dev server plugin (`configureServer` hook in `vitePlugin.ts`). In production builds (`vite preview`, Tauri desktop), the bridge does not start — the chat panel shows "No providers" and Claude Code CLI cannot connect.
+
+**Impact**: Any feature that requires AI (chat, onboarding wizard AI init) only works in `vite dev` mode. The onboarding wizard (I6b) checks `provider.available` and gracefully degrades, but AI-powered architecture initialization is unavailable in production.
+
+**Resolution path (I7)**:
+1. Add `configurePreviewServer` hook to `vitePlugin.ts` for `vite preview` mode
+2. Create standalone `archcanvas serve` command that hosts the bridge independently
+3. Tauri sidecar: bundle the bridge server as a sidecar process, auto-started on app launch
+4. Dynamic port discovery: browser detects bridge URL via environment variable or well-known port scan
+
+This is a packaging/deployment concern, not an architecture issue — the bridge code (`claudeCodeBridge.ts`, `vitePlugin.ts`) is correct and complete. It just needs a host process outside of Vite dev.
+
 ### Deferred Decisions
 
 To be resolved during implementation:

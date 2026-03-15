@@ -14,13 +14,13 @@ vi.mock('@/platform/index', () => ({
 }));
 
 // Mock node:fs to control existsSync for findProjectRoot
-const existsSyncMock = vi.fn<(p: string) => boolean>();
+const existsSyncMock = vi.fn<(p: import('node:fs').PathLike) => boolean>();
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    default: { ...actual, existsSync: (p: string) => existsSyncMock(p) },
-    existsSync: (p: string) => existsSyncMock(p),
+    default: { ...actual, existsSync: (p: import('node:fs').PathLike) => existsSyncMock(p) },
+    existsSync: (p: import('node:fs').PathLike) => existsSyncMock(p),
   };
 });
 
@@ -133,8 +133,9 @@ describe('loadContext', () => {
 
   it('searches cwd upward for .archcanvas/ when no explicit path', async () => {
     // Mock existsSync to find .archcanvas/ in a parent directory
-    existsSyncMock.mockImplementation((p: string) => {
-      return p.endsWith('/.archcanvas') && !p.includes('worktrees');
+    existsSyncMock.mockImplementation((p: import('node:fs').PathLike) => {
+      const s = String(p);
+      return s.endsWith('/.archcanvas') && !s.includes('worktrees');
     });
 
     // This will search cwd upward — since existsSync is mocked
@@ -150,6 +151,6 @@ describe('loadContext', () => {
     expect(existsSyncMock).toHaveBeenCalled();
     // Verify it was called with a path ending in .archcanvas
     const calls = existsSyncMock.mock.calls.map((c) => c[0]);
-    expect(calls.some((p) => p.endsWith('.archcanvas'))).toBe(true);
+    expect(calls.some((p) => String(p).endsWith('.archcanvas'))).toBe(true);
   });
 });

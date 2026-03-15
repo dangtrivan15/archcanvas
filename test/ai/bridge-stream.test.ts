@@ -397,7 +397,7 @@ describe('BridgeSession — prompt_suggestion messages', () => {
     const { session } = setupSession({
       yields: [
         sdkAssistantText('Here is my answer.'),
-        sdkPromptSuggestion(['Tell me more', 'Show details']),
+        sdkPromptSuggestion('Tell me more'),
       ],
     });
     const events = await collect(session.sendMessage('test', testContext));
