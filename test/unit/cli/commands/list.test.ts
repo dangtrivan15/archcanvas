@@ -3,10 +3,10 @@ import { enablePatches } from 'immer';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { listCommand } from '@/cli/commands/list';
 import { CLIError } from '@/cli/errors';
-import type { CanvasFile } from '@/types/schema';
+import type { Canvas } from '@/types/schema';
 
 // Mock loadContext — stores are populated by setupStores(), no filesystem needed
 vi.mock('@/cli/context', async () => {
@@ -19,7 +19,7 @@ vi.mock('@/cli/context', async () => {
 
 enablePatches();
 
-const seedData: CanvasFile = {
+const seedData: Canvas = {
   project: { name: 'ListTest' },
   nodes: [
     { id: 'svc-api', type: 'compute/service', displayName: 'API Service' },
@@ -35,7 +35,7 @@ const seedData: CanvasFile = {
 };
 
 function makeMainYaml(): string {
-  return serializeCanvasFile(seedData);
+  return serializeCanvas(seedData);
 }
 
 async function setupStores(): Promise<void> {

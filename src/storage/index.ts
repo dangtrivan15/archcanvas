@@ -1,6 +1,6 @@
 export {
-  parseCanvasFile,
-  serializeCanvasFile,
+  parseCanvas,
+  serializeCanvas,
   ParseError,
   SerializeError,
 } from './yamlCodec';

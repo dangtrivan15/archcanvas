@@ -1,6 +1,6 @@
 import { produceWithPatches } from 'immer';
 import type {
-  CanvasFile,
+  Canvas,
   InlineNode,
   Edge,
   Entity,
@@ -14,7 +14,7 @@ import { validateNode, validateEdge } from './validation';
 // --- Node Operations ---
 
 export function addNode(
-  canvas: CanvasFile,
+  canvas: Canvas,
   node: Node,
   registry?: NodeDefRegistry,
 ): EngineResult {
@@ -37,7 +37,7 @@ export function addNode(
 }
 
 export function removeNode(
-  canvas: CanvasFile,
+  canvas: Canvas,
   nodeId: string,
 ): EngineResult {
   const nodes = canvas.nodes ?? [];
@@ -61,7 +61,7 @@ export type InlineNodeUpdates = Partial<
 >;
 
 export function updateNode(
-  canvas: CanvasFile,
+  canvas: Canvas,
   nodeId: string,
   updates: InlineNodeUpdates,
   registry?: NodeDefRegistry,
@@ -92,7 +92,7 @@ export function updateNode(
 }
 
 export function updateNodePosition(
-  canvas: CanvasFile,
+  canvas: Canvas,
   nodeId: string,
   position: Position,
 ): EngineResult {
@@ -113,7 +113,7 @@ export function updateNodePosition(
 // --- Edge Operations ---
 
 export function addEdge(
-  canvas: CanvasFile,
+  canvas: Canvas,
   edge: Edge,
   registry?: NodeDefRegistry,
 ): EngineResult {
@@ -160,7 +160,7 @@ export function addEdge(
 }
 
 export function removeEdge(
-  canvas: CanvasFile,
+  canvas: Canvas,
   from: string,
   to: string,
 ): EngineResult {
@@ -182,7 +182,7 @@ export function removeEdge(
 export type EdgeUpdates = Partial<Pick<Edge, 'protocol' | 'label' | 'entities' | 'notes'>>;
 
 export function updateEdge(
-  canvas: CanvasFile,
+  canvas: Canvas,
   from: string,
   to: string,
   updates: EdgeUpdates,
@@ -206,7 +206,7 @@ export function updateEdge(
 // --- Entity Operations ---
 
 export function addEntity(
-  canvas: CanvasFile,
+  canvas: Canvas,
   entity: Entity,
 ): EngineResult {
   const entities = canvas.entities ?? [];
@@ -223,7 +223,7 @@ export function addEntity(
 }
 
 export function removeEntity(
-  canvas: CanvasFile,
+  canvas: Canvas,
   entityName: string,
 ): EngineResult {
   const entities = canvas.entities ?? [];
@@ -255,7 +255,7 @@ export function removeEntity(
 export type EntityUpdates = Partial<Pick<Entity, 'description' | 'codeRefs'>>;
 
 export function updateEntity(
-  canvas: CanvasFile,
+  canvas: Canvas,
   entityName: string,
   updates: EntityUpdates,
 ): EngineResult {

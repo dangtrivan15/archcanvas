@@ -6,7 +6,7 @@ import { useGraphStore } from '@/store/graphStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 enablePatches();
@@ -19,7 +19,7 @@ const seedEdges = [{ from: { node: 'node-a' }, to: { node: 'node-b' } }];
 
 function makeMainYaml() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile({
+  return serializeCanvas({
     project: { name: 'CanvasStoreTest' },
     nodes: seedNodes,
     edges: seedEdges,

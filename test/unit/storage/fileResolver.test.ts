@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import { loadProject, saveCanvas, ROOT_CANVAS_KEY } from '@/storage/fileResolver';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 
 function yamlOf(data: Record<string, unknown>): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile(data as any);
+  return serializeCanvas(data as any);
 }
 
 describe('loadProject', () => {

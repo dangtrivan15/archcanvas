@@ -1,4 +1,4 @@
-import type { Node, Edge, CanvasFile } from '@/types';
+import type { Node, Edge, Canvas } from '@/types';
 import type { NodeDefRegistry } from '@/core/registry/core';
 import type { EngineWarning } from './types';
 
@@ -86,7 +86,7 @@ export function validateNode(
  */
 export function validateEdge(
   edge: Edge,
-  canvas: CanvasFile,
+  canvas: Canvas,
   registry: NodeDefRegistry,
 ): EngineWarning[] {
   const warnings: EngineWarning[] = [];
@@ -145,7 +145,7 @@ export function validateEdge(
  * Returns deduplicated warnings.
  */
 export function validateCanvas(
-  canvas: CanvasFile,
+  canvas: Canvas,
   registry: NodeDefRegistry,
 ): EngineWarning[] {
   const warnings: EngineWarning[] = [];

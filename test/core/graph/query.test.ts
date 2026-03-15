@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { CanvasFile } from '@/types';
+import type { Canvas } from '@/types';
 import type { LoadedCanvas } from '@/storage/fileResolver';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import {
@@ -16,7 +16,7 @@ import {
 } from '@/core/graph/query';
 import { makeCanvas, makeNode, makeRefNode, makeEdge, makeEntity } from './helpers';
 
-function makeLoadedCanvas(data: CanvasFile, filePath = 'test.yaml'): LoadedCanvas {
+function makeLoadedCanvas(data: Canvas, filePath = 'test.yaml'): LoadedCanvas {
   return { filePath, data, doc: {} as any };
 }
 

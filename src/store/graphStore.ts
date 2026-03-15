@@ -17,7 +17,7 @@ import {
 import { useFileStore } from './fileStore';
 import { useRegistryStore } from './registryStore';
 import { useHistoryStore } from './historyStore';
-import type { CanvasFile } from '@/types';
+import type { Canvas } from '@/types';
 
 interface GraphStoreState {
   addNode(canvasId: string, node: Node): EngineResult;
@@ -33,7 +33,7 @@ interface GraphStoreState {
 }
 
 type ResolveResult =
-  | { data: CanvasFile; error?: undefined }
+  | { data: Canvas; error?: undefined }
   | { data?: undefined; error: EngineResult };
 
 function resolveCanvas(canvasId: string): ResolveResult {

@@ -96,7 +96,7 @@ export type ProjectMetadata = z.infer<typeof ProjectMetadata>;
 
 // --- Canvas File ---
 
-export const CanvasFile = z.object({
+export const Canvas = z.object({
   id: z.string().optional(),
   type: z.string().optional(),
   displayName: z.string().optional(),
@@ -109,16 +109,16 @@ export const CanvasFile = z.object({
   entities: z.array(Entity).optional(),
   edges: z.array(Edge).optional(),
 });
-export type CanvasFile = z.infer<typeof CanvasFile>;
+export type Canvas = z.infer<typeof Canvas>;
 
 // --- Refinements ---
 
-export const RootCanvasFile = CanvasFile.refine(
+export const RootCanvas = Canvas.refine(
   (f) => f.project != null,
   { message: 'Root canvas must have project metadata' },
 );
 
-export const SubsystemCanvasFile = CanvasFile.refine(
+export const SubsystemCanvas = Canvas.refine(
   (f) => f.id != null && f.type != null,
   { message: 'Subsystem canvas must have id and type' },
 );

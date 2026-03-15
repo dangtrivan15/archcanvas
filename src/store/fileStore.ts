@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { FileSystem } from '../platform/fileSystem';
 import type { FilePicker } from '../platform/filePicker';
 import { createFilePicker } from '../platform/filePicker';
-import type { CanvasFile } from '../types';
+import type { Canvas } from '../types';
 import {
   loadProject,
   saveCanvas as saveCanvasToFile,
@@ -119,7 +119,7 @@ interface FileStoreState {
   saveCanvas: (fs: FileSystem, canvasId: string) => Promise<void>;
   saveAll: (fs: FileSystem) => Promise<void>;
   markDirty: (canvasId: string) => void;
-  updateCanvasData: (canvasId: string, data: CanvasFile) => void;
+  updateCanvasData: (canvasId: string, data: Canvas) => void;
   getCanvas: (canvasId: string) => LoadedCanvas | undefined;
   getRootCanvas: () => LoadedCanvas | undefined;
 
@@ -147,7 +147,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   recentProjects: loadRecentProjects(),
 
   initializeEmptyProject: (name = 'Untitled Project') => {
-    const data: CanvasFile = {
+    const data: Canvas = {
       project: { name, description: '' },
       nodes: [],
       entities: [],

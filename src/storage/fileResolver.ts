@@ -1,11 +1,11 @@
 import type { Document } from 'yaml';
 import type { FileSystem } from '../platform/fileSystem';
-import type { CanvasFile } from '../types';
-import { parseCanvasFile, serializeCanvasFile } from './yamlCodec';
+import type { Canvas } from '../types';
+import { parseCanvas, serializeCanvas } from './yamlCodec';
 
 export interface LoadedCanvas {
   filePath: string;
-  data: CanvasFile;
+  data: Canvas;
   doc: Document | undefined;
 }
 
@@ -32,7 +32,7 @@ export async function loadProject(
 
   const mainPath = '.archcanvas/main.yaml';
   const mainContent = await fs.readFile(mainPath);
-  const mainParsed = parseCanvasFile(mainContent);
+  const mainParsed = parseCanvas(mainContent);
 
   const root: LoadedCanvas = {
     filePath: mainPath,
@@ -82,7 +82,7 @@ async function resolveRefs(
 
     try {
       const content = await fs.readFile(filePath);
-      const parsed = parseCanvasFile(content);
+      const parsed = parseCanvas(content);
       const loadedCanvas: LoadedCanvas = {
         filePath,
         data: parsed.data,
@@ -134,6 +134,6 @@ export async function saveCanvas(
   fs: FileSystem,
   canvas: LoadedCanvas,
 ): Promise<void> {
-  const yamlString = serializeCanvasFile(canvas.data, canvas.doc);
+  const yamlString = serializeCanvas(canvas.data, canvas.doc);
   await fs.writeFile(canvas.filePath, yamlString);
 }

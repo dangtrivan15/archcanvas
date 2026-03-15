@@ -1,5 +1,5 @@
 import type { Patch } from 'immer';
-import type { CanvasFile } from '@/types';
+import type { Canvas } from '@/types';
 
 // --- Error Codes (hard — block the operation) ---
 
@@ -39,7 +39,7 @@ export type EngineWarning =
 export type EngineResult =
   | {
       ok: true;
-      data: CanvasFile;
+      data: Canvas;
       patches: Patch[];
       inversePatches: Patch[];
       warnings: EngineWarning[];

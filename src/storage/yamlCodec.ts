@@ -1,7 +1,7 @@
 import { Document, isMap, isScalar, parseDocument, stringify } from 'yaml';
 import {
-  CanvasFile,
-  type CanvasFile as CanvasFileType,
+  Canvas,
+  type Canvas as CanvasFileType,
 } from '../types';
 
 export interface ParsedCanvas {
@@ -30,7 +30,7 @@ function formatPath(path: PropertyKey[]): string {
   }, '');
 }
 
-export function parseCanvasFile(yamlContent: string): ParsedCanvas {
+export function parseCanvas(yamlContent: string): ParsedCanvas {
   const doc = parseDocument(yamlContent);
 
   if (doc.errors.length > 0) {
@@ -40,7 +40,7 @@ export function parseCanvasFile(yamlContent: string): ParsedCanvas {
   }
 
   const raw = doc.toJSON();
-  const result = CanvasFile.safeParse(raw);
+  const result = Canvas.safeParse(raw);
 
   if (!result.success) {
     const issues = result.error.issues
@@ -52,11 +52,11 @@ export function parseCanvasFile(yamlContent: string): ParsedCanvas {
   return { data: result.data, doc };
 }
 
-export function serializeCanvasFile(
+export function serializeCanvas(
   data: CanvasFileType,
   doc?: Document,
 ): string {
-  const result = CanvasFile.safeParse(data);
+  const result = Canvas.safeParse(data);
 
   if (!result.success) {
     const issues = result.error.issues

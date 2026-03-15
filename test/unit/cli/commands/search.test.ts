@@ -3,10 +3,10 @@ import { enablePatches } from 'immer';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { searchCommand } from '@/cli/commands/search';
-import type { CanvasFile } from '@/types/schema';
+import type { Canvas } from '@/types/schema';
 
 vi.mock('@/cli/context', async () => {
   const actual = await vi.importActual('@/cli/context');
@@ -18,7 +18,7 @@ vi.mock('@/cli/context', async () => {
 
 enablePatches();
 
-const seedData: CanvasFile = {
+const seedData: Canvas = {
   project: { name: 'SearchTest' },
   nodes: [
     { id: 'svc-api', type: 'compute/service', displayName: 'API Service' },
@@ -35,7 +35,7 @@ const seedData: CanvasFile = {
   ],
 };
 
-const childCanvasData: CanvasFile = {
+const childCanvasData: Canvas = {
   id: 'child-canvas',
   type: 'compute/service',
   nodes: [
@@ -57,7 +57,7 @@ async function setupStores(): Promise<void> {
 
   const fs = new InMemoryFileSystem();
   // Add a ref node to the root so the child canvas gets loaded
-  const rootData: CanvasFile = {
+  const rootData: Canvas = {
     ...seedData,
     nodes: [
       ...(seedData.nodes ?? []),
@@ -65,8 +65,8 @@ async function setupStores(): Promise<void> {
     ],
   };
   fs.seed({
-    '.archcanvas/main.yaml': serializeCanvasFile(rootData),
-    '.archcanvas/child-canvas.yaml': serializeCanvasFile(childCanvasData),
+    '.archcanvas/main.yaml': serializeCanvas(rootData),
+    '.archcanvas/child-canvas.yaml': serializeCanvas(childCanvasData),
   });
 
   await useFileStore.getState().openProject(fs);

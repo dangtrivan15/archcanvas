@@ -2,11 +2,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useFileStore, setFilePicker, setLocalStorage } from '@/store/fileStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import type { FilePicker } from '@/platform/filePicker';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 
 function yamlOf(data: Record<string, unknown>): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile(data as any);
+  return serializeCanvas(data as any);
 }
 
 /** Create an InMemoryFileSystem seeded with a minimal valid project */
