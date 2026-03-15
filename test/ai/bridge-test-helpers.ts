@@ -55,12 +55,14 @@ export async function collect(iter: AsyncIterable<ChatEvent>): Promise<ChatEvent
 // ---------------------------------------------------------------------------
 // Test context
 // ---------------------------------------------------------------------------
-export const testContext: ProjectContext = {
-  projectName: 'test-project',
-  projectDescription: 'A test architecture project',
-  currentScope: '@root',
-  projectPath: '/tmp/test-project',
-};
+export function testContext(): ProjectContext {
+  return {
+    projectName: 'test-project',
+    projectDescription: 'A test architecture project',
+    currentScope: '@root',
+    projectPath: testCwd,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // SDK Message factories — simulate what the real SDK would emit

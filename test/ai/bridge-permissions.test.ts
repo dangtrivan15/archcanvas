@@ -42,7 +42,7 @@ describe('BridgeSession — Scenario 6: interruptMidStream', () => {
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
     const events: ChatEvent[] = [];
 
-    const stream = session.sendMessage('analyze', testContext);
+    const stream = session.sendMessage('analyze', testContext());
     for await (const event of stream) {
       events.push(event);
       if (event.type === 'text' && event.content === 'Starting analysis') {
@@ -77,7 +77,7 @@ describe('BridgeSession — permission lifecycle', () => {
     });
 
     // Start the stream to capture the canUseTool callback
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     expect(canUseTool()).not.toBeNull();
 
     // Now simulate the SDK calling canUseTool
@@ -104,7 +104,7 @@ describe('BridgeSession — permission lifecycle', () => {
       },
     });
 
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
 
     // Simulate SDK calling canUseTool
     const permPromise = canUseTool()(
@@ -130,7 +130,7 @@ describe('BridgeSession — permission lifecycle', () => {
 
   it('respondToPermission with denial returns deny result', async () => {
     const { session, canUseTool } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
 
     const permPromise = canUseTool()(
       'Bash',
@@ -148,7 +148,7 @@ describe('BridgeSession — permission lifecycle', () => {
 
   it('destroy() resolves pending permissions with false', async () => {
     const { session, canUseTool } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
 
     const permPromise = canUseTool()(
       'Bash',
@@ -175,7 +175,7 @@ describe('BridgeSession — permission context forwarding', () => {
         permissionEvents.push(event);
       },
     });
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const permPromise = canUseTool()(
       'Write',
       { file_path: '/src/main.ts', content: 'hello' },
@@ -206,7 +206,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
         permissionEvents.push(event);
       },
     });
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const suggestions = [
       { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test:*' }], behavior: 'allow' as const, destination: 'localSettings' },
       { type: 'addRules' as const, rules: [{ toolName: 'Bash', ruleContent: 'npm test' }], behavior: 'allow' as const, destination: 'localSettings' },
@@ -233,7 +233,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
         permissionEvents.push(event);
       },
     });
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const permPromise = canUseTool()(
       'Bash', { command: 'echo hi' },
       { signal: new AbortController().signal, toolUseID: 'perm-nosug-1' },
@@ -252,7 +252,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
         permissionEvents.push(event);
       },
     });
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const suggestions = [
       { type: 'addDirectories' as const, directories: ['/Users/x/project/src'], destination: 'localSettings' },
     ];
@@ -280,7 +280,7 @@ describe('BridgeSession — permission suggestion forwarding', () => {
 describe('BridgeSession — respondToPermission options', () => {
   it('respondToPermission with updatedPermissions returns SDK-shaped suggestions in allow result', async () => {
     const { session, canUseTool } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const permPromise = canUseTool()(
       'Bash', { command: 'npm test' },
       { signal: new AbortController().signal, toolUseID: 'perm-upd-1' },
@@ -299,7 +299,7 @@ describe('BridgeSession — respondToPermission options', () => {
 
   it('respondToPermission with addDirectories suggestion returns it in allow result', async () => {
     const { session, canUseTool } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const permPromise = canUseTool()(
       'Write', { file_path: '/src/foo.ts', content: 'bar' },
       { signal: new AbortController().signal, toolUseID: 'perm-dir-1' },
@@ -317,7 +317,7 @@ describe('BridgeSession — respondToPermission options', () => {
 
   it('respondToPermission with interrupt returns it in deny result', async () => {
     const { session, canUseTool } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const permPromise = canUseTool()(
       'Bash', { command: 'rm -rf /' },
       { signal: new AbortController().signal, toolUseID: 'perm-int-1' },

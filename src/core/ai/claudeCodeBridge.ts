@@ -19,8 +19,14 @@ import type {
   PermissionMode,
   PermissionUpdate,
 } from '@anthropic-ai/claude-agent-sdk';
+import { homedir } from 'os';
+import { existsSync } from 'fs';
 import { buildSystemPrompt } from './systemPrompt';
 import { loadPermissions, savePermission, isAutoApproved } from './permissionStore';
+
+function expandTilde(p: string): string {
+  return p.startsWith('~') ? p.replace('~', homedir()) : p;
+}
 
 // ---------------------------------------------------------------------------
 // SDK types — re-exported for tests and other modules
@@ -331,6 +337,16 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       const systemPrompt = buildSystemPrompt(context);
 
       try {
+        const resolvedCwd = expandTilde(context.projectPath || cwd);
+        if (!existsSync(resolvedCwd)) {
+          yield {
+            type: 'error',
+            requestId,
+            message: `Project path "${resolvedCwd}" does not exist. Please check the path in the AI chat settings.`,
+          } as ChatEvent;
+          return;
+        }
+
         const fn = await resolveQueryFn();
 
         const sdkQuery = fn({
@@ -342,7 +358,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             // 'claude_code', append: buildSystemPrompt(context) }` to get the
             // full Claude Code prompt + our additions.
             systemPrompt,
-            cwd: context.projectPath || cwd,
+            cwd: resolvedCwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
             // `tools` controls which tools are *available* to the model.

@@ -61,7 +61,7 @@ async function setupStores(): Promise<void> {
   inMemFs = new InMemoryFileSystem();
   inMemFs.seed({ '.archcanvas/main.yaml': makeMainYaml() });
 
-  await useFileStore.getState().openProject(inMemFs);
+  await useFileStore.getState().loadProject(inMemFs);
   await useRegistryStore.getState().initialize();
 }
 

@@ -4,13 +4,13 @@ import type { FilePicker } from '../platform/filePicker';
 import { createFilePicker } from '../platform/filePicker';
 import type { Canvas } from '../types';
 import {
-  loadProject,
+  loadProject as loadProjectFile,
   saveCanvas as saveCanvasToFile,
   ROOT_CANVAS_KEY,
   type LoadedCanvas,
   type ResolvedProject,
 } from '../storage/fileResolver';
-import { serializeCanvas } from '../storage/yamlCodec';
+import { parseCanvas, serializeCanvas } from '../storage/yamlCodec';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -147,6 +147,7 @@ interface FileStoreState {
   save: () => Promise<void>;
   isDirty: () => boolean;
   completeOnboarding: (type: 'blank' | 'ai', survey?: SurveyData) => Promise<void>;
+  loadProject: (fs: FileSystem) => Promise<void>;
 }
 
 // Expose store on window for E2E test access (Playwright can't import bundled modules)
@@ -210,9 +211,15 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         return;
       }
 
-      // 4. Normal load path
-      const project = await loadProject(fs);
-      set({ project, fs, status: 'loaded', dirtyCanvases: new Set() });
+      // 4. Check if canvas is empty (no nodes, edges, or entities)
+      const { data } = parseCanvas(content);
+      if (!data.nodes?.length && !data.edges?.length && !data.entities?.length) {
+        set({ fs, status: 'needs_onboarding', error: null });
+        return;
+      }
+
+      // 5. Load and display
+      await get().loadProject(fs);
     } catch (err) {
       set({
         status: 'error',
@@ -356,6 +363,18 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     return get().dirtyCanvases.size > 0;
   },
 
+  loadProject: async (fs) => {
+    try {
+      const project = await loadProjectFile(fs);
+      set({ project, fs, status: 'loaded', dirtyCanvases: new Set() });
+    } catch (err) {
+      set({
+        status: 'error',
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  },
+
   completeOnboarding: async (type, survey) => {
     const { fs } = get();
     if (!fs) return;
@@ -377,8 +396,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     });
     await fs.writeFile('.archcanvas/main.yaml', mainYaml);
 
-    // 3. Load the project
-    await get().openProject(fs);
+    // 3. Load the project (bypass onboarding checks — user already chose)
+    await get().loadProject(fs);
 
     // 4. Update recents (only if loaded successfully)
     if (get().status === 'loaded') {

@@ -27,12 +27,12 @@ describe('BridgeSession — lifecycle', () => {
     };
 
     const session = createBridgeSession({ cwd: '/my/project', queryFn: mockQueryFn });
-    await collect(session.sendMessage('test prompt', testContext));
+    await collect(session.sendMessage('test prompt', testContext()));
 
     expect(capturedArgs).toHaveLength(1);
     expect(capturedArgs[0].prompt).toBe('test prompt');
     // cwd is now context.projectPath (preferred) || session cwd (fallback)
-    expect(capturedArgs[0].options?.cwd).toBe(testContext.projectPath);
+    expect(capturedArgs[0].options?.cwd).toBe(testContext().projectPath);
     expect(capturedArgs[0].options?.systemPrompt).toContain('ArchCanvas');
     expect(capturedArgs[0].options?.systemPrompt).toContain('test-project');
 
@@ -44,7 +44,7 @@ describe('BridgeSession — lifecycle', () => {
     session.destroy();
 
     await expect(async () => {
-      await collect(session.sendMessage('test', testContext));
+      await collect(session.sendMessage('test', testContext()));
     }).rejects.toThrow('BridgeSession has been destroyed');
   });
 
@@ -76,7 +76,7 @@ describe('BridgeSession — lifecycle', () => {
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
@@ -103,11 +103,11 @@ describe('BridgeSession — lifecycle', () => {
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
 
     // First call — no resume
-    await collect(session.sendMessage('first', testContext));
+    await collect(session.sendMessage('first', testContext()));
     expect((capturedArgs[0].options as Record<string, unknown>)?.resume).toBeUndefined();
 
     // Second call — should include resume with captured sessionId
-    await collect(session.sendMessage('second', testContext));
+    await collect(session.sendMessage('second', testContext()));
     expect((capturedArgs[1].options as Record<string, unknown>)?.resume).toBe('session-resume-test');
 
     session.destroy();
@@ -129,10 +129,10 @@ describe('BridgeSession — session settings', () => {
       })());
     };
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
-    await collect(session.sendMessage('first', testContext));
+    await collect(session.sendMessage('first', testContext()));
     expect((capturedArgs[0].options as Record<string, unknown>)?.permissionMode).toBe('default');
     session.setPermissionMode('acceptEdits');
-    await collect(session.sendMessage('second', testContext));
+    await collect(session.sendMessage('second', testContext()));
     expect((capturedArgs[1].options as Record<string, unknown>)?.permissionMode).toBe('acceptEdits');
     session.destroy();
   });
@@ -148,10 +148,10 @@ describe('BridgeSession — session settings', () => {
       })());
     };
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
-    await collect(session.sendMessage('first', testContext));
+    await collect(session.sendMessage('first', testContext()));
     expect((capturedArgs[0].options as Record<string, unknown>)?.effort).toBe('high');
     session.setEffort('low');
-    await collect(session.sendMessage('second', testContext));
+    await collect(session.sendMessage('second', testContext()));
     expect((capturedArgs[1].options as Record<string, unknown>)?.effort).toBe('low');
     session.destroy();
   });
@@ -163,7 +163,7 @@ describe('BridgeSession — session settings', () => {
 describe('BridgeSession — SDK options', () => {
   it('passes tools (not allowedTools), maxTurns, includePartialMessages, and toolConfig', async () => {
     const { session, capturedArgs } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const opts = capturedArgs[0].options as Record<string, unknown>;
     // Tools should be in `tools` (available to the model), NOT `allowedTools`
     // (which would auto-approve them and skip canUseTool permission checks).
@@ -194,7 +194,7 @@ describe('BridgeSession — SDK options', () => {
 describe('BridgeSession — no custom hooks', () => {
   it('does not pass PreToolUse hooks (relies on SDK built-in permissions)', async () => {
     const { session, capturedArgs } = setupSession();
-    await collect(session.sendMessage('test', testContext));
+    await collect(session.sendMessage('test', testContext()));
     const opts = capturedArgs[0].options as Record<string, unknown>;
     expect(opts.hooks).toBeUndefined();
     session.destroy();
