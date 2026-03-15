@@ -69,8 +69,10 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    useUiStore.getState().setLeftPanelRef(leftPanelRef.current);
-    useUiStore.getState().setRightPanelRef(rightPanelRef.current);
+    // Pass ref objects (not .current) so the store reads .current at call
+    // time — the panel library sets .current asynchronously after mount.
+    useUiStore.getState().setLeftPanelRef(leftPanelRef);
+    useUiStore.getState().setRightPanelRef(rightPanelRef);
     return () => {
       useUiStore.getState().setLeftPanelRef(null);
       useUiStore.getState().setRightPanelRef(null);

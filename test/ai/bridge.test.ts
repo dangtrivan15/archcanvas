@@ -6,7 +6,6 @@ import {
   testContext,
   getTestCwd,
   sdkSystemInit,
-  sdkAssistantText,
   sdkResultSuccess,
   setupSession,
   toSDKQuery,

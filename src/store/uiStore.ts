@@ -1,10 +1,11 @@
 import { create } from 'zustand';
+import type { RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 
 interface UiState {
   rightPanelMode: 'details' | 'chat';
-  setLeftPanelRef: (ref: PanelImperativeHandle | null) => void;
-  setRightPanelRef: (ref: PanelImperativeHandle | null) => void;
+  setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
+  setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelMode: (mode: 'details' | 'chat') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -12,10 +13,11 @@ interface UiState {
   toggleChat: () => void;
 }
 
-// Refs stored outside Zustand state — they're mutable handles, not
-// serializable state. Zustand only exposes the methods that act on them.
-let leftPanelRef: PanelImperativeHandle | null = null;
-let rightPanelRef: PanelImperativeHandle | null = null;
+// Ref objects stored outside Zustand state — we store the RefObject (not
+// .current) so that .current is read at call time, after the panel library
+// has initialized the imperative handle.
+let leftPanelRef: RefObject<PanelImperativeHandle | null> | null = null;
+let rightPanelRef: RefObject<PanelImperativeHandle | null> | null = null;
 
 export const useUiStore = create<UiState>((set, get) => ({
   rightPanelMode: 'details',
@@ -25,17 +27,19 @@ export const useUiStore = create<UiState>((set, get) => ({
   setRightPanelMode: (mode) => set({ rightPanelMode: mode }),
 
   toggleLeftPanel: () => {
-    if (!leftPanelRef) return;
-    leftPanelRef.isCollapsed() ? leftPanelRef.expand() : leftPanelRef.collapse();
+    const handle = leftPanelRef?.current;
+    if (!handle) return;
+    handle.isCollapsed() ? handle.expand() : handle.collapse();
   },
 
   toggleRightPanel: () => {
-    if (!rightPanelRef) return;
-    rightPanelRef.isCollapsed() ? rightPanelRef.expand() : rightPanelRef.collapse();
+    const handle = rightPanelRef?.current;
+    if (!handle) return;
+    handle.isCollapsed() ? handle.expand() : handle.collapse();
   },
 
   openRightPanel: () => {
-    rightPanelRef?.expand();
+    rightPanelRef?.current?.expand();
   },
 
   toggleChat: () => {
