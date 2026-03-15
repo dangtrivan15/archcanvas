@@ -105,9 +105,18 @@ describe('fileStore', () => {
       expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
     });
 
-    it('sets error status on failure', async () => {
+    it('sets needs_onboarding for empty directory (no .archcanvas/)', async () => {
       const emptyFs = new InMemoryFileSystem();
       await useFileStore.getState().openProject(emptyFs);
+      expect(useFileStore.getState().status).toBe('needs_onboarding');
+      expect(useFileStore.getState().fs).toBe(emptyFs);
+      expect(useFileStore.getState().error).toBeNull();
+    });
+
+    it('sets error status on corrupt YAML', async () => {
+      const corruptFs = new InMemoryFileSystem();
+      corruptFs.seed({ '.archcanvas/main.yaml': '{{ invalid yaml: [' });
+      await useFileStore.getState().openProject(corruptFs);
       expect(useFileStore.getState().status).toBe('error');
       expect(useFileStore.getState().error).toBeTruthy();
     });
@@ -356,14 +365,25 @@ describe('fileStore', () => {
       expect(useFileStore.getState().project).toBeNull();
     });
 
-    it('does not set fs when project load fails', async () => {
-      const emptyFs = new InMemoryFileSystem(); // no .archcanvas/ → load fails
+    it('routes to needs_onboarding for bare directory (fs is set)', async () => {
+      const emptyFs = new InMemoryFileSystem(); // no .archcanvas/ → needs_onboarding
       setFilePicker(createMockPicker(emptyFs));
 
       await useFileStore.getState().open();
 
-      expect(useFileStore.getState().fs).toBeNull();
+      expect(useFileStore.getState().fs).toBe(emptyFs);
+      expect(useFileStore.getState().status).toBe('needs_onboarding');
+    });
+
+    it('does not update recents when project load fails with error', async () => {
+      const corruptFs = new InMemoryFileSystem();
+      corruptFs.seed({ '.archcanvas/main.yaml': '{{ invalid yaml: [' });
+      setFilePicker(createMockPicker(corruptFs));
+
+      await useFileStore.getState().open();
+
       expect(useFileStore.getState().status).toBe('error');
+      expect(useFileStore.getState().recentProjects.length).toBe(0);
     });
 
     it('updates recentProjects after successful open', async () => {
@@ -401,10 +421,13 @@ describe('fileStore', () => {
     });
 
     it('is a no-op when fs is null (project guard ensures this is unreachable)', async () => {
-      // Load project directly (without open(), so fs remains null)
+      // Manually set project without fs to simulate unreachable state
+      // (openProject now always sets fs, so we must set state directly)
       await useFileStore.getState().openProject(fs);
       useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
 
+      // Reset fs to null to simulate the "no fs" guard path
+      useFileStore.setState({ fs: null });
       expect(useFileStore.getState().fs).toBeNull();
 
       await useFileStore.getState().save();

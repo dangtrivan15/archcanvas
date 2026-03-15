@@ -10,6 +10,7 @@ import {
   type LoadedCanvas,
   type ResolvedProject,
 } from '../storage/fileResolver';
+import { serializeCanvas } from '../storage/yamlCodec';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -102,13 +103,25 @@ function getFilePicker(): FilePicker {
 }
 
 // ---------------------------------------------------------------------------
+// Onboarding survey data (used by completeOnboarding)
+// ---------------------------------------------------------------------------
+
+export interface SurveyData {
+  description: string;
+  techStack: string[];
+  explorationDepth: 'full' | 'top-level' | 'custom';
+  customDepth?: number;
+  focusDirs: string;
+}
+
+// ---------------------------------------------------------------------------
 // Store definition
 // ---------------------------------------------------------------------------
 
 interface FileStoreState {
   project: ResolvedProject | null;
   dirtyCanvases: Set<string>;
-  status: 'idle' | 'loading' | 'loaded' | 'error';
+  status: 'idle' | 'loading' | 'loaded' | 'needs_onboarding' | 'error';
   error: string | null;
   fs: FileSystem | null;
   recentProjects: RecentProject[];
@@ -128,6 +141,7 @@ interface FileStoreState {
   open: () => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
+  completeOnboarding: (type: 'blank' | 'ai', survey?: SurveyData) => Promise<void>;
 }
 
 // Expose store on window for E2E test access (Playwright can't import bundled modules)
@@ -162,8 +176,30 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   openProject: async (fs) => {
     set({ status: 'loading', error: null });
     try {
+      // 1. Check if .archcanvas/ exists
+      const dirExists = await fs.exists('.archcanvas');
+      if (!dirExists) {
+        set({ fs, status: 'needs_onboarding', error: null });
+        return;
+      }
+
+      // 2. Check if main.yaml exists
+      const fileExists = await fs.exists('.archcanvas/main.yaml');
+      if (!fileExists) {
+        set({ fs, status: 'needs_onboarding', error: null });
+        return;
+      }
+
+      // 3. Check if main.yaml has content
+      const content = await fs.readFile('.archcanvas/main.yaml');
+      if (content.trim() === '') {
+        set({ fs, status: 'needs_onboarding', error: null });
+        return;
+      }
+
+      // 4. Normal load path
       const project = await loadProject(fs);
-      set({ project, status: 'loaded', dirtyCanvases: new Set() });
+      set({ project, fs, status: 'loaded', dirtyCanvases: new Set() });
     } catch (err) {
       set({
         status: 'error',
@@ -255,26 +291,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const fs = await picker.pickDirectory();
     if (!fs) return; // user cancelled
 
-    // If .archcanvas/main.yaml already exists, treat as "open existing"
-    if (await fs.exists('.archcanvas/main.yaml')) {
-      await get().openProject(fs);
-    } else {
-      // Scaffold new project
-      await fs.mkdir('.archcanvas');
-      const template = `project:\n  name: "New Project"\n  description: ""\n  version: "1.0.0"\n\nnodes: []\nedges: []\nentities: []\n`;
-      await fs.writeFile('.archcanvas/main.yaml', template);
-      await get().openProject(fs);
-    }
-
-    // Only store fs and update recents if the project loaded successfully
-    if (get().status === 'loaded') {
-      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      const path = projectName;
-      set({
-        fs,
-        recentProjects: addToRecent(get().recentProjects, projectName, path),
-      });
-    }
+    await get().openProject(fs);
   },
 
   open: async () => {
@@ -284,14 +301,11 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     await get().openProject(fs);
 
-    // Only store fs and update recents if the project loaded successfully
+    // Update recents only on successful load (not needs_onboarding)
     if (get().status === 'loaded') {
       const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      // Use project name as path identifier for recent projects
-      // (Web handles are not restorable — path is informational, C7.9)
       const path = projectName;
       set({
-        fs,
         recentProjects: addToRecent(get().recentProjects, projectName, path),
       });
     }
@@ -305,6 +319,49 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   isDirty: () => {
     return get().dirtyCanvases.size > 0;
+  },
+
+  completeOnboarding: async (type, survey) => {
+    const { fs } = get();
+    if (!fs) return;
+
+    const name = fs.getName();
+
+    // 1. Scaffold .archcanvas/
+    if (!(await fs.exists('.archcanvas'))) {
+      await fs.mkdir('.archcanvas');
+    }
+
+    // 2. Write main.yaml
+    const description = type === 'ai' && survey ? survey.description : '';
+    const mainYaml = serializeCanvas({
+      project: { name, description, version: '1.0.0' },
+      nodes: [],
+      edges: [],
+      entities: [],
+    });
+    await fs.writeFile('.archcanvas/main.yaml', mainYaml);
+
+    // 3. Load the project
+    await get().openProject(fs);
+
+    // 4. Update recents (only if loaded successfully)
+    if (get().status === 'loaded') {
+      set({ recentProjects: addToRecent(get().recentProjects, name, name) });
+    }
+
+    // 5. AI path: open chat + send init prompt
+    if (type === 'ai' && survey && get().status === 'loaded') {
+      const { useUiStore } = await import('./uiStore');
+      useUiStore.getState().toggleChat();
+      // Wait for next tick so assembleContext() reads valid project state
+      setTimeout(async () => {
+        const { assembleInitPrompt } = await import('../core/ai/initPrompt');
+        const { useChatStore } = await import('./chatStore');
+        const prompt = assembleInitPrompt(name, survey);
+        useChatStore.getState().sendMessage(prompt);
+      }, 0);
+    }
   },
 }));
 
