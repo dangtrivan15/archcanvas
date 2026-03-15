@@ -16,7 +16,8 @@
     "test:unit": "vitest run --project unit",
     "test:cli": "vitest run --project cli",
     "test:e2e": "npm run build && playwright test",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.74",

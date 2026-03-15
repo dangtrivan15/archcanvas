@@ -66,12 +66,15 @@ export const testContext: ProjectContext = {
 // SDK Message factories — simulate what the real SDK would emit
 // ---------------------------------------------------------------------------
 
+/** Valid UUID format required by the SDK's UUID type (from `crypto`). */
+const FAKE_UUID = '00000000-0000-0000-0000-000000000000' as import('crypto').UUID;
+
 export function sdkSystemInit(sessionId: string): SDKMessage {
   return {
     type: 'system',
     subtype: 'init',
     session_id: sessionId,
-    uuid: 'sys-uuid',
+    uuid: FAKE_UUID,
     tools: ['Bash'],
     model: 'claude-sonnet-4-20250514',
     cwd: testCwd,
@@ -81,7 +84,7 @@ export function sdkSystemInit(sessionId: string): SDKMessage {
     output_style: 'text',
     skills: [],
     plugins: [],
-    apiKeySource: 'env',
+    apiKeySource: 'user',
     claude_code_version: '2.0.0',
     agents: [],
     betas: [],
@@ -91,7 +94,7 @@ export function sdkSystemInit(sessionId: string): SDKMessage {
 export function sdkAssistantText(text: string): SDKMessage {
   return {
     type: 'assistant',
-    uuid: `ast-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
       content: [{ type: 'text', text }],
@@ -103,7 +106,7 @@ export function sdkAssistantText(text: string): SDKMessage {
 export function sdkAssistantToolUse(name: string, input: Record<string, unknown>, id: string): SDKMessage {
   return {
     type: 'assistant',
-    uuid: `ast-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
       content: [{ type: 'tool_use', name, input, id }],
@@ -115,7 +118,7 @@ export function sdkAssistantToolUse(name: string, input: Record<string, unknown>
 export function sdkUserToolResult(toolUseId: string, content: string, isError = false): SDKMessage {
   return {
     type: 'user',
-    uuid: `usr-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
       content: [{ type: 'tool_result', tool_use_id: toolUseId, content, is_error: isError }],
@@ -128,7 +131,7 @@ export function sdkResultSuccess(): SDKMessage {
   return {
     type: 'result',
     subtype: 'success',
-    uuid: 'res-uuid',
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     duration_ms: 100,
     duration_api_ms: 80,
@@ -143,11 +146,14 @@ export function sdkResultSuccess(): SDKMessage {
   };
 }
 
-export function sdkResultError(subtype: string, errors: string[]): SDKMessage {
+export function sdkResultError(
+  subtype: 'error_during_execution' | 'error_max_turns' | 'error_max_budget_usd' | 'error_max_structured_output_retries',
+  errors: string[],
+): SDKMessage {
   return {
     type: 'result',
     subtype,
-    uuid: 'res-uuid',
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     duration_ms: 100,
     duration_api_ms: 80,
@@ -165,8 +171,9 @@ export function sdkResultError(subtype: string, errors: string[]): SDKMessage {
 export function sdkStreamEvent(deltaType: string, delta: Record<string, string>): SDKMessage {
   return {
     type: 'stream_event',
-    uuid: `se-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
+    parent_tool_use_id: null,
     event: {
       type: 'content_block_delta',
       delta: { type: deltaType, ...delta },
@@ -177,8 +184,9 @@ export function sdkStreamEvent(deltaType: string, delta: Record<string, string>)
 export function sdkStreamEventOther(eventType: string): SDKMessage {
   return {
     type: 'stream_event',
-    uuid: `se-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
+    parent_tool_use_id: null,
     event: { type: eventType },
   };
 }
@@ -186,30 +194,30 @@ export function sdkStreamEventOther(eventType: string): SDKMessage {
 export function sdkToolProgress(): SDKMessage {
   return {
     type: 'tool_progress',
-    uuid: `tp-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     tool_use_id: 'tool-1',
     tool_name: 'Bash',
     parent_tool_use_id: null,
     elapsed_time_seconds: 1,
-  } as unknown as SDKMessage;
+  };
 }
 
 export function sdkRateLimit(status: 'rejected' | 'allowed_warning' | 'allowed' = 'rejected'): SDKMessage {
   return {
     type: 'rate_limit_event',
-    uuid: `rl-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     rate_limit_info: { status },
   };
 }
 
-export function sdkPromptSuggestion(suggestions: string[]): SDKMessage {
+export function sdkPromptSuggestion(suggestion: string): SDKMessage {
   return {
     type: 'prompt_suggestion',
-    uuid: `ps-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
-    suggestions,
+    suggestion,
   };
 }
 
@@ -222,7 +230,7 @@ export function sdkAssistantMixed(
 ): SDKMessage {
   return {
     type: 'assistant',
-    uuid: `ast-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
       content: [
@@ -237,7 +245,7 @@ export function sdkAssistantMixed(
 export function sdkAssistantThinking(thinkingText: string): SDKMessage {
   return {
     type: 'assistant',
-    uuid: `ast-${Date.now()}`,
+    uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
       content: [{ type: 'thinking', text: thinkingText }],

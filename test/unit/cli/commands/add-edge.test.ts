@@ -18,13 +18,13 @@ vi.mock('@/platform/index', () => ({
 }));
 
 // Mock node:fs existsSync for findProjectRoot
-const existsSyncMock = vi.fn<(p: string) => boolean>().mockReturnValue(true);
+const existsSyncMock = vi.fn<(p: import('node:fs').PathLike) => boolean>().mockReturnValue(true);
 vi.mock(import('node:fs'), async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    default: { ...actual, existsSync: (p: string) => existsSyncMock(p) },
-    existsSync: (p: string) => existsSyncMock(p),
+    default: { ...actual, existsSync: (p: import('node:fs').PathLike) => existsSyncMock(p) },
+    existsSync: (p: import('node:fs').PathLike) => existsSyncMock(p),
   };
 });
 
