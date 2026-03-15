@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import http from 'http';
+import { tmpdir } from 'os';
 import { WebSocket } from 'ws';
 import { aiBridgePlugin, type StoreActionResult } from '@/core/ai/vitePlugin';
 import type { SDKQueryFn, SDKMessage } from '@/core/ai/claudeCodeBridge';
@@ -248,7 +249,7 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
       context: {
         projectName: 'test',
         currentScope: '@root',
-        projectPath: '/tmp/test',
+        projectPath: tmpdir(),
       },
     }));
 

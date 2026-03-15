@@ -35,7 +35,7 @@ describe('BridgeSession — Scenario 1: textStreaming', () => {
         sdkAssistantText('architecture.'),
       ],
     });
-    const events = await collect(session.sendMessage('hello', testContext));
+    const events = await collect(session.sendMessage('hello', testContext()));
 
     const textEvents = events.filter(e => e.type === 'text');
     expect(textEvents).toHaveLength(3);
@@ -67,7 +67,7 @@ describe('BridgeSession — Scenario 2: toolCallFlow', () => {
         sdkAssistantText('Found 2 nodes in your architecture.'),
       ],
     });
-    const events = await collect(session.sendMessage('list my nodes', testContext));
+    const events = await collect(session.sendMessage('list my nodes', testContext()));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'I will list the nodes.' });
     expect(events[1]).toMatchObject({ type: 'tool_call', name: 'bash', id: 'call-1' });
@@ -91,7 +91,7 @@ describe('BridgeSession — Scenario 3: permissionDenied', () => {
         sdkAssistantText("Understood, I won't make that change."),
       ],
     });
-    const events = await collect(session.sendMessage('add a service', testContext));
+    const events = await collect(session.sendMessage('add a service', testContext()));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'I need to run a command.' });
     expect(events[1]).toMatchObject({ type: 'text', content: "Understood, I won't make that change." });
@@ -109,7 +109,7 @@ describe('BridgeSession — Scenario 4: clarifyingQuestion', () => {
     const { session } = setupSession({
       yields: [sdkAssistantText('Could you clarify which service you want to add?')],
     });
-    const events = await collect(session.sendMessage('add a service', testContext));
+    const events = await collect(session.sendMessage('add a service', testContext()));
 
     expect(events).toHaveLength(2);
     expect(events[0]).toMatchObject({
@@ -137,7 +137,7 @@ describe('BridgeSession — Scenario 5: errorScenario', () => {
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
-    const events = await collect(session.sendMessage('analyze', testContext));
+    const events = await collect(session.sendMessage('analyze', testContext()));
 
     expect(events[0]).toMatchObject({ type: 'text', content: 'Processing your request...' });
     expect(events[1]).toMatchObject({
@@ -164,7 +164,7 @@ describe('BridgeSession — Scenario 7: multipleMutations', () => {
         sdkAssistantText('Added service and connected it to the database.'),
       ],
     });
-    const events = await collect(session.sendMessage('add service and connect', testContext));
+    const events = await collect(session.sendMessage('add service and connect', testContext()));
 
     // Expected: tool_call, tool_result, tool_call, tool_result, text, done
     expect(events[0]).toMatchObject({ type: 'tool_call', name: 'bash', id: 'call-1' });
@@ -189,7 +189,7 @@ describe('BridgeSession — stream_event translation', () => {
         sdkStreamEvent('text_delta', { text: 'world' }),
       ],
     });
-    const events = await collect(session.sendMessage('hi', testContext));
+    const events = await collect(session.sendMessage('hi', testContext()));
 
     const textEvents = events.filter(e => e.type === 'text');
     expect(textEvents).toHaveLength(2);
@@ -207,7 +207,7 @@ describe('BridgeSession — stream_event translation', () => {
         sdkStreamEvent('thinking_delta', { thinking: ' the options.' }),
       ],
     });
-    const events = await collect(session.sendMessage('think', testContext));
+    const events = await collect(session.sendMessage('think', testContext()));
 
     const thinkingEvents = events.filter(e => e.type === 'thinking');
     expect(thinkingEvents).toHaveLength(2);
@@ -227,7 +227,7 @@ describe('BridgeSession — stream_event translation', () => {
         sdkStreamEventOther('message_stop'),
       ],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const textEvents = events.filter(e => e.type === 'text');
     expect(textEvents).toHaveLength(1);
@@ -252,7 +252,7 @@ describe('BridgeSession — no double text', () => {
         sdkUserToolResult('call-1', 'file.txt'),
       ],
     });
-    const events = await collect(session.sendMessage('hi', testContext));
+    const events = await collect(session.sendMessage('hi', testContext()));
 
     // Text should appear only from streaming (2 deltas), not from the final assistant message
     const textEvents = events.filter(e => e.type === 'text');
@@ -281,7 +281,7 @@ describe('BridgeSession — no double text', () => {
         sdkAssistantThinking('Hmm...'),
       ],
     });
-    const events = await collect(session.sendMessage('think', testContext));
+    const events = await collect(session.sendMessage('think', testContext()));
 
     // Thinking should appear only once (from streaming)
     const thinkingEvents = events.filter(e => e.type === 'thinking');
@@ -296,7 +296,7 @@ describe('BridgeSession — no double text', () => {
     const { session } = setupSession({
       yields: [sdkAssistantText('No streaming here.')],
     });
-    const events = await collect(session.sendMessage('hi', testContext));
+    const events = await collect(session.sendMessage('hi', testContext()));
 
     const textEvents = events.filter(e => e.type === 'text');
     expect(textEvents).toHaveLength(1);
@@ -317,7 +317,7 @@ describe('BridgeSession — tool_progress messages', () => {
         sdkAssistantText('Done.'),
       ],
     });
-    const events = await collect(session.sendMessage('build', testContext));
+    const events = await collect(session.sendMessage('build', testContext()));
 
     // tool_progress messages are acknowledged but don't produce status events
     const statusEvents = events.filter(e => e.type === 'status');
@@ -339,7 +339,7 @@ describe('BridgeSession — rate_limit messages', () => {
         sdkAssistantText('After rate limit.'),
       ],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(1);
@@ -362,7 +362,7 @@ describe('BridgeSession — rate_limit messages', () => {
         sdkRateLimit('allowed_warning'),
       ],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(1);
@@ -380,7 +380,7 @@ describe('BridgeSession — rate_limit messages', () => {
         sdkRateLimit('allowed'),
       ],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(0);
@@ -400,7 +400,7 @@ describe('BridgeSession — prompt_suggestion messages', () => {
         sdkPromptSuggestion('Tell me more'),
       ],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     // Should only have text + done, no prompt_suggestion events
     expect(events.map(e => e.type)).toEqual(['text', 'done']);
@@ -427,7 +427,7 @@ describe('BridgeSession — full streaming scenario', () => {
         sdkAssistantText('Found the main function.'),
       ],
     });
-    const events = await collect(session.sendMessage('read main', testContext));
+    const events = await collect(session.sendMessage('read main', testContext()));
 
     const types = events.map(e => e.type);
     // Stream deltas, tool_call (from assistant), tool_result, more stream delta, done
@@ -465,7 +465,7 @@ describe('BridgeSession — SDK type regression', () => {
     };
 
     const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     // Only a done event should be emitted — the unknown type is silently skipped
     expect(events).toHaveLength(1);
@@ -479,7 +479,7 @@ describe('BridgeSession — SDK type regression', () => {
     const { session } = setupSession({
       yields: [sdkRateLimit('rejected')],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(1);
@@ -496,7 +496,7 @@ describe('BridgeSession — SDK type regression', () => {
     const { session } = setupSession({
       yields: [sdkRateLimit('allowed_warning')],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(1);
@@ -513,7 +513,7 @@ describe('BridgeSession — SDK type regression', () => {
     const { session } = setupSession({
       yields: [sdkRateLimit('allowed')],
     });
-    const events = await collect(session.sendMessage('test', testContext));
+    const events = await collect(session.sendMessage('test', testContext()));
 
     const rateLimitEvents = events.filter(e => e.type === 'rate_limit');
     expect(rateLimitEvents).toHaveLength(0);

@@ -136,9 +136,9 @@ export async function loadContext(
   // No bridge — load project locally
   const fs = await createFileSystem(resolvedPath);
 
-  // Open the project via fileStore
+  // Load the project directly (bypass onboarding checks — CLI has no wizard)
   const fileStore = useFileStore.getState();
-  await fileStore.openProject(fs);
+  await fileStore.loadProject(fs);
 
   // Check if loading succeeded
   const { status, error } = useFileStore.getState();

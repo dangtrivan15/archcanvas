@@ -166,6 +166,23 @@ describe('fileStore — onboarding', () => {
       expect(useFileStore.getState().fs).toBe(fs);
     });
 
+    it('sets needs_onboarding when main.yaml is valid but canvas is empty', async () => {
+      const fs = new InMemoryFileSystem('empty-canvas');
+      fs.seed({
+        '.archcanvas/main.yaml': yamlOf({
+          project: { name: 'EmptyCanvas', description: 'Has metadata but no content' },
+          nodes: [],
+          edges: [],
+          entities: [],
+        }),
+      });
+
+      await useFileStore.getState().openProject(fs);
+
+      expect(useFileStore.getState().status).toBe('needs_onboarding');
+      expect(useFileStore.getState().fs).toBe(fs);
+    });
+
     it('loads normally with valid main.yaml (existing behavior preserved)', async () => {
       const fs = createSeededFs('Valid Project');
 
@@ -274,6 +291,17 @@ describe('fileStore — onboarding', () => {
       // fs is null, so completeOnboarding returns early
       expect(mockToggleChat).not.toHaveBeenCalled();
       expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('blank: does NOT re-trigger needs_onboarding (bypasses empty-canvas check)', async () => {
+      const fs = new InMemoryFileSystem('BlankBypass');
+      useFileStore.setState({ fs, status: 'needs_onboarding' });
+
+      await useFileStore.getState().completeOnboarding('blank');
+
+      // completeOnboarding uses _loadAndDisplay, not openProject,
+      // so the empty-canvas check is bypassed and status is 'loaded'
+      expect(useFileStore.getState().status).toBe('loaded');
     });
 
     it('creates .archcanvas directory if it does not exist', async () => {
