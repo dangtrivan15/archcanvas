@@ -59,15 +59,15 @@ vi.mock('@/components/ui/scroll-area', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
-function mockPanelRef(collapsed = false): PanelImperativeHandle {
+function mockPanelRef(collapsed = false): { current: PanelImperativeHandle } {
   let _collapsed = collapsed;
-  return {
+  return { current: {
     collapse: () => { _collapsed = true; },
     expand: () => { _collapsed = false; },
     getSize: () => ({ asPercentage: _collapsed ? 0 : 20, inPixels: _collapsed ? 0 : 300 }),
     isCollapsed: () => _collapsed,
     resize: (_size: number | string) => {},
-  };
+  } };
 }
 
 /** Wrapper component that activates the useAppKeyboard hook */
@@ -105,7 +105,7 @@ describe('uiStore — chat toggle', () => {
     const ref = mockPanelRef(true);
     useUiStore.getState().setRightPanelRef(ref);
     useUiStore.getState().toggleChat();
-    expect(ref.isCollapsed()).toBe(false);
+    expect(ref.current.isCollapsed()).toBe(false);
     expect(useUiStore.getState().rightPanelMode).toBe('chat');
   });
 
@@ -116,7 +116,7 @@ describe('uiStore — chat toggle', () => {
     useUiStore.getState().toggleChat();
     expect(useUiStore.getState().rightPanelMode).toBe('details');
     // Panel stays expanded — user might want to see details
-    expect(ref.isCollapsed()).toBe(false);
+    expect(ref.current.isCollapsed()).toBe(false);
   });
 
   it('setRightPanelMode sets mode directly', () => {
