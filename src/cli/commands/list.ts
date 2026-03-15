@@ -16,7 +16,7 @@ export async function listCommand(flags: ListFlags, options: OutputOptions, proj
 
   if (ctx.bridgeUrl) {
     const result = await bridgeRequest(ctx.bridgeUrl, 'list', { canvasId, type: flags.type });
-    printSuccess(result.data ?? result, options);
+    printSuccess(result.data!, options);
     return;
   }
 

@@ -26,7 +26,7 @@ export async function removeEdgeCommand(
       from: options.from,
       to: options.to,
     });
-    printSuccess(result, globalOptions);
+    printSuccess(result.data!, globalOptions);
   } else {
     // Local store mutation path
     const result = useGraphStore.getState().removeEdge(canvasId, options.from, options.to);

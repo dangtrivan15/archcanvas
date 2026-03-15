@@ -185,8 +185,22 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   saveAll: async (fs) => {
     const { dirtyCanvases } = get();
+    const errors: Array<{ canvasId: string; error: string }> = [];
+
     for (const canvasId of dirtyCanvases) {
-      await get().saveCanvas(fs, canvasId);
+      try {
+        await get().saveCanvas(fs, canvasId);
+      } catch (err) {
+        errors.push({
+          canvasId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      const summary = errors.map((e) => `${e.canvasId}: ${e.error}`).join('; ');
+      set({ error: `Failed to save: ${summary}` });
     }
   },
 

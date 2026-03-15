@@ -12,7 +12,7 @@ export async function catalogCommand(flags: CatalogFlags, options: OutputOptions
 
   if (ctx.bridgeUrl) {
     const result = await bridgeRequest(ctx.bridgeUrl, 'catalog', { namespace: flags.namespace });
-    printSuccess(result.data ?? result, options);
+    printSuccess(result.data!, options);
     return;
   }
   const allDefs = flags.namespace

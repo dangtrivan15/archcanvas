@@ -151,6 +151,84 @@ describe('fileStore', () => {
     });
   });
 
+  describe('saveAll partial-failure handling', () => {
+    it('continues saving after one canvas fails', async () => {
+      await useFileStore.getState().openProject(fs);
+      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
+      useFileStore.getState().markDirty('svc-api');
+
+      // Make the root canvas fail to save
+      fs.failOnWrite('.archcanvas/main.yaml');
+
+      await useFileStore.getState().saveAll(fs);
+
+      // svc-api should be saved (removed from dirty set)
+      expect(useFileStore.getState().dirtyCanvases.has('svc-api')).toBe(false);
+      // Root canvas should remain dirty (save failed)
+      expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(true);
+      // Error should be set
+      expect(useFileStore.getState().error).toContain('Failed to save');
+      expect(useFileStore.getState().error).toContain(ROOT_CANVAS_KEY);
+    });
+
+    it('saves remaining canvases when second canvas fails', async () => {
+      await useFileStore.getState().openProject(fs);
+      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
+      useFileStore.getState().markDirty('svc-api');
+
+      // Make svc-api fail
+      fs.failOnWrite('.archcanvas/svc-api.yaml');
+
+      await useFileStore.getState().saveAll(fs);
+
+      // Root should be saved
+      expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(false);
+      // svc-api should remain dirty
+      expect(useFileStore.getState().dirtyCanvases.has('svc-api')).toBe(true);
+      // Error set
+      expect(useFileStore.getState().error).toContain('svc-api');
+    });
+
+    it('reports all failures when all saves fail', async () => {
+      await useFileStore.getState().openProject(fs);
+      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
+      useFileStore.getState().markDirty('svc-api');
+
+      fs.failOnWrite('.archcanvas/main.yaml');
+      fs.failOnWrite('.archcanvas/svc-api.yaml');
+
+      await useFileStore.getState().saveAll(fs);
+
+      // Both should remain dirty
+      expect(useFileStore.getState().dirtyCanvases.size).toBe(2);
+      // Error should mention both
+      expect(useFileStore.getState().error).toContain(ROOT_CANVAS_KEY);
+      expect(useFileStore.getState().error).toContain('svc-api');
+    });
+
+    it('does not set error when all saves succeed', async () => {
+      await useFileStore.getState().openProject(fs);
+      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
+      useFileStore.getState().markDirty('svc-api');
+
+      await useFileStore.getState().saveAll(fs);
+
+      expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
+      expect(useFileStore.getState().error).toBeNull();
+    });
+
+    it('error message includes failing canvas IDs', async () => {
+      await useFileStore.getState().openProject(fs);
+      useFileStore.getState().markDirty('svc-api');
+
+      fs.failOnWrite('.archcanvas/svc-api.yaml');
+
+      await useFileStore.getState().saveAll(fs);
+
+      expect(useFileStore.getState().error).toMatch(/Failed to save:.*svc-api/);
+    });
+  });
+
   describe('getCanvas / getRootCanvas', () => {
     it('getCanvas returns canvas by ID', async () => {
       await useFileStore.getState().openProject(fs);

@@ -24,7 +24,7 @@ export async function searchCommand(
 
   if (ctx.bridgeUrl) {
     const result = await bridgeRequest(ctx.bridgeUrl, 'search', { query, type: flags.type });
-    printSuccess(result.data ?? result, options);
+    printSuccess(result.data!, options);
     return;
   }
 

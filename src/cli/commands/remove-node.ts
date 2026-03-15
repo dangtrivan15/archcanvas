@@ -24,7 +24,7 @@ export async function removeNodeCommand(
       canvasId,
       nodeId: options.id,
     });
-    printSuccess(result, globalOptions);
+    printSuccess(result.data!, globalOptions);
   } else {
     // Local store mutation path
     const result = useGraphStore.getState().removeNode(canvasId, options.id);

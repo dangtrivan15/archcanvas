@@ -31,7 +31,7 @@ export async function addNodeCommand(
       name: options.name,
       args: options.args,
     });
-    printSuccess(result, globalOptions);
+    printSuccess(result.data!, globalOptions);
     return;
   }
 

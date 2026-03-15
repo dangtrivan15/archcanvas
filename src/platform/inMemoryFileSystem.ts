@@ -2,6 +2,12 @@ import type { FileSystem } from './fileSystem';
 
 export class InMemoryFileSystem implements FileSystem {
   private files = new Map<string, string>();
+  private _failPaths = new Set<string>();
+
+  /** Make writeFile throw for the given path (for testing partial-failure scenarios). */
+  failOnWrite(path: string): void {
+    this._failPaths.add(path);
+  }
 
   async readFile(path: string): Promise<string> {
     const content = this.files.get(this.normalize(path));
@@ -12,6 +18,9 @@ export class InMemoryFileSystem implements FileSystem {
   }
 
   async writeFile(path: string, content: string): Promise<void> {
+    if (this._failPaths.has(this.normalize(path))) {
+      throw new Error(`Simulated write failure: ${path}`);
+    }
     this.files.set(this.normalize(path), content);
   }
 

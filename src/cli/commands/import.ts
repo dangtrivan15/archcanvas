@@ -66,7 +66,7 @@ export async function importCommand(
       edges,
       entities,
     });
-    printSuccess(result, options);
+    printSuccess(result.data!, options);
     return;
   }
 
