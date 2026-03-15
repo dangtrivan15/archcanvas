@@ -15,6 +15,16 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Skip all canvas shortcuts when focus is inside an input/textarea/contentEditable
+      const el = document.activeElement;
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.contentEditable === 'true')
+      ) {
+        return;
+      }
+
       const mod = e.metaKey || e.ctrlKey;
 
       // Undo — Cmd+Z
@@ -33,15 +43,6 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
 
       // Delete selection — Delete or Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Don't intercept when focus is inside an input/textarea/contenteditable
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable
-        ) {
-          return;
-        }
         e.preventDefault();
         useCanvasStore.getState().deleteSelection();
         return;

@@ -22,10 +22,9 @@ import type { PanelImperativeHandle } from 'react-resizable-panels';
 vi.mock('@/store/fileStore', () => ({
   useFileStore: Object.assign(vi.fn((sel: any) => sel({
     save: vi.fn(),
-    saveAs: vi.fn(),
     open: vi.fn(),
   })), {
-    getState: () => ({ save: vi.fn(), saveAs: vi.fn(), open: vi.fn() }),
+    getState: () => ({ save: vi.fn(), open: vi.fn() }),
   }),
 }));
 

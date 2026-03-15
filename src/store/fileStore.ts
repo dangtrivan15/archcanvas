@@ -127,7 +127,6 @@ interface FileStoreState {
   newProject: () => Promise<void>;
   open: () => Promise<void>;
   save: () => Promise<void>;
-  saveAs: () => Promise<void>;
   isDirty: () => boolean;
 }
 
@@ -286,27 +285,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   save: async () => {
     const { fs } = get();
-    if (!fs) {
-      // No FileSystem yet — fall through to saveAs (C7.3)
-      await get().saveAs();
-      return;
-    }
+    if (!fs) return; // No FileSystem — project guard ensures this is unreachable
     await get().saveAll(fs);
-  },
-
-  saveAs: async () => {
-    const picker = getFilePicker();
-    const newFs = await picker.pickDirectory();
-    if (!newFs) return; // user cancelled
-
-    await get().saveAll(newFs);
-
-    const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-    const path = projectName;
-    set({
-      fs: newFs,
-      recentProjects: addToRecent(get().recentProjects, projectName, path),
-    });
   },
 
   isDirty: () => {

@@ -76,7 +76,7 @@ test.describe("dirty indicator", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("file menu persistence items", () => {
-  test("Save and Save As menu items exist with correct shortcuts", async ({
+  test("Save menu item exists with correct shortcut", async ({
     page,
   }) => {
     await gotoApp(page);
@@ -89,11 +89,6 @@ test.describe("file menu persistence items", () => {
     const saveItem = page.getByRole("menuitem", { name: /Save/ }).first();
     await expect(saveItem).toBeVisible();
     await expect(saveItem).toContainText("⌘S");
-
-    // Save As... with ⇧⌘S shortcut
-    const saveAsItem = page.getByRole("menuitem", { name: /Save As/ });
-    await expect(saveAsItem).toBeVisible();
-    await expect(saveAsItem).toContainText("⇧⌘S");
   });
 
   test("Open menu item exists with correct shortcut", async ({ page }) => {
@@ -138,10 +133,9 @@ test.describe("save keyboard shortcut", () => {
     const statusBar = page.locator("div.h-6.border-t");
     await expect(statusBar.getByText("Modified")).toBeVisible();
 
-    // Press Cmd+S — in web mode with no FileSystem, this falls through to
-    // saveAs() which opens a directory picker. The picker dialog itself can't
-    // be automated, so we just verify it doesn't crash and the app stays
-    // functional. We dismiss any potential dialogs.
+    // Press Cmd+S — in web mode with no FileSystem, save() is a no-op
+    // (project guard ensures fs is always set in production, but in E2E
+    // tests we skip the guard). We verify it doesn't crash.
     // Listen for dialogs and dismiss them
     page.on("dialog", (dialog) => dialog.dismiss());
 

@@ -45,6 +45,8 @@ export const useUiStore = create<UiState>((set, get) => ({
       // Opening chat — also expand panel if collapsed
       get().openRightPanel();
       set({ rightPanelMode: 'chat' });
+      // Notify ChatPanel to auto-focus (setTimeout so React re-renders first)
+      setTimeout(() => window.dispatchEvent(new CustomEvent('archcanvas:focus-chat')), 0);
     }
   },
 }));

@@ -26,17 +26,9 @@ export function useAppKeyboard() {
       if (!mod) return;
 
       // C10.1: Cmd+S → save()
-      // Note: check both cases — e.key is uppercase when Shift is held
-      if ((e.key === 's' || e.key === 'S') && !e.shiftKey) {
+      if (e.key === 's' && !e.shiftKey) {
         e.preventDefault();
         useFileStore.getState().save();
-        return;
-      }
-
-      // C10.3: Cmd+Shift+S → saveAs()
-      if ((e.key === 's' || e.key === 'S') && e.shiftKey) {
-        e.preventDefault();
-        useFileStore.getState().saveAs();
         return;
       }
 

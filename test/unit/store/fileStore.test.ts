@@ -322,83 +322,18 @@ describe('fileStore', () => {
       expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
     });
 
-    it('falls through to saveAs when fs is null (C7.3)', async () => {
+    it('is a no-op when fs is null (project guard ensures this is unreachable)', async () => {
       // Load project directly (without open(), so fs remains null)
       await useFileStore.getState().openProject(fs);
       useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
 
       expect(useFileStore.getState().fs).toBeNull();
 
-      // Set up a picker for the saveAs fallthrough
-      const newFs = new InMemoryFileSystem();
-      setFilePicker(createMockPicker(newFs));
-
       await useFileStore.getState().save();
 
-      // fs should now be set (saveAs picked a directory)
-      expect(useFileStore.getState().fs).toBe(newFs);
-      expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
-    });
-
-    it('does nothing when fs is null and user cancels saveAs picker', async () => {
-      await useFileStore.getState().openProject(fs);
-      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
-
-      setFilePicker(createMockPicker(null));
-
-      await useFileStore.getState().save();
-
-      // fs still null, dirty canvases still present
+      // fs still null, dirty canvases still present — save was a no-op
       expect(useFileStore.getState().fs).toBeNull();
       expect(useFileStore.getState().dirtyCanvases.size).toBe(1);
-    });
-  });
-
-  describe('saveAs() — C7.4', () => {
-    it('replaces fs with new FileSystem from picker', async () => {
-      const originalFs = createSeededFs();
-      setFilePicker(createMockPicker(originalFs));
-      await useFileStore.getState().open();
-
-      // Now saveAs with a different fs
-      const newFs = new InMemoryFileSystem();
-      setFilePicker(createMockPicker(newFs));
-
-      useFileStore.getState().markDirty(ROOT_CANVAS_KEY);
-      await useFileStore.getState().saveAs();
-
-      expect(useFileStore.getState().fs).toBe(newFs);
-      expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
-    });
-
-    it('does nothing when user cancels the picker', async () => {
-      const originalFs = createSeededFs();
-      setFilePicker(createMockPicker(originalFs));
-      await useFileStore.getState().open();
-
-      // Cancel saveAs
-      setFilePicker(createMockPicker(null));
-      await useFileStore.getState().saveAs();
-
-      // fs should remain the original
-      expect(useFileStore.getState().fs).toBe(originalFs);
-    });
-
-    it('updates recentProjects after saveAs', async () => {
-      const mockStorage = createMockStorage();
-      setLocalStorage(mockStorage);
-
-      // Load project directly
-      await useFileStore.getState().openProject(fs);
-
-      const newFs = new InMemoryFileSystem();
-      setFilePicker(createMockPicker(newFs));
-
-      await useFileStore.getState().saveAs();
-
-      const recents = useFileStore.getState().recentProjects;
-      expect(recents.length).toBe(1);
-      expect(recents[0].name).toBe('Test');
     });
   });
 

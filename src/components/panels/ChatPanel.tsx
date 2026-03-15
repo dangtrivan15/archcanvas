@@ -25,10 +25,30 @@ export function ChatPanel() {
     }
   }, [messages]);
 
-  // Auto-focus textarea when panel mounts
+  // Auto-focus textarea when panel mounts or when chat is opened
   useEffect(() => {
-    textareaRef.current?.focus();
+    // Focus on initial mount
+    requestAnimationFrame(() => textareaRef.current?.focus());
+    // Also focus when chat is (re-)opened while already mounted (e.g. panel collapsed then expanded)
+    const handler = () => requestAnimationFrame(() => textareaRef.current?.focus());
+    window.addEventListener('archcanvas:focus-chat', handler);
+    return () => window.removeEventListener('archcanvas:focus-chat', handler);
   }, []);
+
+  // Escape to interrupt — window-level capture handler because the textarea
+  // is disabled during streaming and can't receive onKeyDown events
+  useEffect(() => {
+    if (!isStreaming) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        useChatStore.getState().interrupt();
+      }
+    };
+    window.addEventListener('keydown', handler, true); // capture phase
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [isStreaming]);
 
   const activeProvider = activeProviderId
     ? providers.get(activeProviderId)
