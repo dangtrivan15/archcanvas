@@ -18,6 +18,7 @@ vi.mock('@/store/fileStore', () => ({
         },
       },
       fs: { fake: true },
+      projectPath: '/mock/project/path',
     }),
   },
 }));
@@ -349,7 +350,7 @@ describe('chatStore', () => {
       expect(ctx.projectName).toBe('MockProject');
       expect(ctx.projectDescription).toBe('A test project');
       expect(ctx.currentScope).toBe('@root');
-      expect(ctx.projectPath).toBe('.');
+      expect(ctx.projectPath).toBe('/mock/project/path');
     });
 
     it('sets error on error event', async () => {

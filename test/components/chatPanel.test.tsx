@@ -19,19 +19,27 @@ import type {
 // Mock dependent stores (chatStore reads from these internally)
 // ---------------------------------------------------------------------------
 
-vi.mock('@/store/fileStore', () => ({
-  useFileStore: {
-    getState: () => ({
-      project: {
-        root: {
-          data: {
-            project: { name: 'TestProject', description: 'Test' },
-          },
-        },
+const mockFileStoreState = {
+  project: {
+    root: {
+      data: {
+        project: { name: 'TestProject', description: 'Test' },
       },
-      fs: { fake: true },
-    }),
+    },
   },
+  fs: { fake: true },
+  projectPath: '/mock/project/path',
+  setProjectPath: vi.fn(),
+};
+
+vi.mock('@/store/fileStore', () => ({
+  useFileStore: Object.assign(
+    // Support selector-style calls: useFileStore((s) => s.projectPath)
+    (sel: (s: typeof mockFileStoreState) => unknown) => sel(mockFileStoreState),
+    {
+      getState: () => mockFileStoreState,
+    },
+  ),
 }));
 
 vi.mock('@/store/navigationStore', () => ({

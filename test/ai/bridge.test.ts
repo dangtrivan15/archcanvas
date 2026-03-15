@@ -31,7 +31,8 @@ describe('BridgeSession — lifecycle', () => {
 
     expect(capturedArgs).toHaveLength(1);
     expect(capturedArgs[0].prompt).toBe('test prompt');
-    expect(capturedArgs[0].options?.cwd).toBe('/my/project');
+    // cwd is now context.projectPath (preferred) || session cwd (fallback)
+    expect(capturedArgs[0].options?.cwd).toBe(testContext.projectPath);
     expect(capturedArgs[0].options?.systemPrompt).toContain('ArchCanvas');
     expect(capturedArgs[0].options?.systemPrompt).toContain('test-project');
 

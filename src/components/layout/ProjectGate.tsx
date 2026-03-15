@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useFileStore } from '@/store/fileStore';
 
 /**
@@ -8,10 +9,37 @@ import { useFileStore } from '@/store/fileStore';
  * - New Project: picks a directory and scaffolds .archcanvas/main.yaml if needed
  *
  * Shows error state if the last open/new attempt failed.
+ *
+ * Also handles URL params for one-project-per-tab:
+ * - ?action=open — auto-fires open() on mount
+ * - ?action=new  — auto-fires newProject() on mount
  */
 export function ProjectGate() {
   const status = useFileStore((s) => s.status);
   const error = useFileStore((s) => s.error);
+  const actionFired = useRef(false);
+
+  // Auto-trigger from URL param (one-project-per-tab)
+  useEffect(() => {
+    if (actionFired.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (!action) return;
+
+    actionFired.current = true;
+
+    // Clear the param from the URL so it doesn't re-trigger on navigation
+    params.delete('action');
+    const nextSearch = params.toString();
+    const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
+    window.history.replaceState({}, '', nextUrl);
+
+    if (action === 'open') {
+      useFileStore.getState().open();
+    } else if (action === 'new') {
+      useFileStore.getState().newProject();
+    }
+  }, []);
 
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-background text-foreground">

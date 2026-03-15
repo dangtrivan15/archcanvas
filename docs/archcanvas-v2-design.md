@@ -889,3 +889,4 @@ To be resolved during implementation:
 | **NodeDef shape extensibility** | Current enum has 9 shapes. Community may want custom SVGs. Decide when building remote registry. |
 | **AI system prompt tuning** | Onboarding init prompt needs iteration with real projects. Post-v1. |
 | **CLI output format for Claude Code** | Test `stream-json` vs. npm SDK. Decide during AI integration. |
+| **Node/Tauri `getPath()` auto-resolve** | `FileSystem.getPath()` is defined on the interface and implemented for `NodeFileSystem` and `TauriFileSystem`, but not exercised in the current web-only runtime. When the app runs natively (Tauri desktop, CLI with Node), `openProject()` should auto-set `projectPath` from `fs.getPath()`, eliminating the manual path input requirement. Target: I7 (Packaging & Polish). |

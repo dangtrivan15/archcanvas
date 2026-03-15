@@ -7,6 +7,10 @@ export class WebFileSystem implements FileSystem {
     return this.rootHandle.name;
   }
 
+  getPath(): string | null {
+    return null;
+  }
+
   async readFile(path: string): Promise<string> {
     const { dir, fileName } = await this.resolve(path);
     const fileHandle = await dir.getFileHandle(fileName);

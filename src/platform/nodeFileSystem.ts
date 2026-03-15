@@ -13,6 +13,10 @@ export class NodeFileSystem implements FileSystem {
     return basename(this.rootPath);
   }
 
+  getPath(): string {
+    return this.rootPath;
+  }
+
   private resolvePath(path: string): string {
     const full = resolve(this.rootPath, path);
     if (!full.startsWith(this.rootPath + '/') && full !== this.rootPath) {

@@ -16,6 +16,10 @@ export class TauriFileSystem implements FileSystem {
     return segments[segments.length - 1] || this.rootPath;
   }
 
+  getPath(): string {
+    return this.rootPath;
+  }
+
   private async resolve(path: string): Promise<string> {
     return join(this.rootPath, path);
   }
