@@ -84,6 +84,7 @@ beforeEach(() => {
     activeProviderId: null,
     providers: new Map(),
     error: null,
+    warning: null,
     permissionMode: 'default',
     effort: 'high',
   });
@@ -120,6 +121,29 @@ describe('ChatPanel', () => {
     render(<ChatPanel />);
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('Connection lost');
+  });
+
+  it('shows warning banner with amber styling when warning is set', () => {
+    useChatStore.setState({ warning: 'Rate limited. Retrying in 30s...' });
+
+    render(<ChatPanel />);
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('Rate limited. Retrying in 30s...');
+    expect(status.className).toContain('bg-amber-950');
+    expect(status.className).toContain('text-amber-300');
+  });
+
+  it('does NOT show warning banner when error is set (error takes priority)', () => {
+    useChatStore.setState({
+      warning: 'Rate limited',
+      error: 'Connection lost',
+    });
+
+    render(<ChatPanel />);
+    // Error banner should be visible
+    expect(screen.getByRole('alert')).toHaveTextContent('Connection lost');
+    // Warning banner should NOT be visible
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('shows streaming indicator when isStreaming', () => {

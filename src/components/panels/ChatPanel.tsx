@@ -7,6 +7,7 @@ export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
   const isStreaming = useChatStore((s) => s.isStreaming);
   const error = useChatStore((s) => s.error);
+  const warning = useChatStore((s) => s.warning);
   const statusMessage = useChatStore((s) => s.statusMessage);
   const providers = useChatStore((s) => s.providers);
   const activeProviderId = useChatStore((s) => s.activeProviderId);
@@ -128,6 +129,13 @@ export function ChatPanel() {
       {error && (
         <div className="border-b border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300" role="alert">
           {error}
+        </div>
+      )}
+
+      {/* Warning banner (rate-limit etc.) — hidden when error is showing */}
+      {warning && !error && (
+        <div className="border-b border-amber-800 bg-amber-950/50 px-3 py-1.5 text-xs text-amber-300" role="status">
+          {warning}
         </div>
       )}
 
