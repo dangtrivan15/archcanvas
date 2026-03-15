@@ -91,6 +91,12 @@ export function App() {
     return <OnboardingWizard />;
   }
 
+  // Error or loading with fs set (e.g., completeOnboarding → openProject failure)
+  // — route back to ProjectGate which handles both states (error banner, loading text)
+  if (status === 'error' || status === 'loading') {
+    return <ProjectGate />;
+  }
+
   return (
     <TooltipProvider delayDuration={300}>
       <ReactFlowProvider>
