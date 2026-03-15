@@ -170,31 +170,34 @@ export function ChatPanel() {
       <div className="border-t border-border p-2">
         {/* Inline path input — shown when projectPath is null and provider is connected */}
         {needsPath && (
-          <div className="mb-2 flex gap-2" data-testid="path-input-bar">
-            <input
-              type="text"
-              value={pathInput}
-              onChange={(e) => setPathInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && pathInput.trim()) {
-                  useFileStore.getState().setProjectPath(pathInput.trim());
-                }
-              }}
-              placeholder="/Users/you/projects/my-app"
-              className="flex-1 rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
-              aria-label="Project path"
-            />
-            <button
-              onClick={() => {
-                if (pathInput.trim()) {
-                  useFileStore.getState().setProjectPath(pathInput.trim());
-                }
-              }}
-              disabled={!pathInput.trim()}
-              className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
-            >
-              Set
-            </button>
+          <div className="mb-2" data-testid="path-input-bar">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={pathInput}
+                onChange={(e) => setPathInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && pathInput.trim()) {
+                    useFileStore.getState().setProjectPath(pathInput.trim());
+                  }
+                }}
+                placeholder="/Users/you/projects/my-app"
+                className="flex-1 rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+                aria-label="Project path"
+              />
+              <button
+                onClick={() => {
+                  if (pathInput.trim()) {
+                    useFileStore.getState().setProjectPath(pathInput.trim());
+                  }
+                }}
+                disabled={!pathInput.trim()}
+                className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
+              >
+                Set
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-amber-400">Required for AI chat</p>
           </div>
         )}
         <div className="flex gap-2">
