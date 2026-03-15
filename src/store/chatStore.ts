@@ -5,6 +5,7 @@ import type {
   ProjectContext,
   PermissionSuggestion,
 } from '@/core/ai/types';
+import { isInteractiveProvider } from '@/core/ai/types';
 import { useFileStore } from './fileStore';
 import { useNavigationStore } from './navigationStore';
 // ---------------------------------------------------------------------------
@@ -17,6 +18,8 @@ interface ChatState {
   activeProviderId: string | null;
   providers: Map<string, ChatProvider>;
   error: string | null;
+  /** Transient warning (e.g., rate-limit). Shown as amber banner; cleared on done/new message. */
+  warning: string | null;
   /** Latest status message from the AI (e.g., "Reading file..."). Cleared on done/error. */
   statusMessage: string | null;
   /** Current permission mode for the AI session. */
@@ -79,6 +82,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activeProviderId: null,
   providers: new Map(),
   error: null,
+  warning: null,
   statusMessage: null,
   permissionMode: 'default',
   effort: 'high',
@@ -128,6 +132,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [...state.messages, userMessage],
       isStreaming: true,
       error: null,
+      warning: null,
       statusMessage: null,
     }));
 
@@ -190,7 +195,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
         // Handle rate_limit events — show as temporary warning without stopping the stream
         if (event.type === 'rate_limit') {
-          set({ error: event.message });
+          set({ warning: event.message });
         }
 
         // Handle error events
@@ -200,7 +205,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
         // Clear status on done
         if (event.type === 'done') {
-          set({ statusMessage: null });
+          set({ statusMessage: null, warning: null });
         }
 
         // Update messages: replace everything from streamStartIdx onwards
@@ -216,7 +221,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err instanceof Error ? err.message : String(err),
       });
     } finally {
-      set({ isStreaming: false, statusMessage: null });
+      set({ isStreaming: false, statusMessage: null, warning: null });
     }
   },
 
@@ -234,9 +239,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const provider = providers.get(activeProviderId);
     if (!provider) return;
 
-    // Duck-type check: only WebSocket-backed providers expose sendPermissionResponse
-    if ('sendPermissionResponse' in provider && typeof (provider as any).sendPermissionResponse === 'function') {
-      (provider as any).sendPermissionResponse(id, allowed, options);
+    if (isInteractiveProvider(provider)) {
+      provider.sendPermissionResponse(id, allowed, options);
     }
   },
 
@@ -247,9 +251,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const provider = providers.get(activeProviderId);
     if (!provider) return;
 
-    // Duck-type check: only WebSocket-backed providers expose sendQuestionResponse
-    if ('sendQuestionResponse' in provider && typeof (provider as any).sendQuestionResponse === 'function') {
-      (provider as any).sendQuestionResponse(id, answers);
+    if (isInteractiveProvider(provider)) {
+      provider.sendQuestionResponse(id, answers);
     }
   },
 
@@ -262,9 +265,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const provider = providers.get(activeProviderId);
     if (!provider) return;
 
-    // Duck-type check: only WebSocket-backed providers expose sendSetPermissionMode
-    if ('sendSetPermissionMode' in provider && typeof (provider as any).sendSetPermissionMode === 'function') {
-      (provider as any).sendSetPermissionMode(mode);
+    if (isInteractiveProvider(provider)) {
+      provider.sendSetPermissionMode(mode);
     }
   },
 
@@ -277,9 +279,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const provider = providers.get(activeProviderId);
     if (!provider) return;
 
-    // Duck-type check: only WebSocket-backed providers expose sendSetEffort
-    if ('sendSetEffort' in provider && typeof (provider as any).sendSetEffort === 'function') {
-      (provider as any).sendSetEffort(effort);
+    if (isInteractiveProvider(provider)) {
+      provider.sendSetEffort(effort);
     }
   },
 
@@ -293,6 +294,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearHistory() {
-    set({ messages: [], error: null, statusMessage: null });
+    set({ messages: [], error: null, warning: null, statusMessage: null });
   },
 }));

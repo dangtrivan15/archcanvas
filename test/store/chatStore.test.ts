@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useChatStore } from '@/store/chatStore';
 import type { ChatProvider, ChatEvent, ProjectContext, ChatMessage } from '@/core/ai/types';
+import { isInteractiveProvider } from '@/core/ai/types';
 
 // ---------------------------------------------------------------------------
 // Mock stores that chatStore reads from
@@ -118,6 +119,7 @@ beforeEach(() => {
     activeProviderId: null,
     providers: new Map(),
     error: null,
+    warning: null,
     statusMessage: null,
     permissionMode: 'default',
     effort: 'high',
@@ -613,7 +615,7 @@ describe('chatStore', () => {
   // -----------------------------------------------------------------------
 
   describe('rate_limit events', () => {
-    it('sets error on rate_limit event without stopping streaming', async () => {
+    it('sets warning (not error) on rate_limit event without stopping streaming', async () => {
       const provider = createMockProvider('p1');
       useChatStore.getState().registerProvider(provider);
 
@@ -625,11 +627,12 @@ describe('chatStore', () => {
 
       await useChatStore.getState().sendMessage('test');
 
-      // Rate limit message was in error, but done cleared streaming
+      // Rate limit should set warning, not error
       // The assistant message should have accumulated text after the rate limit
       const msgs = useChatStore.getState().messages;
       expect(msgs[1].content).toBe('After rate limit');
       expect(useChatStore.getState().isStreaming).toBe(false);
+      expect(useChatStore.getState().error).toBeNull();
     });
 
     it('stores rate_limit event in assistant message events', async () => {
@@ -645,6 +648,52 @@ describe('chatStore', () => {
 
       const assistantMsg = useChatStore.getState().messages[1];
       expect(assistantMsg.events!.some(e => e.type === 'rate_limit')).toBe(true);
+    });
+
+    it('warning is cleared on done event', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'rate_limit', requestId: 'r1', message: 'Rate limited' },
+        { type: 'done', requestId: 'r1' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+
+      expect(useChatStore.getState().warning).toBeNull();
+    });
+
+    it('warning is cleared on new sendMessage', async () => {
+      useChatStore.setState({ warning: 'Previous rate limit' });
+
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([{ type: 'done', requestId: 'r1' }]);
+      await useChatStore.getState().sendMessage('New msg');
+
+      expect(useChatStore.getState().warning).toBeNull();
+    });
+
+    it('warning is cleared on clearHistory', () => {
+      useChatStore.setState({ warning: 'Some rate limit' });
+      useChatStore.getState().clearHistory();
+      expect(useChatStore.getState().warning).toBeNull();
+    });
+
+    it('real error events still set error field (not warning)', async () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      provider.emitEvents([
+        { type: 'error', requestId: 'r1', message: 'Connection lost' },
+      ]);
+
+      await useChatStore.getState().sendMessage('test');
+
+      expect(useChatStore.getState().error).toBe('Connection lost');
+      expect(useChatStore.getState().warning).toBeNull();
     });
   });
 
@@ -677,19 +726,67 @@ describe('chatStore', () => {
   // -----------------------------------------------------------------------
 
   describe('clearHistory', () => {
-    it('clears messages and error', () => {
+    it('clears messages, error, and warning', () => {
       useChatStore.setState({
         messages: [
           { role: 'user', content: 'Hello', timestamp: 1 },
           { role: 'assistant', content: 'Hi', timestamp: 2 },
         ],
         error: 'Some error',
+        warning: 'Some warning',
       });
 
       useChatStore.getState().clearHistory();
 
       expect(useChatStore.getState().messages).toHaveLength(0);
       expect(useChatStore.getState().error).toBeNull();
+      expect(useChatStore.getState().warning).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // isInteractiveProvider type guard
+  // -----------------------------------------------------------------------
+
+  describe('isInteractiveProvider', () => {
+    it('returns true for providers with interactive methods', () => {
+      const provider = createMockProvider('p1');
+      expect(isInteractiveProvider(provider)).toBe(true);
+    });
+
+    it('returns false for bare ChatProvider without interactive methods', () => {
+      const bareProvider: ChatProvider = {
+        id: 'bare',
+        displayName: 'Bare',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+      };
+      expect(isInteractiveProvider(bareProvider)).toBe(false);
+    });
+
+    it('respondToPermission works with interactive provider via isInteractiveProvider', () => {
+      const provider = createMockProvider('p1');
+      useChatStore.getState().registerProvider(provider);
+
+      useChatStore.getState().respondToPermission('perm-1', true);
+      expect(provider.sendPermissionResponse).toHaveBeenCalledWith('perm-1', true, undefined);
+    });
+
+    it('respondToPermission no-ops with bare ChatProvider (no crash)', () => {
+      const bareProvider: ChatProvider = {
+        id: 'bare',
+        displayName: 'Bare',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+      };
+      useChatStore.getState().registerProvider(bareProvider);
+
+      // Should not throw
+      useChatStore.getState().respondToPermission('perm-1', true);
     });
   });
 });

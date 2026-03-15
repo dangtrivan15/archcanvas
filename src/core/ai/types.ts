@@ -228,3 +228,24 @@ export interface ChatProvider {
   /** Interrupt the current turn. Stops streaming but preserves session context. */
   interrupt(): void;
 }
+
+/**
+ * Extended provider interface for interactive chat (permissions, questions,
+ * settings). WebSocketClaudeCodeProvider implements this; future ApiKeyProvider
+ * may not. chatStore uses isInteractiveProvider() to safely narrow.
+ */
+export interface InteractiveChatProvider extends ChatProvider {
+  sendPermissionResponse(
+    id: string,
+    allowed: boolean,
+    options?: { updatedPermissions?: PermissionSuggestion[]; interrupt?: boolean },
+  ): void;
+  sendQuestionResponse(id: string, answers: Record<string, string>): void;
+  sendSetPermissionMode(mode: string): void;
+  sendSetEffort(effort: string): void;
+}
+
+/** Type guard: narrows ChatProvider to InteractiveChatProvider. */
+export function isInteractiveProvider(p: ChatProvider): p is InteractiveChatProvider {
+  return 'sendPermissionResponse' in p;
+}
