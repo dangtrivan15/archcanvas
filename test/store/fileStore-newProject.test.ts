@@ -86,6 +86,9 @@ describe('fileStore.newProject()', () => {
   });
 
   it('opens existing project when .archcanvas/main.yaml already exists', async () => {
+    const mockStorage = createMockStorage();
+    setLocalStorage(mockStorage);
+
     const existingFs = createSeededFs('Existing Project');
     setFilePicker(createMockPicker(existingFs));
 
@@ -95,6 +98,10 @@ describe('fileStore.newProject()', () => {
     expect(useFileStore.getState().status).toBe('loaded');
     expect(useFileStore.getState().fs).toBe(existingFs);
     expect(useFileStore.getState().project?.root.data.project?.name).toBe('Existing Project');
+
+    // Recents should be updated after a successful load
+    expect(useFileStore.getState().recentProjects.length).toBe(1);
+    expect(useFileStore.getState().recentProjects[0].name).toBe('Existing Project');
   });
 
   it('does not overwrite existing .archcanvas/main.yaml', async () => {

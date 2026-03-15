@@ -292,6 +292,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     if (!fs) return; // user cancelled
 
     await get().openProject(fs);
+
+    // Update recents only on successful load (not needs_onboarding)
+    if (get().status === 'loaded') {
+      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
+      set({ recentProjects: addToRecent(get().recentProjects, projectName, projectName) });
+    }
   },
 
   open: async () => {
