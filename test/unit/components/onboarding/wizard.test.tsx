@@ -41,6 +41,7 @@ vi.mock('@/store/chatStore', () => ({
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { InitMethodStep } from '@/components/onboarding/InitMethodStep';
 import { AiSurveyStep } from '@/components/onboarding/AiSurveyStep';
+import { useFileStore } from '@/store/fileStore';
 import { useChatStore } from '@/store/chatStore';
 
 // ---------------------------------------------------------------------------
@@ -56,6 +57,15 @@ function setAiAvailable(available: boolean) {
   vi.mocked(useChatStore).mockImplementation((sel: any) =>
     sel({ providers: mockProviders }),
   );
+}
+
+/** Override the fileStore mock's fs value (null by default, or an object with getPath) */
+function setMockFs(fs: { getPath: () => string | null } | null) {
+  vi.mocked(useFileStore).mockImplementation(((sel: any) =>
+    sel({
+      completeOnboarding: mockCompleteOnboarding,
+      fs,
+    })) as any);
 }
 
 // ---------------------------------------------------------------------------
@@ -192,5 +202,28 @@ describe('AiSurveyStep', () => {
     setAiAvailable(true);
     render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
     expect(screen.queryByTestId('ai-unavailable-banner')).not.toBeInTheDocument();
+  });
+
+  it('pre-fills project path input from fs.getPath() when fs is available', () => {
+    setAiAvailable(true);
+    setMockFs({ getPath: () => '/home/user/real-project' });
+
+    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
+
+    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app') as HTMLInputElement;
+    expect(pathInput.value).toBe('/home/user/real-project');
+
+    // Reset fs mock for other tests
+    setMockFs(null);
+  });
+
+  it('project path input is empty when fs is null (Web)', () => {
+    setAiAvailable(true);
+    setMockFs(null);
+
+    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
+
+    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app') as HTMLInputElement;
+    expect(pathInput.value).toBe('');
   });
 });
