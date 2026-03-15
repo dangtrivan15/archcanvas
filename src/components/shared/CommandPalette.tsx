@@ -9,6 +9,8 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useHistoryStore } from '@/store/historyStore';
+import { useUiStore } from '@/store/uiStore';
+import { useToolStore } from '@/store/toolStore';
 import { resolveIcon } from '@/components/nodes/iconMap';
 
 // ---------------------------------------------------------------------------
@@ -85,45 +87,81 @@ const NodeSearchProvider: PaletteProvider = {
   },
 };
 
-const ActionProvider: PaletteProvider = {
-  category: 'Actions',
+// ---------------------------------------------------------------------------
+// Action helpers
+// ---------------------------------------------------------------------------
 
-  search(query: string): PaletteResult[] {
-    const actions: PaletteResult[] = [
-      { id: 'action:undo', title: 'Undo', subtitle: 'Ctrl+Z / ⌘Z', icon: '↩', category: 'Actions' },
-      { id: 'action:redo', title: 'Redo', subtitle: 'Ctrl+Shift+Z / ⌘⇧Z', icon: '↪', category: 'Actions' },
-      { id: 'action:fit-view', title: 'Fit View', subtitle: 'Reset viewport to show all nodes', icon: '⊡', category: 'Actions' },
-      { id: 'action:auto-layout', title: 'Auto Layout', subtitle: 'Arrange nodes automatically', icon: '⊞', category: 'Actions' },
-    ];
+interface ActionDef {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon: string;
+  category: string;
+  execute: () => void;
+}
 
-    if (query === '') return actions;
-    const q = query.toLowerCase();
-    return actions.filter(
-      (a) =>
-        a.title.toLowerCase().includes(q) ||
-        (a.subtitle ?? '').toLowerCase().includes(q),
-    );
-  },
+function filterActions(actions: ActionDef[], query: string): PaletteResult[] {
+  if (query === '') return actions;
+  const q = query.toLowerCase();
+  return actions.filter(
+    (a) =>
+      a.title.toLowerCase().includes(q) ||
+      (a.subtitle ?? '').toLowerCase().includes(q) ||
+      a.category.toLowerCase().includes(q),
+  );
+}
 
-  onSelect(result: PaletteResult) {
-    switch (result.id) {
-      case 'action:undo':
-        useHistoryStore.getState().undo();
-        break;
-      case 'action:redo':
-        useHistoryStore.getState().redo();
-        break;
-      case 'action:fit-view':
-        // Fit view is handled by ReactFlow — dispatch a custom event that
-        // the canvas can listen to, or no-op until Task 15 wires it up.
-        window.dispatchEvent(new CustomEvent('archcanvas:fit-view'));
-        break;
-      case 'action:auto-layout':
-        window.dispatchEvent(new CustomEvent('archcanvas:auto-layout'));
-        break;
+function createActionProvider(category: string, actions: ActionDef[]): PaletteProvider {
+  return {
+    category,
+    search: (query) => filterActions(actions, query),
+    onSelect: (result) => actions.find((a) => a.id === result.id)?.execute(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Action definitions by category
+// ---------------------------------------------------------------------------
+
+const fileActions: ActionDef[] = [
+  { id: 'action:new-project', title: 'New Project', subtitle: '⌘N', icon: '📄', category: 'File', execute: () => useFileStore.getState().newProject() },
+  { id: 'action:open', title: 'Open Project…', subtitle: '⌘O', icon: '📂', category: 'File', execute: () => useFileStore.getState().open() },
+  { id: 'action:save', title: 'Save', subtitle: '⌘S', icon: '💾', category: 'File', execute: () => useFileStore.getState().save() },
+];
+
+const editActions: ActionDef[] = [
+  { id: 'action:undo', title: 'Undo', subtitle: '⌘Z', icon: '↩', category: 'Edit', execute: () => useHistoryStore.getState().undo() },
+  { id: 'action:redo', title: 'Redo', subtitle: '⇧⌘Z', icon: '↪', category: 'Edit', execute: () => useHistoryStore.getState().redo() },
+  { id: 'action:select-all', title: 'Select All', subtitle: '⌘A', icon: '⊡', category: 'Edit', execute: () => {
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    if (canvas) {
+      const nodes = listNodes(canvas.data);
+      useCanvasStore.getState().selectNodes(nodes.map((n) => n.id));
     }
-  },
-};
+  }},
+  { id: 'action:clear-selection', title: 'Clear Selection', subtitle: 'Esc', icon: '⊘', category: 'Edit', execute: () => useCanvasStore.getState().clearSelection() },
+  { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection() },
+];
+
+const viewActions: ActionDef[] = [
+  { id: 'action:fit-view', title: 'Fit View', subtitle: 'Reset viewport to show all nodes', icon: '⊡', category: 'View', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:fit-view')) },
+  { id: 'action:auto-layout', title: 'Auto Layout', subtitle: 'Arrange nodes automatically', icon: '⊞', category: 'View', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:auto-layout')) },
+  { id: 'action:toggle-left-panel', title: 'Toggle Left Panel', icon: '◧', category: 'View', execute: () => useUiStore.getState().toggleLeftPanel() },
+  { id: 'action:toggle-right-panel', title: 'Toggle Right Panel', icon: '◨', category: 'View', execute: () => useUiStore.getState().toggleRightPanel() },
+  { id: 'action:open-chat', title: 'Open AI Chat', subtitle: '⇧⌘I', icon: '💬', category: 'View', execute: () => { useUiStore.getState().openRightPanel(); useUiStore.getState().setRightPanelMode('chat'); setTimeout(() => window.dispatchEvent(new CustomEvent('archcanvas:focus-chat')), 0); } },
+];
+
+const toolActions: ActionDef[] = [
+  { id: 'action:tool-select', title: 'Select Mode', subtitle: 'Default pointer tool', icon: '🔘', category: 'Tool', execute: () => useToolStore.getState().setMode('select') },
+  { id: 'action:tool-pan', title: 'Pan Mode', subtitle: 'Drag to pan the canvas', icon: '✋', category: 'Tool', execute: () => useToolStore.getState().setMode('pan') },
+  { id: 'action:tool-connect', title: 'Connect Mode', subtitle: 'Draw edges between nodes', icon: '🔗', category: 'Tool', execute: () => useToolStore.getState().setMode('connect') },
+];
+
+const FileActionProvider = createActionProvider('File', fileActions);
+const EditActionProvider = createActionProvider('Edit', editActions);
+const ViewActionProvider = createActionProvider('View', viewActions);
+const ToolActionProvider = createActionProvider('Tool', toolActions);
 
 const NodeTypeProvider: PaletteProvider = {
   category: 'Node types',
@@ -247,8 +285,15 @@ const ScopeProvider: PaletteProvider = {
 // All providers in render order
 // ---------------------------------------------------------------------------
 
+const ACTION_PROVIDERS: PaletteProvider[] = [
+  FileActionProvider,
+  EditActionProvider,
+  ViewActionProvider,
+  ToolActionProvider,
+];
+
 const ALL_PROVIDERS: PaletteProvider[] = [
-  ActionProvider,
+  ...ACTION_PROVIDERS,
   NodeSearchProvider,
   NodeTypeProvider,
   EntityProvider,
@@ -261,7 +306,7 @@ const ALL_PROVIDERS: PaletteProvider[] = [
 
 function resolveProviders(raw: string): { providers: PaletteProvider[]; query: string } {
   if (raw.startsWith(PREFIX_ACTIONS)) {
-    return { providers: [ActionProvider], query: raw.slice(1).trimStart() };
+    return { providers: ACTION_PROVIDERS, query: raw.slice(1).trimStart() };
   }
   if (raw.startsWith(PREFIX_NODES)) {
     return { providers: [NodeSearchProvider], query: raw.slice(1).trimStart() };

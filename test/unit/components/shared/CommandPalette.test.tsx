@@ -172,6 +172,9 @@ const mockFileState = {
     ]),
   },
   getCanvas: (id: string) => mockFileState.project.canvases.get(id),
+  newProject: vi.fn(),
+  open: vi.fn(),
+  save: vi.fn(),
 };
 vi.mock('@/store/fileStore', () => ({
   useFileStore: {
@@ -232,6 +235,8 @@ vi.mock('@/store/registryStore', () => ({
 const mockCanvasState = {
   selectNodes: vi.fn(),
   selectEdge: vi.fn(),
+  clearSelection: vi.fn(),
+  deleteSelection: vi.fn(),
 };
 vi.mock('@/store/canvasStore', () => ({
   useCanvasStore: {
@@ -261,6 +266,26 @@ const mockHistoryState = {
 vi.mock('@/store/historyStore', () => ({
   useHistoryStore: {
     getState: () => mockHistoryState,
+  },
+}));
+
+const mockUiState = {
+  toggleLeftPanel: vi.fn(),
+  toggleRightPanel: vi.fn(),
+  toggleChat: vi.fn(),
+};
+vi.mock('@/store/uiStore', () => ({
+  useUiStore: {
+    getState: () => mockUiState,
+  },
+}));
+
+const mockToolState = {
+  setMode: vi.fn(),
+};
+vi.mock('@/store/toolStore', () => ({
+  useToolStore: {
+    getState: () => mockToolState,
   },
 }));
 
@@ -328,13 +353,27 @@ describe('CommandPalette', () => {
     expect(nodesGroup.textContent).toContain('Users DB');
   });
 
-  it('shows all 4 actions in the Actions group', () => {
+  it('shows actions organized by category groups', () => {
     renderPalette(true);
-    const actionsGroup = screen.getByTestId('cmdk-group-Actions');
-    expect(actionsGroup.textContent).toContain('Undo');
-    expect(actionsGroup.textContent).toContain('Redo');
-    expect(actionsGroup.textContent).toContain('Fit View');
-    expect(actionsGroup.textContent).toContain('Auto Layout');
+
+    const fileGroup = screen.getByTestId('cmdk-group-File');
+    expect(fileGroup.textContent).toContain('Save');
+    expect(fileGroup.textContent).toContain('Open Project');
+
+    const editGroup = screen.getByTestId('cmdk-group-Edit');
+    expect(editGroup.textContent).toContain('Undo');
+    expect(editGroup.textContent).toContain('Redo');
+    expect(editGroup.textContent).toContain('Delete Selection');
+
+    const viewGroup = screen.getByTestId('cmdk-group-View');
+    expect(viewGroup.textContent).toContain('Fit View');
+    expect(viewGroup.textContent).toContain('Auto Layout');
+    expect(viewGroup.textContent).toContain('Open AI Chat');
+
+    const toolGroup = screen.getByTestId('cmdk-group-Tool');
+    expect(toolGroup.textContent).toContain('Select Mode');
+    expect(toolGroup.textContent).toContain('Pan Mode');
+    expect(toolGroup.textContent).toContain('Connect Mode');
   });
 
   it('shows node type results in Node types group', () => {
@@ -359,10 +398,13 @@ describe('CommandPalette', () => {
 
   // --- Prefix filtering: > Actions ---
 
-  it('> prefix: shows only Actions group', async () => {
+  it('> prefix: shows only action groups (File, Edit, View, Tool)', async () => {
     renderPalette(true);
     await setQuery('>');
-    expect(screen.queryByTestId('cmdk-group-Actions')).not.toBeNull();
+    expect(screen.queryByTestId('cmdk-group-File')).not.toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Edit')).not.toBeNull();
+    expect(screen.queryByTestId('cmdk-group-View')).not.toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Tool')).not.toBeNull();
     expect(screen.queryByTestId('cmdk-group-Nodes')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Node types')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Entities')).toBeNull();
@@ -372,9 +414,9 @@ describe('CommandPalette', () => {
   it('> prefix with query: filters actions by text', async () => {
     renderPalette(true);
     await setQuery('> undo');
-    const actionsGroup = screen.getByTestId('cmdk-group-Actions');
-    expect(actionsGroup.textContent).toContain('Undo');
-    expect(actionsGroup.textContent).not.toContain('Redo');
+    const editGroup = screen.getByTestId('cmdk-group-Edit');
+    expect(editGroup.textContent).toContain('Undo');
+    expect(editGroup.textContent).not.toContain('Redo');
   });
 
   // --- Prefix filtering: @ Nodes ---
@@ -383,7 +425,10 @@ describe('CommandPalette', () => {
     renderPalette(true);
     await setQuery('@');
     expect(screen.queryByTestId('cmdk-group-Nodes')).not.toBeNull();
-    expect(screen.queryByTestId('cmdk-group-Actions')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-File')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Edit')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-View')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Tool')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Node types')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Entities')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Scopes')).toBeNull();
@@ -403,7 +448,10 @@ describe('CommandPalette', () => {
     renderPalette(true);
     await setQuery('#');
     expect(screen.queryByTestId('cmdk-group-Entities')).not.toBeNull();
-    expect(screen.queryByTestId('cmdk-group-Actions')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-File')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Edit')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-View')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Tool')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Nodes')).toBeNull();
     expect(screen.queryByTestId('cmdk-group-Scopes')).toBeNull();
   });
@@ -431,8 +479,8 @@ describe('CommandPalette', () => {
     const onClose = vi.fn();
     renderPalette(true, onClose);
     await setQuery('>');
-    const actionsGroup = screen.getByTestId('cmdk-group-Actions');
-    const undoItem = Array.from(actionsGroup.querySelectorAll('[data-testid="cmdk-item"]')).find(
+    const editGroup = screen.getByTestId('cmdk-group-Edit');
+    const undoItem = Array.from(editGroup.querySelectorAll('[data-testid="cmdk-item"]')).find(
       (el) => el.textContent?.includes('Undo'),
     );
     expect(undoItem).toBeDefined();
@@ -447,8 +495,8 @@ describe('CommandPalette', () => {
     const onClose = vi.fn();
     renderPalette(true, onClose);
     await setQuery('>');
-    const actionsGroup = screen.getByTestId('cmdk-group-Actions');
-    const redoItem = Array.from(actionsGroup.querySelectorAll('[data-testid="cmdk-item"]')).find(
+    const editGroup = screen.getByTestId('cmdk-group-Edit');
+    const redoItem = Array.from(editGroup.querySelectorAll('[data-testid="cmdk-item"]')).find(
       (el) => el.textContent?.includes('Redo'),
     );
     expect(redoItem).toBeDefined();

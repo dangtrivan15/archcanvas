@@ -58,9 +58,6 @@ export function TopMenubar() {
           <MenubarItem onClick={() => useFileStore.getState().save()}>
             Save <MenubarShortcut>⌘S</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem onClick={() => useFileStore.getState().saveAs()}>
-            Save As... <MenubarShortcut>⇧⌘S</MenubarShortcut>
-          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
