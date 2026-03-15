@@ -110,6 +110,44 @@ function createMockProvider(
 }
 
 // ---------------------------------------------------------------------------
+// Sequential mock provider: supports multiple sendMessage calls with
+// pre-queued event batches (one per call). Used by auto-continue tests.
+// ---------------------------------------------------------------------------
+
+function createSequentialMockProvider(
+  id: string,
+  eventBatches: ChatEvent[][],
+): ChatProvider & {
+  sentMessages: Array<{ content: string; context: ProjectContext }>;
+} {
+  const sentMessages: Array<{ content: string; context: ProjectContext }> = [];
+  let callIndex = 0;
+
+  return {
+    id,
+    displayName: `Sequential ${id}`,
+    available: true,
+    sentMessages,
+
+    sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent> {
+      sentMessages.push({ content, context });
+      const batch = eventBatches[callIndex++] ?? [];
+
+      async function* generator(): AsyncGenerator<ChatEvent> {
+        for (const event of batch) {
+          yield event;
+        }
+      }
+
+      return generator();
+    },
+
+    loadHistory() {},
+    interrupt() {},
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Reset store between tests
 // ---------------------------------------------------------------------------
 
@@ -124,6 +162,7 @@ beforeEach(() => {
     statusMessage: null,
     permissionMode: 'default',
     effort: 'high',
+    _autoContinueCount: 0,
   });
 });
 
@@ -742,6 +781,168 @@ describe('chatStore', () => {
       expect(useChatStore.getState().messages).toHaveLength(0);
       expect(useChatStore.getState().error).toBeNull();
       expect(useChatStore.getState().warning).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // auto-continue on max-turn exhaustion
+  // -----------------------------------------------------------------------
+
+  describe('auto-continue on max-turn error', () => {
+    it('detects max-turn error and auto-sends "Continue"', async () => {
+      const provider = createSequentialMockProvider('p1', [
+        // First call: ends with max-turn error
+        [
+          { type: 'text', requestId: 'r1', content: 'Partial analysis' },
+          { type: 'error', requestId: 'r1', message: 'Reached max turn limit' },
+        ],
+        // Auto-continue call: completes normally
+        [
+          { type: 'text', requestId: 'r2', content: 'Continued result' },
+          { type: 'done', requestId: 'r2' },
+        ],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+      await useChatStore.getState().sendMessage('Analyze this');
+
+      // Provider should have received 2 calls: original + auto-continue
+      expect(provider.sentMessages).toHaveLength(2);
+      expect(provider.sentMessages[0].content).toBe('Analyze this');
+      expect(provider.sentMessages[1].content).toBe('Continue');
+
+      // Messages should include both user messages and both assistant messages
+      const msgs = useChatStore.getState().messages;
+      const userMsgs = msgs.filter(m => m.role === 'user');
+      const assistantMsgs = msgs.filter(m => m.role === 'assistant');
+      expect(userMsgs).toHaveLength(2);
+      expect(userMsgs[0].content).toBe('Analyze this');
+      expect(userMsgs[1].content).toBe('Continue');
+      expect(assistantMsgs).toHaveLength(2);
+    });
+
+    it('resets _autoContinueCount per user-initiated sendMessage', async () => {
+      const provider = createSequentialMockProvider('p1', [
+        // First user message: max-turn error
+        [
+          { type: 'error', requestId: 'r1', message: 'max turn reached' },
+        ],
+        // Auto-continue: done
+        [
+          { type: 'done', requestId: 'r2' },
+        ],
+        // Second user message: max-turn error again
+        [
+          { type: 'error', requestId: 'r3', message: 'max turn reached' },
+        ],
+        // Auto-continue for second message: done
+        [
+          { type: 'done', requestId: 'r4' },
+        ],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+
+      // First user message triggers auto-continue (count goes to 1)
+      await useChatStore.getState().sendMessage('First');
+      expect(provider.sentMessages).toHaveLength(2);
+
+      // Second user message should reset counter and auto-continue again
+      await useChatStore.getState().sendMessage('Second');
+      expect(provider.sentMessages).toHaveLength(4);
+      expect(provider.sentMessages[2].content).toBe('Second');
+      expect(provider.sentMessages[3].content).toBe('Continue');
+
+      // Counter resets each time
+      expect(useChatStore.getState()._autoContinueCount).toBe(1);
+    });
+
+    it('respects 3-retry cap', async () => {
+      const provider = createSequentialMockProvider('p1', [
+        // Original call: max-turn error
+        [{ type: 'error', requestId: 'r1', message: 'max turn limit' }],
+        // Continue 1/3: max-turn error
+        [{ type: 'error', requestId: 'r2', message: 'max turn limit' }],
+        // Continue 2/3: max-turn error
+        [{ type: 'error', requestId: 'r3', message: 'max turn limit' }],
+        // Continue 3/3: max-turn error
+        [{ type: 'error', requestId: 'r4', message: 'max turn limit' }],
+        // Should NOT be called (cap reached)
+        [{ type: 'done', requestId: 'r5' }],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+      await useChatStore.getState().sendMessage('Analyze');
+
+      // Original + 3 auto-continues = 4 total
+      expect(provider.sentMessages).toHaveLength(4);
+      expect(useChatStore.getState()._autoContinueCount).toBe(3);
+      // Error from last failed attempt remains — cap was reached, no more retries
+      expect(useChatStore.getState().error).toBe('max turn limit');
+    });
+
+    it('sets statusMessage during auto-continue', async () => {
+      const statusMessages: (string | null)[] = [];
+      const unsubscribe = useChatStore.subscribe((state) => {
+        if (state.statusMessage && !statusMessages.includes(state.statusMessage)) {
+          statusMessages.push(state.statusMessage);
+        }
+      });
+
+      const provider = createSequentialMockProvider('p1', [
+        [{ type: 'error', requestId: 'r1', message: 'max turn limit' }],
+        [
+          { type: 'text', requestId: 'r2', content: 'Done' },
+          { type: 'done', requestId: 'r2' },
+        ],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+      await useChatStore.getState().sendMessage('Go');
+
+      expect(statusMessages).toContain('Continuing analysis (1/3)...');
+      unsubscribe();
+    });
+
+    it('does not auto-continue non-max-turn errors', async () => {
+      const provider = createSequentialMockProvider('p1', [
+        [
+          { type: 'text', requestId: 'r1', content: 'Partial' },
+          { type: 'error', requestId: 'r1', message: 'Connection lost' },
+        ],
+        // Should NOT be called
+        [{ type: 'done', requestId: 'r2' }],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+      await useChatStore.getState().sendMessage('Hello');
+
+      // Only the original call, no auto-continue
+      expect(provider.sentMessages).toHaveLength(1);
+      expect(useChatStore.getState()._autoContinueCount).toBe(0);
+    });
+
+    it('increments counter correctly across recursive continues', async () => {
+      const provider = createSequentialMockProvider('p1', [
+        [{ type: 'error', requestId: 'r1', message: 'max turn reached' }],
+        [{ type: 'error', requestId: 'r2', message: 'max turn reached' }],
+        [
+          { type: 'text', requestId: 'r3', content: 'Finally done' },
+          { type: 'done', requestId: 'r3' },
+        ],
+      ]);
+
+      useChatStore.getState().registerProvider(provider);
+      await useChatStore.getState().sendMessage('Start');
+
+      // Original + 2 auto-continues = 3 total calls
+      expect(provider.sentMessages).toHaveLength(3);
+      expect(provider.sentMessages[0].content).toBe('Start');
+      expect(provider.sentMessages[1].content).toBe('Continue');
+      expect(provider.sentMessages[2].content).toBe('Continue');
+      expect(useChatStore.getState()._autoContinueCount).toBe(2);
+      expect(useChatStore.getState().isStreaming).toBe(false);
+      expect(useChatStore.getState().error).toBeNull();
     });
   });
 
