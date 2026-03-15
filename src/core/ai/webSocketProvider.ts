@@ -9,8 +9,8 @@ import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
-import type { InlineNode, Node, Edge, Entity } from '@/types/schema';
-import type { NodeDef } from '@/types/nodeDefSchema';
+import type { Node, Edge, Entity } from '@/types/schema';
+import { validateAndBuildNode } from '@/core/validation/addNodeValidation';
 
 // ---------------------------------------------------------------------------
 // Internal message types (bridge <-> browser, not part of public ChatEvent)
@@ -314,72 +314,21 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
    */
   private dispatchAddNode(args: Record<string, unknown>): unknown {
     const canvasId = args.canvasId as string;
-    let type = args.type as string;
-    const id = args.id as string;
-    const name = args.name as string | undefined;
-    const rawArgs = args.args as string | undefined;
 
-    const registry = useRegistryStore.getState();
-    let nodeDef = registry.resolve(type);
-
-    // Dot→slash substitution (e.g., "compute.service" → "compute/service")
-    if (!nodeDef && type.includes('.')) {
-      const slashVariant = type.replaceAll('.', '/');
-      nodeDef = registry.resolve(slashVariant);
-      if (nodeDef) {
-        type = slashVariant;
-      }
+    const result = validateAndBuildNode(
+      {
+        id: args.id as string,
+        type: args.type as string,
+        name: args.name as string | undefined,
+        args: args.args as string | undefined,
+      },
+      useRegistryStore.getState(),
+    );
+    if (!result.ok) {
+      return { ok: false, error: { code: result.code, message: result.message } };
     }
 
-    if (!nodeDef) {
-      const hints: string[] = [
-        `Node type '${type}' is not registered.`,
-        `Node types use the format \`namespace/name\` (e.g., compute/service).`,
-      ];
-
-      // Fuzzy search for suggestions
-      const words = type.split(/[/.]/);
-      const candidates = new Map<string, NodeDef>();
-      for (const word of words) {
-        if (word.length === 0) continue;
-        for (const def of registry.search(word)) {
-          const key = `${def.metadata.namespace}/${def.metadata.name}`;
-          candidates.set(key, def);
-        }
-      }
-      if (words.length >= 1 && words[0].length > 0) {
-        for (const def of registry.listByNamespace(words[0])) {
-          const key = `${def.metadata.namespace}/${def.metadata.name}`;
-          candidates.set(key, def);
-        }
-      }
-      const similar = Array.from(candidates.values()).slice(0, 3);
-      if (similar.length > 0) {
-        hints.push(`Similar types: ${similar.map((d) => `${d.metadata.namespace}/${d.metadata.name}`).join(', ')}`);
-      }
-      if (type.includes('.')) {
-        hints.push(`Did you mean '${type.replaceAll('.', '/')}'?`);
-      }
-      hints.push(`Run \`archcanvas catalog --json\` to see all available types.`);
-
-      return { ok: false, error: { code: 'UNKNOWN_NODE_TYPE', message: hints.join(' ') } };
-    }
-
-    // Resolve displayName from NodeDef if name not provided
-    const displayName = name ?? nodeDef.metadata.displayName;
-
-    // Parse --args JSON if provided as string
-    let parsedArgs: Record<string, string | number | boolean | string[]> | undefined;
-    if (rawArgs) {
-      try {
-        parsedArgs = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : rawArgs as Record<string, string | number | boolean | string[]>;
-      } catch {
-        return { ok: false, error: { code: 'INVALID_ARGS', message: `Invalid JSON for args: ${rawArgs}` } };
-      }
-    }
-
-    const node: InlineNode = { id, type, displayName, args: parsedArgs };
-    return useGraphStore.getState().addNode(canvasId, node);
+    return useGraphStore.getState().addNode(canvasId, result.node);
   }
 
   /** Import pre-parsed nodes/edges/entities into a canvas. */
