@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
 import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
@@ -125,7 +125,25 @@ export function Canvas() {
   // -------------------------------------------------------------------------
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
+  // Ref-based flag so the pane click guard can read the current open state
+  // without a stale closure (state reads in useCallback would go stale).
+  const contextMenuOpenRef = useRef(false);
+  useEffect(() => {
+    contextMenuOpenRef.current = contextMenu !== null;
+  }, [contextMenu]);
+
   const closeMenu = useCallback(() => setContextMenu(null), []);
+
+  // Guard against ReactFlow's onPaneClick firing through an open context menu
+  // overlay and inadvertently clearing the selection. When the menu is open,
+  // consume the click by closing the menu instead of passing it to the canvas.
+  const onPaneClickGuarded = useCallback(() => {
+    if (contextMenuOpenRef.current) {
+      setContextMenu(null);
+      return;
+    }
+    onPaneClick();
+  }, [onPaneClick]);
 
   const onPaneContextMenu = useCallback((e: React.MouseEvent | MouseEvent) => {
     e.preventDefault();
@@ -215,7 +233,7 @@ export function Canvas() {
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
-        onPaneClick={onPaneClick}
+        onPaneClick={onPaneClickGuarded}
         onPaneContextMenu={onPaneContextMenu}
         onNodeContextMenu={onNodeContextMenu}
         onEdgeContextMenu={onEdgeContextMenu}
