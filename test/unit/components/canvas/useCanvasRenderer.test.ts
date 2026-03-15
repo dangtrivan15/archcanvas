@@ -3,12 +3,12 @@ import { renderHook } from '@testing-library/react';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { useCanvasRenderer } from '@/components/canvas/hooks/useCanvasRenderer';
 
 function yamlOf(data: Record<string, unknown>): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile(data as any);
+  return serializeCanvas(data as any);
 }
 
 async function seedAndOpen(

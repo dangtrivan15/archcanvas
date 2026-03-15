@@ -3,8 +3,8 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
-import type { CanvasFile } from '@/types/schema';
+import { serializeCanvas } from '@/storage/yamlCodec';
+import type { Canvas } from '@/types/schema';
 
 // Mock createFileSystem to return our InMemoryFileSystem
 let mockFs: InMemoryFileSystem;
@@ -25,7 +25,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 function yamlOf(data: Record<string, unknown>): string {
-  return serializeCanvasFile(data as CanvasFile);
+  return serializeCanvas(data as Canvas);
 }
 
 function resetStores(): void {

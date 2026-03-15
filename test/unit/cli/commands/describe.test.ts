@@ -3,11 +3,11 @@ import { enablePatches } from 'immer';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { describeCommand } from '@/cli/commands/describe';
 import { CLIError } from '@/cli/errors';
-import type { CanvasFile } from '@/types/schema';
+import type { Canvas } from '@/types/schema';
 
 vi.mock('@/cli/context', async () => {
   const actual = await vi.importActual('@/cli/context');
@@ -19,7 +19,7 @@ vi.mock('@/cli/context', async () => {
 
 enablePatches();
 
-const seedData: CanvasFile = {
+const seedData: Canvas = {
   project: { name: 'DescribeTest' },
   nodes: [
     {
@@ -41,7 +41,7 @@ const seedData: CanvasFile = {
   ],
 };
 
-const childCanvasData: CanvasFile = {
+const childCanvasData: Canvas = {
   id: 'child-canvas',
   type: 'compute/service',
   displayName: 'Child Service',
@@ -53,11 +53,11 @@ const childCanvasData: CanvasFile = {
 };
 
 function makeMainYaml(): string {
-  return serializeCanvasFile(seedData);
+  return serializeCanvas(seedData);
 }
 
 function makeChildYaml(): string {
-  return serializeCanvasFile(childCanvasData);
+  return serializeCanvas(childCanvasData);
 }
 
 async function setupStores(): Promise<void> {

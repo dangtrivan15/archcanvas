@@ -4,11 +4,11 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useGraphStore } from '@/store/graphStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import { importCommand } from '@/cli/commands/import';
 import { CLIError } from '@/cli/errors';
-import type { CanvasFile } from '@/types/schema';
+import type { Canvas } from '@/types/schema';
 
 // Mock node:fs/promises readFile
 const mockReadFile = vi.fn<(path: string, encoding: string) => Promise<string>>();
@@ -39,7 +39,7 @@ vi.mock('@/cli/context', async () => {
 
 enablePatches();
 
-const seedData: CanvasFile = {
+const seedData: Canvas = {
   project: { name: 'ImportTest' },
   nodes: [],
   edges: [],
@@ -47,7 +47,7 @@ const seedData: CanvasFile = {
 };
 
 function makeMainYaml(): string {
-  return serializeCanvasFile(seedData);
+  return serializeCanvas(seedData);
 }
 
 async function setupStores(): Promise<void> {

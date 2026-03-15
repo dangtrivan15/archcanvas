@@ -7,9 +7,9 @@ import {
   Entity,
   Edge,
   Node,
-  CanvasFile,
-  RootCanvasFile,
-  SubsystemCanvasFile,
+  Canvas,
+  RootCanvas,
+  SubsystemCanvas,
 } from '@/types';
 
 describe('PropertyValue', () => {
@@ -169,9 +169,9 @@ describe('Node union', () => {
   });
 });
 
-describe('CanvasFile', () => {
+describe('Canvas', () => {
   it('accepts empty canvas', () => {
-    expect(CanvasFile.parse({})).toEqual({});
+    expect(Canvas.parse({})).toEqual({});
   });
   it('accepts root canvas with project metadata', () => {
     const canvas = {
@@ -184,7 +184,7 @@ describe('CanvasFile', () => {
         { from: { node: 'svc-api' }, to: { node: 'db' } },
       ],
     };
-    expect(CanvasFile.parse(canvas)).toEqual(canvas);
+    expect(Canvas.parse(canvas)).toEqual(canvas);
   });
   it('accepts subsystem canvas with identity', () => {
     const canvas = {
@@ -198,29 +198,29 @@ describe('CanvasFile', () => {
         { id: 'handler', type: 'compute/function', displayName: 'Handler' },
       ],
     };
-    expect(CanvasFile.parse(canvas)).toEqual(canvas);
+    expect(Canvas.parse(canvas)).toEqual(canvas);
   });
 });
 
-describe('RootCanvasFile', () => {
+describe('RootCanvas', () => {
   it('accepts canvas with project metadata', () => {
     const canvas = { project: { name: 'Test' } };
-    expect(RootCanvasFile.parse(canvas)).toEqual(canvas);
+    expect(RootCanvas.parse(canvas)).toEqual(canvas);
   });
   it('rejects canvas without project metadata', () => {
-    expect(() => RootCanvasFile.parse({})).toThrow(/project/i);
+    expect(() => RootCanvas.parse({})).toThrow(/project/i);
   });
 });
 
-describe('SubsystemCanvasFile', () => {
+describe('SubsystemCanvas', () => {
   it('accepts canvas with id and type', () => {
     const canvas = { id: 'svc-api', type: 'compute/service' };
-    expect(SubsystemCanvasFile.parse(canvas)).toEqual(canvas);
+    expect(SubsystemCanvas.parse(canvas)).toEqual(canvas);
   });
   it('rejects canvas without id', () => {
-    expect(() => SubsystemCanvasFile.parse({ type: 'compute/service' })).toThrow();
+    expect(() => SubsystemCanvas.parse({ type: 'compute/service' })).toThrow();
   });
   it('rejects canvas without type', () => {
-    expect(() => SubsystemCanvasFile.parse({ id: 'svc-api' })).toThrow();
+    expect(() => SubsystemCanvas.parse({ id: 'svc-api' })).toThrow();
   });
 });

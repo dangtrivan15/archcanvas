@@ -1,15 +1,15 @@
-import type { CanvasFile, Node, Edge, Entity } from '@/types';
+import type { Canvas, Node, Edge, Entity } from '@/types';
 import type { LoadedCanvas } from '@/storage/fileResolver';
 import type { SearchResult } from './types';
 
 // --- Single-Canvas Queries ---
 
-export function findNode(canvas: CanvasFile, nodeId: string): Node | undefined {
+export function findNode(canvas: Canvas, nodeId: string): Node | undefined {
   return (canvas.nodes ?? []).find((n) => n.id === nodeId);
 }
 
 export function findEdge(
-  canvas: CanvasFile,
+  canvas: Canvas,
   fromNode: string,
   toNode: string,
 ): Edge | undefined {
@@ -18,15 +18,15 @@ export function findEdge(
   );
 }
 
-export function listNodes(canvas: CanvasFile): Node[] {
+export function listNodes(canvas: Canvas): Node[] {
   return canvas.nodes ?? [];
 }
 
-export function listEdges(canvas: CanvasFile): Edge[] {
+export function listEdges(canvas: Canvas): Edge[] {
   return canvas.edges ?? [];
 }
 
-export function listEntities(canvas: CanvasFile): Entity[] {
+export function listEntities(canvas: Canvas): Entity[] {
   return canvas.entities ?? [];
 }
 

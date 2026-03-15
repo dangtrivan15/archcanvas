@@ -4,9 +4,9 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useGraphStore } from '@/store/graphStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
-import type { CanvasFile } from '@/types/schema';
+import type { Canvas } from '@/types/schema';
 
 enablePatches();
 
@@ -29,7 +29,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
 });
 
 function yamlOf(data: Record<string, unknown>): string {
-  return serializeCanvasFile(data as CanvasFile);
+  return serializeCanvas(data as Canvas);
 }
 
 function resetStores(): void {

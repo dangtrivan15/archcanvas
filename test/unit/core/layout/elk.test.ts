@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeLayout } from '@/core/layout/elk';
-import type { CanvasFile } from '@/types';
+import type { Canvas } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -9,7 +9,7 @@ import type { CanvasFile } from '@/types';
 function makeCanvas(
   nodeIds: string[],
   edges: Array<{ from: string; to: string }> = [],
-): CanvasFile {
+): Canvas {
   return {
     nodes: nodeIds.map((id) => ({ id, type: 'service' })),
     edges: edges.map((e) => ({ from: { node: e.from }, to: { node: e.to } })),

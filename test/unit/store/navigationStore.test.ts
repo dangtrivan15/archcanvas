@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useFileStore } from '@/store/fileStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 function yamlOf(data: Record<string, unknown>): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile(data as any);
+  return serializeCanvas(data as any);
 }
 
 async function seedMultiCanvas(): Promise<void> {

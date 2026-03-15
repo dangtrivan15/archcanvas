@@ -1,5 +1,5 @@
 import type {
-  CanvasFile,
+  Canvas,
   InlineNode,
   RefNode,
   Edge,
@@ -8,7 +8,7 @@ import type {
 import type { NodeDef } from '@/types/nodeDefSchema';
 import type { NodeDefRegistry } from '@/core/registry/core';
 
-export function makeCanvas(overrides?: Partial<CanvasFile>): CanvasFile {
+export function makeCanvas(overrides?: Partial<Canvas>): Canvas {
   return {
     nodes: [],
     edges: [],

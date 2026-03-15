@@ -1,5 +1,5 @@
 import ELK from 'elkjs/lib/elk.bundled.js';
-import type { CanvasFile, Position } from '@/types';
+import type { Canvas, Position } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,13 +25,13 @@ const DEFAULT_NODE_HEIGHT = 100;
 // ---------------------------------------------------------------------------
 
 /**
- * Runs the ELK layered layout algorithm on a CanvasFile and returns computed
+ * Runs the ELK layered layout algorithm on a Canvas and returns computed
  * node positions as a Map<nodeId, Position>.
  *
  * Pure function — no side effects, no React dependency.
  */
 export async function computeLayout(
-  canvas: CanvasFile,
+  canvas: Canvas,
   options?: LayoutOptions,
 ): Promise<LayoutResult> {
   const nodes = canvas.nodes ?? [];

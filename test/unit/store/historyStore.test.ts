@@ -5,14 +5,14 @@ import { useRegistryStore } from '@/store/registryStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import { serializeCanvasFile } from '@/storage/yamlCodec';
+import { serializeCanvas } from '@/storage/yamlCodec';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 enablePatches();
 
 function makeMainYaml() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return serializeCanvasFile({
+  return serializeCanvas({
     project: { name: 'HistoryTest' },
     nodes: [{ id: 'node-a', type: 'compute/service', displayName: 'Node A' }],
   } as any);
