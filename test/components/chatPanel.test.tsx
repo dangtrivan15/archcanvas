@@ -96,6 +96,10 @@ beforeEach(() => {
     permissionMode: 'default',
     effort: 'high',
   });
+
+  // Reset fileStore mock to defaults
+  mockFileStoreState.projectPath = '/mock/project/path';
+  mockFileStoreState.setProjectPath.mockClear();
 });
 
 // ===========================================================================
@@ -244,6 +248,130 @@ describe('ChatPanel', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     window.removeEventListener('archcanvas:toggle-chat', handler);
+  });
+});
+
+// ===========================================================================
+// ChatPanel — Path Input Bar
+// ===========================================================================
+
+describe('ChatPanel — Path Input Bar', () => {
+  it('renders path-input-bar when projectPath is null and provider is available', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByTestId('path-input-bar')).toBeInTheDocument();
+    expect(screen.getByLabelText('Project path')).toBeInTheDocument();
+    expect(screen.getByText('Set')).toBeInTheDocument();
+  });
+
+  it('disables message input when path-input-bar is showing', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Chat input')).toBeDisabled();
+  });
+
+  it('does not render path-input-bar when projectPath is set', () => {
+    // mockFileStoreState.projectPath is '/mock/project/path' by default
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.queryByTestId('path-input-bar')).not.toBeInTheDocument();
+  });
+
+  it('does not render path-input-bar when no provider is available', () => {
+    mockFileStoreState.projectPath = null;
+    // No active provider
+
+    render(<ChatPanel />);
+    expect(screen.queryByTestId('path-input-bar')).not.toBeInTheDocument();
+  });
+
+  it('calls setProjectPath when user types a path and clicks Set', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+
+    const pathInput = screen.getByLabelText('Project path');
+    fireEvent.change(pathInput, { target: { value: '/home/user/my-project' } });
+    fireEvent.click(screen.getByText('Set'));
+
+    expect(mockFileStoreState.setProjectPath).toHaveBeenCalledWith('/home/user/my-project');
+  });
+
+  it('calls setProjectPath on Enter key in path input', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+
+    const pathInput = screen.getByLabelText('Project path');
+    fireEvent.change(pathInput, { target: { value: '/home/user/my-project' } });
+    fireEvent.keyDown(pathInput, { key: 'Enter' });
+
+    expect(mockFileStoreState.setProjectPath).toHaveBeenCalledWith('/home/user/my-project');
+  });
+
+  it('does not call setProjectPath when path input is empty', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+
+    // Set button should be disabled with empty input
+    const setBtn = screen.getByText('Set');
+    expect(setBtn).toBeDisabled();
+
+    // Click it anyway
+    fireEvent.click(setBtn);
+    expect(mockFileStoreState.setProjectPath).not.toHaveBeenCalled();
+  });
+
+  it('hides path-input-bar after projectPath is set', () => {
+    mockFileStoreState.projectPath = null;
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    const { rerender } = render(<ChatPanel />);
+    expect(screen.getByTestId('path-input-bar')).toBeInTheDocument();
+
+    // Simulate projectPath being set (the mock selector re-reads from mockFileStoreState)
+    mockFileStoreState.projectPath = '/home/user/my-project';
+    rerender(<ChatPanel />);
+
+    expect(screen.queryByTestId('path-input-bar')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Chat input')).not.toBeDisabled();
   });
 });
 
