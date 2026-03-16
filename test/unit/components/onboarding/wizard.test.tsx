@@ -204,14 +204,24 @@ describe('AiSurveyStep', () => {
     expect(screen.queryByTestId('ai-unavailable-banner')).not.toBeInTheDocument();
   });
 
-  it('pre-fills project path input from fs.getPath() when fs is available', () => {
+  it('pre-fills project path from fs.getPath() and hides the input', () => {
     setAiAvailable(true);
     setMockFs({ getPath: () => '/home/user/real-project' });
 
-    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
+    const onStart = vi.fn();
+    render(<AiSurveyStep onBack={vi.fn()} onStart={onStart} />);
 
-    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app') as HTMLInputElement;
-    expect(pathInput.value).toBe('/home/user/real-project');
+    // When fs provides a path, the manual input is hidden (auto-detected)
+    expect(screen.queryByPlaceholderText('/Users/you/projects/my-app')).toBeNull();
+
+    // Fill required description so Start is enabled, then verify the path flows through
+    const desc = screen.getByPlaceholderText('Describe what this project does...');
+    fireEvent.change(desc, { target: { value: 'Test project' } });
+    fireEvent.click(screen.getByText('Start'));
+
+    expect(onStart).toHaveBeenCalledWith(
+      expect.objectContaining({ projectPath: '/home/user/real-project' }),
+    );
 
     // Reset fs mock for other tests
     setMockFs(null);
