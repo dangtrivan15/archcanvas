@@ -128,10 +128,10 @@ describe('Edge', () => {
     };
     expect(Edge.parse(edge)).toEqual(edge);
   });
-  it('accepts @root/ reference in endpoint', () => {
+  it('accepts @<ref-node-id>/ cross-scope reference in endpoint', () => {
     const edge = {
       from: { node: 'handler', port: 'out' },
-      to: { node: '@root/db-postgres', port: 'query-in' },
+      to: { node: '@order-service/db-postgres', port: 'query-in' },
     };
     expect(Edge.parse(edge)).toEqual(edge);
   });
