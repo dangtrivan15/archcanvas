@@ -25,6 +25,7 @@ import {
   type OnPermissionRequest,
   type OnAskUserQuestion,
 } from './claudeCodeBridge';
+import { createArchCanvasMcpServer, MCP_TOOL_NAMES } from './mcpTools';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -219,6 +220,8 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
       onPermissionRequest,
       onAskUserQuestion,
       ...(options.queryFn ? { queryFn: options.queryFn } : {}),
+      mcpServers: { archcanvas: mcpServer },
+      allowedTools: MCP_TOOL_NAMES,
     });
     sessions.set(ws, session);
 
@@ -401,6 +404,9 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
       });
     });
   }
+
+  // --- Create in-process MCP server with tools bound to relayStoreAction ---
+  const mcpServer = createArchCanvasMcpServer(relayStoreAction);
 
   return {
     /** Start the standalone HTTP + WebSocket server. */

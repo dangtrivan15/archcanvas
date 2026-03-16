@@ -143,6 +143,10 @@ export interface BridgeSessionOptions {
   onPermissionRequest?: OnPermissionRequest;
   /** Called when Claude calls AskUserQuestion and needs user input. */
   onAskUserQuestion?: OnAskUserQuestion;
+  /** MCP servers to make available to the SDK (e.g., ArchCanvas tools). */
+  mcpServers?: Record<string, any>;
+  /** Tool names to auto-approve (skip canUseTool). Used for MCP tools. */
+  allowedTools?: string[];
 }
 
 export function createBridgeSession(options: BridgeSessionOptions): BridgeSession {
@@ -355,20 +359,13 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         const sdkQuery = fn({
           prompt: content,
           options: {
-            // We use a custom system prompt (not the SDK's preset) because the
-            // preset would override our ArchCanvas-specific context (CLI commands,
-            // project info).  Future: consider `{ type: 'preset', preset:
-            // 'claude_code', append: buildSystemPrompt(context) }` to get the
-            // full Claude Code prompt + our additions.
             systemPrompt,
             cwd: resolvedCwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
-            // `tools` controls which tools are *available* to the model.
-            // `allowedTools` would auto-approve them (skipping canUseTool),
-            // which is NOT what we want — we need canUseTool to gate every
-            // tool invocation so the user can approve/deny in the UI.
             tools: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
+            ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
+            ...(options.allowedTools ? { allowedTools: options.allowedTools } : {}),
             permissionMode,
             effort,
             maxTurns: 50,
