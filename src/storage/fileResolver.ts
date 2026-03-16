@@ -61,9 +61,10 @@ async function resolveRefs(
     if (!('ref' in node) || !node.ref) continue;
 
     const ref = node.ref;
+    const filePath = `.archcanvas/${ref}`;
 
-    // True cycle: this ref is an ancestor in the current DFS path
-    if (ancestors.has(node.id)) {
+    // True cycle: this file is an ancestor in the current DFS path
+    if (ancestors.has(filePath)) {
       errors.push({
         file: canvas.filePath,
         message: `Circular reference detected: ${ref}`,
@@ -72,13 +73,12 @@ async function resolveRefs(
     }
 
     // Diamond: already loaded via a different path — skip, no error
-    if (loaded.has(node.id)) continue;
+    if (loaded.has(filePath)) continue;
 
     // Mark as loaded before attempting read — if the file is missing or invalid,
     // only the first reference reports an error; subsequent references skip silently.
-    loaded.add(node.id);
-    ancestors.add(node.id);
-    const filePath = `.archcanvas/${ref}`;
+    loaded.add(filePath);
+    ancestors.add(filePath);
 
     try {
       const content = await fs.readFile(filePath);
@@ -98,7 +98,7 @@ async function resolveRefs(
       });
     }
 
-    ancestors.delete(node.id); // backtrack
+    ancestors.delete(filePath); // backtrack
   }
 }
 

@@ -18,11 +18,14 @@ function makeProject(canvases: Record<string, { entities?: any[]; edges?: any[];
     };
     if (id === ROOT_CANVAS_KEY) {
       root = canvas;
-    } else {
-      map.set(id, canvas);
     }
+    // All canvases go in the map (loadProject puts root under ROOT_CANVAS_KEY too)
+    map.set(id, canvas);
   }
-  if (!root) root = { filePath: '.archcanvas/main.yaml', data: { nodes: [], edges: [], entities: [], displayName: 'Root' } };
+  if (!root) {
+    root = { filePath: '.archcanvas/main.yaml', data: { nodes: [], edges: [], entities: [], displayName: 'Root' } };
+    map.set(ROOT_CANVAS_KEY, root);
+  }
   return { root, canvases: map, errors: [] };
 }
 
