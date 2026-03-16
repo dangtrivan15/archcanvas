@@ -60,10 +60,19 @@
   color: #6b7280;
 }
 
-/* Ghost marker for @root/ cross-scope endpoints */
-.ghost-marker {
-  fill: #e5e7eb;
-  stroke: #9ca3af;
-  stroke-width: 1px;
-  stroke-dasharray: 3, 3;
+/* Inherited edges from parent scope */
+.edge-inherited {
+  stroke-dasharray: 6, 4;
+  opacity: 0.6;
+}
+
+/* Ghost node for inherited edge endpoints */
+.ghost-node {
+  border: 2px dashed var(--color-border-muted, #6b7280);
+  background: var(--color-bg-muted, #f3f4f6);
+  opacity: 0.5;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
 }

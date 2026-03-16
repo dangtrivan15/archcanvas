@@ -42,6 +42,8 @@ describe('navigationStore', () => {
     useNavigationStore.setState({
       currentCanvasId: ROOT_CANVAS_KEY,
       breadcrumb: [{ canvasId: ROOT_CANVAS_KEY, displayName: 'Root' }],
+      parentCanvasId: null,
+      parentEdges: [],
     });
   });
 
@@ -221,6 +223,118 @@ describe('navigationStore', () => {
       useNavigationStore.getState().goToBreadcrumb(-1);
 
       expect(useNavigationStore.getState().currentCanvasId).toBe('svc-api');
+    });
+  });
+
+  describe('parent context', () => {
+    it('diveIn stores parentCanvasId and parentEdges', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        '.archcanvas/main.yaml': yamlOf({
+          project: { name: 'Test' },
+          nodes: [
+            { id: 'svc-api', ref: 'svc-api.yaml' },
+            { id: 'db', type: 'data/database' },
+          ],
+          edges: [
+            { from: { node: '@svc-api/handler' }, to: { node: 'db' }, label: 'persist' },
+          ],
+        }),
+        '.archcanvas/svc-api.yaml': yamlOf({
+          id: 'svc-api',
+          type: 'compute/service',
+          displayName: 'API Service',
+          nodes: [{ id: 'handler', type: 'compute/function' }],
+        }),
+      });
+      await useFileStore.getState().openProject(fs);
+
+      useNavigationStore.getState().diveIn('svc-api');
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBe(ROOT_CANVAS_KEY);
+      expect(state.parentEdges).toHaveLength(1);
+      expect(state.parentEdges[0].label).toBe('persist');
+    });
+
+    it('goUp clears parentCanvasId and parentEdges', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        '.archcanvas/main.yaml': yamlOf({
+          project: { name: 'Test' },
+          nodes: [
+            { id: 'svc-api', ref: 'svc-api.yaml' },
+            { id: 'db', type: 'data/database' },
+          ],
+          edges: [
+            { from: { node: '@svc-api/handler' }, to: { node: 'db' } },
+          ],
+        }),
+        '.archcanvas/svc-api.yaml': yamlOf({
+          id: 'svc-api',
+          type: 'compute/service',
+          nodes: [{ id: 'handler', type: 'compute/function' }],
+        }),
+      });
+      await useFileStore.getState().openProject(fs);
+
+      useNavigationStore.getState().diveIn('svc-api');
+      expect(useNavigationStore.getState().parentEdges).toHaveLength(1);
+
+      useNavigationStore.getState().goUp();
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBeNull();
+      expect(state.parentEdges).toHaveLength(0);
+    });
+
+    it('goToRoot clears parentCanvasId and parentEdges', async () => {
+      await seedMultiCanvas();
+
+      useNavigationStore.getState().diveIn('svc-api');
+      useNavigationStore.getState().goToRoot();
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBeNull();
+      expect(state.parentEdges).toHaveLength(0);
+    });
+
+    it('goToBreadcrumb clears parentCanvasId and parentEdges', async () => {
+      await seedMultiCanvas();
+
+      useNavigationStore.getState().diveIn('svc-api');
+      useNavigationStore.getState().goToBreadcrumb(0);
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBeNull();
+      expect(state.parentEdges).toHaveLength(0);
+    });
+
+    it('navigateTo clears parentCanvasId and parentEdges', async () => {
+      await seedMultiCanvas();
+
+      useNavigationStore.getState().diveIn('svc-api');
+      useNavigationStore.getState().navigateTo(ROOT_CANVAS_KEY);
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBeNull();
+      expect(state.parentEdges).toHaveLength(0);
+    });
+
+    it('initial state has null parentCanvasId and empty parentEdges', () => {
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBeNull();
+      expect(state.parentEdges).toHaveLength(0);
+    });
+
+    it('diveIn stores empty parentEdges when parent has no edges', async () => {
+      await seedMultiCanvas(); // seedMultiCanvas has no edges
+
+      useNavigationStore.getState().diveIn('svc-api');
+
+      const state = useNavigationStore.getState();
+      expect(state.parentCanvasId).toBe(ROOT_CANVAS_KEY);
+      expect(state.parentEdges).toHaveLength(0);
     });
   });
 
