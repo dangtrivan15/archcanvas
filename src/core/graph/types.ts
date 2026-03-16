@@ -20,7 +20,8 @@ export type EngineError =
   | { code: 'INVALID_REF_NODE_UPDATE' }
   | { code: 'CANVAS_NOT_FOUND'; canvasId: string }
   | { code: 'INVALID_CROSS_SCOPE_REF'; message: string }
-  | { code: 'CROSS_SCOPE_REF_NOT_FOUND'; message: string };
+  | { code: 'CROSS_SCOPE_REF_NOT_FOUND'; message: string }
+  | { code: 'PROTOCOL_MISMATCH'; message: string };
 
 // --- Warning Codes (soft — operation succeeds) ---
 
