@@ -2,6 +2,28 @@
 
 > **Purpose**: Internal positioning analysis. Why ArchCanvas exists alongside Mermaid, where they overlap, and why they serve fundamentally different needs.
 
+## The Direction of Flow
+
+This is the fundamental difference. Every other distinction (format, features, audience) follows from it.
+
+**Mermaid flows backward**: code exists first → someone writes a diagram to document it. The diagram trails reality. When the code changes and nobody updates the Mermaid file, the diagram rots. This is the default state of every documentation-first tool.
+
+```
+Code (source of truth) → Mermaid diagram (documentation) → Reader
+```
+
+**ArchCanvas flows forward**: the architecture comes first as the design artifact → AI implements code from it. The diagram _leads_ reality. It doesn't rot because it's not documenting something else — it _is_ the thing.
+
+```
+ArchCanvas diagram (source of truth) → AI → Code (implementation)
+```
+
+Most diagramming tools — Mermaid, Lucidchart, draw.io, even Structurizr — assume the diagram is **output**. A downstream artifact that describes something that already exists. ArchCanvas assumes the diagram is **input**. The upstream artifact that drives what gets built.
+
+This isn't just a feature difference. It's a product thesis: in the AI era, the bottleneck isn't writing code — it's designing the right system. The person who designs the architecture should be able to express it visually and hand it to AI for implementation. That requires the diagram to carry enough semantic richness that AI can act on it — not just render a picture, but understand types, protocols, data flow, and code targets.
+
+That requirement is what makes Mermaid's format insufficient and ArchCanvas's format necessary.
+
 ## Overview
 
 Mermaid is a text-based diagramming tool where you write a custom DSL and it renders static SVGs. It's embedded everywhere — GitHub, Notion, Confluence, VS Code, Obsidian. For putting a quick diagram in a README, it's excellent.
@@ -142,6 +164,7 @@ The v2 roadmap includes **export to Mermaid** as a feature — design in ArchCan
 
 | Dimension | Mermaid | ArchCanvas |
 |-----------|---------|------------|
+| **Direction of flow** | Code → diagram (documentation) | Diagram → code (design drives implementation) |
 | **What it is** | Rendering format | Design environment |
 | **Paradigm** | Text → static image | Interactive canvas → structured YAML |
 | **Data model** | Labels and arrows | Typed nodes, ports, protocols, entities, code refs |
