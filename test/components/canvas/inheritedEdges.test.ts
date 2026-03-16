@@ -31,13 +31,12 @@ describe('extractInheritedEdges', () => {
     expect(result[0].direction).toBe('inbound');
   });
 
-  it('handles both endpoints being local', () => {
+  it('skips both-endpoints-local (intra-subsystem edge belongs to child canvas)', () => {
     const parentEdges = [
       { from: { node: '@svc-api/a' }, to: { node: '@svc-api/b' } },
     ];
     const result = extractInheritedEdges(parentEdges as any, 'svc-api');
-    expect(result).toHaveLength(1);
-    expect(result[0].localEndpoint).toBe('a');
+    expect(result).toHaveLength(0);
   });
 
   it('ignores edges for different ref-node', () => {

@@ -1,6 +1,5 @@
 import type { ResolvedProject, LoadedCanvas } from '../../storage/fileResolver';
 import type { Edge, Entity } from '../../types/schema';
-import { ROOT_CANVAS_KEY } from '../../storage/fileResolver';
 
 export interface EntityUsage {
   canvasId: string;
@@ -15,8 +14,8 @@ export interface EntitySummary {
   referencedIn: string[];
 }
 
+// project.canvases includes root under ROOT_CANVAS_KEY, so no special case needed
 function getCanvasById(project: ResolvedProject, canvasId: string): LoadedCanvas | undefined {
-  if (canvasId === ROOT_CANVAS_KEY) return project.root;
   return project.canvases.get(canvasId);
 }
 

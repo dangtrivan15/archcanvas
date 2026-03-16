@@ -93,6 +93,7 @@ export function useCanvasRenderer(): {
           },
           selectable: false,
           draggable: false,
+          connectable: false,
         };
         ghostNodeMap.set(ghostId, ghostNode);
       }
