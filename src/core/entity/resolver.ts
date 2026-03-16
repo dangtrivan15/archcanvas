@@ -25,8 +25,8 @@ export function getEntitiesForCanvas(project: ResolvedProject, canvasId: string)
   return (canvas?.data.entities ?? []) as Entity[];
 }
 
+// project.canvases already includes root under ROOT_CANVAS_KEY (set by loadProject)
 function* allCanvases(project: ResolvedProject): Iterable<[string, LoadedCanvas]> {
-  yield [ROOT_CANVAS_KEY, project.root];
   for (const [id, canvas] of project.canvases) {
     yield [id, canvas];
   }
