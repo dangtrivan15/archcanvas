@@ -9,6 +9,7 @@ import type { InlineNode } from '@/types';
 import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { ChatPanel } from '@/components/panels/ChatPanel';
+import { EntityPanel } from '@/components/panels/EntityPanel';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
   return 'type' in node && node.ref === undefined;
@@ -24,6 +25,10 @@ export function RightPanel() {
 
   if (rightPanelMode === 'chat') {
     return <ChatPanel />;
+  }
+
+  if (rightPanelMode === 'entities') {
+    return <EntityPanel />;
   }
 
   const allNodes = canvas?.data.nodes ?? [];
