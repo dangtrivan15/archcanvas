@@ -221,7 +221,7 @@ export function Canvas() {
 
   const handleNodeDelete = useCallback((nodeId: string) => {
     useCanvasStore.getState().selectNodes([nodeId]);
-    useCanvasStore.getState().deleteSelection();
+    useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId);
   }, []);
 
   const handleRefNodeDiveIn = useCallback((nodeId: string) => {

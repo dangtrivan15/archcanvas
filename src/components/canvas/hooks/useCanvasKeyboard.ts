@@ -44,7 +44,7 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
       // Delete selection — Delete or Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        useCanvasStore.getState().deleteSelection();
+        useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId);
         return;
       }
 
@@ -74,8 +74,9 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         return;
       }
 
-      // Escape — clear selection, or go up if nothing selected
+      // Escape — clear highlights, clear selection, or go up if nothing selected
       if (e.key === 'Escape') {
+        useCanvasStore.getState().clearHighlight();
         const { selectedNodeIds, selectedEdgeKeys } = useCanvasStore.getState();
         if (selectedNodeIds.size > 0 || selectedEdgeKeys.size > 0) {
           useCanvasStore.getState().clearSelection();

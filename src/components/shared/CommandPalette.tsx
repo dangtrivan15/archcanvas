@@ -142,7 +142,7 @@ const editActions: ActionDef[] = [
     }
   }},
   { id: 'action:clear-selection', title: 'Clear Selection', subtitle: 'Esc', icon: '⊘', category: 'Edit', execute: () => useCanvasStore.getState().clearSelection() },
-  { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection() },
+  { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId) },
 ];
 
 const viewActions: ActionDef[] = [

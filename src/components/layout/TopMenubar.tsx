@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/menubar";
 import { useHistoryStore } from "@/store/historyStore";
 import { useCanvasStore } from "@/store/canvasStore";
+import { useNavigationStore } from "@/store/navigationStore";
 import { useFileStore } from "@/store/fileStore";
 import { useUiStore } from "@/store/uiStore";
 
@@ -74,7 +75,7 @@ export function TopMenubar() {
             Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onClick={() => useCanvasStore.getState().deleteSelection()}>
+          <MenubarItem onClick={() => useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId)}>
             Delete <MenubarShortcut>⌫</MenubarShortcut>
           </MenubarItem>
         </MenubarContent>
