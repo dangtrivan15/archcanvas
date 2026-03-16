@@ -16,7 +16,7 @@ async function seedMultiCanvas(): Promise<void> {
     '.archcanvas/main.yaml': yamlOf({
       project: { name: 'Test' },
       nodes: [
-        { id: 'svc-api', ref: 'svc-api' },
+        { id: 'svc-api', ref: 'svc-api.yaml' },
         { id: 'db', type: 'data/database' },
       ],
     }),
@@ -104,7 +104,7 @@ describe('navigationStore', () => {
           project: { name: 'Test' },
           nodes: [
             // ref points to a file that doesn't exist
-            { id: 'ghost', ref: 'missing-canvas' },
+            { id: 'ghost', ref: 'missing-canvas.yaml' },
           ],
         }),
       });
@@ -121,7 +121,7 @@ describe('navigationStore', () => {
       fs.seed({
         '.archcanvas/main.yaml': yamlOf({
           project: { name: 'Test' },
-          nodes: [{ id: 'worker', ref: 'worker' }],
+          nodes: [{ id: 'worker', ref: 'worker.yaml' }],
         }),
         '.archcanvas/worker.yaml': yamlOf({
           id: 'worker',

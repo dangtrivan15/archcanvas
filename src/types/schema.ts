@@ -119,6 +119,6 @@ export const RootCanvas = Canvas.refine(
 );
 
 export const SubsystemCanvas = Canvas.refine(
-  (f) => f.id != null && f.type != null,
-  { message: 'Subsystem canvas must have id and type' },
+  (f) => f.type != null,
+  { message: 'Subsystem canvas must have type' },
 );

@@ -46,7 +46,7 @@ function createSeededFs(name = 'Test'): InMemoryFileSystem {
     '.archcanvas/main.yaml': yamlOf({
       project: { name },
       nodes: [
-        { id: 'svc-api', ref: 'svc-api' },
+        { id: 'svc-api', ref: 'svc-api.yaml' },
         { id: 'db', type: 'data/database' },
       ],
     }),

@@ -213,14 +213,29 @@ describe('RootCanvas', () => {
 });
 
 describe('SubsystemCanvas', () => {
+  it('accepts canvas with type only (no id)', () => {
+    const canvas = {
+      type: 'compute/service',
+      displayName: 'Order Service',
+      nodes: [],
+      edges: [],
+    };
+    const result = SubsystemCanvas.safeParse(canvas);
+    expect(result.success).toBe(true);
+  });
+
   it('accepts canvas with id and type', () => {
     const canvas = { id: 'svc-api', type: 'compute/service' };
     expect(SubsystemCanvas.parse(canvas)).toEqual(canvas);
   });
-  it('rejects canvas without id', () => {
-    expect(() => SubsystemCanvas.parse({ type: 'compute/service' })).toThrow();
-  });
-  it('rejects canvas without type', () => {
-    expect(() => SubsystemCanvas.parse({ id: 'svc-api' })).toThrow();
+
+  it('rejects canvas without type field', () => {
+    const canvas = {
+      displayName: 'Order Service',
+      nodes: [],
+      edges: [],
+    };
+    const result = SubsystemCanvas.safeParse(canvas);
+    expect(result.success).toBe(false);
   });
 });

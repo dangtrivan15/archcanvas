@@ -35,7 +35,7 @@ describe('loadProject', () => {
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
         nodes: [
-          { id: 'svc-api', ref: 'svc-api' },
+          { id: 'svc-api', ref: 'svc-api.yaml' },
           { id: 'db', type: 'data/database' },
         ],
       }),
@@ -57,12 +57,12 @@ describe('loadProject', () => {
     fs.seed({
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
-        nodes: [{ id: 'svc-api', ref: 'svc-api' }],
+        nodes: [{ id: 'svc-api', ref: 'svc-api.yaml' }],
       }),
       '.archcanvas/svc-api.yaml': yamlOf({
         id: 'svc-api',
         type: 'compute/service',
-        nodes: [{ id: 'internal', ref: 'internal' }],
+        nodes: [{ id: 'internal', ref: 'internal.yaml' }],
       }),
       '.archcanvas/internal.yaml': yamlOf({
         id: 'internal',
@@ -80,7 +80,7 @@ describe('loadProject', () => {
     fs.seed({
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
-        nodes: [{ id: 'missing', ref: 'missing-service' }],
+        nodes: [{ id: 'missing', ref: 'missing-service.yaml' }],
       }),
     });
 
@@ -93,17 +93,17 @@ describe('loadProject', () => {
     fs.seed({
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
-        nodes: [{ id: 'a', ref: 'a' }],
+        nodes: [{ id: 'a', ref: 'a.yaml' }],
       }),
       '.archcanvas/a.yaml': yamlOf({
         id: 'a',
         type: 'compute/service',
-        nodes: [{ id: 'b', ref: 'b' }],
+        nodes: [{ id: 'b', ref: 'b.yaml' }],
       }),
       '.archcanvas/b.yaml': yamlOf({
         id: 'b',
         type: 'compute/service',
-        nodes: [{ id: 'a-again', ref: 'a' }],
+        nodes: [{ id: 'a-again', ref: 'a.yaml' }],
       }),
     });
 
@@ -119,19 +119,19 @@ describe('loadProject', () => {
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
         nodes: [
-          { id: 'a', ref: 'a' },
-          { id: 'b', ref: 'b' },
+          { id: 'a', ref: 'a.yaml' },
+          { id: 'b', ref: 'b.yaml' },
         ],
       }),
       '.archcanvas/a.yaml': yamlOf({
         id: 'a',
         type: 'compute/service',
-        nodes: [{ id: 'shared', ref: 'shared' }],
+        nodes: [{ id: 'shared', ref: 'shared.yaml' }],
       }),
       '.archcanvas/b.yaml': yamlOf({
         id: 'b',
         type: 'compute/service',
-        nodes: [{ id: 'shared-again', ref: 'shared' }],
+        nodes: [{ id: 'shared-again', ref: 'shared.yaml' }],
       }),
       '.archcanvas/shared.yaml': yamlOf({
         id: 'shared',
@@ -147,59 +147,67 @@ describe('loadProject', () => {
     expect(circularErrors).toHaveLength(0);
   });
 
-  it('validates @root/ references — valid', async () => {
+  it('loads canvas from ref with .yaml suffix without double extension', async () => {
+    fs.seed({
+      '.archcanvas/main.yaml': yamlOf({
+        project: { name: 'Test' },
+        nodes: [{ id: 'svc-api', ref: 'svc-api.yaml' }],
+      }),
+      '.archcanvas/svc-api.yaml': yamlOf({
+        type: 'compute/service',
+        displayName: 'API Service',
+        nodes: [],
+        edges: [],
+      }),
+    });
+    const project = await loadProject(fs);
+    expect(project.errors).toHaveLength(0);
+    expect(project.canvases.has('svc-api')).toBe(true);
+  });
+
+  it('validates @<ref-node-id>/<node-id> edges at load time', async () => {
     fs.seed({
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
         nodes: [
-          { id: 'svc-api', ref: 'svc-api' },
+          { id: 'svc-api', ref: 'svc-api.yaml' },
           { id: 'db', type: 'data/database' },
+        ],
+        edges: [
+          { from: { node: '@svc-api/handler' }, to: { node: 'db' } },
         ],
       }),
       '.archcanvas/svc-api.yaml': yamlOf({
-        id: 'svc-api',
         type: 'compute/service',
         nodes: [{ id: 'handler', type: 'compute/function' }],
-        edges: [
-          {
-            from: { node: 'handler', port: 'db-out' },
-            to: { node: '@root/db', port: 'query-in' },
-          },
-        ],
+        edges: [],
       }),
     });
-
     const project = await loadProject(fs);
-    const rootRefErrors = project.errors.filter((e) =>
-      e.message.includes('@root/'),
-    );
-    expect(rootRefErrors).toHaveLength(0);
+    expect(project.errors).toHaveLength(0);
   });
 
-  it('validates @root/ references — invalid', async () => {
+  it('reports error for invalid node in cross-scope ref', async () => {
     fs.seed({
       '.archcanvas/main.yaml': yamlOf({
         project: { name: 'Test' },
-        nodes: [{ id: 'svc-api', ref: 'svc-api' }],
-      }),
-      '.archcanvas/svc-api.yaml': yamlOf({
-        id: 'svc-api',
-        type: 'compute/service',
+        nodes: [
+          { id: 'svc-api', ref: 'svc-api.yaml' },
+          { id: 'db', type: 'data/database' },
+        ],
         edges: [
-          {
-            from: { node: 'handler' },
-            to: { node: '@root/nonexistent' },
-          },
+          { from: { node: '@svc-api/nonexistent' }, to: { node: 'db' } },
         ],
       }),
+      '.archcanvas/svc-api.yaml': yamlOf({
+        type: 'compute/service',
+        nodes: [{ id: 'handler', type: 'compute/function' }],
+        edges: [],
+      }),
     });
-
     const project = await loadProject(fs);
-    const rootRefErrors = project.errors.filter((e) =>
-      e.message.includes('@root/'),
-    );
-    expect(rootRefErrors).toHaveLength(1);
-    expect(rootRefErrors[0].message).toContain('nonexistent');
+    expect(project.errors.length).toBeGreaterThan(0);
+    expect(project.errors[0].message).toContain('nonexistent');
   });
 });
 

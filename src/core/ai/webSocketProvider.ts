@@ -472,10 +472,10 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
         const refNodes = (d.nodes ?? []).filter((n: Node) => 'ref' in n);
         if (refNodes.length > 0) {
           scopeInfo.childRefs = refNodes.map((n: Node) => {
-            const ref = 'ref' in n ? n.ref : '';
-            const childCanvas = project.canvases.get(ref);
+            // Canvas map is keyed by node.id, not the ref filename
+            const childCanvas = project.canvases.get(n.id);
             return {
-              ref,
+              ref: 'ref' in n ? n.ref : '',
               nodeCount: childCanvas ? (childCanvas.data.nodes ?? []).length : 0,
               edgeCount: childCanvas ? (childCanvas.data.edges ?? []).length : 0,
             };

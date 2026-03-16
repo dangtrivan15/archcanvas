@@ -42,7 +42,7 @@ export async function loadProject(
   canvases.set(ROOT_CANVAS_KEY, root);
 
   await resolveRefs(fs, root, canvases, errors, loaded, ancestors);
-  validateRootRefs(root, canvases, errors);
+  validateCrossScopeRefs(canvases, root, errors);
 
   return { root, canvases, errors };
 }
@@ -63,7 +63,7 @@ async function resolveRefs(
     const ref = node.ref;
 
     // True cycle: this ref is an ancestor in the current DFS path
-    if (ancestors.has(ref)) {
+    if (ancestors.has(node.id)) {
       errors.push({
         file: canvas.filePath,
         message: `Circular reference detected: ${ref}`,
@@ -72,13 +72,13 @@ async function resolveRefs(
     }
 
     // Diamond: already loaded via a different path — skip, no error
-    if (loaded.has(ref)) continue;
+    if (loaded.has(node.id)) continue;
 
     // Mark as loaded before attempting read — if the file is missing or invalid,
     // only the first reference reports an error; subsequent references skip silently.
-    loaded.add(ref);
-    ancestors.add(ref);
-    const filePath = `.archcanvas/${ref}.yaml`;
+    loaded.add(node.id);
+    ancestors.add(node.id);
+    const filePath = `.archcanvas/${ref}`;
 
     try {
       const content = await fs.readFile(filePath);
@@ -88,7 +88,7 @@ async function resolveRefs(
         data: parsed.data,
         doc: parsed.doc,
       };
-      canvases.set(ref, loadedCanvas);
+      canvases.set(node.id, loadedCanvas);
 
       await resolveRefs(fs, loadedCanvas, canvases, errors, loaded, ancestors);
     } catch (err) {
@@ -98,32 +98,63 @@ async function resolveRefs(
       });
     }
 
-    ancestors.delete(ref); // backtrack
+    ancestors.delete(node.id); // backtrack
   }
 }
 
-function validateRootRefs(
-  root: LoadedCanvas,
+function validateCrossScopeRefs(
   canvases: Map<string, LoadedCanvas>,
+  root: LoadedCanvas,
   errors: ResolutionError[],
 ): void {
-  const rootNodeIds = new Set(
-    (root.data.nodes ?? []).map((n) => n.id),
-  );
+  const allCanvases = new Map(canvases);
+  allCanvases.set(ROOT_CANVAS_KEY, root);
 
-  for (const [id, canvas] of canvases) {
-    if (id === ROOT_CANVAS_KEY) continue;
-
+  for (const [canvasId, canvas] of allCanvases) {
     for (const edge of canvas.data.edges ?? []) {
-      for (const endpoint of [edge.from, edge.to]) {
-        if (endpoint.node.startsWith('@root/')) {
-          const refId = endpoint.node.slice('@root/'.length);
-          if (!rootNodeIds.has(refId)) {
-            errors.push({
-              file: canvas.filePath,
-              message: `@root/ reference '${refId}' not found in root canvas`,
-            });
-          }
+      for (const side of ['from', 'to'] as const) {
+        const endpoint = edge[side];
+        if (!endpoint.node.startsWith('@')) continue;
+
+        const slashIdx = endpoint.node.indexOf('/');
+        if (slashIdx === -1) {
+          errors.push({
+            file: canvas.filePath,
+            message: `Invalid cross-scope ref '${endpoint.node}' in canvas '${canvasId}' — missing /nodeId`,
+          });
+          continue;
+        }
+
+        const refNodeId = endpoint.node.slice(1, slashIdx);
+        const targetNodeId = endpoint.node.slice(slashIdx + 1);
+
+        // Check ref-node-id exists in this canvas's nodes
+        const nodes = canvas.data.nodes ?? [];
+        const refNode = nodes.find(
+          (n) => n.id === refNodeId && 'ref' in n,
+        );
+        if (!refNode) {
+          // Engine validates this at edge-add time too (CROSS_SCOPE_REF_NOT_FOUND)
+          // Here we just check the target node exists
+          continue;
+        }
+
+        // Check target node exists in the referenced canvas
+        const targetCanvas = canvases.get(refNodeId);
+        if (!targetCanvas) {
+          errors.push({
+            file: canvas.filePath,
+            message: `Cross-scope ref '@${refNodeId}/${targetNodeId}' — canvas '${refNodeId}' not loaded`,
+          });
+          continue;
+        }
+
+        const targetNodes = targetCanvas.data.nodes ?? [];
+        if (!targetNodes.some((n) => n.id === targetNodeId)) {
+          errors.push({
+            file: canvas.filePath,
+            message: `Cross-scope ref '@${refNodeId}/${targetNodeId}' — node '${targetNodeId}' not found in canvas '${refNodeId}'`,
+          });
         }
       }
     }
