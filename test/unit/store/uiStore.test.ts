@@ -73,4 +73,17 @@ describe('uiStore', () => {
     useUiStore.getState().toggleRightPanel();
     useUiStore.getState().openRightPanel();
   });
+
+  // --- detailPanelTab ---
+
+  it('setDetailPanelTab sets the tab', () => {
+    useUiStore.getState().setDetailPanelTab('notes');
+    expect(useUiStore.getState().detailPanelTab).toBe('notes');
+  });
+
+  it('setDetailPanelTab null resets', () => {
+    useUiStore.getState().setDetailPanelTab('notes');
+    useUiStore.getState().setDetailPanelTab(null);
+    expect(useUiStore.getState().detailPanelTab).toBeNull();
+  });
 });

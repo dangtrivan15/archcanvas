@@ -273,6 +273,8 @@ const mockUiState = {
   toggleLeftPanel: vi.fn(),
   toggleRightPanel: vi.fn(),
   toggleChat: vi.fn(),
+  setRightPanelMode: vi.fn(),
+  openRightPanel: vi.fn(),
 };
 vi.mock('@/store/uiStore', () => ({
   useUiStore: {
@@ -540,7 +542,7 @@ describe('CommandPalette', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('clicking an entity result calls canvasStore.selectEdge and closes', async () => {
+  it('clicking an entity result navigates to defining scope and opens entities panel', async () => {
     const onClose = vi.fn();
     renderPalette(true, onClose);
     await setQuery('#user');
@@ -550,7 +552,8 @@ describe('CommandPalette', () => {
     await act(async () => {
       fireEvent.click(entityItem!);
     });
-    expect(mockCanvasState.selectEdge).toHaveBeenCalledWith('node-1', 'node-2');
+    expect(mockNavigationState.navigateTo).toHaveBeenCalled();
+    expect(mockUiState.setRightPanelMode).toHaveBeenCalledWith('entities');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

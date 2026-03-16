@@ -1,6 +1,7 @@
 import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from '@xyflow/react';
 import type { Edge as RFEdge } from '@xyflow/react';
 import type { CanvasEdgeData } from '../canvas/types';
+import { useCanvasStore } from '../../store/canvasStore';
 import './EdgeRenderer.css';
 
 type EdgeRendererProps = EdgeProps<RFEdge<CanvasEdgeData>>;
@@ -28,11 +29,14 @@ export function EdgeRenderer({
   const styleCategory = data?.styleCategory ?? 'default';
   const edge = data?.edge;
   const isInherited = data?.inherited === true;
+  const highlightedEdgeIds = useCanvasStore((s) => s.highlightedEdgeIds);
+  const isHighlighted = highlightedEdgeIds.includes(id);
 
   const classNames = [
     'react-flow__edge-path',
     `edge-${styleCategory}`,
     isInherited ? 'edge-inherited' : '',
+    isHighlighted ? 'edge-highlighted' : '',
   ].filter(Boolean).join(' ');
 
   return (

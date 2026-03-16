@@ -249,4 +249,19 @@ describe('canvasStore', () => {
     expect(ids).not.toContain('node-a');
     expect(ids).not.toContain('node-b');
   });
+
+  // --- highlightEdges ---
+
+  describe('highlightEdges', () => {
+    it('sets highlightedEdgeIds', () => {
+      useCanvasStore.getState().highlightEdges(['e1', 'e2']);
+      expect(useCanvasStore.getState().highlightedEdgeIds).toEqual(['e1', 'e2']);
+    });
+
+    it('clearHighlight resets to empty', () => {
+      useCanvasStore.getState().highlightEdges(['e1']);
+      useCanvasStore.getState().clearHighlight();
+      expect(useCanvasStore.getState().highlightedEdgeIds).toEqual([]);
+    });
+  });
 });

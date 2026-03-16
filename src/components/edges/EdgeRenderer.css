@@ -66,6 +66,12 @@
   opacity: 0.6;
 }
 
+/* Highlighted edges (entity selection) */
+.edge-highlighted {
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 4px var(--color-accent, #3b82f6));
+}
+
 /* Ghost node for inherited edge endpoints */
 .ghost-node {
   border: 2px dashed var(--color-border-muted, #6b7280);
