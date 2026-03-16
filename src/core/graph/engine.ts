@@ -10,6 +10,7 @@ import type {
 import type { NodeDefRegistry } from '@/core/registry/core';
 import type { EngineResult, EngineWarning } from './types';
 import { validateNode, validateEdge } from './validation';
+import { arePortsCompatible } from '../protocol/compatibility';
 
 // --- Node Operations ---
 
@@ -146,6 +147,40 @@ export function addEdge(
           ok: false,
           error: { code: 'EDGE_ENDPOINT_NOT_FOUND', endpoint: endpoint.node, side },
         };
+      }
+    }
+  }
+
+  // Protocol compatibility check (only when both ports specified and registry available)
+  if (edge.from.port && edge.to.port && registry) {
+    // Only check local nodes (cross-scope port resolution requires loading the remote canvas)
+    if (!edge.from.node.startsWith('@') && !edge.to.node.startsWith('@')) {
+      const fromNode = nodes.find((n) => n.id === edge.from.node);
+      const toNode = nodes.find((n) => n.id === edge.to.node);
+
+      if (fromNode && !('ref' in fromNode) && toNode && !('ref' in toNode)) {
+        const fromDef = registry.resolve(fromNode.type);
+        const toDef = registry.resolve(toNode.type);
+
+        if (fromDef && toDef) {
+          const fromPortDef = (fromDef.spec.ports ?? []).find(
+            (p) => p.name === edge.from.port,
+          );
+          const toPortDef = (toDef.spec.ports ?? []).find(
+            (p) => p.name === edge.to.port,
+          );
+
+          const compat = arePortsCompatible(fromPortDef, toPortDef);
+          if (!compat.compatible) {
+            return {
+              ok: false,
+              error: {
+                code: 'PROTOCOL_MISMATCH',
+                message: `Port '${compat.fromPortName}' [${compat.fromProtocols?.join(', ')}] → '${compat.toPortName}' [${compat.toProtocols?.join(', ')}] — no common protocol`,
+              },
+            };
+          }
+        }
       }
     }
   }

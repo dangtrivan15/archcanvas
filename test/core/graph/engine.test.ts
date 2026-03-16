@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { enablePatches, applyPatches } from 'immer';
+import type { NodeDef } from '@/types/nodeDefSchema';
 import {
   addNode,
   removeNode,
@@ -742,5 +743,189 @@ describe('cross-scope @ syntax', () => {
       expect(result.data.edges).toHaveLength(1); // only the db→db edge remains
       expect(result.data.nodes).toHaveLength(1); // only db remains
     }
+  });
+});
+
+// =====================================================================
+// Protocol Compatibility
+// =====================================================================
+
+describe('addEdge — protocol compatibility', () => {
+  const httpServiceDef: NodeDef = {
+    kind: 'NodeDef',
+    apiVersion: 'v1',
+    metadata: {
+      name: 'http-service',
+      namespace: 'compute',
+      version: '1.0.0',
+      displayName: 'HTTP Service',
+      description: 'An HTTP service',
+      icon: 'server',
+      shape: 'rectangle',
+    },
+    spec: {
+      ports: [
+        { name: 'http-in', direction: 'inbound', protocol: ['HTTP', 'HTTPS'] },
+        { name: 'http-out', direction: 'outbound', protocol: ['HTTP', 'HTTPS'] },
+      ],
+    },
+  };
+
+  const dbDef: NodeDef = {
+    kind: 'NodeDef',
+    apiVersion: 'v1',
+    metadata: {
+      name: 'database',
+      namespace: 'storage',
+      version: '1.0.0',
+      displayName: 'Database',
+      description: 'A database',
+      icon: 'database',
+      shape: 'cylinder',
+    },
+    spec: {
+      ports: [
+        { name: 'sql-in', direction: 'inbound', protocol: ['SQL'] },
+        { name: 'sql-out', direction: 'outbound', protocol: ['SQL'] },
+      ],
+    },
+  };
+
+  const grpcServiceDef: NodeDef = {
+    kind: 'NodeDef',
+    apiVersion: 'v1',
+    metadata: {
+      name: 'grpc-service',
+      namespace: 'compute',
+      version: '1.0.0',
+      displayName: 'gRPC Service',
+      description: 'A gRPC service',
+      icon: 'server',
+      shape: 'rectangle',
+    },
+    spec: {
+      ports: [
+        { name: 'grpc-in', direction: 'inbound', protocol: ['gRPC'] },
+        { name: 'grpc-out', direction: 'outbound', protocol: ['gRPC', 'HTTP'] },
+      ],
+    },
+  };
+
+  it('rejects edge when port protocols are incompatible', () => {
+    const registry = registryWith(
+      ['compute/http-service', httpServiceDef],
+      ['storage/database', dbDef],
+    );
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'svc', type: 'compute/http-service' }),
+        makeNode({ id: 'db', type: 'storage/database' }),
+      ],
+    });
+    const edge = makeEdge({
+      from: { node: 'svc', port: 'http-out' },
+      to: { node: 'db', port: 'sql-in' },
+    });
+    const result = addEdge(canvas, edge, registry);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('PROTOCOL_MISMATCH');
+    if (result.error.code !== 'PROTOCOL_MISMATCH') return;
+    expect(result.error.message).toContain('http-out');
+    expect(result.error.message).toContain('sql-in');
+    expect(result.error.message).toContain('no common protocol');
+  });
+
+  it('allows edge when port protocols overlap', () => {
+    const registry = registryWith(
+      ['compute/grpc-service', grpcServiceDef],
+      ['compute/http-service', httpServiceDef],
+    );
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'grpc', type: 'compute/grpc-service' }),
+        makeNode({ id: 'http', type: 'compute/http-service' }),
+      ],
+    });
+    // grpc-out has ['gRPC', 'HTTP'], http-in has ['HTTP', 'HTTPS'] — overlap on HTTP
+    const edge = makeEdge({
+      from: { node: 'grpc', port: 'grpc-out' },
+      to: { node: 'http', port: 'http-in' },
+    });
+    const result = addEdge(canvas, edge, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('skips check when ports not specified on edge', () => {
+    const registry = registryWith(
+      ['compute/http-service', httpServiceDef],
+      ['storage/database', dbDef],
+    );
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'svc', type: 'compute/http-service' }),
+        makeNode({ id: 'db', type: 'storage/database' }),
+      ],
+    });
+    // No ports specified → no protocol check
+    const edge = makeEdge({
+      from: { node: 'svc' },
+      to: { node: 'db' },
+    });
+    const result = addEdge(canvas, edge, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('skips check for cross-scope edges', () => {
+    const registry = registryWith(['compute/http-service', httpServiceDef]);
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'svc', type: 'compute/http-service' }),
+        makeRefNode({ id: 'remote-svc' }),
+      ],
+    });
+    const edge = makeEdge({
+      from: { node: 'svc', port: 'http-out' },
+      to: { node: '@remote-svc/db', port: 'sql-in' },
+    });
+    const result = addEdge(canvas, edge, registry);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('skips check when registry not provided', () => {
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'svc', type: 'compute/http-service' }),
+        makeNode({ id: 'db', type: 'storage/database' }),
+      ],
+    });
+    const edge = makeEdge({
+      from: { node: 'svc', port: 'http-out' },
+      to: { node: 'db', port: 'sql-in' },
+    });
+    const result = addEdge(canvas, edge);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('skips check for ref nodes', () => {
+    const registry = registryWith(['compute/http-service', httpServiceDef]);
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'svc', type: 'compute/http-service' }),
+        makeRefNode({ id: 'ref-db' }),
+      ],
+    });
+    const edge = makeEdge({
+      from: { node: 'svc', port: 'http-out' },
+      to: { node: 'ref-db', port: 'sql-in' },
+    });
+    const result = addEdge(canvas, edge, registry);
+
+    expect(result.ok).toBe(true);
   });
 });
