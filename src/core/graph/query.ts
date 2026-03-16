@@ -62,7 +62,10 @@ export function findEdgesReferencingNode(
 
 function matchesNodeId(endpoint: string, nodeId: string): boolean {
   if (endpoint === nodeId) return true;
-  if (endpoint.startsWith('@root/') && endpoint.slice('@root/'.length) === nodeId) return true;
+  if (endpoint.startsWith('@')) {
+    const slashIdx = endpoint.indexOf('/');
+    if (slashIdx !== -1 && endpoint.slice(slashIdx + 1) === nodeId) return true;
+  }
   return false;
 }
 

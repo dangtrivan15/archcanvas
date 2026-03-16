@@ -104,8 +104,8 @@ export function validateEdge(
   for (const { endpoint, side: _, expectedDirection } of endpoints) {
     if (!endpoint.port) continue;
 
-    // Skip @root/ references — cross-scope validation is not our concern
-    if (endpoint.node.startsWith('@root/')) continue;
+    // Skip @ cross-scope references — cross-scope validation is not our concern
+    if (endpoint.node.startsWith('@')) continue;
 
     // Find the node in canvas
     const node = nodes.find((n) => n.id === endpoint.node);

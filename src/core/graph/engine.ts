@@ -49,7 +49,8 @@ export function removeNode(
   const [data, patches, inversePatches] = produceWithPatches(canvas, (draft) => {
     draft.nodes = (draft.nodes ?? []).filter((n) => n.id !== nodeId);
     draft.edges = (draft.edges ?? []).filter(
-      (e) => e.from.node !== nodeId && e.to.node !== nodeId,
+      (e) => e.from.node !== nodeId && e.to.node !== nodeId &&
+        !e.from.node.startsWith(`@${nodeId}/`) && !e.to.node.startsWith(`@${nodeId}/`),
     );
   });
 
@@ -120,10 +121,26 @@ export function addEdge(
   const nodes = canvas.nodes ?? [];
   const edges = canvas.edges ?? [];
 
-  // Check endpoints exist (skip @root/ prefixed ones)
+  // Check endpoints exist (validate @ cross-scope refs against ref-nodes)
   for (const side of ['from', 'to'] as const) {
     const endpoint = edge[side];
-    if (!endpoint.node.startsWith('@root/')) {
+    if (endpoint.node.startsWith('@')) {
+      const slashIdx = endpoint.node.indexOf('/');
+      if (slashIdx === -1) {
+        return {
+          ok: false,
+          error: { code: 'INVALID_CROSS_SCOPE_REF', message: `Invalid cross-scope ref '${endpoint.node}' — missing /nodeId` },
+        };
+      }
+      const refNodeId = endpoint.node.slice(1, slashIdx);
+      const refNode = nodes.find((n) => n.id === refNodeId && 'ref' in n);
+      if (!refNode) {
+        return {
+          ok: false,
+          error: { code: 'CROSS_SCOPE_REF_NOT_FOUND', message: `Ref-node '${refNodeId}' not found in canvas` },
+        };
+      }
+    } else {
       if (!nodes.some((n) => n.id === endpoint.node)) {
         return {
           ok: false,
@@ -133,8 +150,8 @@ export function addEdge(
     }
   }
 
-  // Self-loop check — raw string comparison is intentional. @root/svc-a and svc-a
-  // are different nodes in different scopes (root vs local), so they are not a self-loop.
+  // Self-loop check — raw string comparison is intentional. @ref/svc-a and svc-a
+  // are different nodes in different scopes, so they are not a self-loop.
   if (edge.from.node === edge.to.node) {
     return { ok: false, error: { code: 'SELF_LOOP', nodeId: edge.from.node } };
   }
