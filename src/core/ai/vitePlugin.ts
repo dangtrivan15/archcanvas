@@ -1,5 +1,6 @@
 /**
  * Vite plugin that hosts the AI bridge: WebSocket + HTTP endpoints on the dev server.
+ * Delegates all logic to bridgeServer.ts.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
  * The `vite.config.ts` externalises it via `build.rollupOptions.external`.
@@ -19,69 +20,20 @@
  */
 
 import type { Plugin } from 'vite';
-import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage, ServerResponse } from 'http';
-import type {
-  ClientMessage,
-  ChatEvent,
-  SetPermissionModeClientMessage,
-  SetEffortClientMessage,
-  PermissionResponseClientMessage,
-  QuestionResponseClientMessage,
-} from './types';
-import { createBridgeSession, type BridgeSession, type SDKQueryFn, type OnPermissionRequest, type OnAskUserQuestion } from './claudeCodeBridge';
+import { createBridgeServer, type BridgeServerOptions } from './bridgeServer';
+
+// Re-export types needed by consumers (vitePlugin.test.ts imports StoreActionResult)
+export type { StoreActionMessage, StoreActionResult, BridgeServerOptions } from './bridgeServer';
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const WS_PATH = '/__archcanvas_ai';
-const API_PREFIX = '/__archcanvas_ai/api/';
-const HEALTH_PATH = '/__archcanvas_ai/health';
-const REQUEST_TIMEOUT_MS = 10_000;
-
-/** Maps HTTP route segments to store action names sent to the browser. */
-const ROUTE_TO_ACTION: Record<string, string> = {
-  // writes
-  'add-node': 'addNode',
-  'add-edge': 'addEdge',
-  'remove-node': 'removeNode',
-  'remove-edge': 'removeEdge',
-  'import': 'import',
-  // reads
-  'list': 'list',
-  'describe': 'describe',
-  'search': 'search',
-  'catalog': 'catalog',
-};
-
-// ---------------------------------------------------------------------------
-// Store-action message types (server ↔ browser via WebSocket)
-// ---------------------------------------------------------------------------
-
-export interface StoreActionMessage {
-  type: 'store_action';
-  action: string;
-  args: Record<string, unknown>;
-  correlationId: string;
-}
-
-export interface StoreActionResult {
-  type: 'store_action_result';
-  correlationId: string;
-  ok: boolean;
-  data?: unknown;
-  error?: { code: string; message: string };
-}
-
-// ---------------------------------------------------------------------------
-// Plugin options (for testing)
+// Plugin options
 // ---------------------------------------------------------------------------
 
 export interface AiBridgePluginOptions {
   /** Injectable SDK query function for bridge sessions. */
-  queryFn?: SDKQueryFn;
-  /** Timeout (ms) for request relay to the browser. Defaults to REQUEST_TIMEOUT_MS (10 s). */
+  queryFn?: BridgeServerOptions['queryFn'];
+  /** Timeout (ms) for request relay to the browser. Defaults to 10 000. */
   requestTimeoutMs?: number;
 }
 
@@ -90,326 +42,71 @@ export interface AiBridgePluginOptions {
 // ---------------------------------------------------------------------------
 
 export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
-  let wss: WebSocketServer | null = null;
-
-  /** Active browser WebSocket connections. */
-  const browserClients = new Set<WebSocket>();
-
-  /** Pending HTTP requests waiting for browser response. */
-  const pendingRequests = new Map<
-    string,
-    {
-      resolve: (result: StoreActionResult) => void;
-      timer: ReturnType<typeof setTimeout>;
-    }
-  >();
-
-  /** Bridge sessions keyed by WebSocket client. */
-  const sessions = new Map<WebSocket, BridgeSession>();
-
-  // --- Guard against SDK unhandled rejections ---
-  // The Claude Agent SDK has a bug where handleControlRequest doesn't
-  // catch transport.write() errors after the session is aborted.  This
-  // causes an unhandled rejection ("Operation aborted") that crashes the
-  // Vite dev server.  We catch it here so the server stays up.
-  //
-  // Extracted as a named reference so it can be removed on server close,
-  // preventing listener leaks across test runs / HMR restarts.
-  const rejectionHandler = (reason: unknown) => {
-    if (reason instanceof Error && reason.message === 'Operation aborted') {
-      // Known SDK issue: safe to suppress during session cleanup.
-      return;
-    }
-    // Log unexpected rejections without crashing.
-    console.error('[archcanvas-ai-bridge] Unhandled rejection:', reason);
-  };
-
   return {
     name: 'archcanvas-ai-bridge',
 
     configureServer(server) {
-      process.on('unhandledRejection', rejectionHandler);
-
-      // --- HTTP middleware ---
-      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        const pathname = new URL(req.url ?? '', 'http://localhost').pathname;
-
-        // Health check
-        if (req.method === 'GET' && pathname === HEALTH_PATH) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true }));
-          return;
-        }
-
-        // Mutation endpoints
-        if (req.method === 'POST' && pathname.startsWith(API_PREFIX)) {
-          const route = pathname.slice(API_PREFIX.length);
-          const action = ROUTE_TO_ACTION[route];
-
-          if (!action) {
-            res.writeHead(404, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ ok: false, error: { code: 'NOT_FOUND', message: `Unknown route: ${route}` } }));
-            return;
-          }
-
-          // Read request body
-          let body = '';
-          req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
-          req.on('end', () => {
-            let args: Record<string, unknown>;
-            try {
-              args = body ? JSON.parse(body) : {};
-            } catch {
-              res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ ok: false, error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }));
-              return;
-            }
-
-            // Find a connected browser client to relay to
-            const client = findActiveBrowserClient();
-            if (!client) {
-              res.writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_DISCONNECTED', message: 'No browser client connected' } }));
-              return;
-            }
-
-            const correlationId = `mut-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-            // Send store_action to browser
-            const storeAction: StoreActionMessage = {
-              type: 'store_action',
-              action,
-              args,
-              correlationId,
-            };
-
-            try {
-              client.send(JSON.stringify(storeAction));
-            } catch {
-              res.writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_DISCONNECTED', message: 'Failed to send to browser' } }));
-              return;
-            }
-
-            // Wait for browser response with timeout
-            const timeoutMs = pluginOptions?.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
-            const timer = setTimeout(() => {
-              pendingRequests.delete(correlationId);
-              res.writeHead(504, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_TIMEOUT', message: 'Browser did not respond in time' } }));
-            }, timeoutMs);
-
-            pendingRequests.set(correlationId, {
-              resolve: (result) => {
-                clearTimeout(timer);
-                pendingRequests.delete(correlationId);
-                let status: number;
-                if (result.ok) {
-                  status = 200;
-                } else if (result.error?.code === 'BRIDGE_DISCONNECTED') {
-                  status = 502;
-                } else if (result.error?.code === 'BRIDGE_TIMEOUT') {
-                  status = 504;
-                } else {
-                  status = 500;
-                }
-                res.writeHead(status, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(result.ok ? { ok: true, data: result.data } : { ok: false, error: result.error }));
-              },
-              timer,
-            });
-          });
-          return;
-        }
-
-        next();
+      const bridge = createBridgeServer({
+        cwd: process.cwd(),
+        queryFn: pluginOptions?.queryFn,
+        requestTimeoutMs: pluginOptions?.requestTimeoutMs,
       });
 
-      // --- WebSocket server ---
+      // Attach bridge request handler as Vite middleware
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        if (!bridge.handleRequest(req, res)) {
+          next();
+        }
+      });
+
+      // Attach WebSocket upgrade
       const httpServer = server.httpServer;
       if (!httpServer) return;
 
-      // Clean up the unhandledRejection listener when the server shuts down
-      // to prevent listener leaks across test runs / HMR restarts.
-      httpServer.on('close', () => {
-        process.off('unhandledRejection', rejectionHandler);
+      httpServer.on('upgrade', (request: IncomingMessage, socket, head: Buffer) => {
+        const url = new URL(request.url ?? '', `http://${request.headers.host}`);
+        if (url.pathname !== '/__archcanvas_ai') return; // Let Vite HMR handle other upgrades
+
+        bridge.wss.handleUpgrade(request, socket, head, (ws) => {
+          bridge.handleConnection(ws);
+        });
       });
 
-      wss = new WebSocketServer({ noServer: true });
+      // Clean up on server close
+      httpServer.on('close', () => {
+        bridge.stop();
+      });
+    },
+
+    configurePreviewServer(server) {
+      const bridge = createBridgeServer({
+        cwd: process.cwd(),
+        queryFn: pluginOptions?.queryFn,
+        requestTimeoutMs: pluginOptions?.requestTimeoutMs,
+      });
+
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        if (!bridge.handleRequest(req, res)) {
+          next();
+        }
+      });
+
+      // Preview server also has httpServer for WebSocket upgrade
+      const httpServer = server.httpServer;
+      if (!httpServer) return;
 
       httpServer.on('upgrade', (request: IncomingMessage, socket, head: Buffer) => {
         const url = new URL(request.url ?? '', `http://${request.headers.host}`);
-        if (url.pathname !== WS_PATH) return; // Let Vite HMR handle other upgrades
+        if (url.pathname !== '/__archcanvas_ai') return;
 
-        wss!.handleUpgrade(request, socket, head, (ws) => {
-          wss!.emit('connection', ws, request);
+        bridge.wss.handleUpgrade(request, socket, head, (ws) => {
+          bridge.handleConnection(ws);
         });
       });
 
-      wss.on('connection', (ws: WebSocket) => {
-        browserClients.add(ws);
-
-        // Track the current client requestId so that side-channel events
-        // (permission_request, ask_user_question) can be remapped to the
-        // client's ULID.  Without this, the browser's event listener can't
-        // route these events because they arrive with the bridge's internal
-        // requestId instead of the client's.
-        let currentClientRequestId: string | undefined;
-
-        // Create a bridge session for this client.
-        // Wire onPermissionRequest to forward permission events via WebSocket.
-        const onPermissionRequest: OnPermissionRequest = (event) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            const remapped = currentClientRequestId
-              ? { ...event, requestId: currentClientRequestId }
-              : event;
-            ws.send(JSON.stringify(remapped));
-          }
-        };
-        // Wire onAskUserQuestion to forward clarifying-question events via
-        // WebSocket.  The browser renders a question card and sends back
-        // a question_response message which we route to respondToQuestion().
-        const onAskUserQuestion: OnAskUserQuestion = (event) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            const remapped = currentClientRequestId
-              ? { ...event, requestId: currentClientRequestId }
-              : event;
-            ws.send(JSON.stringify(remapped));
-          }
-        };
-        const session = createBridgeSession({
-          cwd: process.cwd(),
-          onPermissionRequest,
-          onAskUserQuestion,
-          ...(pluginOptions?.queryFn ? { queryFn: pluginOptions.queryFn } : {}),
-        });
-        sessions.set(ws, session);
-
-        ws.on('message', async (data: Buffer | string) => {
-          let msg: ClientMessage | StoreActionResult;
-          try {
-            msg = JSON.parse(typeof data === 'string' ? data : data.toString());
-          } catch {
-            return; // Ignore malformed messages
-          }
-
-          // Handle store_action_result from browser (response to mutation relay)
-          if ('type' in msg && (msg as StoreActionResult).type === 'store_action_result') {
-            const result = msg as StoreActionResult;
-            const pending = pendingRequests.get(result.correlationId);
-            if (pending) {
-              pending.resolve(result);
-            }
-            return;
-          }
-
-          // Handle client messages for AI chat
-          const clientMsg = msg as ClientMessage;
-          const bridgeSession = sessions.get(ws);
-          if (!bridgeSession) return;
-
-          switch (clientMsg.type) {
-            case 'chat': {
-              // Capture the client's requestId so side-channel callbacks
-              // (onPermissionRequest, onAskUserQuestion) can remap their
-              // events to match the client's event listener.
-              currentClientRequestId = clientMsg.requestId;
-              try {
-                const stream = bridgeSession.sendMessage(clientMsg.content, clientMsg.context);
-                for await (const event of stream) {
-                  if (ws.readyState === WebSocket.OPEN) {
-                    // Remap bridge-internal requestId to the client's requestId
-                    // so the browser's event listener can route it correctly.
-                    ws.send(JSON.stringify({ ...event, requestId: clientMsg.requestId }));
-                  }
-                }
-              } catch (err) {
-                if (ws.readyState === WebSocket.OPEN) {
-                  const errorEvent: ChatEvent = {
-                    type: 'error',
-                    requestId: clientMsg.requestId,
-                    message: err instanceof Error ? err.message : String(err),
-                    code: 'BRIDGE_ERROR',
-                  };
-                  ws.send(JSON.stringify(errorEvent));
-                }
-              }
-              break;
-            }
-
-            case 'interrupt': {
-              bridgeSession.interrupt();
-              break;
-            }
-
-            case 'load_history': {
-              bridgeSession.loadHistory(clientMsg.messages);
-              break;
-            }
-
-            case 'permission_response': {
-              const permMsg = clientMsg as PermissionResponseClientMessage;
-              bridgeSession.respondToPermission(permMsg.id, permMsg.allowed, {
-                updatedPermissions: permMsg.updatedPermissions,
-                interrupt: permMsg.interrupt,
-              });
-              break;
-            }
-
-            case 'set_permission_mode': {
-              bridgeSession.setPermissionMode(
-                (clientMsg as SetPermissionModeClientMessage).mode,
-              );
-              break;
-            }
-
-            case 'set_effort': {
-              bridgeSession.setEffort(
-                (clientMsg as SetEffortClientMessage).effort,
-              );
-              break;
-            }
-
-            case 'question_response': {
-              // User answered an AskUserQuestion card.  Forward the answers
-              // record to the bridge, which unblocks the canUseTool callback
-              // and returns them to the SDK as updatedInput.
-              const qMsg = clientMsg as QuestionResponseClientMessage;
-              bridgeSession.respondToQuestion(qMsg.id, qMsg.answers);
-              break;
-            }
-          }
-        });
-
-        ws.on('close', () => {
-          browserClients.delete(ws);
-          const bridgeSession = sessions.get(ws);
-          if (bridgeSession) {
-            bridgeSession.destroy();
-            sessions.delete(ws);
-          }
-
-          // Reject any pending mutations that were waiting on this client
-          for (const [id, pending] of pendingRequests) {
-            clearTimeout(pending.timer);
-            pending.resolve({
-              type: 'store_action_result',
-              correlationId: id,
-              ok: false,
-              error: { code: 'BRIDGE_DISCONNECTED', message: 'Browser connection lost' },
-            });
-          }
-        });
+      httpServer.on('close', () => {
+        bridge.stop();
       });
     },
   };
-
-  function findActiveBrowserClient(): WebSocket | null {
-    for (const client of browserClients) {
-      if (client.readyState === WebSocket.OPEN) {
-        return client;
-      }
-    }
-    return null;
-  }
 }
