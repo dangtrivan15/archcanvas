@@ -3,20 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "bin": {
-    "archcanvas": "./dist/cli.js"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:cli": "vite build --config vite.config.cli.ts",
     "build:bridge": "vite build --config vite.config.bridge.ts",
     "build:sidecar": "bun build --compile src/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:cli": "vitest run --project cli",
     "test:e2e": "npm run build && playwright test",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
@@ -33,7 +28,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "commander": "^14.0.3",
     "elkjs": "^0.11.0",
     "immer": "^11.1.4",
     "lucide-react": "^0.500.0",

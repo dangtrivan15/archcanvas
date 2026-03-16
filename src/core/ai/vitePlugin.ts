@@ -1,22 +1,15 @@
 /**
- * Vite plugin that hosts the AI bridge: WebSocket + HTTP endpoints on the dev server.
+ * Vite plugin that hosts the AI bridge: WebSocket + health endpoint on the dev server.
  * Delegates all logic to bridgeServer.ts.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
  * The `vite.config.ts` externalises it via `build.rollupOptions.external`.
  *
  * WebSocket endpoint: ws://localhost:5173/__archcanvas_ai
- * HTTP endpoints:
+ * HTTP endpoint:
  *   GET  /__archcanvas_ai/health
- *   POST /__archcanvas_ai/api/add-node
- *   POST /__archcanvas_ai/api/add-edge
- *   POST /__archcanvas_ai/api/remove-node
- *   POST /__archcanvas_ai/api/remove-edge
- *   POST /__archcanvas_ai/api/import
- *   POST /__archcanvas_ai/api/list
- *   POST /__archcanvas_ai/api/describe
- *   POST /__archcanvas_ai/api/search
- *   POST /__archcanvas_ai/api/catalog
+ *
+ * Tool execution flows through MCP tools → relayStoreAction → WebSocket, not HTTP.
  */
 
 import type { Plugin } from 'vite';
