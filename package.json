@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build",
     "build:cli": "vite build --config vite.config.cli.ts",
     "build:bridge": "vite build --config vite.config.bridge.ts",
+    "build:sidecar": "npm run build:bridge && cp dist/bridge-server.js src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",

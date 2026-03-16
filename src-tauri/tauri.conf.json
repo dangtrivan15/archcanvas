@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "npm run build && npm run build:sidecar"
   },
   "app": {
     "windows": [
@@ -22,5 +22,8 @@
     "security": {
       "csp": null
     }
+  },
+  "bundle": {
+    "externalBin": ["binaries/archcanvas-bridge"]
   }
 }

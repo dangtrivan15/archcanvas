@@ -13,8 +13,12 @@ import path from 'path';
 function chmodPlugin(): Plugin {
   return {
     name: 'chmod-bridge',
-    closeBundle: async () => {
-      await chmod(path.resolve(__dirname, 'dist/bridge-server.js'), 0o755);
+    writeBundle: async () => {
+      try {
+        await chmod(path.resolve(__dirname, 'dist/bridge-server.js'), 0o755);
+      } catch {
+        // File may not exist yet in some build modes — non-fatal
+      }
     },
   };
 }
