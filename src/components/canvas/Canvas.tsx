@@ -6,6 +6,7 @@ import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
 import { useCanvasNavigation } from "./hooks/useCanvasNavigation";
 import { NodeRenderer } from "../nodes/NodeRenderer";
+import { GhostNodeRenderer } from "../nodes/GhostNodeRenderer";
 import { EdgeRenderer } from "../edges/EdgeRenderer";
 import { Breadcrumb } from "../shared/Breadcrumb";
 import { ContextMenu } from "../shared/ContextMenu";
@@ -19,8 +20,10 @@ import { useUiStore } from "@/store/uiStore";
 import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { computeLayout } from "@/core/layout/elk";
+import { extractInheritedEdges } from "./inheritedEdges";
+import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
 
-const nodeTypes = { archNode: NodeRenderer };
+const nodeTypes = { archNode: NodeRenderer, archGhostNode: GhostNodeRenderer };
 const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
@@ -45,9 +48,10 @@ export function Canvas() {
     setRfNodes((nds) => applyNodeChanges(changes, nds));
 
     // Commit final position to the engine only when drag ends (creates undo entry)
+    // Skip ghost nodes — they are render-only and never saved
     const canvasId = useNavigationStore.getState().currentCanvasId;
     for (const change of changes) {
-      if (change.type === 'position' && change.position && !change.dragging) {
+      if (change.type === 'position' && change.position && !change.dragging && !change.id.startsWith(GHOST_NODE_PREFIX)) {
         useGraphStore.getState().updateNodePosition(canvasId, change.id, change.position);
       }
     }
@@ -70,15 +74,38 @@ export function Canvas() {
   const reactFlow = useReactFlow();
 
   const handleAutoLayout = useCallback(async () => {
-    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const navState = useNavigationStore.getState();
+    const canvasId = navState.currentCanvasId;
     const loaded = useFileStore.getState().getCanvas(canvasId);
     if (!loaded) return;
 
-    const result = await computeLayout(loaded.data);
+    // Build ghost node/edge lists for inherited edges (if in a child canvas)
+    const ghostNodes: { id: string }[] = [];
+    const ghostEdges: { source: string; target: string }[] = [];
+
+    if (navState.breadcrumb.length > 1 && navState.parentEdges.length > 0) {
+      const inherited = extractInheritedEdges(navState.parentEdges, canvasId);
+      const seenGhosts = new Set<string>();
+      for (const ie of inherited) {
+        const ghostId = `${GHOST_NODE_PREFIX}${ie.ghostEndpoint}`;
+        if (!seenGhosts.has(ghostId)) {
+          ghostNodes.push({ id: ghostId });
+          seenGhosts.add(ghostId);
+        }
+        const source = ie.direction === 'outbound' ? ie.localEndpoint : ghostId;
+        const target = ie.direction === 'outbound' ? ghostId : ie.localEndpoint;
+        ghostEdges.push({ source, target });
+      }
+    }
+
+    const result = await computeLayout(loaded.data, { ghostNodes, ghostEdges });
     const gs = useGraphStore.getState();
 
     for (const [nodeId, position] of result.positions) {
-      gs.updateNodePosition(canvasId, nodeId, position);
+      // Only update real nodes in the store — ghost nodes are render-only
+      if (!nodeId.startsWith(GHOST_NODE_PREFIX)) {
+        gs.updateNodePosition(canvasId, nodeId, position);
+      }
     }
 
     // Fit view after layout settles

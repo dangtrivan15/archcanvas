@@ -7,6 +7,21 @@ import type { Canvas, Position } from '@/types';
 
 export interface LayoutOptions {
   direction?: 'horizontal' | 'vertical';
+  /** Extra nodes to include in layout (e.g. ghost nodes for inherited edges) */
+  ghostNodes?: GhostLayoutNode[];
+  /** Extra edges to include in layout (e.g. inherited edges) */
+  ghostEdges?: GhostLayoutEdge[];
+}
+
+export interface GhostLayoutNode {
+  id: string;
+  width?: number;
+  height?: number;
+}
+
+export interface GhostLayoutEdge {
+  source: string;
+  target: string;
 }
 
 export interface LayoutResult {
@@ -19,6 +34,8 @@ export interface LayoutResult {
 
 const DEFAULT_NODE_WIDTH = 200;
 const DEFAULT_NODE_HEIGHT = 100;
+const GHOST_NODE_WIDTH = 150;
+const GHOST_NODE_HEIGHT = 40;
 
 // ---------------------------------------------------------------------------
 // computeLayout
@@ -41,6 +58,41 @@ export async function computeLayout(
 
   const elk = new ELK();
 
+  const children = nodes.map((node) => ({
+    id: node.id,
+    width: node.position?.width ?? DEFAULT_NODE_WIDTH,
+    height: node.position?.height ?? DEFAULT_NODE_HEIGHT,
+  }));
+
+  // Add ghost nodes for layout participation
+  if (options?.ghostNodes) {
+    for (const ghost of options.ghostNodes) {
+      children.push({
+        id: ghost.id,
+        width: ghost.width ?? GHOST_NODE_WIDTH,
+        height: ghost.height ?? GHOST_NODE_HEIGHT,
+      });
+    }
+  }
+
+  const elkEdges = edges.map((edge, idx) => ({
+    id: `edge-${idx}`,
+    sources: [edge.from.node],
+    targets: [edge.to.node],
+  }));
+
+  // Add ghost edges for layout participation
+  if (options?.ghostEdges) {
+    for (let i = 0; i < options.ghostEdges.length; i++) {
+      const ge = options.ghostEdges[i];
+      elkEdges.push({
+        id: `ghost-edge-${i}`,
+        sources: [ge.source],
+        targets: [ge.target],
+      });
+    }
+  }
+
   const graph = {
     id: 'root',
     layoutOptions: {
@@ -49,16 +101,8 @@ export async function computeLayout(
       'elk.layered.spacing.nodeNodeBetweenLayers': '80',
       'elk.spacing.nodeNode': '50',
     },
-    children: nodes.map((node) => ({
-      id: node.id,
-      width: node.position?.width ?? DEFAULT_NODE_WIDTH,
-      height: node.position?.height ?? DEFAULT_NODE_HEIGHT,
-    })),
-    edges: edges.map((edge, idx) => ({
-      id: `edge-${idx}`,
-      sources: [edge.from.node],
-      targets: [edge.to.node],
-    })),
+    children,
+    edges: elkEdges,
   };
 
   const result = await elk.layout(graph);

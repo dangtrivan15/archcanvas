@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { useFileStore } from './fileStore';
 import { useHistoryStore } from './historyStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+import type { Edge } from '@/types';
 
 interface BreadcrumbEntry {
   canvasId: string;
@@ -11,6 +12,8 @@ interface BreadcrumbEntry {
 interface NavigationStoreState {
   currentCanvasId: string;
   breadcrumb: BreadcrumbEntry[];
+  parentCanvasId: string | null;
+  parentEdges: Edge[];
 
   diveIn(refNodeId: string): void;
   goUp(): void;
@@ -27,6 +30,8 @@ const ROOT_ENTRY: BreadcrumbEntry = {
 export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
   currentCanvasId: ROOT_CANVAS_KEY,
   breadcrumb: [ROOT_ENTRY],
+  parentCanvasId: null,
+  parentEdges: [],
 
   diveIn(refNodeId) {
     const { currentCanvasId } = get();
@@ -54,6 +59,8 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
         ...state.breadcrumb,
         { canvasId: targetCanvasId, displayName },
       ],
+      parentCanvasId: currentCanvasId,
+      parentEdges: canvas.data.edges ?? [],
     }));
   },
 
@@ -64,12 +71,12 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const newBreadcrumb = breadcrumb.slice(0, -1);
     const parent = newBreadcrumb[newBreadcrumb.length - 1];
     useHistoryStore.getState().clear();
-    set({ breadcrumb: newBreadcrumb, currentCanvasId: parent.canvasId });
+    set({ breadcrumb: newBreadcrumb, currentCanvasId: parent.canvasId, parentCanvasId: null, parentEdges: [] });
   },
 
   goToRoot() {
     useHistoryStore.getState().clear();
-    set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
+    set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY], parentCanvasId: null, parentEdges: [] });
   },
 
   goToBreadcrumb(index) {
@@ -79,13 +86,13 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const newBreadcrumb = breadcrumb.slice(0, index + 1);
     const target = newBreadcrumb[index];
     useHistoryStore.getState().clear();
-    set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId });
+    set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId, parentCanvasId: null, parentEdges: [] });
   },
 
   navigateTo(canvasId) {
     useHistoryStore.getState().clear();
     if (canvasId === ROOT_CANVAS_KEY) {
-      set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY] });
+      set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY], parentCanvasId: null, parentEdges: [] });
       return;
     }
 
@@ -100,6 +107,8 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
         ROOT_ENTRY,
         { canvasId, displayName },
       ],
+      parentCanvasId: null,
+      parentEdges: [],
     });
   },
 }));

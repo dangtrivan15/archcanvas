@@ -27,23 +27,22 @@ export function EdgeRenderer({
 
   const styleCategory = data?.styleCategory ?? 'default';
   const edge = data?.edge;
-  const hasRootFrom = edge?.from.node.startsWith('@root/');
-  const hasRootTo = edge?.to.node.startsWith('@root/');
+  const isInherited = data?.inherited === true;
+
+  const classNames = [
+    'react-flow__edge-path',
+    `edge-${styleCategory}`,
+    isInherited ? 'edge-inherited' : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <>
       <path
         id={id}
-        className={`react-flow__edge-path edge-${styleCategory}`}
+        className={classNames}
         d={edgePath}
-        markerEnd={markerEnd}
+        markerEnd={isInherited ? undefined : markerEnd}
       />
-      {hasRootFrom && (
-        <circle cx={sourceX} cy={sourceY} r={6} className="ghost-marker" />
-      )}
-      {hasRootTo && (
-        <circle cx={targetX} cy={targetY} r={6} className="ghost-marker" />
-      )}
       {edge?.label && (
         <EdgeLabelRenderer>
           <div
