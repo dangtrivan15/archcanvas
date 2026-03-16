@@ -15,6 +15,8 @@ export function extractInheritedEdges(parentEdges: Edge[], refNodeId: string): I
     const fromIsLocal = edge.from.node.startsWith(prefix);
     const toIsLocal = edge.to.node.startsWith(prefix);
     if (!fromIsLocal && !toIsLocal) continue;
+    // Both endpoints local = intra-subsystem edge, belongs to child canvas, not inherited
+    if (fromIsLocal && toIsLocal) continue;
 
     results.push({
       edge,

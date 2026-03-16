@@ -69,9 +69,22 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     if (breadcrumb.length <= 1) return; // already at root, no-op
 
     const newBreadcrumb = breadcrumb.slice(0, -1);
-    const parent = newBreadcrumb[newBreadcrumb.length - 1];
+    const target = newBreadcrumb[newBreadcrumb.length - 1];
     useHistoryStore.getState().clear();
-    set({ breadcrumb: newBreadcrumb, currentCanvasId: parent.canvasId, parentCanvasId: null, parentEdges: [] });
+
+    // Restore parent context if still nested (depth >= 2)
+    if (newBreadcrumb.length >= 2) {
+      const parentEntry = newBreadcrumb[newBreadcrumb.length - 2];
+      const parentCanvas = useFileStore.getState().getCanvas(parentEntry.canvasId);
+      set({
+        breadcrumb: newBreadcrumb,
+        currentCanvasId: target.canvasId,
+        parentCanvasId: parentEntry.canvasId,
+        parentEdges: parentCanvas?.data.edges ?? [],
+      });
+    } else {
+      set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId, parentCanvasId: null, parentEdges: [] });
+    }
   },
 
   goToRoot() {
@@ -86,7 +99,20 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const newBreadcrumb = breadcrumb.slice(0, index + 1);
     const target = newBreadcrumb[index];
     useHistoryStore.getState().clear();
-    set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId, parentCanvasId: null, parentEdges: [] });
+
+    // Restore parent context if target is nested (index >= 1)
+    if (index >= 1) {
+      const parentEntry = newBreadcrumb[index - 1];
+      const parentCanvas = useFileStore.getState().getCanvas(parentEntry.canvasId);
+      set({
+        breadcrumb: newBreadcrumb,
+        currentCanvasId: target.canvasId,
+        parentCanvasId: parentEntry.canvasId,
+        parentEdges: parentCanvas?.data.edges ?? [],
+      });
+    } else {
+      set({ breadcrumb: newBreadcrumb, currentCanvasId: target.canvasId, parentCanvasId: null, parentEdges: [] });
+    }
   },
 
   navigateTo(canvasId) {
