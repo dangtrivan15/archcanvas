@@ -5,7 +5,7 @@ import type { CanvasNodeData } from '../canvas/types';
 type GhostNodeProps = NodeProps<RFNode<CanvasNodeData>>;
 
 export function GhostNodeRenderer({ data }: GhostNodeProps) {
-  const displayName = data.node.displayName ?? data.node.id;
+  const displayName = ('displayName' in data.node ? data.node.displayName : undefined) ?? data.node.id;
 
   return (
     <>

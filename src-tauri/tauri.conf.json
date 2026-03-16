@@ -25,5 +25,10 @@
   },
   "bundle": {
     "externalBin": ["binaries/archcanvas-bridge"]
+  },
+  "plugins": {
+    "fs": {
+      "requireLiteralLeadingDot": false
+    }
   }
 }

@@ -83,16 +83,15 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      // Tauri packages are only available inside the Tauri runtime and are
-      // imported dynamically behind `__TAURI_INTERNALS__` guards. Externalise
-      // them so the web-only production build doesn't fail on missing deps.
-      //
       // AI bridge modules (claudeCodeBridge, vitePlugin) and their Node.js-only
       // dependencies are server-side only and must never enter the browser bundle.
+      //
+      // Tauri plugin packages (@tauri-apps/*) are NOT externalized — they are
+      // browser-compatible JS that communicates with the Rust backend via
+      // window.__TAURI_INTERNALS__ IPC. They must be bundled so the webview
+      // can resolve them. They're code-split via dynamic imports and only
+      // loaded when running inside Tauri.
       external: [
-        "@tauri-apps/plugin-fs",
-        "@tauri-apps/api/path",
-        "@tauri-apps/plugin-dialog",
         "@anthropic-ai/claude-agent-sdk",
         "ws",
       ],

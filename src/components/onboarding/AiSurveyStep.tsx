@@ -94,20 +94,22 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
         />
       </div>
 
-      {/* Project Path */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="project-path" className="text-sm font-medium">
-          Project Path <span className="text-red-400">*</span>
-        </label>
-        <input
-          id="project-path"
-          type="text"
-          value={projectPath}
-          onChange={(e) => setProjectPath(e.target.value)}
-          placeholder="/Users/you/projects/my-app"
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
+      {/* Project Path — only show input when path isn't auto-detected (web mode) */}
+      {!fsPath && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="project-path" className="text-sm font-medium">
+            Project Path <span className="text-red-400">*</span>
+          </label>
+          <input
+            id="project-path"
+            type="text"
+            value={projectPath}
+            onChange={(e) => setProjectPath(e.target.value)}
+            placeholder="/Users/you/projects/my-app"
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      )}
 
       {/* Tech stack */}
       <div className="flex flex-col gap-1.5">

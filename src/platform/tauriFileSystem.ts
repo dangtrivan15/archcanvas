@@ -6,7 +6,6 @@ import {
   mkdir as tauriMkdir,
   readDir,
 } from '@tauri-apps/plugin-fs';
-import { join } from '@tauri-apps/api/path';
 
 export class TauriFileSystem implements FileSystem {
   constructor(private rootPath: string) {}
@@ -20,20 +19,22 @@ export class TauriFileSystem implements FileSystem {
     return this.rootPath;
   }
 
-  private async resolve(path: string): Promise<string> {
-    return join(this.rootPath, path);
+  private resolve(path: string): string {
+    const root = this.rootPath.replace(/\/+$/, '');
+    const rel = path.replace(/^\/+/, '');
+    return `${root}/${rel}`;
   }
 
   async readFile(path: string): Promise<string> {
-    return readTextFile(await this.resolve(path));
+    return readTextFile(this.resolve(path));
   }
 
   async writeFile(path: string, content: string): Promise<void> {
-    await writeTextFile(await this.resolve(path), content);
+    await writeTextFile(this.resolve(path), content);
   }
 
   async listFiles(path: string): Promise<string[]> {
-    const entries = await readDir(await this.resolve(path));
+    const entries = await readDir(this.resolve(path));
     return entries
       .filter((e) => e.isFile)
       .map((e) => e.name)
@@ -41,10 +42,10 @@ export class TauriFileSystem implements FileSystem {
   }
 
   async exists(path: string): Promise<boolean> {
-    return tauriExists(await this.resolve(path));
+    return tauriExists(this.resolve(path));
   }
 
   async mkdir(path: string): Promise<void> {
-    await tauriMkdir(await this.resolve(path), { recursive: true });
+    await tauriMkdir(this.resolve(path), { recursive: true });
   }
 }

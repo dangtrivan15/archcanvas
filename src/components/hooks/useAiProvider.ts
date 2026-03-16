@@ -5,12 +5,12 @@ import { useChatStore } from '@/store/chatStore';
 /**
  * Resolve the WebSocket URL for the AI bridge.
  *
- * - **Tauri mode** (`__TAURI__` in window): queries the Rust backend for the
- *   bridge sidecar port via `invoke('get_bridge_port')`.
+ * - **Tauri mode** (`__TAURI_INTERNALS__` in window): queries the Rust backend
+ *   for the bridge sidecar port via `invoke('get_bridge_port')`.
  * - **Web mode**: derives the URL from the current page origin (Vite dev server).
  */
 async function resolveBridgeUrl(): Promise<string> {
-  if (typeof window !== 'undefined' && '__TAURI__' in window) {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     const { invoke } = await import('@tauri-apps/api/core');
     // Retry a few times — the sidecar may still be starting up
     let port: number | undefined;
