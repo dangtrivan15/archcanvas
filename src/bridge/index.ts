@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Standalone bridge server entry point.
  *

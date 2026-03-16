@@ -6,6 +6,7 @@ dist/
 
 # Tauri
 src-tauri/target/
+src-tauri/binaries/archcanvas-bridge-*
 
 # Environment
 .env
