@@ -14,8 +14,9 @@ export function NodeRenderer({ data }: NodeRendererProps) {
   // Determine display name
   const displayName = (() => {
     if (isRef && 'ref' in node) {
-      const refCanvas = useFileStore.getState().getCanvas(node.ref);
-      return refCanvas?.data.displayName ?? node.ref;
+      // Canvas map is keyed by node.id, not the ref filename
+      const refCanvas = useFileStore.getState().getCanvas(node.id);
+      return refCanvas?.data.displayName ?? node.id;
     }
     return ('displayName' in node && node.displayName) ? node.displayName : node.id;
   })();

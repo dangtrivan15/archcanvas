@@ -61,7 +61,7 @@ async function setupStores(): Promise<void> {
     ...seedData,
     nodes: [
       ...(seedData.nodes ?? []),
-      { id: 'child-ref', ref: 'child-canvas' },
+      { id: 'child-ref', ref: 'child-canvas.yaml' },
     ],
   };
   fs.seed({
@@ -105,7 +105,7 @@ describe('searchCommand', () => {
       expect(nodeResults.length).toBeGreaterThanOrEqual(2);
       const scopes = nodeResults.map((r: Record<string, unknown>) => r.scope);
       expect(scopes).toContain(ROOT_CANVAS_KEY);
-      expect(scopes).toContain('child-canvas');
+      expect(scopes).toContain('child-ref');
     } finally {
       capture.restore();
     }
@@ -200,7 +200,7 @@ describe('searchCommand', () => {
       await searchCommand('inner-api', {}, { json: true });
       const result = JSON.parse(capture.output);
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].scope).toBe('child-canvas');
+      expect(result.results[0].scope).toBe('child-ref');
     } finally {
       capture.restore();
     }

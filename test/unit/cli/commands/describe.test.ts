@@ -31,7 +31,7 @@ const seedData: Canvas = {
       codeRefs: ['src/api/index.ts'],
     },
     { id: 'svc-db', type: 'data/database', displayName: 'Main DB' },
-    { id: 'child-scope', ref: 'child-canvas' },
+    { id: 'child-scope', ref: 'child-canvas.yaml' },
   ],
   edges: [
     { from: { node: 'svc-api' }, to: { node: 'svc-db' }, label: 'reads from', protocol: 'TCP' },
@@ -172,8 +172,8 @@ describe('describeCommand', () => {
       await describeCommand({}, { json: true });
       const result = JSON.parse(capture.output);
 
-      // The child-canvas scope should be present
-      const child = result.scopes.find((s: Record<string, unknown>) => s.canvasId === 'child-canvas');
+      // The child-scope canvas should be present (keyed by node.id)
+      const child = result.scopes.find((s: Record<string, unknown>) => s.canvasId === 'child-scope');
       expect(child).toBeDefined();
       expect(child.nodeCount).toBe(1);
     } finally {
@@ -249,7 +249,7 @@ describe('describeCommand', () => {
       const result = JSON.parse(capture.output);
       expect(result.ok).toBe(true);
       expect(result.node.id).toBe('child-scope');
-      expect(result.node.ref).toBe('child-canvas');
+      expect(result.node.ref).toBe('child-canvas.yaml');
     } finally {
       capture.restore();
     }

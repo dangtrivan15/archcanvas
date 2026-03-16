@@ -38,7 +38,8 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const node = (canvas.data.nodes ?? []).find((n) => n.id === refNodeId);
     if (!node || !('ref' in node) || !node.ref) return;
 
-    const targetCanvasId = node.ref;
+    // Canvas map is keyed by node.id (the ref-node identity), not the ref filename
+    const targetCanvasId = refNodeId;
 
     // Verify the target canvas exists
     const targetCanvas = fileStore.getCanvas(targetCanvasId);

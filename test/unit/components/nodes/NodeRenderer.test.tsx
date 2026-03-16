@@ -186,7 +186,7 @@ describe('NodeRenderer', () => {
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
-          node: makeRefNode({ ref: 'known-canvas' }),
+          node: makeRefNode({ id: 'known-canvas', ref: 'known-canvas.yaml' }),
           nodeDef: undefined,
           isSelected: false,
           isRef: true,
@@ -195,15 +195,15 @@ describe('NodeRenderer', () => {
     );
     const node = container.firstChild as HTMLElement;
     expect(node.className).toContain('ref-node');
-    // displayName resolved from mocked fileStore
+    // displayName resolved from mocked fileStore using node.id
     expect(container.textContent).toContain('Known Canvas');
   });
 
-  it('falls back to ref id when canvas not found in fileStore', () => {
+  it('falls back to node id when canvas not found in fileStore', () => {
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
-          node: makeRefNode({ ref: 'unknown-canvas' }),
+          node: makeRefNode({ id: 'unknown-canvas', ref: 'unknown-canvas.yaml' }),
           nodeDef: undefined,
           isSelected: false,
           isRef: true,
