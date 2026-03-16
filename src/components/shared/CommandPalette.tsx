@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Command } from 'cmdk';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
-import type { Node, Entity } from '@/types';
-import { listNodes, listEntities, findEdgesReferencingEntity } from '@/core/graph/query';
+import type { Node } from '@/types';
+import { listNodes } from '@/core/graph/query';
+import { listAllEntities } from '@/core/entity/resolver';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -210,14 +211,13 @@ const EntityProvider: PaletteProvider = {
   category: 'Entities',
 
   search(query: string): PaletteResult[] {
-    const { currentCanvasId } = useNavigationStore.getState();
-    const canvas = useFileStore.getState().getCanvas(currentCanvasId);
-    if (!canvas) return [];
+    const project = useFileStore.getState().project;
+    if (!project) return [];
 
-    const entities: Entity[] = listEntities(canvas.data);
+    const allEntities = listAllEntities(project);
     const q = query.toLowerCase();
 
-    return entities
+    return allEntities
       .filter((entity) => {
         if (q === '') return true;
         return (
@@ -228,7 +228,9 @@ const EntityProvider: PaletteProvider = {
       .map((entity) => ({
         id: `entity:${entity.name}`,
         title: entity.name,
-        subtitle: entity.description,
+        subtitle: entity.description
+          ? `${entity.description} — ${entity.definedIn.join(', ')}`
+          : entity.definedIn.join(', '),
         icon: '⬡',
         category: 'Entities',
       }));
@@ -239,11 +241,16 @@ const EntityProvider: PaletteProvider = {
     const project = useFileStore.getState().project;
     if (!project) return;
 
-    const refs = findEdgesReferencingEntity(project.canvases, entityName);
-    if (refs.length === 0) return;
+    // Find the first canvas that defines this entity and navigate there
+    const allEntities = listAllEntities(project);
+    const entity = allEntities.find((e) => e.name === entityName);
+    if (entity && entity.definedIn.length > 0) {
+      useNavigationStore.getState().navigateTo(entity.definedIn[0]);
+    }
 
-    const { edge } = refs[0];
-    useCanvasStore.getState().selectEdge(edge.from.node, edge.to.node);
+    // Switch to entities panel
+    useUiStore.getState().setRightPanelMode('entities');
+    useUiStore.getState().openRightPanel();
   },
 };
 

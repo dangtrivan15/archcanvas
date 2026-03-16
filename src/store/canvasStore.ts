@@ -9,6 +9,7 @@ interface CanvasStoreState {
   selectedNodeIds: Set<string>;
   selectedEdgeKeys: Set<string>; // "from→to" format
   draftEdge: { from: EdgeEndpoint } | null;
+  highlightedEdgeIds: string[];
 
   selectNodes(ids: string[]): void;
   selectEdge(from: string, to: string): void;
@@ -17,12 +18,15 @@ interface CanvasStoreState {
   completeDraftEdge(to: EdgeEndpoint, fromOverride?: EdgeEndpoint): EngineResult;
   cancelDraftEdge(): void;
   deleteSelection(): EngineResult | null;
+  highlightEdges(edgeIds: string[]): void;
+  clearHighlight(): void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   selectedNodeIds: new Set(),
   selectedEdgeKeys: new Set(),
   draftEdge: null,
+  highlightedEdgeIds: [],
 
   selectNodes(ids) {
     set({ selectedNodeIds: new Set(ids), selectedEdgeKeys: new Set() });
@@ -82,5 +86,13 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
 
     set({ selectedNodeIds: new Set(), selectedEdgeKeys: new Set() });
     return firstFailure;
+  },
+
+  highlightEdges(edgeIds) {
+    set({ highlightedEdgeIds: edgeIds });
+  },
+
+  clearHighlight() {
+    set({ highlightedEdgeIds: [] });
   },
 }));

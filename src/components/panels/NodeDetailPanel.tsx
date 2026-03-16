@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { InlineNode } from '@/types';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import { useGraphStore } from '@/store/graphStore';
+import { useUiStore } from '@/store/uiStore';
 import { PropertiesTab } from './PropertiesTab';
 import { NotesTab } from './NotesTab';
 import { CodeRefsTab } from './CodeRefsTab';
@@ -14,6 +15,16 @@ interface Props {
 
 export function NodeDetailPanel({ node, nodeDef, canvasId }: Props) {
   const [activeTab, setActiveTab] = useState<'properties' | 'notes' | 'code'>('properties');
+  const detailPanelTab = useUiStore((s) => s.detailPanelTab);
+
+  // External tab-switch API: uiStore.setDetailPanelTab() drives the active tab
+  useEffect(() => {
+    if (!detailPanelTab) return;
+    const mapped = detailPanelTab === 'codeRefs' ? 'code' : detailPanelTab;
+    setActiveTab(mapped);
+    useUiStore.getState().setDetailPanelTab(null); // clear after applying
+  }, [detailPanelTab]);
+
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(node.displayName ?? node.id);
 

@@ -11,6 +11,8 @@ interface UiState {
   toggleRightPanel: () => void;
   openRightPanel: () => void;
   toggleChat: () => void;
+  detailPanelTab: 'properties' | 'notes' | 'codeRefs' | null;
+  setDetailPanelTab: (tab: 'properties' | 'notes' | 'codeRefs' | null) => void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -41,6 +43,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   openRightPanel: () => {
     rightPanelRef?.current?.expand();
   },
+
+  detailPanelTab: null,
+  setDetailPanelTab: (tab) => set({ detailPanelTab: tab }),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {
