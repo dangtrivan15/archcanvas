@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { Node as RFNode, Connection } from '@xyflow/react';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useNavigationStore } from '@/store/navigationStore';
 import type { CanvasNodeData } from '../types';
 
 export function useCanvasInteractions() {
@@ -20,7 +21,9 @@ export function useCanvasInteractions() {
 
   const onConnect = useCallback((connection: Connection) => {
     if (connection.source && connection.target) {
+      const canvasId = useNavigationStore.getState().currentCanvasId;
       useCanvasStore.getState().completeDraftEdge(
+        canvasId,
         { node: connection.target },
         { node: connection.source },
       );
@@ -45,6 +48,7 @@ export function useCanvasInteractions() {
 
   const onPaneClick = useCallback(() => {
     useCanvasStore.getState().clearSelection();
+    useCanvasStore.getState().clearHighlight();
   }, []);
 
   return {

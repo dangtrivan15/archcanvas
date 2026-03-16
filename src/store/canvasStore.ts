@@ -3,7 +3,6 @@ import type { EdgeEndpoint } from '@/types';
 import type { EngineResult } from '@/core/graph/types';
 import { useGraphStore } from './graphStore';
 import { useHistoryStore } from './historyStore';
-import { useNavigationStore } from './navigationStore';
 
 interface CanvasStoreState {
   selectedNodeIds: Set<string>;
@@ -15,9 +14,9 @@ interface CanvasStoreState {
   selectEdge(from: string, to: string): void;
   clearSelection(): void;
   startDraftEdge(from: EdgeEndpoint): void;
-  completeDraftEdge(to: EdgeEndpoint, fromOverride?: EdgeEndpoint): EngineResult;
+  completeDraftEdge(canvasId: string, to: EdgeEndpoint, fromOverride?: EdgeEndpoint): EngineResult;
   cancelDraftEdge(): void;
-  deleteSelection(): EngineResult | null;
+  deleteSelection(canvasId: string): EngineResult | null;
   highlightEdges(edgeIds: string[]): void;
   clearHighlight(): void;
 }
@@ -44,12 +43,11 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     set({ draftEdge: { from } });
   },
 
-  completeDraftEdge(to, fromOverride) {
+  completeDraftEdge(canvasId, to, fromOverride) {
     const { draftEdge } = get();
     const fromEndpoint = fromOverride ?? draftEdge?.from ?? { node: '' };
     // Always clear draftEdge regardless of outcome
     set({ draftEdge: null });
-    const canvasId = useNavigationStore.getState().currentCanvasId;
     return useGraphStore.getState().addEdge(canvasId, { from: fromEndpoint, to });
   },
 
@@ -57,11 +55,10 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     set({ draftEdge: null });
   },
 
-  deleteSelection() {
+  deleteSelection(canvasId) {
     const { selectedNodeIds, selectedEdgeKeys } = get();
     const gs = useGraphStore.getState();
     const hs = useHistoryStore.getState();
-    const canvasId = useNavigationStore.getState().currentCanvasId;
     let firstFailure: EngineResult | null = null;
 
     // Batch all deletions so they produce a single undo entry

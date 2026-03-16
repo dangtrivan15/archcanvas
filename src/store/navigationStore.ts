@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useFileStore } from './fileStore';
 import { useHistoryStore } from './historyStore';
+import { useCanvasStore } from './canvasStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import type { Edge } from '@/types';
 
@@ -53,6 +54,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const displayName = targetCanvas.data.displayName ?? refNodeId;
 
     useHistoryStore.getState().clear();
+    useCanvasStore.getState().clearHighlight();
     set((state) => ({
       currentCanvasId: targetCanvasId,
       breadcrumb: [
@@ -71,6 +73,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const newBreadcrumb = breadcrumb.slice(0, -1);
     const target = newBreadcrumb[newBreadcrumb.length - 1];
     useHistoryStore.getState().clear();
+    useCanvasStore.getState().clearHighlight();
 
     // Restore parent context if still nested (depth >= 2)
     if (newBreadcrumb.length >= 2) {
@@ -89,6 +92,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
   goToRoot() {
     useHistoryStore.getState().clear();
+    useCanvasStore.getState().clearHighlight();
     set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY], parentCanvasId: null, parentEdges: [] });
   },
 
@@ -99,6 +103,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
     const newBreadcrumb = breadcrumb.slice(0, index + 1);
     const target = newBreadcrumb[index];
     useHistoryStore.getState().clear();
+    useCanvasStore.getState().clearHighlight();
 
     // Restore parent context if target is nested (index >= 1)
     if (index >= 1) {
@@ -117,6 +122,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
 
   navigateTo(canvasId) {
     useHistoryStore.getState().clear();
+    useCanvasStore.getState().clearHighlight();
     if (canvasId === ROOT_CANVAS_KEY) {
       set({ currentCanvasId: ROOT_CANVAS_KEY, breadcrumb: [ROOT_ENTRY], parentCanvasId: null, parentEdges: [] });
       return;

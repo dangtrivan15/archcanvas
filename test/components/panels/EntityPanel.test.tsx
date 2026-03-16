@@ -11,14 +11,35 @@ import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 let mockProject: ResolvedProject | null = null;
 let mockCurrentCanvasId = ROOT_CANVAS_KEY;
 
+const mockFileStoreState = {
+  get project() { return mockProject; },
+  getCanvas: (canvasId: string) => mockProject?.canvases.get(canvasId),
+};
+
 vi.mock('@/store/fileStore', () => ({
-  useFileStore: (sel: (s: { project: ResolvedProject | null }) => unknown) =>
-    sel({ project: mockProject }),
+  useFileStore: Object.assign(
+    (sel: (s: { project: ResolvedProject | null }) => unknown) => sel({ project: mockProject }),
+    { getState: () => mockFileStoreState },
+  ),
 }));
 
 vi.mock('@/store/navigationStore', () => ({
-  useNavigationStore: (sel: (s: { currentCanvasId: string }) => unknown) =>
-    sel({ currentCanvasId: mockCurrentCanvasId }),
+  useNavigationStore: Object.assign(
+    (sel: (s: { currentCanvasId: string }) => unknown) => sel({ currentCanvasId: mockCurrentCanvasId }),
+    { getState: () => ({ currentCanvasId: mockCurrentCanvasId }) },
+  ),
+}));
+
+const mockHighlightEdges = vi.fn();
+const mockClearHighlight = vi.fn();
+
+vi.mock('@/store/canvasStore', () => ({
+  useCanvasStore: {
+    getState: () => ({
+      highlightEdges: mockHighlightEdges,
+      clearHighlight: mockClearHighlight,
+    }),
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -80,6 +101,8 @@ describe('EntityPanel', () => {
   beforeEach(() => {
     mockProject = null;
     mockCurrentCanvasId = ROOT_CANVAS_KEY;
+    mockHighlightEdges.mockClear();
+    mockClearHighlight.mockClear();
   });
 
   it('renders "No project loaded" when project is null', () => {

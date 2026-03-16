@@ -119,7 +119,7 @@ describe('canvasStore', () => {
     useGraphStore.getState().addNode(ROOT_CANVAS_KEY, { id: 'node-c', type: 'compute/service' });
 
     useCanvasStore.getState().startDraftEdge({ node: 'node-a' });
-    const result = useCanvasStore.getState().completeDraftEdge({ node: 'node-c' });
+    const result = useCanvasStore.getState().completeDraftEdge(ROOT_CANVAS_KEY,{ node: 'node-c' });
 
     expect(result.ok).toBe(true);
 
@@ -137,7 +137,7 @@ describe('canvasStore', () => {
   it('completeDraftEdge clears draftEdge even on failure', () => {
     // node-a → node-b already exists in seed data — this will produce DUPLICATE_EDGE
     useCanvasStore.getState().startDraftEdge({ node: 'node-a' });
-    const result = useCanvasStore.getState().completeDraftEdge({ node: 'node-b' });
+    const result = useCanvasStore.getState().completeDraftEdge(ROOT_CANVAS_KEY,{ node: 'node-b' });
 
     expect(result.ok).toBe(false);
 
@@ -158,7 +158,7 @@ describe('canvasStore', () => {
 
   it('deleteSelection removes selected nodes via graphStore', () => {
     useCanvasStore.getState().selectNodes(['node-a']);
-    const result = useCanvasStore.getState().deleteSelection();
+    const result = useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     expect(result).toBeNull(); // null = all succeeded
 
@@ -169,7 +169,7 @@ describe('canvasStore', () => {
 
   it('deleteSelection removes selected edges via graphStore', () => {
     useCanvasStore.getState().selectEdge('node-a', 'node-b');
-    const result = useCanvasStore.getState().deleteSelection();
+    const result = useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     expect(result).toBeNull();
 
@@ -181,7 +181,7 @@ describe('canvasStore', () => {
 
   it('deleteSelection clears selection after operation', () => {
     useCanvasStore.getState().selectNodes(['node-a']);
-    useCanvasStore.getState().deleteSelection();
+    useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     const { selectedNodeIds, selectedEdgeKeys } = useCanvasStore.getState();
     expect(selectedNodeIds.size).toBe(0);
@@ -189,13 +189,13 @@ describe('canvasStore', () => {
   });
 
   it('deleteSelection returns null when nothing selected', () => {
-    const result = useCanvasStore.getState().deleteSelection();
+    const result = useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
     expect(result).toBeNull();
   });
 
   it('deleteSelection returns first failure result when a node does not exist', () => {
     useCanvasStore.setState({ selectedNodeIds: new Set(['ghost-node']), selectedEdgeKeys: new Set() });
-    const result = useCanvasStore.getState().deleteSelection();
+    const result = useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     expect(result).not.toBeNull();
     expect(result?.ok).toBe(false);
@@ -209,7 +209,7 @@ describe('canvasStore', () => {
 
     // Select both seed nodes and delete
     useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
-    useCanvasStore.getState().deleteSelection();
+    useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     // Should be exactly 1 history entry, not 2
     expect(useHistoryStore.getState().undoStack).toHaveLength(1);
@@ -225,7 +225,7 @@ describe('canvasStore', () => {
     useHistoryStore.getState().clear();
 
     useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
-    useCanvasStore.getState().deleteSelection();
+    useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
 
     // One undo should restore both nodes
     useHistoryStore.getState().undo();
@@ -240,7 +240,7 @@ describe('canvasStore', () => {
     useHistoryStore.getState().clear();
 
     useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
-    useCanvasStore.getState().deleteSelection();
+    useCanvasStore.getState().deleteSelection(ROOT_CANVAS_KEY);
     useHistoryStore.getState().undo();
     useHistoryStore.getState().redo();
 

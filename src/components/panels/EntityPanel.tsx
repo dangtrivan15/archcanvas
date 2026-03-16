@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useFileStore } from '../../store/fileStore';
 import { useNavigationStore } from '../../store/navigationStore';
+import { useCanvasStore } from '../../store/canvasStore';
 import { getEntitiesForCanvas, findEntityUsages } from '../../core/entity/resolver';
 import type { ResolvedProject } from '../../storage/fileResolver';
 import type { Entity } from '../../types/schema';
@@ -115,9 +116,20 @@ export function EntityPanel() {
               entity={entity}
               project={project}
               expanded={expandedEntity === entity.name}
-              onToggle={() =>
-                setExpandedEntity(expandedEntity === entity.name ? null : entity.name)
-              }
+              onToggle={() => {
+                const expanding = expandedEntity !== entity.name;
+                setExpandedEntity(expanding ? entity.name : null);
+                if (expanding) {
+                  // Highlight edges referencing this entity in the current canvas
+                  const canvas = useFileStore.getState().getCanvas(currentCanvasId);
+                  const edgeIds = (canvas?.data.edges ?? [])
+                    .filter((e) => e.entities?.includes(entity.name))
+                    .map((e) => `${e.from.node}-${e.to.node}`);
+                  useCanvasStore.getState().highlightEdges(edgeIds);
+                } else {
+                  useCanvasStore.getState().clearHighlight();
+                }
+              }}
             />
           ))
         )}
