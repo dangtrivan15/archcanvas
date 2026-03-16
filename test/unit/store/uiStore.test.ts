@@ -63,6 +63,11 @@ describe('uiStore', () => {
     expect(ref.current.isCollapsed()).toBe(false);
   });
 
+  it('setRightPanelMode accepts entities mode', () => {
+    useUiStore.getState().setRightPanelMode('entities');
+    expect(useUiStore.getState().rightPanelMode).toBe('entities');
+  });
+
   it('toggle methods are safe to call before refs are set', () => {
     useUiStore.getState().toggleLeftPanel();
     useUiStore.getState().toggleRightPanel();

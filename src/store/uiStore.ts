@@ -3,10 +3,10 @@ import type { RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 
 interface UiState {
-  rightPanelMode: 'details' | 'chat';
+  rightPanelMode: 'details' | 'chat' | 'entities';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
-  setRightPanelMode: (mode: 'details' | 'chat') => void;
+  setRightPanelMode: (mode: 'details' | 'chat' | 'entities') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   openRightPanel: () => void;
