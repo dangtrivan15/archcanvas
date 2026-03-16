@@ -33,12 +33,12 @@ Exploration instructions:
 Please:
 1. Explore the project structure and key configuration files
 2. Identify major services, components, and infrastructure
-3. Create nodes for each component using \`archcanvas add-node\`
-4. Create edges showing how components communicate using \`archcanvas add-edge\`
+3. Create nodes for each component using \`add_node\`
+4. Create edges showing how components communicate using \`add_edge\`
 5. Use subsystems (nested canvases) for complex components
 6. Define entities for data flowing between components
 7. Add meaningful edge labels and protocols (HTTP, gRPC, SQL, etc.)
 8. Add notes for architectural decisions you observe
 
-Use the built-in node types (compute/service, data/database, messaging/message-queue, etc.). Run \`archcanvas catalog --json\` to see all available types.`;
+Use the built-in node types (compute/service, data/database, messaging/message-queue, etc.). Run \`catalog\` to see all available types.`;
 }
