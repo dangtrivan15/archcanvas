@@ -278,52 +278,50 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('ArchCanvas');
   });
 
-  it('instructs to use --json flag', () => {
+  it('documents tools as auto-approved', () => {
     const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toContain('--json');
+    expect(prompt).toContain('auto-approved');
   });
 
-  // --- All 10 CLI command signatures ---
-  const commandSignatures = [
-    ['list', 'archcanvas list'],
-    ['describe', 'archcanvas describe'],
-    ['search', 'archcanvas search'],
-    ['add-node', 'archcanvas add-node'],
-    ['add-edge', 'archcanvas add-edge'],
-    ['remove-node', 'archcanvas remove-node'],
-    ['remove-edge', 'archcanvas remove-edge'],
-    ['import', 'archcanvas import'],
-    ['init', 'archcanvas init'],
-    ['catalog', 'archcanvas catalog'],
+  // --- All 9 MCP tool names ---
+  const toolNames = [
+    'add_node',
+    'add_edge',
+    'remove_node',
+    'remove_edge',
+    'import_yaml',
+    'list',
+    'describe',
+    'search',
+    'catalog',
   ] as const;
 
-  for (const [name, signature] of commandSignatures) {
-    it(`includes the ${name} command`, () => {
+  for (const name of toolNames) {
+    it(`includes the ${name} tool`, () => {
       const prompt = buildSystemPrompt(baseContext);
-      expect(prompt).toContain(signature);
+      expect(prompt).toContain(`**${name}**`);
     });
   }
 
-  it('add-edge signature includes --from and --to flags', () => {
+  it('add_edge tool documents from, to, and optional port parameters', () => {
     const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toMatch(/add-edge\s+--from\s+<nodeId>\s+--to\s+<nodeId>/);
+    expect(prompt).toContain('from (string)');
+    expect(prompt).toContain('to (string)');
+    expect(prompt).toContain('fromPort');
+    expect(prompt).toContain('toPort');
   });
 
-  it('add-edge signature includes --from-port and --to-port flags', () => {
+  it('list tool documents scope and type parameters', () => {
     const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toContain('--from-port');
-    expect(prompt).toContain('--to-port');
+    expect(prompt).toMatch(/list.*scope/);
+    expect(prompt).toContain('nodes|edges|entities|all');
   });
 
-  it('remove-edge signature includes --from and --to flags', () => {
+  it('does not reference CLI commands', () => {
     const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toMatch(/remove-edge\s+--from\s+<nodeId>\s+--to\s+<nodeId>/);
-  });
-
-  it('list command includes --scope and --type flags', () => {
-    const prompt = buildSystemPrompt(baseContext);
-    expect(prompt).toMatch(/list\s+\[--scope/);
-    expect(prompt).toContain('--type');
+    expect(prompt).not.toContain('archcanvas list');
+    expect(prompt).not.toContain('archcanvas add-node');
+    expect(prompt).not.toContain('--json');
   });
 });
 

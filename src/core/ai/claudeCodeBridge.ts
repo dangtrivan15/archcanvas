@@ -38,9 +38,12 @@ export type { Query as SDKQuery, SDKMessage } from '@anthropic-ai/claude-agent-s
  * Shape of the SDK `query` function. Uses the SDK's own `Options` and `Query` types.
  * The real implementation comes from `@anthropic-ai/claude-agent-sdk`.
  * Tests inject a mock that conforms to this interface.
+ *
+ * The prompt is `string` for simple calls, or an `AsyncIterable` for streaming
+ * input mode (required by some SDK features like MCP server integration).
  */
 export type SDKQueryFn = (args: {
-  prompt: string;
+  prompt: string | AsyncIterable<{ type: 'user'; message: { role: 'user'; content: string } }>;
   options?: SDKOptions;
 }) => Query;
 
