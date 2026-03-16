@@ -27,22 +27,19 @@ class WebFilePicker implements FilePicker {
 
 /**
  * Tauri implementation — uses Tauri dialog API.
- * Placeholder until @tauri-apps/plugin-dialog is wired up.
- *
- * The dynamic import uses a variable to prevent Vite from statically
- * analyzing and failing on the missing Tauri package during dev/test builds.
+ * The @tauri-apps/plugin-dialog package is bundled into the frontend
+ * and communicates with the Rust backend via __TAURI_INTERNALS__ IPC.
  */
 class TauriFilePicker implements FilePicker {
   async pickDirectory(): Promise<FileSystem | null> {
     try {
-      // Indirection prevents Vite's import analysis from resolving at build time
-      const dialogModule = '@tauri-apps/plugin-dialog';
-      const { open } = await import(/* @vite-ignore */ dialogModule);
-      const selected = await open({ directory: true, multiple: false });
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({ directory: true, multiple: false, recursive: true });
       if (!selected || typeof selected !== 'string') return null;
       const { TauriFileSystem } = await import('./tauriFileSystem');
       return new TauriFileSystem(selected);
-    } catch {
+    } catch (err) {
+      console.error('[TauriFilePicker] Dialog failed:', err);
       return null;
     }
   }

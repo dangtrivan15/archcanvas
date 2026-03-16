@@ -62,19 +62,17 @@ describe('createFileSystem', () => {
   });
 
   describe('Branch 3: TauriFileSystem (window.__TAURI_INTERNALS__)', () => {
-    it('attempts TauriFileSystem import when Tauri internals are present', async () => {
+    it('creates TauriFileSystem when Tauri internals are present', async () => {
       // Add __TAURI_INTERNALS__ to window to trigger the Tauri branch
       // @ts-expect-error — adding Tauri marker for detection
       globalThis.window.__TAURI_INTERNALS__ = {};
 
       const { createFileSystem } = await import('@/platform/index');
 
-      // The dynamic import of tauriFileSystem will fail because
-      // @tauri-apps/plugin-fs is not installed. This is expected —
-      // we're verifying the branch is entered (not the unknown environment error).
-      await expect(createFileSystem('/tauri/root')).rejects.toThrow(
-        /@tauri-apps/,
-      );
+      // @tauri-apps/plugin-fs is installed, so the import succeeds
+      // and returns a TauriFileSystem instance.
+      const fs = await createFileSystem('/tauri/root');
+      expect(fs.getPath()).toBe('/tauri/root');
     });
   });
 
