@@ -32,24 +32,8 @@ import { createArchCanvasMcpServer, MCP_TOOL_NAMES } from './mcpTools';
 // ---------------------------------------------------------------------------
 
 const WS_PATH = '/__archcanvas_ai';
-const API_PREFIX = '/__archcanvas_ai/api/';
 const HEALTH_PATH = '/__archcanvas_ai/health';
 const REQUEST_TIMEOUT_MS = 10_000;
-
-/** Maps HTTP route segments to store action names sent to the browser. */
-const ROUTE_TO_ACTION: Record<string, string> = {
-  // writes
-  'add-node': 'addNode',
-  'add-edge': 'addEdge',
-  'remove-node': 'removeNode',
-  'remove-edge': 'removeEdge',
-  'import': 'import',
-  // reads
-  'list': 'list',
-  'describe': 'describe',
-  'search': 'search',
-  'catalog': 'catalog',
-};
 
 // ---------------------------------------------------------------------------
 // Store-action message types (server <-> browser via WebSocket)
@@ -140,48 +124,6 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
     if (req.method === 'GET' && pathname === HEALTH_PATH) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
-      return true;
-    }
-
-    // API routes
-    if (req.method === 'POST' && pathname.startsWith(API_PREFIX)) {
-      const route = pathname.slice(API_PREFIX.length);
-      const action = ROUTE_TO_ACTION[route];
-
-      if (!action) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: { code: 'NOT_FOUND', message: `Unknown route: ${route}` } }));
-        return true;
-      }
-
-      // Read request body, relay via relayStoreAction, write HTTP response
-      let body = '';
-      req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
-      req.on('end', async () => {
-        let args: Record<string, unknown>;
-        try {
-          args = body ? JSON.parse(body) : {};
-        } catch {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: { code: 'INVALID_JSON', message: 'Invalid JSON body' } }));
-          return;
-        }
-
-        const result = await relayStoreAction(action, args);
-
-        let status: number;
-        if (result.ok) {
-          status = 200;
-        } else if (result.error?.code === 'BRIDGE_DISCONNECTED') {
-          status = 502;
-        } else if (result.error?.code === 'BRIDGE_TIMEOUT') {
-          status = 504;
-        } else {
-          status = 500;
-        }
-        res.writeHead(status, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(result.ok ? { ok: true, data: result.data } : { ok: false, error: result.error }));
-      });
       return true;
     }
 

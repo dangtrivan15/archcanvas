@@ -44,7 +44,7 @@ ArchCanvas is a visual architecture design tool for **engineers and architects**
 ### What ArchCanvas IS
 
 - A visual architecture design tool backed by human-readable YAML files
-- An AI-native tool where AI interacts via CLI (same interface as humans)
+- An AI-native tool where AI interacts via in-process MCP tools (no external binary needed)
 - A community-extensible platform through NodeDef definitions and a registry
 
 ### What ArchCanvas is NOT
@@ -60,10 +60,10 @@ ArchCanvas is a visual architecture design tool for **engineers and architects**
 | Principle | Meaning |
 |-----------|---------|
 | **YAML is truth** | Human-readable files in `.archcanvas/`, committed to git alongside source code. |
-| **Closed-source app, open format** | The file format is open (YAML). The app, CLI, and ecosystem are the product. |
+| **Closed-source app, open format** | The file format is open (YAML). The app and ecosystem are the product. |
 | **Nodes are everything** | Every architectural concept is a node. Infrastructure, services, databases, queues — all nodes. Edges are just arrows between ports. |
 | **Nestable by default** | Any node can contain child nodes. A canvas IS a node. Systems contain subsystems recursively. |
-| **AI-native** | AI doesn't use a special API. It uses the same CLI humans can use. Two AI backends (API key, Claude Code CLI) behind one chat UI. |
+| **AI-native** | AI uses in-process MCP tools to read/write architecture. Two AI backends (API key, Claude Code SDK) behind one chat UI. |
 | **Community-extensible** | NodeDefs define what types of nodes exist. Built-in set for onboarding. Community registry for sharing custom definitions. |
 | **Git-friendly** | One YAML file per canvas scope. Meaningful diffs in PRs. Visual graph diff on roadmap. |
 
@@ -466,7 +466,7 @@ The matrix is a simple lookup table shipped with the app and updatable in future
 | **Styling** | Tailwind CSS 4 + shadcn/ui | Utility-first, consistent component library |
 | **State** | Zustand | Lightweight, focused stores, no boilerplate |
 | **Desktop + iPad** | Tauri 2.0 | Mac + iPad + Web from one codebase |
-| **CLI** | Node.js (commander) | Same TS codebase, AI agents call it |
+| **AI tools** | Claude Agent SDK + MCP | In-process tools, no external binary |
 | **Serialization** | YAML (yaml package) | Human-readable source of truth |
 | **Validation** | Zod | Schema validation at all boundaries |
 | **Icons** | Lucide React | Clean icon set, NodeDefs reference by name |
@@ -516,9 +516,13 @@ core/
   history/
     undoManager.ts     ← action-level undo/redo (patch-based via Immer)
   ai/
-    chatProvider.ts    ← ChatProvider interface
-    apiKeyProvider.ts  ← direct Anthropic API backend
-    claudeCodeProvider.ts ← Claude Code CLI backend
+    types.ts           ← ChatProvider interface + ChatEvent types
+    bridgeServer.ts    ← WebSocket + health endpoint server (Node.js only)
+    claudeCodeBridge.ts ← Claude Code SDK session wrapper (Node.js only)
+    mcpTools.ts        ← 9 MCP tools for architecture CRUD (Node.js only)
+    storeActionDispatcher.ts ← provider-agnostic tool → store dispatch
+    webSocketProvider.ts     ← browser-side WebSocket ChatProvider
+    systemPrompt.ts    ← AI system prompt builder
   entity/
     resolver.ts        ← resolve entity references, cross-scope lookup
 ```
@@ -575,30 +579,24 @@ platform/
   tauri.ts          ← Tauri implementation (Mac, iPad)
   web.ts            ← Web implementation (File System Access API + fallback)
   clipboard.ts
-  shell.ts          ← spawn CLI processes (for AI Claude Code backend)
 ```
 
-### CLI Architecture
+### AI Bridge Architecture
 
-The CLI shares the Core Layer with the app. No code duplication.
+The AI bridge connects the Claude Code SDK (running in Node.js) to the browser's Zustand stores via WebSocket. It runs either embedded in the Vite dev/preview server or as a standalone Tauri sidecar.
 
 ```
-cli/
-  index.ts          ← entry point (commander)
-  commands/
-    init.ts         ← create .archcanvas/ with main.yaml
-    add-node.ts     ← add a node to a scope
-    add-edge.ts     ← connect two nodes
-    remove-node.ts  ← remove a node
-    list.ts         ← list nodes, edges, entities in a scope
-    describe.ts     ← describe a node or the whole architecture
-    search.ts       ← search across all scopes
-    import.ts       ← bulk import from YAML
-  context.ts        ← loads .archcanvas/, initializes core layer
-  output.ts         ← JSON (for AI) / human-readable (for terminal) formatting
+bridge/
+  index.ts          ← standalone sidecar entry point (Tauri)
+core/ai/
+  bridgeServer.ts   ← HTTP health + WebSocket server (embeddable or standalone)
+  claudeCodeBridge.ts ← wraps Claude Agent SDK, manages session lifecycle
+  mcpTools.ts       ← 9 MCP tools with Zod schemas + arg translation
+  storeActionDispatcher.ts ← shared tool → Zustand store dispatch (provider-agnostic)
+  vitePlugin.ts     ← thin Vite plugin wrapper around bridgeServer
 ```
 
-Every CLI command supports `--json` for structured output (AI consumption) and human-readable output (terminal use).
+> **Migration note**: The original design used a CLI (`commander`-based, 9 commands) as the AI interface. This was replaced with in-process MCP tools in 2026-03. See [`docs/specs/2026-03-16-mcp-tools-replace-cli-design.md`](specs/2026-03-16-mcp-tools-replace-cli-design.md) for the migration rationale and architecture.
 
 ### Implementation Note: Module Reuse
 
@@ -630,8 +628,8 @@ Some modules from the current v1 codebase may be stable enough to reuse in the r
        │                 │
   ApiKeyProvider    ClaudeCodeProvider
        │                 │
-  Anthropic API     Claude Code CLI
-  (app manages       (Claude Code manages
+  Anthropic API     Claude Code SDK
+  (app manages       (SDK manages
    tool loop)         tool loop)
 ```
 
@@ -649,50 +647,68 @@ type ChatEvent =
   | { type: 'error'; message: string }
 
 interface ChatProvider {
-  sendMessage(content: string): AsyncIterable<ChatEvent>
-  abort(): void
+  sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent>
+  interrupt(): void
 }
 ```
 
-### ApiKeyProvider
+### ApiKeyProvider (future)
 
 The app acts as the agent:
 
 1. Sends user message + tool definitions to Anthropic API
 2. Receives response with text + `tool_use` blocks
-3. Executes tools by calling `archcanvas` CLI commands
+3. Executes tools via `storeActionDispatcher` (in-browser, no bridge needed)
 4. Sends tool results back to API
 5. Loops until the model is done
 6. Emits all steps as `ChatEvent`s to the UI
 
-Tool definitions are generated from the CLI's command list — each CLI command becomes a tool.
+Tool definitions mirror the 9 MCP tools. The shared `storeActionDispatcher` handles all tool → store execution.
 
-### ClaudeCodeProvider
+### ClaudeCodeProvider (implemented)
 
-Claude Code is the agent:
+Claude Code SDK is the agent:
 
-1. App spawns Claude Code CLI as a subprocess (or uses `@anthropic-ai/claude-code` SDK)
-2. Pipes the user message
-3. Claude Code autonomously calls `archcanvas` CLI as needed
-4. Streams structured output back
-5. App parses into `ChatEvent`s for the UI
+1. Browser connects to the AI bridge server via WebSocket
+2. Bridge creates a session using `@anthropic-ai/claude-agent-sdk`
+3. SDK receives 9 auto-approved MCP tools (add_node, add_edge, remove_node, remove_edge, import_yaml, list, describe, search, catalog)
+4. MCP tool handlers relay store actions to the browser via WebSocket correlation
+5. Browser's `storeActionDispatcher` executes the action against Zustand stores
+6. Results flow back through the bridge to the SDK
+7. SDK streams text/tool events → ChatEvents → UI
 
-The app doesn't manage the tool loop — Claude Code handles it.
+The app doesn't manage the tool loop — the SDK handles it autonomously.
 
 ### What AI Can Do
 
-Both backends have access to the same CLI commands:
+Both backends have access to 9 architecture tools:
 
-| Command | AI Use Case |
-|---------|------------|
-| `archcanvas describe` | Understand current architecture |
-| `archcanvas list` | See what nodes/edges/entities exist |
-| `archcanvas search` | Find specific components |
-| `archcanvas add-node` | Create new components |
-| `archcanvas add-edge` | Connect components |
-| `archcanvas remove-node` | Remove components |
-| `archcanvas import` | Bulk-create from YAML |
-| `archcanvas init` | Bootstrap from scratch |
+| MCP Tool | AI Use Case |
+|----------|------------|
+| `describe` | Understand current architecture |
+| `list` | See what nodes/edges/entities exist |
+| `search` | Find specific components |
+| `catalog` | Browse available node types |
+| `add_node` | Create new components |
+| `add_edge` | Connect components |
+| `remove_node` | Remove components |
+| `remove_edge` | Remove connections |
+| `import_yaml` | Bulk-create from YAML |
+
+All tools are auto-approved via the SDK's `allowedTools` — the user is never prompted for ArchCanvas tool permissions.
+
+### Tool Execution Architecture
+
+```
+MCP tool call (e.g. add_node)
+  → Tool handler: translate args, call relayStoreAction()
+  → WebSocket: send StoreActionMessage to browser
+  → Browser: storeActionDispatcher → graphStore.addNode()
+  → WebSocket: send StoreActionResult back
+  → Tool handler returns result to SDK
+```
+
+The `storeActionDispatcher` is provider-agnostic — it translates action names into Zustand store calls. Both the WebSocket bridge (Claude Code) and a future API key provider share the same dispatch logic.
 
 ### Generalization
 
@@ -702,7 +718,7 @@ The `ChatProvider` interface is model-agnostic. Future providers:
 - `OllamaProvider` — local models
 - Any model that supports tool use
 
-The AI's only interface is the CLI — any model that can call shell commands works.
+All providers share the same `storeActionDispatcher` for tool execution. The Claude Code provider uses a WebSocket bridge (because the SDK runs in Node.js); future in-browser providers would call the dispatcher directly.
 
 ---
 
@@ -741,8 +757,8 @@ A short guided flow that collects context and feeds it into an AI prompt.
 **Step 3 (if Option A): AI Initialization**
 1. App scans the project directory for recognizable patterns (package.json, Dockerfile, go.mod, src/ structure, etc.)
 2. Feeds context into an AI system prompt:
-   > "You are initializing an architecture for [project name]. Here is the project structure: [tree output]. Here are the key config files: [contents]. Create a detailed, layered architecture using the archcanvas CLI. Be thorough — include subsystems where appropriate."
-3. AI uses CLI commands to build the graph iteratively
+   > "You are initializing an architecture for [project name]. Here is the project structure: [tree output]. Here are the key config files: [contents]. Create a detailed, layered architecture using the ArchCanvas tools. Be thorough — include subsystems where appropriate."
+3. AI uses MCP tools to build the graph iteratively
 4. User watches the canvas populate in real-time
 5. AI summarizes what it created in the chat
 
@@ -830,9 +846,9 @@ New categories are added by registering new providers, not by modifying the pale
 | YAML file format | `.archcanvas/` folder, one file per canvas, flat directory |
 | Built-in NodeDefs | ~40 types across 9 namespaces |
 | Project-local NodeDefs | Custom types in `.archcanvas/nodedefs/` |
-| CLI | Full CRUD, search, describe, bulk import |
-| AI chat (API key) | Direct Anthropic API via ChatProvider |
-| AI chat (Claude Code CLI) | Claude Code subprocess via ChatProvider |
+| MCP tools | 9 in-process tools for architecture CRUD, search, describe, bulk import |
+| AI chat (API key) | Direct Anthropic API via ChatProvider (future) |
+| AI chat (Claude Code SDK) | Claude Agent SDK via WebSocket bridge |
 | Onboarding wizard | Guided init with AI architecture proposal |
 | Command palette | Unified Cmd+K with pluggable providers |
 | In-app undo/redo | Action-level, patch-based |
@@ -845,7 +861,7 @@ New categories are added by registering new providers, not by modifying the pale
 
 | Feature | Notes |
 |---------|-------|
-| **Export** | Markdown, PNG, SVG, PDF. CLI: `archcanvas export`. |
+| **Export** | Markdown, PNG, SVG, PDF. |
 | **Visual git diff** | Parse YAML diffs → highlight added/removed/modified nodes on canvas. Killer feature for PR reviews. |
 | **Remote NodeDef registry** | HTTP API for community-shared NodeDefs. Search, install, publish. |
 | **iPad app** | Tauri 2.0 mobile build. Same codebase. |
@@ -861,21 +877,16 @@ New categories are added by registering new providers, not by modifying the pale
 | **Code scaffolding** | AI generates boilerplate from architecture (Dockerfiles, service stubs, API contracts). |
 | **Registry governance** | Namespaces, verified publishers, versioning, deprecation. npm-like ecosystem. |
 
-### Critical Gap: AI Bridge in Production Builds
+### Resolved: AI Bridge in Production Builds
 
-> **Status**: Must be resolved in I7 (Packaging & Polish) — blocks AI features outside `vite dev`.
+> **Status**: Resolved (I7 + MCP tools migration)
 
-The AI bridge (WebSocket + HTTP endpoints) currently only runs via the Vite dev server plugin (`configureServer` hook in `vitePlugin.ts`). In production builds (`vite preview`, Tauri desktop), the bridge does not start — the chat panel shows "No providers" and Claude Code CLI cannot connect.
+The AI bridge now works in all three modes:
+1. **Vite dev** — `configureServer` hook in `vitePlugin.ts`
+2. **Vite preview** — `configurePreviewServer` hook in `vitePlugin.ts`
+3. **Tauri desktop** — standalone sidecar binary (`src/bridge/index.ts`), auto-started on app launch, port discovery via Rust IPC
 
-**Impact**: Any feature that requires AI (chat, onboarding wizard AI init) only works in `vite dev` mode. The onboarding wizard (I6b) checks `provider.available` and gracefully degrades, but AI-powered architecture initialization is unavailable in production.
-
-**Resolution path (I7)**:
-1. Add `configurePreviewServer` hook to `vitePlugin.ts` for `vite preview` mode
-2. Create standalone `archcanvas serve` command that hosts the bridge independently
-3. Tauri sidecar: bundle the bridge server as a sidecar process, auto-started on app launch
-4. Dynamic port discovery: browser detects bridge URL via environment variable or well-known port scan
-
-This is a packaging/deployment concern, not an architecture issue — the bridge code (`claudeCodeBridge.ts`, `vitePlugin.ts`) is correct and complete. It just needs a host process outside of Vite dev.
+The MCP tools migration eliminated the CLI binary dependency — all tool execution is in-process via the Claude Agent SDK.
 
 ### Deferred Decisions
 
@@ -883,10 +894,7 @@ To be resolved during implementation:
 
 | Decision | Context |
 |----------|---------|
-| **Module reuse from v1** | Evaluate current graph engine, registry, layout, history, platform adapters for reuse vs. rewrite. |
 | **Cross-scope reference syntax** | `@root/` is proposed. May need `@parent/` or relative paths. Decide when implementing recursive loader. |
-| **Edge protocol rendering** | Solid vs. dashed vs. dotted per protocol category. Decide during UI implementation. |
 | **NodeDef shape extensibility** | Current enum has 9 shapes. Community may want custom SVGs. Decide when building remote registry. |
 | **AI system prompt tuning** | Onboarding init prompt needs iteration with real projects. Post-v1. |
-| **CLI output format for Claude Code** | Test `stream-json` vs. npm SDK. Decide during AI integration. |
-| **Node/Tauri `getPath()` auto-resolve** | `FileSystem.getPath()` is defined on the interface and implemented for `NodeFileSystem` and `TauriFileSystem`, but not exercised in the current web-only runtime. When the app runs natively (Tauri desktop, CLI with Node), `openProject()` should auto-set `projectPath` from `fs.getPath()`, eliminating the manual path input requirement. Target: I7 (Packaging & Polish). |
+| **API key provider implementation** | In-browser tool execution via `storeActionDispatcher` — no bridge needed. Target: v2 (additional AI models). |
