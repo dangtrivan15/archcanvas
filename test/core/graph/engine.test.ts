@@ -344,11 +344,13 @@ describe('addEdge', () => {
     expect(result.error).toEqual({ code: 'DUPLICATE_EDGE', from: 'a', to: 'b' });
   });
 
-  it('skips endpoint check for @root/ prefixed nodes', () => {
-    const canvas = makeCanvas({ nodes: [makeNode({ id: 'a' })] });
+  it('allows edge with @<ref-node-id>/<node-id> when ref-node exists (to side)', () => {
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'a' }), makeRefNode({ id: 'db-postgres', ref: 'db-postgres.yaml' })],
+    });
     const edge = makeEdge({
       from: { node: 'a' },
-      to: { node: '@root/db-postgres' },
+      to: { node: '@db-postgres/table-users' },
     });
     const result = addEdge(canvas, edge);
 
@@ -360,10 +362,12 @@ describe('addEdge', () => {
     expect(result.patches.length).toBeGreaterThan(0);
   });
 
-  it('skips endpoint check for @root/ on from side', () => {
-    const canvas = makeCanvas({ nodes: [makeNode({ id: 'b' })] });
+  it('allows edge with @<ref-node-id>/<node-id> when ref-node exists (from side)', () => {
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'b' }), makeRefNode({ id: 'api-gateway', ref: 'api-gateway.yaml' })],
+    });
     const edge = makeEdge({
-      from: { node: '@root/api-gateway' },
+      from: { node: '@api-gateway/handler' },
       to: { node: 'b' },
     });
     const result = addEdge(canvas, edge);
@@ -678,5 +682,65 @@ describe('immutability', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data).not.toBe(canvas);
+  });
+});
+
+// =====================================================================
+// Cross-Scope @ Syntax
+// =====================================================================
+
+describe('cross-scope @ syntax', () => {
+  it('allows edge with @<ref-node-id>/<node-id> when ref-node exists', () => {
+    const canvas = makeCanvas({
+      nodes: [
+        makeRefNode({ id: 'svc-api', ref: 'svc-api.yaml' }),
+        makeNode({ id: 'db', type: 'data/database' }),
+      ],
+    });
+    const edge = makeEdge({ from: { node: '@svc-api/handler' }, to: { node: 'db' } });
+    const result = addEdge(canvas, edge);
+    expect(result.ok).toBe(true);
+  });
+
+  it('rejects edge with @<nonexistent>/<node-id>', () => {
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'db', type: 'data/database' })],
+    });
+    const edge = makeEdge({ from: { node: '@nonexistent/handler' }, to: { node: 'db' } });
+    const result = addEdge(canvas, edge);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('CROSS_SCOPE_REF_NOT_FOUND');
+  });
+
+  it('rejects edge with @ but missing /nodeId', () => {
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'db', type: 'data/database' })],
+    });
+    const edge = makeEdge({ from: { node: '@badref' }, to: { node: 'db' } });
+    const result = addEdge(canvas, edge);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('INVALID_CROSS_SCOPE_REF');
+  });
+
+  it('removeNode cascades edges with @<removed-node-id>/*', () => {
+    const canvas = makeCanvas({
+      nodes: [
+        makeRefNode({ id: 'svc-api', ref: 'svc-api.yaml' }),
+        makeNode({ id: 'db', type: 'data/database' }),
+      ],
+      edges: [
+        makeEdge({ from: { node: '@svc-api/handler' }, to: { node: 'db' } }),
+        makeEdge({ from: { node: 'db' }, to: { node: 'db' } }), // self-loop kept for test
+      ],
+    });
+    // Manually construct canvas with the edges (bypass addEdge validation)
+    const result = removeNode(canvas as any, 'svc-api');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.edges).toHaveLength(1); // only the db→db edge remains
+      expect(result.data.nodes).toHaveLength(1); // only db remains
+    }
   });
 });

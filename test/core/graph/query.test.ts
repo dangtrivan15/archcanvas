@@ -124,7 +124,7 @@ function makeTwoCanvasMap(): Map<string, LoadedCanvas> {
     edges: [
       makeEdge({
         from: { node: 'handler' },
-        to: { node: '@root/db-postgres' },
+        to: { node: '@svc-auth/db-postgres' },
         label: 'writes to',
         entities: ['User'],
       }),
@@ -177,11 +177,11 @@ describe('findEdgesReferencingNode', () => {
     expect(results.every((r) => r.canvasId === 'auth-service')).toBe(true);
   });
 
-  it('finds edges via @root/ prefix match', () => {
+  it('finds edges via @<ref-node-id>/ prefix match', () => {
     const canvases = makeTwoCanvasMap();
     const results = findEdgesReferencingNode(canvases, 'db-postgres');
     // Root canvas: svc-auth -> db-postgres (direct)
-    // Sub canvas: handler -> @root/db-postgres (@root/ match)
+    // Sub canvas: handler -> @svc-auth/db-postgres (@ prefix match)
     expect(results).toHaveLength(2);
     const canvasIds = results.map((r) => r.canvasId);
     expect(canvasIds).toContain(ROOT_CANVAS_KEY);

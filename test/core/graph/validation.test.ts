@@ -135,17 +135,17 @@ describe('validateEdge', () => {
     expect(result).toEqual([]);
   });
 
-  it('skips port checks for @root/ references', () => {
+  it('skips port checks for @ cross-scope references', () => {
     const registry = registryWith(['compute/service', serviceNodeDef]);
     const canvas = makeCanvas({
       nodes: [makeNode({ id: 'a' })],
     });
     const edge = makeEdge({
       from: { node: 'a', port: 'http-out' },
-      to: { node: '@root/db-postgres', port: 'sql-in' },
+      to: { node: '@db-svc/db-postgres', port: 'sql-in' },
     });
     const result = validateEdge(edge, canvas, registry);
-    // Only from-port checked, to-port skipped because @root/
+    // Only from-port checked, to-port skipped because @ prefix
     expect(result).toEqual([]);
   });
 
