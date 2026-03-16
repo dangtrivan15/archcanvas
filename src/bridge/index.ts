@@ -5,14 +5,19 @@
  * decoupled from Vite. Used by the Tauri sidecar for desktop mode.
  *
  * The Claude Agent SDK is imported statically so bun build --compile bundles it.
- * At runtime, the sidecar resolves the user's `claude` CLI path via login shell
- * and passes it to the SDK as pathToClaudeCodeExecutable, avoiding the need for
- * node/bun on PATH to run the SDK's embedded cli.js.
+ * At runtime, the sidecar resolves the user's `claude` CLI path and passes it
+ * to the SDK as pathToClaudeCodeExecutable, avoiding the need for node/bun on
+ * PATH to run the SDK's embedded cli.js.
+ *
+ * Note: When launched from Tauri, the Rust host already resolves the user's
+ * login shell PATH and passes it via env. So `which` here uses the full PATH
+ * without needing to spawn a login shell.
  *
  * Usage: archcanvas-bridge [--port <port>] [--cwd <path>]
  */
 
 import { createBridgeServer } from '../core/ai/bridgeServer.js';
+import type { SDKQueryFn } from '../core/ai/claudeCodeBridge.js';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { execFileSync } from 'child_process';
 
@@ -23,12 +28,12 @@ delete process.env.CLAUDECODE;
 delete process.env.CLAUDE_CODE_ENTRYPOINT;
 
 // Resolve the installed `claude` CLI path. The SDK spawns it as a subprocess.
-// We resolve via the user's login shell so it works even when launched from
-// Finder (which has a minimal PATH that doesn't include ~/.local/bin).
+// The Tauri Rust host already injects the user's full login shell PATH into
+// our environment, so a plain `which` is sufficient — no need to spawn another
+// login shell (which would add ~200ms of startup latency).
 function resolveClaudePath(): string | undefined {
-  const shell = process.env.SHELL || '/bin/zsh';
   try {
-    return execFileSync(shell, ['-l', '-c', 'which claude'], { encoding: 'utf-8' }).trim() || undefined;
+    return execFileSync('which', ['claude'], { encoding: 'utf-8' }).trim() || undefined;
   } catch {
     return undefined;
   }
@@ -37,19 +42,23 @@ function resolveClaudePath(): string | undefined {
 const claudePath = resolveClaudePath();
 
 // ---------------------------------------------------------------------------
-// Wrapped query — injects the resolved Claude CLI path
+// Wrapped query — injects the resolved Claude CLI path.
 // MCP servers and allowedTools are handled by bridgeServer internally.
+//
+// Typed as SDKQueryFn so createBridgeServer accepts it without casts.
+// Internally delegates to the SDK's `query` — the prompt is passed through
+// unchanged, so the simplified SDKQueryFn prompt type is safe at runtime.
 // ---------------------------------------------------------------------------
 
-function wrappedQuery({ prompt, options }: Parameters<typeof query>[0]) {
+const wrappedQuery: SDKQueryFn = ({ prompt, options }) => {
   return query({
-    prompt,
+    prompt: prompt as Parameters<typeof query>[0]['prompt'],
     options: {
       ...options,
       ...(claudePath ? { pathToClaudeCodeExecutable: claudePath } : {}),
     },
   });
-}
+};
 
 // ---------------------------------------------------------------------------
 // Parse CLI arguments and start server
@@ -62,7 +71,7 @@ const cwdIdx = cliArgs.indexOf('--cwd');
 const port = portIdx !== -1 ? parseInt(cliArgs[portIdx + 1]) : 17248;
 const cwd = cwdIdx !== -1 ? cliArgs[cwdIdx + 1] : process.cwd();
 
-const server = createBridgeServer({ port, cwd, queryFn: wrappedQuery as any });
+const server = createBridgeServer({ port, cwd, queryFn: wrappedQuery });
 const { port: actualPort } = await server.start();
 
 // Structured first line for Tauri sidecar port discovery

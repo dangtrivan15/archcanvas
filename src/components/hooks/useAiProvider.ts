@@ -12,19 +12,28 @@ import { useChatStore } from '@/store/chatStore';
 async function resolveBridgeUrl(): Promise<string> {
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     const { invoke } = await import('@tauri-apps/api/core');
-    // Retry a few times — the sidecar may still be starting up
+    // Retry a few times — the sidecar may still be starting up.
+    // The Rust command returns:
+    //   Ok(port) — sidecar ready
+    //   Err("Bridge starting...") — still booting, keep retrying
+    //   Err("Bridge sidecar crashed (exit code: N)") — fatal, stop retrying
     let port: number | undefined;
     for (let attempt = 0; attempt < 10; attempt++) {
       try {
         port = await invoke<number>('get_bridge_port');
         break;
-      } catch {
-        // Bridge not ready yet — wait and retry
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // If the sidecar crashed, don't waste time retrying
+        if (msg.includes('crashed')) {
+          throw new Error(msg);
+        }
+        // Still starting — wait and retry
         await new Promise((r) => setTimeout(r, 500));
       }
     }
     if (port === undefined) {
-      throw new Error('Bridge sidecar failed to start — could not get port');
+      throw new Error('Bridge sidecar did not start within 5 seconds');
     }
     return `ws://127.0.0.1:${port}/__archcanvas_ai`;
   }
