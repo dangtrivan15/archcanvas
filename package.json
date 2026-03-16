@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:cli": "vite build --config vite.config.cli.ts",
+    "build:bridge": "vite build --config vite.config.bridge.ts",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
