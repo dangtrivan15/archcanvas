@@ -153,10 +153,10 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
         return true;
       }
 
-      // Read request body
+      // Read request body, relay via relayStoreAction, write HTTP response
       let body = '';
       req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
-      req.on('end', () => {
+      req.on('end', async () => {
         let args: Record<string, unknown>;
         try {
           args = body ? JSON.parse(body) : {};
@@ -166,59 +166,20 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
           return;
         }
 
-        // Find a connected browser client to relay to
-        const client = findActiveBrowserClient();
-        if (!client) {
-          res.writeHead(502, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_DISCONNECTED', message: 'No browser client connected' } }));
-          return;
+        const result = await relayStoreAction(action, args);
+
+        let status: number;
+        if (result.ok) {
+          status = 200;
+        } else if (result.error?.code === 'BRIDGE_DISCONNECTED') {
+          status = 502;
+        } else if (result.error?.code === 'BRIDGE_TIMEOUT') {
+          status = 504;
+        } else {
+          status = 500;
         }
-
-        const correlationId = `mut-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-        // Send store_action to browser
-        const storeAction: StoreActionMessage = {
-          type: 'store_action',
-          action,
-          args,
-          correlationId,
-        };
-
-        try {
-          client.send(JSON.stringify(storeAction));
-        } catch {
-          res.writeHead(502, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_DISCONNECTED', message: 'Failed to send to browser' } }));
-          return;
-        }
-
-        // Wait for browser response with timeout
-        const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
-        const timer = setTimeout(() => {
-          pendingRequests.delete(correlationId);
-          res.writeHead(504, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: { code: 'BRIDGE_TIMEOUT', message: 'Browser did not respond in time' } }));
-        }, timeoutMs);
-
-        pendingRequests.set(correlationId, {
-          resolve: (result) => {
-            clearTimeout(timer);
-            pendingRequests.delete(correlationId);
-            let status: number;
-            if (result.ok) {
-              status = 200;
-            } else if (result.error?.code === 'BRIDGE_DISCONNECTED') {
-              status = 502;
-            } else if (result.error?.code === 'BRIDGE_TIMEOUT') {
-              status = 504;
-            } else {
-              status = 500;
-            }
-            res.writeHead(status, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(result.ok ? { ok: true, data: result.data } : { ok: false, error: result.error }));
-          },
-          timer,
-        });
+        res.writeHead(status, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result.ok ? { ok: true, data: result.data } : { ok: false, error: result.error }));
       });
       return true;
     }
@@ -389,6 +350,58 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
   wss.on('connection', handleConnection);
 
+  // --- Relay a store action to the browser (reusable by HTTP + MCP) ---
+  async function relayStoreAction(
+    action: string,
+    args: Record<string, unknown>,
+  ): Promise<StoreActionResult> {
+    const client = findActiveBrowserClient();
+    if (!client) {
+      return {
+        type: 'store_action_result',
+        correlationId: '',
+        ok: false,
+        error: { code: 'BRIDGE_DISCONNECTED', message: 'No browser client connected' },
+      };
+    }
+
+    const correlationId = `relay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const storeAction: StoreActionMessage = { type: 'store_action', action, args, correlationId };
+
+    try {
+      client.send(JSON.stringify(storeAction));
+    } catch {
+      return {
+        type: 'store_action_result',
+        correlationId,
+        ok: false,
+        error: { code: 'BRIDGE_DISCONNECTED', message: 'Failed to send to browser' },
+      };
+    }
+
+    const timeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+    return new Promise<StoreActionResult>((resolve) => {
+      const timer = setTimeout(() => {
+        pendingRequests.delete(correlationId);
+        resolve({
+          type: 'store_action_result',
+          correlationId,
+          ok: false,
+          error: { code: 'BRIDGE_TIMEOUT', message: 'Browser did not respond in time' },
+        });
+      }, timeoutMs);
+
+      pendingRequests.set(correlationId, {
+        resolve: (result) => {
+          clearTimeout(timer);
+          pendingRequests.delete(correlationId);
+          resolve(result);
+        },
+        timer,
+      });
+    });
+  }
+
   return {
     /** Start the standalone HTTP + WebSocket server. */
     async start() {
@@ -423,5 +436,8 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
     /** WebSocket server instance for Vite upgrade handling. */
     get wss() { return wss; },
+
+    /** Relay a store action to the browser and return the result. Reusable by HTTP and MCP handlers. */
+    relayStoreAction,
   };
 }
