@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>ArchCanvas</title>
+    <script>
+      // Flash prevention: apply theme before first paint.
+      // MAINTENANCE: palette values are duplicated from src/core/theme/palettes/*.ts.
+      // When palette colors change, update both the TS files AND this object.
+      // TODO: Consider a build-time script to generate this from the TS sources.
+      (function() {
+        var DEFAULTS = { palette: 'archcanvas', mode: 'system', textSize: 'medium' };
+        var TEXT_SIZES = { small: '13px', medium: '15px', large: '17px' };
+        var PALETTES = { 'archcanvas': { light: { 'background': '#fafafe', 'foreground': '#1a1a2e', 'card': '#ffffff', 'card-foreground': '#1a1a2e', 'popover': '#ffffff', 'popover-foreground': '#1a1a2e', 'muted': '#f0f0f5', 'muted-foreground': '#6b6b80', 'border': '#e0e0ea', 'input': '#e0e0ea', 'ring': '#2563eb', 'primary': '#2563eb', 'primary-foreground': '#ffffff', 'secondary': '#f0f0f5', 'secondary-foreground': '#1a1a2e', 'accent': '#eef2ff', 'accent-foreground': '#1a1a2e', 'destructive': '#dc2626', 'destructive-foreground': '#ffffff', 'node-bg': '#ffffff', 'node-border': '#d1d5db', 'node-shadow': '#00000014', 'node-selected-border': '#2563eb', 'node-selected-ring': '#2563eb40', 'node-ref-bg': '#f9fafb', 'node-ref-border': '#6b7280', 'edge-sync': '#374151', 'edge-async': '#6366f1', 'edge-default': '#9ca3af', 'canvas-dot': '#d1d5db' }, dark: { 'background': '#09090b', 'foreground': '#fafafa', 'card': '#18181b', 'card-foreground': '#fafafa', 'popover': '#18181b', 'popover-foreground': '#fafafa', 'muted': '#27272a', 'muted-foreground': '#a1a1aa', 'border': '#27272a', 'input': '#27272a', 'ring': '#d4d4d8', 'primary': '#fafafa', 'primary-foreground': '#18181b', 'secondary': '#27272a', 'secondary-foreground': '#fafafa', 'accent': '#27272a', 'accent-foreground': '#fafafa', 'destructive': '#7f1d1d', 'destructive-foreground': '#fafafa', 'node-bg': '#1e1e22', 'node-border': '#3f3f46', 'node-shadow': '#00000040', 'node-selected-border': '#3b82f6', 'node-selected-ring': '#3b82f640', 'node-ref-bg': '#27272a', 'node-ref-border': '#71717a', 'edge-sync': '#d1d5db', 'edge-async': '#818cf8', 'edge-default': '#71717a', 'canvas-dot': '#333333' } }, 'rose-pine': { light: { 'background': '#faf4ed', 'foreground': '#575279', 'card': '#fffaf3', 'card-foreground': '#575279', 'popover': '#fffaf3', 'popover-foreground': '#575279', 'muted': '#f2e9e1', 'muted-foreground': '#9893a5', 'border': '#dfdad9', 'input': '#dfdad9', 'ring': '#907aa9', 'primary': '#907aa9', 'primary-foreground': '#fffaf3', 'secondary': '#f2e9e1', 'secondary-foreground': '#575279', 'accent': '#f2e9e1', 'accent-foreground': '#575279', 'destructive': '#b4637a', 'destructive-foreground': '#fffaf3', 'node-bg': '#fffaf3', 'node-border': '#dfdad9', 'node-shadow': '#57527914', 'node-selected-border': '#907aa9', 'node-selected-ring': '#907aa940', 'node-ref-bg': '#faf4ed', 'node-ref-border': '#9893a5', 'edge-sync': '#575279', 'edge-async': '#907aa9', 'edge-default': '#9893a5', 'canvas-dot': '#dfdad9' }, dark: { 'background': '#191724', 'foreground': '#e0def4', 'card': '#1f1d2e', 'card-foreground': '#e0def4', 'popover': '#1f1d2e', 'popover-foreground': '#e0def4', 'muted': '#26233a', 'muted-foreground': '#908caa', 'border': '#393552', 'input': '#393552', 'ring': '#c4a7e7', 'primary': '#c4a7e7', 'primary-foreground': '#191724', 'secondary': '#26233a', 'secondary-foreground': '#e0def4', 'accent': '#26233a', 'accent-foreground': '#e0def4', 'destructive': '#eb6f92', 'destructive-foreground': '#191724', 'node-bg': '#1f1d2e', 'node-border': '#393552', 'node-shadow': '#01010140', 'node-selected-border': '#c4a7e7', 'node-selected-ring': '#c4a7e740', 'node-ref-bg': '#26233a', 'node-ref-border': '#6e6a86', 'edge-sync': '#e0def4', 'edge-async': '#c4a7e7', 'edge-default': '#6e6a86', 'canvas-dot': '#393552' } }, 'catppuccin': { light: { 'background': '#eff1f5', 'foreground': '#4c4f69', 'card': '#e6e9ef', 'card-foreground': '#4c4f69', 'popover': '#e6e9ef', 'popover-foreground': '#4c4f69', 'muted': '#ccd0da', 'muted-foreground': '#6c6f85', 'border': '#bcc0cc', 'input': '#bcc0cc', 'ring': '#1e66f5', 'primary': '#1e66f5', 'primary-foreground': '#eff1f5', 'secondary': '#ccd0da', 'secondary-foreground': '#4c4f69', 'accent': '#dce0e8', 'accent-foreground': '#4c4f69', 'destructive': '#d20f39', 'destructive-foreground': '#eff1f5', 'node-bg': '#e6e9ef', 'node-border': '#bcc0cc', 'node-shadow': '#4c4f6914', 'node-selected-border': '#1e66f5', 'node-selected-ring': '#1e66f540', 'node-ref-bg': '#eff1f5', 'node-ref-border': '#9ca0b0', 'edge-sync': '#4c4f69', 'edge-async': '#7287fd', 'edge-default': '#9ca0b0', 'canvas-dot': '#bcc0cc' }, dark: { 'background': '#1e1e2e', 'foreground': '#cdd6f4', 'card': '#181825', 'card-foreground': '#cdd6f4', 'popover': '#181825', 'popover-foreground': '#cdd6f4', 'muted': '#313244', 'muted-foreground': '#a6adc8', 'border': '#45475a', 'input': '#45475a', 'ring': '#89b4fa', 'primary': '#89b4fa', 'primary-foreground': '#1e1e2e', 'secondary': '#313244', 'secondary-foreground': '#cdd6f4', 'accent': '#313244', 'accent-foreground': '#cdd6f4', 'destructive': '#f38ba8', 'destructive-foreground': '#1e1e2e', 'node-bg': '#181825', 'node-border': '#45475a', 'node-shadow': '#01010140', 'node-selected-border': '#89b4fa', 'node-selected-ring': '#89b4fa40', 'node-ref-bg': '#313244', 'node-ref-border': '#6c7086', 'edge-sync': '#cdd6f4', 'edge-async': '#b4befe', 'edge-default': '#6c7086', 'canvas-dot': '#45475a' } } };
+        try {
+          var stored = JSON.parse(localStorage.getItem('archcanvas:theme') || '{}');
+          var palette = stored.palette || DEFAULTS.palette;
+          var mode = stored.mode || DEFAULTS.mode;
+          var textSize = stored.textSize || DEFAULTS.textSize;
+        } catch(e) {
+          var palette = DEFAULTS.palette;
+          var mode = DEFAULTS.mode;
+          var textSize = DEFAULTS.textSize;
+        }
+        var resolved = mode;
+        if (mode === 'system') {
+          try { resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+          catch(e) { resolved = 'light'; }
+        }
+        document.documentElement.style.fontSize = TEXT_SIZES[textSize] || TEXT_SIZES.medium;
+        var tokens = (PALETTES[palette] || PALETTES.archcanvas || {})[resolved];
+        if (tokens) { for (var key in tokens) { document.documentElement.style.setProperty('--color-' + key, tokens[key]); } }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
