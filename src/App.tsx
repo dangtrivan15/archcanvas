@@ -113,11 +113,11 @@ export function App() {
             >
               <LeftToolbar />
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle />
             <ResizablePanel defaultSize="74%">
               <Canvas />
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle />
             <ResizablePanel
               panelRef={rightPanelRef}
               defaultSize="22%"
