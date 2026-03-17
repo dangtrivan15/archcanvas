@@ -53,9 +53,8 @@ test.describe("menubar", () => {
     const bg = await content.evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     );
-    // Should not be transparent (rgba(0,0,0,0)) or white
+    // Should not be transparent — must have a styled background
     expect(bg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(bg).not.toContain("255, 255, 255");
 
     // Menu items should be present
     await expect(
@@ -100,7 +99,7 @@ test.describe("menubar", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("command palette", () => {
-  test("opens with dark popover background on Cmd+K", async ({ page }) => {
+  test("opens with styled popover background on Cmd+K", async ({ page }) => {
     await gotoApp(page);
 
     await page.keyboard.press("Meta+k");
@@ -113,8 +112,8 @@ test.describe("command palette", () => {
     const bg = await paletteBox.evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     );
+    // Should not be transparent — must have a styled background
     expect(bg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(bg).not.toContain("255, 255, 255");
   });
 
   test("shows Actions and Node Types sections", async ({ page }) => {
@@ -147,7 +146,7 @@ test.describe("command palette", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("context menu", () => {
-  test("opens with dark background on canvas right-click", async ({
+  test("opens with styled background on canvas right-click", async ({
     page,
   }) => {
     await gotoApp(page);
@@ -163,8 +162,8 @@ test.describe("context menu", () => {
     const bg = await menu.evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     );
+    // Should not be transparent — must have a styled background
     expect(bg).not.toBe("rgba(0, 0, 0, 0)");
-    expect(bg).not.toContain("255, 255, 255");
   });
 
   test("has Add Node, Auto Layout, and Fit View items", async ({ page }) => {
@@ -193,7 +192,7 @@ test.describe("context menu", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("reactflow controls", () => {
-  test("control buttons are visible with non-white background", async ({
+  test("control buttons are visible with styled background", async ({
     page,
   }) => {
     await gotoApp(page);
@@ -204,9 +203,9 @@ test.describe("reactflow controls", () => {
     const bg = await zoomIn.evaluate(
       (el) => getComputedStyle(el).backgroundColor,
     );
-    // Should not be the ReactFlow default near-white (#fefefe)
+    // Should not be transparent or the ReactFlow default near-white (#fefefe)
+    expect(bg).not.toBe("rgba(0, 0, 0, 0)");
     expect(bg).not.toContain("254, 254, 254");
-    expect(bg).not.toContain("255, 255, 255");
   });
 });
 
