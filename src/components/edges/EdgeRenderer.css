@@ -1,13 +1,13 @@
 /* Sync protocol: solid line, dark color */
 .edge-sync {
-  stroke: #374151;
+  stroke: var(--color-edge-sync);
   stroke-width: 2px;
   fill: none;
 }
 
 /* Async protocol: dashed line with animation, indigo color */
 .edge-async {
-  stroke: #6366f1;
+  stroke: var(--color-edge-async);
   stroke-width: 2px;
   stroke-dasharray: 5, 5;
   fill: none;
@@ -16,7 +16,7 @@
 
 /* Default protocol: solid line, gray, thin */
 .edge-default {
-  stroke: #9ca3af;
+  stroke: var(--color-edge-default);
   stroke-width: 1px;
   fill: none;
 }
@@ -32,13 +32,13 @@
 
 /* Edge label container */
 .edge-label {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 11px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-foreground);
   white-space: nowrap;
 }
 
@@ -52,12 +52,12 @@
 
 /* Individual entity pill */
 .entity-pill {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
   border-radius: 9999px;
   padding: 0 4px;
   font-size: 10px;
-  color: #6b7280;
+  color: var(--color-muted-foreground);
 }
 
 /* Inherited edges from parent scope */
@@ -74,11 +74,11 @@
 
 /* Ghost node for inherited edge endpoints */
 .ghost-node {
-  border: 2px dashed var(--color-border-muted, #6b7280);
-  background: var(--color-bg-muted, #f3f4f6);
+  border: 2px dashed var(--color-border);
+  background: var(--color-muted);
   opacity: 0.5;
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 11px;
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-muted-foreground);
 }
