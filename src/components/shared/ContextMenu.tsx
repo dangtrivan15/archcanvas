@@ -119,6 +119,15 @@ export function ContextMenu({
             }}
           />
           <MenuItem
+            label="Create Subsystem..."
+            onClick={() => {
+              window.dispatchEvent(
+                new CustomEvent('archcanvas:open-palette', { detail: { mode: 'subsystem' } }),
+              );
+              onClose();
+            }}
+          />
+          <MenuItem
             label="Auto Layout"
             onClick={() => {
               window.dispatchEvent(new CustomEvent('archcanvas:auto-layout'));
