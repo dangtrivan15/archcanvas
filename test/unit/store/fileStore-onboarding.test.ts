@@ -25,6 +25,7 @@ vi.mock('@/store/chatStore', () => ({
     getState: () => ({
       sendMessage: mockSendMessage,
     }),
+    subscribe: () => () => {},
   },
 }));
 
