@@ -110,6 +110,10 @@ export function TopMenubar() {
           >
             Command Palette <MenubarShortcut>⌘K</MenubarShortcut>
           </MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem onClick={() => useUiStore.getState().openAppearanceDialog()}>
+            Appearance…
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>
