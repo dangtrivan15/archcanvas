@@ -6,8 +6,8 @@
 /* ---------------------------------------------------------- */
 
 .arch-node {
-  background-color: #ffffff;
-  border: 1.5px solid #d1d5db;
+  background-color: var(--color-node-bg);
+  border: 1.5px solid var(--color-node-border);
   border-radius: 6px;
   padding: 8px 12px;
   min-width: 120px;
@@ -16,8 +16,8 @@
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: #111827;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  color: var(--color-foreground);
+  box-shadow: 0 1px 3px 0 var(--color-node-shadow);
   position: relative;
   cursor: default;
   user-select: none;
@@ -28,18 +28,18 @@
 /* ---------------------------------------------------------- */
 
 .arch-node.selected {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+  border-color: var(--color-node-selected-border);
+  box-shadow: 0 0 0 2px var(--color-node-selected-ring);
 }
 
 .arch-node.ref-node {
   border-style: dashed;
-  border-color: #6b7280;
-  background-color: #f9fafb;
+  border-color: var(--color-node-ref-border);
+  background-color: var(--color-node-ref-bg);
 }
 
 .arch-node.ref-node.selected {
-  border-color: #2563eb;
+  border-color: var(--color-node-selected-border);
 }
 
 .arch-node.unknown-type {
@@ -104,7 +104,7 @@
   border: none;
   padding: 12px 24px;
   min-width: 140px;
-  background-color: #ffffff;
+  background-color: var(--color-node-bg);
   /* Use outline simulation via box-shadow since clip-path hides the border */
   /* Actual border is drawn using a pseudo element approach */
 }
@@ -127,7 +127,7 @@
 
 .node-shape-cloud {
   border-radius: 50px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--color-node-border);
   padding: 10px 20px;
 }
 
@@ -159,9 +159,8 @@
   left: -1.5px;
   right: -1.5px;
   height: 14px;
-  border-left: 1.5px solid #d1d5db;
-  border-right: 1.5px solid #d1d5db;
-  background: radial-gradient(ellipse 55% 100% at 50% 0%, transparent 70%, #d1d5db 70.5%, transparent 71%) no-repeat center / 100% 100%;
+  border-left: 1.5px solid var(--color-node-border);
+  border-right: 1.5px solid var(--color-node-border);
   clip-path: none;
   /* Wavy bottom: approximate with two ellipses */
   border-bottom: none;
@@ -170,8 +169,8 @@
     to bottom,
     transparent 0%,
     transparent 40%,
-    #d1d5db 40%,
-    #d1d5db 41%
+    var(--color-node-border) 40%,
+    var(--color-node-border) 41%
   );
 }
 
@@ -194,18 +193,18 @@
 
 .node-shape-container {
   border-radius: 8px;
-  border: 2px solid #d1d5db;
-  outline: 2px solid #d1d5db;
+  border: 2px solid var(--color-node-border);
+  outline: 2px solid var(--color-node-border);
   outline-offset: 3px;
   padding: 14px 16px;
   min-width: 180px;
   min-height: 80px;
-  background-color: rgba(249, 250, 251, 0.7);
+  background-color: color-mix(in srgb, var(--color-node-ref-bg) 70%, transparent);
 }
 
 .node-shape-container.selected {
-  border-color: #2563eb;
-  outline-color: #2563eb;
+  border-color: var(--color-node-selected-border);
+  outline-color: var(--color-node-selected-border);
 }
 
 /* ---------------------------------------------------------- */
@@ -238,7 +237,7 @@
 .arch-node-type {
   font-family: var(--font-family-mono);
   font-size: 10px;
-  color: #6b7280;
+  color: var(--color-muted-foreground);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
