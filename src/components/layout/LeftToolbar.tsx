@@ -14,15 +14,23 @@ import {
   Redo2,
   LayoutGrid,
   MessageSquare,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { useHistoryStore } from "@/store/historyStore";
 import { useToolStore } from "@/store/toolStore";
 import type { ToolMode } from "@/store/toolStore";
 import { useUiStore } from "@/store/uiStore";
+import { useThemeStore } from "@/store/themeStore";
 
 export function LeftToolbar() {
   const activeMode = useToolStore((s) => s.mode);
   const rightPanelMode = useUiStore((s) => s.rightPanelMode);
+  const themeMode = useThemeStore((s) => s.mode);
+  const resolvedMode = useThemeStore((s) => s.getResolvedMode());
+  const themeIcon = themeMode === 'system' ? Monitor : resolvedMode === 'dark' ? Moon : Sun;
+  const themeLabel = themeMode === 'system' ? 'System (auto)' : themeMode === 'dark' ? 'Dark mode' : 'Light mode';
 
   const tools: Array<{
     icon: typeof MousePointer2;
@@ -90,6 +98,16 @@ export function LeftToolbar() {
       active: rightPanelMode === 'chat',
       onClick: () => useUiStore.getState().toggleChat(),
     },
+    {
+      icon: themeIcon,
+      label: themeLabel,
+      shortcut: '',
+      onClick: () => {
+        const { mode, setMode } = useThemeStore.getState();
+        const next = mode === 'light' ? 'dark' : mode === 'dark' ? 'system' : 'light';
+        setMode(next);
+      },
+    },
   ];
 
   return (
@@ -99,7 +117,7 @@ export function LeftToolbar() {
           <Tooltip key={label}>
             <TooltipTrigger asChild>
               <button
-                aria-label={`${label} (${shortcut})`}
+                aria-label={shortcut ? `${label} (${shortcut})` : label}
                 data-active={active || (mode && activeMode === mode) ? "true" : undefined}
                 className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${
                   active
@@ -114,7 +132,7 @@ export function LeftToolbar() {
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              {label} ({shortcut})
+              {shortcut ? `${label} (${shortcut})` : label}
             </TooltipContent>
           </Tooltip>
         ))}
