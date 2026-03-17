@@ -1,6 +1,42 @@
 @import "tailwindcss" source(".");
 @import "@xyflow/react/dist/style.css";
 
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Argon';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/monaspace-argon/MonaspaceArgon-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Monaspace Argon';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/monaspace-argon/MonaspaceArgon-Medium.woff2') format('woff2');
+}
+
 @theme {
   --color-background: #09090b;
   --color-foreground: #fafafa;
@@ -21,14 +57,26 @@
   --color-popover-foreground: #fafafa;
   --color-card: #18181b;
   --color-card-foreground: #fafafa;
-  --radius: 0.5rem;
+  --radius: 0.625rem;
+  --font-family-mono: 'Monaspace Argon', ui-monospace, monospace;
+  --color-node-bg: #1e1e22;
+  --color-node-border: #3f3f46;
+  --color-node-shadow: #00000040;
+  --color-node-selected-border: #3b82f6;
+  --color-node-selected-ring: #3b82f640;
+  --color-node-ref-bg: #27272a;
+  --color-node-ref-border: #71717a;
+  --color-edge-sync: #d1d5db;
+  --color-edge-async: #818cf8;
+  --color-edge-default: #71717a;
+  --color-canvas-dot: #333333;
 }
 
 body {
   margin: 0;
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow: hidden;
 }
 
@@ -37,7 +85,7 @@ body {
   width: 100vw;
 }
 
-/* ReactFlow dark-theme overrides */
+/* ReactFlow controls */
 .react-flow__controls {
   background: transparent;
   border: none;
@@ -45,10 +93,11 @@ body {
 }
 
 .react-flow__controls-button {
-  background-color: var(--color-muted);
+  background-color: var(--color-card);
   border: 1px solid var(--color-border);
   fill: var(--color-muted-foreground);
   color: var(--color-muted-foreground);
+  border-radius: 6px;
 }
 
 .react-flow__controls-button:hover {
@@ -59,4 +108,9 @@ body {
 
 .react-flow__controls-button svg {
   fill: inherit;
+}
+
+/* Canvas background dots — themed */
+.react-flow__background pattern circle {
+  fill: var(--color-canvas-dot);
 }

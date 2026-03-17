@@ -34,7 +34,7 @@ export function ChatToolCall({ event, result }: Props) {
         <div className="border-t border-border px-2 py-1.5 space-y-1.5">
           <div>
             <p className="text-muted-foreground mb-0.5">Arguments:</p>
-            <pre className="whitespace-pre-wrap break-all rounded bg-muted p-1.5 text-[11px] text-foreground">
+            <pre className="whitespace-pre-wrap break-all rounded bg-muted p-1.5 text-[11px] font-mono text-foreground">
               {JSON.stringify(event.args, null, 2)}
             </pre>
           </div>
@@ -44,7 +44,7 @@ export function ChatToolCall({ event, result }: Props) {
                 {result.isError ? 'Error:' : 'Result:'}
               </p>
               <pre
-                className={`whitespace-pre-wrap break-all rounded p-1.5 text-[11px] ${
+                className={`whitespace-pre-wrap break-all rounded p-1.5 text-[11px] font-mono ${
                   result.isError
                     ? 'bg-red-950/30 text-red-300'
                     : 'bg-muted text-foreground'
