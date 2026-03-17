@@ -236,6 +236,7 @@
 }
 
 .arch-node-type {
+  font-family: var(--font-family-mono);
   font-size: 10px;
   color: #6b7280;
   overflow: hidden;
