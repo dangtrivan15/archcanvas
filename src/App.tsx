@@ -20,6 +20,8 @@ import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
+import { AppearanceDialog } from '@/components/AppearanceDialog';
+import '@/store/themeStore'; // side-effect: applies theme on import
 
 enablePatches();
 
@@ -130,6 +132,7 @@ export function App() {
             </ResizablePanel>
           </ResizablePanelGroup>
           <StatusBar />
+          <AppearanceDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>
