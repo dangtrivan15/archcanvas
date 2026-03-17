@@ -13,13 +13,17 @@ ArchCanvas supports subsystem canvases (RefNode → separate YAML file → navig
 1. Users can create subsystems from the UI (Command Palette + Context Menu)
 2. AI can create subsystems via a new MCP tool (`create_subsystem`)
 3. System prompt teaches the AI about subsystem existence and usage
-4. Full E2E test coverage: creation, navigation, inner nodes, saving, collision handling
+4. Full E2E and unit test coverage: creation, navigation, inner nodes, saving, collision handling
 
 ## Non-Goals
 
 - Promote inline node to subsystem (future)
 - Delete subsystem cascade (engine already handles RefNode removal + edge cleanup)
 - `unregisterCanvas` for undo (noted as known gap — see Undo section)
+
+## Cleanup (pre-existing)
+
+- `src/core/validation/addNodeValidation.ts:101` references removed CLI (`archcanvas catalog --json`). Update to "Use the catalog tool" while touching the MCP layer.
 
 ---
 
@@ -58,13 +62,15 @@ registerCanvas(
 
 ```ts
 {
-  type,          // from registry (e.g., "compute/service")
+  id: canvasId,  // matches the canvasId key — consistent with fileResolver behavior
+  type,          // from registry (e.g., "compute/service") — validated
   displayName,   // user-provided name
   nodes: [],
   edges: [],
-  entities: [],
 }
 ```
+
+Note: `id` is set to `canvasId` for consistency with how `fileResolver.loadProject` loads canvases (the canvas data's `id` matches its Map key). `entities` is omitted (optional in schema, engine handles `?? []`).
 
 ### Save behavior
 
@@ -86,10 +92,11 @@ createSubsystem(
 ### Flow
 
 1. **Resolve parent canvas** — `resolveCanvas(parentCanvasId)`, fail with `CANVAS_NOT_FOUND` if missing
-2. **Register child canvas** — `fileStore.registerCanvas(id, '.archcanvas/<id>.yaml', { type, displayName, nodes: [], edges: [], entities: [] })`, fail with `CANVAS_ALREADY_EXISTS` if collision
-3. **Add RefNode to parent** — `engineAddNode(parentCanvas, { id, ref: '<id>.yaml' })` via existing engine path. Fails with `DUPLICATE_NODE_ID` if collision.
-4. **Apply result** — `applyResult(parentCanvasId, result)` updates fileStore + pushes patches to historyStore. This marks the parent canvas dirty via `updateCanvasData`.
-5. **Mark child dirty** — `fileStore.markDirty(id)` so the new `.yaml` file gets persisted on save
+2. **Validate type** — resolve `type` against the NodeDef registry. If not found, return `{ ok: false, error: { code: 'UNKNOWN_SUBSYSTEM_TYPE', type } }`. Also resolve `displayName` from `NodeDef.metadata.displayName` when caller omits `displayName`.
+3. **Register child canvas** — `fileStore.registerCanvas(id, '.archcanvas/<id>.yaml', { id, type, displayName, nodes: [], edges: [] })`, fail with `CANVAS_ALREADY_EXISTS` if collision
+4. **Add RefNode to parent** — `engineAddNode(parentCanvas, { id, ref: '<id>.yaml' })` via existing engine path. Fails with `DUPLICATE_NODE_ID` if collision.
+5. **Apply result** — `applyResult(parentCanvasId, result)` updates fileStore + pushes patches to historyStore. This marks the parent canvas dirty via `updateCanvasData`.
+6. **Mark child dirty** — `fileStore.markDirty(id)` so the new `.yaml` file gets persisted on save
 
 ### Dirty tracking
 
@@ -114,6 +121,12 @@ tool('create_subsystem', 'Create a subsystem (nested canvas) with its own scope'
   type: z.string().describe('Node type (e.g., compute/service). Run catalog tool first.'),
   name: z.string().optional().describe('Display name'),
   scope: z.string().optional().describe('Parent canvas scope ID (omit for root)'),
+}, async (a) => {
+  const result = await relay('createSubsystem', {
+    canvasId: a.scope ?? ROOT,
+    id: a.id, type: a.type, name: a.name,
+  });
+  return toCallToolResult(result);
 })
 ```
 
@@ -123,13 +136,13 @@ New `createSubsystem` case:
 
 ```ts
 case 'createSubsystem':
-  return graphStore.createSubsystem(
+  return useGraphStore.getState().createSubsystem(
     args.canvasId as string,
-    { id: args.id, type: args.type, displayName: args.name }
+    { id: args.id as string, type: args.type as string, displayName: args.name as string | undefined }
   );
 ```
 
-Type validation: `graphStore.createSubsystem` resolves displayName from the registry if `name` is not provided. No need for `validateAndBuildNode` — we're not building an InlineNode.
+Type validation is handled inside `graphStore.createSubsystem` (step 2 of its flow): resolves `type` against registry, resolves `displayName` from NodeDef when omitted.
 
 ### allowedTools
 
@@ -153,6 +166,7 @@ Add `'mcp__archcanvas__create_subsystem'` to `MCP_TOOL_NAMES` array.
 - The subsystem becomes a RefNode in the parent canvas and a navigable scope
 - After creation, use the scope parameter on other tools to add nodes/edges inside it
   (e.g., add_node with scope: "order-service" adds a node inside that subsystem)
+- Use describe (no args) to see all subsystems and their node/edge counts
 - Cross-scope edges reference nodes inside subsystems: @<subsystem-id>/<node-id>
 - Example workflow:
   1. create_subsystem(id: "order-svc", type: "compute/service", name: "Order Service")
@@ -164,7 +178,7 @@ Add `'mcp__archcanvas__create_subsystem'` to `MCP_TOOL_NAMES` array.
 
 ## Layer 5: UI Entry Points
 
-### 5a. Command Palette
+### 5a. Command Palette + palette mode plumbing
 
 New edit action:
 
@@ -176,7 +190,39 @@ New edit action:
 }
 ```
 
-When the palette opens in `mode === 'subsystem'`, selecting a node type opens the `CreateSubsystemDialog` instead of calling `addNode`.
+#### State plumbing for palette mode
+
+`Canvas.tsx` gains a new state variable:
+
+```ts
+const [paletteMode, setPaletteMode] = useState<'default' | 'subsystem'>('default');
+```
+
+The `archcanvas:open-palette` event handler reads `detail.mode`:
+
+```ts
+const handleOpenPalette = (e: Event) => {
+  const detail = (e as CustomEvent<{ prefix?: string; mode?: string }>).detail;
+  setPaletteMode((detail?.mode as 'default' | 'subsystem') ?? 'default');
+  openPalette(detail?.prefix ?? '');
+};
+```
+
+`paletteMode` is passed as a prop to `CommandPalette`. When `paletteMode === 'subsystem'`, `NodeTypeProvider.onSelect` sets `pendingSubsystemType` state (the selected type key) and opens `CreateSubsystemDialog`, instead of calling `graphStore.addNode`.
+
+#### Type handoff to dialog
+
+`CommandPalette` gains local state:
+
+```ts
+const [pendingSubsystemType, setPendingSubsystemType] = useState<string | null>(null);
+```
+
+When in subsystem mode, `NodeTypeProvider.onSelect`:
+1. Sets `pendingSubsystemType` to the selected type key
+2. Does NOT close the palette — instead renders `CreateSubsystemDialog` inline (or as a sibling modal)
+
+`CreateSubsystemDialog` receives `type` as a prop and handles the name/ID/filename flow.
 
 ### 5b. Context Menu — canvas background
 
@@ -266,6 +312,59 @@ New spec: `test/e2e/subsystem.spec.ts`
 
 ---
 
+## Layer 7: EngineError Type Update
+
+Add two new variants to `EngineError` in `src/core/graph/types.ts`:
+
+```ts
+| { code: 'CANVAS_ALREADY_EXISTS'; canvasId: string }
+| { code: 'UNKNOWN_SUBSYSTEM_TYPE'; type: string }
+```
+
+These are returned by `graphStore.createSubsystem` and flow through the existing `EngineResult` contract.
+
+---
+
+## Layer 8: Unit Tests
+
+### fileStore.registerCanvas
+
+| Test | Assertion |
+|------|-----------|
+| Registers new canvas | `getCanvas(id)` returns the entry, `project.canvases` has new key |
+| Marks canvas dirty | `dirtyCanvases.has(id)` is true |
+| Collision returns error | Returns `{ ok: false, error: { code: 'CANVAS_ALREADY_EXISTS' } }` |
+| Sets `data.id` | Registered canvas `data.id === canvasId` |
+
+### graphStore.createSubsystem
+
+| Test | Assertion |
+|------|-----------|
+| Happy path | RefNode in parent canvas, child canvas registered, both dirty |
+| Parent not found | Returns `CANVAS_NOT_FOUND` |
+| Canvas ID collision | Returns `CANVAS_ALREADY_EXISTS`, parent unchanged |
+| Node ID collision | Returns `DUPLICATE_NODE_ID`, no orphan canvas registered |
+| Unknown type | Returns `UNKNOWN_SUBSYSTEM_TYPE` |
+| DisplayName defaulting | When `displayName` omitted, resolves from NodeDef registry |
+
+### storeActionDispatcher.createSubsystem
+
+| Test | Assertion |
+|------|-----------|
+| Dispatches to graphStore | Returns success result |
+| Missing args | Returns error |
+
+### deriveId utility
+
+| Test | Assertion |
+|------|-----------|
+| `"Order Service"` → `"order-service"` | Basic conversion |
+| `"  --Hello World!! "` → `"hello-world"` | Leading/trailing cleanup |
+| `"café"` → `"caf"` | Non-ASCII stripped |
+| `""` → `""` | Empty string |
+
+---
+
 ## Files Changed / Created
 
 ### New files
@@ -281,11 +380,14 @@ New spec: `test/e2e/subsystem.spec.ts`
 |------|--------|
 | `src/store/fileStore.ts` | Add `registerCanvas()` method |
 | `src/store/graphStore.ts` | Add `createSubsystem()` method |
+| `src/core/graph/types.ts` | Add `CANVAS_ALREADY_EXISTS` + `UNKNOWN_SUBSYSTEM_TYPE` to `EngineError` |
 | `src/core/ai/mcpTools.ts` | Add `create_subsystem` tool + update `MCP_TOOL_NAMES` |
 | `src/core/ai/storeActionDispatcher.ts` | Add `createSubsystem` dispatcher case |
 | `src/core/ai/systemPrompt.ts` | Add subsystem tool + guidance section |
+| `src/core/validation/addNodeValidation.ts` | Fix stale CLI reference (line 101) |
 | `src/components/shared/CommandPalette.tsx` | Add "Create Subsystem" action + subsystem mode |
 | `src/components/shared/ContextMenu.tsx` | Add "Create Subsystem..." to canvas menu |
+| `src/components/canvas/Canvas.tsx` | Add `paletteMode` state + event handler update |
 | `test/e2e/e2e-helpers.ts` | Add subsystem test helpers |
 
 ### Unchanged
