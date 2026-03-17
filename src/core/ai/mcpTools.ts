@@ -108,6 +108,19 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         return toCallToolResult(result);
       }),
 
+      tool('create_subsystem', 'Create a subsystem (nested canvas) with its own scope', {
+        id: z.string().describe('Unique subsystem identifier (kebab-case, becomes both node ID and filename)'),
+        type: z.string().describe('Node type (e.g., compute/service). Run catalog tool first.'),
+        name: z.string().optional().describe('Display name'),
+        scope: z.string().optional().describe('Parent canvas scope ID (omit for root)'),
+      }, async (a) => {
+        const result = await relay('createSubsystem', {
+          canvasId: a.scope ?? ROOT,
+          id: a.id, type: a.type, name: a.name,
+        });
+        return toCallToolResult(result);
+      }),
+
       // --- Read Tools ---
       tool('list', 'List nodes, edges, or entities in a canvas', {
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
@@ -155,7 +168,8 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
 export const MCP_TOOL_NAMES = [
   'mcp__archcanvas__add_node', 'mcp__archcanvas__add_edge',
   'mcp__archcanvas__remove_node', 'mcp__archcanvas__remove_edge',
-  'mcp__archcanvas__import_yaml', 'mcp__archcanvas__list',
+  'mcp__archcanvas__import_yaml', 'mcp__archcanvas__create_subsystem',
+  'mcp__archcanvas__list',
   'mcp__archcanvas__describe', 'mcp__archcanvas__search',
   'mcp__archcanvas__catalog',
 ];

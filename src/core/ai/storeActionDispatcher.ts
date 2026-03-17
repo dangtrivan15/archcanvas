@@ -44,6 +44,15 @@ export function dispatchStoreAction(action: string, args: Record<string, unknown
       return useGraphStore.getState().removeEdge(args.canvasId as string, args.from as string, args.to as string);
     case 'import':
       return dispatchImport(args);
+    case 'createSubsystem':
+      return useGraphStore.getState().createSubsystem(
+        args.canvasId as string,
+        {
+          id: args.id as string,
+          type: args.type as string,
+          displayName: args.name as string | undefined,
+        },
+      );
 
     // --- Read actions ---
     case 'list':

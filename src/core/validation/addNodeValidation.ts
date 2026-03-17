@@ -98,7 +98,7 @@ export function validateAndBuildNode(
       hints.push(`Did you mean '${slashVariant}'?`);
     }
 
-    hints.push(`Run \`archcanvas catalog --json\` to see all available types.`);
+    hints.push(`Use the catalog tool to see all available types.`);
 
     return { ok: false, code: 'UNKNOWN_NODE_TYPE', message: hints.join(' ') };
   }
