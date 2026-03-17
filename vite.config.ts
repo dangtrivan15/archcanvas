@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { aiBridgePlugin } from "./src/core/ai/vitePlugin";
+import { themeFlashPlugin } from "./src/core/theme/viteFlashPlugin";
 import path from "path";
 import fs from "fs";
 const host = process.env.TAURI_DEV_HOST;
@@ -75,7 +76,7 @@ function serverGuard(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [serverGuard(), aiBridgePlugin(), react(), tailwindcss()],
+  plugins: [serverGuard(), themeFlashPlugin(), aiBridgePlugin(), react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
