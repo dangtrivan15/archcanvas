@@ -21,7 +21,9 @@ export type EngineError =
   | { code: 'CANVAS_NOT_FOUND'; canvasId: string }
   | { code: 'INVALID_CROSS_SCOPE_REF'; message: string }
   | { code: 'CROSS_SCOPE_REF_NOT_FOUND'; message: string }
-  | { code: 'PROTOCOL_MISMATCH'; message: string };
+  | { code: 'PROTOCOL_MISMATCH'; message: string }
+  | { code: 'CANVAS_ALREADY_EXISTS'; canvasId: string }
+  | { code: 'UNKNOWN_SUBSYSTEM_TYPE'; type: string };
 
 // --- Warning Codes (soft — operation succeeds) ---
 
