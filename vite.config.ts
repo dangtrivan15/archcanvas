@@ -1,7 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { aiBridgePlugin } from "./src/core/ai/vitePlugin";
+import { aiBridgePlugin, type AiBridgePluginOptions } from "./src/core/ai/vitePlugin";
 import { themeFlashPlugin } from "./src/core/theme/viteFlashPlugin";
 import path from "path";
 import fs from "fs";
@@ -75,8 +75,16 @@ function serverGuard(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [serverGuard(), themeFlashPlugin(), aiBridgePlugin(), react(), tailwindcss()],
+async function resolveBridgeOptions(): Promise<AiBridgePluginOptions | undefined> {
+  if (process.env.MOCK_BRIDGE === '1') {
+    const { createMockSessionFactory } = await import('./test/e2e/mockSessionFactory');
+    return { sessionFactory: createMockSessionFactory() };
+  }
+  return undefined;
+}
+
+export default defineConfig(async () => ({
+  plugins: [serverGuard(), themeFlashPlugin(), aiBridgePlugin(await resolveBridgeOptions()), react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -122,4 +130,4 @@ export default defineConfig({
       ],
     },
   },
-});
+}));

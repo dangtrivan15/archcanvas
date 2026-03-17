@@ -23,6 +23,7 @@ export async function gotoApp(page: Page): Promise<void> {
     store.setState({
       fs: {
         getName: () => 'test-project',
+        getPath: () => null,
         readFile: async () => '',
         writeFile: async () => {},
         exists: async () => false,
@@ -65,6 +66,7 @@ export async function gotoEmptyProject(page: Page): Promise<void> {
     store.setState({
       fs: {
         getName: () => 'test-project',
+        getPath: () => null,
         readFile: async () => '',
         writeFile: async () => {},
         exists: async () => false,
