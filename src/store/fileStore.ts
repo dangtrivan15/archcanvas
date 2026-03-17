@@ -141,6 +141,13 @@ interface FileStoreState {
   /** Set the project's absolute filesystem path (for AI CWD and system prompt). */
   setProjectPath: (path: string) => void;
 
+  /** Register a new canvas (subsystem) in the project's canvas map. */
+  registerCanvas: (
+    canvasId: string,
+    filePath: string,
+    data: Canvas,
+  ) => { ok: true } | { ok: false; error: { code: 'CANVAS_ALREADY_EXISTS'; canvasId: string } };
+
   // New persistence methods (UI-only — CLI never calls these)
   newProject: () => Promise<void>;
   open: () => Promise<void>;
@@ -304,6 +311,27 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   setProjectPath: (path: string) => {
     set({ projectPath: path });
+  },
+
+  registerCanvas: (canvasId, filePath, data) => {
+    const { project } = get();
+    if (!project || project.canvases.has(canvasId)) {
+      return { ok: false, error: { code: 'CANVAS_ALREADY_EXISTS' as const, canvasId } };
+    }
+
+    const entry = { filePath, data, doc: undefined };
+    const nextCanvases = new Map(project.canvases);
+    nextCanvases.set(canvasId, entry);
+
+    const nextDirty = new Set(get().dirtyCanvases);
+    nextDirty.add(canvasId);
+
+    set({
+      project: { ...project, canvases: nextCanvases },
+      dirtyCanvases: nextDirty,
+    });
+
+    return { ok: true };
   },
 
   // -----------------------------------------------------------------------
