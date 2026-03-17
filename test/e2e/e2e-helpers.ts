@@ -56,6 +56,53 @@ export async function resetToEmptyProject(page: Page): Promise<void> {
  * Set up the app in needs_onboarding state (simulating opening an empty directory).
  * The wizard should appear instead of the canvas.
  */
+/**
+ * Create a subsystem via the context menu.
+ * Opens context menu → picks "Create Subsystem..." → picks type → fills name dialog → creates.
+ */
+export async function createSubsystem(
+  page: Page,
+  name: string,
+  typePattern: RegExp,
+): Promise<void> {
+  // Open palette in subsystem mode via context menu on canvas background
+  const canvas = page.locator('.react-flow__pane');
+  await canvas.click({ button: 'right', position: { x: 200, y: 200 } });
+  await page.getByText('Create Subsystem...').click();
+
+  // Pick the node type
+  await page.getByRole('option', { name: typePattern }).click();
+
+  // Fill the dialog
+  await page.getByTestId('subsystem-name-input').fill(name);
+  await page.getByTestId('subsystem-create-btn').click();
+
+  // Wait for dialog to close and node to appear
+  await page.waitForTimeout(200);
+}
+
+/**
+ * Dive into a subsystem via context menu on a RefNode.
+ */
+export async function diveIntoSubsystem(
+  page: Page,
+  nodeText: string,
+): Promise<void> {
+  const node = page.locator('.react-flow__node').filter({ hasText: nodeText });
+  await node.click({ button: 'right' });
+  await page.getByRole('button', { name: 'Dive In' }).click();
+  // Wait for navigation animation
+  await page.waitForTimeout(700);
+}
+
+/**
+ * Get the current breadcrumb text.
+ */
+export async function getBreadcrumbText(page: Page): Promise<string> {
+  const breadcrumb = page.locator('[data-testid="breadcrumb"]');
+  return breadcrumb.innerText();
+}
+
 export async function gotoEmptyProject(page: Page): Promise<void> {
   await page.goto('/');
   await page.evaluate(() => {

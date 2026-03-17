@@ -167,3 +167,7 @@ export const useGraphStore = create<GraphStoreState>(() => ({
     return applied;
   },
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).__archcanvas_graphStore__ = useGraphStore;
+}
