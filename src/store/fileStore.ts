@@ -416,6 +416,18 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         const { useChatStore } = await import('./chatStore');
         const prompt = assembleInitPrompt(name, survey);
         useChatStore.getState().sendMessage(prompt);
+
+        // Auto-layout when AI finishes creating nodes
+        let wasStreaming = false;
+        const unsub = useChatStore.subscribe((state) => {
+          if (wasStreaming && !state.isStreaming) {
+            unsub();
+            window.dispatchEvent(
+              new CustomEvent('archcanvas:auto-layout'),
+            );
+          }
+          wasStreaming = state.isStreaming;
+        });
       }, 0);
     }
   },

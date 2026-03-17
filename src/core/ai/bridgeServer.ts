@@ -157,12 +157,18 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
       }
     };
 
+    // Per-connection MCP server: relay is bound to THIS ws, so MCP tool
+    // mutations always target the correct browser tab.
+    const clientRelay = (action: string, args: Record<string, unknown>) =>
+      relayToClient(ws, action, args);
+    const clientMcpServer = createArchCanvasMcpServer(clientRelay);
+
     const session = createBridgeSession({
       cwd,
       onPermissionRequest,
       onAskUserQuestion,
       ...(options.queryFn ? { queryFn: options.queryFn } : {}),
-      mcpServers: { archcanvas: mcpServer },
+      mcpServers: { archcanvas: clientMcpServer },
       allowedTools: MCP_TOOL_NAMES,
     });
     sessions.set(ws, session);
@@ -295,18 +301,18 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
   wss.on('connection', handleConnection);
 
-  // --- Relay a store action to the browser (reusable by HTTP + MCP) ---
-  async function relayStoreAction(
+  // --- Relay a store action to a specific browser client ---
+  async function relayToClient(
+    target: WebSocket,
     action: string,
     args: Record<string, unknown>,
   ): Promise<StoreActionResult> {
-    const client = findActiveBrowserClient();
-    if (!client) {
+    if (target.readyState !== WebSocket.OPEN) {
       return {
         type: 'store_action_result',
         correlationId: '',
         ok: false,
-        error: { code: 'BRIDGE_DISCONNECTED', message: 'No browser client connected' },
+        error: { code: 'BRIDGE_DISCONNECTED', message: 'Browser client not connected' },
       };
     }
 
@@ -314,7 +320,7 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
     const storeAction: StoreActionMessage = { type: 'store_action', action, args, correlationId };
 
     try {
-      client.send(JSON.stringify(storeAction));
+      target.send(JSON.stringify(storeAction));
     } catch {
       return {
         type: 'store_action_result',
@@ -347,8 +353,22 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
     });
   }
 
-  // --- Create in-process MCP server with tools bound to relayStoreAction ---
-  const mcpServer = createArchCanvasMcpServer(relayStoreAction);
+  // --- Public relay: finds any active client (used by tests + public API) ---
+  async function relayStoreAction(
+    action: string,
+    args: Record<string, unknown>,
+  ): Promise<StoreActionResult> {
+    const client = findActiveBrowserClient();
+    if (!client) {
+      return {
+        type: 'store_action_result',
+        correlationId: '',
+        ok: false,
+        error: { code: 'BRIDGE_DISCONNECTED', message: 'No browser client connected' },
+      };
+    }
+    return relayToClient(client, action, args);
+  }
 
   return {
     /** Start the standalone HTTP + WebSocket server. */
