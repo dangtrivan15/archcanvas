@@ -5,7 +5,7 @@ export function Breadcrumb() {
   const goToBreadcrumb = useNavigationStore((s) => s.goToBreadcrumb);
 
   return (
-    <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/80 rounded px-2 py-1 text-sm">
+    <div data-testid="breadcrumb" className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/80 rounded px-2 py-1 text-sm">
       {breadcrumb.map((entry, i) => (
         <span key={entry.canvasId} className="flex items-center gap-1">
           {i > 0 && <span className="text-gray-400">/</span>}

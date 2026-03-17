@@ -62,11 +62,15 @@ export function Canvas() {
   // -------------------------------------------------------------------------
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteInitial, setPaletteInitial] = useState('');
+  const [paletteMode, setPaletteMode] = useState<'default' | 'subsystem'>('default');
   const openPalette = useCallback((prefix = '') => {
     setPaletteInitial(prefix);
     setPaletteOpen(true);
   }, []);
-  const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const closePalette = useCallback(() => {
+    setPaletteOpen(false);
+    setPaletteMode('default');
+  }, []);
 
   // -------------------------------------------------------------------------
   // Auto-layout
@@ -122,8 +126,9 @@ export function Canvas() {
     const handleFitView = () => reactFlow.fitView({ duration: 300 });
     const handleLayout = () => void handleAutoLayout();
     const handleOpenPalette = (e: Event) => {
-      const prefix = (e as CustomEvent<{ prefix?: string }>).detail?.prefix ?? '';
-      openPalette(prefix);
+      const detail = (e as CustomEvent<{ prefix?: string; mode?: string }>).detail;
+      setPaletteMode((detail?.mode as 'default' | 'subsystem') ?? 'default');
+      openPalette(detail?.prefix ?? '');
     };
     window.addEventListener('archcanvas:fit-view', handleFitView);
     window.addEventListener('archcanvas:auto-layout', handleLayout);
@@ -283,7 +288,12 @@ export function Canvas() {
         />
       )}
 
-      <CommandPalette open={paletteOpen} onClose={closePalette} initialInput={paletteInitial} />
+      <CommandPalette
+        open={paletteOpen}
+        onClose={closePalette}
+        initialInput={paletteInitial}
+        mode={paletteMode}
+      />
     </div>
   );
 }
