@@ -1,10 +1,17 @@
+/**
+ * Playwright config for E2E mock bridge tests.
+ *
+ * Runs with MOCK_BRIDGE=1 so the Vite preview server uses a mock BridgeSession
+ * instead of the real Claude SDK. Only runs bridge-specific test files.
+ */
+
 import { defineConfig, devices } from "@playwright/test";
 
 process.env.SLOT_GUARD_POOL = "playwright";
 
 export default defineConfig({
   testDir: "./test/e2e",
-  testIgnore: ["ai-bridge.spec.ts"],
+  testMatch: "ai-bridge.spec.ts",
   globalSetup: ["./test/setup/playwrightSlotGuard.ts"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -23,7 +30,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run build && npx vite preview",
+    command: "MOCK_BRIDGE=1 npm run build && MOCK_BRIDGE=1 npx vite preview",
     url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
   },

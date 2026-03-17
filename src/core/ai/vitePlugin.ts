@@ -28,6 +28,8 @@ export interface AiBridgePluginOptions {
   queryFn?: BridgeServerOptions['queryFn'];
   /** Timeout (ms) for request relay to the browser. Defaults to 10 000. */
   requestTimeoutMs?: number;
+  /** Custom session factory — replaces the default Claude SDK session. Used for E2E mock bridge. */
+  sessionFactory?: BridgeServerOptions['sessionFactory'];
 }
 
 // ---------------------------------------------------------------------------
@@ -43,6 +45,7 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
         cwd: process.cwd(),
         queryFn: pluginOptions?.queryFn,
         requestTimeoutMs: pluginOptions?.requestTimeoutMs,
+        sessionFactory: pluginOptions?.sessionFactory,
       });
 
       // Attach bridge request handler as Vite middleware
@@ -76,6 +79,7 @@ export function aiBridgePlugin(pluginOptions?: AiBridgePluginOptions): Plugin {
         cwd: process.cwd(),
         queryFn: pluginOptions?.queryFn,
         requestTimeoutMs: pluginOptions?.requestTimeoutMs,
+        sessionFactory: pluginOptions?.sessionFactory,
       });
 
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
