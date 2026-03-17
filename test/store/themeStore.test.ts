@@ -47,7 +47,7 @@ describe('themeStore', () => {
   it('has correct defaults', () => {
     const state = useThemeStore.getState();
     expect(state.palette).toBe('archcanvas');
-    expect(state.mode).toBe('system');
+    expect(state.mode).toBe('light');
     expect(state.textSize).toBe('medium');
   });
 
@@ -108,7 +108,11 @@ describe('themeStore', () => {
   });
 
   it('getResolvedMode resolves system mode', () => {
-    matchMediaMock.mockReturnValue({ matches: true } as unknown as MediaQueryList);
+    matchMediaMock.mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList);
     useThemeStore.getState().setMode('system');
     expect(useThemeStore.getState().getResolvedMode()).toBe('dark');
   });

@@ -38,38 +38,38 @@
 }
 
 @theme {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
-  --color-border: #27272a;
-  --color-input: #27272a;
-  --color-ring: #d4d4d8;
-  --color-primary: #fafafa;
-  --color-primary-foreground: #18181b;
-  --color-secondary: #27272a;
-  --color-secondary-foreground: #fafafa;
-  --color-accent: #27272a;
-  --color-accent-foreground: #fafafa;
-  --color-destructive: #7f1d1d;
-  --color-destructive-foreground: #fafafa;
-  --color-popover: #18181b;
-  --color-popover-foreground: #fafafa;
-  --color-card: #18181b;
-  --color-card-foreground: #fafafa;
+  --color-background: #fafafe;
+  --color-foreground: #1a1a2e;
+  --color-muted: #f0f0f5;
+  --color-muted-foreground: #6b6b80;
+  --color-border: #e0e0ea;
+  --color-input: #e0e0ea;
+  --color-ring: #2563eb;
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f0f0f5;
+  --color-secondary-foreground: #1a1a2e;
+  --color-accent: #eef2ff;
+  --color-accent-foreground: #1a1a2e;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1a1a2e;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1a2e;
   --radius: 0.625rem;
   --font-family-mono: 'Monaspace Argon', ui-monospace, monospace;
-  --color-node-bg: #1e1e22;
-  --color-node-border: #3f3f46;
-  --color-node-shadow: #00000040;
-  --color-node-selected-border: #3b82f6;
-  --color-node-selected-ring: #3b82f640;
-  --color-node-ref-bg: #27272a;
-  --color-node-ref-border: #71717a;
-  --color-edge-sync: #d1d5db;
-  --color-edge-async: #818cf8;
-  --color-edge-default: #71717a;
-  --color-canvas-dot: #333333;
+  --color-node-bg: #ffffff;
+  --color-node-border: #d1d5db;
+  --color-node-shadow: #00000014;
+  --color-node-selected-border: #2563eb;
+  --color-node-selected-ring: #2563eb40;
+  --color-node-ref-bg: #f9fafb;
+  --color-node-ref-border: #6b7280;
+  --color-edge-sync: #374151;
+  --color-edge-async: #6366f1;
+  --color-edge-default: #9ca3af;
+  --color-canvas-dot: #d1d5db;
 }
 
 body {

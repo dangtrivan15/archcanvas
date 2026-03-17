@@ -18,7 +18,7 @@ interface ThemeState {
 }
 
 function loadPersistedState(): { palette: string; mode: Mode; textSize: TextSize } {
-  const defaults = { palette: 'archcanvas' as string, mode: 'system' as Mode, textSize: 'medium' as TextSize };
+  const defaults = { palette: 'archcanvas' as string, mode: 'light' as Mode, textSize: 'medium' as TextSize };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults;
