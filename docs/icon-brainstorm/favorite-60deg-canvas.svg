@@ -1,0 +1,48 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Round 22: 60° diagonal dot grid, full-screen canvas, 3 objects standing -->
+  <defs>
+    <clipPath id="clip"><rect width="128" height="128" rx="28"/></clipPath>
+    <filter id="blur"><feGaussianBlur stdDeviation="2"/></filter>
+    <pattern id="dots" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(60)">
+      <circle cx="4" cy="4" r="1.2" fill="#dfdad9"/>
+    </pattern>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="128" height="128" fill="#faf4ed"/>
+    <rect width="128" height="128" fill="url(#dots)"/>
+
+    <!-- Contact shadows -->
+    <ellipse cx="32" cy="100" rx="16" ry="4" fill="#575279" opacity="0.08" filter="url(#blur)"/>
+    <ellipse cx="90" cy="104" rx="14" ry="3.5" fill="#575279" opacity="0.07" filter="url(#blur)"/>
+    <ellipse cx="72" cy="58" rx="11" ry="2.5" fill="#575279" opacity="0.05" filter="url(#blur)"/>
+
+    <!-- Connecting lines -->
+    <line x1="32" y1="80" x2="72" y2="46" stroke="#b4637a" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <line x1="90" y1="86" x2="72" y2="46" stroke="#b4637a" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <line x1="32" y1="80" x2="90" y2="86" stroke="#b4637a" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+
+    <!-- SUBCANVAS — upper, smallest (farthest) -->
+    <rect x="58" y="46" width="28" height="4" rx="1.5" fill="#458b95"/>
+    <rect x="58" y="32" width="28" height="16" rx="3.5" fill="#56949f"/>
+    <circle cx="66" cy="40" r="2" fill="#faf4ed"/>
+    <line x1="68" y1="40" x2="74" y2="40" stroke="#faf4ed" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+    <circle cx="78" cy="40" r="2" fill="#faf4ed"/>
+
+    <!-- AI ROBOT — bottom-right, medium -->
+    <rect x="76" y="98" width="28" height="5" rx="2" fill="#c48520"/>
+    <line x1="90" y1="76" x2="90" y2="81" stroke="#ea9d34" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="90" cy="74" r="3" fill="#ea9d34"/>
+    <rect x="76" y="81" width="28" height="20" rx="6" fill="#ea9d34"/>
+    <circle cx="85" cy="90" r="3" fill="#faf4ed"/>
+    <circle cx="95" cy="90" r="3" fill="#faf4ed"/>
+    <circle cx="86" cy="90" r="1.5" fill="#575279"/>
+    <circle cx="96" cy="90" r="1.5" fill="#575279"/>
+
+    <!-- HUMAN — bottom-left, largest (closest) -->
+    <ellipse cx="32" cy="98" rx="18" ry="5" fill="#7d6a96"/>
+    <circle cx="32" cy="80" r="18" fill="#907aa9"/>
+    <circle cx="32" cy="74" r="4.5" fill="#faf4ed" opacity="0.85"/>
+    <path d="M25 86 Q32 81 39 86" fill="none" stroke="#faf4ed" stroke-width="2.8" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="26" cy="74" r="4" fill="#faf4ed" opacity="0.1"/>
+  </g>
+</svg>

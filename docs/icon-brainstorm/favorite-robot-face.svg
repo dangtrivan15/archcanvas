@@ -1,0 +1,42 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Round 17, Option A: Minimal robot face as AI partner -->
+  <!-- F3 base (full dot grid canvas) with projected shadows, 3 elements -->
+  <defs>
+    <filter id="blur"><feGaussianBlur stdDeviation="4"/></filter>
+    <pattern id="dots" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="1.3" fill="#dfdad9"/>
+    </pattern>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#faf4ed"/>
+  <rect width="128" height="128" rx="28" fill="url(#dots)"/>
+
+  <!-- Projected shadows on canvas -->
+  <ellipse cx="38" cy="72" rx="18" ry="7" fill="#575279" opacity="0.13" filter="url(#blur)"/>
+  <ellipse cx="88" cy="62" rx="16" ry="6.5" fill="#575279" opacity="0.1" filter="url(#blur)"/>
+  <ellipse cx="78" cy="96" rx="24" ry="8" fill="#575279" opacity="0.12" filter="url(#blur)"/>
+
+  <!-- Edges -->
+  <line x1="38" y1="38" x2="78" y2="62" stroke="#dfdad9" stroke-width="3" stroke-linecap="round"/>
+  <line x1="88" y1="28" x2="78" y2="62" stroke="#dfdad9" stroke-width="3" stroke-linecap="round"/>
+  <line x1="38" y1="38" x2="88" y2="28" stroke="#dfdad9" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Human node -->
+  <circle cx="38" cy="32" r="16" fill="#907aa9"/>
+  <circle cx="38" cy="27" r="4" fill="#faf4ed" opacity="0.85"/>
+  <path d="M32 38 Q38 33 44 38" fill="none" stroke="#faf4ed" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- AI: Minimal robot face -->
+  <line x1="88" y1="12" x2="88" y2="18" stroke="#ea9d34" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="88" cy="10" r="3" fill="#ea9d34"/>
+  <rect x="74" y="18" width="28" height="22" rx="7" fill="#ea9d34"/>
+  <circle cx="82" cy="28" r="3" fill="#faf4ed"/>
+  <circle cx="94" cy="28" r="3" fill="#faf4ed"/>
+  <circle cx="83" cy="28" r="1.5" fill="#575279"/>
+  <circle cx="95" cy="28" r="1.5" fill="#575279"/>
+
+  <!-- Subcanvas -->
+  <rect x="56" y="50" width="44" height="28" rx="8" fill="#56949f"/>
+  <circle cx="69" cy="64" r="4" fill="#faf4ed"/>
+  <line x1="73" y1="64" x2="83" y2="64" stroke="#faf4ed" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="87" cy="64" r="4" fill="#faf4ed"/>
+</svg>
