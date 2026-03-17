@@ -22,7 +22,7 @@ export function camelToKebab(s: string): string {
  */
 export function resolveMode(mode: Mode): 'light' | 'dark' {
   if (mode !== 'system') return mode;
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -46,7 +46,7 @@ export function applyTheme(palette: ThemePalette, resolvedMode: 'light' | 'dark'
  * Subscribe to OS dark/light mode changes. Returns unsubscribe function.
  */
 export function subscribeToSystemMode(onChange: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {};
   const mql = window.matchMedia('(prefers-color-scheme: dark)');
   mql.addEventListener('change', onChange);
   return () => mql.removeEventListener('change', onChange);
