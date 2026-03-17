@@ -10,15 +10,11 @@
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod/v4';
 import { parseCanvas } from '../../storage/yamlCodec';
-import type { StoreActionResult } from './bridgeServer';
+import type { RelayStoreActionFn } from './bridgeServer';
+
+export type { RelayStoreActionFn } from './bridgeServer';
 
 const ROOT = '__root__';
-
-/** Function signature for relaying a store action to the browser. */
-export type RelayStoreActionFn = (
-  action: string,
-  args: Record<string, unknown>,
-) => Promise<StoreActionResult>;
 
 function toCallToolResult(result: { ok: boolean; data?: unknown; error?: { code: string; message: string } }) {
   if (result.ok) {

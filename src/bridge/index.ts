@@ -71,7 +71,19 @@ const cwdIdx = cliArgs.indexOf('--cwd');
 const port = portIdx !== -1 ? parseInt(cliArgs[portIdx + 1]) : 17248;
 const cwd = cwdIdx !== -1 ? cliArgs[cwdIdx + 1] : process.cwd();
 
-const server = createBridgeServer({ port, cwd, queryFn: wrappedQuery });
+const IDLE_TIMEOUT_MS = 15_000; // Exit after 15s with no connected clients
+
+const server = createBridgeServer({
+  port,
+  cwd,
+  queryFn: wrappedQuery,
+  idleTimeoutMs: IDLE_TIMEOUT_MS,
+  onIdleTimeout: async () => {
+    console.log('[bridge] No clients connected for 15s — shutting down');
+    await server.stop();
+    process.exit(0);
+  },
+});
 const { port: actualPort } = await server.start();
 
 // Structured first line for Tauri sidecar port discovery

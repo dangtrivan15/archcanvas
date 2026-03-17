@@ -54,6 +54,12 @@ export interface StoreActionResult {
   error?: { code: string; message: string };
 }
 
+/** Function that relays a store action to the browser and returns the result. */
+export type RelayStoreActionFn = (
+  action: string,
+  args: Record<string, unknown>,
+) => Promise<StoreActionResult>;
+
 // ---------------------------------------------------------------------------
 // Options
 // ---------------------------------------------------------------------------
@@ -69,6 +75,20 @@ export interface BridgeServerOptions {
   queryFn?: SDKQueryFn;
   /** Timeout (ms) for request relay to the browser. Defaults to 10 000. */
   requestTimeoutMs?: number;
+  /**
+   * If set, the server fires `onIdleTimeout` after all WebSocket clients
+   * disconnect and no new client reconnects within this duration.
+   * Only triggers after at least one client has connected (not on cold start).
+   */
+  idleTimeoutMs?: number;
+  /** Called when the idle timeout fires. Typically used by the sidecar to exit. */
+  onIdleTimeout?: () => void;
+  /**
+   * Optional factory to create custom BridgeSession instances.
+   * Receives the per-connection relay function so the session can dispatch
+   * store actions to the browser. Used for E2E testing with mock providers.
+   */
+  sessionFactory?: (relay: RelayStoreActionFn) => BridgeSession;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,6 +103,30 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
   /** Active browser WebSocket connections. */
   const browserClients = new Set<WebSocket>();
+
+  /** Idle timeout tracking — only active when idleTimeoutMs is set. */
+  let hadConnection = false;
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function startIdleTimer() {
+    if (!options.idleTimeoutMs || !options.onIdleTimeout) return;
+    if (!hadConnection) return; // Don't fire on cold start
+    if (browserClients.size > 0) return; // Still has clients
+
+    stopIdleTimer();
+    idleTimer = setTimeout(() => {
+      if (browserClients.size === 0) {
+        options.onIdleTimeout!();
+      }
+    }, options.idleTimeoutMs);
+  }
+
+  function stopIdleTimer() {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+  }
 
   /** Pending HTTP requests waiting for browser response. */
   const pendingRequests = new Map<
@@ -133,6 +177,8 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
   // --- WebSocket connection handler ---
   function handleConnection(ws: WebSocket) {
     browserClients.add(ws);
+    hadConnection = true;
+    stopIdleTimer();
 
     // Track the current client requestId so that side-channel events
     // (permission_request, ask_user_question) can be remapped to the
@@ -157,20 +203,24 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
       }
     };
 
-    // Per-connection MCP server: relay is bound to THIS ws, so MCP tool
-    // mutations always target the correct browser tab.
-    const clientRelay = (action: string, args: Record<string, unknown>) =>
+    // Per-connection relay: bound to THIS ws, so mutations target the correct tab.
+    const clientRelay: RelayStoreActionFn = (action, args) =>
       relayToClient(ws, action, args);
-    const clientMcpServer = createArchCanvasMcpServer(clientRelay);
 
-    const session = createBridgeSession({
-      cwd,
-      onPermissionRequest,
-      onAskUserQuestion,
-      ...(options.queryFn ? { queryFn: options.queryFn } : {}),
-      mcpServers: { archcanvas: clientMcpServer },
-      allowedTools: MCP_TOOL_NAMES,
-    });
+    let session: BridgeSession;
+    if (options.sessionFactory) {
+      session = options.sessionFactory(clientRelay);
+    } else {
+      const clientMcpServer = createArchCanvasMcpServer(clientRelay);
+      session = createBridgeSession({
+        cwd,
+        onPermissionRequest,
+        onAskUserQuestion,
+        ...(options.queryFn ? { queryFn: options.queryFn } : {}),
+        mcpServers: { archcanvas: clientMcpServer },
+        allowedTools: MCP_TOOL_NAMES,
+      });
+    }
     sessions.set(ws, session);
 
     ws.on('message', async (data: Buffer | string) => {
@@ -268,6 +318,8 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
         bridgeSession.destroy();
         sessions.delete(ws);
       }
+
+      startIdleTimer();
 
       // Reject any pending mutations that were waiting on this client
       for (const [id, pending] of pendingRequests) {
@@ -385,6 +437,7 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
     /** Stop the server and clean up all connections. */
     async stop() {
+      stopIdleTimer();
       process.off('unhandledRejection', rejectionHandler);
       return new Promise<void>((resolve) => {
         // Close all WebSocket connections

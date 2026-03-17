@@ -66,6 +66,22 @@ pub fn run() {
     let state_for_setup = sidecar_state.clone();
     let state_for_run = sidecar_state.clone();
 
+    // Option A: Install signal handler (SIGTERM + SIGINT) to kill sidecar
+    // before the process exits. Covers graceful kill, system shutdown, Ctrl+C.
+    // SIGKILL is uncatchable — Option B (sidecar idle timeout) handles that.
+    let state_for_signal = sidecar_state.clone();
+    ctrlc::set_handler(move || {
+        eprintln!("[signal] Caught SIGTERM/SIGINT — killing sidecar");
+        if let Ok(mut guard) = state_for_signal.lock() {
+            if let Some(child) = guard.child.take() {
+                let _ = child.kill();
+                eprintln!("[signal] Sidecar killed");
+            }
+        }
+        std::process::exit(0);
+    })
+    .expect("failed to set signal handler");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
