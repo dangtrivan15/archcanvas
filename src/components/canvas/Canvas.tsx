@@ -12,6 +12,7 @@ import { Breadcrumb } from "../shared/Breadcrumb";
 import { ContextMenu } from "../shared/ContextMenu";
 import type { ContextMenuState } from "../shared/ContextMenu";
 import { CommandPalette } from "../shared/CommandPalette";
+import { CreateSubsystemDialog } from "@/components/CreateSubsystemDialog";
 import type { CanvasNodeData, CanvasEdgeData } from "./types";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useGraphStore } from "@/store/graphStore";
@@ -63,6 +64,7 @@ export function Canvas() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteInitial, setPaletteInitial] = useState('');
   const [paletteMode, setPaletteMode] = useState<'default' | 'subsystem'>('default');
+  const [subsystemType, setSubsystemType] = useState<string | null>(null);
   const openPalette = useCallback((prefix = '') => {
     setPaletteInitial(prefix);
     setPaletteOpen(true);
@@ -293,7 +295,16 @@ export function Canvas() {
         onClose={closePalette}
         initialInput={paletteInitial}
         mode={paletteMode}
+        onSelectSubsystemType={(type) => setSubsystemType(type)}
       />
+
+      {subsystemType && (
+        <CreateSubsystemDialog
+          open={!!subsystemType}
+          type={subsystemType}
+          onClose={() => setSubsystemType(null)}
+        />
+      )}
     </div>
   );
 }

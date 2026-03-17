@@ -143,6 +143,11 @@ const editActions: ActionDef[] = [
   }},
   { id: 'action:clear-selection', title: 'Clear Selection', subtitle: 'Esc', icon: '⊘', category: 'Edit', execute: () => useCanvasStore.getState().clearSelection() },
   { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId) },
+  { id: 'action:create-subsystem', title: 'Create Subsystem...', icon: '⊞', category: 'Edit',
+    execute: () => window.dispatchEvent(
+      new CustomEvent('archcanvas:open-palette', { detail: { mode: 'subsystem' } }),
+    ),
+  },
 ];
 
 const viewActions: ActionDef[] = [
@@ -333,9 +338,11 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   initialInput?: string;
+  mode?: 'default' | 'subsystem';
+  onSelectSubsystemType?: (type: string) => void;
 }
 
-export function CommandPalette({ open, onClose, initialInput = '' }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose, initialInput = '', mode = 'default', onSelectSubsystemType }: CommandPaletteProps) {
   const [inputValue, setInputValue] = useState('');
 
   // Seed the input when the palette opens with a prefix (e.g. "@" from Add Node button)
@@ -353,7 +360,10 @@ export function CommandPalette({ open, onClose, initialInput = '' }: CommandPale
     [onClose],
   );
 
-  const { providers, query } = resolveProviders(inputValue);
+  const { providers: resolvedProviders, query } = resolveProviders(inputValue);
+
+  // In subsystem mode, only show NodeTypeProvider (user picks a type for the subsystem)
+  const providers = mode === 'subsystem' ? [NodeTypeProvider] : resolvedProviders;
 
   // Collect grouped results — we disable cmdk's built-in filter because we
   // handle filtering ourselves per-provider to support the prefix shortcuts.
@@ -363,11 +373,19 @@ export function CommandPalette({ open, onClose, initialInput = '' }: CommandPale
 
   const handleSelect = useCallback(
     (provider: PaletteProvider, result: PaletteResult) => {
+      // Intercept node type selection in subsystem mode — hand off to Canvas
+      if (mode === 'subsystem' && result.id.startsWith('nodetype:')) {
+        const typeKey = result.id.replace(/^nodetype:/, '');
+        onSelectSubsystemType?.(typeKey);
+        onClose();
+        setInputValue('');
+        return;
+      }
       provider.onSelect(result);
       onClose();
       setInputValue('');
     },
-    [onClose],
+    [onClose, mode, onSelectSubsystemType],
   );
 
   return (
@@ -390,7 +408,9 @@ export function CommandPalette({ open, onClose, initialInput = '' }: CommandPale
         <Command.Input
           value={inputValue}
           onValueChange={setInputValue}
-          placeholder="Type a command or search… (> actions, @ nodes, # entities)"
+          placeholder={mode === 'subsystem'
+            ? "Pick a node type for the subsystem..."
+            : "Type a command or search… (> actions, @ nodes, # entities)"}
           className="w-full border-b border-border bg-popover px-4 py-3 text-sm text-popover-foreground outline-none placeholder:text-muted-foreground"
         />
 
