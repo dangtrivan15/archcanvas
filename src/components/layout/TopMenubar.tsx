@@ -21,6 +21,11 @@ export function TopMenubar() {
 
   return (
     <Menubar className="rounded-none border-b border-border bg-background px-2">
+      {/* Logo */}
+      <div className="flex items-center px-1">
+        <img src="/favicon.svg" alt="ArchCanvas" width={20} height={20} className="rounded" />
+      </div>
+
       {/* ------------------------------------------------------------------ */}
       {/* File                                                                */}
       {/* ------------------------------------------------------------------ */}
