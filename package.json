@@ -12,7 +12,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && npm run test:e2e-no-bridge && npm run test:e2e-bridge",
+    "test:e2e-no-bridge": "playwright test --config playwright.config.no-bridge.ts",
     "test:e2e-bridge": "playwright test --config playwright.config.bridge.ts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
