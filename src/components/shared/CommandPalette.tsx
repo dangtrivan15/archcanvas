@@ -151,6 +151,7 @@ const viewActions: ActionDef[] = [
   { id: 'action:toggle-left-panel', title: 'Toggle Left Panel', icon: '◧', category: 'View', execute: () => useUiStore.getState().toggleLeftPanel() },
   { id: 'action:toggle-right-panel', title: 'Toggle Right Panel', icon: '◨', category: 'View', execute: () => useUiStore.getState().toggleRightPanel() },
   { id: 'action:open-chat', title: 'Open AI Chat', subtitle: '⇧⌘I', icon: '💬', category: 'View', execute: () => { useUiStore.getState().openRightPanel(); useUiStore.getState().setRightPanelMode('chat'); setTimeout(() => window.dispatchEvent(new CustomEvent('archcanvas:focus-chat')), 0); } },
+  { id: 'action:appearance', title: 'Appearance\u2026', subtitle: 'Theme, mode, text size', icon: '🎨', category: 'View', execute: () => useUiStore.getState().openAppearanceDialog() },
 ];
 
 const toolActions: ActionDef[] = [
