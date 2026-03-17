@@ -144,9 +144,9 @@ const editActions: ActionDef[] = [
   { id: 'action:clear-selection', title: 'Clear Selection', subtitle: 'Esc', icon: '⊘', category: 'Edit', execute: () => useCanvasStore.getState().clearSelection() },
   { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId) },
   { id: 'action:create-subsystem', title: 'Create Subsystem...', icon: '⊞', category: 'Edit',
-    execute: () => window.dispatchEvent(
+    execute: () => setTimeout(() => window.dispatchEvent(
       new CustomEvent('archcanvas:open-palette', { detail: { mode: 'subsystem' } }),
-    ),
+    ), 0),
   },
 ];
 
