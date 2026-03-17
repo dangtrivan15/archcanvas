@@ -13,6 +13,9 @@ interface UiState {
   toggleChat: () => void;
   detailPanelTab: 'properties' | 'notes' | 'codeRefs' | null;
   setDetailPanelTab: (tab: 'properties' | 'notes' | 'codeRefs' | null) => void;
+  showAppearanceDialog: boolean;
+  openAppearanceDialog: () => void;
+  closeAppearanceDialog: () => void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -46,6 +49,10 @@ export const useUiStore = create<UiState>((set, get) => ({
 
   detailPanelTab: null,
   setDetailPanelTab: (tab) => set({ detailPanelTab: tab }),
+
+  showAppearanceDialog: false,
+  openAppearanceDialog: () => set({ showAppearanceDialog: true }),
+  closeAppearanceDialog: () => set({ showAppearanceDialog: false }),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {
