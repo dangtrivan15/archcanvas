@@ -1,6 +1,10 @@
-# ArchCanvas
+<p align="center">
+  <img src="public/favicon.svg" alt="ArchCanvas logo" width="128" height="128">
+</p>
 
-**You design the architecture. AI writes the code.**
+<h1 align="center">ArchCanvas</h1>
+
+<p align="center"><strong>You design the architecture. AI writes the code.</strong></p>
 
 ArchCanvas is a visual architecture tool built for the AI era of software development. You think in systems — services, databases, queues, connections — and express your design on an interactive canvas. AI reads your architecture as the source of truth and turns it into working code.
 

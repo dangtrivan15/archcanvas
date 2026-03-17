@@ -4,7 +4,6 @@ import type { SurveyData } from '@/store/fileStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import type { FilePicker } from '@/platform/filePicker';
 import { serializeCanvas } from '@/storage/yamlCodec';
-import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 // ---------------------------------------------------------------------------
 // Mock uiStore and chatStore for AI path tests
@@ -260,14 +259,14 @@ describe('fileStore — onboarding', () => {
       // toggleChat called synchronously
       expect(mockToggleChat).toHaveBeenCalledTimes(1);
 
-      // sendMessage called after setTimeout(0) — wait for the async callback to complete
-      // We need to flush the microtask queue + macrotask queue
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      expect(mockSendMessage).toHaveBeenCalledTimes(1);
-      expect(mockSendMessage).toHaveBeenCalledWith(
-        expect.stringContaining('AIProject'),
-      );
+      // sendMessage is called inside a fire-and-forget setTimeout(0) with dynamic
+      // imports — poll until the assertion passes rather than using a fixed delay
+      await vi.waitFor(() => {
+        expect(mockSendMessage).toHaveBeenCalledTimes(1);
+        expect(mockSendMessage).toHaveBeenCalledWith(
+          expect.stringContaining('AIProject'),
+        );
+      });
     });
 
     it('ai: does not open chat if status is not loaded', async () => {
@@ -472,10 +471,12 @@ describe('fileStore — onboarding', () => {
 
       await useFileStore.getState().completeOnboarding('ai', defaultSurvey);
 
-      // Wait for setTimeout(0) callback
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      expect(useFileStore.getState().projectPath).toBe('/home/user/projects/my-app');
+      // setProjectPath is called synchronously before the setTimeout(0), but the
+      // dynamic import of uiStore (await import('./uiStore')) happens first — use
+      // waitFor for consistency and resilience
+      await vi.waitFor(() => {
+        expect(useFileStore.getState().projectPath).toBe('/home/user/projects/my-app');
+      });
     });
 
     it('completeOnboarding (blank) does NOT set projectPath', async () => {

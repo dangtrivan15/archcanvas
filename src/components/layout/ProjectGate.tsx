@@ -46,6 +46,7 @@ export function ProjectGate() {
       <div className="flex flex-col items-center gap-8">
         {/* Logo / Heading */}
         <div className="flex flex-col items-center gap-2">
+          <img src="/favicon.svg" alt="ArchCanvas logo" width={120} height={120} className="rounded-3xl" />
           <h1 className="text-3xl font-bold tracking-tight">ArchCanvas</h1>
           <p className="text-sm text-muted-foreground">
             Open an existing project or create a new one to get started.
