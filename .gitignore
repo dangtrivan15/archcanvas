@@ -7,6 +7,8 @@ dist/
 # Tauri
 src-tauri/target/
 src-tauri/binaries/archcanvas-bridge-*
+src-tauri/icons/android/
+src-tauri/icons/ios/
 
 # Environment
 .env
