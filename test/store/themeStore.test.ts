@@ -46,7 +46,7 @@ describe('themeStore', () => {
 
   it('has correct defaults', () => {
     const state = useThemeStore.getState();
-    expect(state.palette).toBe('archcanvas');
+    expect(state.palette).toBe('rose-pine');
     expect(state.mode).toBe('light');
     expect(state.textSize).toBe('medium');
   });
@@ -89,10 +89,10 @@ describe('themeStore', () => {
     vi.resetModules();
     const mod = await import('@/store/themeStore');
     const state = mod.useThemeStore.getState();
-    expect(state.palette).toBe('archcanvas');
+    expect(state.palette).toBe('rose-pine');
   });
 
-  it('falls back to archcanvas if stored palette id is unknown', async () => {
+  it('falls back to rose-pine if stored palette id is unknown', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       palette: 'nonexistent', mode: 'dark', textSize: 'medium',
     }));
