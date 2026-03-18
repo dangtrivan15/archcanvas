@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useNavigationStore } from '@/store/navigationStore';
+import { computeFitViewport } from '@/lib/computeFitViewport';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,10 +63,20 @@ export function useNavigationTransition() {
     return el ? el.getBoundingClientRect() : null;
   };
 
-  /** Capture all visible node positions from the DOM */
-  const captureVisibleNodes = (): CapturedNode[] => {
+  /** Find the main canvas ReactFlow container (excludes mini ReactFlow in previews) */
+  const getMainFlowContainer = (): Element | null => {
+    const allFlows = document.querySelectorAll('.react-flow');
+    for (const flow of allFlows) {
+      if (!flow.closest('.subsystem-preview')) return flow;
+    }
+    return null;
+  };
+
+  /** Capture all visible node positions from the DOM, scoped to a container */
+  const captureVisibleNodes = (container?: Element | null): CapturedNode[] => {
+    const root = container ?? document;
     const nodes: CapturedNode[] = [];
-    document.querySelectorAll('.react-flow__node').forEach((el) => {
+    root.querySelectorAll('.react-flow__node').forEach((el) => {
       const id = el.getAttribute('data-id');
       if (!id || id.startsWith('__ghost__')) return;
       const rect = el.getBoundingClientRect();
@@ -80,10 +91,11 @@ export function useNavigationTransition() {
     return nodes;
   };
 
-  /** Capture visible edges */
-  const captureVisibleEdges = (): CapturedEdge[] => {
+  /** Capture visible edges, scoped to a container */
+  const captureVisibleEdges = (container?: Element | null): CapturedEdge[] => {
+    const root = container ?? document;
     const edges: CapturedEdge[] = [];
-    document.querySelectorAll('.react-flow__edge').forEach((el) => {
+    root.querySelectorAll('.react-flow__edge').forEach((el) => {
       const id = el.getAttribute('data-testid') ?? el.id ?? '';
       const parts = id.replace('rf__edge-', '').split('-');
       if (parts.length >= 2) {
@@ -93,34 +105,64 @@ export function useNavigationTransition() {
     return edges;
   };
 
-  /** Capture mini-node screen positions from a SubsystemPreview SVG */
-  const captureMiniNodes = (refNodeId: string): CapturedNode[] => {
-    const container = document.querySelector(`[data-id="${refNodeId}"]`);
-    const svg = container?.querySelector('.subsystem-preview');
-    if (!svg) return [];
+  /** Compute fitted screen rects for target nodes using viewport math */
+  const computeTargetRects = (rfNodes: { id: string; position: { x: number; y: number }; width?: number; height?: number; data?: { node: { displayName?: string; id: string } } }[]): CapturedNode[] => {
+    const mainFlow = getMainFlowContainer();
+    if (!mainFlow) return [];
+    const vpRect = mainFlow.getBoundingClientRect();
 
-    const nodes: CapturedNode[] = [];
-    svg.querySelectorAll('g[data-node-id]').forEach((g) => {
-      const id = g.getAttribute('data-node-id')!;
-      const rect = g.querySelector('rect');
-      if (!rect) return;
-      const screenRect = rect.getBoundingClientRect();
-      const text = g.querySelector('text')?.textContent ?? id;
-      const fill = rect.getAttribute('fill') ?? '';
-      nodes.push({ id, rect: screenRect, label: text, color: fill });
+    const fitNodes = rfNodes.map((n) => ({
+      x: n.position.x,
+      y: n.position.y,
+      width: n.width ?? 150,
+      height: n.height ?? 40,
+    }));
+
+    const { nodeScreenRects } = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: vpRect.width,
+      viewportHeight: vpRect.height,
     });
-    return nodes;
+
+    return rfNodes.map((n, i) => ({
+      id: n.id,
+      rect: new DOMRect(
+        vpRect.left + nodeScreenRects[i].x,
+        vpRect.top + nodeScreenRects[i].y,
+        nodeScreenRects[i].width,
+        nodeScreenRects[i].height,
+      ),
+      label: n.data?.node?.displayName ?? n.data?.node?.id ?? n.id,
+      color: 'var(--color-node-border)',
+    }));
   };
 
-  /** Shared finalize callback */
+  /** Set the viewport to the fitted position while overlay is still opaque */
+  const setFittedViewport = () => {
+    const mainFlowEl = getMainFlowContainer();
+    if (!mainFlowEl) return;
+    const rfNodes = reactFlow.getNodes();
+    const vpRect = mainFlowEl.getBoundingClientRect();
+    const fitNodes = rfNodes.map((n) => ({
+      x: n.position.x,
+      y: n.position.y,
+      width: n.width ?? 150,
+      height: n.height ?? 40,
+    }));
+    const { zoom, offsetX, offsetY } = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: vpRect.width,
+      viewportHeight: vpRect.height,
+    });
+    reactFlow.setViewport({ x: offsetX, y: offsetY, zoom });
+  };
+
+  /** Shared finalize callback — no fitView needed, viewport already set */
   const finalize = useCallback(() => {
     setTransitionData(null);
     setIsTransitioning(false);
     transitioningRef.current = false;
-    requestAnimationFrame(() => {
-      reactFlow.fitView({ duration: 300 });
-    });
-  }, [reactFlow]);
+  }, []);
 
   // -----------------------------------------------------------------------
   // Dive In
@@ -133,11 +175,13 @@ export function useNavigationTransition() {
     const currentCanvasId = useNavigationStore.getState().currentCanvasId;
     const containerRect = getNodeRect(refNodeId);
 
-    // Capture source positions: mini-nodes from the SubsystemPreview SVG
-    const sourceNodes = captureMiniNodes(refNodeId);
+    // Capture source: mini-node rects from the RefNode's mini ReactFlow
+    const miniContainer = document.querySelector(`[data-id="${refNodeId}"] .react-flow`);
+    const sourceNodes = captureVisibleNodes(miniContainer);
 
-    // Capture siblings (all nodes except the target container)
-    const allNodes = captureVisibleNodes();
+    // Capture siblings (all main canvas nodes except the target container)
+    const mainFlow = getMainFlowContainer();
+    const allNodes = captureVisibleNodes(mainFlow);
     const siblings = allNodes.filter((n) => n.id !== refNodeId);
 
     // Phase 1: Mount overlay with clones at mini-node positions
@@ -156,19 +200,23 @@ export function useNavigationTransition() {
       onComplete: finalize,
     });
 
-    // Switch canvas behind the overlay (batched with above in same React commit)
+    // Switch canvas behind the overlay
     useNavigationStore.getState().diveIn(refNodeId);
 
-    // Phase 2: After ReactFlow renders the new canvas, capture target positions
+    // Phase 2: Compute fitted viewport and set target positions
     requestAnimationFrame(() => {
-      const targetNodes = captureVisibleNodes();
-      const edges = captureVisibleEdges();
+      const rfNodes = reactFlow.getNodes();
+      const targetNodes = computeTargetRects(rfNodes);
+      const edges = captureVisibleEdges(mainFlow);
+
+      // Set viewport to fitted position while overlay is still opaque
+      setFittedViewport();
 
       setTransitionData((prev) =>
         prev ? { ...prev, targetNodes, edges, targetsReady: true } : null,
       );
     });
-  }, [finalize]);
+  }, [finalize, reactFlow]);
 
   // -----------------------------------------------------------------------
   // Go Up (reverse morph)
@@ -182,9 +230,10 @@ export function useNavigationTransition() {
 
     const fromCanvasId = nav.currentCanvasId;
 
-    // Capture source positions: full-size nodes from the current canvas
-    const sourceNodes = captureVisibleNodes();
-    const edges = captureVisibleEdges();
+    // Capture source: full-size nodes from the current (child) canvas
+    const mainFlow = getMainFlowContainer();
+    const sourceNodes = captureVisibleNodes(mainFlow);
+    const edges = captureVisibleEdges(mainFlow);
 
     // Phase 1: Mount overlay with full-size clones
     setIsTransitioning(true);
@@ -209,9 +258,18 @@ export function useNavigationTransition() {
     requestAnimationFrame(() => {
       const toCanvasId = useNavigationStore.getState().currentCanvasId;
       const targetContainerRect = getNodeRect(fromCanvasId);
-      const targetNodes = captureMiniNodes(fromCanvasId);
-      const parentNodes = captureVisibleNodes();
+
+      // Target: mini-node rects from the parent's RefNode mini ReactFlow
+      const miniContainer = document.querySelector(`[data-id="${fromCanvasId}"] .react-flow`);
+      const targetNodes = captureVisibleNodes(miniContainer);
+
+      // Siblings: all parent canvas nodes except the container we came from
+      const mainFlowEl = getMainFlowContainer();
+      const parentNodes = captureVisibleNodes(mainFlowEl);
       const siblings = parentNodes.filter((n) => n.id !== fromCanvasId);
+
+      // Set viewport to fitted position for the parent canvas
+      setFittedViewport();
 
       setTransitionData((prev) =>
         prev
@@ -219,7 +277,7 @@ export function useNavigationTransition() {
           : null,
       );
     });
-  }, [finalize]);
+  }, [finalize, reactFlow]);
 
   // -----------------------------------------------------------------------
   // Breadcrumb Jump (dissolve) — unchanged logic, updated field names
