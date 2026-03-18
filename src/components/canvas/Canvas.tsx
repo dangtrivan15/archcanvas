@@ -257,6 +257,9 @@ export function Canvas() {
         fitView
         proOptions={{ hideAttribution: true }}
         panOnDrag={toolMode === 'pan' ? true : [1, 2]}
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
         nodesDraggable={toolMode === 'select'}
         nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
         selectionOnDrag={toolMode === 'select'}
