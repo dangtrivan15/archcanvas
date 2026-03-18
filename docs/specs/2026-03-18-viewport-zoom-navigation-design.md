@@ -58,19 +58,35 @@ The mini-ReactFlow preview (from milestone 23) renders child nodes with the same
 
 At the switch point, the container fills the screen. The mini-preview renders child nodes fitted within the container's **content area** (container bounds minus header and padding).
 
-The matched child viewport must place child nodes at those same screen positions:
+The matched child viewport must place child nodes at those same screen positions. All viewport values use ReactFlow's `{ x, y, zoom }` convention (where `x`/`y` are the translation of the canvas origin in screen pixels).
+
+**Computing the matched viewport (pure math, no DOM reads needed):**
 
 ```
-contentArea = containerRect minus header/padding
-matchedViewport = computeFitViewport({
-  nodes: childNodes,
-  viewportWidth: contentArea.width,
-  viewportHeight: contentArea.height,
-})
-// Offset to account for content area position within the full viewport
-matchedViewport.offsetX += contentArea.left (in screen coords)
-matchedViewport.offsetY += contentArea.top (in screen coords)
+// 1. Compute the zoom level that fills the screen with the container
+zoomedViewport = computeZoomToRect(containerCanvasRect, vpW, vpH)
+
+// 2. Derive the content area dimensions at that zoom level
+//    The container's content area = container minus header (~30px) and padding (~8px)
+//    At the zoomed viewport, these map to screen pixels:
+contentW = containerCanvasRect.width * zoomedViewport.zoom - (2 * PADDING)
+contentH = containerCanvasRect.height * zoomedViewport.zoom - HEADER_HEIGHT - (2 * PADDING)
+
+// 3. Fit child nodes within the content area dimensions
+fit = computeFitViewport({ nodes: childNodes, viewportWidth: contentW, viewportHeight: contentH })
+
+// 4. Convert to { x, y, zoom } and offset for content area position
+//    The content area's top-left in screen coords:
+contentLeft = (vpW - contentW) / 2  // centered horizontally
+contentTop = (vpH - contentH) / 2 + HEADER_HEIGHT / 2  // shifted down for header
+matchedViewport = {
+  x: fit.offsetX + contentLeft,
+  y: fit.offsetY + contentTop,
+  zoom: fit.zoom,
+}
 ```
+
+This computation works for both dive-in (setting the child viewport after the switch) and go-up Phase 1 (the target to compress child nodes toward). It depends only on: child node positions, the container's canvas-space rect (readable from parent canvas data via `fileStore`), and the main viewport dimensions — no DOM measurements required.
 
 Phase 2 then animates from this content-area-fitted viewport to the true full-viewport-fitted viewport — a subtle shift as nodes settle into the full screen space.
 
@@ -125,6 +141,8 @@ x = vpW/2 - (rect.centerX * zoom)
 y = vpH/2 - (rect.centerY * zoom)
 ```
 
+**`padding` defaults to 0 intentionally** — at the switch point, the container must fill the screen edge-to-edge for the seamless swap to work. This differs from `computeFitViewport` which uses a 0.1 default for comfortable viewing. Callers should not override the default for switch-point viewports.
+
 ### Modified Files
 
 #### `src/components/canvas/hooks/useNavigationTransition.ts` — Full Rewrite
@@ -143,28 +161,29 @@ idle → zooming_in → switching → zooming_out → idle
   goUp: () => void,
   goToBreadcrumb: (index: number) => void,
   isTransitioning: boolean,
-  // transitionData removed — no overlay to feed
+  overlayStyle: React.CSSProperties | null,  // for switch cover + dissolve
+  onOverlayTransitionEnd: () => void,         // dissolve cleanup
 }
 ```
 
 **Dive-in sequence:**
-1. Read current viewport, get container node's canvas-space rect
+1. **Capture state before anything changes**: `currentViewport = reactFlow.getViewport()`. Get the container node's canvas-space rect from `reactFlow.getNode(refNodeId)` (position + measured width/height).
 2. Compute Phase 1 target via `computeZoomToRect(containerRect, vpW, vpH)`
-3. `animateViewport(current → zoomedViewport, 200ms)` — Phase 1
-4. On Phase 1 complete: show 1-frame cover, call `navigationStore.diveIn()`
-5. Next RAF: read child nodes, compute matched viewport, set it, hide cover
-6. Compute fitted viewport via `computeFitViewport`
-7. `animateViewport(matched → fitted, 250ms)` — Phase 2
+3. `animateViewport(currentViewport → zoomedViewport, 200ms)` — Phase 1
+4. On Phase 1 complete: show 1-frame cover, call `navigationStore.diveIn()` — this changes `currentCanvasId` and causes React to re-render with child canvas nodes
+5. Next RAF: child nodes are now rendered. Read `childNodes = reactFlow.getNodes()`. Compute matched viewport. Call `reactFlow.setViewport(matchedViewport)`. Hide cover.
+6. Compute fitted viewport via `computeFitViewport(childNodes, vpW, vpH)`
+7. `animateViewport(matchedViewport → fittedViewport, 250ms)` — Phase 2
 8. On Phase 2 complete: state → `idle`
 
 **Go-up sequence:**
-1. Read current viewport and child nodes
-2. Pre-read the container's canvas-space rect from parent canvas data (before switching)
-3. Compute Phase 1 target: matched child viewport (nodes at mini-preview scale)
-4. `animateViewport(current → matchedViewport, 200ms)` — Phase 1
+1. **Capture state before anything changes**: read `currentViewport = reactFlow.getViewport()`, `childNodes = reactFlow.getNodes()`
+2. Pre-read the container's canvas-space rect from parent canvas data: `containerRect = getContainerRect(fromCanvasId, parentCanvasId)` — reads the RefNode's position and dimensions from the parent canvas in `fileStore` (no DOM query needed)
+3. Compute Phase 1 target using the matched viewport formula from "Matched Viewport Math" section: `matchedViewport = computeMatchedViewport(childNodes, containerRect, vpW, vpH)`. This compresses child nodes to the scale and position they'd have in the parent's mini-preview.
+4. `animateViewport(currentViewport → matchedViewport, 200ms)` — Phase 1
 5. On Phase 1 complete: show cover, call `navigationStore.goUp()`
-6. Next RAF: compute zoomed-into-container viewport, set it, hide cover
-7. Compute parent fitted viewport
+6. Next RAF: compute `zoomedViewport = computeZoomToRect(containerRect, vpW, vpH)`, call `reactFlow.setViewport(zoomedViewport)`, hide cover
+7. Compute parent fitted viewport from `reactFlow.getNodes()`
 8. `animateViewport(zoomedViewport → fittedViewport, 250ms)` — Phase 2
 9. On Phase 2 complete: state → `idle`
 
@@ -177,7 +196,32 @@ idle → zooming_in → switching → zooming_out → idle
 - Remove `transitionData` from destructured hook return
 - Remove `<NavigationTransition data={transitionData} />`
 - Remove import of `NavigationTransition`
-- Add a thin `<div>` managed by the hook for the 1-frame switch cover and dissolve overlay (or the hook manages this via a portal/ref)
+- **Remove `fitView` prop from `<ReactFlow>`** — The `fitView` prop triggers on every `nodes` change. When `diveIn()`/`goUp()` switches the canvas, ReactFlow receives new nodes and `fitView` would fire, overriding the matched viewport that the hook just set via `setViewport()`. Without removing `fitView`, there's a race condition where `fitView` wins and causes a visible viewport jump. Initial fit-on-load is handled by the existing `useEffect` that calls `reactFlow.fitView({ duration: 400 })` on layout completion — this is unaffected.
+- Add a `<div>` for the 1-frame switch cover and dissolve overlay, controlled by state from the hook (see Cover Div section below)
+
+### Cover Div & Dissolve Overlay
+
+The hook needs to render two kinds of overlays:
+
+1. **Switch cover** — A `position: fixed; inset: 0` div with `backgroundColor: var(--color-background)` shown for exactly 1 frame during the canvas swap. Prevents a flash frame while React re-renders new nodes.
+
+2. **Dissolve overlay** — Same div, but with a CSS opacity transition for breadcrumb jumps.
+
+**Mechanism**: The hook exposes `overlayStyle: CSSProperties | null` in its return value. `Canvas.tsx` renders a `<div>` with this style (or nothing when `null`). This keeps the hook in control of timing while Canvas.tsx owns the DOM element — standard React patterns, no portals or imperative DOM insertion.
+
+```typescript
+// Hook returns:
+{ diveIn, goUp, goToBreadcrumb, isTransitioning, overlayStyle }
+
+// Canvas.tsx renders:
+{overlayStyle && (
+  <div style={overlayStyle} onTransitionEnd={...} />
+)}
+```
+
+For the switch cover: `overlayStyle` is set to `{ opacity: 1, ... }` on the switch frame, then set to `null` on the next RAF (after React has rendered the new nodes and viewport is set).
+
+For dissolve: `overlayStyle` starts at `{ opacity: 1, transition: 'opacity 350ms' }`, then updated to `{ opacity: 0, transition: 'opacity 350ms' }` on the next frame. `onTransitionEnd` resets to `null`.
 
 ### Deleted Files
 
