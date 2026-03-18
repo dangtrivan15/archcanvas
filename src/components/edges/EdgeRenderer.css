@@ -39,7 +39,9 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--color-foreground);
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 200px;
+  text-align: center;
 }
 
 /* Entity pills container */
