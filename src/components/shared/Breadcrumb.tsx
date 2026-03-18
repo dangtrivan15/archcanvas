@@ -1,8 +1,20 @@
+import { useCallback } from 'react';
 import { useNavigationStore } from '@/store/navigationStore';
 
 export function Breadcrumb() {
   const breadcrumb = useNavigationStore((s) => s.breadcrumb);
-  const goToBreadcrumb = useNavigationStore((s) => s.goToBreadcrumb);
+
+  const handleBreadcrumbClick = useCallback((index: number) => {
+    if (index === breadcrumb.length - 2) {
+      // One level up — triggers reverse morph via the transition hook
+      window.dispatchEvent(new CustomEvent('archcanvas:navigate-up'));
+    } else {
+      // Multi-level jump — triggers dissolve via the transition hook
+      window.dispatchEvent(
+        new CustomEvent('archcanvas:navigate-to-breadcrumb', { detail: { index } }),
+      );
+    }
+  }, [breadcrumb.length]);
 
   return (
     <div data-testid="breadcrumb" className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-white/80 rounded px-2 py-1 text-sm">
@@ -12,7 +24,7 @@ export function Breadcrumb() {
           {i < breadcrumb.length - 1 ? (
             <button
               className="text-blue-600 hover:underline"
-              onClick={() => goToBreadcrumb(i)}
+              onClick={() => handleBreadcrumbClick(i)}
             >
               {entry.displayName}
             </button>
