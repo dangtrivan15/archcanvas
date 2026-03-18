@@ -67,10 +67,17 @@ The matched child viewport must place child nodes at those same screen positions
 zoomedViewport = computeZoomToRect(containerCanvasRect, vpW, vpH)
 
 // 2. Derive the content area dimensions at that zoom level
-//    The container's content area = container minus header (~30px) and padding (~8px)
-//    At the zoomed viewport, these map to screen pixels:
-contentW = containerCanvasRect.width * zoomedViewport.zoom - (2 * PADDING)
-contentH = containerCanvasRect.height * zoomedViewport.zoom - HEADER_HEIGHT - (2 * PADDING)
+//    Container CSS (.node-shape-container): padding: 14px 16px
+//    Header (.arch-node-header): font-size: 12px, line-height: 1.4 → ~17px
+//    These are CSS pixels in the container's local space; at zoom level they scale:
+HEADER_H = 17  // px — derived from actual CSS (12px * 1.4 line-height)
+PAD_X = 16     // px — horizontal padding from .node-shape-container
+PAD_Y = 14     // px — vertical padding from .node-shape-container
+//    NOTE: These must be verified against nodeShapes.css at implementation time.
+//    If the CSS changes, these constants must be updated. Consider exporting them
+//    from a shared constants file alongside nodeShapes.css.
+contentW = containerCanvasRect.width * zoomedViewport.zoom - (2 * PAD_X)
+contentH = containerCanvasRect.height * zoomedViewport.zoom - HEADER_H - (2 * PAD_Y)
 
 // 3. Fit child nodes within the content area dimensions
 fit = computeFitViewport({ nodes: childNodes, viewportWidth: contentW, viewportHeight: contentH })
@@ -78,7 +85,7 @@ fit = computeFitViewport({ nodes: childNodes, viewportWidth: contentW, viewportH
 // 4. Convert to { x, y, zoom } and offset for content area position
 //    The content area's top-left in screen coords:
 contentLeft = (vpW - contentW) / 2  // centered horizontally
-contentTop = (vpH - contentH) / 2 + HEADER_HEIGHT / 2  // shifted down for header
+contentTop = (vpH - contentH) / 2 + (HEADER_H + PAD_Y) / 2  // shifted down for header
 matchedViewport = {
   x: fit.offsetX + contentLeft,
   y: fit.offsetY + contentTop,
@@ -143,6 +150,39 @@ y = vpH/2 - (rect.centerY * zoom)
 
 **`padding` defaults to 0 intentionally** — at the switch point, the container must fill the screen edge-to-edge for the seamless swap to work. This differs from `computeFitViewport` which uses a 0.1 default for comfortable viewing. Callers should not override the default for switch-point viewports.
 
+#### `src/lib/computeMatchedViewport.ts`
+
+Pure function wrapping the matched viewport formula from the "Matched Viewport Math" section. Encapsulates the content-area offset logic so both dive-in and go-up can share it.
+
+```typescript
+function computeMatchedViewport(
+  childNodes: Array<{ position: { x: number; y: number }; width?: number; height?: number }>,
+  containerCanvasRect: { x: number; y: number; width: number; height: number },
+  viewportWidth: number,
+  viewportHeight: number,
+): { x: number; y: number; zoom: number }
+```
+
+Internally: calls `computeZoomToRect` to get the zoom level, derives content area dimensions using container layout constants, calls `computeFitViewport` for the child node fit, then applies the content area offset. See "Matched Viewport Math" section for the full formula.
+
+#### Helper: `getContainerRect(fromCanvasId, parentCanvasId)`
+
+Not a separate file — a local helper within `useNavigationTransition.ts`. Reads the RefNode's position and measured dimensions from the parent canvas data in `fileStore`:
+
+```typescript
+function getContainerRect(refNodeId: string, parentCanvasId: string) {
+  const canvas = useFileStore.getState().getCanvas(parentCanvasId);
+  const refNode = canvas?.nodes.find(n => n.id === refNodeId);
+  if (!refNode || !refNode.position) return null;
+  // Width/height come from ReactFlow's measured dimensions stored on the node
+  // If not available (unmeasured), return null → caller falls back to dissolve
+  return { x: refNode.position.x, y: refNode.position.y,
+           width: refNode.position.width, height: refNode.position.height };
+}
+```
+
+Returns `null` if the RefNode has no stored `width`/`height` (unmeasured). The caller falls back to dissolve transition.
+
 ### Modified Files
 
 #### `src/components/canvas/hooks/useNavigationTransition.ts` — Full Rewrite
@@ -162,9 +202,11 @@ idle → zooming_in → switching → zooming_out → idle
   goToBreadcrumb: (index: number) => void,
   isTransitioning: boolean,
   overlayStyle: React.CSSProperties | null,  // for switch cover + dissolve
-  onOverlayTransitionEnd: () => void,         // dissolve cleanup
+  onOverlayTransitionEnd: () => void,         // Canvas.tsx passes this as onTransitionEnd on the overlay div
 }
 ```
+
+`onOverlayTransitionEnd` is called when the dissolve overlay's CSS opacity transition finishes. The hook uses it to clear `overlayStyle` back to `null`. Canvas.tsx wires it as `<div style={overlayStyle} onTransitionEnd={onOverlayTransitionEnd} />`. For the 1-frame switch cover, `overlayStyle` is cleared via RAF (not transition), so `onTransitionEnd` doesn't fire.
 
 **Dive-in sequence:**
 1. **Capture state before anything changes**: `currentViewport = reactFlow.getViewport()`. Get the container node's canvas-space rect from `reactFlow.getNode(refNodeId)` (position + measured width/height).
@@ -263,7 +305,8 @@ All of these are replaced by the new viewport-zoom orchestration:
 | Very small container | Large zoom ratio. Logarithmic interpolation keeps it feeling smooth. |
 | Rapid double-click | Guard: `if (state !== 'idle') return`. Second click is ignored. |
 | Navigate during animation | Cancel current animation, `fitView()` to snap, reset to `idle`. |
-| Container unmeasured | If `containerNode.width` is undefined, fall back to dissolve. |
+| Container unmeasured (dive-in) | If `containerNode.width` is undefined from `reactFlow.getNode()`, fall back to dissolve. |
+| Container unmeasured (go-up) | If `getContainerRect()` returns null (RefNode in parent canvas has no stored width/height), fall back to dissolve. |
 | Breadcrumb multi-level jump | Uses dissolve (crossfade), not viewport zoom. |
 
 ## Testing
