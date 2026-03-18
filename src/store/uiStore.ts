@@ -6,6 +6,7 @@ interface UiState {
   rightPanelMode: 'details' | 'chat' | 'entities';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
+  rightPanelCollapsed: boolean;
   setRightPanelMode: (mode: 'details' | 'chat' | 'entities') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -26,6 +27,7 @@ let rightPanelRef: RefObject<PanelImperativeHandle | null> | null = null;
 
 export const useUiStore = create<UiState>((set, get) => ({
   rightPanelMode: 'details',
+  rightPanelCollapsed: false,
 
   setLeftPanelRef: (ref) => { leftPanelRef = ref; },
   setRightPanelRef: (ref) => { rightPanelRef = ref; },
@@ -40,11 +42,14 @@ export const useUiStore = create<UiState>((set, get) => ({
   toggleRightPanel: () => {
     const handle = rightPanelRef?.current;
     if (!handle) return;
-    handle.isCollapsed() ? handle.expand() : handle.collapse();
+    const wasCollapsed = handle.isCollapsed();
+    wasCollapsed ? handle.expand() : handle.collapse();
+    set({ rightPanelCollapsed: !wasCollapsed });
   },
 
   openRightPanel: () => {
     rightPanelRef?.current?.expand();
+    set({ rightPanelCollapsed: false });
   },
 
   detailPanelTab: null,
