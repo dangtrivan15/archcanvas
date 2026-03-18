@@ -20,7 +20,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          environment: "jsdom",
+          environment: "happy-dom",
           setupFiles: ["./test/setup.ts"],
           include: ["test/**/*.test.{ts,tsx}"],
         },

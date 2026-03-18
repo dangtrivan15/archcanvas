@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, afterEach } from 'vitest';
 import { WebSocket } from 'ws';
 import { createBridgeServer, type RelayStoreActionFn } from '../../src/core/ai/bridgeServer';
