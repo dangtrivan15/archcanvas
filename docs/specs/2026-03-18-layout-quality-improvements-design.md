@@ -7,25 +7,21 @@ Auto-layout produces visually cluttered diagrams:
 1. **Edge/node overlap** — Edge labels overlap nodes because ELK spacing is too tight (80px between layers, 50px between nodes) and ELK doesn't account for edge label dimensions.
 2. **Edge labels forced to one line** — CSS `white-space: nowrap` truncates long labels like "JPA/Flyway — segments, workspace_connections".
 3. **Weak semantic ordering** — ELK's layered algorithm respects flow direction but default strategies don't optimize well for architecture diagrams.
-4. **Curved edges** — Bezier curves are less readable than orthogonal (90° bend) edges for system diagrams.
 
 ## Design Decisions
 
-### Why orthogonal edges over Bezier
+### Why not orthogonal edges
 
-Architecture diagrams conventionally use orthogonal edges (UML, C4, cloud architecture diagrams). Orthogonal edges make flow direction visually obvious and reduce visual noise when many edges cross. Bezier curves work well for small graphs but become spaghetti-like at scale.
+Orthogonal (90° bend) edges were prototyped but rejected. Two problems emerged:
 
-### Why ELK bend points + `getSmoothStepPath` fallback (not pure client-side routing)
+1. **Handle overlap** — All outgoing edges from a node share the same handle position, so they exit on the same horizontal line and overlap until diverging into vertical channels. Bezier curves naturally diverge from a shared point.
+2. **Coordinate mismatch** — ELK computes edge endpoints at the node border, but ReactFlow positions edges at Handle coordinates. Bridging this gap required fragile connector logic that produced visual artifacts.
 
-ReactFlow's `getSmoothStepPath` is a pure function of two endpoints — it has **zero knowledge of obstacle nodes**. Edges can and will route through other nodes.
+Bezier curves combined with improved ELK spacing produce better results with no custom edge rendering code.
 
-ELK's `ORTHOGONAL` edge routing computes obstacle-aware bend points during the full layout pass. However, ELK has no standalone "route one edge around obstacles" API ([eclipse/elk#315](https://github.com/eclipse/elk/issues/315), unimplemented).
+### Why `EdgeRoute` type is preserved in `elk.ts`
 
-**Approach A (chosen):** Use ELK bend points after auto-layout; fall back to `getSmoothStepPath` when nodes are manually dragged. Rationale: auto-layout is where edge quality matters most (the "generated" view). When users drag nodes, they accept responsibility for the arrangement.
-
-**Why not approach B** (re-run ELK on every drag): ELK's `Layered` algorithm re-positions nodes — it doesn't support fixed-position edge-only routing. The `Fixed` algorithm respects positions but has limited routing.
-
-**Why not approach C** (custom A*/visibility-graph router): More work with diminishing returns. Can be added later if drag-time edge quality becomes a problem.
+`computeLayout()` extracts ELK's edge routing data (`sections[].startPoint/bendPoints/endPoint`) into an `edgeRoutes` map. This infrastructure is kept for potential future use (e.g., smooth splines through waypoints) even though `EdgeRenderer` does not consume it currently.
 
 ## Changes
 
@@ -44,54 +40,28 @@ ELK's `ORTHOGONAL` edge routing computes obstacle-aware bend points during the f
 |--------|-------|---------|
 | `elk.spacing.edgeLabel` | `20` | Reserve space around edge labels |
 | `elk.layered.spacing.edgeNodeBetweenLayers` | `40` | Gap between edges and nodes in adjacent layers |
+| `elk.spacing.edgeEdge` | `20` | Spacing between parallel edge segments |
+| `elk.layered.spacing.edgeEdgeBetweenLayers` | `20` | Spacing between edges between layers |
 | `elk.layered.nodePlacement.strategy` | `NETWORK_SIMPLEX` | Optimize vertical node positions within each layer to minimize edge length (default is `BRANDES_KOEPF`) |
 | `elk.layered.crossingMinimization.strategy` | `LAYER_SWEEP` | Reduce edge crossings (already the ELK default — included for explicitness) |
-| `elk.edgeRouting` | `ORTHOGONAL` | Already the default for `layered` — included for explicitness. The real fix is that `EdgeRenderer` currently ignores ELK's bend points and uses `getBezierPath` |
+| `elk.edgeRouting` | `ORTHOGONAL` | Already the default for `layered` — included for explicitness |
 
-**Return type change:**
+**Return type extension:**
 
-`computeLayout()` currently returns `{ positions: Map<string, Position> }`. It will additionally return edge routing data:
+`computeLayout()` additionally returns edge routing data for future use:
 
 ```typescript
 export interface EdgeRoute {
-  points: Array<{ x: number; y: number }>; // startPoint + bendPoints + endPoint
+  points: Array<{ x: number; y: number }>;
 }
 
 export interface LayoutResult {
   positions: Map<string, Position>;
-  edgeRoutes: Map<string, EdgeRoute>; // key: "sourceId->targetId"
+  edgeRoutes: Map<string, EdgeRoute>;
 }
 ```
 
-ELK returns `sections[].startPoint`, `sections[].bendPoints`, and `sections[].endPoint` per edge. We flatten these into a single ordered point array per edge.
-
-**Edge ID correlation:** Current ELK code uses `edge-${idx}` as edge IDs. To build the `edgeRoutes` map, we read each result edge's `sources[0]` and `targets[0]` arrays (which contain the node IDs) and construct the key as `"sourceId->targetId"`.
-
-### 2. Transient edge route state — `src/components/canvas/Canvas.tsx`
-
-Edge routes are **transient** — valid only for the current node positions. Stored as local component state (not in a Zustand store, not persisted).
-
-```typescript
-const [edgeRoutes, setEdgeRoutes] = useState<Map<string, EdgeRoute>>(new Map());
-```
-
-**Lifecycle:**
-- `handleAutoLayout()` calls `computeLayout()` → sets both node positions and `edgeRoutes`
-- Node drag-**start** (`onNodesChange` with `change.dragging === true`) → clears `edgeRoutes` immediately. This ensures edges fall back to `getSmoothStepPath` during the drag, not after. Clearing on drag-end would leave stale bend points visible throughout the entire drag.
-- Canvas navigation (scope change) → `edgeRoutes` resets naturally via component state
-
-**Plumbing routes to EdgeRenderer:** `Canvas.tsx` transforms the `edges` array returned by `useCanvasRenderer()` to inject `route` data from the transient `edgeRoutes` map before passing to `<ReactFlow>`. The hook itself remains pure (derives from store data only). This keeps transient state contained in `Canvas.tsx`.
-
-### 3. Edge renderer — `src/components/edges/EdgeRenderer.tsx`
-
-Two rendering paths:
-
-1. **If `data.route` exists** (after auto-layout): Build SVG path from the point array. Construct an `M x,y L x,y L x,y ...` path with optional rounded corners at bends (configurable `borderRadius`). **Label position** is computed as the midpoint of the total path length (walk the segments, find the point at 50% cumulative distance).
-2. **If no route** (manual positioning / fallback): Use `getSmoothStepPath` from `@xyflow/react` (replaces current `getBezierPath`). Parameters: same source/target coordinates + `borderRadius: 8` for slightly rounded 90° bends. Label position comes from `getSmoothStepPath`'s returned `labelX`/`labelY` (same API as `getBezierPath`).
-
-Both paths produce orthogonal edges. The difference is obstacle awareness.
-
-### 4. Edge label wrapping — `src/components/edges/EdgeRenderer.css`
+### 2. Edge label wrapping — `src/components/edges/EdgeRenderer.css`
 
 ```css
 .edge-label {
@@ -108,13 +78,10 @@ Both paths produce orthogonal edges. The difference is obstacle awareness.
 
 | File | Change |
 |------|--------|
-| `src/core/layout/elk.ts` | Spacing values, new ELK options, extract edge routes from result |
-| `src/components/edges/EdgeRenderer.tsx` | `getBezierPath` → conditional ELK route / `getSmoothStepPath` fallback |
+| `src/core/layout/elk.ts` | Spacing values, new ELK options, `EdgeRoute` type, edge route extraction |
 | `src/components/edges/EdgeRenderer.css` | Edge label wrapping |
-| `src/components/canvas/Canvas.tsx` | Transient `edgeRoutes` state, pass routes to edges, clear on drag |
-| `src/components/canvas/types.ts` | Add `route?: EdgeRoute` to `CanvasEdgeData` |
 
-No new files. No new dependencies.
+No new files. No new dependencies. `EdgeRenderer.tsx` and `Canvas.tsx` unchanged.
 
 ## Testing
 
@@ -122,12 +89,12 @@ Existing `computeLayout` unit tests verify the function contract (positions retu
 
 - Unit test: `computeLayout` returns `edgeRoutes` with correct keys and non-empty point arrays when edges exist
 - Unit test: `edgeRoutes` map is empty when canvas has no edges
-- Update existing `EdgeRenderer.test.ts`: mock `getSmoothStepPath` instead of `getBezierPath`, add tests for both rendering paths (with `data.route` and without)
 
-Visual tuning (spacing values, corner radius) is verified by inspection.
+Visual tuning (spacing values) is verified by inspection.
 
 ## Out of Scope
 
-- Persisting edge routes to canvas files (routes are transient, recomputed on auto-layout)
-- Custom pathfinding for drag-time obstacle avoidance (future enhancement if needed)
+- Orthogonal edge rendering (prototyped and rejected — see Design Decisions)
+- Persisting edge routes to canvas files
+- Custom pathfinding for obstacle avoidance
 - Per-edge routing API (ELK doesn't support it — [eclipse/elk#315](https://github.com/eclipse/elk/issues/315))
