@@ -286,3 +286,77 @@ test.describe("toolbar accessibility", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Scroll behavior — scroll pans, not zooms
+// ---------------------------------------------------------------------------
+
+test.describe("scroll behavior", () => {
+  test("ReactFlow is configured for pan-on-scroll", async ({ page }) => {
+    await gotoApp(page);
+
+    // ReactFlow renders panOnScroll as a class or data attribute on the container
+    // Check that scrolling doesn't zoom by verifying the viewport transform stays at same scale
+    const reactFlow = page.locator(".react-flow");
+    const viewportBefore = await reactFlow.locator(".react-flow__viewport").getAttribute("style");
+
+    // Scroll on the canvas
+    await reactFlow.hover();
+    await page.mouse.wheel(0, 200);
+    await page.waitForTimeout(300);
+
+    const viewportAfter = await reactFlow.locator(".react-flow__viewport").getAttribute("style");
+
+    // Extract scale from transform: translate(...) scale(X)
+    const scaleBefore = viewportBefore?.match(/scale\(([^)]+)\)/)?.[1] ?? "1";
+    const scaleAfter = viewportAfter?.match(/scale\(([^)]+)\)/)?.[1] ?? "1";
+
+    // Scale should NOT change (scroll = pan, not zoom)
+    expect(scaleAfter).toBe(scaleBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Right panel collapse — toggle and expand strip
+// ---------------------------------------------------------------------------
+
+test.describe("right panel collapse", () => {
+  test("right panel collapses and expands via strip", async ({ page }) => {
+    await gotoApp(page);
+
+    // Right panel should show Detail Panel heading initially
+    const detailHeading = page.getByRole("heading", { name: "Detail Panel" });
+    await expect(detailHeading).toBeVisible();
+
+    // Collapse via View menu
+    await page.getByRole("menuitem", { name: "View" }).click();
+    await page.getByRole("menuitem", { name: "Toggle Right Panel" }).click();
+    await page.waitForTimeout(300);
+
+    // Detail heading should be hidden, expand button should appear
+    await expect(detailHeading).not.toBeVisible();
+    const expandBtn = page.getByRole("button", { name: "Expand right panel" });
+    await expect(expandBtn).toBeVisible();
+
+    // Click expand strip to re-open
+    await expandBtn.click();
+    await page.waitForTimeout(300);
+
+    // Detail heading should be visible again
+    await expect(detailHeading).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Project info display — project name in menubar
+// ---------------------------------------------------------------------------
+
+test.describe("project info display", () => {
+  test("shows project name in menubar", async ({ page }) => {
+    await gotoApp(page);
+
+    // initializeEmptyProject() sets name to 'Untitled Project'
+    const menubar = page.locator('[data-slot="menubar"]');
+    await expect(menubar.getByText("Untitled Project")).toBeVisible();
+  });
+});

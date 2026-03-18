@@ -230,7 +230,7 @@ test.describe("panel collapse interaction", () => {
       .poll(async () =>
         rightPanel.evaluate((el) => el.getBoundingClientRect().width),
       )
-      .toBe(0);
+      .toBeLessThanOrEqual(28);
 
     // Click AI Chat — should expand right panel AND show chat
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
@@ -262,7 +262,7 @@ test.describe("panel collapse interaction", () => {
       .poll(async () =>
         rightPanel.evaluate((el) => el.getBoundingClientRect().width),
       )
-      .toBe(0);
+      .toBeLessThanOrEqual(28);
 
     // Open chat (also expands)
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
