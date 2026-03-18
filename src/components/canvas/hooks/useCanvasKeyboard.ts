@@ -81,7 +81,8 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         if (selectedNodeIds.size > 0 || selectedEdgeKeys.size > 0) {
           useCanvasStore.getState().clearSelection();
         } else {
-          useNavigationStore.getState().goUp();
+          // Dispatch navigate-up event so it goes through the transition hook
+          window.dispatchEvent(new CustomEvent('archcanvas:navigate-up'));
         }
         return;
       }
