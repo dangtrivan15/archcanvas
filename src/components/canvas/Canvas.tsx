@@ -5,6 +5,7 @@ import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
 import { useNavigationTransition } from "./hooks/useNavigationTransition";
+import { CanvasOverlay } from "./CanvasOverlay";
 
 import { NodeRenderer } from "../nodes/NodeRenderer";
 import { GhostNodeRenderer } from "../nodes/GhostNodeRenderer";
@@ -30,7 +31,11 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
-  const { diveIn, goUp, goToBreadcrumb, isTransitioning, overlayStyle, onOverlayTransitionEnd } = useNavigationTransition();
+  const {
+    diveIn, goUp, goToBreadcrumb, isTransitioning,
+    overlayConfig, backdropCanvasId, overlayElRef, onOverlayReactFlowReady,
+    dissolveOverlayStyle, onDissolveTransitionEnd,
+  } = useNavigationTransition();
   const toolMode = useToolStore((s) => s.mode);
 
   // ---------------------------------------------------------------------------
@@ -272,72 +277,89 @@ export function Canvas() {
 
   return (
     <div className="relative h-full w-full">
-      <Breadcrumb />
-      <ReactFlow
-        nodes={rfNodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        proOptions={{ hideAttribution: true }}
-        panOnDrag={toolMode === 'pan' ? true : [1, 2]}
-        panOnScroll
-        zoomOnScroll={false}
-        zoomOnPinch
-        nodesDraggable={toolMode === 'select'}
-        nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
-        selectionOnDrag={toolMode === 'select'}
-        onNodesChange={onNodesChange}
-        onNodeClick={onNodeClick}
-        onNodeDoubleClick={onNodeDoubleClick}
-        onEdgeClick={onEdgeClick}
-        onConnect={onConnect}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onPaneClick={onPaneClickGuarded}
-        onPaneContextMenu={onPaneContextMenu}
-        onNodeContextMenu={onNodeContextMenu}
-        onEdgeContextMenu={onEdgeContextMenu}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls />
-      </ReactFlow>
+      {/* Parent canvas backdrop — rendered behind main canvas */}
+      {backdropCanvasId && <CanvasOverlay canvasId={backdropCanvasId} backdrop />}
 
-      {contextMenu && (
-        <ContextMenu
-          menu={contextMenu}
-          onClose={closeMenu}
-          onCanvasFitView={handleCanvasFitView}
-          onNodeEditProperties={handleNodeEditProperties}
-          onNodeAddNote={handleNodeAddNote}
-          onNodeDelete={handleNodeDelete}
-          onRefNodeDiveIn={handleRefNodeDiveIn}
-          onRefNodeFitContent={handleRefNodeFitContent}
-          onEdgeEdit={handleEdgeEdit}
-          onEdgeDelete={handleEdgeDelete}
+      {/* Main canvas content */}
+      <div className="relative h-full w-full" style={{ zIndex: 10 }}>
+        <Breadcrumb />
+        <ReactFlow
+          nodes={rfNodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          proOptions={{ hideAttribution: true }}
+          panOnDrag={toolMode === 'pan' ? true : [1, 2]}
+          panOnScroll
+          zoomOnScroll={false}
+          zoomOnPinch
+          nodesDraggable={toolMode === 'select'}
+          nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
+          selectionOnDrag={toolMode === 'select'}
+          onNodesChange={onNodesChange}
+          onNodeClick={onNodeClick}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onEdgeClick={onEdgeClick}
+          onConnect={onConnect}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
+          onPaneClick={onPaneClickGuarded}
+          onPaneContextMenu={onPaneContextMenu}
+          onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Controls />
+        </ReactFlow>
+
+        {contextMenu && (
+          <ContextMenu
+            menu={contextMenu}
+            onClose={closeMenu}
+            onCanvasFitView={handleCanvasFitView}
+            onNodeEditProperties={handleNodeEditProperties}
+            onNodeAddNote={handleNodeAddNote}
+            onNodeDelete={handleNodeDelete}
+            onRefNodeDiveIn={handleRefNodeDiveIn}
+            onRefNodeFitContent={handleRefNodeFitContent}
+            onEdgeEdit={handleEdgeEdit}
+            onEdgeDelete={handleEdgeDelete}
+          />
+        )}
+
+        <CommandPalette
+          open={paletteOpen}
+          onClose={closePalette}
+          initialInput={paletteInitial}
+          mode={paletteMode}
+          onSelectSubsystemType={(type) => setSubsystemType(type)}
+        />
+
+        {subsystemType && (
+          <CreateSubsystemDialog
+            open={!!subsystemType}
+            type={subsystemType}
+            onClose={() => setSubsystemType(null)}
+          />
+        )}
+      </div>
+
+      {/* Transition overlay — temporary, only during clip-path animations */}
+      {overlayConfig && (
+        <CanvasOverlay
+          canvasId={overlayConfig.canvasId}
+          clipPath={overlayConfig.clipPath}
+          onReactFlowReady={onOverlayReactFlowReady}
+          containerRef={overlayElRef}
         />
       )}
 
-      <CommandPalette
-        open={paletteOpen}
-        onClose={closePalette}
-        initialInput={paletteInitial}
-        mode={paletteMode}
-        onSelectSubsystemType={(type) => setSubsystemType(type)}
-      />
-
-      {subsystemType && (
-        <CreateSubsystemDialog
-          open={!!subsystemType}
-          type={subsystemType}
-          onClose={() => setSubsystemType(null)}
-        />
-      )}
-
-      {overlayStyle && (
+      {/* Dissolve overlay — simple opaque cover for breadcrumb/fallback transitions */}
+      {dissolveOverlayStyle && (
         <div
           className="navigation-transition-overlay"
-          style={overlayStyle}
-          onTransitionEnd={onOverlayTransitionEnd}
+          style={dissolveOverlayStyle}
+          onTransitionEnd={onDissolveTransitionEnd}
         />
       )}
     </div>
