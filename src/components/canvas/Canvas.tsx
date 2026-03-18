@@ -4,7 +4,8 @@ import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
-import { useCanvasNavigation } from "./hooks/useCanvasNavigation";
+import { useNavigationTransition } from "./hooks/useNavigationTransition";
+import { NavigationTransition } from "./NavigationTransition";
 import { NodeRenderer } from "../nodes/NodeRenderer";
 import { GhostNodeRenderer } from "../nodes/GhostNodeRenderer";
 import { EdgeRenderer } from "../edges/EdgeRenderer";
@@ -29,7 +30,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
-  const { diveIn } = useCanvasNavigation();
+  const { diveIn, goUp, goToBreadcrumb, isTransitioning, transitionData } = useNavigationTransition();
   const toolMode = useToolStore((s) => s.mode);
 
   // ---------------------------------------------------------------------------
@@ -132,15 +133,24 @@ export function Canvas() {
       setPaletteMode((detail?.mode as 'default' | 'subsystem') ?? 'default');
       openPalette(detail?.prefix ?? '');
     };
+    const handleNavigateUp = () => goUp();
+    const handleNavigateToBreadcrumb = (e: Event) => {
+      const index = (e as CustomEvent<{ index: number }>).detail?.index;
+      if (typeof index === 'number') goToBreadcrumb(index);
+    };
     window.addEventListener('archcanvas:fit-view', handleFitView);
     window.addEventListener('archcanvas:auto-layout', handleLayout);
     window.addEventListener('archcanvas:open-palette', handleOpenPalette);
+    window.addEventListener('archcanvas:navigate-up', handleNavigateUp);
+    window.addEventListener('archcanvas:navigate-to-breadcrumb', handleNavigateToBreadcrumb);
     return () => {
       window.removeEventListener('archcanvas:fit-view', handleFitView);
       window.removeEventListener('archcanvas:auto-layout', handleLayout);
       window.removeEventListener('archcanvas:open-palette', handleOpenPalette);
+      window.removeEventListener('archcanvas:navigate-up', handleNavigateUp);
+      window.removeEventListener('archcanvas:navigate-to-breadcrumb', handleNavigateToBreadcrumb);
     };
-  }, [reactFlow, handleAutoLayout, openPalette]);
+  }, [reactFlow, handleAutoLayout, openPalette, goUp, goToBreadcrumb]);
 
   const {
     onNodeClick, onEdgeClick,
@@ -148,11 +158,12 @@ export function Canvas() {
   } = useCanvasInteractions();
 
   const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
+    if (isTransitioning) return;
     const nodeData = node.data as CanvasNodeData;
     if (nodeData.isRef) {
-      diveIn(node.id, node.position);
+      diveIn(node.id);
     }
-  }, [diveIn]);
+  }, [diveIn, isTransitioning]);
 
   // -------------------------------------------------------------------------
   // Context menu state
@@ -322,6 +333,8 @@ export function Canvas() {
           onClose={() => setSubsystemType(null)}
         />
       )}
+
+      <NavigationTransition data={transitionData} />
     </div>
   );
 }
