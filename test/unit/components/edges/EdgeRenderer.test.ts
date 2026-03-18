@@ -6,9 +6,9 @@ import type { CanvasEdgeData } from '@/components/canvas/types';
 import type { Edge } from '@/types/schema';
 
 // Mock @xyflow/react so EdgeLabelRenderer renders its children without needing
-// a ReactFlow context, and getSmoothStepPath returns deterministic values.
+// a ReactFlow context, and getBezierPath returns deterministic values.
 vi.mock('@xyflow/react', () => ({
-  getSmoothStepPath: () => ['M0 0 L 30 0 L 30 30', 15, 15],
+  getBezierPath: () => ['M0 0 C 10 10, 20 20, 30 30', 15, 15],
   EdgeLabelRenderer: ({ children }: { children: React.ReactNode }) => children,
   Position: { Top: 'top', Bottom: 'bottom', Left: 'left', Right: 'right' },
 }));
@@ -178,44 +178,6 @@ describe('EdgeRenderer', () => {
         }),
       );
       expect(container.querySelector('.entity-pills')).toBeNull();
-    });
-  });
-
-  describe('rendering paths', () => {
-    it('uses ELK route path when data.route is present', () => {
-      const route = {
-        points: [
-          { x: 0, y: 50 },
-          { x: 50, y: 50 },
-          { x: 50, y: 150 },
-          { x: 100, y: 150 },
-        ],
-      };
-      const { container } = render(
-        React.createElement(EdgeRenderer, {
-          ...defaultProps,
-          data: makeData({ route }),
-        }),
-      );
-      const path = container.querySelector('path');
-      expect(path).toBeTruthy();
-      const d = path?.getAttribute('d') ?? '';
-      // ELK route path starts with M and uses L commands (not curve commands)
-      expect(d).toMatch(/^M\s/);
-      expect(d).not.toContain('C');
-    });
-
-    it('uses getSmoothStepPath fallback when no route', () => {
-      const { container } = render(
-        React.createElement(EdgeRenderer, {
-          ...defaultProps,
-          data: makeData(),
-        }),
-      );
-      const path = container.querySelector('path');
-      expect(path).toBeTruthy();
-      // Path comes from the mocked getSmoothStepPath
-      expect(path?.getAttribute('d')).toBe('M0 0 L 30 0 L 30 30');
     });
   });
 
