@@ -264,13 +264,13 @@ export function Canvas() {
     useGraphStore.getState().removeEdge(canvasId, edgeData.edge.from.node, edgeData.edge.to.node);
   }, []);
 
-  const edgesWithRoutes = useMemo(() => {
+  const edgesWithRoutes = useMemo((): RFEdge<CanvasEdgeData>[] => {
     if (edgeRoutes.size === 0) return edges;
     return edges.map((edge) => {
       const routeKey = `${edge.source}->${edge.target}`;
       const route = edgeRoutes.get(routeKey);
       if (!route || !edge.data) return edge;
-      return { ...edge, data: { ...edge.data, route } };
+      return { ...edge, data: { ...edge.data, route } as CanvasEdgeData };
     });
   }, [edges, edgeRoutes]);
 
