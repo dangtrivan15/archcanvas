@@ -202,6 +202,11 @@
   background-color: color-mix(in srgb, var(--color-node-ref-bg) 70%, transparent);
 }
 
+.node-shape-container.ref-node {
+  border-style: dashed;
+  border-width: 2px;
+}
+
 .node-shape-container.selected {
   border-color: var(--color-node-selected-border);
   outline-color: var(--color-node-selected-border);
