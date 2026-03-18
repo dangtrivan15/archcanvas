@@ -24,8 +24,13 @@ export interface GhostLayoutEdge {
   target: string;
 }
 
+export interface EdgeRoute {
+  points: Array<{ x: number; y: number }>;
+}
+
 export interface LayoutResult {
   positions: Map<string, Position>;
+  edgeRoutes: Map<string, EdgeRoute>;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,5 +126,5 @@ export async function computeLayout(
     }
   }
 
-  return { positions };
+  return { positions, edgeRoutes: new Map() };
 }
