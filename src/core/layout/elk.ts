@@ -110,6 +110,8 @@ export async function computeLayout(
       'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
       'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
       'elk.edgeRouting': 'ORTHOGONAL',
+      'elk.spacing.edgeEdge': '20',
+      'elk.layered.spacing.edgeEdgeBetweenLayers': '20',
     },
     children,
     edges: elkEdges,
