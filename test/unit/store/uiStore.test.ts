@@ -19,6 +19,7 @@ function mockPanelRef(collapsed = false): { current: PanelImperativeHandle } {
 describe('uiStore', () => {
   beforeEach(() => {
     _resetPanelRefs();
+    useUiStore.setState({ rightPanelCollapsed: false });
   });
 
   it('toggleLeftPanel collapses an expanded panel', () => {
@@ -72,6 +73,26 @@ describe('uiStore', () => {
     useUiStore.getState().toggleLeftPanel();
     useUiStore.getState().toggleRightPanel();
     useUiStore.getState().openRightPanel();
+  });
+
+  // --- rightPanelCollapsed ---
+
+  it('rightPanelCollapsed defaults to false', () => {
+    expect(useUiStore.getState().rightPanelCollapsed).toBe(false);
+  });
+
+  it('toggleRightPanel sets rightPanelCollapsed to true when collapsing', () => {
+    const ref = mockPanelRef(false);
+    useUiStore.getState().setRightPanelRef(ref);
+    useUiStore.getState().toggleRightPanel();
+    expect(useUiStore.getState().rightPanelCollapsed).toBe(true);
+  });
+
+  it('toggleRightPanel sets rightPanelCollapsed to false when expanding', () => {
+    const ref = mockPanelRef(true);
+    useUiStore.getState().setRightPanelRef(ref);
+    useUiStore.getState().toggleRightPanel();
+    expect(useUiStore.getState().rightPanelCollapsed).toBe(false);
   });
 
   // --- detailPanelTab ---
