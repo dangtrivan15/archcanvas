@@ -1,7 +1,6 @@
 import type { Node } from '@/types';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import type { Edge } from '@/types';
-import type { EdgeRoute } from '@/core/layout/elk';
 
 export interface CanvasNodeData extends Record<string, unknown> {
   node: Node;
@@ -14,7 +13,6 @@ export interface CanvasEdgeData extends Record<string, unknown> {
   edge: Edge;
   styleCategory: 'sync' | 'async' | 'default';
   inherited?: boolean;
-  route?: EdgeRoute;
 }
 
 export const PROTOCOL_STYLES: Record<string, 'sync' | 'async'> = {
