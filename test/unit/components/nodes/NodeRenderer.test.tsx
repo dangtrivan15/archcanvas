@@ -23,20 +23,35 @@ vi.mock('@xyflow/react', () => ({
     />
   ),
   Position: { Left: 'left', Right: 'right' },
+  NodeResizer: (props: any) => <div data-testid="node-resizer" data-visible={props.isVisible} />,
 }));
 
-// Mock fileStore so tests don't depend on a loaded project
-vi.mock('@/store/fileStore', () => ({
-  useFileStore: {
-    getState: () => ({
-      getCanvas: (id: string) => {
-        if (id === 'known-canvas') {
-          return { data: { displayName: 'Known Canvas' } };
-        }
-        return undefined;
-      },
-    }),
-  },
+// Mock fileStore so tests don't depend on a loaded project.
+// useFileStore is used as both getState() (NodeRenderer) and as a hook with selector (SubsystemPreview).
+vi.mock('@/store/fileStore', () => {
+  const state = {
+    project: { canvases: new Map() },
+    getCanvas: (id: string) => {
+      if (id === 'known-canvas') {
+        return { data: { displayName: 'Known Canvas' } };
+      }
+      return undefined;
+    },
+  };
+  const hook = (selector?: (s: typeof state) => any) => {
+    if (selector) return selector(state);
+    return state;
+  };
+  hook.getState = () => state;
+  return { useFileStore: hook };
+});
+
+// Mock graphStore and navigationStore (used by NodeResizer resize handler)
+vi.mock('@/store/graphStore', () => ({
+  useGraphStore: { getState: () => ({ updateNodePosition: vi.fn() }) },
+}));
+vi.mock('@/store/navigationStore', () => ({
+  useNavigationStore: { getState: () => ({ currentCanvasId: '__root__' }) },
 }));
 
 // Import AFTER mocks are registered
