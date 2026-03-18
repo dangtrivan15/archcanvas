@@ -9,6 +9,21 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   } as any;
 }
 
+// Capture ReactFlow props for assertion
+let lastReactFlowProps: Record<string, any> = {};
+
+vi.mock('@xyflow/react', () => {
+  const React = require('react');
+  return {
+    ReactFlow: (props: any) => {
+      lastReactFlowProps = props;
+      return React.createElement('div', { className: 'react-flow' }, props.children);
+    },
+    ReactFlowProvider: ({ children }: any) => React.createElement('div', null, children),
+    useReactFlow: () => ({ setViewport: vi.fn() }),
+  };
+});
+
 import { render } from '@testing-library/react';
 import { SubsystemPreview } from '@/components/nodes/SubsystemPreview';
 import { useFileStore } from '@/store/fileStore';
@@ -79,5 +94,16 @@ describe('SubsystemPreview', () => {
     });
     const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
     expect(container.querySelector('.subsystem-preview')).toBeTruthy();
+  });
+
+  it('does not pass fitView prop to ReactFlow (uses computeFitViewport instead)', () => {
+    setCanvas('test-canvas', {
+      nodes: [
+        { id: 'a', type: 'service', position: { x: 0, y: 0 } },
+        { id: 'b', type: 'database', position: { x: 100, y: 50 } },
+      ],
+    });
+    render(<SubsystemPreview canvasId="test-canvas" />);
+    expect(lastReactFlowProps).not.toHaveProperty('fitView');
   });
 });
