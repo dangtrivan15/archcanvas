@@ -103,8 +103,13 @@ export async function computeLayout(
     layoutOptions: {
       'elk.algorithm': 'layered',
       'elk.direction': direction,
-      'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-      'elk.spacing.nodeNode': '50',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '180',
+      'elk.spacing.nodeNode': '80',
+      'elk.spacing.edgeLabel': '20',
+      'elk.layered.spacing.edgeNodeBetweenLayers': '40',
+      'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+      'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
+      'elk.edgeRouting': 'ORTHOGONAL',
     },
     children,
     edges: elkEdges,
@@ -126,5 +131,27 @@ export async function computeLayout(
     }
   }
 
-  return { positions, edgeRoutes: new Map() };
+  const edgeRoutes = new Map<string, EdgeRoute>();
+
+  for (const edge of result.edges ?? []) {
+    const src = (edge as { sources?: string[] }).sources?.[0];
+    const tgt = (edge as { targets?: string[] }).targets?.[0];
+    const sections = (edge as { sections?: Array<{
+      startPoint: { x: number; y: number };
+      endPoint: { x: number; y: number };
+      bendPoints?: Array<{ x: number; y: number }>;
+    }> }).sections;
+
+    if (src && tgt && sections && sections.length > 0) {
+      const section = sections[0];
+      const points: Array<{ x: number; y: number }> = [
+        section.startPoint,
+        ...(section.bendPoints ?? []),
+        section.endPoint,
+      ];
+      edgeRoutes.set(`${src}->${tgt}`, { points });
+    }
+  }
+
+  return { positions, edgeRoutes };
 }
