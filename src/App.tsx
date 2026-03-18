@@ -126,7 +126,12 @@ export function App() {
               minSize="180px"
               maxSize="40%"
               collapsible
-              collapsedSize="0px"
+              collapsedSize="28px"
+              onResize={() => {
+                useUiStore.setState({
+                  rightPanelCollapsed: rightPanelRef.current?.isCollapsed() ?? false,
+                });
+              }}
             >
               <RightPanel />
             </ResizablePanel>
