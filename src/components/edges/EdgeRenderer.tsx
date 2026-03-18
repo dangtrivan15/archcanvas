@@ -100,15 +100,34 @@ export function EdgeRenderer({
 
   if (route && route.points.length >= 2) {
     // ELK-computed obstacle-aware path.
-    // Use ReactFlow's handle positions as start/end (ELK's startPoint/endPoint
-    // are at the node border, not the handle position). Keep ELK's bendPoints
-    // for the middle — those are the obstacle-aware waypoints.
-    const bendPoints = route.points.slice(1, -1);
-    const adjustedPoints = [
+    // ELK's startPoint/endPoint are at the node border, not the handle.
+    // We use ReactFlow's handle coords as start/end and ELK's bendPoints
+    // as channel waypoints, building orthogonal connectors between them.
+    const elkBends = route.points.slice(1, -1);
+    const adjustedPoints: Array<{ x: number; y: number }> = [
       { x: sourceX, y: sourceY },
-      ...bendPoints,
-      { x: targetX, y: targetY },
     ];
+
+    if (elkBends.length >= 2) {
+      // Horizontal exit from source handle → first bend's x channel
+      adjustedPoints.push({ x: elkBends[0].x, y: sourceY });
+      // Middle bends (obstacle avoidance) — keep as-is
+      for (let i = 1; i < elkBends.length - 1; i++) {
+        adjustedPoints.push(elkBends[i]);
+      }
+      // Horizontal entry to target handle from last bend's x channel
+      adjustedPoints.push({ x: elkBends[elkBends.length - 1].x, y: targetY });
+    } else {
+      // 0 or 1 bend points: simple step path through midpoint/bend x
+      const midX = elkBends.length === 1
+        ? elkBends[0].x
+        : (sourceX + targetX) / 2;
+      adjustedPoints.push({ x: midX, y: sourceY });
+      adjustedPoints.push({ x: midX, y: targetY });
+    }
+
+    adjustedPoints.push({ x: targetX, y: targetY });
+
     edgePath = buildRoutePath(adjustedPoints);
     const labelPos = routeLabelPosition(adjustedPoints);
     labelX = labelPos.x;
