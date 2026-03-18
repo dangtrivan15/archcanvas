@@ -17,6 +17,7 @@ import { useFileStore } from "@/store/fileStore";
 import { useUiStore } from "@/store/uiStore";
 
 export function TopMenubar() {
+  const projectName = useFileStore((s) => s.project?.root.data.project?.name ?? null);
   const recentProjects = useFileStore((s) => s.recentProjects);
 
   return (
@@ -25,6 +26,12 @@ export function TopMenubar() {
       <div className="flex items-center px-1">
         <img src="/favicon.svg" alt="ArchCanvas" width={20} height={20} className="rounded" />
       </div>
+
+      {projectName && (
+        <span className="text-sm font-medium text-muted-foreground px-2 truncate max-w-[200px]">
+          {projectName}
+        </span>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* File                                                                */}
