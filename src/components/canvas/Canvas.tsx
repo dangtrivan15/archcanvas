@@ -235,6 +235,19 @@ export function Canvas() {
     diveIn(nodeId);
   }, [diveIn]);
 
+  const handleRefNodeFitContent = useCallback((nodeId: string) => {
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    const node = canvas?.data.nodes?.find((n) => n.id === nodeId);
+    if (!node?.position) return;
+    useGraphStore.getState().updateNodePosition(canvasId, nodeId, {
+      ...node.position,
+      autoSize: true,
+      width: undefined,
+      height: undefined,
+    });
+  }, []);
+
   const handleEdgeEdit = useCallback((edgeData: CanvasEdgeData) => {
     const { from, to } = edgeData.edge;
     useCanvasStore.getState().selectEdge(from.node, to.node);
@@ -288,6 +301,7 @@ export function Canvas() {
           onNodeAddNote={handleNodeAddNote}
           onNodeDelete={handleNodeDelete}
           onRefNodeDiveIn={handleRefNodeDiveIn}
+          onRefNodeFitContent={handleRefNodeFitContent}
           onEdgeEdit={handleEdgeEdit}
           onEdgeDelete={handleEdgeDelete}
         />
