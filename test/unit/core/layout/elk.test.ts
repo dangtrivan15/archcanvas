@@ -126,4 +126,33 @@ describe('computeLayout', () => {
       }
     }
   });
+
+  it('returns edgeRoutes with correct keys for edges', async () => {
+    const canvas = makeCanvas(['a', 'b', 'c'], [
+      { from: 'a', to: 'b' },
+      { from: 'b', to: 'c' },
+    ]);
+    const result = await computeLayout(canvas);
+    expect(result.edgeRoutes.size).toBe(2);
+    expect(result.edgeRoutes.has('a->b')).toBe(true);
+    expect(result.edgeRoutes.has('b->c')).toBe(true);
+  });
+
+  it('edgeRoutes contain non-empty point arrays', async () => {
+    const canvas = makeCanvas(['a', 'b'], [{ from: 'a', to: 'b' }]);
+    const result = await computeLayout(canvas);
+    const route = result.edgeRoutes.get('a->b');
+    expect(route).toBeDefined();
+    expect(route!.points.length).toBeGreaterThanOrEqual(2);
+    for (const pt of route!.points) {
+      expect(typeof pt.x).toBe('number');
+      expect(typeof pt.y).toBe('number');
+    }
+  });
+
+  it('returns empty edgeRoutes when canvas has no edges', async () => {
+    const canvas = makeCanvas(['a', 'b']);
+    const result = await computeLayout(canvas);
+    expect(result.edgeRoutes.size).toBe(0);
+  });
 });
