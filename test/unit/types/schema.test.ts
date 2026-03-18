@@ -95,6 +95,27 @@ describe('Position', () => {
   });
 });
 
+describe('Position.autoSize', () => {
+  it('accepts autoSize boolean', () => {
+    const result = Position.safeParse({ x: 10, y: 20, autoSize: true });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.autoSize).toBe(true);
+  });
+
+  it('autoSize is optional (defaults to undefined)', () => {
+    const result = Position.safeParse({ x: 10, y: 20 });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.autoSize).toBeUndefined();
+  });
+
+  it('round-trips with width, height, and autoSize', () => {
+    const input = { x: 0, y: 0, width: 240, height: 160, autoSize: false };
+    const result = Position.safeParse(input);
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toEqual(input);
+  });
+});
+
 describe('Entity', () => {
   it('accepts minimal entity', () => {
     expect(Entity.parse({ name: 'Order' })).toEqual({ name: 'Order' });
