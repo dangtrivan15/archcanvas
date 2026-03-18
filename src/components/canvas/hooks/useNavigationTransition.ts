@@ -106,7 +106,7 @@ export function useNavigationTransition() {
   };
 
   /** Compute fitted screen rects for target nodes using viewport math */
-  const computeTargetRects = (rfNodes: { id: string; position: { x: number; y: number }; width?: number; height?: number; data?: { node: { displayName?: string; id: string } } }[]): CapturedNode[] => {
+  const computeTargetRects = (rfNodes: { id: string; position: { x: number; y: number }; width?: number; height?: number; data?: Record<string, unknown> }[]): CapturedNode[] => {
     const mainFlow = getMainFlowContainer();
     if (!mainFlow) return [];
     const vpRect = mainFlow.getBoundingClientRect();
@@ -124,17 +124,20 @@ export function useNavigationTransition() {
       viewportHeight: vpRect.height,
     });
 
-    return rfNodes.map((n, i) => ({
-      id: n.id,
-      rect: new DOMRect(
-        vpRect.left + nodeScreenRects[i].x,
-        vpRect.top + nodeScreenRects[i].y,
-        nodeScreenRects[i].width,
-        nodeScreenRects[i].height,
-      ),
-      label: n.data?.node?.displayName ?? n.data?.node?.id ?? n.id,
-      color: 'var(--color-node-border)',
-    }));
+    return rfNodes.map((n, i) => {
+      const nodeData = n.data?.node as { displayName?: string; id: string } | undefined;
+      return {
+        id: n.id,
+        rect: new DOMRect(
+          vpRect.left + nodeScreenRects[i].x,
+          vpRect.top + nodeScreenRects[i].y,
+          nodeScreenRects[i].width,
+          nodeScreenRects[i].height,
+        ),
+        label: nodeData?.displayName ?? nodeData?.id ?? n.id,
+        color: 'var(--color-node-border)',
+      };
+    });
   };
 
   /** Set the viewport to the fitted position while overlay is still opaque */
