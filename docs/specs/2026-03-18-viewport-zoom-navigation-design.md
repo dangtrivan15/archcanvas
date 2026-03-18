@@ -85,7 +85,7 @@ fit = computeFitViewport({ nodes: childNodes, viewportWidth: contentW, viewportH
 // 4. Convert to { x, y, zoom } and offset for content area position
 //    The content area's top-left in screen coords:
 contentLeft = (vpW - contentW) / 2  // centered horizontally
-contentTop = (vpH - contentH) / 2 + (HEADER_H + PAD_Y) / 2  // shifted down for header
+contentTop = (vpH - contentH) / 2 + HEADER_H / 2  // shifted down for asymmetric header chrome
 matchedViewport = {
   x: fit.offsetX + contentLeft,
   y: fit.offsetY + contentTop,
