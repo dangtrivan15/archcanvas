@@ -1,34 +1,37 @@
 import { useState, useCallback, useRef, type CSSProperties } from 'react';
 import { useReactFlow } from '@xyflow/react';
+import type { ReactFlowInstance } from '@xyflow/react';
 import { useNavigationStore } from '@/store/navigationStore';
-import { computeZoomToRect } from '@/lib/computeZoomToRect';
-import { computeMatchedViewport } from '@/lib/computeMatchedViewport';
+import { useFileStore } from '@/store/fileStore';
+import { useRegistryStore } from '@/store/registryStore';
 import { computeFitViewport } from '@/lib/computeFitViewport';
-import { animateViewport, easeInOut } from '@/lib/animateViewport';
+import { animateOverlayTransition } from '@/lib/animateOverlayTransition';
+import type { Inset, Viewport } from '@/lib/animateOverlayTransition';
+import { mapCanvasNodes } from '../mapCanvasData';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const PHASE1_DURATION = 200; // ms
-const PHASE2_DURATION = 250; // ms
+const DIVE_IN_DURATION = 350;  // ms
+const GO_UP_DURATION = 300;    // ms
 const DISSOLVE_DURATION = 350; // ms
 
-type TransitionState = 'idle' | 'zooming_in' | 'switching' | 'zooming_out';
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-interface ContainerRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+export interface OverlayConfig {
+  canvasId: string;
+  clipPath?: string;
 }
 
 // ---------------------------------------------------------------------------
-// Overlay style factory
+// Helpers
 // ---------------------------------------------------------------------------
 
 const COVER_STYLE: CSSProperties = {
-  position: 'fixed',
+  position: 'absolute',
   inset: 0,
   zIndex: 50,
   backgroundColor: 'var(--color-background)',
@@ -44,21 +47,7 @@ function dissolveStyle(opacity: number): CSSProperties {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helper: get viewport dimensions from main ReactFlow container
-// ---------------------------------------------------------------------------
-
-function getViewportDimensions() {
-  const el = document.querySelector('.react-flow:not(.subsystem-preview .react-flow)');
-  if (!el) return { width: window.innerWidth, height: window.innerHeight };
-  const rect = el.getBoundingClientRect();
-  return { width: rect.width, height: rect.height };
-}
-
-// ---------------------------------------------------------------------------
-// Helper: build FitNode array from ReactFlow nodes
-// ---------------------------------------------------------------------------
-
+/** Build FitNode array from ReactFlow nodes. */
 function toFitNodes(rfNodes: Array<{ position: { x: number; y: number }; width?: number | null; height?: number | null }>) {
   return rfNodes.map((n) => ({
     x: n.position.x,
@@ -68,21 +57,66 @@ function toFitNodes(rfNodes: Array<{ position: { x: number; y: number }; width?:
   }));
 }
 
+/** Get the main ReactFlow container's bounding rect. */
+function getMainCanvasRect(): DOMRect {
+  const el = document.querySelector('.react-flow:not(.subsystem-preview .react-flow):not(.canvas-overlay .react-flow)');
+  if (!el) return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+  return el.getBoundingClientRect();
+}
+
+/** Build fit nodes for a canvas from the file store. */
+function buildFitNodesForCanvas(canvasId: string) {
+  const fileState = useFileStore.getState();
+  const canvas = fileState.getCanvas(canvasId);
+  if (!canvas?.data?.nodes?.length) return null;
+
+  const canvasesRef = fileState.project?.canvases;
+  const resolve = useRegistryStore.getState().resolve;
+  const rfNodes = mapCanvasNodes({
+    canvas: canvas.data,
+    resolve,
+    selectedNodeIds: new Set<string>(),
+    canvasesRef,
+  });
+  return toFitNodes(rfNodes);
+}
+
+/** Compute clip-path inset from a DOMRect relative to a container DOMRect. */
+function rectToInset(pr: DOMRect, cr: DOMRect): Inset {
+  return {
+    top: pr.top - cr.top,
+    right: cr.right - pr.right,
+    bottom: cr.bottom - pr.bottom,
+    left: pr.left - cr.left,
+  };
+}
+
+/** Format an inset as a clip-path string. */
+function insetToClipPath(inset: Inset, radius = 8): string {
+  return `inset(${inset.top}px ${inset.right}px ${inset.bottom}px ${inset.left}px round ${radius}px)`;
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
 export function useNavigationTransition() {
   const reactFlow = useReactFlow();
+
+  // -----------------------------------------------------------------------
+  // State
+  // -----------------------------------------------------------------------
+
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [overlayStyle, setOverlayStyle] = useState<CSSProperties | null>(null);
-  const stateRef = useRef<TransitionState>('idle');
+  const [overlayConfig, setOverlayConfig] = useState<OverlayConfig | null>(null);
+  const [backdropCanvasId, setBackdropCanvasId] = useState<string | null>(null);
+  const [dissolveOverlayStyle, setDissolveOverlayStyle] = useState<CSSProperties | null>(null);
+
+  const stateRef = useRef<'idle' | 'animating'>('idle');
   const cancelRef = useRef<(() => void) | null>(null);
-  // Store the container's measured rect during dive-in so go-up can use it.
-  // We capture from reactFlow.getNode() which has measured pixel dimensions.
-  // Reading from fileStore wouldn't work — Position.width/height are optional
-  // YAML fields, not ReactFlow's measured dimensions.
-  const lastContainerRectRef = useRef<ContainerRect | null>(null);
+  const lastPreviewRectRef = useRef<DOMRect | null>(null);
+  const overlayElRef = useRef<HTMLDivElement>(null);
+  const onRfReadyCallbackRef = useRef<((rf: ReactFlowInstance) => void) | null>(null);
 
   // -----------------------------------------------------------------------
   // Reset
@@ -91,56 +125,71 @@ export function useNavigationTransition() {
   const reset = useCallback(() => {
     cancelRef.current?.();
     cancelRef.current = null;
+    onRfReadyCallbackRef.current = null;
     stateRef.current = 'idle';
     setIsTransitioning(false);
-    setOverlayStyle(null);
+    setOverlayConfig(null);
+    setDissolveOverlayStyle(null);
+  }, []);
+
+  // -----------------------------------------------------------------------
+  // Overlay ReactFlow ready callback
+  // -----------------------------------------------------------------------
+
+  const onOverlayReactFlowReady = useCallback((rf: ReactFlowInstance) => {
+    const cb = onRfReadyCallbackRef.current;
+    onRfReadyCallbackRef.current = null;
+    if (cb) cb(rf);
   }, []);
 
   // -----------------------------------------------------------------------
   // Dissolve helpers (fallback + breadcrumb)
   // -----------------------------------------------------------------------
 
-  // Dissolve helpers use double-rAF to ensure the browser paints opacity:1
-  // before we set opacity:0 — required for the CSS transition to fire.
-  // A safety timeout guarantees reset even if onTransitionEnd never fires
-  // (possible under React 19 concurrent rendering or if element unmounts).
-
   const startDissolveOut = useCallback(() => {
-    // Double rAF: first ensures React commits opacity:1, second triggers opacity:0
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        setOverlayStyle(dissolveStyle(0));
-        // Safety: reset after duration + buffer, in case onTransitionEnd doesn't fire
+        setDissolveOverlayStyle(dissolveStyle(0));
         setTimeout(() => {
-          if (stateRef.current === 'switching') reset();
+          if (stateRef.current === 'animating') reset();
         }, DISSOLVE_DURATION + 50);
       });
     });
   }, [reset]);
 
-  const goToBreadcrumbDissolve = useCallback((refNodeId: string) => {
-    stateRef.current = 'switching';
+  const dissolveUp = useCallback(() => {
+    stateRef.current = 'animating';
     setIsTransitioning(true);
-    setOverlayStyle(dissolveStyle(1));
+    setDissolveOverlayStyle(dissolveStyle(1));
+
+    requestAnimationFrame(() => {
+      const nav = useNavigationStore.getState();
+      nav.goUp();
+      reactFlow.fitView({ duration: 0 });
+      setBackdropCanvasId(nav.parentCanvasId);
+      lastPreviewRectRef.current = null;
+      startDissolveOut();
+    });
+  }, [reactFlow, startDissolveOut]);
+
+  const goToBreadcrumbDissolve = useCallback((refNodeId: string) => {
+    stateRef.current = 'animating';
+    setIsTransitioning(true);
+    setDissolveOverlayStyle(dissolveStyle(1));
 
     requestAnimationFrame(() => {
       useNavigationStore.getState().diveIn(refNodeId);
       reactFlow.fitView({ duration: 0 });
+      setBackdropCanvasId(useNavigationStore.getState().parentCanvasId);
       startDissolveOut();
     });
   }, [reactFlow, startDissolveOut]);
 
-  const dissolveUp = useCallback(() => {
-    stateRef.current = 'switching';
-    setIsTransitioning(true);
-    setOverlayStyle(dissolveStyle(1));
-
-    requestAnimationFrame(() => {
-      useNavigationStore.getState().goUp();
-      reactFlow.fitView({ duration: 0 });
-      startDissolveOut();
-    });
-  }, [reactFlow, startDissolveOut]);
+  const onDissolveTransitionEnd = useCallback(() => {
+    if (stateRef.current === 'animating') {
+      reset();
+    }
+  }, [reset]);
 
   // -----------------------------------------------------------------------
   // Dive In
@@ -149,66 +198,110 @@ export function useNavigationTransition() {
   const diveIn = useCallback((refNodeId: string) => {
     if (stateRef.current !== 'idle') return;
 
-    // Capture state before anything changes
-    const currentViewport = reactFlow.getViewport();
-    const containerNode = reactFlow.getNode(refNodeId);
-    if (!containerNode?.width || !containerNode?.height) {
-      // Unmeasured — fall back to dissolve
+    // Find the SubsystemPreview element for this ref node
+    const previewEl = document.querySelector(
+      `.subsystem-preview[data-canvas-id="${refNodeId}"]`
+    );
+    if (!previewEl) {
+      // No preview element → dissolve fallback
       goToBreadcrumbDissolve(refNodeId);
       return;
     }
 
-    const containerRect: ContainerRect = {
-      x: containerNode.position.x,
-      y: containerNode.position.y,
-      width: containerNode.width,
-      height: containerNode.height,
-    };
+    // Measure the preview's screen rect
+    const pr = previewEl.getBoundingClientRect();
+    if (pr.width === 0 || pr.height === 0) {
+      goToBreadcrumbDissolve(refNodeId);
+      return;
+    }
 
     // Store for go-up to use later
-    lastContainerRectRef.current = containerRect;
+    lastPreviewRectRef.current = pr;
 
-    const { width: vpW, height: vpH } = getViewportDimensions();
-    const zoomedViewport = computeZoomToRect(containerRect, vpW, vpH);
+    // Build fit nodes for the child canvas
+    const fitNodes = buildFitNodesForCanvas(refNodeId);
+    if (!fitNodes || fitNodes.length === 0) {
+      goToBreadcrumbDissolve(refNodeId);
+      return;
+    }
 
-    stateRef.current = 'zooming_in';
+    // Get the main canvas container rect
+    const cr = getMainCanvasRect();
+
+    // Compute starting viewport (matches preview)
+    const pvVp = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: pr.width,
+      viewportHeight: pr.height,
+    });
+    const startVp: Viewport = {
+      x: pvVp.offsetX + (pr.left - cr.left),
+      y: pvVp.offsetY + (pr.top - cr.top),
+      zoom: pvVp.zoom,
+    };
+
+    // Compute ending viewport (fitted to canvas area)
+    const endFit = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: cr.width,
+      viewportHeight: cr.height,
+    });
+    const endVp: Viewport = {
+      x: endFit.offsetX,
+      y: endFit.offsetY,
+      zoom: endFit.zoom,
+    };
+
+    // Compute clip-path insets
+    const startInset = rectToInset(pr, cr);
+    const endInset: Inset = { top: 0, right: 0, bottom: 0, left: 0 };
+
+    // Begin transition
+    stateRef.current = 'animating';
     setIsTransitioning(true);
 
-    // Phase 1: zoom into container
-    cancelRef.current = animateViewport(
-      reactFlow, currentViewport, zoomedViewport, PHASE1_DURATION, easeInOut, () => {
-        // Switch point
-        stateRef.current = 'switching';
-        setOverlayStyle(COVER_STYLE); // 1-frame cover
+    // Mount overlay with initial clip-path
+    setOverlayConfig({
+      canvasId: refNodeId,
+      clipPath: insetToClipPath(startInset),
+    });
 
-        useNavigationStore.getState().diveIn(refNodeId);
+    // When the overlay's ReactFlow is ready, start the animation
+    onRfReadyCallbackRef.current = (rf) => {
+      const overlayEl = overlayElRef.current;
+      if (!overlayEl) { reset(); return; }
 
-        // Next frame: React has rendered child nodes
-        requestAnimationFrame(() => {
-          const childRfNodes = reactFlow.getNodes();
-          const childFitNodes = toFitNodes(childRfNodes);
-          const matchedVp = computeMatchedViewport(childFitNodes, containerRect, vpW, vpH);
-          reactFlow.setViewport(matchedVp);
-          setOverlayStyle(null); // hide cover
+      // Set initial viewport on overlay
+      rf.setViewport(startVp);
 
-          const fittedVp = computeFitViewport({
-            nodes: childFitNodes,
-            viewportWidth: vpW,
-            viewportHeight: vpH,
-          });
-          const fittedViewport = { x: fittedVp.offsetX, y: fittedVp.offsetY, zoom: fittedVp.zoom };
+      cancelRef.current = animateOverlayTransition({
+        overlayEl,
+        reactFlow: rf,
+        startInset,
+        endInset,
+        startVp,
+        endVp,
+        startRadius: 8,
+        endRadius: 0,
+        duration: DIVE_IN_DURATION,
+        onComplete: () => {
+          // Swap the main canvas to the child
+          useNavigationStore.getState().diveIn(refNodeId);
 
-          stateRef.current = 'zooming_out';
+          // Set main canvas viewport to match overlay end state
+          reactFlow.setViewport(endVp);
 
-          // Phase 2: zoom out to fitted
-          cancelRef.current = animateViewport(
-            reactFlow, matchedVp, fittedViewport, PHASE2_DURATION, easeInOut, () => {
-              reset();
-            },
-          );
-        });
-      },
-    );
+          // Update backdrop to show the parent
+          setBackdropCanvasId(useNavigationStore.getState().parentCanvasId);
+
+          // Clean up
+          cancelRef.current = null;
+          setOverlayConfig(null);
+          stateRef.current = 'idle';
+          setIsTransitioning(false);
+        },
+      });
+    };
   }, [reactFlow, reset, goToBreadcrumbDissolve]);
 
   // -----------------------------------------------------------------------
@@ -220,59 +313,98 @@ export function useNavigationTransition() {
     const nav = useNavigationStore.getState();
     if (nav.breadcrumb.length <= 1) return;
 
-    // Capture state before anything changes
-    const currentViewport = reactFlow.getViewport();
-
-    // Use the container rect captured during dive-in.
-    // This has ReactFlow's measured pixel dimensions (not YAML position.width).
-    const containerRect = lastContainerRectRef.current;
-    if (!containerRect) {
-      // No stored rect (e.g., navigated via breadcrumb, not dive-in) — fall back to dissolve
+    const lastRect = lastPreviewRectRef.current;
+    if (!lastRect) {
+      // No stored rect → dissolve fallback
       dissolveUp();
       return;
     }
 
-    const childRfNodes = reactFlow.getNodes();
-    const childFitNodes = toFitNodes(childRfNodes);
-    const { width: vpW, height: vpH } = getViewportDimensions();
-    const matchedVp = computeMatchedViewport(childFitNodes, containerRect, vpW, vpH);
+    // Get current canvas data for overlay viewport
+    const currentCanvasId = nav.currentCanvasId;
+    const fitNodes = buildFitNodesForCanvas(currentCanvasId);
+    if (!fitNodes || fitNodes.length === 0) {
+      dissolveUp();
+      return;
+    }
 
-    stateRef.current = 'zooming_in';
+    // Get the main canvas container rect
+    const cr = getMainCanvasRect();
+
+    // Compute overlay starting viewport (full canvas area, fitted)
+    const fullFit = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: cr.width,
+      viewportHeight: cr.height,
+    });
+    const startVp: Viewport = {
+      x: fullFit.offsetX,
+      y: fullFit.offsetY,
+      zoom: fullFit.zoom,
+    };
+
+    // Compute overlay ending viewport (matches preview rect)
+    const previewFit = computeFitViewport({
+      nodes: fitNodes,
+      viewportWidth: lastRect.width,
+      viewportHeight: lastRect.height,
+    });
+    const endVp: Viewport = {
+      x: previewFit.offsetX + (lastRect.left - cr.left),
+      y: previewFit.offsetY + (lastRect.top - cr.top),
+      zoom: previewFit.zoom,
+    };
+
+    // Clip-path: start full screen, end at preview rect
+    const startInset: Inset = { top: 0, right: 0, bottom: 0, left: 0 };
+    const endInset = rectToInset(lastRect, cr);
+
+    // Begin transition
+    stateRef.current = 'animating';
     setIsTransitioning(true);
 
-    // Phase 1: compress child nodes to preview scale
-    cancelRef.current = animateViewport(
-      reactFlow, currentViewport, matchedVp, PHASE1_DURATION, easeInOut, () => {
-        // Switch point
-        stateRef.current = 'switching';
-        setOverlayStyle(COVER_STYLE);
+    // Mount overlay showing current (child) canvas at full screen
+    setOverlayConfig({ canvasId: currentCanvasId });
 
-        nav.goUp();
+    // When the overlay's ReactFlow is ready:
+    onRfReadyCallbackRef.current = (rf) => {
+      const overlayEl = overlayElRef.current;
+      if (!overlayEl) { reset(); return; }
 
-        requestAnimationFrame(() => {
-          const zoomedViewport = computeZoomToRect(containerRect, vpW, vpH);
-          reactFlow.setViewport(zoomedViewport);
-          setOverlayStyle(null);
+      // Set overlay to full-screen fitted viewport
+      rf.setViewport(startVp);
 
-          const parentRfNodes = reactFlow.getNodes();
-          const parentFitNodes = toFitNodes(parentRfNodes);
-          const fittedVp = computeFitViewport({
-            nodes: parentFitNodes,
-            viewportWidth: vpW,
-            viewportHeight: vpH,
-          });
-          const fittedViewport = { x: fittedVp.offsetX, y: fittedVp.offsetY, zoom: fittedVp.zoom };
+      // Swap main canvas to parent (hidden behind full-screen overlay)
+      nav.goUp();
 
-          stateRef.current = 'zooming_out';
+      // Start the shrinking animation
+      // (parent nodes will render behind overlay during animation)
+      cancelRef.current = animateOverlayTransition({
+        overlayEl,
+        reactFlow: rf,
+        startInset,
+        endInset,
+        startVp,
+        endVp,
+        startRadius: 0,
+        endRadius: 8,
+        duration: GO_UP_DURATION,
+        onComplete: () => {
+          // Fit the main canvas to parent nodes
+          reactFlow.fitView({ duration: 0 });
 
-          cancelRef.current = animateViewport(
-            reactFlow, zoomedViewport, fittedViewport, PHASE2_DURATION, easeInOut, () => {
-              reset();
-            },
-          );
-        });
-      },
-    );
+          // Update backdrop
+          setBackdropCanvasId(useNavigationStore.getState().parentCanvasId);
+
+          // Clean up
+          lastPreviewRectRef.current = null;
+          cancelRef.current = null;
+          setOverlayConfig(null);
+          stateRef.current = 'idle';
+          setIsTransitioning(false);
+        },
+      });
+    };
   }, [reactFlow, reset, dissolveUp]);
 
   // -----------------------------------------------------------------------
@@ -285,34 +417,33 @@ export function useNavigationTransition() {
     const target = nav.breadcrumb[index];
     if (!target) return;
 
-    stateRef.current = 'switching';
+    stateRef.current = 'animating';
     setIsTransitioning(true);
-    setOverlayStyle(dissolveStyle(1));
+    setDissolveOverlayStyle(dissolveStyle(1));
 
     requestAnimationFrame(() => {
       nav.goToBreadcrumb(index);
       reactFlow.fitView({ duration: 0 });
+      setBackdropCanvasId(useNavigationStore.getState().parentCanvasId);
+      lastPreviewRectRef.current = null;
       startDissolveOut();
     });
   }, [reactFlow, startDissolveOut]);
 
   // -----------------------------------------------------------------------
-  // Dissolve onTransitionEnd
+  // Return
   // -----------------------------------------------------------------------
-
-  const onOverlayTransitionEnd = useCallback(() => {
-    // Only reset if we're in a dissolve (overlayStyle has a transition)
-    if (stateRef.current === 'switching' || stateRef.current === 'idle') {
-      reset();
-    }
-  }, [reset]);
 
   return {
     diveIn,
     goUp,
     goToBreadcrumb,
     isTransitioning,
-    overlayStyle,
-    onOverlayTransitionEnd,
+    overlayConfig,
+    backdropCanvasId,
+    overlayElRef,
+    onOverlayReactFlowReady,
+    dissolveOverlayStyle,
+    onDissolveTransitionEnd,
   };
 }
