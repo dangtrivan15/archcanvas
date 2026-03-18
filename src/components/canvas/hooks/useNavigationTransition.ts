@@ -20,12 +20,16 @@ interface CapturedEdge {
 
 export interface TransitionData {
   direction: 'in' | 'out' | 'dissolve';
-  /** Captured positions of nodes being animated */
-  nodes: CapturedNode[];
-  /** Edges connecting captured nodes */
+  /** Where clones START (mini-node rects for dive-in, full-size rects for go-up) */
+  sourceNodes: CapturedNode[];
+  /** Where clones END (full-size rects for dive-in, mini-node rects for go-up) */
+  targetNodes: CapturedNode[];
+  /** Edges connecting animated nodes */
   edges: CapturedEdge[];
-  /** Bounding rect of the container being morphed (dive-in: the ref-node rect) */
+  /** Container rect at source phase */
   containerRect: DOMRect | null;
+  /** Container rect at target phase (for go-up: where nodes shrink to) */
+  targetContainerRect: DOMRect | null;
   /** Sibling nodes (for fade-out on dive-in, fade-in on go-up) */
   siblings: CapturedNode[];
   /** The canvas ID we're transitioning FROM */
@@ -36,8 +40,6 @@ export interface TransitionData {
   onComplete: () => void;
 }
 
-const TRANSITION_DURATION = 350; // ms
-
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -46,7 +48,7 @@ export function useNavigationTransition() {
   const reactFlow = useReactFlow();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionData, setTransitionData] = useState<TransitionData | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const transitioningRef = useRef(false);
 
   // -----------------------------------------------------------------------
   // Helpers
@@ -81,7 +83,6 @@ export function useNavigationTransition() {
     const edges: CapturedEdge[] = [];
     document.querySelectorAll('.react-flow__edge').forEach((el) => {
       const id = el.getAttribute('data-testid') ?? el.id ?? '';
-      // ReactFlow edge IDs are typically "source-target"
       const parts = id.replace('rf__edge-', '').split('-');
       if (parts.length >= 2) {
         edges.push({ sourceId: parts[0], targetId: parts[1] });
@@ -90,131 +91,153 @@ export function useNavigationTransition() {
     return edges;
   };
 
+  /** Capture mini-node screen positions from a SubsystemPreview SVG */
+  const captureMiniNodes = (refNodeId: string): CapturedNode[] => {
+    const container = document.querySelector(`[data-id="${refNodeId}"]`);
+    const svg = container?.querySelector('.subsystem-preview');
+    if (!svg) return [];
+
+    const nodes: CapturedNode[] = [];
+    svg.querySelectorAll('g[data-node-id]').forEach((g) => {
+      const id = g.getAttribute('data-node-id')!;
+      const rect = g.querySelector('rect');
+      if (!rect) return;
+      const screenRect = rect.getBoundingClientRect();
+      const text = g.querySelector('text')?.textContent ?? id;
+      const fill = rect.getAttribute('fill') ?? '';
+      nodes.push({ id, rect: screenRect, label: text, color: fill });
+    });
+    return nodes;
+  };
+
+  /** Shared finalize callback */
+  const finalize = useCallback(() => {
+    setTransitionData(null);
+    setIsTransitioning(false);
+    transitioningRef.current = false;
+    requestAnimationFrame(() => {
+      reactFlow.fitView({ duration: 300 });
+    });
+  }, [reactFlow]);
+
   // -----------------------------------------------------------------------
   // Dive In
   // -----------------------------------------------------------------------
 
   const diveIn = useCallback((refNodeId: string) => {
-    if (isTransitioning) return;
+    if (transitioningRef.current) return;
+    transitioningRef.current = true;
 
     const currentCanvasId = useNavigationStore.getState().currentCanvasId;
     const containerRect = getNodeRect(refNodeId);
 
-    // Capture siblings (all nodes except the target)
+    // Capture source positions: mini-nodes from the SubsystemPreview SVG
+    const sourceNodes = captureMiniNodes(refNodeId);
+
+    // Capture siblings (all nodes except the target container)
     const allNodes = captureVisibleNodes();
     const siblings = allNodes.filter((n) => n.id !== refNodeId);
 
-    // Now switch the canvas (behind the overlay)
+    // Phase 1: Mount overlay with clones at mini-node positions
     setIsTransitioning(true);
+    setTransitionData({
+      direction: 'in',
+      sourceNodes,
+      targetNodes: [],
+      edges: [],
+      containerRect: containerRect ?? null,
+      targetContainerRect: null,
+      siblings,
+      fromCanvasId: currentCanvasId,
+      toCanvasId: refNodeId,
+      onComplete: finalize,
+    });
 
-    const finalize = () => {
-      setTransitionData(null);
-      setIsTransitioning(false);
-      requestAnimationFrame(() => {
-        reactFlow.fitView({ duration: 300 });
-      });
-    };
-
-    // Perform the actual navigation
+    // Switch canvas behind the overlay (batched with above in same React commit)
     useNavigationStore.getState().diveIn(refNodeId);
 
-    // After the canvas switches, read child node positions for morph targets
-    // We need a frame for ReactFlow to render the new canvas
+    // Phase 2: After ReactFlow renders the new canvas, capture target positions
     requestAnimationFrame(() => {
-      const childNodes = captureVisibleNodes();
-      const childEdges = captureVisibleEdges();
+      const targetNodes = captureVisibleNodes();
+      const edges = captureVisibleEdges();
 
-      setTransitionData({
-        direction: 'in',
-        nodes: childNodes,
-        edges: childEdges,
-        containerRect: containerRect ?? null,
-        siblings,
-        fromCanvasId: currentCanvasId,
-        toCanvasId: refNodeId,
-        onComplete: finalize,
-      });
-
-      // Safety timeout in case transitionend doesn't fire
-      timeoutRef.current = setTimeout(finalize, TRANSITION_DURATION + 100);
+      setTransitionData((prev) =>
+        prev ? { ...prev, targetNodes, edges } : null,
+      );
     });
-  }, [isTransitioning, reactFlow]);
+  }, [finalize]);
 
   // -----------------------------------------------------------------------
   // Go Up (reverse morph)
   // -----------------------------------------------------------------------
 
   const goUp = useCallback(() => {
-    if (isTransitioning) return;
+    if (transitioningRef.current) return;
     const nav = useNavigationStore.getState();
     if (nav.breadcrumb.length <= 1) return;
+    transitioningRef.current = true;
 
     const fromCanvasId = nav.currentCanvasId;
 
-    // Capture current full-sized nodes
-    const currentNodes = captureVisibleNodes();
-    const currentEdges = captureVisibleEdges();
+    // Capture source positions: full-size nodes from the current canvas
+    const sourceNodes = captureVisibleNodes();
+    const edges = captureVisibleEdges();
 
+    // Phase 1: Mount overlay with full-size clones
     setIsTransitioning(true);
+    setTransitionData({
+      direction: 'out',
+      sourceNodes,
+      targetNodes: [],
+      edges,
+      containerRect: null,
+      targetContainerRect: null,
+      siblings: [],
+      fromCanvasId,
+      toCanvasId: '',
+      onComplete: finalize,
+    });
 
-    const finalize = () => {
-      setTransitionData(null);
-      setIsTransitioning(false);
-      requestAnimationFrame(() => {
-        reactFlow.fitView({ duration: 300 });
-      });
-    };
-
-    // Perform navigation
+    // Switch canvas behind the overlay
     nav.goUp();
 
-    // After canvas switch, find the ref-node in the parent to get the container rect
+    // Phase 2: After parent canvas renders, capture target positions
     requestAnimationFrame(() => {
-      const containerRect = getNodeRect(fromCanvasId);
+      const toCanvasId = useNavigationStore.getState().currentCanvasId;
+      const targetContainerRect = getNodeRect(fromCanvasId);
+      const targetNodes = captureMiniNodes(fromCanvasId);
       const parentNodes = captureVisibleNodes();
       const siblings = parentNodes.filter((n) => n.id !== fromCanvasId);
 
-      setTransitionData({
-        direction: 'out',
-        nodes: currentNodes,
-        edges: currentEdges,
-        containerRect: containerRect ?? null,
-        siblings,
-        fromCanvasId,
-        toCanvasId: nav.currentCanvasId,
-        onComplete: finalize,
-      });
-
-      timeoutRef.current = setTimeout(finalize, TRANSITION_DURATION + 100);
+      setTransitionData((prev) =>
+        prev
+          ? { ...prev, targetNodes, targetContainerRect: targetContainerRect ?? null, siblings, toCanvasId }
+          : null,
+      );
     });
-  }, [isTransitioning, reactFlow]);
+  }, [finalize]);
 
   // -----------------------------------------------------------------------
-  // Breadcrumb Jump (dissolve)
+  // Breadcrumb Jump (dissolve) — unchanged logic, updated field names
   // -----------------------------------------------------------------------
 
   const goToBreadcrumb = useCallback((index: number) => {
-    if (isTransitioning) return;
+    if (transitioningRef.current) return;
     const nav = useNavigationStore.getState();
     const fromCanvasId = nav.currentCanvasId;
     const target = nav.breadcrumb[index];
     if (!target) return;
+    transitioningRef.current = true;
 
     setIsTransitioning(true);
 
-    const finalize = () => {
-      setTransitionData(null);
-      setIsTransitioning(false);
-      requestAnimationFrame(() => {
-        reactFlow.fitView({ duration: 300 });
-      });
-    };
-
     setTransitionData({
       direction: 'dissolve',
-      nodes: [],
+      sourceNodes: [],
+      targetNodes: [],
       edges: [],
       containerRect: null,
+      targetContainerRect: null,
       siblings: [],
       fromCanvasId,
       toCanvasId: target.canvasId,
@@ -225,9 +248,7 @@ export function useNavigationTransition() {
     requestAnimationFrame(() => {
       nav.goToBreadcrumb(index);
     });
-
-    timeoutRef.current = setTimeout(finalize, TRANSITION_DURATION + 100);
-  }, [isTransitioning, reactFlow]);
+  }, [finalize]);
 
   return {
     diveIn,
