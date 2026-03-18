@@ -319,7 +319,8 @@ test.describe("panel toggles", () => {
     const collapsedWidth = await rightPanel.evaluate(
       (el) => el.getBoundingClientRect().width,
     );
-    expect(collapsedWidth).toBe(0);
+    // Collapsed panel now shows a 28px expand strip (not fully hidden)
+    expect(collapsedWidth).toBeLessThanOrEqual(28);
 
     // Toggle to expand
     await page.getByRole("menuitem", { name: "View" }).click();
