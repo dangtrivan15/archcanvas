@@ -56,6 +56,20 @@ describe('SubsystemPreview', () => {
     expect(texts[0].textContent).toBe('API');
   });
 
+  it('renders data-node-id attribute on each g element', () => {
+    setCanvas('test-canvas', {
+      nodes: [
+        { id: 'node-a', type: 'service', position: { x: 0, y: 0 } },
+        { id: 'node-b', type: 'database', position: { x: 100, y: 50 } },
+      ],
+    });
+    const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
+    const groups = container.querySelectorAll('g[data-node-id]');
+    expect(groups.length).toBe(2);
+    expect(groups[0].getAttribute('data-node-id')).toBe('node-a');
+    expect(groups[1].getAttribute('data-node-id')).toBe('node-b');
+  });
+
   it('renders line elements for each edge', () => {
     setCanvas('test-canvas', {
       nodes: [

@@ -80,7 +80,7 @@ export function SubsystemPreview({ canvasId }: SubsystemPreviewProps) {
           : displayName;
 
         return (
-          <g key={n.id}>
+          <g key={n.id} data-node-id={n.id}>
             <rect
               x={x} y={y}
               width={MINI_NODE_W} height={MINI_NODE_H}
