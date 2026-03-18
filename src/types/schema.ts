@@ -31,6 +31,7 @@ export const Position = z.object({
   y: z.number(),
   width: z.number().optional(),
   height: z.number().optional(),
+  autoSize: z.boolean().optional(),
 });
 export type Position = z.infer<typeof Position>;
 
