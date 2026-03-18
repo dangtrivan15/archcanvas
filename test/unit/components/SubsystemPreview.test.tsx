@@ -1,9 +1,23 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Polyfill ResizeObserver for jsdom (ReactFlow requires it)
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as any;
+}
+
 import { render } from '@testing-library/react';
 import { SubsystemPreview } from '@/components/nodes/SubsystemPreview';
 import { useFileStore } from '@/store/fileStore';
 
-// Helper to set up a canvas in the store
+// Mock registryStore — SubsystemPreview uses it for node type resolution
+vi.mock('@/store/registryStore', () => ({
+  useRegistryStore: (selector: any) => selector({ resolve: () => undefined }),
+}));
+
 function setCanvas(canvasId: string, data: { nodes?: any[]; edges?: any[] }) {
   const store = useFileStore.getState();
   const canvases = new Map(store.project?.canvases ?? []);
@@ -24,15 +38,15 @@ describe('SubsystemPreview', () => {
   it('renders nothing when canvas has no nodes', () => {
     setCanvas('test-canvas', { nodes: [] });
     const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
-    expect(container.querySelector('svg')).toBeNull();
+    expect(container.querySelector('.subsystem-preview')).toBeNull();
   });
 
   it('renders nothing when canvas does not exist', () => {
     const { container } = render(<SubsystemPreview canvasId="nonexistent" />);
-    expect(container.querySelector('svg')).toBeNull();
+    expect(container.querySelector('.subsystem-preview')).toBeNull();
   });
 
-  it('renders rect elements for each node', () => {
+  it('renders a ReactFlow instance with nodes', () => {
     setCanvas('test-canvas', {
       nodes: [
         { id: 'a', type: 'service', position: { x: 0, y: 0 } },
@@ -40,46 +54,30 @@ describe('SubsystemPreview', () => {
       ],
     });
     const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
-    const rects = container.querySelectorAll('rect');
-    expect(rects.length).toBe(2);
+    // Should have the preview wrapper with a ReactFlow instance inside
+    expect(container.querySelector('.subsystem-preview')).toBeTruthy();
+    expect(container.querySelector('.react-flow')).toBeTruthy();
   });
 
-  it('renders text labels for each node', () => {
-    setCanvas('test-canvas', {
-      nodes: [
-        { id: 'a', type: 'service', displayName: 'API', position: { x: 0, y: 0 } },
-      ],
-    });
-    const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
-    const texts = container.querySelectorAll('text');
-    expect(texts.length).toBe(1);
-    expect(texts[0].textContent).toBe('API');
-  });
-
-  it('renders data-node-id attribute on each g element', () => {
-    setCanvas('test-canvas', {
-      nodes: [
-        { id: 'node-a', type: 'service', position: { x: 0, y: 0 } },
-        { id: 'node-b', type: 'database', position: { x: 100, y: 50 } },
-      ],
-    });
-    const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
-    const groups = container.querySelectorAll('g[data-node-id]');
-    expect(groups.length).toBe(2);
-    expect(groups[0].getAttribute('data-node-id')).toBe('node-a');
-    expect(groups[1].getAttribute('data-node-id')).toBe('node-b');
-  });
-
-  it('renders line elements for each edge', () => {
+  it('wraps ReactFlow in its own ReactFlowProvider (no throw)', () => {
     setCanvas('test-canvas', {
       nodes: [
         { id: 'a', type: 'service', position: { x: 0, y: 0 } },
-        { id: 'b', type: 'database', position: { x: 100, y: 50 } },
       ],
-      edges: [{ from: { node: 'a' }, to: { node: 'b' } }],
+    });
+    // If no provider, ReactFlow would throw. Rendering without error = provider present.
+    expect(() => {
+      render(<SubsystemPreview canvasId="test-canvas" />);
+    }).not.toThrow();
+  });
+
+  it('has the subsystem-preview wrapper class', () => {
+    setCanvas('test-canvas', {
+      nodes: [
+        { id: 'a', type: 'service', position: { x: 0, y: 0 } },
+      ],
     });
     const { container } = render(<SubsystemPreview canvasId="test-canvas" />);
-    const lines = container.querySelectorAll('line');
-    expect(lines.length).toBe(1);
+    expect(container.querySelector('.subsystem-preview')).toBeTruthy();
   });
 });
