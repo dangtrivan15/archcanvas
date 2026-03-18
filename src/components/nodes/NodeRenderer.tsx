@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
@@ -7,12 +8,14 @@ import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { resolveIcon } from './iconMap';
 import { SubsystemPreview } from './SubsystemPreview';
+import { PreviewModeContext } from './PreviewModeContext';
 import './nodeShapes.css';
 
 type NodeRendererProps = NodeProps<RFNode<CanvasNodeData>>;
 
 export function NodeRenderer({ data }: NodeRendererProps) {
   const { node, nodeDef, isSelected, isRef } = data;
+  const isPreview = useContext(PreviewModeContext);
 
   // Determine display name
   const displayName = (() => {
@@ -104,8 +107,8 @@ export function NodeRenderer({ data }: NodeRendererProps) {
         </span>
       </div>
 
-      {/* Mini-node preview for container RefNodes */}
-      {isRef && <SubsystemPreview canvasId={node.id} />}
+      {/* Mini-node preview for container RefNodes (skipped in preview mode to prevent recursion) */}
+      {isRef && !isPreview && <SubsystemPreview canvasId={node.id} />}
 
       {/* Type label (inline nodes only) */}
       {typeLabel !== undefined && (
