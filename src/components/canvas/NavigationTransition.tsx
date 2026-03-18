@@ -27,11 +27,11 @@ export function NavigationTransition({ data }: NavigationTransitionProps) {
       currentTransitionRef.current = data.fromCanvasId;
       setPhase('source');
       completedRef.current = false;
-      return;
+      // Don't return — fall through to check targetsReady (dissolve is ready immediately)
     }
 
-    // Same transition, targets arrived: advance to animate (after one frame for layout)
-    if (data.targetNodes.length > 0 && phase === 'source') {
+    // Advance to animate when targets are ready (after one frame for layout)
+    if (data.targetsReady && phase === 'source') {
       const raf = requestAnimationFrame(() => setPhase('animate'));
       return () => cancelAnimationFrame(raf);
     }
