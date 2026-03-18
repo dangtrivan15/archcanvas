@@ -57,9 +57,13 @@ test.describe('subsystem creation', () => {
     await expect(page.locator('.react-flow__node')).toHaveCount(1);
 
     // Go back — root should still have just the RefNode
+    // (mini-preview inside RefNode also renders ReactFlow nodes, so scope to main canvas)
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
-    await expect(page.locator('.react-flow__node')).toHaveCount(1);
+    const mainNodeCount = await page.locator('.react-flow__node').evaluateAll(
+      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview')).length,
+    );
+    expect(mainNodeCount).toBe(1);
   });
 
   test('collision error shown when duplicate name', async ({ page }) => {
@@ -202,11 +206,12 @@ test.describe('subsystem container', () => {
     const refNode = page.locator('.react-flow__node').first();
     await expect(refNode.locator('.node-shape-container')).toBeVisible();
 
-    // SubsystemPreview should be present (SVG with mini-node rects)
-    const preview = refNode.locator('svg.subsystem-preview');
+    // SubsystemPreview should be present (mini ReactFlow instance)
+    const preview = refNode.locator('.subsystem-preview');
     await expect(preview).toBeVisible();
-    const rects = preview.locator('rect');
-    await expect(rects).toHaveCount(2);
+    // The mini ReactFlow should render the same number of nodes as the subsystem has
+    const miniNodes = preview.locator('.react-flow__node');
+    await expect(miniNodes).toHaveCount(2);
   });
 
   test('subsystem container is larger than regular nodes', async ({ page }) => {
@@ -293,6 +298,43 @@ test.describe('subsystem navigation animation', () => {
 
     // RefNode should be visible
     await expect(page.locator('.react-flow__node')).toHaveCount(1);
+  });
+
+  test('dive-in transition does not cause a second zoom step', async ({ page }) => {
+    await createSubsystem(page, 'Test System', /Service compute\/service/);
+
+    // Add a node inside the subsystem so it has content
+    await diveIntoSubsystem(page, 'Test System');
+    await page.keyboard.press('Meta+k');
+    await page.getByRole('option', { name: /Database data\/database/ }).click();
+    await page.waitForTimeout(200);
+
+    // Go back to root
+    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
+    await page.waitForTimeout(700);
+
+    // Double-click to dive in (triggers morph animation)
+    const refNode = page.locator('.react-flow__node').first();
+    await refNode.dblclick();
+
+    // Wait for navigation transition to complete
+    await page.waitForTimeout(800);
+
+    // Capture viewport state immediately after transition
+    const viewportBefore = await page.evaluate(() => {
+      const vp = document.querySelector('.react-flow__viewport') as HTMLElement;
+      return vp?.style.transform ?? '';
+    });
+
+    // Wait to see if viewport changes (fitView would kick in)
+    await page.waitForTimeout(500);
+
+    const viewportAfter = await page.evaluate(() => {
+      const vp = document.querySelector('.react-flow__viewport') as HTMLElement;
+      return vp?.style.transform ?? '';
+    });
+
+    expect(viewportAfter).toBe(viewportBefore);
   });
 
   test('Escape key navigates up from subsystem', async ({ page }) => {
