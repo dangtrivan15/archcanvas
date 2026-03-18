@@ -56,6 +56,7 @@ vi.mock('@/store/navigationStore', () => ({
 
 // Import AFTER mocks are registered
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';
+import { PreviewModeContext } from '@/components/nodes/PreviewModeContext';
 
 // ------------------------------------------------------------------ helpers
 
@@ -270,6 +271,26 @@ describe('NodeRenderer', () => {
     );
     expect(screen.getByTestId('handle-source')).toBeDefined();
     expect(screen.getByTestId('handle-target')).toBeDefined();
+  });
+
+  it('skips SubsystemPreview when PreviewModeContext is true', () => {
+    const data: CanvasNodeData = {
+      node: makeRefNode({ id: 'sub-1' }) as any,
+      nodeDef: undefined,
+      isSelected: false,
+      isRef: true,
+    };
+
+    const { container } = render(
+      <PreviewModeContext.Provider value={true}>
+        <NodeRenderer {...makeProps(data) as Parameters<typeof NodeRenderer>[0]} />
+      </PreviewModeContext.Provider>,
+    );
+
+    // Should render the node header but NOT SubsystemPreview
+    expect(container.querySelector('.arch-node-header')).toBeTruthy();
+    // The node should still have the container shape class
+    expect(container.querySelector('.node-shape-container')).toBeTruthy();
   });
 
   it('renders named port handles when nodeDef defines ports', () => {
