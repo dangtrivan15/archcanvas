@@ -171,3 +171,144 @@ test.describe('subsystem creation', () => {
     expect(edgeCount).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ==========================================================================
+// Subsystem Container
+// ==========================================================================
+
+test.describe('subsystem container', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoApp(page);
+  });
+
+  test('subsystem renders as container with preview', async ({ page }) => {
+    // Create subsystem
+    await createSubsystem(page, 'Order Service', /Service compute\/service/);
+
+    // Dive in and add nodes
+    await diveIntoSubsystem(page, 'Order Service');
+    await page.keyboard.press('Meta+k');
+    await page.getByRole('option', { name: /Database data\/database/ }).click();
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Meta+k');
+    await page.getByRole('option', { name: /Function compute\/function/ }).click();
+    await page.waitForTimeout(200);
+
+    // Go back to root
+    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
+    await page.waitForTimeout(700);
+
+    // The ref-node should have the container class
+    const refNode = page.locator('.react-flow__node').first();
+    await expect(refNode.locator('.node-shape-container')).toBeVisible();
+
+    // SubsystemPreview should be present (SVG with mini-node rects)
+    const preview = refNode.locator('svg.subsystem-preview');
+    await expect(preview).toBeVisible();
+    const rects = preview.locator('rect');
+    await expect(rects).toHaveCount(2);
+  });
+
+  test('subsystem container is larger than regular nodes', async ({ page }) => {
+    // Add a regular node
+    await page.keyboard.press('Meta+k');
+    await page.getByRole('option', { name: /API Gateway network\/api-gateway/ }).click();
+    await page.waitForTimeout(200);
+
+    // Create a subsystem
+    await createSubsystem(page, 'Order Service', /Service compute\/service/);
+
+    // Compare sizes
+    const nodes = page.locator('.react-flow__node');
+    await expect(nodes).toHaveCount(2);
+
+    // Get bounding boxes
+    const sizes = await nodes.evaluateAll((elements) =>
+      elements.map((el) => ({
+        width: el.getBoundingClientRect().width,
+        height: el.getBoundingClientRect().height,
+        isContainer: el.querySelector('.node-shape-container') !== null,
+      })),
+    );
+
+    const container = sizes.find((s) => s.isContainer);
+    const regular = sizes.find((s) => !s.isContainer);
+    expect(container).toBeDefined();
+    expect(regular).toBeDefined();
+    expect(container!.width).toBeGreaterThan(regular!.width);
+    expect(container!.height).toBeGreaterThan(regular!.height);
+  });
+});
+
+// ==========================================================================
+// Subsystem Navigation Animation
+// ==========================================================================
+
+test.describe('subsystem navigation animation', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoApp(page);
+  });
+
+  test('dive-in navigation works and shows child canvas', async ({ page }) => {
+    await createSubsystem(page, 'Order Service', /Service compute\/service/);
+
+    // Add a node inside
+    await diveIntoSubsystem(page, 'Order Service');
+    await page.keyboard.press('Meta+k');
+    await page.getByRole('option', { name: /Database data\/database/ }).click();
+    await page.waitForTimeout(200);
+
+    // Go back
+    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
+    await page.waitForTimeout(700);
+
+    // Double-click to dive in (triggers morph animation)
+    const refNode = page.locator('.react-flow__node').first();
+    await refNode.dblclick();
+    await page.waitForTimeout(600);
+
+    // Should be inside the subsystem
+    const breadcrumb = await getBreadcrumbText(page);
+    expect(breadcrumb).toContain('Order Service');
+
+    // Should see the database node we added
+    await expect(page.locator('.react-flow__node')).toHaveCount(1);
+  });
+
+  test('go-up via breadcrumb navigates back', async ({ page }) => {
+    await createSubsystem(page, 'Order Service', /Service compute\/service/);
+    await diveIntoSubsystem(page, 'Order Service');
+
+    // Verify we're inside
+    const breadcrumbInside = await getBreadcrumbText(page);
+    expect(breadcrumbInside).toContain('Order Service');
+
+    // Click parent breadcrumb to go up (triggers reverse morph)
+    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
+    await page.waitForTimeout(700);
+
+    // Should be back at root
+    const breadcrumbRoot = await getBreadcrumbText(page);
+    expect(breadcrumbRoot).not.toContain('Order Service');
+
+    // RefNode should be visible
+    await expect(page.locator('.react-flow__node')).toHaveCount(1);
+  });
+
+  test('Escape key navigates up from subsystem', async ({ page }) => {
+    await createSubsystem(page, 'Order Service', /Service compute\/service/);
+    await diveIntoSubsystem(page, 'Order Service');
+
+    // Click on the canvas pane to ensure it has focus
+    await page.locator('.react-flow__pane').click({ position: { x: 400, y: 300 } });
+    await page.waitForTimeout(200);
+
+    // Press Escape to go up (no selection → dispatches navigate-up)
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+
+    // Should be back at root
+    const breadcrumb = await getBreadcrumbText(page);
+    expect(breadcrumb).not.toContain('Order Service');
+  });
+});
