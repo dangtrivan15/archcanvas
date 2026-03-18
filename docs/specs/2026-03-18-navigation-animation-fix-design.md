@@ -179,7 +179,20 @@ When the child canvas has no nodes, `SubsystemPreview` returns `null` and `captu
 
 #### Edge case: rapid double-click re-entry
 
-The `isTransitioning` guard is a React `useState` value. Between the user's click and React's commit, a second click could enter `diveIn` because `isTransitioning` is still `false` in the closure. Add a `useRef<boolean>` (`transitioningRef`) checked synchronously at the top of `diveIn`/`goUp`/`goToBreadcrumb`, set to `true` before any state updates. This prevents re-entry regardless of React's batching.
+The `isTransitioning` guard is a React `useState` value. Between the user's click and React's commit, a second click could enter `diveIn` because `isTransitioning` is still `false` in the closure. Add a synchronous ref guard:
+
+```ts
+const transitioningRef = useRef(false);
+```
+
+Checked at the top of `diveIn`/`goUp`/`goToBreadcrumb`, set before any state updates:
+
+```ts
+if (transitioningRef.current) return;
+transitioningRef.current = true;
+```
+
+Reset in `finalize` (see `finalize` definition above). This prevents re-entry regardless of React's batching.
 
 #### Dissolve — unchanged
 
@@ -269,9 +282,29 @@ Each clone in `sourceNodes` is paired with its match in `targetNodes` by node ID
 })}
 ```
 
-**Unmatched target nodes** (nodes in `targetNodes` with no corresponding `sourceNodes` entry) fade in from transparent. This handles the case where the child canvas has nodes that weren't visible in the mini-preview (e.g., the preview was empty when the subsystem had no nodes yet).
+**Unmatched target nodes** (nodes in `targetNodes` with no corresponding `sourceNodes` entry) are rendered in a second loop, fading in from transparent at their target positions:
 
-**Unmatched source nodes** (mini-nodes with no corresponding full-size node) fade out.
+```tsx
+{data.targetNodes
+  .filter(tgt => !data.sourceNodes.some(src => src.id === tgt.id))
+  .map((tgt, i) => (
+    <div
+      key={tgt.id}
+      style={{
+        position: 'fixed',
+        left: tgt.rect.left,
+        top: tgt.rect.top,
+        width: tgt.rect.width,
+        height: tgt.rect.height,
+        opacity: phase === 'animate' ? 1 : 0,
+        transition: `opacity ${TRANSITION_DURATION}ms ease-in-out`,
+        // ...same styling as matched clones
+      }}
+    />
+  ))}
+```
+
+**Unmatched source nodes** (mini-nodes with no corresponding full-size node) fade out via `opacity: phase === 'animate' ? 0 : 1`.
 
 #### Container border morph
 
