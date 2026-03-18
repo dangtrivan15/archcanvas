@@ -1,46 +1,71 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, type CSSProperties } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useNavigationStore } from '@/store/navigationStore';
+import { computeZoomToRect } from '@/lib/computeZoomToRect';
+import { computeMatchedViewport } from '@/lib/computeMatchedViewport';
 import { computeFitViewport } from '@/lib/computeFitViewport';
+import { animateViewport, easeInOut } from '@/lib/animateViewport';
 
 // ---------------------------------------------------------------------------
-// Types
+// Constants
 // ---------------------------------------------------------------------------
 
-interface CapturedNode {
-  id: string;
-  rect: DOMRect;
-  label: string;
-  color: string;
+const PHASE1_DURATION = 200; // ms
+const PHASE2_DURATION = 250; // ms
+const DISSOLVE_DURATION = 350; // ms
+
+type TransitionState = 'idle' | 'zooming_in' | 'switching' | 'zooming_out';
+
+interface ContainerRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-interface CapturedEdge {
-  sourceId: string;
-  targetId: string;
+// ---------------------------------------------------------------------------
+// Overlay style factory
+// ---------------------------------------------------------------------------
+
+const COVER_STYLE: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 50,
+  backgroundColor: 'var(--color-background)',
+  opacity: 1,
+  pointerEvents: 'none',
+};
+
+function dissolveStyle(opacity: number): CSSProperties {
+  return {
+    ...COVER_STYLE,
+    opacity,
+    transition: `opacity ${DISSOLVE_DURATION}ms ease-out`,
+  };
 }
 
-export interface TransitionData {
-  direction: 'in' | 'out' | 'dissolve';
-  /** Where clones START (mini-node rects for dive-in, full-size rects for go-up) */
-  sourceNodes: CapturedNode[];
-  /** Where clones END (full-size rects for dive-in, mini-node rects for go-up) */
-  targetNodes: CapturedNode[];
-  /** Edges connecting animated nodes */
-  edges: CapturedEdge[];
-  /** Container rect at source phase */
-  containerRect: DOMRect | null;
-  /** Container rect at target phase (for go-up: where nodes shrink to) */
-  targetContainerRect: DOMRect | null;
-  /** Sibling nodes (for fade-out on dive-in, fade-in on go-up) */
-  siblings: CapturedNode[];
-  /** The canvas ID we're transitioning FROM */
-  fromCanvasId: string;
-  /** The canvas ID we're transitioning TO */
-  toCanvasId: string;
-  /** True when the second phase data (targets) has been provided */
-  targetsReady: boolean;
-  /** Callback to finalize the transition (called on animation end) */
-  onComplete: () => void;
+// ---------------------------------------------------------------------------
+// Helper: get viewport dimensions from main ReactFlow container
+// ---------------------------------------------------------------------------
+
+function getViewportDimensions() {
+  const el = document.querySelector('.react-flow:not(.subsystem-preview .react-flow)');
+  if (!el) return { width: window.innerWidth, height: window.innerHeight };
+  const rect = el.getBoundingClientRect();
+  return { width: rect.width, height: rect.height };
+}
+
+// ---------------------------------------------------------------------------
+// Helper: build FitNode array from ReactFlow nodes
+// ---------------------------------------------------------------------------
+
+function toFitNodes(rfNodes: Array<{ position: { x: number; y: number }; width?: number | null; height?: number | null }>) {
+  return rfNodes.map((n) => ({
+    x: n.position.x,
+    y: n.position.y,
+    width: n.width ?? 150,
+    height: n.height ?? 40,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -50,277 +75,244 @@ export interface TransitionData {
 export function useNavigationTransition() {
   const reactFlow = useReactFlow();
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionData, setTransitionData] = useState<TransitionData | null>(null);
-  const transitioningRef = useRef(false);
+  const [overlayStyle, setOverlayStyle] = useState<CSSProperties | null>(null);
+  const stateRef = useRef<TransitionState>('idle');
+  const cancelRef = useRef<(() => void) | null>(null);
+  // Store the container's measured rect during dive-in so go-up can use it.
+  // We capture from reactFlow.getNode() which has measured pixel dimensions.
+  // Reading from fileStore wouldn't work — Position.width/height are optional
+  // YAML fields, not ReactFlow's measured dimensions.
+  const lastContainerRectRef = useRef<ContainerRect | null>(null);
 
   // -----------------------------------------------------------------------
-  // Helpers
+  // Reset
   // -----------------------------------------------------------------------
 
-  /** Read current screen rect for a ReactFlow node element */
-  const getNodeRect = (nodeId: string): DOMRect | null => {
-    const el = document.querySelector(`[data-id="${nodeId}"]`);
-    return el ? el.getBoundingClientRect() : null;
-  };
+  const reset = useCallback(() => {
+    cancelRef.current?.();
+    cancelRef.current = null;
+    stateRef.current = 'idle';
+    setIsTransitioning(false);
+    setOverlayStyle(null);
+  }, []);
 
-  /** Find the main canvas ReactFlow container (excludes mini ReactFlow in previews) */
-  const getMainFlowContainer = (): Element | null => {
-    const allFlows = document.querySelectorAll('.react-flow');
-    for (const flow of allFlows) {
-      if (!flow.closest('.subsystem-preview')) return flow;
-    }
-    return null;
-  };
+  // -----------------------------------------------------------------------
+  // Dissolve helpers (fallback + breadcrumb)
+  // -----------------------------------------------------------------------
 
-  /** Capture all visible node positions from the DOM, scoped to a container */
-  const captureVisibleNodes = (container?: Element | null): CapturedNode[] => {
-    const root = container ?? document;
-    const nodes: CapturedNode[] = [];
-    root.querySelectorAll('.react-flow__node').forEach((el) => {
-      const id = el.getAttribute('data-id');
-      if (!id || id.startsWith('__ghost__')) return;
-      const rect = el.getBoundingClientRect();
-      const nameEl = el.querySelector('.arch-node-header-name');
-      nodes.push({
-        id,
-        rect,
-        label: nameEl?.textContent ?? id,
-        color: 'var(--color-node-border)',
+  // Dissolve helpers use double-rAF to ensure the browser paints opacity:1
+  // before we set opacity:0 — required for the CSS transition to fire.
+  // A safety timeout guarantees reset even if onTransitionEnd never fires
+  // (possible under React 19 concurrent rendering or if element unmounts).
+
+  const startDissolveOut = useCallback(() => {
+    // Double rAF: first ensures React commits opacity:1, second triggers opacity:0
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setOverlayStyle(dissolveStyle(0));
+        // Safety: reset after duration + buffer, in case onTransitionEnd doesn't fire
+        setTimeout(() => {
+          if (stateRef.current === 'switching') reset();
+        }, DISSOLVE_DURATION + 50);
       });
     });
-    return nodes;
-  };
+  }, [reset]);
 
-  /** Capture visible edges, scoped to a container */
-  const captureVisibleEdges = (container?: Element | null): CapturedEdge[] => {
-    const root = container ?? document;
-    const edges: CapturedEdge[] = [];
-    root.querySelectorAll('.react-flow__edge').forEach((el) => {
-      const id = el.getAttribute('data-testid') ?? el.id ?? '';
-      const parts = id.replace('rf__edge-', '').split('-');
-      if (parts.length >= 2) {
-        edges.push({ sourceId: parts[0], targetId: parts[1] });
-      }
+  const goToBreadcrumbDissolve = useCallback((refNodeId: string) => {
+    stateRef.current = 'switching';
+    setIsTransitioning(true);
+    setOverlayStyle(dissolveStyle(1));
+
+    requestAnimationFrame(() => {
+      useNavigationStore.getState().diveIn(refNodeId);
+      reactFlow.fitView({ duration: 0 });
+      startDissolveOut();
     });
-    return edges;
-  };
+  }, [reactFlow, startDissolveOut]);
 
-  /** Compute fitted screen rects for target nodes using viewport math */
-  const computeTargetRects = (rfNodes: { id: string; position: { x: number; y: number }; width?: number; height?: number; data?: Record<string, unknown> }[]): CapturedNode[] => {
-    const mainFlow = getMainFlowContainer();
-    if (!mainFlow) return [];
-    const vpRect = mainFlow.getBoundingClientRect();
+  const dissolveUp = useCallback(() => {
+    stateRef.current = 'switching';
+    setIsTransitioning(true);
+    setOverlayStyle(dissolveStyle(1));
 
-    const fitNodes = rfNodes.map((n) => ({
-      x: n.position.x,
-      y: n.position.y,
-      width: n.width ?? 150,
-      height: n.height ?? 40,
-    }));
-
-    const { nodeScreenRects } = computeFitViewport({
-      nodes: fitNodes,
-      viewportWidth: vpRect.width,
-      viewportHeight: vpRect.height,
+    requestAnimationFrame(() => {
+      useNavigationStore.getState().goUp();
+      reactFlow.fitView({ duration: 0 });
+      startDissolveOut();
     });
-
-    return rfNodes.map((n, i) => {
-      const nodeData = n.data?.node as { displayName?: string; id: string } | undefined;
-      return {
-        id: n.id,
-        rect: new DOMRect(
-          vpRect.left + nodeScreenRects[i].x,
-          vpRect.top + nodeScreenRects[i].y,
-          nodeScreenRects[i].width,
-          nodeScreenRects[i].height,
-        ),
-        label: nodeData?.displayName ?? nodeData?.id ?? n.id,
-        color: 'var(--color-node-border)',
-      };
-    });
-  };
-
-  /** Set the viewport to the fitted position while overlay is still opaque */
-  const setFittedViewport = () => {
-    const mainFlowEl = getMainFlowContainer();
-    if (!mainFlowEl) return;
-    const rfNodes = reactFlow.getNodes();
-    const vpRect = mainFlowEl.getBoundingClientRect();
-    const fitNodes = rfNodes.map((n) => ({
-      x: n.position.x,
-      y: n.position.y,
-      width: n.width ?? 150,
-      height: n.height ?? 40,
-    }));
-    const { zoom, offsetX, offsetY } = computeFitViewport({
-      nodes: fitNodes,
-      viewportWidth: vpRect.width,
-      viewportHeight: vpRect.height,
-    });
-    reactFlow.setViewport({ x: offsetX, y: offsetY, zoom });
-  };
-
-  /** Shared finalize callback — no fitView needed, viewport already set */
-  const finalize = useCallback(() => {
-    setTransitionData(null);
-    setIsTransitioning(false);
-    transitioningRef.current = false;
-  }, []);
+  }, [reactFlow, startDissolveOut]);
 
   // -----------------------------------------------------------------------
   // Dive In
   // -----------------------------------------------------------------------
 
   const diveIn = useCallback((refNodeId: string) => {
-    if (transitioningRef.current) return;
-    transitioningRef.current = true;
+    if (stateRef.current !== 'idle') return;
 
-    const currentCanvasId = useNavigationStore.getState().currentCanvasId;
-    const containerRect = getNodeRect(refNodeId);
+    // Capture state before anything changes
+    const currentViewport = reactFlow.getViewport();
+    const containerNode = reactFlow.getNode(refNodeId);
+    if (!containerNode?.width || !containerNode?.height) {
+      // Unmeasured — fall back to dissolve
+      goToBreadcrumbDissolve(refNodeId);
+      return;
+    }
 
-    // Capture source: mini-node rects from the RefNode's mini ReactFlow
-    const miniContainer = document.querySelector(`[data-id="${refNodeId}"] .react-flow`);
-    const sourceNodes = captureVisibleNodes(miniContainer);
+    const containerRect: ContainerRect = {
+      x: containerNode.position.x,
+      y: containerNode.position.y,
+      width: containerNode.width,
+      height: containerNode.height,
+    };
 
-    // Capture siblings (all main canvas nodes except the target container)
-    const mainFlow = getMainFlowContainer();
-    const allNodes = captureVisibleNodes(mainFlow);
-    const siblings = allNodes.filter((n) => n.id !== refNodeId);
+    // Store for go-up to use later
+    lastContainerRectRef.current = containerRect;
 
-    // Phase 1: Mount overlay with clones at mini-node positions
+    const { width: vpW, height: vpH } = getViewportDimensions();
+    const zoomedViewport = computeZoomToRect(containerRect, vpW, vpH);
+
+    stateRef.current = 'zooming_in';
     setIsTransitioning(true);
-    setTransitionData({
-      direction: 'in',
-      sourceNodes,
-      targetNodes: [],
-      edges: [],
-      containerRect: containerRect ?? null,
-      targetContainerRect: null,
-      siblings,
-      fromCanvasId: currentCanvasId,
-      toCanvasId: refNodeId,
-      targetsReady: false,
-      onComplete: finalize,
-    });
 
-    // Switch canvas behind the overlay
-    useNavigationStore.getState().diveIn(refNodeId);
+    // Phase 1: zoom into container
+    cancelRef.current = animateViewport(
+      reactFlow, currentViewport, zoomedViewport, PHASE1_DURATION, easeInOut, () => {
+        // Switch point
+        stateRef.current = 'switching';
+        setOverlayStyle(COVER_STYLE); // 1-frame cover
 
-    // Phase 2: Compute fitted viewport and set target positions
-    requestAnimationFrame(() => {
-      const rfNodes = reactFlow.getNodes();
-      const targetNodes = computeTargetRects(rfNodes);
-      const edges = captureVisibleEdges(mainFlow);
+        useNavigationStore.getState().diveIn(refNodeId);
 
-      // Set viewport to fitted position while overlay is still opaque
-      setFittedViewport();
+        // Next frame: React has rendered child nodes
+        requestAnimationFrame(() => {
+          const childRfNodes = reactFlow.getNodes();
+          const childFitNodes = toFitNodes(childRfNodes);
+          const matchedVp = computeMatchedViewport(childFitNodes, containerRect, vpW, vpH);
+          reactFlow.setViewport(matchedVp);
+          setOverlayStyle(null); // hide cover
 
-      setTransitionData((prev) =>
-        prev ? { ...prev, targetNodes, edges, targetsReady: true } : null,
-      );
-    });
-  }, [finalize, reactFlow]);
+          const fittedVp = computeFitViewport({
+            nodes: childFitNodes,
+            viewportWidth: vpW,
+            viewportHeight: vpH,
+          });
+          const fittedViewport = { x: fittedVp.offsetX, y: fittedVp.offsetY, zoom: fittedVp.zoom };
+
+          stateRef.current = 'zooming_out';
+
+          // Phase 2: zoom out to fitted
+          cancelRef.current = animateViewport(
+            reactFlow, matchedVp, fittedViewport, PHASE2_DURATION, easeInOut, () => {
+              reset();
+            },
+          );
+        });
+      },
+    );
+  }, [reactFlow, reset, goToBreadcrumbDissolve]);
 
   // -----------------------------------------------------------------------
-  // Go Up (reverse morph)
+  // Go Up
   // -----------------------------------------------------------------------
 
   const goUp = useCallback(() => {
-    if (transitioningRef.current) return;
+    if (stateRef.current !== 'idle') return;
     const nav = useNavigationStore.getState();
     if (nav.breadcrumb.length <= 1) return;
-    transitioningRef.current = true;
 
-    const fromCanvasId = nav.currentCanvasId;
+    // Capture state before anything changes
+    const currentViewport = reactFlow.getViewport();
 
-    // Capture source: full-size nodes from the current (child) canvas
-    const mainFlow = getMainFlowContainer();
-    const sourceNodes = captureVisibleNodes(mainFlow);
-    const edges = captureVisibleEdges(mainFlow);
+    // Use the container rect captured during dive-in.
+    // This has ReactFlow's measured pixel dimensions (not YAML position.width).
+    const containerRect = lastContainerRectRef.current;
+    if (!containerRect) {
+      // No stored rect (e.g., navigated via breadcrumb, not dive-in) — fall back to dissolve
+      dissolveUp();
+      return;
+    }
 
-    // Phase 1: Mount overlay with full-size clones
+    const childRfNodes = reactFlow.getNodes();
+    const childFitNodes = toFitNodes(childRfNodes);
+    const { width: vpW, height: vpH } = getViewportDimensions();
+    const matchedVp = computeMatchedViewport(childFitNodes, containerRect, vpW, vpH);
+
+    stateRef.current = 'zooming_in';
     setIsTransitioning(true);
-    setTransitionData({
-      direction: 'out',
-      sourceNodes,
-      targetNodes: [],
-      edges,
-      containerRect: null,
-      targetContainerRect: null,
-      siblings: [],
-      fromCanvasId,
-      toCanvasId: '',
-      targetsReady: false,
-      onComplete: finalize,
-    });
 
-    // Switch canvas behind the overlay
-    nav.goUp();
+    // Phase 1: compress child nodes to preview scale
+    cancelRef.current = animateViewport(
+      reactFlow, currentViewport, matchedVp, PHASE1_DURATION, easeInOut, () => {
+        // Switch point
+        stateRef.current = 'switching';
+        setOverlayStyle(COVER_STYLE);
 
-    // Phase 2: After parent canvas renders, capture target positions
-    requestAnimationFrame(() => {
-      const toCanvasId = useNavigationStore.getState().currentCanvasId;
-      const targetContainerRect = getNodeRect(fromCanvasId);
+        nav.goUp();
 
-      // Target: mini-node rects from the parent's RefNode mini ReactFlow
-      const miniContainer = document.querySelector(`[data-id="${fromCanvasId}"] .react-flow`);
-      const targetNodes = captureVisibleNodes(miniContainer);
+        requestAnimationFrame(() => {
+          const zoomedViewport = computeZoomToRect(containerRect, vpW, vpH);
+          reactFlow.setViewport(zoomedViewport);
+          setOverlayStyle(null);
 
-      // Siblings: all parent canvas nodes except the container we came from
-      const mainFlowEl = getMainFlowContainer();
-      const parentNodes = captureVisibleNodes(mainFlowEl);
-      const siblings = parentNodes.filter((n) => n.id !== fromCanvasId);
+          const parentRfNodes = reactFlow.getNodes();
+          const parentFitNodes = toFitNodes(parentRfNodes);
+          const fittedVp = computeFitViewport({
+            nodes: parentFitNodes,
+            viewportWidth: vpW,
+            viewportHeight: vpH,
+          });
+          const fittedViewport = { x: fittedVp.offsetX, y: fittedVp.offsetY, zoom: fittedVp.zoom };
 
-      // Set viewport to fitted position for the parent canvas
-      setFittedViewport();
+          stateRef.current = 'zooming_out';
 
-      setTransitionData((prev) =>
-        prev
-          ? { ...prev, targetNodes, targetContainerRect: targetContainerRect ?? null, siblings, toCanvasId, targetsReady: true }
-          : null,
-      );
-    });
-  }, [finalize, reactFlow]);
+          cancelRef.current = animateViewport(
+            reactFlow, zoomedViewport, fittedViewport, PHASE2_DURATION, easeInOut, () => {
+              reset();
+            },
+          );
+        });
+      },
+    );
+  }, [reactFlow, reset, dissolveUp]);
 
   // -----------------------------------------------------------------------
-  // Breadcrumb Jump (dissolve) — unchanged logic, updated field names
+  // Breadcrumb Jump (dissolve)
   // -----------------------------------------------------------------------
 
   const goToBreadcrumb = useCallback((index: number) => {
-    if (transitioningRef.current) return;
+    if (stateRef.current !== 'idle') return;
     const nav = useNavigationStore.getState();
-    const fromCanvasId = nav.currentCanvasId;
     const target = nav.breadcrumb[index];
     if (!target) return;
-    transitioningRef.current = true;
 
+    stateRef.current = 'switching';
     setIsTransitioning(true);
+    setOverlayStyle(dissolveStyle(1));
 
-    setTransitionData({
-      direction: 'dissolve',
-      sourceNodes: [],
-      targetNodes: [],
-      edges: [],
-      containerRect: null,
-      targetContainerRect: null,
-      siblings: [],
-      fromCanvasId,
-      toCanvasId: target.canvasId,
-      targetsReady: true,
-      onComplete: finalize,
-    });
-
-    // Perform navigation after overlay renders
     requestAnimationFrame(() => {
       nav.goToBreadcrumb(index);
+      reactFlow.fitView({ duration: 0 });
+      startDissolveOut();
     });
-  }, [finalize]);
+  }, [reactFlow, startDissolveOut]);
+
+  // -----------------------------------------------------------------------
+  // Dissolve onTransitionEnd
+  // -----------------------------------------------------------------------
+
+  const onOverlayTransitionEnd = useCallback(() => {
+    // Only reset if we're in a dissolve (overlayStyle has a transition)
+    if (stateRef.current === 'switching' || stateRef.current === 'idle') {
+      reset();
+    }
+  }, [reset]);
 
   return {
     diveIn,
     goUp,
     goToBreadcrumb,
     isTransitioning,
-    transitionData,
+    overlayStyle,
+    onOverlayTransitionEnd,
   };
 }

@@ -5,7 +5,7 @@ import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
 import { useNavigationTransition } from "./hooks/useNavigationTransition";
-import { NavigationTransition } from "./NavigationTransition";
+
 import { NodeRenderer } from "../nodes/NodeRenderer";
 import { GhostNodeRenderer } from "../nodes/GhostNodeRenderer";
 import { EdgeRenderer } from "../edges/EdgeRenderer";
@@ -30,7 +30,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
-  const { diveIn, goUp, goToBreadcrumb, isTransitioning, transitionData } = useNavigationTransition();
+  const { diveIn, goUp, goToBreadcrumb, isTransitioning, overlayStyle, onOverlayTransitionEnd } = useNavigationTransition();
   const toolMode = useToolStore((s) => s.mode);
 
   // ---------------------------------------------------------------------------
@@ -278,7 +278,6 @@ export function Canvas() {
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        fitView
         proOptions={{ hideAttribution: true }}
         panOnDrag={toolMode === 'pan' ? true : [1, 2]}
         panOnScroll
@@ -334,7 +333,13 @@ export function Canvas() {
         />
       )}
 
-      <NavigationTransition data={transitionData} />
+      {overlayStyle && (
+        <div
+          className="navigation-transition-overlay"
+          style={overlayStyle}
+          onTransitionEnd={onOverlayTransitionEnd}
+        />
+      )}
     </div>
   );
 }
