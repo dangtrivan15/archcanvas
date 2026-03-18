@@ -6,7 +6,7 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 import { extractInheritedEdges } from '../inheritedEdges';
-import { computeAutoSize } from '@/lib/computeAutoSize';
+import { mapCanvasNodes, mapCanvasEdges } from '../mapCanvasData';
 
 export const GHOST_NODE_PREFIX = '__ghost__';
 
@@ -25,63 +25,15 @@ export function useCanvasRenderer(): {
   // every canvas mutation, so this re-runs auto-fit sizing when child content changes.
   const canvasesRef = useFileStore((s) => s.project?.canvases);
 
-  const nodes = useMemo<RFNode<CanvasNodeData>[]>(() => {
-    const rawNodes = canvas?.data.nodes ?? [];
-    return rawNodes.map((node) => {
-      const isRef = 'ref' in node;
-      const nodeDef = isRef ? undefined : resolve((node as { type: string }).type);
-      const data: CanvasNodeData = {
-        node,
-        nodeDef,
-        isSelected: selectedNodeIds.has(node.id),
-        isRef,
-      };
-      const rfNode: RFNode<CanvasNodeData> = {
-        id: node.id,
-        type: 'archNode',
-        position: node.position ?? { x: 0, y: 0 },
-        data,
-      };
+  const nodes = useMemo<RFNode<CanvasNodeData>[]>(
+    () => mapCanvasNodes({ canvas: canvas?.data, resolve, selectedNodeIds, canvasesRef }),
+    [canvas, resolve, selectedNodeIds, canvasesRef],
+  );
 
-      // Auto-fit sizing for RefNode containers
-      if (isRef) {
-        const childCanvas = canvasesRef?.get(node.id);
-        const pos = node.position;
-        if (pos?.autoSize === false) {
-          rfNode.width = pos.width ?? 240;
-          rfNode.height = pos.height ?? 160;
-        } else {
-          const { width, height } = computeAutoSize(childCanvas?.data);
-          rfNode.width = width;
-          rfNode.height = height;
-        }
-      }
-
-      return rfNode;
-    });
-  }, [canvas, resolve, selectedNodeIds, canvasesRef]);
-
-  const edges = useMemo<RFEdge<CanvasEdgeData>[]>(() => {
-    const rawEdges = canvas?.data.edges ?? [];
-    return rawEdges.map((edge) => {
-      const protocol = edge.protocol;
-      const styleCategory: 'sync' | 'async' | 'default' =
-        protocol !== undefined
-          ? (PROTOCOL_STYLES[protocol] ?? 'default')
-          : 'default';
-      const data: CanvasEdgeData = {
-        edge,
-        styleCategory,
-      };
-      return {
-        id: `${edge.from.node}-${edge.to.node}`,
-        source: edge.from.node,
-        target: edge.to.node,
-        type: 'archEdge',
-        data,
-      };
-    });
-  }, [canvas]);
+  const edges = useMemo<RFEdge<CanvasEdgeData>[]>(
+    () => mapCanvasEdges(canvas?.data),
+    [canvas],
+  );
 
   // Inherited edges from parent scope (only when inside a child canvas)
   const { inheritedRFEdges, ghostNodes } = useMemo(() => {
