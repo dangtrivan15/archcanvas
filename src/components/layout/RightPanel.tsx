@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFileStore } from '@/store/fileStore';
@@ -16,12 +17,25 @@ function isInlineNode(node: { id: string; ref?: string; type?: string }): node i
 }
 
 export function RightPanel() {
+  const rightPanelCollapsed = useUiStore((s) => s.rightPanelCollapsed);
   const rightPanelMode = useUiStore((s) => s.rightPanelMode);
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
   const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const canvas = useFileStore((s) => s.getCanvas(currentCanvasId));
   const resolve = useRegistryStore((s) => s.resolve);
+
+  if (rightPanelCollapsed) {
+    return (
+      <button
+        className="flex h-full w-full items-center justify-center border-l border-border bg-background text-muted-foreground hover:text-foreground"
+        onClick={() => useUiStore.getState().toggleRightPanel()}
+        aria-label="Expand right panel"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+    );
+  }
 
   if (rightPanelMode === 'chat') {
     return <ChatPanel />;
