@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
 import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
@@ -21,7 +21,6 @@ import { useUiStore } from "@/store/uiStore";
 import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { computeLayout } from "@/core/layout/elk";
-import type { EdgeRoute } from "@/core/layout/elk";
 import { extractInheritedEdges } from "./inheritedEdges";
 import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
 
@@ -45,21 +44,7 @@ export function Canvas() {
     setRfNodes(storeNodes);
   }, [storeNodes]);
 
-  // ---------------------------------------------------------------------------
-  // Transient edge routes from ELK auto-layout.
-  // Valid only for current node positions — cleared on drag-start.
-  // ---------------------------------------------------------------------------
-  const [edgeRoutes, setEdgeRoutes] = useState<Map<string, EdgeRoute>>(new Map());
-
   const onNodesChange = useCallback((changes: NodeChange<RFNode<CanvasNodeData>>[]) => {
-    // Clear ELK edge routes on drag-start — stale during drag
-    for (const change of changes) {
-      if (change.type === 'position' && change.dragging) {
-        setEdgeRoutes(new Map());
-        break;
-      }
-    }
-
     // Apply ALL changes locally so ReactFlow can render smooth drag movement
     setRfNodes((nds) => applyNodeChanges(changes, nds));
 
@@ -128,9 +113,6 @@ export function Canvas() {
         gs.updateNodePosition(canvasId, nodeId, position);
       }
     }
-
-    // Store ELK edge routes for obstacle-aware rendering
-    setEdgeRoutes(result.edgeRoutes);
 
     // Fit view after layout settles
     requestAnimationFrame(() => reactFlow.fitView({ duration: 400, padding: 0.15 }));
@@ -264,22 +246,12 @@ export function Canvas() {
     useGraphStore.getState().removeEdge(canvasId, edgeData.edge.from.node, edgeData.edge.to.node);
   }, []);
 
-  const edgesWithRoutes = useMemo((): RFEdge<CanvasEdgeData>[] => {
-    if (edgeRoutes.size === 0) return edges;
-    return edges.map((edge) => {
-      const routeKey = `${edge.source}->${edge.target}`;
-      const route = edgeRoutes.get(routeKey);
-      if (!route || !edge.data) return edge;
-      return { ...edge, data: { ...edge.data, route } as CanvasEdgeData };
-    });
-  }, [edges, edgeRoutes]);
-
   return (
     <div className="relative h-full w-full">
       <Breadcrumb />
       <ReactFlow
         nodes={rfNodes}
-        edges={edgesWithRoutes}
+        edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
