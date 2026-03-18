@@ -36,6 +36,8 @@ export interface TransitionData {
   fromCanvasId: string;
   /** The canvas ID we're transitioning TO */
   toCanvasId: string;
+  /** True when the second phase data (targets) has been provided */
+  targetsReady: boolean;
   /** Callback to finalize the transition (called on animation end) */
   onComplete: () => void;
 }
@@ -150,6 +152,7 @@ export function useNavigationTransition() {
       siblings,
       fromCanvasId: currentCanvasId,
       toCanvasId: refNodeId,
+      targetsReady: false,
       onComplete: finalize,
     });
 
@@ -162,7 +165,7 @@ export function useNavigationTransition() {
       const edges = captureVisibleEdges();
 
       setTransitionData((prev) =>
-        prev ? { ...prev, targetNodes, edges } : null,
+        prev ? { ...prev, targetNodes, edges, targetsReady: true } : null,
       );
     });
   }, [finalize]);
@@ -195,6 +198,7 @@ export function useNavigationTransition() {
       siblings: [],
       fromCanvasId,
       toCanvasId: '',
+      targetsReady: false,
       onComplete: finalize,
     });
 
@@ -211,7 +215,7 @@ export function useNavigationTransition() {
 
       setTransitionData((prev) =>
         prev
-          ? { ...prev, targetNodes, targetContainerRect: targetContainerRect ?? null, siblings, toCanvasId }
+          ? { ...prev, targetNodes, targetContainerRect: targetContainerRect ?? null, siblings, toCanvasId, targetsReady: true }
           : null,
       );
     });
@@ -241,6 +245,7 @@ export function useNavigationTransition() {
       siblings: [],
       fromCanvasId,
       toCanvasId: target.canvasId,
+      targetsReady: true,
       onComplete: finalize,
     });
 
