@@ -88,7 +88,7 @@ export async function diveIntoSubsystem(
   page: Page,
   nodeText: string,
 ): Promise<void> {
-  const node = page.locator('.react-flow__node').filter({ hasText: nodeText });
+  const node = page.locator('[data-testid="main-canvas"] .react-flow__node').filter({ hasText: nodeText });
   await node.click({ button: 'right' });
   await page.getByRole('button', { name: 'Dive In' }).click();
   // Wait for navigation animation

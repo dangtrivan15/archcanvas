@@ -33,8 +33,8 @@ test.describe('subsystem creation', () => {
     expect(breadcrumb).toContain('Root');
     expect(breadcrumb).toContain('Order Service');
 
-    // Canvas should be empty (new subsystem)
-    await expect(page.locator('.react-flow__node')).toHaveCount(0);
+    // Canvas should be empty (new subsystem) — scope to main canvas to exclude backdrop overlay
+    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(0);
 
     // Navigate back via breadcrumb
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
@@ -53,15 +53,15 @@ test.describe('subsystem creation', () => {
     await page.getByRole('option', { name: /Database data\/database/ }).click();
     await page.waitForTimeout(200);
 
-    // Node should appear inside subsystem
-    await expect(page.locator('.react-flow__node')).toHaveCount(1);
+    // Node should appear inside subsystem — scope to main canvas to exclude backdrop overlay
+    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
 
     // Go back — root should still have just the RefNode
     // (mini-preview inside RefNode also renders ReactFlow nodes, so scope to main canvas)
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
     const mainNodeCount = await page.locator('.react-flow__node').evaluateAll(
-      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview')).length,
+      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview') && !n.closest('.canvas-overlay')).length,
     );
     expect(mainNodeCount).toBe(1);
   });
@@ -267,8 +267,8 @@ test.describe('subsystem navigation animation', () => {
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
 
-    // Double-click to dive in (triggers morph animation)
-    const refNode = page.locator('.react-flow__node').first();
+    // Double-click to dive in (triggers overlay animation)
+    const refNode = page.locator('[data-testid="main-canvas"] .react-flow__node').first();
     await refNode.dblclick();
     await page.waitForTimeout(600);
 
@@ -276,8 +276,8 @@ test.describe('subsystem navigation animation', () => {
     const breadcrumb = await getBreadcrumbText(page);
     expect(breadcrumb).toContain('Order Service');
 
-    // Should see the database node we added
-    await expect(page.locator('.react-flow__node')).toHaveCount(1);
+    // Should see the database node we added (scope to main canvas)
+    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
   });
 
   test('go-up via breadcrumb navigates back', async ({ page }) => {
@@ -313,16 +313,16 @@ test.describe('subsystem navigation animation', () => {
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
 
-    // Double-click to dive in (triggers morph animation)
-    const refNode = page.locator('.react-flow__node').first();
+    // Double-click to dive in (triggers overlay animation)
+    const refNode = page.locator('[data-testid="main-canvas"] .react-flow__node').first();
     await refNode.dblclick();
 
     // Wait for navigation transition to complete
     await page.waitForTimeout(800);
 
-    // Capture viewport state immediately after transition
+    // Capture viewport state immediately after transition (scope to main canvas, not backdrop)
     const viewportBefore = await page.evaluate(() => {
-      const vp = document.querySelector('.react-flow__viewport') as HTMLElement;
+      const vp = document.querySelector('[data-testid="main-canvas"] .react-flow__viewport') as HTMLElement;
       return vp?.style.transform ?? '';
     });
 
@@ -330,7 +330,7 @@ test.describe('subsystem navigation animation', () => {
     await page.waitForTimeout(500);
 
     const viewportAfter = await page.evaluate(() => {
-      const vp = document.querySelector('.react-flow__viewport') as HTMLElement;
+      const vp = document.querySelector('[data-testid="main-canvas"] .react-flow__viewport') as HTMLElement;
       return vp?.style.transform ?? '';
     });
 
@@ -341,8 +341,8 @@ test.describe('subsystem navigation animation', () => {
     await createSubsystem(page, 'Order Service', /Service compute\/service/);
     await diveIntoSubsystem(page, 'Order Service');
 
-    // Click on the canvas pane to ensure it has focus
-    await page.locator('.react-flow__pane').click({ position: { x: 400, y: 300 } });
+    // Click on the main canvas pane to ensure it has focus (exclude backdrop pane)
+    await page.locator('[data-testid="main-canvas"] .react-flow__pane').click({ position: { x: 400, y: 300 } });
     await page.waitForTimeout(200);
 
     // Press Escape to go up (no selection → dispatches navigate-up)

@@ -33,7 +33,7 @@ export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
   const {
     diveIn, goUp, goToBreadcrumb, isTransitioning,
-    overlayConfig, backdropCanvasId, overlayElRef, onOverlayReactFlowReady,
+    overlayConfig, overlayElRef, onOverlayReactFlowReady,
     dissolveOverlayStyle, onDissolveTransitionEnd,
   } = useNavigationTransition();
   const toolMode = useToolStore((s) => s.mode);
@@ -277,11 +277,8 @@ export function Canvas() {
 
   return (
     <div className="relative h-full w-full">
-      {/* Parent canvas backdrop — rendered behind main canvas */}
-      {backdropCanvasId && <CanvasOverlay canvasId={backdropCanvasId} backdrop />}
-
-      {/* Main canvas content */}
-      <div className="relative h-full w-full" style={{ zIndex: 10 }}>
+      {/* Main canvas content — opaque background hides any backdrop layer */}
+      <div data-testid="main-canvas" className="relative h-full w-full bg-[var(--color-background)]" style={{ zIndex: 10 }}>
         <Breadcrumb />
         <ReactFlow
           nodes={rfNodes}
