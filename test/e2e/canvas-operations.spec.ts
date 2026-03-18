@@ -332,3 +332,122 @@ test.describe("panel toggles", () => {
     expect(expandedWidth).toBeGreaterThan(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Auto-layout quality — ELK spacing, flow direction, edge label wrapping
+// ---------------------------------------------------------------------------
+
+test.describe("auto-layout quality", () => {
+  /**
+   * Helper: add 3 nodes and 2 edges (A→B→C) via store, then trigger auto-layout.
+   */
+  async function setupGraphAndLayout(page: import("@playwright/test").Page) {
+    await gotoApp(page);
+
+    // Add 3 nodes via command palette
+    const nodeTypes = [
+      /Service compute\/service/,
+      /Database data\/database/,
+      /Message Queue messaging\/message-queue/,
+    ];
+    for (const pattern of nodeTypes) {
+      await page.keyboard.press("Meta+k");
+      await page.getByRole("option", { name: pattern }).click();
+      await page.waitForTimeout(200);
+    }
+    await expect(page.locator(".react-flow__node")).toHaveCount(3);
+
+    // Add edges A→B and B→C via graphStore
+    await page.evaluate(() => {
+      const fileStore = (window as any).__archcanvas_fileStore__;
+      const graphStore = (window as any).__archcanvas_graphStore__;
+      const root = fileStore.getState().getCanvas("__root__");
+      const nodes = root.data.nodes;
+      if (nodes.length >= 3) {
+        graphStore.getState().addEdge("__root__", {
+          from: { node: nodes[0].id },
+          to: { node: nodes[1].id },
+          label: "REST API (JWT Bearer auth)",
+        });
+        graphStore.getState().addEdge("__root__", {
+          from: { node: nodes[1].id },
+          to: { node: nodes[2].id },
+          label: "JPA/Flyway — segments, workspace_connections for tracking",
+        });
+      }
+    });
+    await page.waitForTimeout(200);
+
+    // Trigger auto-layout via keyboard shortcut (Cmd+Shift+L)
+    await page.keyboard.press("Meta+Shift+l");
+    await page.waitForTimeout(800); // Wait for ELK layout + fitView animation
+  }
+
+  test("auto-layout spaces nodes apart (no overlap)", async ({ page }) => {
+    await setupGraphAndLayout(page);
+
+    // Get bounding boxes of all nodes
+    const boxes = await page.locator(".react-flow__node").evaluateAll((els) =>
+      els.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, w: rect.width, h: rect.height };
+      }),
+    );
+
+    expect(boxes.length).toBe(3);
+
+    // Verify no pair of nodes overlaps
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i];
+        const b = boxes[j];
+        const overlapsX = a.x < b.x + b.w && a.x + a.w > b.x;
+        const overlapsY = a.y < b.y + b.h && a.y + a.h > b.y;
+        expect(
+          overlapsX && overlapsY,
+          `node ${i} and node ${j} overlap`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  test("auto-layout places connected nodes in distinct layers", async ({ page }) => {
+    await setupGraphAndLayout(page);
+
+    // Get x-positions of all 3 nodes
+    const xPositions = await page.locator(".react-flow__node").evaluateAll((els) =>
+      els.map((el) => el.getBoundingClientRect().x),
+    );
+
+    expect(xPositions.length).toBe(3);
+
+    // With edges A→B→C, ELK's layered algorithm should assign each node
+    // to a distinct layer — their x positions should all differ significantly
+    const sorted = [...xPositions].sort((a, b) => a - b);
+    const gap1 = sorted[1] - sorted[0];
+    const gap2 = sorted[2] - sorted[1];
+
+    // Each gap should be at least 50px (nodes are in separate layers, not stacked)
+    expect(gap1).toBeGreaterThan(50);
+    expect(gap2).toBeGreaterThan(50);
+  });
+
+  test("edge labels wrap instead of being forced to one line", async ({ page }) => {
+    await setupGraphAndLayout(page);
+
+    // Find an edge label with a long text
+    const edgeLabel = page.locator(".edge-label").first();
+    await expect(edgeLabel).toBeVisible();
+
+    // Verify CSS allows wrapping
+    const whiteSpace = await edgeLabel.evaluate(
+      (el) => getComputedStyle(el).whiteSpace,
+    );
+    expect(whiteSpace).toBe("normal");
+
+    const maxWidth = await edgeLabel.evaluate(
+      (el) => getComputedStyle(el).maxWidth,
+    );
+    expect(maxWidth).toBe("200px");
+  });
+});
