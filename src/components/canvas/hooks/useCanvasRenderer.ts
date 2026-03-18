@@ -6,6 +6,7 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 import { extractInheritedEdges } from '../inheritedEdges';
+import { computeAutoSize } from '@/lib/computeAutoSize';
 
 export const GHOST_NODE_PREFIX = '__ghost__';
 
@@ -20,6 +21,10 @@ export function useCanvasRenderer(): {
   const breadcrumb = useNavigationStore((s) => s.breadcrumb);
   const parentEdges = useNavigationStore((s) => s.parentEdges);
 
+  // Subscribe to canvases Map reference for reactivity — the Map is cloned on
+  // every canvas mutation, so this re-runs auto-fit sizing when child content changes.
+  const canvasesRef = useFileStore((s) => s.project?.canvases);
+
   const nodes = useMemo<RFNode<CanvasNodeData>[]>(() => {
     const rawNodes = canvas?.data.nodes ?? [];
     return rawNodes.map((node) => {
@@ -31,14 +36,30 @@ export function useCanvasRenderer(): {
         isSelected: selectedNodeIds.has(node.id),
         isRef,
       };
-      return {
+      const rfNode: RFNode<CanvasNodeData> = {
         id: node.id,
         type: 'archNode',
         position: node.position ?? { x: 0, y: 0 },
         data,
       };
+
+      // Auto-fit sizing for RefNode containers
+      if (isRef) {
+        const childCanvas = canvasesRef?.get(node.id);
+        const pos = node.position;
+        if (pos?.autoSize === false) {
+          rfNode.width = pos.width ?? 240;
+          rfNode.height = pos.height ?? 160;
+        } else {
+          const { width, height } = computeAutoSize(childCanvas?.data);
+          rfNode.width = width;
+          rfNode.height = height;
+        }
+      }
+
+      return rfNode;
     });
-  }, [canvas, resolve, selectedNodeIds]);
+  }, [canvas, resolve, selectedNodeIds, canvasesRef]);
 
   const edges = useMemo<RFEdge<CanvasEdgeData>[]>(() => {
     const rawEdges = canvas?.data.edges ?? [];
