@@ -99,9 +99,18 @@ export function EdgeRenderer({
   const route = data?.route;
 
   if (route && route.points.length >= 2) {
-    // ELK-computed obstacle-aware path
-    edgePath = buildRoutePath(route.points);
-    const labelPos = routeLabelPosition(route.points);
+    // ELK-computed obstacle-aware path.
+    // Use ReactFlow's handle positions as start/end (ELK's startPoint/endPoint
+    // are at the node border, not the handle position). Keep ELK's bendPoints
+    // for the middle — those are the obstacle-aware waypoints.
+    const bendPoints = route.points.slice(1, -1);
+    const adjustedPoints = [
+      { x: sourceX, y: sourceY },
+      ...bendPoints,
+      { x: targetX, y: targetY },
+    ];
+    edgePath = buildRoutePath(adjustedPoints);
+    const labelPos = routeLabelPosition(adjustedPoints);
     labelX = labelPos.x;
     labelY = labelPos.y;
   } else {
