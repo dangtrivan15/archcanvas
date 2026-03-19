@@ -22,8 +22,7 @@ safety mechanisms embedded in the tools themselves so they can't be bypassed:
 - Test slot guard in [test/setup/slotGuard.ts](../../test/setup/slotGuard.ts)
   (globalSetup, two-layer slot system)
 
-Cleaned up scripts to just [scripts/init.sh](../../scripts/init.sh). Deleted the
-obsolete `testing` skill; `task-decomposition` skill remains valid.
+Deleted the obsolete `testing` skill; `task-decomposition` skill remains valid.
 
 **What's next**: I10 — Core Data Model & YAML. Foundation for everything else:
 Zod schemas, YAML codec, file resolver, cross-scope refs. Pure TypeScript, zero
@@ -44,7 +43,7 @@ UI. After I10, I3 (NodeDef) and I4 (Graph Engine) can partially parallelize.
 | Test concurrency | Two-layer slot guard (global + per-runner) | Single pool | Fine-grained control — cap total load AND tune per tool independently |
 | E2E test server | `vite preview` on 4173 (production build) | Dev server on 5173 | No HMR flakiness, each worktree independent |
 | Slot config | Defaults in code + env var overrides | `.test.env` file | One less config file, conventional override mechanism |
-| Scripts | Keep only `init.sh` | Full scripts directory | Shell wrappers replaced by convergence-point guards |
+| Scripts | None — no shell wrappers | Full scripts directory | Shell wrappers replaced by convergence-point guards |
 
 ### Tech Stack
 
