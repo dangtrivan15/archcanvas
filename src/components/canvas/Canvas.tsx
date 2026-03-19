@@ -13,6 +13,16 @@ import { ContextMenu } from "../shared/ContextMenu";
 import type { ContextMenuState } from "../shared/ContextMenu";
 import { CommandPalette } from "../shared/CommandPalette";
 import { CreateSubsystemDialog } from "@/components/CreateSubsystemDialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import type { CanvasNodeData, CanvasEdgeData } from "./types";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useGraphStore } from "@/store/graphStore";
@@ -21,6 +31,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { computeLayout } from "@/core/layout/elk";
+import { createNodeFromType } from '@/lib/createNodeFromType';
 import { extractInheritedEdges } from "./inheritedEdges";
 import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
 
@@ -57,6 +68,11 @@ export function Canvas() {
       }
     }
   }, []);
+
+  // -------------------------------------------------------------------------
+  // Delete confirmation state
+  // -------------------------------------------------------------------------
+  const [pendingDelete, setPendingDelete] = useState<{ label: string; action: () => void } | null>(null);
 
   // -------------------------------------------------------------------------
   // Command palette state
@@ -227,8 +243,17 @@ export function Canvas() {
   }, []);
 
   const handleNodeDelete = useCallback((nodeId: string) => {
-    useCanvasStore.getState().selectNodes([nodeId]);
-    useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId);
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const canvas = useFileStore.getState().getCanvas(canvasId);
+    const node = canvas?.data.nodes?.find((n) => n.id === nodeId);
+    const label = (node && 'displayName' in node ? node.displayName : node?.id) ?? 'this node';
+    setPendingDelete({
+      label,
+      action: () => {
+        useCanvasStore.getState().selectNodes([nodeId]);
+        useCanvasStore.getState().deleteSelection(canvasId);
+      },
+    });
   }, []);
 
   const handleRefNodeDiveIn = useCallback((nodeId: string) => {
@@ -256,11 +281,46 @@ export function Canvas() {
 
   const handleEdgeDelete = useCallback((edgeData: CanvasEdgeData) => {
     const canvasId = useNavigationStore.getState().currentCanvasId;
-    useGraphStore.getState().removeEdge(canvasId, edgeData.edge.from.node, edgeData.edge.to.node);
+    const label = `${edgeData.edge.from.node} → ${edgeData.edge.to.node}`;
+    setPendingDelete({
+      label,
+      action: () => {
+        useGraphStore.getState().removeEdge(canvasId, edgeData.edge.from.node, edgeData.edge.to.node);
+      },
+    });
   }, []);
 
+  // -------------------------------------------------------------------------
+  // Drag-and-drop from NodeTypeOverlay
+  // -------------------------------------------------------------------------
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/archcanvas-nodetype')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    const typeKey = e.dataTransfer.getData('application/archcanvas-nodetype');
+    if (!typeKey) return;
+    e.preventDefault();
+
+    const position = reactFlow.screenToFlowPosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    createNodeFromType(canvasId, typeKey, position);
+  }, [reactFlow]);
+
   return (
-    <div data-testid="main-canvas" className="relative h-full w-full">
+    <div
+      data-testid="main-canvas"
+      className="relative h-full w-full"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <Breadcrumb />
       <ReactFlow
         nodes={rfNodes}
@@ -273,7 +333,7 @@ export function Canvas() {
         zoomOnScroll={false}
         zoomOnPinch
         nodesDraggable={toolMode === 'select'}
-        nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
+        nodesConnectable={toolMode === 'select'}
         selectionOnDrag={toolMode === 'select'}
         onNodesChange={onNodesChange}
         onNodeClick={onNodeClick}
@@ -321,6 +381,28 @@ export function Canvas() {
           onClose={() => setSubsystemType(null)}
         />
       )}
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete <strong>{pendingDelete?.label}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                pendingDelete?.action();
+                setPendingDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
