@@ -4,9 +4,7 @@ import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
-import { useNavigationTransition } from "./hooks/useNavigationTransition";
-import { CanvasOverlay } from "./CanvasOverlay";
-
+import { useCanvasNavigation } from "./hooks/useCanvasNavigation";
 import { NodeRenderer } from "../nodes/NodeRenderer";
 import { GhostNodeRenderer } from "../nodes/GhostNodeRenderer";
 import { EdgeRenderer } from "../edges/EdgeRenderer";
@@ -31,11 +29,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
-  const {
-    diveIn, goUp, goToBreadcrumb, isTransitioning,
-    overlayConfig, overlayElRef, onOverlayReactFlowReady,
-    dissolveOverlayStyle, onDissolveTransitionEnd,
-  } = useNavigationTransition();
+  const { diveIn } = useCanvasNavigation();
   const toolMode = useToolStore((s) => s.mode);
 
   // ---------------------------------------------------------------------------
@@ -138,24 +132,15 @@ export function Canvas() {
       setPaletteMode((detail?.mode as 'default' | 'subsystem') ?? 'default');
       openPalette(detail?.prefix ?? '');
     };
-    const handleNavigateUp = () => goUp();
-    const handleNavigateToBreadcrumb = (e: Event) => {
-      const index = (e as CustomEvent<{ index: number }>).detail?.index;
-      if (typeof index === 'number') goToBreadcrumb(index);
-    };
     window.addEventListener('archcanvas:fit-view', handleFitView);
     window.addEventListener('archcanvas:auto-layout', handleLayout);
     window.addEventListener('archcanvas:open-palette', handleOpenPalette);
-    window.addEventListener('archcanvas:navigate-up', handleNavigateUp);
-    window.addEventListener('archcanvas:navigate-to-breadcrumb', handleNavigateToBreadcrumb);
     return () => {
       window.removeEventListener('archcanvas:fit-view', handleFitView);
       window.removeEventListener('archcanvas:auto-layout', handleLayout);
       window.removeEventListener('archcanvas:open-palette', handleOpenPalette);
-      window.removeEventListener('archcanvas:navigate-up', handleNavigateUp);
-      window.removeEventListener('archcanvas:navigate-to-breadcrumb', handleNavigateToBreadcrumb);
     };
-  }, [reactFlow, handleAutoLayout, openPalette, goUp, goToBreadcrumb]);
+  }, [reactFlow, handleAutoLayout, openPalette]);
 
   const {
     onNodeClick, onEdgeClick,
@@ -163,12 +148,11 @@ export function Canvas() {
   } = useCanvasInteractions();
 
   const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: RFNode<CanvasNodeData>) => {
-    if (isTransitioning) return;
     const nodeData = node.data as CanvasNodeData;
     if (nodeData.isRef) {
-      diveIn(node.id);
+      diveIn(node.id, node.position);
     }
-  }, [diveIn, isTransitioning]);
+  }, [diveIn]);
 
   // -------------------------------------------------------------------------
   // Context menu state
@@ -276,87 +260,65 @@ export function Canvas() {
   }, []);
 
   return (
-    <div className="relative h-full w-full">
-      {/* Main canvas content — opaque background hides any backdrop layer */}
-      <div data-testid="main-canvas" className="relative h-full w-full bg-[var(--color-background)]" style={{ zIndex: 10 }}>
-        <Breadcrumb />
-        <ReactFlow
-          nodes={rfNodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          proOptions={{ hideAttribution: true }}
-          panOnDrag={toolMode === 'pan' ? true : [1, 2]}
-          panOnScroll
-          zoomOnScroll={false}
-          zoomOnPinch
-          nodesDraggable={toolMode === 'select'}
-          nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
-          selectionOnDrag={toolMode === 'select'}
-          onNodesChange={onNodesChange}
-          onNodeClick={onNodeClick}
-          onNodeDoubleClick={onNodeDoubleClick}
-          onEdgeClick={onEdgeClick}
-          onConnect={onConnect}
-          onConnectStart={onConnectStart}
-          onConnectEnd={onConnectEnd}
-          onPaneClick={onPaneClickGuarded}
-          onPaneContextMenu={onPaneContextMenu}
-          onNodeContextMenu={onNodeContextMenu}
-          onEdgeContextMenu={onEdgeContextMenu}
-        >
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Controls />
-        </ReactFlow>
+    <div data-testid="main-canvas" className="relative h-full w-full">
+      <Breadcrumb />
+      <ReactFlow
+        nodes={rfNodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        proOptions={{ hideAttribution: true }}
+        panOnDrag={toolMode === 'pan' ? true : [1, 2]}
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
+        nodesDraggable={toolMode === 'select'}
+        nodesConnectable={toolMode === 'connect' || toolMode === 'select'}
+        selectionOnDrag={toolMode === 'select'}
+        onNodesChange={onNodesChange}
+        onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
+        onEdgeClick={onEdgeClick}
+        onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        onPaneClick={onPaneClickGuarded}
+        onPaneContextMenu={onPaneContextMenu}
+        onNodeContextMenu={onNodeContextMenu}
+        onEdgeContextMenu={onEdgeContextMenu}
+      >
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+        <Controls />
+      </ReactFlow>
 
-        {contextMenu && (
-          <ContextMenu
-            menu={contextMenu}
-            onClose={closeMenu}
-            onCanvasFitView={handleCanvasFitView}
-            onNodeEditProperties={handleNodeEditProperties}
-            onNodeAddNote={handleNodeAddNote}
-            onNodeDelete={handleNodeDelete}
-            onRefNodeDiveIn={handleRefNodeDiveIn}
-            onRefNodeFitContent={handleRefNodeFitContent}
-            onEdgeEdit={handleEdgeEdit}
-            onEdgeDelete={handleEdgeDelete}
-          />
-        )}
-
-        <CommandPalette
-          open={paletteOpen}
-          onClose={closePalette}
-          initialInput={paletteInitial}
-          mode={paletteMode}
-          onSelectSubsystemType={(type) => setSubsystemType(type)}
-        />
-
-        {subsystemType && (
-          <CreateSubsystemDialog
-            open={!!subsystemType}
-            type={subsystemType}
-            onClose={() => setSubsystemType(null)}
-          />
-        )}
-      </div>
-
-      {/* Transition overlay — temporary, only during clip-path animations */}
-      {overlayConfig && (
-        <CanvasOverlay
-          canvasId={overlayConfig.canvasId}
-          clipPath={overlayConfig.clipPath}
-          onReactFlowReady={onOverlayReactFlowReady}
-          containerRef={overlayElRef}
+      {contextMenu && (
+        <ContextMenu
+          menu={contextMenu}
+          onClose={closeMenu}
+          onCanvasFitView={handleCanvasFitView}
+          onNodeEditProperties={handleNodeEditProperties}
+          onNodeAddNote={handleNodeAddNote}
+          onNodeDelete={handleNodeDelete}
+          onRefNodeDiveIn={handleRefNodeDiveIn}
+          onRefNodeFitContent={handleRefNodeFitContent}
+          onEdgeEdit={handleEdgeEdit}
+          onEdgeDelete={handleEdgeDelete}
         />
       )}
 
-      {/* Dissolve overlay — simple opaque cover for breadcrumb/fallback transitions */}
-      {dissolveOverlayStyle && (
-        <div
-          className="navigation-transition-overlay"
-          style={dissolveOverlayStyle}
-          onTransitionEnd={onDissolveTransitionEnd}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={closePalette}
+        initialInput={paletteInitial}
+        mode={paletteMode}
+        onSelectSubsystemType={(type) => setSubsystemType(type)}
+      />
+
+      {subsystemType && (
+        <CreateSubsystemDialog
+          open={!!subsystemType}
+          type={subsystemType}
+          onClose={() => setSubsystemType(null)}
         />
       )}
     </div>

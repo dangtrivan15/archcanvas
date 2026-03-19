@@ -33,8 +33,8 @@ test.describe('subsystem creation', () => {
     expect(breadcrumb).toContain('Root');
     expect(breadcrumb).toContain('Order Service');
 
-    // Canvas should be empty (new subsystem) — scope to main canvas to exclude backdrop overlay
-    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(0);
+    // Canvas should be empty (new subsystem)
+    await expect(page.locator('.react-flow__node')).toHaveCount(0);
 
     // Navigate back via breadcrumb
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
@@ -53,15 +53,15 @@ test.describe('subsystem creation', () => {
     await page.getByRole('option', { name: /Database data\/database/ }).click();
     await page.waitForTimeout(200);
 
-    // Node should appear inside subsystem — scope to main canvas to exclude backdrop overlay
+    // Node should appear inside subsystem
     await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
 
     // Go back — root should still have just the RefNode
-    // (mini-preview inside RefNode also renders ReactFlow nodes, so scope to main canvas)
+    // (mini-preview inside RefNode also renders ReactFlow nodes, so filter them out)
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
     const mainNodeCount = await page.locator('.react-flow__node').evaluateAll(
-      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview') && !n.closest('.canvas-overlay')).length,
+      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview')).length,
     );
     expect(mainNodeCount).toBe(1);
   });
@@ -245,112 +245,3 @@ test.describe('subsystem container', () => {
   });
 });
 
-// ==========================================================================
-// Subsystem Navigation Animation
-// ==========================================================================
-
-test.describe('subsystem navigation animation', () => {
-  test.beforeEach(async ({ page }) => {
-    await gotoApp(page);
-  });
-
-  test('dive-in navigation works and shows child canvas', async ({ page }) => {
-    await createSubsystem(page, 'Order Service', /Service compute\/service/);
-
-    // Add a node inside
-    await diveIntoSubsystem(page, 'Order Service');
-    await page.keyboard.press('Meta+k');
-    await page.getByRole('option', { name: /Database data\/database/ }).click();
-    await page.waitForTimeout(200);
-
-    // Go back
-    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
-    await page.waitForTimeout(700);
-
-    // Double-click to dive in (triggers overlay animation)
-    const refNode = page.locator('[data-testid="main-canvas"] .react-flow__node').first();
-    await refNode.dblclick();
-    await page.waitForTimeout(600);
-
-    // Should be inside the subsystem
-    const breadcrumb = await getBreadcrumbText(page);
-    expect(breadcrumb).toContain('Order Service');
-
-    // Should see the database node we added (scope to main canvas)
-    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
-  });
-
-  test('go-up via breadcrumb navigates back', async ({ page }) => {
-    await createSubsystem(page, 'Order Service', /Service compute\/service/);
-    await diveIntoSubsystem(page, 'Order Service');
-
-    // Verify we're inside
-    const breadcrumbInside = await getBreadcrumbText(page);
-    expect(breadcrumbInside).toContain('Order Service');
-
-    // Click parent breadcrumb to go up (triggers reverse morph)
-    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
-    await page.waitForTimeout(700);
-
-    // Should be back at root
-    const breadcrumbRoot = await getBreadcrumbText(page);
-    expect(breadcrumbRoot).not.toContain('Order Service');
-
-    // RefNode should be visible
-    await expect(page.locator('.react-flow__node')).toHaveCount(1);
-  });
-
-  test('dive-in transition does not cause a second zoom step', async ({ page }) => {
-    await createSubsystem(page, 'Test System', /Service compute\/service/);
-
-    // Add a node inside the subsystem so it has content
-    await diveIntoSubsystem(page, 'Test System');
-    await page.keyboard.press('Meta+k');
-    await page.getByRole('option', { name: /Database data\/database/ }).click();
-    await page.waitForTimeout(200);
-
-    // Go back to root
-    await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
-    await page.waitForTimeout(700);
-
-    // Double-click to dive in (triggers overlay animation)
-    const refNode = page.locator('[data-testid="main-canvas"] .react-flow__node').first();
-    await refNode.dblclick();
-
-    // Wait for navigation transition to complete
-    await page.waitForTimeout(800);
-
-    // Capture viewport state immediately after transition (scope to main canvas, not backdrop)
-    const viewportBefore = await page.evaluate(() => {
-      const vp = document.querySelector('[data-testid="main-canvas"] .react-flow__viewport') as HTMLElement;
-      return vp?.style.transform ?? '';
-    });
-
-    // Wait to see if viewport changes (fitView would kick in)
-    await page.waitForTimeout(500);
-
-    const viewportAfter = await page.evaluate(() => {
-      const vp = document.querySelector('[data-testid="main-canvas"] .react-flow__viewport') as HTMLElement;
-      return vp?.style.transform ?? '';
-    });
-
-    expect(viewportAfter).toBe(viewportBefore);
-  });
-
-  test('Escape key navigates up from subsystem', async ({ page }) => {
-    await createSubsystem(page, 'Order Service', /Service compute\/service/);
-    await diveIntoSubsystem(page, 'Order Service');
-
-    // Click on the main canvas pane to ensure it has focus (exclude backdrop pane)
-    await page.locator('[data-testid="main-canvas"] .react-flow__pane').click({ position: { x: 400, y: 300 } });
-    await page.waitForTimeout(200);
-
-    // Press Escape to go up (no selection → dispatches navigate-up)
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(800);
-
-    // Should be back at root
-    const breadcrumb = await getBreadcrumbText(page);
-    expect(breadcrumb).not.toContain('Order Service');
-  });
-});
