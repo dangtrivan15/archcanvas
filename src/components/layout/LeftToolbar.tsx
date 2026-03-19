@@ -116,6 +116,7 @@ export function LeftToolbar() {
     shortcut: string;
     mode?: ToolMode;
     active?: boolean;
+    tooltipSide?: 'right' | 'top';
     onClick?: () => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
@@ -138,6 +139,7 @@ export function LeftToolbar() {
       icon: Square,
       label: "Add Node",
       shortcut: "N",
+      tooltipSide: 'top',
       onClick: handleAddNodeClick,
       onMouseEnter: handleMouseEnter,
       onMouseLeave: handleMouseLeave,
@@ -185,11 +187,13 @@ export function LeftToolbar() {
     },
   ];
 
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="relative h-full">
+    <div ref={toolbarRef} className="relative h-full">
       <ScrollArea className="h-full">
         <div className="flex flex-col items-center gap-1 p-2">
-          {tools.map(({ icon: Icon, label, shortcut, mode, active, onClick, onMouseEnter, onMouseLeave }) => {
+          {tools.map(({ icon: Icon, label, shortcut, mode, active, tooltipSide, onClick, onMouseEnter, onMouseLeave }) => {
             const isActive = active || (mode && activeMode === mode);
 
             return (
@@ -213,7 +217,7 @@ export function LeftToolbar() {
                     <Icon className="relative z-10 h-4 w-4" style={isActive ? { color: 'var(--color-accent-foreground)' } : undefined} />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">
+                <TooltipContent side={tooltipSide ?? "right"}>
                   {shortcut ? `${label} (${shortcut})` : label}
                 </TooltipContent>
               </Tooltip>
@@ -224,6 +228,7 @@ export function LeftToolbar() {
       <NodeTypeOverlay
         visible={overlayVisible}
         pinned={pinned}
+        anchorRef={toolbarRef}
         onPin={handlePin}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}

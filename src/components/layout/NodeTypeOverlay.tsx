@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
@@ -8,6 +9,7 @@ import { resolveIcon } from '@/components/nodes/iconMap';
 interface NodeTypeOverlayProps {
   visible: boolean;
   pinned: boolean;
+  anchorRef?: RefObject<HTMLDivElement | null>;
   onPin: (pinned: boolean) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -16,6 +18,7 @@ interface NodeTypeOverlayProps {
 export function NodeTypeOverlay({
   visible,
   pinned,
+  anchorRef,
   onPin,
   onMouseEnter,
   onMouseLeave,
@@ -53,17 +56,19 @@ export function NodeTypeOverlay({
     [onPin],
   );
 
-  return (
+  // Compute fixed position from anchor element's bounding rect
+  const anchorRect = anchorRef?.current?.getBoundingClientRect();
+  const fixedLeft = anchorRect ? anchorRect.right : 0;
+  const fixedTop = anchorRect ? anchorRect.top : 0;
+
+  return createPortal(
     <AnimatePresence>
       {visible && (
         <motion.div
           data-testid="node-type-overlay"
           data-pinned={pinned ? 'true' : undefined}
-          className="absolute left-12 top-0 z-30 w-[260px] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-2xl"
-          style={{
-            borderColor: pinned ? 'var(--color-accent)' : 'var(--color-border)',
-            maxHeight: 'calc(100vh - 32px)',
-          }}
+          className="fixed z-50"
+          style={{ left: fixedLeft, top: fixedTop }}
           initial={prefersReduced ? false : { opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           exit={prefersReduced ? undefined : { opacity: 0, x: -8 }}
@@ -71,6 +76,17 @@ export function NodeTypeOverlay({
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
+          {/* Invisible hover bridge — covers the gap between toolbar and overlay
+             so the mouse doesn't leave "hover territory" while crossing */}
+          <div className="absolute -left-5 -top-2 w-5" style={{ height: 'calc(100% + 16px)' }} />
+
+          <div
+            className="w-[260px] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-2xl"
+            style={{
+              borderColor: pinned ? 'var(--color-accent)' : 'var(--color-border)',
+              maxHeight: `calc(100vh - ${fixedTop + 16}px)`,
+            }}
+          >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -92,7 +108,7 @@ export function NodeTypeOverlay({
           </div>
 
           {/* Type list */}
-          <div className="overflow-y-auto px-1.5 pb-2" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+          <div className="overflow-y-auto px-1.5 pb-2" style={{ maxHeight: `calc(100vh - ${fixedTop + 100}px)` }}>
             {Array.from(types.entries()).map(([namespace, defs]) => (
               <div key={namespace}>
                 <div className="px-2 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -131,8 +147,10 @@ export function NodeTypeOverlay({
               </div>
             )}
           </div>
+          </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
