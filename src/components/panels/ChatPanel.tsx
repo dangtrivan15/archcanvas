@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '@/store/chatStore';
 import { useFileStore } from '@/store/fileStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
+
+const bannerTransition = { duration: 0.15, ease: 'easeOut' as const };
 
 export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -21,6 +24,7 @@ export function ChatPanel() {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const prefersReduced = useReducedMotion();
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -131,18 +135,38 @@ export function ChatPanel() {
       </div>
 
       {/* Error banner */}
-      {error && (
-        <div className="border-b border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300" role="alert">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            key="error-banner"
+            className="overflow-hidden border-b border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300"
+            role="alert"
+            initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={prefersReduced ? undefined : { height: 0, opacity: 0 }}
+            transition={bannerTransition}
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Warning banner (rate-limit etc.) — hidden when error is showing */}
-      {warning && !error && (
-        <div className="border-b border-amber-800 bg-amber-950/50 px-3 py-1.5 text-xs text-amber-300" role="status">
-          {warning}
-        </div>
-      )}
+      {/* Warning banner (rate-limit etc.) -- hidden when error is showing */}
+      <AnimatePresence>
+        {warning && !error && (
+          <motion.div
+            key="warning-banner"
+            className="overflow-hidden border-b border-amber-800 bg-amber-950/50 px-3 py-1.5 text-xs text-amber-300"
+            role="status"
+            initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={prefersReduced ? undefined : { height: 0, opacity: 0 }}
+            transition={bannerTransition}
+          >
+            {warning}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Message list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -156,49 +180,64 @@ export function ChatPanel() {
         ))}
 
         {/* Streaming indicator */}
-        {isStreaming && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-foreground" />
-            <span>{statusMessage ?? 'AI is responding...'}</span>
-          </div>
-        )}
+        <AnimatePresence>
+          {isStreaming && (
+            <motion.div
+              key="streaming-indicator"
+              className="flex items-center gap-2 text-xs text-muted-foreground"
+              initial={prefersReduced ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0 }}
+              transition={bannerTransition}
+            >
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-foreground" />
+              <span>{statusMessage ?? 'AI is responding...'}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div ref={messagesEndRef} />
       </div>
 
       {/* Footer / Input */}
       <div className="border-t border-border p-2">
-        {/* Inline path input — shown when projectPath is null and provider is connected */}
+        {/* Inline path input -- shown when projectPath is null and provider is connected */}
         {needsPath && (
-          <div className="mb-2" data-testid="path-input-bar">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={pathInput}
-                onChange={(e) => setPathInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && pathInput.trim()) {
-                    useFileStore.getState().setProjectPath(pathInput.trim());
-                  }
-                }}
-                placeholder="/Users/you/projects/my-app"
-                className="flex-1 rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
-                aria-label="Project path"
-              />
-              <button
-                onClick={() => {
-                  if (pathInput.trim()) {
-                    useFileStore.getState().setProjectPath(pathInput.trim());
-                  }
-                }}
-                disabled={!pathInput.trim()}
-                className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
-              >
-                Set
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-amber-400">Required for AI chat</p>
-          </div>
+            <motion.div
+              className="mb-2"
+              data-testid="path-input-bar"
+              initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              transition={bannerTransition}
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={pathInput}
+                  onChange={(e) => setPathInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && pathInput.trim()) {
+                      useFileStore.getState().setProjectPath(pathInput.trim());
+                    }
+                  }}
+                  placeholder="/Users/you/projects/my-app"
+                  className="flex-1 rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
+                  aria-label="Project path"
+                />
+                <button
+                  onClick={() => {
+                    if (pathInput.trim()) {
+                      useFileStore.getState().setProjectPath(pathInput.trim());
+                    }
+                  }}
+                  disabled={!pathInput.trim()}
+                  className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
+                >
+                  Set
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-amber-400">Required for AI chat</p>
+            </motion.div>
         )}
         <div className="flex gap-2">
           <textarea
@@ -216,24 +255,36 @@ export function ChatPanel() {
             className="flex-1 resize-none rounded border border-border bg-input px-2 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring disabled:opacity-50"
             aria-label="Chat input"
           />
-          {isStreaming ? (
-            <button
-              onClick={handleInterrupt}
-              className="shrink-0 rounded bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/80"
-              aria-label="Stop"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={!canSend}
-              className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
-              aria-label="Send message"
-            >
-              Send
-            </button>
-          )}
+          <AnimatePresence mode="wait">
+            {isStreaming ? (
+              <motion.button
+                key="stop-btn"
+                onClick={handleInterrupt}
+                className="shrink-0 rounded bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/80"
+                aria-label="Stop"
+                initial={prefersReduced ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={prefersReduced ? undefined : { opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                Stop
+              </motion.button>
+            ) : (
+              <motion.button
+                key="send-btn"
+                onClick={handleSend}
+                disabled={!canSend}
+                className="shrink-0 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/80 disabled:opacity-50"
+                aria-label="Send message"
+                initial={prefersReduced ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={prefersReduced ? undefined : { opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                Send
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

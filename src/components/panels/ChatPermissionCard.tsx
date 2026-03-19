@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '@/store/chatStore';
 import type { PermissionSuggestion } from '@/core/ai/types';
 
@@ -86,6 +87,7 @@ export function ChatPermissionCard({
   const [state, setState] = useState<CardState>('pending');
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [customValue, setCustomValue] = useState('');
+  const prefersReduced = useReducedMotion();
 
   const suggestions = permissionSuggestions ?? [];
 
@@ -96,7 +98,7 @@ export function ChatPermissionCard({
 
   const handleAlwaysAllow = () => {
     if (suggestions.length === 0) {
-      // No suggestions — send fallback immediately
+      // No suggestions -- send fallback immediately
       useChatStore.getState().respondToPermission(id, true, {
         updatedPermissions: [fallbackSuggestion(tool)],
       });
@@ -166,9 +168,15 @@ export function ChatPermissionCard({
       : 'text-red-400';
 
   const isResolved = state === 'approved' || state === 'always' || state === 'denied' || state === 'interrupted';
+  const isDenied = state === 'denied' || state === 'interrupted';
 
   return (
-    <div className="my-1 rounded border-l-4 border-yellow-500 bg-card p-2">
+    <motion.div
+      className={`my-1 rounded border-l-4 border-yellow-500 bg-card p-2 ${isDenied ? 'opacity-70' : ''}`}
+      initial={prefersReduced ? false : { scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: isDenied ? 0.7 : 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
       <p className="text-xs font-medium text-card-foreground">
         &#x26A0; Permission requested: <span className="font-mono">{tool}</span>
       </p>
@@ -189,9 +197,15 @@ export function ChatPermissionCard({
       )}
 
       {isResolved ? (
-        <p className={`mt-1.5 text-xs font-medium ${statusColor}`}>
+        <motion.p
+          key="resolved"
+          className={`mt-1.5 text-xs font-medium ${statusColor}`}
+          initial={prefersReduced ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+        >
           {statusLabel}
-        </p>
+        </motion.p>
       ) : state === 'pending' ? (
         <div className="mt-1.5 flex flex-wrap gap-2">
           <button
@@ -220,14 +234,20 @@ export function ChatPermissionCard({
           </button>
         </div>
       ) : (
-        /* selecting or editing — chip selector */
-        <div className="mt-1.5">
+        /* selecting or editing -- chip selector */
+        <motion.div
+          key="selecting"
+          className="mt-1.5"
+          initial={prefersReduced ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+        >
           <p className="mb-1 text-[11px] text-muted-foreground">
             Select a permission rule to always allow:
           </p>
           <div className="flex flex-wrap gap-1.5">
             {suggestions.map((s, idx) => (
-              <button
+              <motion.button
                 key={idx}
                 onClick={() => handleChipClick(idx)}
                 className={`rounded-full px-2.5 py-0.5 text-xs font-mono transition-colors ${
@@ -235,31 +255,43 @@ export function ChatPermissionCard({
                     ? 'bg-blue-600 text-white'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
+                initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15, delay: prefersReduced ? 0 : idx * 0.05 }}
               >
                 {suggestionLabel(s)}
-              </button>
+              </motion.button>
             ))}
-            <button
+            <motion.button
               onClick={() => handleChipClick(suggestions.length)}
               className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
                 state === 'editing'
                   ? 'bg-blue-600 text-white'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.15, delay: prefersReduced ? 0 : suggestions.length * 0.05 }}
             >
               Custom...
-            </button>
+            </motion.button>
           </div>
 
           {state === 'editing' && (
-            <input
-              type="text"
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              className="mt-1.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs text-foreground focus:border-blue-500 focus:outline-none"
-              placeholder="Enter custom rule pattern..."
-              autoFocus
-            />
+            <motion.div
+              initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <input
+                type="text"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                className="mt-1.5 w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs text-foreground focus:border-blue-500 focus:outline-none"
+                placeholder="Enter custom rule pattern..."
+                autoFocus
+              />
+            </motion.div>
           )}
 
           <div className="mt-2 flex gap-2">
@@ -276,8 +308,8 @@ export function ChatPermissionCard({
               Cancel
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

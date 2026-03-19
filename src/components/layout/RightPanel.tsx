@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFileStore } from '@/store/fileStore';
@@ -24,6 +25,7 @@ export function RightPanel() {
   const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const canvas = useFileStore((s) => s.getCanvas(currentCanvasId));
   const resolve = useRegistryStore((s) => s.resolve);
+  const prefersReduced = useReducedMotion();
 
   if (rightPanelCollapsed) {
     return (
@@ -55,8 +57,10 @@ export function RightPanel() {
   const totalSelected = selectedNodeIds.size + selectedEdgeKeys.size;
 
   let content: ReactNode;
+  let contentKey: string;
 
   if (totalSelected === 0) {
+    contentKey = 'empty';
     content = (
       <div className="p-4">
         <h3 className="text-sm font-medium text-muted-foreground">Detail Panel</h3>
@@ -70,8 +74,10 @@ export function RightPanel() {
     const allEdges = canvas?.data.edges ?? [];
     const edge = allEdges.find((e) => e.from.node === fromNode && e.to.node === toNode);
     if (edge) {
+      contentKey = `edge-${edgeKey}`;
       content = <EdgeDetailPanel key={`${edge.from.node}→${edge.to.node}`} edge={edge} canvasId={currentCanvasId} />;
     } else {
+      contentKey = 'edge-not-found';
       content = (
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Edge not found.</p>
@@ -80,6 +86,7 @@ export function RightPanel() {
     }
   } else if (selectedEdgeKeys.size > 1 && selectedNodeIds.size === 0) {
     const count = selectedEdgeKeys.size;
+    contentKey = `multi-edges-${count}`;
     content = (
       <div className="p-4">
         <h3 className="text-sm font-medium text-muted-foreground">{count} Edges Selected</h3>
@@ -89,6 +96,7 @@ export function RightPanel() {
       </div>
     );
   } else if (totalSelected > 1) {
+    contentKey = `multi-${totalSelected}`;
     content = (
       <div className="p-4">
         <h3 className="text-sm font-medium text-muted-foreground">
@@ -102,11 +110,13 @@ export function RightPanel() {
   } else if (selectedInlineNodes.length === 1) {
     const node = selectedInlineNodes[0];
     const nodeDef = resolve(node.type);
+    contentKey = `node-${node.id}`;
     content = (
       <NodeDetailPanel key={node.id} node={node} nodeDef={nodeDef} canvasId={currentCanvasId} />
     );
   } else {
     // Single RefNode selected — no inline editing
+    contentKey = 'refnode';
     content = (
       <div className="p-4">
         <h3 className="text-sm font-medium text-muted-foreground">Reference Node</h3>
@@ -117,5 +127,19 @@ export function RightPanel() {
     );
   }
 
-  return <ScrollArea className="h-full overflow-hidden">{content}</ScrollArea>;
+  return (
+    <ScrollArea className="h-full overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={contentKey}
+          initial={prefersReduced ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReduced ? undefined : { opacity: 0 }}
+          transition={{ duration: 0.12 }}
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
+    </ScrollArea>
+  );
 }

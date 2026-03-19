@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
+import { motion, useReducedMotion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
@@ -38,24 +39,40 @@ const buttonVariants = cva(
   }
 )
 
+// Props that conflict between React HTML events and Motion gesture events
+type MotionConflicts = "onDrag" | "onDragStart" | "onDragEnd" | "onAnimationStart"
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
   ...props
-}: React.ComponentProps<"button"> &
+}: Omit<React.ComponentProps<"button">, MotionConflicts> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const prefersReduced = useReducedMotion()
+  const sharedProps = {
+    "data-slot": "button" as const,
+    "data-variant": variant,
+    "data-size": size,
+    className: cn(buttonVariants({ variant, size, className })),
+  }
+
+  if (asChild) {
+    return <Slot.Root {...sharedProps} {...props} />
+  }
+
+  if (prefersReduced) {
+    return <button {...sharedProps} {...props} />
+  }
 
   return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+    <motion.button
+      {...sharedProps}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       {...props}
     />
   )

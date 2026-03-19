@@ -981,7 +981,7 @@ describe('ChatProviderSelector', () => {
     expect(screen.getByText('No providers')).toBeInTheDocument();
   });
 
-  it('shows provider display name in dropdown', () => {
+  it('shows provider display name in trigger button', () => {
     const provider = createMockProvider('claude-code');
     useChatStore.setState({
       providers: new Map([['claude-code', provider]]),
@@ -989,57 +989,42 @@ describe('ChatProviderSelector', () => {
     });
 
     render(<ChatProviderSelector />);
-    // The select should contain the provider's display name
-    const select = screen.getByLabelText('AI provider') as HTMLSelectElement;
-    expect(select).toBeInTheDocument();
-    expect(select.value).toBe('claude-code');
-    // Option text includes the dot indicator + display name
-    const option = within(select).getByText(/Mock claude-code/);
-    expect(option).toBeInTheDocument();
+    const trigger = screen.getByLabelText('AI provider');
+    expect(trigger).toBeInTheDocument();
+    expect(trigger.textContent).toContain('Mock claude-code');
   });
 
-  it('shows availability indicator', () => {
+  it('shows availability indicator on trigger', () => {
     const available = createMockProvider('a', {
       displayName: 'Provider A',
       available: true,
     });
+    useChatStore.setState({
+      providers: new Map([['a', available]]),
+      activeProviderId: 'a',
+    });
+
+    render(<ChatProviderSelector />);
+    const trigger = screen.getByLabelText('AI provider');
+    // Available provider shows a green dot
+    const dot = trigger.querySelector('span.bg-green-500');
+    expect(dot).toBeInTheDocument();
+  });
+
+  it('shows gray dot for unavailable provider', () => {
     const unavailable = createMockProvider('b', {
       displayName: 'Provider B',
       available: false,
     });
     useChatStore.setState({
-      providers: new Map([
-        ['a', available],
-        ['b', unavailable],
-      ]),
-      activeProviderId: 'a',
+      providers: new Map([['b', unavailable]]),
+      activeProviderId: 'b',
     });
 
     render(<ChatProviderSelector />);
-    const select = screen.getByLabelText('AI provider') as HTMLSelectElement;
-    const options = select.querySelectorAll('option');
-    // Available provider has filled circle, unavailable has outline circle
-    expect(options[0].textContent).toContain('\u25CF'); // filled
-    expect(options[1].textContent).toContain('\u25CB'); // outline
-  });
-
-  it('calls setActiveProvider on change', () => {
-    const providerA = createMockProvider('a', { displayName: 'A' });
-    const providerB = createMockProvider('b', { displayName: 'B' });
-    useChatStore.setState({
-      providers: new Map([
-        ['a', providerA],
-        ['b', providerB],
-      ]),
-      activeProviderId: 'a',
-    });
-
-    render(<ChatProviderSelector />);
-    const select = screen.getByLabelText('AI provider') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'b' } });
-
-    // Verify provider was switched
-    expect(useChatStore.getState().activeProviderId).toBe('b');
+    const trigger = screen.getByLabelText('AI provider');
+    const dot = trigger.querySelector('span.bg-muted-foreground');
+    expect(dot).toBeInTheDocument();
   });
 });
 

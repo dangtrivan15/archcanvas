@@ -29,7 +29,7 @@ async function setupBridgeTest(page: Page) {
   await expect(page.getByRole("heading", { name: "AI Chat" })).toBeVisible();
 
   // Wait for WebSocket provider to connect
-  await expect(page.getByLabel("AI provider")).toContainText("●", {
+  await expect(page.getByLabel("AI provider")).toHaveAttribute("data-connected", "true", {
     timeout: 5000,
   });
 }
@@ -48,7 +48,7 @@ test.describe("mock bridge — connection", () => {
   test("provider shows connected status", async ({ page }) => {
     await gotoApp(page);
     await page.getByRole("button", { name: "AI Chat (⌘⇧I)" }).click();
-    await expect(page.getByLabel("AI provider")).toContainText("●", {
+    await expect(page.getByLabel("AI provider")).toHaveAttribute("data-connected", "true", {
       timeout: 5000,
     });
   });

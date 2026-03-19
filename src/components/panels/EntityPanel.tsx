@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '../../store/fileStore';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useCanvasStore } from '../../store/canvasStore';
@@ -18,6 +19,7 @@ function EntityRow({
   expanded: boolean;
   onToggle: () => void;
 }) {
+  const prefersReduced = useReducedMotion();
   const usages = useMemo(() => {
     if (!expanded) return [];
     return findEntityUsages(project, entity.name);
@@ -35,39 +37,59 @@ function EntityRow({
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{entity.description}</p>
           )}
         </div>
-        <span className="text-xs text-gray-400 ml-2">{expanded ? '\u25BE' : '\u25B8'}</span>
+        <motion.span
+          className="text-xs text-gray-400 ml-2 inline-block"
+          animate={{ rotate: expanded ? 90 : 0 }}
+          transition={prefersReduced ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+        >
+          {'\u25B8'}
+        </motion.span>
       </button>
       {expanded && (
-        <div className="px-3 pb-2 space-y-2">
-          {entity.description && (
-            <p className="text-xs text-gray-600 dark:text-gray-300">{entity.description}</p>
-          )}
-          {entity.codeRefs && entity.codeRefs.length > 0 && (
-            <div>
-              <span className="text-xs font-medium text-gray-500">Code refs:</span>
-              <ul className="ml-2">
-                {entity.codeRefs.map((ref) => (
-                  <li key={ref} className="text-xs text-gray-500 font-mono">{ref}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {usages.length > 0 && (
-            <div>
-              <span className="text-xs font-medium text-gray-500">Used in:</span>
-              <ul className="ml-2">
-                {usages.map((usage: EntityUsage) => (
-                  <li key={usage.canvasId} className="text-xs text-gray-500">
-                    {usage.canvasDisplayName} ({usage.edges.length} edge{usage.edges.length !== 1 ? 's' : ''})
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {usages.length === 0 && (
-            <p className="text-xs text-gray-400 italic">Not referenced on any edges</p>
-          )}
-        </div>
+        <motion.div
+          initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="overflow-hidden"
+        >
+          <div className="px-3 pb-2 space-y-2">
+            {entity.description && (
+              <motion.p
+                initial={prefersReduced ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15, delay: 0.1, ease: 'easeOut' }}
+                className="text-xs text-gray-600 dark:text-gray-300"
+              >
+                {entity.description}
+              </motion.p>
+            )}
+            {entity.codeRefs && entity.codeRefs.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-gray-500">Code refs:</span>
+                <ul className="ml-2">
+                  {entity.codeRefs.map((ref) => (
+                    <li key={ref} className="text-xs text-gray-500 font-mono">{ref}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {usages.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-gray-500">Used in:</span>
+                <ul className="ml-2">
+                  {usages.map((usage: EntityUsage) => (
+                    <li key={usage.canvasId} className="text-xs text-gray-500">
+                      {usage.canvasDisplayName} ({usage.edges.length} edge{usage.edges.length !== 1 ? 's' : ''})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {usages.length === 0 && (
+              <p className="text-xs text-gray-400 italic">Not referenced on any edges</p>
+            )}
+          </div>
+        </motion.div>
       )}
     </div>
   );

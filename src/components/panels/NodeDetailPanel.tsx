@@ -3,6 +3,7 @@ import type { InlineNode } from '@/types';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import { useGraphStore } from '@/store/graphStore';
 import { useUiStore } from '@/store/uiStore';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PropertiesTab } from './PropertiesTab';
 import { NotesTab } from './NotesTab';
 import { CodeRefsTab } from './CodeRefsTab';
@@ -63,35 +64,45 @@ export function NodeDetailPanel({ node, nodeDef, canvasId }: Props) {
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b text-xs">
-        {(['properties', 'notes', 'code'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 capitalize ${
-              activeTab === tab
-                ? 'border-b-2 border-blue-500 font-medium'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+      {/* Tabs */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        className="flex flex-col flex-1 min-h-0"
+      >
+        <TabsList className="h-auto rounded-none border-b bg-transparent p-0 text-xs">
+          <TabsTrigger
+            value="properties"
+            className="rounded-none border-b-2 border-transparent px-3 py-1.5 text-xs capitalize shadow-none data-[state=active]:border-blue-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
           >
-            {tab}
-          </button>
-        ))}
-      </div>
+            properties
+          </TabsTrigger>
+          <TabsTrigger
+            value="notes"
+            className="rounded-none border-b-2 border-transparent px-3 py-1.5 text-xs capitalize shadow-none data-[state=active]:border-blue-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            notes
+          </TabsTrigger>
+          <TabsTrigger
+            value="code"
+            className="rounded-none border-b-2 border-transparent px-3 py-1.5 text-xs capitalize shadow-none data-[state=active]:border-blue-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+          >
+            code
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-auto p-3">
-        {activeTab === 'properties' && (
-          <PropertiesTab node={node} nodeDef={nodeDef} canvasId={canvasId} />
-        )}
-        {activeTab === 'notes' && (
-          <NotesTab notes={node.notes ?? []} canvasId={canvasId} nodeId={node.id} />
-        )}
-        {activeTab === 'code' && (
-          <CodeRefsTab codeRefs={node.codeRefs ?? []} canvasId={canvasId} nodeId={node.id} />
-        )}
-      </div>
+        <div className="flex-1 overflow-auto p-3">
+          <TabsContent value="properties" className="mt-0">
+            <PropertiesTab node={node} nodeDef={nodeDef} canvasId={canvasId} />
+          </TabsContent>
+          <TabsContent value="notes" className="mt-0">
+            <NotesTab notes={node.notes ?? []} canvasId={canvasId} nodeId={node.id} />
+          </TabsContent>
+          <TabsContent value="code" className="mt-0">
+            <CodeRefsTab codeRefs={node.codeRefs ?? []} canvasId={canvasId} nodeId={node.id} />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }

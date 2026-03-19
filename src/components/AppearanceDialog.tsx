@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sun, Moon, Monitor, Check } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useUiStore } from '@/store/uiStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useThemeToggler } from '@/components/ui/theme-toggler';
 import { palettes } from '@/core/theme/palettes';
-import { Sun, Moon, Monitor, Check } from 'lucide-react';
 import type { ThemePalette } from '@/core/theme/types';
 
 const MODE_OPTIONS = [
@@ -19,15 +21,18 @@ const TEXT_SIZE_OPTIONS = [
 
 /** Show 4 representative swatches from a palette */
 function PaletteSwatches({ palette, resolvedMode }: { palette: ThemePalette; resolvedMode: 'light' | 'dark' }) {
+  const prefersReduced = useReducedMotion();
   const tokens = resolvedMode === 'dark' ? palette.dark : palette.light;
   const colors = [tokens.primary, tokens.accent, tokens.edgeAsync, tokens.nodeSelectedBorder];
   return (
     <div className="flex gap-1.5 mt-1.5">
       {colors.map((color, i) => (
-        <div
+        <motion.div
           key={i}
           className="size-3.5 rounded-full border border-border/50"
           style={{ backgroundColor: color }}
+          whileHover={prefersReduced ? undefined : { scale: 1.15 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
       ))}
     </div>
@@ -44,8 +49,10 @@ export function AppearanceDialog() {
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
 
   const setPalette = useThemeStore((s) => s.setPalette);
-  const setMode = useThemeStore((s) => s.setMode);
   const setTextSize = useThemeStore((s) => s.setTextSize);
+
+  const prefersReduced = useReducedMotion();
+  const { toggleTheme } = useThemeToggler('ltr');
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
@@ -69,9 +76,20 @@ export function AppearanceDialog() {
                     : 'border-border'
                 }`}
               >
-                {currentPalette === p.id && (
-                  <Check className="absolute top-2 right-2 size-3.5 text-primary" />
-                )}
+                <AnimatePresence>
+                  {currentPalette === p.id && (
+                    <motion.div
+                      key="check"
+                      initial={prefersReduced ? false : { scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={prefersReduced ? undefined : { scale: 0 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="absolute top-2 right-2"
+                    >
+                      <Check className="size-3.5 text-primary" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <span className="font-medium text-card-foreground">{p.name}</span>
                 <PaletteSwatches palette={p} resolvedMode={resolvedMode} />
               </button>
@@ -86,15 +104,22 @@ export function AppearanceDialog() {
             {MODE_OPTIONS.map(({ value, icon: Icon, label }) => (
               <button
                 key={value}
-                onClick={() => setMode(value)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                onClick={() => toggleTheme(value)}
+                className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
                   currentMode === value
-                    ? 'border-primary bg-accent/30 text-card-foreground'
+                    ? 'border-primary text-card-foreground'
                     : 'border-border text-muted-foreground hover:bg-accent/50'
                 }`}
               >
-                <Icon className="size-3.5" />
-                {label}
+                {currentMode === value && (
+                  <motion.div
+                    layoutId={prefersReduced ? undefined : 'mode-indicator'}
+                    className="absolute inset-0 rounded-md bg-accent/30"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <Icon className="relative z-10 size-3.5" />
+                <span className="relative z-10">{label}</span>
               </button>
             ))}
           </div>
@@ -109,13 +134,20 @@ export function AppearanceDialog() {
                 key={value}
                 data-text-size={value}
                 onClick={() => setTextSize(value)}
-                className={`flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
                   currentTextSize === value
-                    ? 'border-primary bg-accent/30 text-card-foreground'
+                    ? 'border-primary text-card-foreground'
                     : 'border-border text-muted-foreground hover:bg-accent/50'
                 }`}
               >
-                {label}
+                {currentTextSize === value && (
+                  <motion.div
+                    layoutId={prefersReduced ? undefined : 'textsize-indicator'}
+                    className="absolute inset-0 rounded-md bg-accent/30"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{label}</span>
               </button>
             ))}
           </div>

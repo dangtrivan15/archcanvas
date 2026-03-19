@@ -1,5 +1,7 @@
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useFileStore } from "@/store/fileStore";
 import { useNavigationStore } from "@/store/navigationStore";
+import { SlidingNumber } from "@/components/ui/sliding-number";
 
 export function StatusBar() {
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
@@ -8,6 +10,7 @@ export function StatusBar() {
   const getCanvas = useFileStore((s) => s.getCanvas);
   const projectFilePath = useFileStore((s) => s.project?.root.filePath ?? null);
   const fileName = projectFilePath ? projectFilePath.split('/').pop() : null;
+  const prefersReduced = useReducedMotion();
 
   const loaded = getCanvas(currentCanvasId);
   const nodeCount = loaded?.data.nodes?.length ?? 0;
@@ -23,18 +26,26 @@ export function StatusBar() {
         {fileName && (
           <span className="text-muted-foreground/60">{fileName}</span>
         )}
-        {isDirty && (
-          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-500 font-medium">
-            Modified
-          </span>
-        )}
+        <AnimatePresence>
+          {isDirty && (
+            <motion.span
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-500 font-medium"
+            >
+              Modified
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
       <div className="flex items-center gap-3">
         {loaded ? (
           <>
             <span>{scopeName}</span>
-            <span>{nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}</span>
-            <span>{edgeCount} {edgeCount === 1 ? 'edge' : 'edges'}</span>
+            <span data-testid="node-count" data-count={nodeCount}><SlidingNumber number={nodeCount} /> {nodeCount === 1 ? 'node' : 'nodes'}</span>
+            <span data-testid="edge-count" data-count={edgeCount}><SlidingNumber number={edgeCount} /> {edgeCount === 1 ? 'edge' : 'edges'}</span>
           </>
         ) : (
           <span>No project open</span>

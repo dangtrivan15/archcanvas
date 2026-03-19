@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { FileIcon } from 'lucide-react';
 import { useGraphStore } from '@/store/graphStore';
+import { CopyButton } from '@/components/ui/copy-button';
 
 interface Props {
   codeRefs: string[];
@@ -8,9 +11,9 @@ interface Props {
 }
 
 export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
+  const prefersReduced = useReducedMotion();
   const [showInput, setShowInput] = useState(false);
   const [value, setValue] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
 
   const save = (updated: string[]) => {
     useGraphStore.getState().updateNode(canvasId, nodeId, { codeRefs: updated });
@@ -28,85 +31,83 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
     save(codeRefs.filter((_, i) => i !== index));
   };
 
-  const copyRef = (ref: string) => {
-    navigator.clipboard.writeText(ref).then(() => {
-      setCopied(ref);
-      setTimeout(() => setCopied(null), 1500);
-    });
-  };
-
   return (
     <div className="space-y-1.5">
       {codeRefs.length === 0 && !showInput && (
         <p className="text-xs text-gray-400">No code refs yet.</p>
       )}
 
-      {codeRefs.map((ref, i) => (
-        <div
-          key={ref}
-          className="group flex items-center gap-1.5 rounded border px-2 py-1 text-xs hover:bg-gray-50"
-        >
-          {/* File icon */}
-          <svg
-            className="shrink-0 text-gray-400"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      <AnimatePresence>
+        {codeRefs.map((ref, i) => (
+          <motion.div
+            key={ref}
+            layout={!prefersReduced}
+            initial={prefersReduced ? false : { opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReduced ? undefined : { opacity: 0, x: -20 }}
+            transition={{ duration: 0.15, delay: Math.min(i * 0.03, 0.2), ease: 'easeOut' }}
+            className="group flex items-center gap-1.5 rounded border px-2 py-1 text-xs hover:bg-gray-50"
           >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
+            <FileIcon className="shrink-0 text-gray-400" size={12} />
 
-          <button
-            className="flex-1 text-left font-mono text-gray-700 truncate hover:text-blue-600"
-            title={copied === ref ? 'Copied!' : 'Click to copy'}
-            onClick={() => copyRef(ref)}
-          >
-            {copied === ref ? '✓ Copied' : ref}
-          </button>
+            <span className="flex-1 font-mono text-gray-700 truncate">
+              {ref}
+            </span>
 
-          <button
-            onClick={() => deleteRef(i)}
-            className="hidden group-hover:inline text-gray-400 hover:text-red-600 px-0.5"
-            title="Remove"
-          >
-            ×
-          </button>
-        </div>
-      ))}
+            <CopyButton
+              content={ref}
+              iconSize={10}
+              className="shrink-0 text-gray-400 hover:text-blue-600"
+              title="Copy path"
+            />
 
-      {showInput && (
-        <div className="flex gap-1 items-center">
-          <input
-            autoFocus
-            className="flex-1 border rounded px-1.5 py-0.5 text-xs font-mono"
-            placeholder="src/path/to/file.ts"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') addRef();
-              if (e.key === 'Escape') { setShowInput(false); setValue(''); }
-            }}
-          />
-          <button
-            onClick={addRef}
-            className="text-xs bg-blue-600 text-white rounded px-2 py-0.5 hover:bg-blue-700"
+            <button
+              onClick={() => deleteRef(i)}
+              className="hidden group-hover:inline text-gray-400 hover:text-red-600 px-0.5"
+              title="Remove"
+            >
+              &times;
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInput && (
+          <motion.div
+            key="add-ref-input"
+            initial={prefersReduced ? false : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReduced ? undefined : { opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="flex gap-1 items-center"
           >
-            Add
-          </button>
-          <button
-            onClick={() => { setShowInput(false); setValue(''); }}
-            className="text-xs text-gray-500 hover:text-gray-700 px-1"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+            <input
+              autoFocus
+              className="flex-1 border rounded px-1.5 py-0.5 text-xs font-mono"
+              placeholder="src/path/to/file.ts"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addRef();
+                if (e.key === 'Escape') { setShowInput(false); setValue(''); }
+              }}
+            />
+            <button
+              onClick={addRef}
+              className="text-xs bg-blue-600 text-white rounded px-2 py-0.5 hover:bg-blue-700"
+            >
+              Add
+            </button>
+            <button
+              onClick={() => { setShowInput(false); setValue(''); }}
+              className="text-xs text-gray-500 hover:text-gray-700 px-1"
+            >
+              Cancel
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {!showInput && (
         <button
