@@ -14,7 +14,7 @@ allowed-tools: Bash(playwright-cli:*)
 Before using playwright-cli for testing the ArchCanvas app, you MUST ensure the dev server is running:
 
 ```bash
-npm run dev:ensure   # Idempotent — safe to call multiple times, starts server only if not already running
+npm run dev
 ```
 
 Do NOT run `npm run dev` directly — it spawns a new Vite process every time and causes OOM when multiple agents are working.
@@ -224,7 +224,7 @@ playwright-cli kill-all
 ### Opening the App
 
 ```bash
-npm run dev:ensure                        # Start dev server (idempotent)
+npm run dev
 playwright-cli open https://localhost:5173  # Open ArchCanvas
 playwright-cli snapshot                     # See the canvas and UI elements
 ```

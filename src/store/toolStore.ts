@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ToolMode = 'select' | 'pan' | 'connect';
+export type ToolMode = 'select' | 'pan';
 
 interface ToolState {
   mode: ToolMode;

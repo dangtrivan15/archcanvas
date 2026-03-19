@@ -1,7 +1,9 @@
+import { motion, useReducedMotion } from 'motion/react';
 import type { InlineNode } from '@/types';
 import type { ArgDef, NodeDef } from '@/types/nodeDefSchema';
 import type { PropertyValue } from '@/types/schema';
 import { useGraphStore } from '@/store/graphStore';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Props {
   node: InlineNode;
@@ -10,6 +12,7 @@ interface Props {
 }
 
 export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
+  const prefersReduced = useReducedMotion();
   const args = node.args ?? {};
 
   const updateArg = (name: string, value: PropertyValue) => {
@@ -42,8 +45,14 @@ export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
 
   return (
     <div className="space-y-3">
-      {specArgs.map((arg) => (
-        <div key={arg.name} className="text-xs">
+      {specArgs.map((arg, index) => (
+        <motion.div
+          key={arg.name}
+          className="text-xs"
+          initial={prefersReduced ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15, delay: Math.min(index * 0.03, 0.2), ease: 'easeOut' }}
+        >
           <label className="block font-medium text-gray-700 mb-0.5">
             {arg.name}
             {arg.required ? <span className="text-red-500 ml-0.5">*</span> : ''}
@@ -52,7 +61,7 @@ export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
           {arg.description && (
             <p className="text-gray-400 mt-0.5">{arg.description}</p>
           )}
-        </div>
+        </motion.div>
       ))}
       {specArgs.length === 0 && (
         <p className="text-xs text-gray-400">No configurable properties</p>
@@ -71,10 +80,9 @@ function renderArgInput(
   switch (arg.type) {
     case 'boolean':
       return (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={Boolean(value ?? arg.default ?? false)}
-          onChange={(e) => onChange(e.target.checked)}
+          onCheckedChange={(checked) => onChange(Boolean(checked))}
           className="mt-0.5"
         />
       );

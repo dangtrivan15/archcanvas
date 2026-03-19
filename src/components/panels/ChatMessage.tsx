@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import type {
   ChatMessage as ChatMessageType,
   ChatEvent,
@@ -18,13 +19,21 @@ interface Props {
 
 export function ChatMessage({ message }: Props) {
   const isUser = message.role === 'user';
+  const prefersReduced = useReducedMotion();
   const time = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
 
+  const slideX = isUser ? 20 : -20;
+
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <motion.div
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      initial={prefersReduced ? false : { opacity: 0, x: slideX }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+    >
       <div
         className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
           isUser
@@ -51,7 +60,7 @@ export function ChatMessage({ message }: Props) {
           {time}
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -113,9 +122,9 @@ function EventsList({ events }: { events: ChatEvent[] }) {
             );
           case 'rate_limit':
             return <RateLimitBadge key={`ratelimit-${idx}`} message={(ev as RateLimitEvent).message} />;
-          // thinking — rendered as merged block above
-          // status — shown in the streaming indicator, not duplicated here
-          // text, tool_result, done, error — not rendered as standalone blocks
+          // thinking -- rendered as merged block above
+          // status -- shown in the streaming indicator, not duplicated here
+          // text, tool_result, done, error -- not rendered as standalone blocks
           default:
             return null;
         }
@@ -130,6 +139,7 @@ function EventsList({ events }: { events: ChatEvent[] }) {
 
 function ThinkingBlock({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false);
+  const prefersReduced = useReducedMotion();
 
   return (
     <div className="my-1 text-xs text-muted-foreground">
@@ -138,13 +148,24 @@ function ThinkingBlock({ content }: { content: string }) {
         className="flex items-center gap-1 hover:text-foreground"
         aria-expanded={expanded}
       >
-        <span>{expanded ? '\u25BC' : '\u25B6'}</span>
+        <motion.span
+          className="inline-block"
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 30 }}
+        >
+          {'\u25BC'}
+        </motion.span>
         <span className="italic">Thinking...</span>
       </button>
       {expanded && (
-        <p className="mt-0.5 whitespace-pre-wrap pl-4 text-[11px] opacity-70">
+        <motion.p
+          className="mt-0.5 whitespace-pre-wrap pl-4 text-[11px] opacity-70"
+          initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 0.7 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
           {content}
-        </p>
+        </motion.p>
       )}
     </div>
   );

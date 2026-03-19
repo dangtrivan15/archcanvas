@@ -171,7 +171,7 @@ test.describe("chat toggle and node selection interaction", () => {
 
     // NodeDetailPanel renders a tab bar — verify "properties" tab is present
     await expect(
-      rightPanel.getByRole("button", { name: /properties/i }),
+      rightPanel.getByRole("tab", { name: /properties/i }),
     ).toBeVisible();
   });
 
@@ -206,7 +206,7 @@ test.describe("chat toggle and node selection interaction", () => {
 
     // NodeDetailPanel renders a tab bar — verify "properties" tab is present
     await expect(
-      rightPanel.getByRole("button", { name: /properties/i }),
+      rightPanel.getByRole("tab", { name: /properties/i }),
     ).toBeVisible();
   });
 });

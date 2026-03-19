@@ -26,6 +26,10 @@ test.describe('UI polish regression tests', () => {
     // matching ReactFlow's accessibility descriptions that contain "delete")
     const contextMenu = page.locator('.fixed.z-50.bg-popover');
     await contextMenu.getByRole('button', { name: 'Delete' }).click();
+
+    // Confirm deletion in the AlertDialog
+    const confirmDialog = page.getByRole('alertdialog', { name: 'Confirm Delete' });
+    await confirmDialog.getByRole('button', { name: 'Delete' }).click();
     await page.waitForTimeout(200);
 
     // Only 1 node should remain
@@ -35,24 +39,27 @@ test.describe('UI polish regression tests', () => {
   // B5 — Status bar grammar (singular/plural)
   test('status bar shows correct singular/plural for node count', async ({ page }) => {
     await gotoApp(page);
-    const statusBar = page.locator('div.h-6.border-t');
+    const nodeCount = page.getByTestId('node-count');
 
     // 0 nodes
-    await expect(statusBar.getByText(/0 nodes/)).toBeVisible();
+    await expect(nodeCount).toHaveAttribute('data-count', '0');
+    await expect(nodeCount).toContainText('nodes');
 
     // Add 1 node
     await page.keyboard.press('Meta+k');
     await page.getByRole('option', { name: /Service compute\/service/ }).click();
     await page.waitForTimeout(200);
 
-    await expect(statusBar.getByText(/1 node\b/)).toBeVisible();
+    await expect(nodeCount).toHaveAttribute('data-count', '1');
+    await expect(nodeCount).toContainText(/\bnode\b/);
 
     // Add second node
     await page.keyboard.press('Meta+k');
     await page.getByRole('option', { name: /Database data\/database/ }).click();
     await page.waitForTimeout(200);
 
-    await expect(statusBar.getByText(/2 nodes/)).toBeVisible();
+    await expect(nodeCount).toHaveAttribute('data-count', '2');
+    await expect(nodeCount).toContainText('nodes');
   });
 
   // U5 — New nodes named by displayName (not type key)

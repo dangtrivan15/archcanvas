@@ -271,7 +271,6 @@ test.describe("toolbar accessibility", () => {
       "Select (V)",
       "Pan (H)",
       "Add Node (N)",
-      "Connect (C)",
       "Search (⌘K)",
       "Auto Layout (⌘⇧L)",
       "Undo (⌘Z)",

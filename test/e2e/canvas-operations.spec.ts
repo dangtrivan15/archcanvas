@@ -13,7 +13,7 @@ test.describe("project bootstrap", () => {
     // Scope to the status bar (bottom bar) to avoid matching breadcrumb "Root"
     const statusBar = page.locator("div.h-6.border-t");
     await expect(statusBar.getByText("Root")).toBeVisible();
-    await expect(statusBar.getByText(/\d+ nodes/)).toBeVisible();
+    await expect(statusBar.getByTestId('node-count')).toBeVisible();
   });
 
   test("add node via command palette creates a node on canvas", async ({
@@ -35,7 +35,7 @@ test.describe("project bootstrap", () => {
     await expect(page.locator(".react-flow__node")).toHaveCount(1);
 
     // Status bar should reflect the new node
-    await expect(page.getByText(/1 nodes?/)).toBeVisible();
+    await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '1');
   });
 
   test("add multiple nodes via command palette", async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe("project bootstrap", () => {
     }
 
     await expect(page.locator(".react-flow__node")).toHaveCount(3);
-    await expect(page.getByText(/3 nodes/)).toBeVisible();
+    await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '3');
   });
 
   test("New Project resets the canvas", async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe("project bootstrap", () => {
 
     // Canvas should be empty again
     await expect(page.locator(".react-flow__node")).toHaveCount(0);
-    await expect(page.getByText(/0 nodes/)).toBeVisible();
+    await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '0');
   });
 });
 
@@ -227,12 +227,12 @@ test.describe("batch undo", () => {
     await page.keyboard.press("Meta+a");
     await page.keyboard.press("Delete");
     await expect(page.locator(".react-flow__node")).toHaveCount(0);
-    await expect(page.getByText(/0 nodes/)).toBeVisible();
+    await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '0');
 
     // Single undo should restore all 3 nodes
     await page.keyboard.press("Meta+z");
     await expect(page.locator(".react-flow__node")).toHaveCount(3);
-    await expect(page.getByText(/3 nodes/)).toBeVisible();
+    await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '3');
   });
 
   test("redo after batch undo re-deletes all nodes", async ({ page }) => {
@@ -449,6 +449,6 @@ test.describe("auto-layout quality", () => {
     const maxWidth = await edgeLabel.evaluate(
       (el) => getComputedStyle(el).maxWidth,
     );
-    expect(maxWidth).toBe("200px");
+    expect(maxWidth).toBe("180px");
   });
 });

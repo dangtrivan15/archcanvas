@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { CanvasNodeData, CanvasEdgeData } from '@/components/canvas/types';
 
 // ---------------------------------------------------------------------------
@@ -42,10 +43,12 @@ interface MenuItemProps {
 
 function MenuItem({ label, onClick, danger }: MenuItemProps) {
   return (
-    <button
-      className={`w-full text-left px-3 py-1.5 text-sm rounded hover:bg-accent ${
-        danger ? 'text-destructive-foreground hover:bg-destructive/20' : 'text-popover-foreground'
+    <motion.button
+      className={`w-full text-left px-3 py-1.5 text-sm rounded transition-colors hover:bg-accent ${
+        danger ? 'text-destructive hover:bg-destructive/20' : 'text-popover-foreground'
       }`}
+      whileHover={{ x: 2 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       onMouseDown={(e) => {
         // Use onMouseDown + preventDefault so the click doesn't propagate
         // to the canvas before we execute the action.
@@ -55,7 +58,7 @@ function MenuItem({ label, onClick, danger }: MenuItemProps) {
       }}
     >
       {label}
-    </button>
+    </motion.button>
   );
 }
 
@@ -102,12 +105,16 @@ export function ContextMenu({
   }, [onClose]);
 
   const { target, x, y } = menu;
+  const prefersReduced = useReducedMotion();
 
   return (
-    <div
+    <motion.div
       ref={menuRef}
       className="fixed z-50 min-w-[160px] rounded-md border border-border bg-popover py-1 shadow-lg"
-      style={{ left: x, top: y }}
+      style={{ left: x, top: y, transformOrigin: '0 0' }}
+      initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
       // Prevent ReactFlow from receiving right-click events on the menu itself
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -225,6 +232,6 @@ export function ContextMenu({
           />
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

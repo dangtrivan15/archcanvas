@@ -1,28 +1,37 @@
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { ToolCallEvent, ToolResultEvent } from '@/core/ai/types';
+import { AutoHeight } from '@/components/ui/auto-height';
 
 interface Props {
   event: ToolCallEvent;
   result?: ToolResultEvent;
 }
 
+const springTransition = { type: 'spring' as const, stiffness: 500, damping: 30 };
+
 export function ChatToolCall({ event, result }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const prefersReduced = useReducedMotion();
 
   // Build a short summary of the command args
   const summary = summarizeArgs(event.name, event.args);
 
   return (
     <div className="my-1 rounded border border-border bg-card text-xs">
-      {/* Header — always visible */}
+      {/* Header -- always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-1.5 px-2 py-1.5 text-left hover:bg-accent/50"
         aria-expanded={expanded}
       >
-        <span className="shrink-0 text-muted-foreground">
-          {expanded ? '\u25BC' : '\u25B6'}
-        </span>
+        <motion.span
+          className="inline-block shrink-0 text-muted-foreground"
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={prefersReduced ? { duration: 0 } : springTransition}
+        >
+          {'\u25BC'}
+        </motion.span>
         <span className="font-medium text-card-foreground">{event.name}</span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">
           {summary}
@@ -31,7 +40,7 @@ export function ChatToolCall({ event, result }: Props) {
 
       {/* Expanded body */}
       {expanded && (
-        <div className="border-t border-border px-2 py-1.5 space-y-1.5">
+        <AutoHeight className="border-t border-border px-2 py-1.5 space-y-1.5">
           <div>
             <p className="text-muted-foreground mb-0.5">Arguments:</p>
             <pre className="whitespace-pre-wrap break-all rounded bg-muted p-1.5 text-[11px] font-mono text-foreground">
@@ -43,18 +52,24 @@ export function ChatToolCall({ event, result }: Props) {
               <p className={`mb-0.5 ${result.isError ? 'text-red-400' : 'text-muted-foreground'}`}>
                 {result.isError ? 'Error:' : 'Result:'}
               </p>
-              <pre
+              <motion.pre
                 className={`whitespace-pre-wrap break-all rounded p-1.5 text-[11px] font-mono ${
                   result.isError
                     ? 'bg-red-950/30 text-red-300'
                     : 'bg-muted text-foreground'
                 }`}
+                animate={
+                  result.isError && !prefersReduced
+                    ? { x: [0, -3, 3, -3, 0] }
+                    : {}
+                }
+                transition={{ duration: 0.3 }}
               >
                 {result.result}
-              </pre>
+              </motion.pre>
             </div>
           )}
-        </div>
+        </AutoHeight>
       )}
     </div>
   );

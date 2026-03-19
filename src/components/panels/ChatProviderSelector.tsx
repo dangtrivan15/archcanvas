@@ -1,4 +1,11 @@
+import { ChevronDownIcon } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 
 export function ChatProviderSelector() {
   const providers = useChatStore((s) => s.providers);
@@ -12,18 +19,43 @@ export function ChatProviderSelector() {
     );
   }
 
+  const activeProvider = activeProviderId
+    ? providers.get(activeProviderId)
+    : undefined;
+
   return (
-    <select
-      value={activeProviderId ?? ''}
-      onChange={(e) => useChatStore.getState().setActiveProvider(e.target.value)}
-      className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none"
-      aria-label="AI provider"
-    >
-      {providerList.map((p) => (
-        <option key={p.id} value={p.id}>
-          {p.available ? '\u25CF' : '\u25CB'} {p.displayName}
-        </option>
-      ))}
-    </select>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="inline-flex items-center gap-1 rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none"
+          aria-label="AI provider"
+          data-connected={activeProvider?.available ? 'true' : undefined}
+        >
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              activeProvider?.available ? 'bg-green-500' : 'bg-muted-foreground'
+            }`}
+          />
+          <span>{activeProvider?.displayName ?? 'Select provider'}</span>
+          <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[10rem]">
+        {providerList.map((p) => (
+          <DropdownMenuItem
+            key={p.id}
+            onClick={() => useChatStore.getState().setActiveProvider(p.id)}
+            className="gap-2 text-xs"
+          >
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                p.available ? 'bg-green-500' : 'bg-muted-foreground'
+              }`}
+            />
+            <span>{p.displayName}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

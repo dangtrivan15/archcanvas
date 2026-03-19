@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { Note } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
 
@@ -32,6 +33,7 @@ function saveNotes(props: Props, updatedNotes: Note[]) {
 const emptyForm = { author: '', content: '', tags: '' };
 
 export function NotesTab(props: Props) {
+  const prefersReduced = useReducedMotion();
   const notes = props.notes;
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -90,62 +92,84 @@ export function NotesTab(props: Props) {
         <p className="text-xs text-gray-400">No notes yet.</p>
       )}
 
-      {notes.map((note, i) => (
-        <div key={note.id ?? `legacy-${i}`} className="group rounded border p-2 text-xs space-y-1">
-          {editIndex === i ? (
+      <AnimatePresence>
+        {notes.map((note, i) => (
+          <motion.div
+            key={note.id ?? `legacy-${i}`}
+            layout={!prefersReduced}
+            initial={prefersReduced ? false : { opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReduced ? undefined : { opacity: 0, x: -20 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="group rounded border p-2 text-xs space-y-1"
+          >
+            {editIndex === i ? (
+              <NoteForm
+                form={form}
+                onChange={setForm}
+                onSave={() => commitEdit(i)}
+                onCancel={cancelForm}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-700">{note.author}</span>
+                  <span className="hidden group-hover:flex gap-1">
+                    <button
+                      onClick={() => startEdit(i)}
+                      className="text-gray-400 hover:text-blue-600 px-1"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteNote(i)}
+                      className="text-gray-400 hover:text-red-600 px-1"
+                    >
+                      Delete
+                    </button>
+                  </span>
+                </div>
+                <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
+                {(note.tags ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(note.tags ?? []).map((tag) => (
+                      <motion.span
+                        key={tag}
+                        initial={prefersReduced ? false : { scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="bg-blue-50 text-blue-700 rounded px-1.5 py-0.5 text-[10px]"
+                      >
+                        {tag}
+                      </motion.span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showForm && editIndex === null && (
+          <motion.div
+            key="add-note-form"
+            initial={prefersReduced ? false : { opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReduced ? undefined : { opacity: 0, y: -10 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="rounded border p-2 text-xs"
+          >
             <NoteForm
               form={form}
               onChange={setForm}
-              onSave={() => commitEdit(i)}
+              onSave={commitAdd}
               onCancel={cancelForm}
             />
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">{note.author}</span>
-                <span className="hidden group-hover:flex gap-1">
-                  <button
-                    onClick={() => startEdit(i)}
-                    className="text-gray-400 hover:text-blue-600 px-1"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteNote(i)}
-                    className="text-gray-400 hover:text-red-600 px-1"
-                  >
-                    Delete
-                  </button>
-                </span>
-              </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{note.content}</p>
-              {(note.tags ?? []).length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {(note.tags ?? []).map((tag) => (
-                    <span
-                      key={tag}
-                      className="bg-blue-50 text-blue-700 rounded px-1.5 py-0.5 text-[10px]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      ))}
-
-      {showForm && editIndex === null && (
-        <div className="rounded border p-2 text-xs">
-          <NoteForm
-            form={form}
-            onChange={setForm}
-            onSave={commitAdd}
-            onCancel={cancelForm}
-          />
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {!showForm && editIndex === null && (
         <button
