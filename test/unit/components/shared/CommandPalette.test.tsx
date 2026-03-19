@@ -291,8 +291,13 @@ vi.mock('@/store/toolStore', () => ({
   },
 }));
 
+vi.mock('@/lib/createNodeFromType', () => ({
+  createNodeFromType: vi.fn(),
+}));
+
 // Import AFTER all mocks are registered
 import { CommandPalette } from '@/components/shared/CommandPalette';
+import { createNodeFromType } from '@/lib/createNodeFromType';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -375,7 +380,6 @@ describe('CommandPalette', () => {
     const toolGroup = screen.getByTestId('cmdk-group-Tool');
     expect(toolGroup.textContent).toContain('Select Mode');
     expect(toolGroup.textContent).toContain('Pan Mode');
-    expect(toolGroup.textContent).toContain('Connect Mode');
   });
 
   it('shows node type results in Node types group', () => {
@@ -523,7 +527,7 @@ describe('CommandPalette', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('clicking a node type calls graphStore.addNode and closes', async () => {
+  it('clicking a node type calls createNodeFromType and closes', async () => {
     const onClose = vi.fn();
     renderPalette(true, onClose);
     await setQuery('service');
@@ -535,9 +539,9 @@ describe('CommandPalette', () => {
     await act(async () => {
       fireEvent.click(serviceItem!);
     });
-    expect(mockGraphState.addNode).toHaveBeenCalledWith(
+    expect(createNodeFromType).toHaveBeenCalledWith(
       'root',
-      expect.objectContaining({ type: 'compute/service' }),
+      'compute/service',
     );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -568,6 +572,46 @@ describe('CommandPalette', () => {
       fireEvent.click(scopeItem!);
     });
     expect(mockNavigationState.navigateTo).toHaveBeenCalledWith('subsystem-a');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // --- Prefix filtering: + Add node ---
+
+  it('+ prefix: shows only Node types group', async () => {
+    renderPalette(true);
+    await setQuery('+');
+    expect(screen.queryByTestId('cmdk-group-Node types')).not.toBeNull();
+    expect(screen.queryByTestId('cmdk-group-File')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Edit')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-View')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Tool')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Nodes')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Entities')).toBeNull();
+    expect(screen.queryByTestId('cmdk-group-Scopes')).toBeNull();
+  });
+
+  it('+ prefix with query: filters node types by name', async () => {
+    renderPalette(true);
+    await setQuery('+service');
+    const typesGroup = screen.getByTestId('cmdk-group-Node types');
+    expect(typesGroup.textContent).toContain('Service');
+    expect(typesGroup.textContent).not.toContain('Database');
+  });
+
+  it('+ prefix: clicking a node type calls createNodeFromType', async () => {
+    const onClose = vi.fn();
+    renderPalette(true, onClose);
+    await setQuery('+');
+    const typesGroup = screen.getByTestId('cmdk-group-Node types');
+    const serviceItem = Array.from(
+      typesGroup.querySelectorAll('[data-testid="cmdk-item"]'),
+    ).find((el) => el.textContent?.includes('Service'));
+    expect(serviceItem).toBeDefined();
+    await act(async () => { fireEvent.click(serviceItem!); });
+    expect(createNodeFromType).toHaveBeenCalledWith(
+      'root',
+      'compute/service',
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

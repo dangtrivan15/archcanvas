@@ -55,6 +55,17 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         return;
       }
 
+      // Add Node palette — N (no modifier)
+      if (e.key === 'n' || e.key === 'N') {
+        if (!mod && !e.shiftKey) {
+          e.preventDefault();
+          window.dispatchEvent(
+            new CustomEvent('archcanvas:open-palette', { detail: { prefix: '+' } }),
+          );
+          return;
+        }
+      }
+
       // Auto layout — Cmd+Shift+L
       if (mod && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
         e.preventDefault();

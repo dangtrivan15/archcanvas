@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Command } from 'cmdk';
+import { motion, useReducedMotion } from 'motion/react';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import type { Node } from '@/types';
 import { listNodes } from '@/core/graph/query';
@@ -8,11 +9,11 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
-import { useGraphStore } from '@/store/graphStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { useUiStore } from '@/store/uiStore';
 import { useToolStore } from '@/store/toolStore';
 import { resolveIcon } from '@/components/nodes/iconMap';
+import { createNodeFromType } from '@/lib/createNodeFromType';
 
 // ---------------------------------------------------------------------------
 // Provider interfaces
@@ -39,6 +40,7 @@ interface PaletteProvider {
 const PREFIX_ACTIONS = '>';
 const PREFIX_NODES = '@';
 const PREFIX_ENTITIES = '#';
+const PREFIX_ADD = '+';
 
 // ---------------------------------------------------------------------------
 // Provider implementations
@@ -162,7 +164,6 @@ const viewActions: ActionDef[] = [
 const toolActions: ActionDef[] = [
   { id: 'action:tool-select', title: 'Select Mode', subtitle: 'Default pointer tool', icon: '🔘', category: 'Tool', execute: () => useToolStore.getState().setMode('select') },
   { id: 'action:tool-pan', title: 'Pan Mode', subtitle: 'Drag to pan the canvas', icon: '✋', category: 'Tool', execute: () => useToolStore.getState().setMode('pan') },
-  { id: 'action:tool-connect', title: 'Connect Mode', subtitle: 'Draw edges between nodes', icon: '🔗', category: 'Tool', execute: () => useToolStore.getState().setMode('connect') },
 ];
 
 const FileActionProvider = createActionProvider('File', fileActions);
@@ -187,29 +188,7 @@ const NodeTypeProvider: PaletteProvider = {
   onSelect(result: PaletteResult) {
     const typeKey = result.id.replace(/^nodetype:/, '');
     const canvasId = useNavigationStore.getState().currentCanvasId;
-    const canvas = useFileStore.getState().getCanvas(canvasId);
-    const existingCount = canvas?.data.nodes?.length ?? 0;
-
-    // Resolve the NodeDef to get the display name
-    const nodeDef = useRegistryStore.getState().resolve(typeKey);
-    const baseName = nodeDef?.metadata.displayName ?? typeKey.split('/').pop() ?? 'Node';
-
-    // Count existing nodes of the same type to generate unique name
-    const sameTypeCount = (canvas?.data.nodes ?? []).filter(
-      (n) => 'type' in n && n.type === typeKey
-    ).length;
-    const displayName = sameTypeCount === 0 ? baseName : `${baseName} ${sameTypeCount + 1}`;
-
-    // Stagger new nodes so they don't stack on top of each other.
-    const col = existingCount % 2;
-    const row = Math.floor(existingCount / 2);
-    const newNode: Node = {
-      id: `node-${crypto.randomUUID().slice(0, 8)}`,
-      type: typeKey,
-      displayName,
-      position: { x: col * 300, y: row * 200 },
-    };
-    useGraphStore.getState().addNode(canvasId, newNode);
+    createNodeFromType(canvasId, typeKey);
   },
 };
 
@@ -327,6 +306,9 @@ function resolveProviders(raw: string): { providers: PaletteProvider[]; query: s
   if (raw.startsWith(PREFIX_ENTITIES)) {
     return { providers: [EntityProvider], query: raw.slice(1).trimStart() };
   }
+  if (raw.startsWith(PREFIX_ADD)) {
+    return { providers: [NodeTypeProvider], query: raw.slice(1).trimStart() };
+  }
   return { providers: ALL_PROVIDERS, query: raw };
 }
 
@@ -344,6 +326,7 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onClose, initialInput = '', mode = 'default', onSelectSubsystemType }: CommandPaletteProps) {
   const [inputValue, setInputValue] = useState('');
+  const prefersReduced = useReducedMotion();
 
   // Seed the input when the palette opens with a prefix (e.g. "@" from Add Node button)
   useEffect(() => {
@@ -398,7 +381,14 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
       overlayClassName="fixed inset-0 z-40 bg-black/40"
       contentClassName="w-full max-w-xl"
     >
-      <div className="w-full max-w-xl rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden">
+      {/* Click-outside backdrop — closes palette when clicking outside the content */}
+      <div className="fixed inset-0 z-[-1]" onClick={onClose} />
+      <motion.div
+        className="w-full max-w-xl rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden"
+        initial={prefersReduced ? false : { opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      >
         <VisuallyHidden.Root asChild>
           <h2>Command palette</h2>
         </VisuallyHidden.Root>
@@ -410,7 +400,7 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
           onValueChange={setInputValue}
           placeholder={mode === 'subsystem'
             ? "Pick a node type for the subsystem..."
-            : "Type a command or search… (> actions, @ nodes, # entities)"}
+            : "Type a command or search… (> actions, @ nodes, # entities, + add node)"}
           className="w-full border-b border-border bg-popover px-4 py-3 text-sm text-popover-foreground outline-none placeholder:text-muted-foreground"
         />
 
@@ -455,7 +445,7 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
             </Command.Group>
           ))}
         </Command.List>
-      </div>
+      </motion.div>
     </Command.Dialog>
   );
 }
