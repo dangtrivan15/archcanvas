@@ -48,4 +48,4 @@ vitest.config.d.ts
 .playwright-cli
 
 # AI permission persistence
-.archcanvas/permissions.json
+.archcanvas/permissions.json.superpowers/
