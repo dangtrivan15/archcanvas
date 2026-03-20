@@ -72,6 +72,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
 }));
 
+// Expose for E2E tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).__archcanvas_uiStore__ = useUiStore;
+
 // For testing: allow resetting module-level refs
 export function _resetPanelRefs() {
   leftPanelRef = null;
