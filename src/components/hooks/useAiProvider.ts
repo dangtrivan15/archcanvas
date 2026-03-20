@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { WebSocketClaudeCodeProvider } from '@/core/ai/webSocketProvider';
+import { ApiKeyProvider } from '@/core/ai/apiKeyProvider';
 import { useChatStore } from '@/store/chatStore';
+import { useApiKeyStore } from '@/store/apiKeyStore';
 
 /**
  * Resolve the WebSocket URL for the AI bridge.
@@ -66,6 +68,17 @@ export function useAiProvider(): void {
       useChatStore.getState().registerProvider(provider);
     });
 
+    // API key provider (always registered, availability driven by apiKeyStore)
+    const apiKeyProvider = new ApiKeyProvider();
+    useChatStore.getState().registerProvider(apiKeyProvider);
+
+    // Re-register when validation state changes so Zustand sees updated `available`
+    const unsubApiKey = useApiKeyStore.subscribe((state, prev) => {
+      if (state.isValidated !== prev.isValidated) {
+        useChatStore.getState().registerProvider(apiKeyProvider);
+      }
+    });
+
     // Resolve the bridge URL (async for Tauri port discovery) and connect
     resolveBridgeUrl()
       .then((wsUrl) => {
@@ -78,6 +91,7 @@ export function useAiProvider(): void {
     return () => {
       provider.setConnectionChangeCallback(null);
       provider.disconnect();
+      unsubApiKey();
     };
   }, []);
 }
