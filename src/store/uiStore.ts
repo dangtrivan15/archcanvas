@@ -17,6 +17,9 @@ interface UiState {
   showAppearanceDialog: boolean;
   openAppearanceDialog: () => void;
   closeAppearanceDialog: () => void;
+  showAiSettingsDialog: boolean;
+  openAiSettingsDialog: () => void;
+  closeAiSettingsDialog: () => void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -58,6 +61,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   showAppearanceDialog: false,
   openAppearanceDialog: () => set({ showAppearanceDialog: true }),
   closeAppearanceDialog: () => set({ showAppearanceDialog: false }),
+
+  showAiSettingsDialog: false,
+  openAiSettingsDialog: () => set({ showAiSettingsDialog: true }),
+  closeAiSettingsDialog: () => set({ showAiSettingsDialog: false }),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {
