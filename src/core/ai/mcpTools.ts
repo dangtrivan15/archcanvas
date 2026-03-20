@@ -121,6 +121,48 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         return toCallToolResult(result);
       }),
 
+      // --- Entity Tools ---
+      tool('add_entity', 'Add a data entity to a canvas scope', {
+        name: z.string().describe('Entity name (unique within scope)'),
+        description: z.string().optional().describe('Entity description'),
+        codeRefs: z.array(z.string()).optional().describe('Code reference paths'),
+        scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
+      }, async (a) => {
+        const result = await relay('addEntity', {
+          canvasId: a.scope ?? ROOT,
+          name: a.name,
+          ...(a.description !== undefined && { description: a.description }),
+          ...(a.codeRefs !== undefined && { codeRefs: a.codeRefs }),
+        });
+        return toCallToolResult(result);
+      }),
+
+      tool('remove_entity', 'Remove a data entity from a canvas scope. Fails if referenced by edges.', {
+        name: z.string().describe('Entity name to remove'),
+        scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
+      }, async (a) => {
+        const result = await relay('removeEntity', {
+          canvasId: a.scope ?? ROOT,
+          entityName: a.name,
+        });
+        return toCallToolResult(result);
+      }),
+
+      tool('update_entity', 'Update entity description or code references. Pass empty string/array to clear.', {
+        name: z.string().describe('Entity name to update'),
+        description: z.string().optional().describe('New description (empty string to clear)'),
+        codeRefs: z.array(z.string()).optional().describe('New code reference paths (empty array to clear)'),
+        scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
+      }, async (a) => {
+        const result = await relay('updateEntity', {
+          canvasId: a.scope ?? ROOT,
+          entityName: a.name,
+          ...(a.description !== undefined && { description: a.description }),
+          ...(a.codeRefs !== undefined && { codeRefs: a.codeRefs }),
+        });
+        return toCallToolResult(result);
+      }),
+
       // --- Read Tools ---
       tool('list', 'List nodes, edges, or entities in a canvas', {
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
@@ -169,6 +211,7 @@ export const MCP_TOOL_NAMES = [
   'mcp__archcanvas__add_node', 'mcp__archcanvas__add_edge',
   'mcp__archcanvas__remove_node', 'mcp__archcanvas__remove_edge',
   'mcp__archcanvas__import_yaml', 'mcp__archcanvas__create_subsystem',
+  'mcp__archcanvas__add_entity', 'mcp__archcanvas__remove_entity', 'mcp__archcanvas__update_entity',
   'mcp__archcanvas__list',
   'mcp__archcanvas__describe', 'mcp__archcanvas__search',
   'mcp__archcanvas__catalog',
