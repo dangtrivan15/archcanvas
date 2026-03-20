@@ -1,20 +1,18 @@
 /**
- * Shared MCP tool definitions for ArchCanvas.
+ * MCP tool server for ArchCanvas.
  *
- * Defines 9 tools that map to store actions (addNode, addEdge, etc.).
- * Used by both the Vite dev server and the Tauri sidecar.
+ * Registers 13 tools with the Claude Agent SDK MCP server.
+ * Handler bodies use shared translateToolArgs() for arg translation.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
  */
 
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod/v4';
-import { parseCanvas } from '../../storage/yamlCodec';
 import type { RelayStoreActionFn } from './bridgeServer';
+import { translateToolArgs } from './translateToolArgs';
 
 export type { RelayStoreActionFn } from './bridgeServer';
-
-const ROOT = '__root__';
 
 function toCallToolResult(result: { ok: boolean; data?: unknown; error?: { code: string; message: string } }) {
   if (result.ok) {
@@ -33,6 +31,7 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
     version: '0.1.0',
     tools: [
       // --- Write Tools ---
+      // --- Write Tools ---
       tool('add_node', 'Add a node to the architecture canvas', {
         id: z.string().describe('Unique node identifier (kebab-case)'),
         type: z.string().describe('Node type (e.g., compute/service, data/database). Run catalog tool first.'),
@@ -40,11 +39,8 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         args: z.string().optional().describe('Constructor arguments as JSON string'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('addNode', {
-          canvasId: a.scope ?? ROOT,
-          id: a.id, type: a.type, name: a.name, args: a.args,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('add_node', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('add_edge', 'Add an edge (connection) between two nodes', {
@@ -56,26 +52,16 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         label: z.string().optional().describe('Edge label'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const edge = {
-          from: { node: a.from, ...(a.fromPort ? { port: a.fromPort } : {}) },
-          to: { node: a.to, ...(a.toPort ? { port: a.toPort } : {}) },
-          ...(a.protocol ? { protocol: a.protocol } : {}),
-          ...(a.label ? { label: a.label } : {}),
-        };
-        const result = await relay('addEdge', {
-          canvasId: a.scope ?? ROOT, edge,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('add_edge', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('remove_node', 'Remove a node from the canvas', {
         id: z.string().describe('Node ID to remove'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('removeNode', {
-          canvasId: a.scope ?? ROOT, nodeId: a.id,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('remove_node', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('remove_edge', 'Remove an edge between two nodes', {
@@ -83,29 +69,20 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         to: z.string().describe('Target node ID'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('removeEdge', {
-          canvasId: a.scope ?? ROOT, from: a.from, to: a.to,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('remove_edge', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('import_yaml', 'Import nodes, edges, and entities from YAML content', {
         yaml: z.string().describe('YAML content to import'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        let parsed;
         try {
-          parsed = parseCanvas(a.yaml);
+          const { action, translatedArgs } = translateToolArgs('import_yaml', a);
+          return toCallToolResult(await relay(action, translatedArgs));
         } catch (err: any) {
           return { content: [{ type: 'text' as const, text: `YAML parse error: ${err.message}` }], isError: true };
         }
-        const result = await relay('import', {
-          canvasId: a.scope ?? ROOT,
-          nodes: parsed.data.nodes ?? [],
-          edges: parsed.data.edges ?? [],
-          entities: parsed.data.entities ?? [],
-        });
-        return toCallToolResult(result);
       }),
 
       tool('create_subsystem', 'Create a subsystem (nested canvas) with its own scope', {
@@ -114,11 +91,8 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         name: z.string().optional().describe('Display name'),
         scope: z.string().optional().describe('Parent canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('createSubsystem', {
-          canvasId: a.scope ?? ROOT,
-          id: a.id, type: a.type, name: a.name,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('create_subsystem', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       // --- Entity Tools ---
@@ -128,24 +102,16 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         codeRefs: z.array(z.string()).optional().describe('Code reference paths'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('addEntity', {
-          canvasId: a.scope ?? ROOT,
-          name: a.name,
-          ...(a.description !== undefined && { description: a.description }),
-          ...(a.codeRefs !== undefined && { codeRefs: a.codeRefs }),
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('add_entity', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('remove_entity', 'Remove a data entity from a canvas scope. Fails if referenced by edges.', {
         name: z.string().describe('Entity name to remove'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('removeEntity', {
-          canvasId: a.scope ?? ROOT,
-          entityName: a.name,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('remove_entity', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('update_entity', 'Update entity description or code references. Pass empty string/array to clear.', {
@@ -154,13 +120,8 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         codeRefs: z.array(z.string()).optional().describe('New code reference paths (empty array to clear)'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('updateEntity', {
-          canvasId: a.scope ?? ROOT,
-          entityName: a.name,
-          ...(a.description !== undefined && { description: a.description }),
-          ...(a.codeRefs !== undefined && { codeRefs: a.codeRefs }),
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('update_entity', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       // --- Read Tools ---
@@ -168,39 +129,31 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
         type: z.enum(['nodes', 'edges', 'entities', 'all']).optional().describe('What to list'),
       }, async (a) => {
-        const result = await relay('list', {
-          canvasId: a.scope ?? ROOT, type: a.type,
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('list', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('describe', 'Describe a node or the full architecture', {
         id: z.string().optional().describe('Node ID (omit for full architecture overview)'),
         scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
       }, async (a) => {
-        const result = await relay('describe', {
-          canvasId: a.scope ?? ROOT, ...(a.id ? { id: a.id } : {}),
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('describe', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('search', 'Search for nodes, edges, or entities by query', {
         query: z.string().describe('Search query'),
         type: z.enum(['nodes', 'edges', 'entities']).optional().describe('Filter by type'),
       }, async (a) => {
-        const result = await relay('search', {
-          query: a.query, ...(a.type ? { type: a.type } : {}),
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('search', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
 
       tool('catalog', 'List available node types from the registry', {
         namespace: z.string().optional().describe('Filter by namespace (e.g., compute, data)'),
       }, async (a) => {
-        const result = await relay('catalog', {
-          ...(a.namespace ? { namespace: a.namespace } : {}),
-        });
-        return toCallToolResult(result);
+        const { action, translatedArgs } = translateToolArgs('catalog', a);
+        return toCallToolResult(await relay(action, translatedArgs));
       }),
     ],
   });
