@@ -51,7 +51,7 @@ export const useApiKeyStore = create<ApiKeyState>((set, get) => ({
   },
 
   async validateKey() {
-    const { apiKey, model } = get();
+    const { apiKey } = get();
     if (!apiKey) {
       set({ error: 'No API key configured', isValidated: false });
       return false;
