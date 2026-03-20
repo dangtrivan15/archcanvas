@@ -3,10 +3,100 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '../../store/fileStore';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useCanvasStore } from '../../store/canvasStore';
+import { useGraphStore } from '../../store/graphStore';
 import { getEntitiesForCanvas, findEntityUsages } from '../../core/entity/resolver';
 import type { ResolvedProject } from '../../storage/fileResolver';
 import type { Entity } from '../../types/schema';
 import type { EntityUsage } from '../../core/entity/resolver';
+
+function CreateEntityForm({
+  canvasId,
+  onClose,
+}: {
+  canvasId: string;
+  onClose: () => void;
+}) {
+  const prefersReduced = useReducedMotion();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [codeRefsInput, setCodeRefsInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCreate = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const entity: { name: string; description?: string; codeRefs?: string[] } = { name: trimmed };
+    const desc = description.trim();
+    if (desc) entity.description = desc;
+    const refs = codeRefsInput.split(',').map((s) => s.trim()).filter(Boolean);
+    if (refs.length > 0) entity.codeRefs = refs;
+
+    const result = useGraphStore.getState().addEntity(canvasId, entity);
+    if (!result.ok) {
+      if (result.error.code === 'DUPLICATE_ENTITY') {
+        setError(`Entity "${trimmed}" already exists`);
+      } else {
+        setError(result.error.code);
+      }
+      return;
+    }
+    onClose();
+  };
+
+  return (
+    <motion.div
+      initial={prefersReduced ? false : { height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="overflow-hidden border-b border-gray-200 dark:border-gray-700"
+    >
+      <div
+        className="p-3 space-y-2"
+        onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      >
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setError(null); }}
+          placeholder="Entity name"
+          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+          autoFocus
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description (optional)"
+          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 resize-none"
+          rows={2}
+        />
+        <input
+          type="text"
+          value={codeRefsInput}
+          onChange={(e) => setCodeRefsInput(e.target.value)}
+          placeholder="Code refs (comma-separated, optional)"
+          className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+        />
+        {error && (
+          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={handleCreate}
+            className="text-xs bg-blue-600 text-white rounded px-3 py-1 hover:bg-blue-700"
+          >
+            Create
+          </button>
+          <button
+            onClick={onClose}
+            className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 px-2 py-1"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 function EntityRow({
   entity,
@@ -98,6 +188,7 @@ function EntityRow({
 export function EntityPanel() {
   const [filter, setFilter] = useState('');
   const [expandedEntity, setExpandedEntity] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const project = useFileStore((s) => s.project);
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
 
@@ -119,7 +210,15 @@ export function EntityPanel() {
   return (
     <div className="flex flex-col h-full">
       <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-semibold mb-2">Entities</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Entities</h3>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            + New Entity
+          </button>
+        </div>
         <input
           type="text"
           value={filter}
@@ -128,6 +227,12 @@ export function EntityPanel() {
           className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
         />
       </div>
+      {showCreateForm && (
+        <CreateEntityForm
+          canvasId={currentCanvasId}
+          onClose={() => setShowCreateForm(false)}
+        />
+      )}
       <div className="flex-1 overflow-auto">
         {filtered.length === 0 ? (
           <div className="p-4 text-sm text-gray-500">No entities in this scope</div>

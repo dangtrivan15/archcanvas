@@ -42,6 +42,17 @@ vi.mock('@/store/canvasStore', () => ({
   },
 }));
 
+const mockGraphState = {
+  addEntity: vi.fn().mockReturnValue({ ok: true }),
+  updateEntity: vi.fn().mockReturnValue({ ok: true }),
+  removeEntity: vi.fn().mockReturnValue({ ok: true }),
+};
+vi.mock('@/store/graphStore', () => ({
+  useGraphStore: Object.assign(vi.fn(() => mockGraphState), {
+    getState: () => mockGraphState,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Import after mocks
 // ---------------------------------------------------------------------------
@@ -103,6 +114,9 @@ describe('EntityPanel', () => {
     mockCurrentCanvasId = ROOT_CANVAS_KEY;
     mockHighlightEdges.mockClear();
     mockClearHighlight.mockClear();
+    mockGraphState.addEntity.mockReset().mockReturnValue({ ok: true });
+    mockGraphState.updateEntity.mockReset().mockReturnValue({ ok: true });
+    mockGraphState.removeEntity.mockReset().mockReturnValue({ ok: true });
   });
 
   it('renders "No project loaded" when project is null', () => {
@@ -239,5 +253,62 @@ describe('EntityPanel', () => {
     fireEvent.click(button);
 
     expect(screen.getByText(/2 edges/)).toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Create Entity
+  // ---------------------------------------------------------------------------
+
+  describe('Create Entity', () => {
+    function setupWithEntities() {
+      mockProject = makeProject({
+        rootEntities: [
+          { name: 'Order', description: 'A purchase order' },
+        ],
+      });
+      render(<EntityPanel />);
+    }
+
+    it('shows create form when New Entity button is clicked', () => {
+      setupWithEntities();
+      fireEvent.click(screen.getByRole('button', { name: /new entity/i }));
+      expect(screen.getByPlaceholderText(/entity name/i)).toBeInTheDocument();
+    });
+
+    it('creates entity on submit', () => {
+      setupWithEntities();
+      fireEvent.click(screen.getByRole('button', { name: /new entity/i }));
+      fireEvent.change(screen.getByPlaceholderText(/entity name/i), { target: { value: 'Payment' } });
+      fireEvent.change(screen.getByPlaceholderText(/description/i), { target: { value: 'A payment record' } });
+      fireEvent.click(screen.getByRole('button', { name: /^create$/i }));
+      expect(mockGraphState.addEntity).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ name: 'Payment', description: 'A payment record' }),
+      );
+    });
+
+    it('shows error for duplicate entity name', () => {
+      mockGraphState.addEntity.mockReturnValue({ ok: false, error: { code: 'DUPLICATE_ENTITY', name: 'Order' } });
+      setupWithEntities();
+      fireEvent.click(screen.getByRole('button', { name: /new entity/i }));
+      fireEvent.change(screen.getByPlaceholderText(/entity name/i), { target: { value: 'Order' } });
+      fireEvent.click(screen.getByRole('button', { name: /^create$/i }));
+      expect(screen.getByText(/already exists/i)).toBeInTheDocument();
+    });
+
+    it('rejects empty name', () => {
+      setupWithEntities();
+      fireEvent.click(screen.getByRole('button', { name: /new entity/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^create$/i }));
+      expect(mockGraphState.addEntity).not.toHaveBeenCalled();
+    });
+
+    it('cancels form on Cancel button', () => {
+      setupWithEntities();
+      fireEvent.click(screen.getByRole('button', { name: /new entity/i }));
+      expect(screen.getByPlaceholderText(/entity name/i)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+      expect(screen.queryByPlaceholderText(/entity name/i)).not.toBeInTheDocument();
+    });
   });
 });
