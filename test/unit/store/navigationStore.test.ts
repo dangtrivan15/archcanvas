@@ -44,6 +44,7 @@ describe('navigationStore', () => {
       breadcrumb: [{ canvasId: ROOT_CANVAS_KEY, displayName: 'Root' }],
       parentCanvasId: null,
       parentEdges: [],
+      savedViewports: {},
     });
   });
 
@@ -378,6 +379,50 @@ describe('navigationStore', () => {
 
       const { breadcrumb } = useNavigationStore.getState();
       expect(breadcrumb[1].displayName).toBe('orphan-canvas');
+    });
+  });
+
+  describe('savedViewports', () => {
+    it('starts with an empty savedViewports map', () => {
+      expect(useNavigationStore.getState().savedViewports).toEqual({});
+    });
+
+    it('saveViewport stores viewport for a canvas', () => {
+      useNavigationStore.getState().saveViewport(ROOT_CANVAS_KEY, { x: 100, y: 200, zoom: 1.5 });
+
+      expect(useNavigationStore.getState().savedViewports[ROOT_CANVAS_KEY]).toEqual({
+        x: 100, y: 200, zoom: 1.5,
+      });
+    });
+
+    it('getSavedViewport retrieves a saved viewport', () => {
+      useNavigationStore.getState().saveViewport('canvas-a', { x: 50, y: 75, zoom: 2 });
+
+      const vp = useNavigationStore.getState().getSavedViewport('canvas-a');
+      expect(vp).toEqual({ x: 50, y: 75, zoom: 2 });
+    });
+
+    it('getSavedViewport returns undefined for unsaved canvas', () => {
+      expect(useNavigationStore.getState().getSavedViewport('unknown')).toBeUndefined();
+    });
+
+    it('saveViewport overwrites previous viewport for the same canvas', () => {
+      const store = useNavigationStore.getState();
+      store.saveViewport('canvas-a', { x: 10, y: 20, zoom: 1 });
+      store.saveViewport('canvas-a', { x: 99, y: 88, zoom: 3 });
+
+      expect(useNavigationStore.getState().getSavedViewport('canvas-a')).toEqual({
+        x: 99, y: 88, zoom: 3,
+      });
+    });
+
+    it('saveViewport does not affect other canvases', () => {
+      const store = useNavigationStore.getState();
+      store.saveViewport('canvas-a', { x: 1, y: 2, zoom: 1 });
+      store.saveViewport('canvas-b', { x: 3, y: 4, zoom: 2 });
+
+      expect(useNavigationStore.getState().getSavedViewport('canvas-a')).toEqual({ x: 1, y: 2, zoom: 1 });
+      expect(useNavigationStore.getState().getSavedViewport('canvas-b')).toEqual({ x: 3, y: 4, zoom: 2 });
     });
   });
 });

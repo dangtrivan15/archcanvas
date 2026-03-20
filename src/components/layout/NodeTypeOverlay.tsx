@@ -77,8 +77,9 @@ export function NodeTypeOverlay({
           onMouseLeave={onMouseLeave}
         >
           {/* Invisible hover bridge — covers the gap between toolbar and overlay
-             so the mouse doesn't leave "hover territory" while crossing */}
-          <div className="absolute -left-5 -top-2 w-5" style={{ height: 'calc(100% + 16px)' }} />
+             so the mouse doesn't leave "hover territory" while crossing.
+             pointer-events: none so clicks pass through to toolbar buttons beneath. */}
+          <div className="absolute -left-5 -top-2 w-5 pointer-events-none" style={{ height: 'calc(100% + 16px)' }} />
 
           <div
             className="w-[260px] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-2xl"
