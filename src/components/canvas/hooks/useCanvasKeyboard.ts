@@ -8,10 +8,11 @@ import { listNodes } from '@/core/graph/query';
 interface KeyboardOptions {
   onOpenPalette?: () => void;
   onAutoLayout?: () => void;
+  onGoUp?: () => void;
 }
 
 export function useCanvasKeyboard(options?: KeyboardOptions) {
-  const { onOpenPalette, onAutoLayout } = options ?? {};
+  const { onOpenPalette, onAutoLayout, onGoUp } = options ?? {};
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -92,7 +93,7 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         if (selectedNodeIds.size > 0 || selectedEdgeKeys.size > 0) {
           useCanvasStore.getState().clearSelection();
         } else {
-          useNavigationStore.getState().goUp();
+          onGoUp?.();
         }
         return;
       }
@@ -100,5 +101,5 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onOpenPalette, onAutoLayout]);
+  }, [onOpenPalette, onAutoLayout, onGoUp]);
 }

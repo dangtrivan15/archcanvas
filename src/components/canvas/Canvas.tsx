@@ -40,7 +40,7 @@ const edgeTypes = { archEdge: EdgeRenderer };
 
 export function Canvas() {
   const { nodes: storeNodes, edges } = useCanvasRenderer();
-  const { diveIn } = useCanvasNavigation();
+  const { diveIn, goUp } = useCanvasNavigation();
   const toolMode = useToolStore((s) => s.mode);
 
   // ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ export function Canvas() {
     requestAnimationFrame(() => reactFlow.fitView({ duration: 400, padding: 0.15 }));
   }, [reactFlow]);
 
-  useCanvasKeyboard({ onOpenPalette: openPalette, onAutoLayout: handleAutoLayout });
+  useCanvasKeyboard({ onOpenPalette: openPalette, onAutoLayout: handleAutoLayout, onGoUp: goUp });
 
   // -------------------------------------------------------------------------
   // Wire custom events dispatched by CommandPalette's ActionProvider and

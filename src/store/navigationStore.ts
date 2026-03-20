@@ -10,17 +10,26 @@ interface BreadcrumbEntry {
   displayName: string;
 }
 
+export interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
 interface NavigationStoreState {
   currentCanvasId: string;
   breadcrumb: BreadcrumbEntry[];
   parentCanvasId: string | null;
   parentEdges: Edge[];
+  savedViewports: Record<string, Viewport>;
 
   diveIn(refNodeId: string): void;
   goUp(): void;
   goToRoot(): void;
   goToBreadcrumb(index: number): void;
   navigateTo(canvasId: string): void;
+  saveViewport(canvasId: string, viewport: Viewport): void;
+  getSavedViewport(canvasId: string): Viewport | undefined;
 }
 
 const ROOT_ENTRY: BreadcrumbEntry = {
@@ -33,6 +42,7 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
   breadcrumb: [ROOT_ENTRY],
   parentCanvasId: null,
   parentEdges: [],
+  savedViewports: {},
 
   diveIn(refNodeId) {
     const { currentCanvasId } = get();
@@ -142,5 +152,15 @@ export const useNavigationStore = create<NavigationStoreState>((set, get) => ({
       parentCanvasId: null,
       parentEdges: [],
     });
+  },
+
+  saveViewport(canvasId, viewport) {
+    set((state) => ({
+      savedViewports: { ...state.savedViewports, [canvasId]: viewport },
+    }));
+  },
+
+  getSavedViewport(canvasId) {
+    return get().savedViewports[canvasId];
   },
 }));

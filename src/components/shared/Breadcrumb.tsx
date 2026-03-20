@@ -1,9 +1,10 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useCanvasNavigation } from '@/components/canvas/hooks/useCanvasNavigation';
 
 export function Breadcrumb() {
   const breadcrumb = useNavigationStore((s) => s.breadcrumb);
-  const goToBreadcrumb = useNavigationStore((s) => s.goToBreadcrumb);
+  const { goToBreadcrumb } = useCanvasNavigation();
   const prefersReduced = useReducedMotion();
 
   return (
