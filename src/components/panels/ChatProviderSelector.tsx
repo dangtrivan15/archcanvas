@@ -1,5 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
+import { useUiStore } from '@/store/uiStore';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -44,7 +45,13 @@ export function ChatProviderSelector() {
         {providerList.map((p) => (
           <DropdownMenuItem
             key={p.id}
-            onClick={() => useChatStore.getState().setActiveProvider(p.id)}
+            onClick={() => {
+              if (!p.available && p.id === 'claude-api-key') {
+                useUiStore.getState().openAiSettingsDialog();
+                return;
+              }
+              useChatStore.getState().setActiveProvider(p.id);
+            }}
             className="gap-2 text-xs"
           >
             <span

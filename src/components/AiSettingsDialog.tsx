@@ -4,6 +4,7 @@ import { Settings, Check, X, Loader2, AlertTriangle } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useUiStore } from '@/store/uiStore';
 import { useApiKeyStore, AVAILABLE_MODELS } from '@/store/apiKeyStore';
+import { useChatStore } from '@/store/chatStore';
 
 function maskKey(key: string): string {
   if (key.length <= 12) return key;
@@ -42,7 +43,7 @@ export function AiSettingsDialog() {
   const handleTestConnection = async () => {
     const success = await useApiKeyStore.getState().validateKey();
     if (success) {
-      // Auto-select handled by caller (Task 7)
+      useChatStore.getState().setActiveProvider('claude-api-key');
     }
   };
 

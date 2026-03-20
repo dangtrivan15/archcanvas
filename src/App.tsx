@@ -21,6 +21,7 @@ import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
+import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import '@/store/themeStore'; // side-effect: applies theme on import
 
 enablePatches();
@@ -138,6 +139,7 @@ export function App() {
           </ResizablePanelGroup>
           <StatusBar />
           <AppearanceDialog />
+          <AiSettingsDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

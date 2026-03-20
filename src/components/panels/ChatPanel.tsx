@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Settings } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useFileStore } from '@/store/fileStore';
+import { useUiStore } from '@/store/uiStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
 
@@ -100,6 +102,13 @@ export function ChatPanel() {
         <h3 className="text-sm font-medium">AI Chat</h3>
         <div className="flex items-center gap-2">
           <ChatProviderSelector />
+          <button
+            onClick={() => useUiStore.getState().openAiSettingsDialog()}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            aria-label="AI settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </button>
           <select
             value={permissionMode}
             onChange={(e) => useChatStore.getState().setPermissionMode(e.target.value)}
