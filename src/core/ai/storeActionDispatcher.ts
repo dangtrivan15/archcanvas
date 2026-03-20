@@ -53,6 +53,12 @@ export function dispatchStoreAction(action: string, args: Record<string, unknown
           displayName: args.name as string | undefined,
         },
       );
+    case 'addEntity':
+      return dispatchAddEntity(args);
+    case 'removeEntity':
+      return dispatchRemoveEntity(args);
+    case 'updateEntity':
+      return dispatchUpdateEntity(args);
 
     // --- Read actions ---
     case 'list':
@@ -322,4 +328,34 @@ function dispatchCatalog(args: Record<string, unknown>): unknown {
   }));
 
   return { nodeTypes };
+}
+
+// ---------------------------------------------------------------------------
+// Entity action dispatchers
+// ---------------------------------------------------------------------------
+
+function dispatchAddEntity(args: Record<string, unknown>) {
+  const canvasId = (args.canvasId as string) ?? ROOT_CANVAS_KEY;
+  const name = args.name as string;
+  const description = args.description as string | undefined;
+  const codeRefs = args.codeRefs as string[] | undefined;
+  const entity: { name: string; description?: string; codeRefs?: string[] } = { name };
+  if (description !== undefined) entity.description = description;
+  if (codeRefs !== undefined) entity.codeRefs = codeRefs;
+  return useGraphStore.getState().addEntity(canvasId, entity);
+}
+
+function dispatchRemoveEntity(args: Record<string, unknown>) {
+  const canvasId = (args.canvasId as string) ?? ROOT_CANVAS_KEY;
+  const entityName = args.entityName as string;
+  return useGraphStore.getState().removeEntity(canvasId, entityName);
+}
+
+function dispatchUpdateEntity(args: Record<string, unknown>) {
+  const canvasId = (args.canvasId as string) ?? ROOT_CANVAS_KEY;
+  const entityName = args.entityName as string;
+  const updates: { description?: string; codeRefs?: string[] } = {};
+  if (args.description !== undefined) updates.description = args.description as string;
+  if (args.codeRefs !== undefined) updates.codeRefs = args.codeRefs as string[];
+  return useGraphStore.getState().updateEntity(canvasId, entityName, updates);
 }
