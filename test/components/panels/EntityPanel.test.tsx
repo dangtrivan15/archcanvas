@@ -311,4 +311,85 @@ describe('EntityPanel', () => {
       expect(screen.queryByPlaceholderText(/entity name/i)).not.toBeInTheDocument();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Edit Entity
+  // ---------------------------------------------------------------------------
+
+  describe('Edit Entity', () => {
+    function setupWithEntity() {
+      mockProject = makeProject({
+        rootEntities: [
+          { name: 'Order', description: 'A purchase order', codeRefs: ['src/order.ts'] },
+        ],
+      });
+      render(<EntityPanel />);
+    }
+
+    it('shows edit form when edit button clicked on expanded entity', () => {
+      setupWithEntity();
+      // Expand entity row
+      fireEvent.click(screen.getByText('Order').closest('button')!);
+      // Click edit button
+      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      expect(screen.getByDisplayValue(/purchase order/i)).toBeInTheDocument();
+    });
+
+    it('saves updated description', () => {
+      setupWithEntity();
+      fireEvent.click(screen.getByText('Order').closest('button')!);
+      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      const textarea = screen.getByDisplayValue(/purchase order/i);
+      fireEvent.change(textarea, { target: { value: 'Updated description' } });
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
+      expect(mockGraphState.updateEntity).toHaveBeenCalledWith(
+        expect.any(String), 'Order', expect.objectContaining({ description: 'Updated description' }),
+      );
+    });
+
+    it('reverts on cancel', () => {
+      setupWithEntity();
+      fireEvent.click(screen.getByText('Order').closest('button')!);
+      fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+      // Should be back to read-only
+      expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Delete Entity
+  // ---------------------------------------------------------------------------
+
+  describe('Delete Entity', () => {
+    function setupWithEntity() {
+      mockProject = makeProject({
+        rootEntities: [
+          { name: 'Order', description: 'A purchase order' },
+        ],
+      });
+      render(<EntityPanel />);
+    }
+
+    it('deletes entity not in use', () => {
+      setupWithEntity();
+      fireEvent.click(screen.getByText('Order').closest('button')!);
+      fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+      // Confirm
+      fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+      expect(mockGraphState.removeEntity).toHaveBeenCalledWith(expect.any(String), 'Order');
+    });
+
+    it('shows warning when entity is in use', () => {
+      mockGraphState.removeEntity.mockReturnValue({
+        ok: false,
+        error: { code: 'ENTITY_IN_USE', name: 'Order', referencedBy: [{ from: 'a', to: 'b' }] },
+      });
+      setupWithEntity();
+      fireEvent.click(screen.getByText('Order').closest('button')!);
+      fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+      fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+      expect(screen.getByText(/referenced by/i)).toBeInTheDocument();
+    });
+  });
 });
