@@ -23,14 +23,48 @@ vi.mock('@/store/fileStore', () => ({
   ),
 }));
 
-// Track the current mock providers map so tests can mutate it
-let mockProviders = new Map<string, { available: boolean }>();
+vi.mock('@/store/apiKeyStore', () => ({
+  useApiKeyStore: Object.assign(
+    vi.fn((sel: any) =>
+      sel({
+        apiKey: null,
+        model: 'claude-sonnet-4-6-20250919',
+        isValidated: false,
+        isValidating: false,
+        error: null,
+      }),
+    ),
+    {
+      getState: () => ({
+        setApiKey: vi.fn(),
+        setModel: vi.fn(),
+        clearApiKey: vi.fn(),
+        validateKey: vi.fn().mockResolvedValue(false),
+      }),
+    },
+  ),
+  AVAILABLE_MODELS: [
+    { id: 'claude-sonnet-4-6-20250919', label: 'Claude Sonnet 4.6' },
+  ],
+}));
+
+// Track the current mock chat state so tests can mutate it
+let mockProviders = new Map<string, { id: string; displayName: string; available: boolean }>();
+let mockActiveProviderId: string | null = null;
 
 vi.mock('@/store/chatStore', () => ({
-  useChatStore: vi.fn((sel: any) =>
-    sel({
-      providers: mockProviders,
-    }),
+  useChatStore: Object.assign(
+    vi.fn((sel: any) =>
+      sel({
+        providers: mockProviders,
+        activeProviderId: mockActiveProviderId,
+      }),
+    ),
+    {
+      getState: () => ({
+        setActiveProvider: vi.fn(),
+      }),
+    },
   ),
 }));
 
@@ -51,12 +85,15 @@ import { useChatStore } from '@/store/chatStore';
 function setAiAvailable(available: boolean) {
   mockProviders = new Map();
   if (available) {
-    mockProviders.set('test-provider', { available: true });
+    mockProviders.set('test-provider', { id: 'test-provider', displayName: 'Test Provider', available: true });
+    mockActiveProviderId = 'test-provider';
+  } else {
+    mockActiveProviderId = null;
   }
-  // Re-configure the mock to pick up new providers
-  vi.mocked(useChatStore).mockImplementation((sel: any) =>
-    sel({ providers: mockProviders }),
-  );
+  // Re-configure the mock to pick up new state
+  vi.mocked(useChatStore).mockImplementation(((sel: any) =>
+    sel({ providers: mockProviders, activeProviderId: mockActiveProviderId }),
+  ) as any);
 }
 
 /** Override the fileStore mock's fs value (null by default, or an object with getPath) */
@@ -184,25 +221,16 @@ describe('AiSurveyStep', () => {
     expect(startBtn).toBeDisabled();
   });
 
-  it('shows amber banner when AI is unavailable', () => {
+  it('shows provider selector with provider buttons', () => {
+    setAiAvailable(true);
+    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
+    expect(screen.getByText('Test Provider')).toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: /ai provider/i })).toBeInTheDocument();
+  });
+
+  it('shows no-providers message when no providers registered', () => {
     setAiAvailable(false);
     render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
-    expect(screen.getByTestId('ai-unavailable-banner')).toBeInTheDocument();
-    expect(screen.getByTestId('ai-unavailable-banner').textContent).toContain(
-      'AI is not connected',
-    );
-  });
-
-  it('hides amber banner when AI is available', () => {
-    setAiAvailable(true);
-    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
-    expect(screen.queryByTestId('ai-unavailable-banner')).not.toBeInTheDocument();
-  });
-
-  it('does not show project path input', () => {
-    setAiAvailable(true);
-    render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
-    expect(screen.queryByPlaceholderText('/Users/you/projects/my-app')).toBeNull();
-    expect(screen.queryByLabelText(/project path/i)).toBeNull();
+    expect(screen.getByText(/no ai providers/i)).toBeInTheDocument();
   });
 });
