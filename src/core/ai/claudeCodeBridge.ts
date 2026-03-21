@@ -22,7 +22,6 @@ import type {
 import { homedir } from 'os';
 import { existsSync } from 'fs';
 import { buildSystemPrompt } from './systemPrompt';
-import { loadPermissions, savePermission, isAutoApproved } from './permissionStore';
 
 function expandTilde(p: string): string {
   return p.startsWith('~') ? p.replace('~', homedir()) : p;
@@ -165,9 +164,6 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   const pendingPermissions = new Map<string, PendingPermission>();
   const pendingQuestions = new Map<string, PendingQuestion>();
   // TODO: store conversation history for session context summary injection.
-
-  // Load persisted "Always Allow" rules from disk
-  let savedPermissions = loadPermissions(cwd);
 
   async function resolveQueryFn(): Promise<SDKQueryFn> {
     if (queryFn) return queryFn;
@@ -362,6 +358,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             systemPrompt,
             cwd: resolvedCwd,
             abortController,
+            settingSources: ['user', 'project', 'local'],
             ...(sessionId ? { resume: sessionId } : {}),
             tools: ['Bash', 'Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
             ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
@@ -427,11 +424,6 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               // Regular tool permission request (Bash, Write, etc.)
               // -----------------------------------------------------------------
 
-              // Auto-approve if the tool matches a saved "Always Allow" rule
-              if (isAutoApproved(savedPermissions, toolName, input)) {
-                return { behavior: 'allow' as const, updatedInput: input };
-              }
-
               const command = typeof input.command === 'string'
                 ? input.command
                 : `${toolName}(${JSON.stringify(input)})`;
@@ -460,9 +452,12 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
               pendingPermissions.delete(toolUseId);
 
               if (response.allowed) {
-                // Cast PermissionSuggestion[] → PermissionUpdate[] at the bridge boundary.
-                // Our UI type is a subset of the SDK type; the cast is safe.
-                const updatedPermissions = response.updatedPermissions as PermissionUpdate[] | undefined;
+                // Override destination to 'localSettings' so "Always Allow" rules are
+                // persisted to .claude/settings.local.json (gitignored), never to the
+                // shared project settings.
+                const updatedPermissions = response.updatedPermissions?.map(
+                  (p) => ({ ...p, destination: 'localSettings' as const }),
+                ) as PermissionUpdate[] | undefined;
                 return {
                   behavior: 'allow' as const,
                   updatedInput: input,
@@ -503,14 +498,6 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         interrupt?: boolean;
       },
     ): void {
-      // Persist "Always Allow" rules to disk and update in-memory cache
-      if (options?.updatedPermissions) {
-        for (const perm of options.updatedPermissions) {
-          savePermission(cwd, perm);
-        }
-        savedPermissions = loadPermissions(cwd);
-      }
-
       const pending = pendingPermissions.get(id);
       if (pending) {
         pending.resolve({
