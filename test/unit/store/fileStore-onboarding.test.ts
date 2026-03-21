@@ -315,6 +315,15 @@ describe('fileStore — onboarding', () => {
       expect(exists).toBe(true);
     });
 
+    it('does not create .archcanvas/.gitignore', async () => {
+      const fs = new InMemoryFileSystem('NewDir');
+      useFileStore.setState({ fs, status: 'needs_onboarding' });
+
+      await useFileStore.getState().completeOnboarding('blank');
+
+      expect(await fs.exists('.archcanvas/.gitignore')).toBe(false);
+    });
+
     it('does not fail if .archcanvas already exists', async () => {
       const fs = new InMemoryFileSystem('ExistingDir');
       fs.seed({ '.archcanvas/other.yaml': 'id: other' });
