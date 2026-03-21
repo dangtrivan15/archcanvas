@@ -188,4 +188,11 @@ export const archCanvasToolDefs: ToolDef[] = [
       include: z.string().optional().describe('Glob filter for filenames (e.g., "*.ts")'),
     }),
   },
+  {
+    name: 'delete_project_file',
+    description: 'Delete a file in the opened project. Cannot delete directories.',
+    inputSchema: z.object({
+      path: z.string().describe('File path relative to project root'),
+    }),
+  },
 ];

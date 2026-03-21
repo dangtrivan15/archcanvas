@@ -54,6 +54,7 @@ export function buildSystemPrompt(context: ProjectContext): string {
     `- **list_project_files** — List directory contents: path? (string, defaults to root)`,
     `- **glob_project_files** — Find files by pattern: pattern (string), path? (string)`,
     `- **search_project_files** — Search file contents: query (regex), path? (string), include? (glob)`,
+    `- **delete_project_file** — Delete a file: path (string)`,
     ``,
     `## Node Types`,
     `- Format: namespace/name (e.g., compute/service, data/database)`,

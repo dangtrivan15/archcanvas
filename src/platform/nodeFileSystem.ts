@@ -1,4 +1,4 @@
-import { readFile, writeFile, readdir, stat, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, readdir, stat, mkdir, unlink } from 'node:fs/promises';
 import { resolve, basename } from 'node:path';
 import type { FileSystem } from './fileSystem';
 
@@ -53,6 +53,10 @@ export class NodeFileSystem implements FileSystem {
 
   async mkdir(path: string): Promise<void> {
     await mkdir(this.resolvePath(path), { recursive: true });
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    await unlink(this.resolvePath(path));
   }
 
   async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {

@@ -100,6 +100,14 @@ export class InMemoryFileSystem implements FileSystem {
     return results.sort();
   }
 
+  async deleteFile(path: string): Promise<void> {
+    const key = this.normalize(path);
+    if (!this.files.has(key)) {
+      throw new Error(`File not found: ${path}`);
+    }
+    this.files.delete(key);
+  }
+
   /** Populate multiple files at once (test helper) */
   seed(files: Record<string, string>): void {
     for (const [path, content] of Object.entries(files)) {

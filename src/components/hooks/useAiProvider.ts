@@ -79,6 +79,11 @@ export function useAiProvider(): void {
       }
     });
 
+    // Auto-validate stored API key so the provider is immediately available
+    if (useApiKeyStore.getState().apiKey) {
+      useApiKeyStore.getState().validateKey().catch(() => {});
+    }
+
     // Resolve the bridge URL (async for Tauri port discovery) and connect
     resolveBridgeUrl()
       .then((wsUrl) => {

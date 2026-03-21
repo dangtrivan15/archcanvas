@@ -283,7 +283,7 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('auto-approved');
   });
 
-  // --- All 19 MCP tool names ---
+  // --- All 20 MCP tool names ---
   const toolNames = [
     'add_node',
     'add_edge',
@@ -300,6 +300,7 @@ describe('buildSystemPrompt', () => {
     'list_project_files',
     'glob_project_files',
     'search_project_files',
+    'delete_project_file',
   ] as const;
 
   for (const name of toolNames) {

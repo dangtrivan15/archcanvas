@@ -211,4 +211,10 @@ describe('translateToolArgs', () => {
     expect(action).toBe('searchProjectFiles');
     expect(translatedArgs).toEqual({ query: 'import.*React', path: 'src', include: '*.tsx' });
   });
+
+  it('translates delete_project_file', () => {
+    const { action, translatedArgs } = translateToolArgs('delete_project_file', { path: 'src/old.ts' });
+    expect(action).toBe('deleteProjectFile');
+    expect(translatedArgs).toEqual({ path: 'src/old.ts' });
+  });
 });

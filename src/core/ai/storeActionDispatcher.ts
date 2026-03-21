@@ -84,6 +84,8 @@ export async function dispatchStoreAction(action: string, args: Record<string, u
       return dispatchGlobProjectFiles(args);
     case 'searchProjectFiles':
       return dispatchSearchProjectFiles(args);
+    case 'deleteProjectFile':
+      return dispatchDeleteProjectFile(args);
 
     default:
       return { ok: false, error: { code: 'UNKNOWN_ACTION', message: `Unknown action: ${action}` } };
@@ -513,4 +515,20 @@ async function dispatchSearchProjectFiles(args: Record<string, unknown>) {
   }
 
   return { matches };
+}
+
+async function dispatchDeleteProjectFile(args: Record<string, unknown>) {
+  let path: string;
+  try { path = validateRelativePath(args.path as string); }
+  catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  try {
+    await fs.deleteFile(path);
+    return { ok: true, data: { path } };
+  } catch {
+    return { ok: false, error: { code: 'FILE_NOT_FOUND', message: `File '${path}' not found` } };
+  }
 }
