@@ -28,8 +28,8 @@ async function setup() {
 describe('dispatchStoreAction: createSubsystem', () => {
   beforeEach(setup);
 
-  it('creates subsystem via dispatcher', () => {
-    const result = dispatchStoreAction('createSubsystem', {
+  it('creates subsystem via dispatcher', async () => {
+    const result = await dispatchStoreAction('createSubsystem', {
       canvasId: ROOT_CANVAS_KEY,
       id: 'order-svc',
       type: 'compute/service',
@@ -39,8 +39,8 @@ describe('dispatchStoreAction: createSubsystem', () => {
     expect(useFileStore.getState().getCanvas('order-svc')).toBeDefined();
   });
 
-  it('returns error for invalid canvas', () => {
-    const result = dispatchStoreAction('createSubsystem', {
+  it('returns error for invalid canvas', async () => {
+    const result = await dispatchStoreAction('createSubsystem', {
       canvasId: 'nonexistent',
       id: 'order-svc',
       type: 'compute/service',

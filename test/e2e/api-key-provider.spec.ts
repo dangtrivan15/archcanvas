@@ -51,9 +51,18 @@ test.describe('API Key Provider', () => {
   });
 
   test('model dropdown shows all options', async ({ page }) => {
-    // Open AI Settings dialog via gear icon
-    await page.getByRole('button', { name: /AI settings/i }).click();
+    // Select the API key provider first (dialog is provider-aware)
+    const providerButton = page.getByRole('button', { name: /AI provider/i });
+    await providerButton.click();
+    await page.getByText('Claude (API Key)').click();
     await page.waitForTimeout(200);
+
+    // The dialog should have opened since the provider is unconfigured
+    // If not already open, open it via gear icon
+    if (!(await page.getByRole('dialog').isVisible().catch(() => false))) {
+      await page.getByRole('button', { name: /AI settings/i }).click();
+      await page.waitForTimeout(200);
+    }
 
     const select = page.getByLabel(/Model/i);
     const options = select.locator('option');

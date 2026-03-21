@@ -4,7 +4,7 @@ import { archCanvasToolDefs } from '../../src/core/ai/toolDefs';
 describe('archCanvasToolDefs', () => {
   it('exports an array of tool definitions', () => {
     expect(Array.isArray(archCanvasToolDefs)).toBe(true);
-    expect(archCanvasToolDefs.length).toBeGreaterThanOrEqual(9);
+    expect(archCanvasToolDefs.length).toBeGreaterThanOrEqual(19);
   });
 
   it('each tool has name, description, and inputSchema', () => {
@@ -31,6 +31,12 @@ describe('archCanvasToolDefs', () => {
     expect(names).toContain('describe');
     expect(names).toContain('search');
     expect(names).toContain('catalog');
+    expect(names).toContain('read_project_file');
+    expect(names).toContain('write_project_file');
+    expect(names).toContain('update_project_file');
+    expect(names).toContain('list_project_files');
+    expect(names).toContain('glob_project_files');
+    expect(names).toContain('search_project_files');
   });
 
   it('does not import Node.js-only modules', async () => {

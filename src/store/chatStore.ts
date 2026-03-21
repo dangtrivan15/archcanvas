@@ -65,14 +65,14 @@ function assembleContext(): ProjectContext {
     fileState.project?.root.data.project?.name ?? 'Untitled';
   const projectDescription =
     fileState.project?.root.data.project?.description ?? undefined;
-  const projectPath = fileState.projectPath ?? '.';
+  const projectPath = fileState.projectPath ?? undefined;
   const currentScope = navState.currentCanvasId;
 
   return {
     projectName,
     projectDescription,
     currentScope,
-    projectPath,
+    ...(projectPath ? { projectPath } : {}),
   };
 }
 
@@ -115,13 +115,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   async _sendMessageInternal(content: string) {
-    // Guard: project path required for AI CWD
-    const projectPath = useFileStore.getState().projectPath;
-    if (!projectPath) {
-      set({ error: 'Project path is required for AI chat. Set it in project settings.' });
-      return;
-    }
-
     const { isStreaming, activeProviderId, providers } = get();
 
     // Guard: no concurrent streaming

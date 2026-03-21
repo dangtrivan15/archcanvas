@@ -7,4 +7,8 @@ export interface FileSystem {
   listFiles(path: string): Promise<string[]>;
   exists(path: string): Promise<boolean>;
   mkdir(path: string): Promise<void>;
+  /** List direct entries (files and directories) under `path`. */
+  listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]>;
+  /** List all file paths under `path` recursively, relative to project root. */
+  listFilesRecursive(path: string, ignore?: string[]): Promise<string[]>;
 }

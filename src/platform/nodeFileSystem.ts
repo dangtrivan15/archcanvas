@@ -54,4 +54,35 @@ export class NodeFileSystem implements FileSystem {
   async mkdir(path: string): Promise<void> {
     await mkdir(this.resolvePath(path), { recursive: true });
   }
+
+  async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {
+    const full = this.resolvePath(path === '.' ? '' : path);
+    const entries = await readdir(full, { withFileTypes: true });
+    return entries.map((e) => ({
+      name: e.name,
+      type: e.isDirectory() ? 'directory' as const : 'file' as const,
+    }));
+  }
+
+  async listFilesRecursive(path: string, ignore: string[] = []): Promise<string[]> {
+    const full = this.resolvePath(path === '.' ? '' : path);
+    const ignoreSet = new Set(ignore);
+    const results: string[] = [];
+
+    async function walk(dir: string, rel: string) {
+      const entries = await readdir(dir, { withFileTypes: true });
+      for (const e of entries) {
+        if (ignoreSet.has(e.name)) continue;
+        const entryRel = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) {
+          await walk(`${dir}/${e.name}`, entryRel);
+        } else if (e.isFile()) {
+          results.push(entryRel);
+        }
+      }
+    }
+
+    await walk(full, path === '.' || path === '' ? '' : path);
+    return results.sort();
+  }
 }

@@ -47,6 +47,7 @@ export function ChatProviderSelector() {
             key={p.id}
             onClick={() => {
               if (!p.available && p.id === 'claude-api-key') {
+                useChatStore.getState().setActiveProvider(p.id);
                 useUiStore.getState().openAiSettingsDialog();
                 return;
               }

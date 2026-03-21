@@ -139,4 +139,53 @@ export const archCanvasToolDefs: ToolDef[] = [
       namespace: z.string().optional().describe('Filter by namespace (e.g., compute, data)'),
     }),
   },
+  // --- Project File Tools ---
+  {
+    name: 'read_project_file',
+    description: 'Read a text file in the opened project. Binary files are not supported.',
+    inputSchema: z.object({
+      path: z.string().describe('File path relative to project root (e.g., "src/app.ts")'),
+    }),
+  },
+  {
+    name: 'write_project_file',
+    description: 'Create or overwrite a file in the opened project. Auto-creates parent directories.',
+    inputSchema: z.object({
+      path: z.string().describe('File path relative to project root'),
+      content: z.string().describe('Full file content'),
+    }),
+  },
+  {
+    name: 'update_project_file',
+    description: 'Edit a file by replacing a specific string. Provide enough surrounding context in old_string to make the match unique.',
+    inputSchema: z.object({
+      path: z.string().describe('File path relative to project root'),
+      old_string: z.string().describe('Exact text to find (must be unique in the file)'),
+      new_string: z.string().describe('Replacement text'),
+    }),
+  },
+  {
+    name: 'list_project_files',
+    description: 'List direct children (files and directories) of a directory in the opened project.',
+    inputSchema: z.object({
+      path: z.string().optional().describe('Directory path relative to project root (defaults to root)'),
+    }),
+  },
+  {
+    name: 'glob_project_files',
+    description: 'Find files by glob pattern in the opened project. Supports *, **, ? wildcards.',
+    inputSchema: z.object({
+      pattern: z.string().describe('Glob pattern (e.g., "**/*.ts", "src/**/*.tsx")'),
+      path: z.string().optional().describe('Base directory to search from (defaults to root)'),
+    }),
+  },
+  {
+    name: 'search_project_files',
+    description: 'Search file contents by regex pattern in the opened project.',
+    inputSchema: z.object({
+      query: z.string().describe('Regex pattern to search for'),
+      path: z.string().optional().describe('Subdirectory to scope the search (defaults to root)'),
+      include: z.string().optional().describe('Glob filter for filenames (e.g., "*.ts")'),
+    }),
+  },
 ];

@@ -227,12 +227,12 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     }
   }
 
-  private handleStoreAction(msg: StoreActionMessage): void {
+  private async handleStoreAction(msg: StoreActionMessage): Promise<void> {
     const { action, args, correlationId } = msg;
 
     let result: unknown;
     try {
-      result = dispatchStoreAction(action, args);
+      result = await dispatchStoreAction(action, args);
     } catch (err) {
       this.send({
         type: 'store_action_result',

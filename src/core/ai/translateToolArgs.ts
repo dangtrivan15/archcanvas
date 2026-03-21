@@ -23,6 +23,12 @@ export const TOOL_TO_ACTION: Record<string, string> = {
   describe: 'describe',
   search: 'search',
   catalog: 'catalog',
+  read_project_file: 'readProjectFile',
+  write_project_file: 'writeProjectFile',
+  update_project_file: 'updateProjectFile',
+  list_project_files: 'listProjectFiles',
+  glob_project_files: 'globProjectFiles',
+  search_project_files: 'searchProjectFiles',
 };
 
 const ROOT = '__root__';
@@ -110,6 +116,32 @@ export function translateToolArgs(
           ...(args.codeRefs !== undefined && { codeRefs: args.codeRefs }),
         },
       };
+
+    // --- Project File Tools ---
+    case 'read_project_file':
+      return { action, translatedArgs: { path: args.path } };
+
+    case 'write_project_file':
+      return { action, translatedArgs: { path: args.path, content: args.content } };
+
+    case 'update_project_file':
+      return { action, translatedArgs: {
+        path: args.path, oldString: args.old_string, newString: args.new_string,
+      }};
+
+    case 'list_project_files':
+      return { action, translatedArgs: { path: (args.path as string) ?? '.' } };
+
+    case 'glob_project_files':
+      return { action, translatedArgs: {
+        pattern: args.pattern, path: (args.path as string) ?? '.',
+      }};
+
+    case 'search_project_files':
+      return { action, translatedArgs: {
+        query: args.query, path: (args.path as string) ?? '.',
+        ...(args.include !== undefined && { include: args.include }),
+      }};
 
     // Read actions: map scope → canvasId, pass rest through
     default: {
