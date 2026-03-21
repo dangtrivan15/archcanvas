@@ -101,7 +101,7 @@ export class WebFileSystem implements FileSystem {
     path: string,
     createDirs = false,
   ): Promise<{ dir: FileSystemDirectoryHandle; fileName: string }> {
-    const parts = path.split('/').filter(Boolean);
+    const parts = path.split('/').filter((p) => p && p !== '.');
     const fileName = parts.pop()!;
     let dir = this.rootHandle;
     for (const part of parts) {
@@ -114,7 +114,7 @@ export class WebFileSystem implements FileSystem {
     path: string,
     create = false,
   ): Promise<FileSystemDirectoryHandle> {
-    const parts = path.split('/').filter(Boolean);
+    const parts = path.split('/').filter((p) => p && p !== '.');
     let dir = this.rootHandle;
     for (const part of parts) {
       dir = await dir.getDirectoryHandle(part, { create });
