@@ -79,4 +79,12 @@ describe('assembleInitPrompt', () => {
     expect(prompt).toContain('IMPORTANT: The project to analyze is located at "/home/user/my-app"');
     expect(prompt).toContain("Explore THAT directory, not the ArchCanvas tool's own source code.");
   });
+
+  it('uses project file tools guidance when no projectPath', () => {
+    const survey = makeSurvey({ projectPath: undefined });
+    const prompt = assembleInitPrompt('MyProject', survey);
+    expect(prompt).not.toContain('Project path:');
+    expect(prompt).toContain('project file tools');
+    expect(prompt).toContain('relative to the project root');
+  });
 });

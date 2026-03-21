@@ -112,7 +112,7 @@ export interface SurveyData {
   explorationDepth: 'full' | 'top-level' | 'custom';
   customDepth?: number;
   focusDirs: string;
-  projectPath: string;
+  projectPath?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -434,7 +434,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     // 5. AI path: set projectPath from survey, open chat + send init prompt
     if (get().status === 'loaded' && type === 'ai' && survey) {
-      get().setProjectPath(survey.projectPath);
+      if (survey.projectPath) get().setProjectPath(survey.projectPath);
 
       const { useUiStore } = await import('./uiStore');
       useUiStore.getState().toggleChat();
