@@ -119,10 +119,6 @@ describe('OnboardingWizard', () => {
     const textarea = screen.getByPlaceholderText('Describe what this project does...');
     fireEvent.change(textarea, { target: { value: 'My cool project' } });
 
-    // Fill project path (required)
-    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app');
-    fireEvent.change(pathInput, { target: { value: '/home/user/my-app' } });
-
     // Select a tech
     fireEvent.click(screen.getByText('TypeScript'));
 
@@ -134,7 +130,6 @@ describe('OnboardingWizard', () => {
       techStack: ['TypeScript'],
       explorationDepth: 'full',
       focusDirs: '',
-      projectPath: '/home/user/my-app',
     });
   });
 });
@@ -204,36 +199,10 @@ describe('AiSurveyStep', () => {
     expect(screen.queryByTestId('ai-unavailable-banner')).not.toBeInTheDocument();
   });
 
-  it('pre-fills project path from fs.getPath() and hides the input', () => {
+  it('does not show project path input', () => {
     setAiAvailable(true);
-    setMockFs({ getPath: () => '/home/user/real-project' });
-
-    const onStart = vi.fn();
-    render(<AiSurveyStep onBack={vi.fn()} onStart={onStart} />);
-
-    // When fs provides a path, the manual input is hidden (auto-detected)
-    expect(screen.queryByPlaceholderText('/Users/you/projects/my-app')).toBeNull();
-
-    // Fill required description so Start is enabled, then verify the path flows through
-    const desc = screen.getByPlaceholderText('Describe what this project does...');
-    fireEvent.change(desc, { target: { value: 'Test project' } });
-    fireEvent.click(screen.getByText('Start'));
-
-    expect(onStart).toHaveBeenCalledWith(
-      expect.objectContaining({ projectPath: '/home/user/real-project' }),
-    );
-
-    // Reset fs mock for other tests
-    setMockFs(null);
-  });
-
-  it('project path input is empty when fs is null (Web)', () => {
-    setAiAvailable(true);
-    setMockFs(null);
-
     render(<AiSurveyStep onBack={vi.fn()} onStart={vi.fn()} />);
-
-    const pathInput = screen.getByPlaceholderText('/Users/you/projects/my-app') as HTMLInputElement;
-    expect(pathInput.value).toBe('');
+    expect(screen.queryByPlaceholderText('/Users/you/projects/my-app')).toBeNull();
+    expect(screen.queryByLabelText(/project path/i)).toBeNull();
   });
 });

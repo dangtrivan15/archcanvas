@@ -16,15 +16,20 @@ export function assembleInitPrompt(projectName: string, survey: SurveyData): str
     ? survey.techStack.join(', ')
     : 'not specified';
 
+  const pathLines = survey.projectPath
+    ? `Project path: ${survey.projectPath}
+
+IMPORTANT: The project to analyze is located at "${survey.projectPath}".
+Explore THAT directory, not the ArchCanvas tool's own source code.`
+    : `Use the project file tools (read_project_file, glob_project_files, etc.) to explore the project.
+These tools access files relative to the project root — no absolute path needed.`;
+
   return `I'd like you to analyze this codebase and create an architecture diagram using ArchCanvas.
 
 Project: ${projectName}
 Description: ${survey.description}
 Tech stack: ${techStackText}
-Project path: ${survey.projectPath}
-
-IMPORTANT: The project to analyze is located at "${survey.projectPath}".
-Explore THAT directory, not the ArchCanvas tool's own source code.
+${pathLines}
 
 Exploration instructions:
 - Depth: ${depthText}
