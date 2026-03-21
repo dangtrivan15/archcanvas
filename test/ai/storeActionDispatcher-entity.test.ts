@@ -29,8 +29,8 @@ describe('dispatchStoreAction — entity actions', () => {
   beforeEach(setup);
 
   describe('addEntity', () => {
-    it('adds entity to canvas', () => {
-      const result = dispatchStoreAction('addEntity', {
+    it('adds entity to canvas', async () => {
+      const result = await dispatchStoreAction('addEntity', {
         canvasId: ROOT_CANVAS_KEY,
         name: 'Order',
         description: 'A purchase order',
@@ -39,12 +39,12 @@ describe('dispatchStoreAction — entity actions', () => {
       expect(result).toMatchObject({ ok: true });
     });
 
-    it('returns error for duplicate entity', () => {
-      dispatchStoreAction('addEntity', {
+    it('returns error for duplicate entity', async () => {
+      await dispatchStoreAction('addEntity', {
         canvasId: ROOT_CANVAS_KEY,
         name: 'Order',
       });
-      const result = dispatchStoreAction('addEntity', {
+      const result = await dispatchStoreAction('addEntity', {
         canvasId: ROOT_CANVAS_KEY,
         name: 'Order',
       });
@@ -56,20 +56,20 @@ describe('dispatchStoreAction — entity actions', () => {
   });
 
   describe('removeEntity', () => {
-    it('removes entity from canvas', () => {
-      dispatchStoreAction('addEntity', {
+    it('removes entity from canvas', async () => {
+      await dispatchStoreAction('addEntity', {
         canvasId: ROOT_CANVAS_KEY,
         name: 'Order',
       });
-      const result = dispatchStoreAction('removeEntity', {
+      const result = await dispatchStoreAction('removeEntity', {
         canvasId: ROOT_CANVAS_KEY,
         entityName: 'Order',
       });
       expect(result).toMatchObject({ ok: true });
     });
 
-    it('returns error when entity not found', () => {
-      const result = dispatchStoreAction('removeEntity', {
+    it('returns error when entity not found', async () => {
+      const result = await dispatchStoreAction('removeEntity', {
         canvasId: ROOT_CANVAS_KEY,
         entityName: 'NonExistent',
       });
@@ -81,12 +81,12 @@ describe('dispatchStoreAction — entity actions', () => {
   });
 
   describe('updateEntity', () => {
-    it('updates entity description', () => {
-      dispatchStoreAction('addEntity', {
+    it('updates entity description', async () => {
+      await dispatchStoreAction('addEntity', {
         canvasId: ROOT_CANVAS_KEY,
         name: 'Order',
       });
-      const result = dispatchStoreAction('updateEntity', {
+      const result = await dispatchStoreAction('updateEntity', {
         canvasId: ROOT_CANVAS_KEY,
         entityName: 'Order',
         description: 'Updated description',

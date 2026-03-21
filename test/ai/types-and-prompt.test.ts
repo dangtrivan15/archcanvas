@@ -283,7 +283,7 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('auto-approved');
   });
 
-  // --- All 9 MCP tool names ---
+  // --- All 19 MCP tool names ---
   const toolNames = [
     'add_node',
     'add_edge',
@@ -294,6 +294,12 @@ describe('buildSystemPrompt', () => {
     'describe',
     'search',
     'catalog',
+    'read_project_file',
+    'write_project_file',
+    'update_project_file',
+    'list_project_files',
+    'glob_project_files',
+    'search_project_files',
   ] as const;
 
   for (const name of toolNames) {
@@ -315,6 +321,35 @@ describe('buildSystemPrompt', () => {
     const prompt = buildSystemPrompt(baseContext);
     expect(prompt).toMatch(/list.*scope/);
     expect(prompt).toContain('nodes|edges|entities|all');
+  });
+
+  it('omits path line when projectPath is absent', () => {
+    const ctx: ProjectContext = {
+      projectName: 'NoPath',
+      currentScope: 'root',
+    };
+    const prompt = buildSystemPrompt(ctx);
+    expect(prompt).not.toContain('**Path:**');
+  });
+
+  it('includes no-filesystem warning when projectPath is absent', () => {
+    const ctx: ProjectContext = {
+      projectName: 'NoPath',
+      currentScope: 'root',
+    };
+    const prompt = buildSystemPrompt(ctx);
+    expect(prompt).toContain('No Filesystem Path Available');
+  });
+
+  it('does not include no-filesystem warning when projectPath is present', () => {
+    const prompt = buildSystemPrompt(baseContext);
+    expect(prompt).not.toContain('No Filesystem Path Available');
+  });
+
+  it('includes project file tools section', () => {
+    const prompt = buildSystemPrompt(baseContext);
+    expect(prompt).toContain('Project File Tools');
+    expect(prompt).toContain('relative to the project root');
   });
 
   it('does not reference CLI commands', () => {

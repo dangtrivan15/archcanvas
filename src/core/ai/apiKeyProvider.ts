@@ -200,7 +200,7 @@ export class ApiKeyProvider implements ChatProvider {
 
         for (const tool of toolUseBlocks) {
           const { action, translatedArgs } = translateToolArgs(tool.name, tool.input);
-          const result = dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
+          const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
           const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
 
           if (resultObj.ok) {

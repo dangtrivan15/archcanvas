@@ -3,7 +3,7 @@ import { useChatStore } from '@/store/chatStore';
 import type { ChatProvider, ChatEvent, ProjectContext } from '@/core/ai/types';
 
 // ---------------------------------------------------------------------------
-// Mock stores — projectPath is null to test the guard
+// Mock stores — projectPath is null (no longer blocks chat)
 // ---------------------------------------------------------------------------
 
 vi.mock('@/store/fileStore', () => ({
@@ -103,35 +103,39 @@ beforeEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('chatStore — projectPath guard', () => {
-  it('sets error when projectPath is null', async () => {
+describe('chatStore — projectPath no longer blocks chat', () => {
+  it('allows sending messages when projectPath is null', async () => {
     const provider = createMockProvider('p1');
     useChatStore.getState().registerProvider(provider);
 
+    // Pre-emit done event so streaming completes
+    provider.emitEvents([
+      { type: 'text', requestId: 'r', content: 'Hi!' },
+      { type: 'done', requestId: 'r' },
+    ]);
+
     await useChatStore.getState().sendMessage('Hello');
 
-    expect(useChatStore.getState().error).toBe(
-      'Project path is required for AI chat. Set it in project settings.',
-    );
-    // Message should NOT have been sent to provider
-    expect(provider.sentMessages).toHaveLength(0);
+    // No error should be set
+    expect(useChatStore.getState().error).toBeNull();
+    // Message should have been sent to provider
+    expect(provider.sentMessages).toHaveLength(1);
   });
 
-  it('does not add user message when projectPath is null', async () => {
+  it('assembles context without projectPath', async () => {
     const provider = createMockProvider('p1');
     useChatStore.getState().registerProvider(provider);
 
-    await useChatStore.getState().sendMessage('Hello');
-
-    expect(useChatStore.getState().messages).toHaveLength(0);
-  });
-
-  it('does not set isStreaming when projectPath is null', async () => {
-    const provider = createMockProvider('p1');
-    useChatStore.getState().registerProvider(provider);
+    provider.emitEvents([
+      { type: 'text', requestId: 'r', content: 'Hi!' },
+      { type: 'done', requestId: 'r' },
+    ]);
 
     await useChatStore.getState().sendMessage('Hello');
 
-    expect(useChatStore.getState().isStreaming).toBe(false);
+    // Context should NOT contain projectPath
+    const sentContext = provider.sentMessages[0].context;
+    expect(sentContext.projectPath).toBeUndefined();
+    expect(sentContext.projectName).toBe('MockProject');
   });
 });

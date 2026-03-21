@@ -168,8 +168,8 @@ describe('BridgeSession — SDK options', () => {
     // Tools should be in `tools` (available to the model), NOT `allowedTools`
     // (which would auto-approve them and skip canUseTool permission checks).
     const tools = opts.tools as string[];
-    expect(tools).toContain('Write');
-    expect(tools).toContain('Edit');
+    expect(tools).not.toContain('Write');
+    expect(tools).not.toContain('Edit');
     expect(tools).toContain('WebFetch');
     expect(tools).toContain('WebSearch');
     expect(tools).toContain('AskUserQuestion');

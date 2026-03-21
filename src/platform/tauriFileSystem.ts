@@ -48,4 +48,35 @@ export class TauriFileSystem implements FileSystem {
   async mkdir(path: string): Promise<void> {
     await tauriMkdir(this.resolve(path), { recursive: true });
   }
+
+  async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {
+    const entries = await readDir(this.resolve(path));
+    return entries
+      .filter((e) => e.name != null)
+      .map((e) => ({
+        name: e.name!,
+        type: e.isDirectory ? 'directory' as const : 'file' as const,
+      }));
+  }
+
+  async listFilesRecursive(path: string, ignore: string[] = []): Promise<string[]> {
+    const ignoreSet = new Set(ignore);
+    const results: string[] = [];
+
+    const walk = async (dir: string, rel: string) => {
+      const entries = await readDir(dir);
+      for (const e of entries) {
+        if (!e.name || ignoreSet.has(e.name)) continue;
+        const entryRel = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory) {
+          await walk(`${dir}/${e.name}`, entryRel);
+        } else if (e.isFile) {
+          results.push(entryRel);
+        }
+      }
+    };
+
+    await walk(this.resolve(path), path === '.' || path === '' ? '' : path);
+    return results.sort();
+  }
 }

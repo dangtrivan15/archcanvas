@@ -363,7 +363,7 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
             cwd: resolvedCwd,
             abortController,
             ...(sessionId ? { resume: sessionId } : {}),
-            tools: ['Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
+            tools: ['Bash', 'Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'AskUserQuestion'],
             ...(options.mcpServers ? { mcpServers: options.mcpServers } : {}),
             ...(options.allowedTools ? { allowedTools: options.allowedTools } : {}),
             permissionMode,

@@ -65,6 +65,38 @@ export class WebFileSystem implements FileSystem {
     await this.resolveDir(path, true);
   }
 
+  async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {
+    const dir = await this.resolveDir(path);
+    const entries: { name: string; type: 'file' | 'directory' }[] = [];
+    const iterable = dir as unknown as AsyncIterable<[string, FileSystemHandle]>;
+    for await (const [name, handle] of iterable) {
+      entries.push({ name, type: handle.kind === 'directory' ? 'directory' : 'file' });
+    }
+    return entries;
+  }
+
+  async listFilesRecursive(path: string, ignore: string[] = []): Promise<string[]> {
+    const ignoreSet = new Set(ignore);
+    const results: string[] = [];
+
+    const walk = async (dirHandle: FileSystemDirectoryHandle, rel: string) => {
+      const iterable = dirHandle as unknown as AsyncIterable<[string, FileSystemHandle]>;
+      for await (const [name, handle] of iterable) {
+        if (ignoreSet.has(name)) continue;
+        const entryRel = rel ? `${rel}/${name}` : name;
+        if (handle.kind === 'directory') {
+          await walk(handle as FileSystemDirectoryHandle, entryRel);
+        } else {
+          results.push(entryRel);
+        }
+      }
+    };
+
+    const dir = await this.resolveDir(path);
+    await walk(dir, path === '.' || path === '' ? '' : path);
+    return results.sort();
+  }
+
   private async resolve(
     path: string,
     createDirs = false,

@@ -1,7 +1,7 @@
 /**
  * MCP tool server for ArchCanvas.
  *
- * Registers 13 tools with the Claude Agent SDK MCP server.
+ * Registers 19 tools with the Claude Agent SDK MCP server.
  * Handler bodies use shared translateToolArgs() for arg translation.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
@@ -22,7 +22,7 @@ function toCallToolResult(result: { ok: boolean; data?: unknown; error?: { code:
 }
 
 /**
- * Create an MCP server with 9 ArchCanvas tools.
+ * Create an MCP server with 19 ArchCanvas tools.
  * Each tool handler translates MCP args to dispatcher shape and relays via the provided function.
  */
 export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
@@ -155,6 +155,55 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         const { action, translatedArgs } = translateToolArgs('catalog', a);
         return toCallToolResult(await relay(action, translatedArgs));
       }),
+
+      // --- Project File Tools ---
+      tool('read_project_file', 'Read a text file in the opened project. Binary files are not supported.', {
+        path: z.string().describe('File path relative to project root'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('read_project_file', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
+      tool('write_project_file', 'Create or overwrite a file in the opened project. Auto-creates parent directories.', {
+        path: z.string().describe('File path relative to project root'),
+        content: z.string().describe('Full file content'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('write_project_file', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
+      tool('update_project_file', 'Edit a file by replacing a specific string. Provide enough context in old_string to make the match unique.', {
+        path: z.string().describe('File path relative to project root'),
+        old_string: z.string().describe('Exact text to find'),
+        new_string: z.string().describe('Replacement text'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('update_project_file', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
+      tool('list_project_files', 'List direct children (files and directories) of a directory in the opened project.', {
+        path: z.string().optional().describe('Directory path relative to project root (defaults to root)'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('list_project_files', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
+      tool('glob_project_files', 'Find files by glob pattern in the opened project. Supports *, **, ? wildcards.', {
+        pattern: z.string().describe('Glob pattern (e.g., "**/*.ts")'),
+        path: z.string().optional().describe('Base directory (defaults to root)'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('glob_project_files', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
+      tool('search_project_files', 'Search file contents by regex pattern in the opened project.', {
+        query: z.string().describe('Regex pattern to search for'),
+        path: z.string().optional().describe('Subdirectory scope (defaults to root)'),
+        include: z.string().optional().describe('Glob filter for filenames (e.g., "*.ts")'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('search_project_files', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
     ],
   });
 }
@@ -168,4 +217,7 @@ export const MCP_TOOL_NAMES = [
   'mcp__archcanvas__list',
   'mcp__archcanvas__describe', 'mcp__archcanvas__search',
   'mcp__archcanvas__catalog',
+  'mcp__archcanvas__read_project_file', 'mcp__archcanvas__write_project_file',
+  'mcp__archcanvas__update_project_file', 'mcp__archcanvas__list_project_files',
+  'mcp__archcanvas__glob_project_files', 'mcp__archcanvas__search_project_files',
 ];

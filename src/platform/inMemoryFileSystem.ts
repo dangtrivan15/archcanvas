@@ -63,6 +63,43 @@ export class InMemoryFileSystem implements FileSystem {
     // No-op — directories are implicit in the file map
   }
 
+  async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {
+    const prefix = path === '.' || path === '' ? '' : this.normalize(path) + '/';
+    const entries = new Map<string, 'file' | 'directory'>();
+
+    for (const key of this.files.keys()) {
+      if (!key.startsWith(prefix)) continue;
+      const rest = key.slice(prefix.length);
+      const slashIdx = rest.indexOf('/');
+      if (slashIdx === -1) {
+        entries.set(rest, 'file');
+      } else {
+        const dirName = rest.slice(0, slashIdx);
+        if (!entries.has(dirName)) {
+          entries.set(dirName, 'directory');
+        }
+      }
+    }
+
+    return [...entries.entries()].map(([name, type]) => ({ name, type }));
+  }
+
+  async listFilesRecursive(path: string, ignore: string[] = []): Promise<string[]> {
+    const prefix = path === '.' || path === '' ? '' : this.normalize(path) + '/';
+    const ignoreSet = new Set(ignore);
+    const results: string[] = [];
+
+    for (const key of this.files.keys()) {
+      if (prefix === '' || key.startsWith(prefix)) {
+        const segments = key.split('/');
+        if (segments.some((s) => ignoreSet.has(s))) continue;
+        results.push(key);
+      }
+    }
+
+    return results.sort();
+  }
+
   /** Populate multiple files at once (test helper) */
   seed(files: Record<string, string>): void {
     for (const [path, content] of Object.entries(files)) {

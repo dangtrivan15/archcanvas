@@ -159,4 +159,56 @@ describe('translateToolArgs', () => {
     expect(translatedArgs.namespace).toBe('compute');
     expect(translatedArgs.canvasId).toBe('__root__');
   });
+
+  // --- Project File Tools ---
+
+  it('translates read_project_file', () => {
+    const { action, translatedArgs } = translateToolArgs('read_project_file', { path: 'src/app.ts' });
+    expect(action).toBe('readProjectFile');
+    expect(translatedArgs).toEqual({ path: 'src/app.ts' });
+  });
+
+  it('translates write_project_file', () => {
+    const { action, translatedArgs } = translateToolArgs('write_project_file', {
+      path: 'src/new.ts', content: 'hello',
+    });
+    expect(action).toBe('writeProjectFile');
+    expect(translatedArgs).toEqual({ path: 'src/new.ts', content: 'hello' });
+  });
+
+  it('translates update_project_file', () => {
+    const { action, translatedArgs } = translateToolArgs('update_project_file', {
+      path: 'src/app.ts', old_string: 'foo', new_string: 'bar',
+    });
+    expect(action).toBe('updateProjectFile');
+    expect(translatedArgs).toEqual({ path: 'src/app.ts', oldString: 'foo', newString: 'bar' });
+  });
+
+  it('translates list_project_files', () => {
+    const { action, translatedArgs } = translateToolArgs('list_project_files', { path: 'src' });
+    expect(action).toBe('listProjectFiles');
+    expect(translatedArgs).toEqual({ path: 'src' });
+  });
+
+  it('translates list_project_files with default path', () => {
+    const { action, translatedArgs } = translateToolArgs('list_project_files', {});
+    expect(action).toBe('listProjectFiles');
+    expect(translatedArgs).toEqual({ path: '.' });
+  });
+
+  it('translates glob_project_files', () => {
+    const { action, translatedArgs } = translateToolArgs('glob_project_files', {
+      pattern: '**/*.ts', path: 'src',
+    });
+    expect(action).toBe('globProjectFiles');
+    expect(translatedArgs).toEqual({ pattern: '**/*.ts', path: 'src' });
+  });
+
+  it('translates search_project_files', () => {
+    const { action, translatedArgs } = translateToolArgs('search_project_files', {
+      query: 'import.*React', path: 'src', include: '*.tsx',
+    });
+    expect(action).toBe('searchProjectFiles');
+    expect(translatedArgs).toEqual({ query: 'import.*React', path: 'src', include: '*.tsx' });
+  });
 });

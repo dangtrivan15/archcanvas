@@ -16,6 +16,7 @@ import { useRegistryStore } from '@/store/registryStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import type { Node, Edge, Entity } from '@/types/schema';
 import { validateAndBuildNode } from '@/core/validation/addNodeValidation';
+import { validateRelativePath, isBinaryContent, truncateLines, globToRegex, DEFAULT_IGNORE } from './fileToolUtils';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -31,7 +32,7 @@ export interface StoreActionError {
  * Returns the action result (shape varies per action), or an error object.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function dispatchStoreAction(action: string, args: Record<string, unknown>): unknown {
+export async function dispatchStoreAction(action: string, args: Record<string, unknown>): Promise<unknown> {
   switch (action) {
     // --- Write actions ---
     case 'addNode':
@@ -69,6 +70,20 @@ export function dispatchStoreAction(action: string, args: Record<string, unknown
       return dispatchSearch(args);
     case 'catalog':
       return dispatchCatalog(args);
+
+    // --- Project file actions ---
+    case 'readProjectFile':
+      return dispatchReadProjectFile(args);
+    case 'writeProjectFile':
+      return dispatchWriteProjectFile(args);
+    case 'updateProjectFile':
+      return dispatchUpdateProjectFile(args);
+    case 'listProjectFiles':
+      return dispatchListProjectFiles(args);
+    case 'globProjectFiles':
+      return dispatchGlobProjectFiles(args);
+    case 'searchProjectFiles':
+      return dispatchSearchProjectFiles(args);
 
     default:
       return { ok: false, error: { code: 'UNKNOWN_ACTION', message: `Unknown action: ${action}` } };
@@ -358,4 +373,144 @@ function dispatchUpdateEntity(args: Record<string, unknown>) {
   if (args.description !== undefined) updates.description = args.description as string;
   if (args.codeRefs !== undefined) updates.codeRefs = args.codeRefs as string[];
   return useGraphStore.getState().updateEntity(canvasId, entityName, updates);
+}
+
+// ---------------------------------------------------------------------------
+// Project file action dispatchers
+// ---------------------------------------------------------------------------
+
+async function dispatchReadProjectFile(args: Record<string, unknown>) {
+  let path: string;
+  try { path = validateRelativePath(args.path as string); }
+  catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  try {
+    const content = await fs.readFile(path);
+    if (isBinaryContent(content)) {
+      return { ok: false, error: { code: 'BINARY_FILE', message: `'${path}' appears to be a binary file` } };
+    }
+    return { ok: true, data: truncateLines(content, 2000) };
+  } catch {
+    return { ok: false, error: { code: 'FILE_NOT_FOUND', message: `File '${path}' not found` } };
+  }
+}
+
+async function dispatchWriteProjectFile(args: Record<string, unknown>) {
+  let path: string;
+  try { path = validateRelativePath(args.path as string); }
+  catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  await fs.writeFile(path, args.content as string);
+  return { ok: true, data: { path } };
+}
+
+async function dispatchUpdateProjectFile(args: Record<string, unknown>) {
+  let path: string;
+  try { path = validateRelativePath(args.path as string); }
+  catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  let content: string;
+  try { content = await fs.readFile(path); }
+  catch { return { ok: false, error: { code: 'FILE_NOT_FOUND', message: `File '${path}' not found` } }; }
+
+  const oldString = args.oldString as string;
+  const newString = args.newString as string;
+  const firstIdx = content.indexOf(oldString);
+  if (firstIdx === -1) {
+    return { ok: false, error: { code: 'STRING_NOT_FOUND', message: `String not found in '${path}'` } };
+  }
+  const secondIdx = content.indexOf(oldString, firstIdx + 1);
+  if (secondIdx !== -1) {
+    return { ok: false, error: { code: 'AMBIGUOUS_MATCH', message: `String matches multiple locations in '${path}'. Provide more surrounding context.` } };
+  }
+
+  const updated = content.slice(0, firstIdx) + newString + content.slice(firstIdx + oldString.length);
+  await fs.writeFile(path, updated);
+  return { ok: true, data: { path } };
+}
+
+async function dispatchListProjectFiles(args: Record<string, unknown>) {
+  let path = (args.path as string) ?? '.';
+  if (path !== '.') {
+    try { path = validateRelativePath(path); }
+    catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+  }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  const entries = await fs.listEntries(path);
+  return { entries: entries.map((e) => ({ name: e.name, type: e.type })) };
+}
+
+async function dispatchGlobProjectFiles(args: Record<string, unknown>) {
+  const pattern = args.pattern as string;
+  let basePath = (args.path as string) ?? '.';
+  if (basePath !== '.') {
+    try { basePath = validateRelativePath(basePath); }
+    catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+  }
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  const allFiles = await fs.listFilesRecursive(basePath, DEFAULT_IGNORE);
+  const regex = globToRegex(pattern);
+  const matched = allFiles.filter((f) => {
+    // Match against path relative to basePath
+    const rel = basePath === '.' ? f : f.startsWith(basePath + '/') ? f.slice(basePath.length + 1) : f;
+    return regex.test(rel);
+  });
+
+  return { files: matched.slice(0, 1000) };
+}
+
+async function dispatchSearchProjectFiles(args: Record<string, unknown>) {
+  const query = args.query as string;
+  let basePath = (args.path as string) ?? '.';
+  if (basePath !== '.') {
+    try { basePath = validateRelativePath(basePath); }
+    catch { return { ok: false, error: { code: 'INVALID_PATH', message: `Invalid path: ${args.path}` } }; }
+  }
+  const include = args.include as string | undefined;
+
+  const fs = useFileStore.getState().fs;
+  if (!fs) return { ok: false, error: { code: 'NO_FILESYSTEM', message: 'No project open' } };
+
+  let regex: RegExp;
+  try { regex = new RegExp(query); }
+  catch { return { ok: false, error: { code: 'INVALID_REGEX', message: `Invalid regex: ${query}` } }; }
+
+  const includeRegex = include ? globToRegex(include) : null;
+  const allFiles = await fs.listFilesRecursive(basePath, DEFAULT_IGNORE);
+
+  const matches: { path: string; line: number; content: string }[] = [];
+
+  for (const filePath of allFiles) {
+    if (includeRegex && !includeRegex.test(filePath.split('/').pop()!)) continue;
+    if (matches.length >= 100) break;
+
+    let content: string;
+    try { content = await fs.readFile(filePath); } catch { continue; }
+    if (isBinaryContent(content)) continue;
+
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (regex.test(lines[i])) {
+        matches.push({ path: filePath, line: i + 1, content: lines[i] });
+        if (matches.length >= 100) break;
+      }
+    }
+  }
+
+  return { matches };
 }

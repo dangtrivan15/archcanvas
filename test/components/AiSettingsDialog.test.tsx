@@ -35,6 +35,30 @@ vi.mock('@/store/uiStore', () => ({
   useUiStore: (selector: (s: typeof mockUiState) => unknown) => selector(mockUiState),
 }));
 
+const mockChatState = {
+  activeProviderId: 'claude-api-key' as string | null,
+};
+
+vi.mock('@/store/chatStore', () => ({
+  useChatStore: Object.assign(
+    (selector: (s: typeof mockChatState) => unknown) => selector(mockChatState),
+    { getState: () => ({ setActiveProvider: vi.fn() }) },
+  ),
+}));
+
+const mockFileState = {
+  projectPath: null as string | null,
+  fs: null as { getPath: () => string | null } | null,
+  setProjectPath: vi.fn(),
+};
+
+vi.mock('@/store/fileStore', () => ({
+  useFileStore: Object.assign(
+    (selector: (s: typeof mockFileState) => unknown) => selector(mockFileState),
+    { getState: () => mockFileState },
+  ),
+}));
+
 // Stub motion to avoid animation issues in tests
 vi.mock('motion/react', () => ({
   motion: {
@@ -56,9 +80,14 @@ describe('AiSettingsDialog', () => {
     mockApiKeyState.isValidating = false;
     mockApiKeyState.error = null;
     mockUiState.showAiSettingsDialog = true;
+    mockChatState.activeProviderId = 'claude-api-key';
+    mockFileState.projectPath = null;
+    mockFileState.fs = null;
   });
 
-  it('renders API key input and model dropdown', () => {
+  // --- API Key provider ---
+
+  it('shows API key settings when API key provider is active', () => {
     render(<AiSettingsDialog />);
     expect(screen.getByLabelText(/api key/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/model/i)).toBeInTheDocument();
@@ -127,10 +156,48 @@ describe('AiSettingsDialog', () => {
   it('saves key when user types and presses Enter', () => {
     render(<AiSettingsDialog />);
     const input = screen.getByLabelText(/api key/i);
-    // Focus triggers edit mode, then type a value
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'sk-ant-api03-new-key' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(mockApiKeyState.setApiKey).toHaveBeenCalledWith('sk-ant-api03-new-key');
+  });
+
+  // --- Claude Code provider ---
+
+  it('shows project path when Claude Code provider is active', () => {
+    mockChatState.activeProviderId = 'claude-code';
+    render(<AiSettingsDialog />);
+    expect(screen.getByLabelText(/project path/i)).toBeInTheDocument();
+    expect(screen.getByText(/context awareness/i)).toBeInTheDocument();
+  });
+
+  it('does not show API key settings when Claude Code is active', () => {
+    mockChatState.activeProviderId = 'claude-code';
+    render(<AiSettingsDialog />);
+    expect(screen.queryByLabelText(/api key/i)).not.toBeInTheDocument();
+  });
+
+  it('sets project path via Set button', () => {
+    mockChatState.activeProviderId = 'claude-code';
+    render(<AiSettingsDialog />);
+    const input = screen.getByLabelText(/project path/i);
+    fireEvent.change(input, { target: { value: '/home/user/my-project' } });
+    fireEvent.click(screen.getByText('Set'));
+    expect(mockFileState.setProjectPath).toHaveBeenCalledWith('/home/user/my-project');
+  });
+
+  // --- No provider ---
+
+  it('shows message when no provider is active', () => {
+    mockChatState.activeProviderId = null;
+    render(<AiSettingsDialog />);
+    expect(screen.getByText(/select.*provider/i)).toBeInTheDocument();
+  });
+
+  it('does not show API key or path settings when no provider', () => {
+    mockChatState.activeProviderId = null;
+    render(<AiSettingsDialog />);
+    expect(screen.queryByLabelText(/api key/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/project path/i)).not.toBeInTheDocument();
   });
 });
