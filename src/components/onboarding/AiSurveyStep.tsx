@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useChatStore } from '@/store/chatStore';
 import type { SurveyData } from '@/store/fileStore';
+import { ApiKeySettings, ClaudeCodeSettings } from '@/components/ai/AiProviderSettings';
 
 interface AiSurveyStepProps {
   onBack: () => void;
@@ -32,13 +33,11 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
   const [customDepth, setCustomDepth] = useState(3);
   const [focusDirs, setFocusDirs] = useState('');
 
-  const aiAvailable = useChatStore((s) => {
-    for (const p of s.providers.values()) {
-      if (p.available) return true;
-    }
-    return false;
-  });
+  const providers = useChatStore((s) => s.providers);
+  const activeProviderId = useChatStore((s) => s.activeProviderId);
+  const providerList = Array.from(providers.values());
 
+  const aiAvailable = providerList.some((p) => p.id === activeProviderId && p.available);
   const canStart = description.trim().length > 0 && aiAvailable;
 
   function toggleTech(tech: string) {
@@ -75,29 +74,80 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
         </p>
       </motion.div>
 
-      <AnimatePresence>
-        {!aiAvailable && (
-          <motion.div
-            key="ai-unavailable"
-            initial={prefersReduced ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={prefersReduced ? undefined : { opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div
-              className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400"
-              role="alert"
-              data-testid="ai-unavailable-banner"
-            >
-              AI is not connected. The analysis will start once a connection is established.
-            </div>
-          </motion.div>
+      {/* AI Provider */}
+      <motion.div className="flex flex-col gap-3" {...sectionProps(0.05)}>
+        <label htmlFor="ai-provider" className="text-sm font-medium">
+          AI Provider <span className="text-red-400">*</span>
+        </label>
+
+        {providerList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No AI providers available. Ensure Claude Code is running or configure an API key below.
+          </p>
+        ) : (
+          <div className="flex gap-2" role="radiogroup" aria-label="AI provider">
+            {providerList.map((p) => {
+              const isActive = p.id === activeProviderId;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => useChatStore.getState().setActiveProvider(p.id)}
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                    isActive
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-2 w-2 rounded-full ${
+                      p.available ? 'bg-green-500' : 'bg-muted-foreground'
+                    }`}
+                  />
+                  {p.displayName}
+                </button>
+              );
+            })}
+          </div>
         )}
-      </AnimatePresence>
+
+        {/* Provider-specific settings */}
+        <AnimatePresence mode="wait">
+          {activeProviderId === 'claude-api-key' && (
+            <motion.div
+              key="api-key-settings"
+              initial={prefersReduced ? false : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={prefersReduced ? undefined : { opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-md border border-border bg-surface/50 p-4">
+                <ApiKeySettings />
+              </div>
+            </motion.div>
+          )}
+          {activeProviderId && activeProviderId !== 'claude-api-key' && (
+            <motion.div
+              key="claude-code-settings"
+              initial={prefersReduced ? false : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={prefersReduced ? undefined : { opacity: 0, height: 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-md border border-border bg-surface/50 p-4">
+                <ClaudeCodeSettings />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Description */}
-      <motion.div className="flex flex-col gap-1.5" {...sectionProps(0.05)}>
+      <motion.div className="flex flex-col gap-1.5" {...sectionProps(0.1)}>
         <label htmlFor="description" className="text-sm font-medium">
           Description <span className="text-red-400">*</span>
         </label>
