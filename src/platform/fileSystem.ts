@@ -11,4 +11,6 @@ export interface FileSystem {
   listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]>;
   /** List all file paths under `path` recursively, relative to project root. */
   listFilesRecursive(path: string, ignore?: string[]): Promise<string[]>;
+  /** Delete a file at `path`. Throws if the file does not exist. */
+  deleteFile(path: string): Promise<void>;
 }

@@ -97,6 +97,11 @@ export class WebFileSystem implements FileSystem {
     return results.sort();
   }
 
+  async deleteFile(path: string): Promise<void> {
+    const { dir, fileName } = await this.resolve(path);
+    await dir.removeEntry(fileName);
+  }
+
   private async resolve(
     path: string,
     createDirs = false,

@@ -163,6 +163,26 @@ describe('dispatchStoreAction — file actions', () => {
     });
   });
 
+  describe('deleteProjectFile', () => {
+    it('deletes an existing file', async () => {
+      const fs = useFileStore.getState().fs!;
+      expect(await fs.exists('README.md')).toBe(true);
+      const result = await dispatchStoreAction('deleteProjectFile', { path: 'README.md' });
+      expect(result).toMatchObject({ ok: true, data: { path: 'README.md' } });
+      expect(await fs.exists('README.md')).toBe(false);
+    });
+
+    it('returns error for nonexistent file', async () => {
+      const result = await dispatchStoreAction('deleteProjectFile', { path: 'nope.ts' });
+      expect(result).toMatchObject({ ok: false, error: { code: 'FILE_NOT_FOUND' } });
+    });
+
+    it('rejects path traversal', async () => {
+      const result = await dispatchStoreAction('deleteProjectFile', { path: '../etc/passwd' });
+      expect(result).toMatchObject({ ok: false, error: { code: 'INVALID_PATH' } });
+    });
+  });
+
   describe('searchProjectFiles', () => {
     it('finds regex matches', async () => {
       const result = await dispatchStoreAction('searchProjectFiles', {

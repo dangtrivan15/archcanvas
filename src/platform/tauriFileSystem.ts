@@ -5,6 +5,7 @@ import {
   exists as tauriExists,
   mkdir as tauriMkdir,
   readDir,
+  remove as tauriRemove,
 } from '@tauri-apps/plugin-fs';
 
 export class TauriFileSystem implements FileSystem {
@@ -47,6 +48,10 @@ export class TauriFileSystem implements FileSystem {
 
   async mkdir(path: string): Promise<void> {
     await tauriMkdir(this.resolve(path), { recursive: true });
+  }
+
+  async deleteFile(path: string): Promise<void> {
+    await tauriRemove(this.resolve(path));
   }
 
   async listEntries(path: string): Promise<{ name: string; type: 'file' | 'directory' }[]> {

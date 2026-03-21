@@ -1,7 +1,7 @@
 /**
  * MCP tool server for ArchCanvas.
  *
- * Registers 19 tools with the Claude Agent SDK MCP server.
+ * Registers 20 tools with the Claude Agent SDK MCP server.
  * Handler bodies use shared translateToolArgs() for arg translation.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
@@ -22,7 +22,7 @@ function toCallToolResult(result: { ok: boolean; data?: unknown; error?: { code:
 }
 
 /**
- * Create an MCP server with 19 ArchCanvas tools.
+ * Create an MCP server with 20 ArchCanvas tools.
  * Each tool handler translates MCP args to dispatcher shape and relays via the provided function.
  */
 export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
@@ -204,6 +204,13 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         const { action, translatedArgs } = translateToolArgs('search_project_files', a);
         return toCallToolResult(await relay(action, translatedArgs));
       }),
+
+      tool('delete_project_file', 'Delete a file in the opened project. Cannot delete directories.', {
+        path: z.string().describe('File path relative to project root'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('delete_project_file', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
     ],
   });
 }
@@ -220,4 +227,5 @@ export const MCP_TOOL_NAMES = [
   'mcp__archcanvas__read_project_file', 'mcp__archcanvas__write_project_file',
   'mcp__archcanvas__update_project_file', 'mcp__archcanvas__list_project_files',
   'mcp__archcanvas__glob_project_files', 'mcp__archcanvas__search_project_files',
+  'mcp__archcanvas__delete_project_file',
 ];

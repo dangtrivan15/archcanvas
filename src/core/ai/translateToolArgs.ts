@@ -29,6 +29,7 @@ export const TOOL_TO_ACTION: Record<string, string> = {
   list_project_files: 'listProjectFiles',
   glob_project_files: 'globProjectFiles',
   search_project_files: 'searchProjectFiles',
+  delete_project_file: 'deleteProjectFile',
 };
 
 const ROOT = '__root__';
@@ -142,6 +143,9 @@ export function translateToolArgs(
         query: args.query, path: (args.path as string) ?? '.',
         ...(args.include !== undefined && { include: args.include }),
       }};
+
+    case 'delete_project_file':
+      return { action, translatedArgs: { path: args.path } };
 
     // Read actions: map scope → canvasId, pass rest through
     default: {
