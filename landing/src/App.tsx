@@ -3,6 +3,8 @@ import { Hero } from './components/Hero';
 import { Features } from './components/Features';
 import { HowItWorks } from './components/HowItWorks';
 import { TechStrip } from './components/TechStrip';
+import { CtaSection } from './components/CtaSection';
+import { Footer } from './components/Footer';
 
 export function App() {
   return (
@@ -13,7 +15,9 @@ export function App() {
         <Features />
         <HowItWorks />
         <TechStrip />
+        <CtaSection />
       </main>
+      <Footer />
     </div>
   );
 }
