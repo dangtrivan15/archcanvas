@@ -9,8 +9,8 @@ const FOOTER_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="relative z-[1] bg-footer-bg px-14 py-7">
-      <div className="max-w-[880px] mx-auto flex justify-between items-center">
+    <footer className="relative z-[1] bg-footer-bg px-14 max-md:px-6 py-7">
+      <div className="max-w-[880px] mx-auto flex justify-between items-center max-md:flex-col max-md:gap-4 max-md:text-center">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-[18px] h-[18px] rounded-[5px] bg-linear-to-br from-purple to-teal" />

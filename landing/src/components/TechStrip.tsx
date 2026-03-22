@@ -72,7 +72,7 @@ export function TechStrip() {
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <section className="relative z-[1] px-14 py-13 border-t border-b border-[#e8e0d8]">
+    <section className="relative z-[1] px-14 max-md:px-6 py-13 border-t border-b border-[#e8e0d8]">
       <motion.div
         ref={ref}
         className="max-w-[800px] mx-auto"

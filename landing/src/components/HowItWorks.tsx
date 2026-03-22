@@ -24,7 +24,7 @@ export function HowItWorks() {
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <section className="relative z-[1] px-14 py-20 bg-[rgba(242,233,225,0.55)]">
+    <section className="relative z-[1] px-14 max-md:px-6 py-20 bg-[rgba(242,233,225,0.55)]">
       <div className="max-w-[880px] mx-auto">
         <div className="text-center mb-12">
           <div className="inline-block bg-warm-cream/90 text-purple text-[11px] px-3 py-1 rounded-full mb-3 font-semibold border border-purple/15">
@@ -35,7 +35,7 @@ export function HowItWorks() {
           </h2>
         </div>
 
-        <div ref={ref} className="flex items-stretch">
+        <div ref={ref} className="flex items-stretch max-md:flex-col max-md:gap-6">
           <motion.div
             className="flex-1 text-center flex flex-col"
             initial={{ opacity: 0, y: 20 }}
@@ -70,7 +70,7 @@ export function HowItWorks() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <StepArrow color="#907aa9" />
+            <div className="max-md:hidden"><StepArrow color="#907aa9" /></div>
           </motion.div>
 
           <motion.div
@@ -104,7 +104,7 @@ export function HowItWorks() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.6, duration: 0.5 }}
           >
-            <StepArrow color="#56949f" />
+            <div className="max-md:hidden"><StepArrow color="#56949f" /></div>
           </motion.div>
 
           <motion.div

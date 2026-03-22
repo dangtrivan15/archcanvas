@@ -7,7 +7,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="flex items-center justify-between px-14 py-7 max-w-[1280px] mx-auto">
+    <nav className="flex items-center justify-between px-14 max-md:px-6 py-7 max-w-[1280px] mx-auto">
       {/* Logo */}
       <a href="/" className="flex items-center gap-2.5">
         <div className="w-[26px] h-[26px] rounded-[7px] bg-linear-to-br from-purple to-teal" />

@@ -63,7 +63,7 @@ export function Features() {
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <section id="features" className="relative z-[1] px-14 py-20">
+    <section id="features" className="relative z-[1] px-14 max-md:px-6 py-20">
       <div ref={ref} className="max-w-[880px] mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -79,7 +79,7 @@ export function Features() {
         </div>
 
         {/* 2x2 card grid */}
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-2 max-md:grid-cols-1 gap-5">
           {FEATURES.map((feature, index) => (
             <motion.div
               key={feature.title}
