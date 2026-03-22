@@ -11,7 +11,7 @@ ArchCanvas is a visual architecture tool built for the AI era of software develo
 No more translating between diagrams and implementation. **The diagram _is_ the spec.**
 
 <p align="center">
-  <video src="public/demo/onboard-with-ai.webm" width="800" autoplay loop muted playsinline>
+  <video src="https://github.com/dangtrivan15/archcanvas/releases/download/assets/onboard-with-ai.webm" width="800" autoplay loop muted playsinline>
     Your browser does not support the video tag.
   </video>
 </p>
