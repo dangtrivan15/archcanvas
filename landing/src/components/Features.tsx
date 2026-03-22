@@ -1,3 +1,6 @@
+import { motion } from 'motion/react';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+
 const FEATURES = [
   {
     title: 'AI reads your architecture',
@@ -57,9 +60,11 @@ const FEATURES = [
 ] as const;
 
 export function Features() {
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+
   return (
     <section id="features" className="relative z-[1] px-14 py-20">
-      <div className="max-w-[880px] mx-auto">
+      <div ref={ref} className="max-w-[880px] mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-block bg-warm-cream/90 text-purple text-[11px] px-3 py-1 rounded-full mb-3 font-semibold border border-purple/15">
@@ -75,10 +80,13 @@ export function Features() {
 
         {/* 2x2 card grid */}
         <div className="grid grid-cols-2 gap-5">
-          {FEATURES.map((feature) => (
-            <div
+          {FEATURES.map((feature, index) => (
+            <motion.div
               key={feature.title}
               className="bg-white border border-border rounded-[14px] p-7 shadow-[0_2px_12px_rgba(87,82,121,0.06)]"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isVisible ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
             >
               <div
                 className={`w-[46px] h-[46px] rounded-xl flex items-center justify-center mb-4 bg-linear-to-br ${feature.gradient}`}
@@ -91,7 +99,7 @@ export function Features() {
               <p className="text-muted text-[13px] leading-relaxed">
                 {feature.description}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

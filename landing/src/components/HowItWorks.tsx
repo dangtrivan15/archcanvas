@@ -1,3 +1,6 @@
+import { motion } from 'motion/react';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+
 function StepArrow({ color }: { color: string }) {
   return (
     <div className="flex-[0_0_40px] flex items-center justify-center pt-7">
@@ -18,6 +21,8 @@ function StepArrow({ color }: { color: string }) {
 }
 
 export function HowItWorks() {
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+
   return (
     <section className="relative z-[1] px-14 py-20 bg-[rgba(242,233,225,0.55)]">
       <div className="max-w-[880px] mx-auto">
@@ -30,8 +35,13 @@ export function HowItWorks() {
           </h2>
         </div>
 
-        <div className="flex items-stretch">
-          <div className="flex-1 text-center flex flex-col">
+        <div ref={ref} className="flex items-stretch">
+          <motion.div
+            className="flex-1 text-center flex flex-col"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0, duration: 0.5 }}
+          >
             <div className="w-16 h-16 rounded-full bg-white border-2 border-purple flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-purple shrink-0">
               1
             </div>
@@ -53,11 +63,22 @@ export function HowItWorks() {
             <p className="text-muted text-xs leading-normal px-2 shrink-0">
               Draw your system on the canvas. Nodes, edges, subsystems — as deep as you need.
             </p>
-          </div>
+          </motion.div>
 
-          <StepArrow color="#907aa9" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <StepArrow color="#907aa9" />
+          </motion.div>
 
-          <div className="flex-1 text-center flex flex-col">
+          <motion.div
+            className="flex-1 text-center flex flex-col"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
             <div className="w-16 h-16 rounded-full bg-white border-2 border-teal flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-teal shrink-0">
               2
             </div>
@@ -76,11 +97,22 @@ export function HowItWorks() {
             <p className="text-muted text-xs leading-normal px-2 shrink-0">
               YAML files in <code className="bg-warm-cream px-1 py-0.5 rounded text-xs font-mono">.archcanvas/</code> go into git. Review architecture changes in PRs.
             </p>
-          </div>
+          </motion.div>
 
-          <StepArrow color="#56949f" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.6, duration: 0.5 }}
+          >
+            <StepArrow color="#56949f" />
+          </motion.div>
 
-          <div className="flex-1 text-center flex flex-col">
+          <motion.div
+            className="flex-1 text-center flex flex-col"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isVisible ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
             <div className="w-16 h-16 rounded-full bg-white border-2 border-gold flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-gold shrink-0">
               3
             </div>
@@ -102,7 +134,7 @@ export function HowItWorks() {
             <p className="text-muted text-xs leading-normal px-2 shrink-0">
               AI reads your architecture as the source of truth and turns it into working code.
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
