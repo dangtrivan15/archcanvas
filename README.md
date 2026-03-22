@@ -10,6 +10,13 @@ ArchCanvas is a visual architecture tool built for the AI era of software develo
 
 No more translating between diagrams and implementation. **The diagram _is_ the spec.**
 
+<p align="center">
+  <video src="public/demo/onboard-with-ai.webm" width="800" autoplay loop muted playsinline>
+    Your browser does not support the video tag.
+  </video>
+</p>
+<p align="center"><em>AI reads your codebase and builds the architecture diagram — in seconds.</em></p>
+
 ## Why ArchCanvas?
 
 Software development is changing. AI can write code — but it still needs an architect. The bottleneck is no longer typing code. It's **designing the right system**.
