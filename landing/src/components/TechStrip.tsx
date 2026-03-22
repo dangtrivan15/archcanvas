@@ -1,3 +1,6 @@
+import { motion } from 'motion/react';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+
 const TECH_ITEMS = [
   {
     label: 'React 19',
@@ -66,9 +69,17 @@ const TECH_ITEMS = [
 ] as const;
 
 export function TechStrip() {
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+
   return (
     <section className="relative z-[1] px-14 py-13 border-t border-b border-[#e8e0d8]">
-      <div className="max-w-[800px] mx-auto">
+      <motion.div
+        ref={ref}
+        className="max-w-[800px] mx-auto"
+        initial={{ opacity: 0 }}
+        animate={isVisible ? { opacity: 1 } : {}}
+        transition={{ duration: 0.6 }}
+      >
         <div className="text-center mb-7 text-muted text-[13px] font-medium uppercase tracking-[2px]">
           Built with
         </div>
@@ -80,7 +91,7 @@ export function TechStrip() {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

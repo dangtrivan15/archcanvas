@@ -1,10 +1,20 @@
 import { Star } from 'lucide-react';
+import { motion } from 'motion/react';
 import { GITHUB_REPO, GITHUB_RELEASES } from '../constants';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 
 export function CtaSection() {
+  const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
+
   return (
     <section className="relative z-[1] px-14 py-20 bg-[rgba(87,82,121,0.82)] overflow-hidden">
-      <div className="relative z-[1] max-w-[600px] mx-auto text-center">
+      <motion.div
+        ref={ref}
+        className="relative z-[1] max-w-[600px] mx-auto text-center"
+        initial={{ opacity: 0 }}
+        animate={isVisible ? { opacity: 1 } : {}}
+        transition={{ duration: 0.6 }}
+      >
         <div className="w-[52px] h-[52px] rounded-[14px] bg-linear-to-br from-purple to-teal mx-auto mb-5 flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#faf4ed" strokeWidth="2" strokeLinecap="round">
             <rect x="4" y="4" width="7" height="7" rx="1.5" />
@@ -44,7 +54,7 @@ export function CtaSection() {
         <div className="mt-4 text-[#9e8fa0] text-[11px]">
           v0.1.0 · macOS 13+ · Apple Silicon & Intel
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
