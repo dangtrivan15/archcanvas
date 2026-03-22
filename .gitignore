@@ -29,6 +29,7 @@ Thumbs.db
 .playwright/
 test-results/
 playwright-report/
+demo-videos/
 tmp/
 
 # Worktrees

@@ -4,7 +4,7 @@ process.env.SLOT_GUARD_POOL = "playwright";
 
 export default defineConfig({
   testDir: "./test/e2e",
-  testIgnore: ["ai-bridge.spec.ts"],
+  testIgnore: ["ai-bridge.spec.ts", "demo-*.spec.ts"],
   globalSetup: ["./test/setup/playwrightSlotGuard.ts"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
