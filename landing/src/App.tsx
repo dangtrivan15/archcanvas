@@ -1,5 +1,6 @@
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { Features } from './components/Features';
 
 export function App() {
   return (
@@ -7,9 +8,7 @@ export function App() {
       <Navbar />
       <main>
         <Hero />
-        <section id="features" className="py-20 text-center">
-          <h2 className="text-3xl font-extrabold text-dark-purple">Features placeholder</h2>
-        </section>
+        <Features />
       </main>
     </div>
   );
