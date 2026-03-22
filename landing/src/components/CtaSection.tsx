@@ -7,7 +7,7 @@ export function CtaSection() {
   const { ref, isVisible } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <section className="relative z-[1] px-14 py-20 bg-[rgba(87,82,121,0.82)] overflow-hidden">
+    <section className="relative z-[1] px-14 max-md:px-6 py-20 bg-[rgba(87,82,121,0.82)] overflow-hidden">
       <motion.div
         ref={ref}
         className="relative z-[1] max-w-[600px] mx-auto text-center"

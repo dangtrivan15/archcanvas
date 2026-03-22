@@ -19,11 +19,11 @@ export function Hero() {
         <rect width="100%" height="100%" fill="url(#hero-fade)" />
       </svg>
 
-      <div className="relative z-[2] px-14 max-w-[1280px] mx-auto">
+      <div className="relative z-[2] px-14 max-md:px-6 max-w-[1280px] mx-auto">
         {/* Hero split: text left (38%), diagram right (62%) */}
-        <div className="flex gap-12 items-center">
+        <div className="flex gap-12 items-center max-lg:flex-col max-lg:gap-8">
           {/* Text side */}
-          <div className="flex-[0_0_38%] max-w-[38%]">
+          <div className="flex-[0_0_38%] max-w-[38%] max-lg:flex-none max-lg:max-w-none max-lg:text-center">
             <div className="inline-block bg-warm-cream/90 text-purple text-xs px-3.5 py-1.5 rounded-full mb-[18px] font-semibold border border-purple/15">
               AI-native architecture tool
             </div>
@@ -37,7 +37,7 @@ export function Hero() {
               The diagram <em>is</em> the spec. Design visually on an interactive canvas,
               commit to git, and let AI implement from your architecture.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 max-lg:justify-center">
               <a
                 href={GITHUB_RELEASES}
                 className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
@@ -54,7 +54,9 @@ export function Hero() {
           </div>
 
           {/* Diagram side */}
-          <HeroDiagram />
+          <div className="max-md:hidden max-lg:min-h-[300px]">
+            <HeroDiagram />
+          </div>
         </div>
       </div>
 
