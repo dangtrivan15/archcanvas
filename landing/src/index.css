@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* --- Inter static instances (400, 500, 600) --- */
+/* NOTE: InterVariable.woff2 not available in this repo; weight 800 used for hero     */
+/* titles will be synthesized by the browser from weight 600. To fix, download        */
+/* InterVariable.woff2 from https://github.com/rsms/inter/releases and replace these  */
+/* three @font-face blocks with a single variable-font block (font-weight: 100 900).  */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+}
+
+/* --- Monaspace Argon for code snippets --- */
+@font-face {
+  font-family: 'Monaspace Argon';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/monaspace-argon/MonaspaceArgon-Regular.woff2') format('woff2');
+}
+
+/* --- Tailwind 4 theme tokens (Rosé Pine palette from spec) --- */
+@theme {
+  --color-cream: #faf4ed;
+  --color-warm-cream: #f2e9e1;
+  --color-purple: #907aa9;
+  --color-dark-purple: #575279;
+  --color-gold: #ea9d34;
+  --color-teal: #56949f;
+  --color-dark-teal: #286983;
+  --color-rose: #d7827e;
+  --color-muted: #797593;
+  --color-border: #dfdad9;
+  --color-footer-bg: #3e3858;
+  --color-footer-text: #c4b8b0;
+  --color-footer-muted: #7e7590;
+  --color-footer-link: #9e8fa0;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Monaspace Argon', ui-monospace, monospace;
+}
+
+/* --- Body: cream background with continuous dot grid --- */
+body {
+  background-color: var(--color-cream);
+  background-image: radial-gradient(
+    circle,
+    rgba(87, 82, 121, 0.15) 1.15px,
+    transparent 1.15px
+  );
+  background-size: 20px 20px;
+  color: var(--color-dark-purple);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
