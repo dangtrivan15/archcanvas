@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, afterEach } from 'vitest';
 import { WebSocket } from 'ws';
-import { createBridgeServer, type RelayStoreActionFn } from '../../src/core/ai/bridgeServer';
-import type { BridgeSession } from '../../src/core/ai/claudeCodeBridge';
+import { createBridgeServer, type RelayStoreActionFn } from '../../src-web/core/ai/bridgeServer';
+import type { BridgeSession } from '../../src-web/core/ai/claudeCodeBridge';
 
 describe('bridgeServer', () => {
   let server: ReturnType<typeof createBridgeServer> | null = null;

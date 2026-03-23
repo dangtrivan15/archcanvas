@@ -69,7 +69,7 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-import { AiSettingsDialog } from '../../src/components/AiSettingsDialog';
+import { AiSettingsDialog } from '../../src-web/components/AiSettingsDialog';
 
 describe('AiSettingsDialog', () => {
   beforeEach(() => {

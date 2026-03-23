@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translateToolArgs, TOOL_TO_ACTION } from '../../src/core/ai/translateToolArgs';
+import { translateToolArgs, TOOL_TO_ACTION } from '../../src-web/core/ai/translateToolArgs';
 
 describe('TOOL_TO_ACTION', () => {
   it('maps all tool names to action names', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryFileSystem } from '../../src/platform/inMemoryFileSystem';
+import { InMemoryFileSystem } from '../../src-web/platform/inMemoryFileSystem';
 
 describe('FileSystem extensions — InMemoryFileSystem', () => {
   let fs: InMemoryFileSystem;

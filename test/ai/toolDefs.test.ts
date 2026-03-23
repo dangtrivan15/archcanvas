@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { archCanvasToolDefs } from '../../src/core/ai/toolDefs';
+import { archCanvasToolDefs } from '../../src-web/core/ai/toolDefs';
 
 describe('archCanvasToolDefs', () => {
   it('exports an array of tool definitions', () => {
@@ -41,7 +41,7 @@ describe('archCanvasToolDefs', () => {
 
   it('does not import Node.js-only modules', async () => {
     // Verify the module can be imported in a browser-like environment
-    const mod = await import('../../src/core/ai/toolDefs');
+    const mod = await import('../../src-web/core/ai/toolDefs');
     expect(mod.archCanvasToolDefs).toBeDefined();
   });
 

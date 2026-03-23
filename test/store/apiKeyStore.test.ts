@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import type { useApiKeyStore as UseApiKeyStoreType } from '../../src/store/apiKeyStore';
+import type { useApiKeyStore as UseApiKeyStoreType } from '../../src-web/store/apiKeyStore';
 
 const mockModelsList = vi.fn();
 
@@ -37,7 +37,7 @@ describe('apiKeyStore', () => {
     vi.stubGlobal('localStorage', mockStorage);
     mockModelsList.mockReset();
     vi.resetModules();
-    const mod = await import('../../src/store/apiKeyStore');
+    const mod = await import('../../src-web/store/apiKeyStore');
     useApiKeyStore = mod.useApiKeyStore;
     DEFAULT_MODEL = mod.DEFAULT_MODEL;
     AVAILABLE_MODELS = mod.AVAILABLE_MODELS;
@@ -83,7 +83,7 @@ describe('apiKeyStore', () => {
     mockStorage.setItem('archcanvas:apiKey', 'sk-ant-stored');
     mockStorage.setItem('archcanvas:model', 'claude-opus-4-6-20250919');
     vi.resetModules();
-    const mod = await import('../../src/store/apiKeyStore');
+    const mod = await import('../../src-web/store/apiKeyStore');
     expect(mod.useApiKeyStore.getState().apiKey).toBe('sk-ant-stored');
     expect(mod.useApiKeyStore.getState().model).toBe('claude-opus-4-6-20250919');
   });

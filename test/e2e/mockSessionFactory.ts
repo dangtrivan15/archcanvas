@@ -12,9 +12,9 @@
  * Activated via MOCK_BRIDGE=1 env var in vite.config.ts.
  */
 
-import type { BridgeSession } from '../../src/core/ai/claudeCodeBridge';
-import type { RelayStoreActionFn, StoreActionResult } from '../../src/core/ai/bridgeServer';
-import type { ChatEvent, ProjectContext } from '../../src/core/ai/types';
+import type { BridgeSession } from '../../src-web/core/ai/claudeCodeBridge';
+import type { RelayStoreActionFn, StoreActionResult } from '../../src-web/core/ai/bridgeServer';
+import type { ChatEvent, ProjectContext } from '../../src-web/core/ai/types';
 
 // ---------------------------------------------------------------------------
 // Scenario type + registry

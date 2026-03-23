@@ -6,7 +6,7 @@ import {
   truncateLines,
   DEFAULT_IGNORE,
   shouldIgnore,
-} from '../../src/core/ai/fileToolUtils';
+} from '../../src-web/core/ai/fileToolUtils';
 
 describe('validateRelativePath', () => {
   it('accepts simple relative paths', () => {
