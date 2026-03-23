@@ -65,8 +65,8 @@ export function CtaSection() {
           <span className="h-px w-8 bg-cream/15" />
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-0 mx-auto max-w-[440px] bg-[rgba(30,25,50,0.5)] border border-cream/10 rounded-lg overflow-hidden">
-          <code className="flex-1 text-cream/80 text-[13px] font-mono px-4 py-2.5 text-left truncate">
+        <div className="mt-3 flex items-center justify-center gap-0 mx-auto bg-[rgba(30,25,50,0.5)] border border-cream/10 rounded-lg overflow-hidden w-fit">
+          <code className="text-cream/80 text-[13px] font-mono px-4 py-2.5 text-left whitespace-nowrap">
             <span className="text-[#e6b450] select-none">$ </span><span className="select-all">{BREW_COMMAND}</span>
           </code>
           <button
