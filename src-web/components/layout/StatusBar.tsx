@@ -1,6 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useFileStore } from "@/store/fileStore";
 import { useNavigationStore } from "@/store/navigationStore";
+import { useUpdaterStore } from "@/store/updaterStore";
+import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
 
 export function StatusBar() {
@@ -12,12 +14,28 @@ export function StatusBar() {
   const fileName = projectFilePath ? projectFilePath.split('/').pop() : null;
   const prefersReduced = useReducedMotion();
 
+  const updateStatus = useUpdaterStore((s) => s.status);
+  const updateVersion = useUpdaterStore((s) => s.version);
+
   const loaded = getCanvas(currentCanvasId);
   const nodeCount = loaded?.data.nodes?.length ?? 0;
   const edgeCount = loaded?.data.edges?.length ?? 0;
 
   const scopeName = breadcrumb[breadcrumb.length - 1]?.displayName ?? 'Root';
   const isDirty = dirtyCanvases.size > 0;
+
+  function handleUpdateClick() {
+    if (updateStatus === 'update-available') {
+      downloadAndInstall();
+    } else if (updateStatus === 'ready-to-restart') {
+      relaunch();
+    }
+  }
+
+  const showUpdateIndicator =
+    updateStatus === 'update-available' ||
+    updateStatus === 'downloading' ||
+    updateStatus === 'ready-to-restart';
 
   return (
     <div className="flex h-6 items-center justify-between border-t border-border bg-background px-3 text-xs text-muted-foreground">
@@ -41,6 +59,28 @@ export function StatusBar() {
         </AnimatePresence>
       </div>
       <div className="flex items-center gap-3">
+        <AnimatePresence>
+          {showUpdateIndicator && (
+            <motion.button
+              data-testid="update-indicator"
+              initial={prefersReduced ? false : { opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={prefersReduced ? undefined : { opacity: 0, x: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onClick={handleUpdateClick}
+              disabled={updateStatus === 'downloading'}
+              className={`rounded px-1.5 py-0.5 font-medium transition-colors ${
+                updateStatus === 'downloading'
+                  ? 'text-muted-foreground cursor-default'
+                  : 'text-sky-500 hover:bg-sky-500/15 cursor-pointer'
+              }`}
+            >
+              {updateStatus === 'update-available' && `v${updateVersion} available`}
+              {updateStatus === 'downloading' && 'Downloading update\u2026'}
+              {updateStatus === 'ready-to-restart' && 'Restart to update'}
+            </motion.button>
+          )}
+        </AnimatePresence>
         {loaded ? (
           <>
             <span>{scopeName}</span>
