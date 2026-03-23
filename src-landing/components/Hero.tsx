@@ -37,19 +37,24 @@ export function Hero() {
               The diagram <em>is</em> the spec. Design visually on an interactive canvas,
               commit to git, and let AI implement from your architecture.
             </p>
-            <div className="flex gap-3 max-lg:justify-center">
-              <a
-                href={DOWNLOAD_ARM64}
-                className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:bg-[#4a4568] transition-colors"
-              >
-                &#63743; Download for Mac
-              </a>
-              <button
-                onClick={() => setVideoOpen(true)}
-                className="border border-border text-dark-purple px-6 py-3 rounded-[10px] text-sm bg-cream/70 backdrop-blur-sm hover:bg-warm-cream/70 transition-colors cursor-pointer"
-              >
-                Watch demo
-              </button>
+            <div className="max-lg:text-center">
+              <div className="flex flex-wrap items-center gap-3 max-lg:justify-center">
+                <a
+                  href={DOWNLOAD_ARM64}
+                  className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:bg-[#4a4568] transition-colors"
+                >
+                  &#63743; Download for Mac
+                </a>
+                <button
+                  onClick={() => setVideoOpen(true)}
+                  className="border border-border text-dark-purple px-6 py-3 rounded-[10px] text-sm bg-cream/70 backdrop-blur-sm hover:bg-warm-cream/70 transition-colors cursor-pointer"
+                >
+                  Watch demo
+                </button>
+              </div>
+              <p className="mt-2 text-muted/60 text-xs pl-5">
+                or <a href="#brew" className="underline hover:text-dark-purple/70 transition-colors">install with Homebrew</a>
+              </p>
             </div>
           </div>
 

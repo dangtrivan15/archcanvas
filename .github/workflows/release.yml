@@ -97,10 +97,14 @@ jobs:
         run: npm run build
 
       - name: Build sidecar
-        run: bun build --compile src-web/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-${{ matrix.rust-target }}
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: bun build --compile src-web/bridge/index.ts --outfile "src-tauri/binaries/archcanvas-bridge-${RUST_TARGET}"
 
       - name: Build Tauri app
-        run: npx tauri build --target ${{ matrix.rust-target }} --bundles dmg --config '{"build":{"beforeBuildCommand":""}}'
+        env:
+          RUST_TARGET: ${{ matrix.rust-target }}
+        run: npx tauri build --target "$RUST_TARGET" --bundles dmg --config '{"build":{"beforeBuildCommand":""}}'
 
       - name: Upload DMG
         uses: actions/upload-artifact@v4

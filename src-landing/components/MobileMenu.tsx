@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { DOWNLOAD_ARM64, NAV_LINKS } from '../constants';
+import { NAV_LINKS } from '../constants';
 
 interface MobileMenuProps {
   open: boolean;
@@ -43,10 +43,11 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               </a>
             ))}
             <a
-              href={DOWNLOAD_ARM64}
+              href="#brew"
+              onClick={onClose}
               className="bg-dark-purple text-cream px-6 py-3 rounded-lg text-sm font-semibold text-center mt-4"
             >
-              Download for Mac
+              Install
             </a>
           </div>
         </motion.div>

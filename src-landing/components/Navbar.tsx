@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
-import { DOWNLOAD_ARM64, NAV_LINKS } from '../constants';
+import { NAV_LINKS } from '../constants';
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,10 +29,10 @@ export function Navbar() {
           </a>
         ))}
         <a
-          href={DOWNLOAD_ARM64}
+          href="#brew"
           className="bg-dark-purple text-cream px-[18px] py-[7px] rounded-lg text-[13px] font-semibold hover:opacity-90 transition-opacity"
         >
-          Download for Mac
+          Install
         </a>
       </div>
 
