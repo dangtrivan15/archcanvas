@@ -154,7 +154,7 @@ npm run lint
 
 ```
 archcanvas/
-  src/
+  src-web/
     components/       # React UI — canvas, nodes, edges, panels, toolbar, onboarding
     store/            # Zustand stores — graph, file, canvas, navigation, history, chat, UI
     core/             # Pure TypeScript — graph engine, registry, layout, AI, validation
@@ -162,6 +162,7 @@ archcanvas/
     platform/         # FileSystem abstraction — Web, Tauri, Node.js, InMemory impls
     bridge/           # Standalone sidecar entry point (Tauri desktop AI bridge)
     types/            # Zod schemas and TypeScript types
+  src-landing/        # Landing page (Vite + React, separate build)
   src-tauri/          # Tauri 2.0 Rust backend
   test/               # Unit tests (Vitest) + E2E tests (Playwright)
   docs/
