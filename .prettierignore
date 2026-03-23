@@ -1,8 +1,4 @@
 node_modules
 dist
-dev-dist
-.vite-cache
-src/proto/archcanvas.pb.js
-src/proto/archcanvas.pb.d.ts
 package-lock.json
 *.md
