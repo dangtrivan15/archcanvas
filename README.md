@@ -226,7 +226,7 @@ The codebase follows strict layering — each layer only depends on the one belo
 
 | Layer | Technology |
 |-------|-----------|
-| UI | React 19, Tailwind CSS 4, Radix UI |
+| UI | React 19, Tailwind CSS 4, Radix UI, Animate UI |
 | Canvas | @xyflow/react v12 |
 | Layout | elkjs |
 | State | Zustand 5, Immer |
@@ -236,6 +236,7 @@ The codebase follows strict layering — each layer only depends on the one belo
 | Desktop | Tauri 2.0 |
 | Build | Vite 7, TypeScript 5.9 |
 | Testing | Vitest 4, Playwright |
+| Animation | Motion (Framer Motion) |
 | Icons | Lucide React |
 
 ## License

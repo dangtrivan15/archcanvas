@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import { MobileMenu } from './MobileMenu';
-import { GITHUB_RELEASES, NAV_LINKS } from '../constants';
+import { DOWNLOAD_ARM64, NAV_LINKS } from '../constants';
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -10,7 +10,7 @@ export function Navbar() {
     <nav className="flex items-center justify-between px-14 max-md:px-6 py-7 max-w-[1280px] mx-auto">
       {/* Logo */}
       <a href="/" className="flex items-center gap-2.5">
-        <div className="w-[26px] h-[26px] rounded-[7px] bg-linear-to-br from-purple to-teal" />
+        <img src="/favicon.svg" alt="" width="32" height="32" />
         <span className="text-dark-purple text-[17px] font-bold tracking-tight">
           ArchCanvas
         </span>
@@ -29,7 +29,7 @@ export function Navbar() {
           </a>
         ))}
         <a
-          href={GITHUB_RELEASES}
+          href={DOWNLOAD_ARM64}
           className="bg-dark-purple text-cream px-[18px] py-[7px] rounded-lg text-[13px] font-semibold hover:opacity-90 transition-opacity"
         >
           Download for Mac

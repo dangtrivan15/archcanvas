@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { GITHUB_RELEASES, NAV_LINKS } from '../constants';
+import { DOWNLOAD_ARM64, NAV_LINKS } from '../constants';
 
 interface MobileMenuProps {
   open: boolean;
@@ -20,7 +20,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         >
           <div className="flex items-center justify-between mb-12">
             <a href="/" className="flex items-center gap-2.5">
-              <div className="w-[26px] h-[26px] rounded-[7px] bg-linear-to-br from-purple to-teal" />
+              <img src="/favicon.svg" alt="" width="32" height="32" />
               <span className="text-dark-purple text-[17px] font-bold tracking-tight">
                 ArchCanvas
               </span>
@@ -43,7 +43,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               </a>
             ))}
             <a
-              href={GITHUB_RELEASES}
+              href={DOWNLOAD_ARM64}
               className="bg-dark-purple text-cream px-6 py-3 rounded-lg text-sm font-semibold text-center mt-4"
             >
               Download for Mac

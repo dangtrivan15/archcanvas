@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { HeroDiagram } from './HeroDiagram';
 import { VideoModal } from './VideoModal';
-import { GITHUB_RELEASES } from '../constants';
+import { DOWNLOAD_ARM64 } from '../constants';
 
 export function Hero() {
   const [videoOpen, setVideoOpen] = useState(false);
 
   return (
-    <section id="hero" className="relative overflow-hidden pb-6">
+    <section id="hero" className="relative overflow-hidden pt-8 pb-6">
       {/* Radial fade for text readability over dot grid */}
       <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-[1]" aria-hidden="true">
         <defs>
@@ -21,7 +21,7 @@ export function Hero() {
 
       <div className="relative z-[2] px-14 max-md:px-6 max-w-[1280px] mx-auto">
         {/* Hero split: text left (38%), diagram right (62%) */}
-        <div className="flex gap-12 items-center max-lg:flex-col max-lg:gap-8">
+        <div className="flex gap-12 items-start max-lg:flex-col max-lg:gap-8">
           {/* Text side */}
           <div className="flex-[0_0_38%] max-w-[38%] max-lg:flex-none max-lg:max-w-none max-lg:text-center">
             <div className="inline-block bg-warm-cream/90 text-purple text-xs px-3.5 py-1.5 rounded-full mb-[18px] font-semibold border border-purple/15">
@@ -39,8 +39,8 @@ export function Hero() {
             </p>
             <div className="flex gap-3 max-lg:justify-center">
               <a
-                href={GITHUB_RELEASES}
-                className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:opacity-90 transition-opacity"
+                href={DOWNLOAD_ARM64}
+                className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:bg-[#4a4568] transition-colors"
               >
                 &#63743; Download for Mac
               </a>
