@@ -25,6 +25,15 @@ export function HowItWorks() {
 
   return (
     <section className="relative z-[1] px-14 max-md:px-6 py-20 bg-[rgba(242,233,225,0.55)]">
+      {/* Reinforce dots dimmed by the warm cream overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, rgba(87,82,121,0.08) 1.15px, transparent 1.15px)',
+          backgroundSize: '20px 20px',
+          backgroundAttachment: 'fixed',
+        }}
+      />
       <div className="max-w-[880px] mx-auto">
         <div className="text-center mb-12">
           <div className="inline-block bg-warm-cream/90 text-purple text-[11px] px-3 py-1 rounded-full mb-3 font-semibold border border-purple/15">
@@ -42,10 +51,10 @@ export function HowItWorks() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0, duration: 0.5 }}
           >
-            <div className="w-16 h-16 rounded-full bg-white border-2 border-purple flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-purple shrink-0">
+            <div className="relative z-[1] w-16 h-16 rounded-full bg-white border-2 border-purple flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-purple shrink-0">
               1
             </div>
-            <div className="bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
+            <div className="relative z-[1] bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
               <svg width="100%" height="80" viewBox="0 0 160 80">
                 <pattern id="s1dots" width="12" height="12" patternUnits="userSpaceOnUse">
                   <circle cx="6" cy="6" r="0.8" fill="#575279" opacity="0.15" />
@@ -79,10 +88,10 @@ export function HowItWorks() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            <div className="w-16 h-16 rounded-full bg-white border-2 border-teal flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-teal shrink-0">
+            <div className="relative z-[1] w-16 h-16 rounded-full bg-white border-2 border-teal flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-teal shrink-0">
               2
             </div>
-            <div className="bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
+            <div className="relative z-[1] bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
               <div className="text-left font-mono text-[9px] leading-[1.7] text-dark-purple">
                 <div><span className="text-purple">nodes:</span></div>
                 <div className="pl-2.5"><span className="text-teal">- id:</span> api-gateway</div>
@@ -113,10 +122,10 @@ export function HowItWorks() {
             animate={isVisible ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.8, duration: 0.5 }}
           >
-            <div className="w-16 h-16 rounded-full bg-white border-2 border-gold flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-gold shrink-0">
+            <div className="relative z-[1] w-16 h-16 rounded-full bg-white border-2 border-gold flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(87,82,121,0.08)] text-2xl font-extrabold text-gold shrink-0">
               3
             </div>
-            <div className="bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
+            <div className="relative z-[1] bg-white border border-border rounded-[10px] p-3 mx-2.5 mb-3.5 shadow-[0_2px_8px_rgba(87,82,121,0.05)] min-h-[120px] flex-1 flex flex-col justify-center">
               <div className="flex items-start gap-2 mb-2">
                 <div className="w-[18px] h-[18px] rounded-[5px] bg-gold flex items-center justify-center shrink-0">
                   <span className="text-white text-[8px] font-bold">AI</span>

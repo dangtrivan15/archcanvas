@@ -321,18 +321,18 @@ export function HeroDiagram() {
 
         {/* --- Breadcrumb --- */}
         <g>
-          <rect x="10" y="340" width="130" height="22" rx="6" fill="rgba(250,244,237,0.88)" stroke="#dfdad9" strokeWidth="0.5" />
-          <text x="18" y="354" fill="#797593" fontSize="9" fontFamily="Inter,system-ui,sans-serif">root</text>
-          <text x="39" y="354" fill="#dfdad9" fontSize="9">&#x203A;</text>
-          <text x="47" y="354" fill="#575279" fontSize="9" fontWeight="600" fontFamily="Inter,system-ui,sans-serif">main</text>
-          <text x="71" y="354" fill="#dfdad9" fontSize="9">&#x203A;</text>
-          <text x="79" y="354" fill="#907aa9" fontSize="9" fontWeight="600" fontFamily="Inter,system-ui,sans-serif">e-commerce</text>
+          <rect x="10" y="305" width="130" height="22" rx="6" fill="rgba(250,244,237,0.88)" stroke="#dfdad9" strokeWidth="0.5" />
+          <text x="18" y="319" fill="#797593" fontSize="9" fontFamily="Inter,system-ui,sans-serif">root</text>
+          <text x="39" y="319" fill="#dfdad9" fontSize="9">&#x203A;</text>
+          <text x="47" y="319" fill="#575279" fontSize="9" fontWeight="600" fontFamily="Inter,system-ui,sans-serif">main</text>
+          <text x="71" y="319" fill="#dfdad9" fontSize="9">&#x203A;</text>
+          <text x="79" y="319" fill="#907aa9" fontSize="9" fontWeight="600" fontFamily="Inter,system-ui,sans-serif">e-commerce</text>
         </g>
       </svg>
 
       {/* --- AI chat bubble (HTML overlay) --- */}
       {reducedMotion ? (
-        <div className="absolute bottom-10 right-3 bg-white border border-border rounded-[10px] px-3.5 py-2.5 shadow-[0_4px_20px_rgba(87,82,121,0.1)] max-w-[200px]">
+        <div className="absolute -bottom-2 right-3 bg-white border border-border rounded-[10px] px-3.5 py-2.5 shadow-[0_4px_20px_rgba(87,82,121,0.1)] max-w-[200px]">
           <div className="flex items-center gap-1.5 mb-1">
             <div className="w-4 h-4 rounded bg-gold flex items-center justify-center">
               <span className="text-white text-[8px] font-bold">AI</span>
@@ -345,7 +345,7 @@ export function HeroDiagram() {
         </div>
       ) : (
         <motion.div
-          className="absolute bottom-10 right-3 bg-white border border-border rounded-[10px] px-3.5 py-2.5 shadow-[0_4px_20px_rgba(87,82,121,0.1)] max-w-[200px]"
+          className="absolute -bottom-2 right-3 bg-white border border-border rounded-[10px] px-3.5 py-2.5 shadow-[0_4px_20px_rgba(87,82,121,0.1)] max-w-[200px]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.8, duration: 0.4 }}

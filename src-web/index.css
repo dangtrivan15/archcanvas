@@ -4,23 +4,9 @@
 @font-face {
   font-family: 'Inter';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 700;
   font-display: swap;
-  src: url('/fonts/inter/Inter-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/inter/Inter-Medium.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+  src: url('/fonts/inter/InterVariable.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Monaspace Argon';

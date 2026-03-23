@@ -8,25 +8,9 @@
 @font-face {
   font-family: 'Inter';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 100 700;
   font-display: swap;
-  src: url('/fonts/inter/Inter-Regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/inter/Inter-Medium.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/inter/Inter-SemiBold.woff2') format('woff2');
+  src: url('/fonts/inter/InterVariable.woff2') format('woff2');
 }
 
 /* --- Monaspace Argon for code snippets --- */
@@ -68,6 +52,7 @@ body {
     transparent 1.15px
   );
   background-size: 20px 20px;
+  background-attachment: fixed;
   color: var(--color-dark-purple);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
