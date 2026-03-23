@@ -1,0 +1,43 @@
+name: Deploy Landing
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src-landing/**'
+      - 'public/**'
+      - 'landing.Dockerfile'
+      - 'nginx-landing.conf'
+      - 'vite.config.landing.ts'
+      - 'tsconfig.landing.json'
+      - 'package.json'
+      - 'package-lock.json'
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: arc-runner-archcanvas
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Export registry env
+        run: echo "PRIVATE_REGISTRY=$PRIVATE_REGISTRY" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [registry."${{ env.PRIVATE_REGISTRY }}"]
+              http = true
+
+      - name: Build and push landing image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: landing.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.PRIVATE_REGISTRY }}/archcanvas-landing:latest
