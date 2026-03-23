@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { HeroDiagram } from './HeroDiagram';
 import { VideoModal } from './VideoModal';
-import { DOWNLOAD_ARM64 } from '../constants';
+import { InstallTabs } from './InstallTabs';
 
 export function Hero() {
   const [videoOpen, setVideoOpen] = useState(false);
@@ -37,18 +37,13 @@ export function Hero() {
               The diagram <em>is</em> the spec. Design visually on an interactive canvas,
               commit to git, and let AI implement from your architecture.
             </p>
-            <div className="flex gap-3 max-lg:justify-center">
-              <a
-                href={DOWNLOAD_ARM64}
-                className="bg-dark-purple text-cream px-6 py-3 rounded-[10px] text-sm font-semibold shadow-[0_2px_8px_rgba(87,82,121,0.25)] inline-flex items-center gap-2 hover:bg-[#4a4568] transition-colors"
-              >
-                &#63743; Download for Mac
-              </a>
+            <div className="max-lg:mx-auto max-lg:max-w-[420px] space-y-3">
+              <InstallTabs />
               <button
                 onClick={() => setVideoOpen(true)}
-                className="border border-border text-dark-purple px-6 py-3 rounded-[10px] text-sm bg-cream/70 backdrop-blur-sm hover:bg-warm-cream/70 transition-colors cursor-pointer"
+                className="text-muted text-sm hover:text-dark-purple transition-colors cursor-pointer"
               >
-                Watch demo
+                Watch demo &rarr;
               </button>
             </div>
           </div>

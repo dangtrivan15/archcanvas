@@ -8,7 +8,7 @@ test.describe('Landing page', () => {
     await expect(page.getByText('ArchCanvas').first()).toBeVisible();
     await expect(page.getByText('You design the')).toBeVisible();
     await expect(page.getByText('AI writes the code.')).toBeVisible();
-    await expect(page.getByText('Download for Mac').first()).toBeVisible();
+    await expect(page.getByText('Homebrew').first()).toBeVisible();
     await expect(page.getByText('Why ArchCanvas')).toBeVisible();
     await expect(page.getByText('AI reads your architecture').first()).toBeVisible();
     await expect(page.getByText('How it works')).toBeVisible();

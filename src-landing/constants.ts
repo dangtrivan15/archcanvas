@@ -1,9 +1,6 @@
 export const GITHUB_REPO = 'https://github.com/dangtrivan15/archcanvas';
 export const GITHUB_RELEASES = 'https://github.com/dangtrivan15/archcanvas/releases';
-export const DOWNLOAD_ARM64 =
-  'https://github.com/dangtrivan15/archcanvas/releases/latest/download/ArchCanvas-aarch64.dmg';
-export const DOWNLOAD_X64 =
-  'https://github.com/dangtrivan15/archcanvas/releases/latest/download/ArchCanvas-x64.dmg';
+export const BREW_COMMAND = 'brew install --cask dangtrivan15/tap/archcanvas';
 export const DEMO_VIDEO_URL =
   'https://github.com/user-attachments/assets/f42215a2-d109-4bf6-96d7-6036585747d0';
 
