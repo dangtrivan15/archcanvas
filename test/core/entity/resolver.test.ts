@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getEntitiesForCanvas, findEntityUsages, listAllEntities } from '../../../src/core/entity/resolver';
-import { ROOT_CANVAS_KEY } from '../../../src/storage/fileResolver';
+import { getEntitiesForCanvas, findEntityUsages, listAllEntities } from '../../../src-web/core/entity/resolver';
+import { ROOT_CANVAS_KEY } from '../../../src-web/storage/fileResolver';
 
 function makeProject(canvases: Record<string, { entities?: any[]; edges?: any[]; nodes?: any[]; displayName?: string }>) {
   const map = new Map<string, any>();

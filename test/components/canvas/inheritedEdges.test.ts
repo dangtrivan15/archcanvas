@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractInheritedEdges } from '../../../src/components/canvas/inheritedEdges';
+import { extractInheritedEdges } from '../../../src-web/components/canvas/inheritedEdges';
 
 describe('extractInheritedEdges', () => {
   it('extracts edges targeting the current subsystem', () => {

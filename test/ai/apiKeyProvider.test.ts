@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ProjectContext, ChatEvent } from '../../src/core/ai/types';
+import type { ProjectContext, ChatEvent } from '../../src-web/core/ai/types';
 
 // --- SDK Mock ---
 
@@ -15,7 +15,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 
 // --- Store Mocks ---
 
-vi.mock('../../src/store/apiKeyStore', () => ({
+vi.mock('../../src-web/store/apiKeyStore', () => ({
   useApiKeyStore: {
     getState: vi.fn().mockReturnValue({
       apiKey: 'sk-ant-test-key',
@@ -26,11 +26,11 @@ vi.mock('../../src/store/apiKeyStore', () => ({
   },
 }));
 
-vi.mock('../../src/core/ai/storeActionDispatcher', () => ({
+vi.mock('../../src-web/core/ai/storeActionDispatcher', () => ({
   dispatchStoreAction: vi.fn().mockReturnValue({ ok: true, data: { id: 'svc-1' } }),
 }));
 
-vi.mock('../../src/core/ai/systemPrompt', () => ({
+vi.mock('../../src-web/core/ai/systemPrompt', () => ({
   buildSystemPrompt: vi.fn().mockReturnValue('You are an architecture assistant.'),
 }));
 
@@ -56,7 +56,7 @@ function createMockStream(events: unknown[], stopReason = 'end_turn', contentBlo
 }
 
 describe('ApiKeyProvider', () => {
-  let ApiKeyProvider: typeof import('../../src/core/ai/apiKeyProvider').ApiKeyProvider;
+  let ApiKeyProvider: typeof import('../../src-web/core/ai/apiKeyProvider').ApiKeyProvider;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -70,7 +70,7 @@ describe('ApiKeyProvider', () => {
       },
     }));
 
-    vi.mock('../../src/store/apiKeyStore', () => ({
+    vi.mock('../../src-web/store/apiKeyStore', () => ({
       useApiKeyStore: {
         getState: vi.fn().mockReturnValue({
           apiKey: 'sk-ant-test-key',
@@ -81,15 +81,15 @@ describe('ApiKeyProvider', () => {
       },
     }));
 
-    vi.mock('../../src/core/ai/storeActionDispatcher', () => ({
+    vi.mock('../../src-web/core/ai/storeActionDispatcher', () => ({
       dispatchStoreAction: vi.fn().mockReturnValue({ ok: true, data: { id: 'svc-1' } }),
     }));
 
-    vi.mock('../../src/core/ai/systemPrompt', () => ({
+    vi.mock('../../src-web/core/ai/systemPrompt', () => ({
       buildSystemPrompt: vi.fn().mockReturnValue('You are an architecture assistant.'),
     }));
 
-    const mod = await import('../../src/core/ai/apiKeyProvider');
+    const mod = await import('../../src-web/core/ai/apiKeyProvider');
     ApiKeyProvider = mod.ApiKeyProvider;
   });
 
@@ -171,7 +171,7 @@ describe('ApiKeyProvider', () => {
     const provider = new ApiKeyProvider();
 
     // Import to access the mock
-    const { dispatchStoreAction } = await import('../../src/core/ai/storeActionDispatcher');
+    const { dispatchStoreAction } = await import('../../src-web/core/ai/storeActionDispatcher');
     (dispatchStoreAction as any).mockReturnValueOnce({
       ok: false,
       error: { code: 'NOT_FOUND', message: 'Node not found' },
@@ -256,7 +256,7 @@ describe('ApiKeyProvider', () => {
   });
 
   it('available reflects apiKeyStore.isValidated', async () => {
-    const { useApiKeyStore } = await import('../../src/store/apiKeyStore');
+    const { useApiKeyStore } = await import('../../src-web/store/apiKeyStore');
 
     // With validated key
     (useApiKeyStore.getState as any).mockReturnValue({ isValidated: true, apiKey: 'key', model: 'model' });
