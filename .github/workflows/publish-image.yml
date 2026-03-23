@@ -2,6 +2,9 @@ name: Publish Image
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src-landing/**', 'landing.Dockerfile', 'vite.config.landing.ts']
 
 concurrency:
   group: publish-image
@@ -14,7 +17,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Export registry env
-        run: echo "PRIVATE_REGISTRY=$PRIVATE_REGISTRY" >> "$GITHUB_ENV"
+        run: |
+          echo "::add-mask::$PRIVATE_REGISTRY"
+          echo "PRIVATE_REGISTRY=$PRIVATE_REGISTRY" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,4 +35,6 @@ jobs:
           file: landing.Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ${{ env.PRIVATE_REGISTRY }}/archcanvas-landing:latest
+          tags: |
+            ${{ env.PRIVATE_REGISTRY }}/archcanvas-landing:latest
+            ${{ env.PRIVATE_REGISTRY }}/archcanvas-landing:${{ github.sha }}
