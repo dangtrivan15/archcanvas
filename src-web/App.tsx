@@ -22,6 +22,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
+import { checkForUpdate } from '@/core/updater';
 import '@/store/themeStore'; // side-effect: applies theme on import
 
 enablePatches();
@@ -71,6 +72,10 @@ export function App() {
 
   useEffect(() => {
     useRegistryStore.getState().initialize();
+  }, []);
+
+  useEffect(() => {
+    checkForUpdate();
   }, []);
 
   useEffect(() => {
