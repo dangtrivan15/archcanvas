@@ -18,6 +18,8 @@
         { "path": "$HOME" },
         { "path": "$HOME/**" }
       ]
-    }
+    },
+    "updater:default",
+    "process:allow-restart"
   ]
 }
