@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   build-and-push:
+    if: github.repository == 'dangtrivan15/archcanvas'
     runs-on: arc-runner-archcanvas
     steps:
       - uses: actions/checkout@v4

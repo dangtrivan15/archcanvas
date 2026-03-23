@@ -109,6 +109,7 @@ jobs:
           path: src-tauri/target/${{ matrix.rust-target }}/release/bundle/dmg/*.dmg
 
   release:
+    if: github.repository == 'dangtrivan15/archcanvas'
     needs: [resolve-version, build]
     runs-on: arc-runner-archcanvas
     permissions:
