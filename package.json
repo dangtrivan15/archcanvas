@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:bridge": "vite build --config vite.config.bridge-sidecar.ts",
-    "build:sidecar": "bun build --compile src/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
+    "build:sidecar": "bun build --compile src-web/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run && npm run test:e2e",
@@ -16,7 +16,11 @@
     "test:e2e-no-bridge": "playwright test --config playwright.config.no-bridge.ts",
     "test:e2e-bridge": "playwright test --config playwright.config.bridge.ts",
     "demo:record": "playwright test --config playwright.config.demo.ts",
-    "lint": "eslint src/",
+    "lint": "eslint src-web/",
+    "dev:landing": "vite --config vite.config.landing.ts",
+    "build:landing": "tsc --noEmit -p tsconfig.landing.json && vite build --config vite.config.landing.ts",
+    "preview:landing": "vite preview --config vite.config.landing.ts",
+    "test:e2e-landing": "playwright test --config playwright.config.landing.ts",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
