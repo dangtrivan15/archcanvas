@@ -185,6 +185,13 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
    * Translate SDK messages into our ChatEvent stream.
    * The SDK emits rich typed messages; we map them to our simpler ChatEvent union.
    */
+  /**
+   * Timeout (ms) for the first SDK message. If the SDK doesn't emit anything
+   * within this window, something is broken (CLI not found, auth expired, etc.).
+   * Surface an error instead of hanging the UI forever.
+   */
+  const FIRST_MESSAGE_TIMEOUT_MS = 30_000;
+
   async function* translateSDKStream(
     sdkStream: AsyncIterable<SDKMessage>,
     requestId: string,
@@ -197,8 +204,38 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
     // blocks from it.
     let hasStreamedText = false;
 
-    for await (const msg of sdkStream) {
+    // Use a manual iterator so we can race the first .next() against a timeout.
+    const iterator = sdkStream[Symbol.asyncIterator]();
+    let firstMessage = true;
+
+    while (true) {
       if (destroyed) return;
+
+      let iterResult: IteratorResult<SDKMessage>;
+
+      if (firstMessage) {
+        const timeout = new Promise<'timeout'>((resolve) =>
+          setTimeout(() => resolve('timeout'), FIRST_MESSAGE_TIMEOUT_MS),
+        );
+        const raceResult = await Promise.race([iterator.next(), timeout]);
+        if (raceResult === 'timeout') {
+          yield {
+            type: 'error',
+            requestId,
+            message: 'Claude Code did not respond within 30 seconds. Verify that the `claude` CLI is installed and authenticated (`claude --version`).',
+            code: 'SDK_TIMEOUT',
+          } as ChatEvent;
+          return;
+        }
+        iterResult = raceResult;
+        firstMessage = false;
+      } else {
+        iterResult = await iterator.next();
+      }
+
+      if (iterResult.done) return;
+
+      const msg = iterResult.value;
 
       switch (msg.type) {
         case 'system': {

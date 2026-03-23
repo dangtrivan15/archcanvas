@@ -7,7 +7,7 @@ const mockCreate = vi.fn();
 
 vi.mock('@anthropic-ai/sdk', () => ({
   default: class MockAnthropic {
-    messages = { create: mockCreate };
+    messages = { stream: mockCreate };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     constructor(_opts: unknown) {}
   },
@@ -65,7 +65,7 @@ describe('ApiKeyProvider', () => {
     // Re-apply mocks after resetModules
     vi.mock('@anthropic-ai/sdk', () => ({
       default: class MockAnthropic {
-        messages = { create: mockCreate };
+        messages = { stream: mockCreate };
         constructor(_opts: unknown) {}
       },
     }));

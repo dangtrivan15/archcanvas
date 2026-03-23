@@ -40,6 +40,12 @@ function resolveClaudePath(): string | undefined {
 }
 
 const claudePath = resolveClaudePath();
+if (claudePath) {
+  console.error(`[bridge] Claude CLI found: ${claudePath}`);
+} else {
+  console.error('[bridge] WARNING: Claude CLI not found on PATH. Claude Code provider will not work.');
+  console.error('[bridge] Install with: npm install -g @anthropic-ai/claude-code');
+}
 
 // ---------------------------------------------------------------------------
 // Wrapped query — injects the resolved Claude CLI path.

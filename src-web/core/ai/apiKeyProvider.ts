@@ -109,13 +109,12 @@ export class ApiKeyProvider implements ChatProvider {
   ): AsyncIterable<ChatEvent> {
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const stream = client.messages.create({
+      const stream = client.messages.stream({
         model,
         max_tokens: maxTokens,
         system: systemPrompt,
         messages: this.messages,
         tools: this.toolParams,
-        stream: true,
       });
 
       // Process stream events
@@ -129,7 +128,7 @@ export class ApiKeyProvider implements ChatProvider {
       let currentToolName = '';
       let inputJsonAccum = '';
 
-      for await (const event of await stream) {
+      for await (const event of stream) {
         // Check abort
         if (this.abortController?.signal.aborted) {
           throw new DOMException('Aborted', 'AbortError');
@@ -187,7 +186,7 @@ export class ApiKeyProvider implements ChatProvider {
       }
 
       // Get the final message to check stop_reason and full content blocks
-      const finalMessage = await (stream as any).finalMessage();
+      const finalMessage = await stream.finalMessage();
       const stopReason = finalMessage.stop_reason;
       const contentBlocks = finalMessage.content;
 
@@ -203,31 +202,35 @@ export class ApiKeyProvider implements ChatProvider {
           const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
           const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
 
-          if (resultObj.ok) {
+          if (resultObj.ok === false) {
+            const errorContent = JSON.stringify(resultObj.error) || 'Unknown error';
             yield {
               type: 'tool_result',
               requestId,
               id: tool.id,
-              result: JSON.stringify(resultObj.data, null, 2),
-            };
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: tool.id,
-              content: JSON.stringify(resultObj.data, null, 2),
-            });
-          } else {
-            yield {
-              type: 'tool_result',
-              requestId,
-              id: tool.id,
-              result: JSON.stringify(resultObj.error),
+              result: errorContent,
               isError: true,
             };
             toolResults.push({
               type: 'tool_result',
               tool_use_id: tool.id,
-              content: JSON.stringify(resultObj.error),
+              content: errorContent,
               is_error: true,
+            });
+          } else {
+            // Success: either { ok: true, data } or raw data (read actions)
+            const data = resultObj.ok ? resultObj.data : result;
+            const content = JSON.stringify(data, null, 2) ?? '{}';
+            yield {
+              type: 'tool_result',
+              requestId,
+              id: tool.id,
+              result: content,
+            };
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: tool.id,
+              content,
             });
           }
         }

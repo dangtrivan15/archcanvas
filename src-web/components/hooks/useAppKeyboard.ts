@@ -12,7 +12,16 @@ import { useUiStore } from '@/store/uiStore';
 export function useAppKeyboard() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // C10.5: Don't fire in input/textarea/contentEditable
+      const mod = e.metaKey || e.ctrlKey;
+
+      // Cmd+Shift+I → toggle AI chat (works even from input/textarea)
+      if (mod && (e.key === 'i' || e.key === 'I') && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().toggleChat();
+        return;
+      }
+
+      // C10.5: Don't fire persistence shortcuts in input/textarea/contentEditable
       const el = document.activeElement;
       if (
         el instanceof HTMLInputElement ||
@@ -22,7 +31,6 @@ export function useAppKeyboard() {
         return;
       }
 
-      const mod = e.metaKey || e.ctrlKey;
       if (!mod) return;
 
       // C10.1: Cmd+S → save()
@@ -36,13 +44,6 @@ export function useAppKeyboard() {
       if ((e.key === 'o' || e.key === 'O') && !e.shiftKey) {
         e.preventDefault();
         useFileStore.getState().open();
-        return;
-      }
-
-      // Cmd+Shift+I → toggle AI chat
-      if ((e.key === 'i' || e.key === 'I') && e.shiftKey) {
-        e.preventDefault();
-        useUiStore.getState().toggleChat();
         return;
       }
     };
