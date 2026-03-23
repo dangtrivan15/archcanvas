@@ -27,7 +27,7 @@ export default defineConfig({
   plugins: [chmodPlugin()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, './src-web'),
     },
   },
   build: {
@@ -35,7 +35,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: false,
     lib: {
-      entry: path.resolve(__dirname, 'src/bridge/index.ts'),
+      entry: path.resolve(__dirname, 'src-web/bridge/index.ts'),
       formats: ['es'],
       fileName: () => 'bridge-server.js',
     },

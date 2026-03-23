@@ -18,9 +18,9 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src-web/*"]
     }
   },
-  "include": ["src", "vite.config.ts", "vitest.config.ts"],
+  "include": ["src-web", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["src-tauri"]
 }
