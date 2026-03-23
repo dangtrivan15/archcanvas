@@ -1,20 +1,10 @@
-name: Deploy Landing
+name: Publish Image
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src-landing/**'
-      - 'public/**'
-      - 'landing.Dockerfile'
-      - 'nginx-landing.conf'
-      - 'vite.config.landing.ts'
-      - 'tsconfig.landing.json'
-      - 'package.json'
-      - 'package-lock.json'
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-landing
+  group: publish-image
   cancel-in-progress: true
 
 jobs:
