@@ -43,11 +43,7 @@
 **Context (read but don't modify):**
 - `docs/specs/2026-03-24-auto-update-design.md` — Section 1 and 2
 
-**Prerequisites:** Before starting, generate the Ed25519 signing key pair. Run:
-```bash
-npx tauri signer generate -w ~/.archcanvas/updater-private-key
-```
-When prompted for a password, leave it empty (press Enter). Save the displayed public key — you'll need it for `tauri.conf.json`.
+**Prerequisites:** The Ed25519 signing key pair has already been generated. The private key is at `~/.archcanvas/updater-private-key`. The public key is already configured in `tauri.conf.json` (`plugins.updater.pubkey`). CSP and `createUpdaterArtifacts` are also already set. Steps 3 and 4 of this task reflect the final state — verify they match before proceeding.
 
 - [ ] **Step 1: Add Rust dependencies**
 

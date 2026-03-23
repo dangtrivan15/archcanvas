@@ -20,10 +20,11 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost ws://127.0.0.1:* http://127.0.0.1:* https://api.anthropic.com; img-src 'self' asset: https://asset.localhost data:"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost ws://127.0.0.1:* http://127.0.0.1:* https://api.anthropic.com https://github.com https://objects.githubusercontent.com; img-src 'self' asset: https://asset.localhost data:"
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "macOS": {
       "signingIdentity": "-",
       "dmg": {
@@ -46,6 +47,12 @@
   "plugins": {
     "fs": {
       "requireLiteralLeadingDot": false
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/dangtrivan15/archcanvas/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkyRDk5RTE5NEU0MzkwM0UKUldRK2tFTk9HWjdaa3JCVVVvKzl3ZVNIVG05WWVaTmxvZDE4OUYzWVFoWEloU0tsYkR5NEh5RWQK"
     }
   }
 }
