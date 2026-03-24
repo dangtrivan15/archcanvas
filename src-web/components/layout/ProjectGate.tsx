@@ -6,15 +6,13 @@ import { Shine } from '@/components/ui/shine';
 /**
  * Full-screen gate shown when no project is open (fileStore.fs === null).
  *
- * Provides two actions:
- * - Open Project: picks an existing directory with .archcanvas/main.yaml
- * - New Project: picks a directory and scaffolds .archcanvas/main.yaml if needed
+ * Provides a single "Open…" action that picks a directory. The system
+ * auto-detects new vs existing projects by checking for .archcanvas/main.yaml.
  *
- * Shows error state if the last open/new attempt failed.
+ * Shows error state if the last open attempt failed.
  *
- * Also handles URL params for one-project-per-tab:
+ * Handles URL param for multi-tab flow:
  * - ?action=open — auto-fires open() on mount
- * - ?action=new  — auto-fires newProject() on mount
  */
 export function ProjectGate() {
   const status = useFileStore((s) => s.status);
@@ -39,8 +37,6 @@ export function ProjectGate() {
 
     if (action === 'open') {
       useFileStore.getState().open();
-    } else if (action === 'new') {
-      useFileStore.getState().newProject();
     }
   }, []);
 
@@ -76,7 +72,7 @@ export function ProjectGate() {
             className="text-sm text-muted-foreground"
             {...fadeUp(0.16)}
           >
-            Open an existing project or create a new one to get started.
+            Open a project folder to get started.
           </motion.p>
         </div>
 
@@ -120,20 +116,10 @@ export function ProjectGate() {
               onClick={() => useFileStore.getState().open()}
               disabled={status === 'loading'}
             >
-              <span>Open Project</span>
+              <span>Open{'\u2026'}</span>
               <span className="ml-2 text-xs text-accent-foreground/60">
                 {'\u2318'}O
               </span>
-            </button>
-          </Shine>
-
-          <Shine enableOnHover color="white" opacity={0.1} duration={800}>
-            <button
-              className="w-64 rounded-md border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
-              onClick={() => useFileStore.getState().newProject()}
-              disabled={status === 'loading'}
-            >
-              New Project
             </button>
           </Shine>
         </motion.div>
