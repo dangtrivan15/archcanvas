@@ -74,18 +74,23 @@ node -e "
   conf.version = '$VERSION';
   fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(conf, null, 2) + '\n');
 "
-echo "Synced version to $VERSION in package.json and tauri.conf.json"
+sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+echo "Synced version to $VERSION in package.json, tauri.conf.json, and Cargo.toml"
 
 # ─── Commit version bump ───────────────────────────────────────────────
-git add package.json src-tauri/tauri.conf.json
-git commit -m "chore: bump version to $VERSION"
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+if ! git diff --cached --quiet; then
+  git commit -m "chore: bump version to $VERSION"
+else
+  echo "Version already at $VERSION, skipping commit"
+fi
 
 # ─── Build frontend (shared) ───────────────────────────────────────────
 echo "Building frontend..."
 npm run build
 
 # ─── Build per-architecture ─────────────────────────────────────────────
-export TAURI_SIGNING_PRIVATE_KEY
+export TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
 TAURI_SIGNING_PRIVATE_KEY=$(cat "$SIGNING_KEY_PATH")
 
 TARGETS=(aarch64-apple-darwin x86_64-apple-darwin)
@@ -111,7 +116,7 @@ for i in 0 1; do
 
   # Build Tauri app (frontend already built — disable beforeBuildCommand)
   echo "Building Tauri app..."
-  npx tauri build --target "$RUST_TARGET" --bundles dmg \
+  npx tauri build --target "$RUST_TARGET" --bundles dmg,app \
     --config '{"build":{"beforeBuildCommand":""}}'
 
   # Collect artifacts

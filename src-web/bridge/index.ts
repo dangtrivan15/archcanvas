@@ -57,11 +57,46 @@ if (claudePath) {
 // ---------------------------------------------------------------------------
 
 const wrappedQuery: SDKQueryFn = ({ prompt, options }) => {
+  // Fail fast if claude CLI was not found — otherwise the SDK hangs for 30s
+  if (!claudePath) {
+    const errorQuery = {
+      [Symbol.asyncIterator]() {
+        let done = false;
+        return {
+          async next() {
+            if (done) return { done: true, value: undefined };
+            done = true;
+            return {
+              done: false,
+              value: {
+                type: 'result' as const,
+                subtype: 'error' as const,
+                errors: [
+                  'Claude CLI not found on PATH. Install it with: npm install -g @anthropic-ai/claude-code\n' +
+                  'Then restart ArchCanvas.',
+                ],
+                duration_ms: 0,
+                duration_api_ms: 0,
+                is_error: true,
+                num_turns: 0,
+                session_id: '',
+              },
+            };
+          },
+        };
+      },
+      abort() {},
+      interrupt() {},
+      on() { return errorQuery; },
+    };
+    return errorQuery as unknown as ReturnType<typeof query>;
+  }
+
   return query({
     prompt: prompt as Parameters<typeof query>[0]['prompt'],
     options: {
       ...options,
-      ...(claudePath ? { pathToClaudeCodeExecutable: claudePath } : {}),
+      pathToClaudeCodeExecutable: claudePath,
     },
   });
 };

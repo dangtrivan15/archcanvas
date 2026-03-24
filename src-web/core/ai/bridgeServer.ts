@@ -134,6 +134,8 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
     {
       resolve: (result: StoreActionResult) => void;
       timer: ReturnType<typeof setTimeout>;
+      /** The WebSocket client this request was sent to. */
+      target: WebSocket;
     }
   >();
 
@@ -321,9 +323,11 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
 
       startIdleTimer();
 
-      // Reject any pending mutations that were waiting on this client
+      // Reject only pending mutations that were sent to THIS client
       for (const [id, pending] of pendingRequests) {
+        if (pending.target !== ws) continue;
         clearTimeout(pending.timer);
+        pendingRequests.delete(id);
         pending.resolve({
           type: 'store_action_result',
           correlationId: id,
@@ -401,6 +405,7 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
           resolve(result);
         },
         timer,
+        target,
       });
     });
   }

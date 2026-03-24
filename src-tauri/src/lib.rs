@@ -21,18 +21,29 @@ impl SidecarState {
 
 type SharedSidecarState = Arc<Mutex<SidecarState>>;
 
-/// Resolve the user's login shell PATH.
+/// Resolve the user's full interactive shell PATH.
+///
 /// When launched from Finder, the app gets a minimal PATH (/usr/bin:/bin:...).
 /// The sidecar needs the full PATH so the Claude SDK can find the `claude` CLI.
+///
+/// We use `-ilc` (interactive + login + command) so the shell reads ALL config
+/// files including `.zshrc` / `.bashrc`. This is critical because many tools
+/// (including `claude` CLI) add themselves to PATH in `.zshrc`, which a plain
+/// login shell (`-lc`) skips.
+///
+/// Since `-i` can produce extra output from shell plugins (oh-my-zsh, etc.),
+/// we take only the last non-empty line of stdout.
 fn resolve_shell_path() -> String {
     let default_path = std::env::var("PATH").unwrap_or_default();
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
     std::process::Command::new(&shell)
-        .args(["-l", "-c", "echo $PATH"])
+        .args(["-ilc", "echo $PATH"])
         .output()
         .ok()
         .and_then(|out| String::from_utf8(out.stdout).ok())
-        .map(|p| p.trim().to_string())
+        // Take the LAST non-empty line — `-i` may produce extra output
+        // from shell plugins (oh-my-zsh prompts, pyenv init, etc.)
+        .and_then(|s| s.lines().rev().find(|l| !l.trim().is_empty()).map(|l| l.trim().to_string()))
         .filter(|p| !p.is_empty())
         .unwrap_or(default_path)
 }
