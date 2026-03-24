@@ -1,0 +1,155 @@
+id: react-spa
+type: client/web-app
+displayName: React SPA (src-web)
+nodes:
+  - id: canvas-renderer
+    type: compute/function
+    displayName: Canvas Renderer (ReactFlow)
+    position:
+      x: 772
+      y: 29
+  - id: ui-components
+    type: compute/function
+    displayName: UI Components (Panels, Layout, Dialogs)
+    position:
+      x: 772
+      y: 389
+  - id: chat-panel
+    type: compute/function
+    displayName: AI Chat Panel
+    position:
+      x: 12
+      y: 474
+  - id: zustand-stores
+    type: data/cache
+    displayName: Zustand Stores (12 stores)
+    position:
+      x: 1152
+      y: 389
+  - id: graph-engine
+    type: compute/function
+    displayName: Graph Engine (Immer patches)
+    position:
+      x: 1532
+      y: 372
+  - id: nodedef-registry
+    type: data/cache
+    displayName: NodeDef Registry (~40 builtins)
+    position:
+      x: 1912
+      y: 372
+  - id: elk-layout
+    type: compute/function
+    displayName: ELK Auto-Layout Engine
+    position:
+      x: 1152
+      y: 12
+  - id: store-action-dispatcher
+    type: compute/function
+    displayName: Store Action Dispatcher
+    position:
+      x: 772
+      y: 527
+  - id: ws-provider
+    type: compute/function
+    displayName: WebSocket ChatProvider
+    position:
+      x: 392
+      y: 690
+  - id: api-key-provider
+    type: compute/function
+    displayName: API Key ChatProvider
+    position:
+      x: 392
+      y: 510
+  - id: yaml-codec
+    type: compute/function
+    displayName: YAML Codec + File Resolver
+    position:
+      x: 1532
+      y: 552
+  - id: platform-fs
+    type: compute/function
+    displayName: Platform FileSystem (Web/Tauri/Node/InMemory)
+    position:
+      x: 1912
+      y: 552
+  - id: theme-system
+    type: compute/function
+    displayName: Theme System (3 palettes, light/dark)
+    position:
+      x: 772
+      y: 209
+edges:
+  - from:
+      node: canvas-renderer
+    to:
+      node: zustand-stores
+    label: Reads graph/canvas/navigation stores, commits on drag-end
+  - from:
+      node: ui-components
+    to:
+      node: zustand-stores
+    label: Reads/writes all stores via hooks
+  - from:
+      node: chat-panel
+    to:
+      node: zustand-stores
+    label: Uses chatStore for message state
+  - from:
+      node: zustand-stores
+    to:
+      node: graph-engine
+    label: graphStore delegates mutations → engine → EngineResult
+  - from:
+      node: zustand-stores
+    to:
+      node: yaml-codec
+    label: fileStore reads/writes via codec
+  - from:
+      node: yaml-codec
+    to:
+      node: platform-fs
+    label: FileResolver reads via FileSystem interface
+  - from:
+      node: graph-engine
+    to:
+      node: nodedef-registry
+    label: Validates node types against registry
+  - from:
+      node: canvas-renderer
+    to:
+      node: elk-layout
+    label: Auto-layout on project open / user request
+  - from:
+      node: chat-panel
+    to:
+      node: ws-provider
+    protocol: WebSocket
+    label: Claude Code SDK path (server-side session)
+  - from:
+      node: chat-panel
+    to:
+      node: api-key-provider
+    protocol: HTTPS
+    label: Direct API path (browser-side tool loop)
+  - from:
+      node: ws-provider
+    to:
+      node: store-action-dispatcher
+    label: Receives store_action via WS, dispatches locally
+  - from:
+      node: api-key-provider
+    to:
+      node: store-action-dispatcher
+    label: Executes tools in-browser via dispatcher
+  - from:
+      node: store-action-dispatcher
+    to:
+      node: zustand-stores
+    label: Translates AI tool args → store mutations/queries
+  - from:
+      node: theme-system
+    to:
+      node: zustand-stores
+    label: themeStore persists palette/mode/textSize

@@ -1,0 +1,88 @@
+id: tauri-shell
+type: compute/container
+displayName: Tauri Desktop Shell (src-tauri)
+nodes:
+  - id: rust-app
+    type: compute/service
+    displayName: Rust App (main.rs / lib.rs)
+    position:
+      x: 12
+      y: 372
+  - id: sidecar-manager
+    type: compute/function
+    displayName: Sidecar Lifecycle Manager
+    position:
+      x: 392
+      y: 732
+  - id: plugin-shell
+    type: compute/function
+    displayName: tauri-plugin-shell
+    position:
+      x: 772
+      y: 732
+  - id: plugin-fs
+    type: compute/function
+    displayName: tauri-plugin-fs
+    position:
+      x: 392
+      y: 12
+  - id: plugin-dialog
+    type: compute/function
+    displayName: tauri-plugin-dialog
+    position:
+      x: 392
+      y: 552
+  - id: plugin-updater
+    type: compute/function
+    displayName: tauri-plugin-updater
+    position:
+      x: 392
+      y: 372
+  - id: signal-handler
+    type: compute/function
+    displayName: Signal Handler (ctrlc)
+    position:
+      x: 12
+      y: 749
+  - id: webview
+    type: client/web-app
+    displayName: Native WebView Window
+    position:
+      x: 392
+      y: 192
+edges:
+  - from:
+      node: rust-app
+    to:
+      node: sidecar-manager
+    label: setup() spawns sidecar, run() kills on exit
+  - from:
+      node: sidecar-manager
+    to:
+      node: plugin-shell
+    label: app.shell().sidecar() spawn + stdout port discovery
+  - from:
+      node: rust-app
+    to:
+      node: webview
+    label: Creates 1280x800 window, loads frontendDist
+  - from:
+      node: signal-handler
+    to:
+      node: sidecar-manager
+    label: SIGTERM/SIGINT → kill sidecar child
+  - from:
+      node: rust-app
+    to:
+      node: plugin-fs
+    label: Registered plugin (file system access)
+  - from:
+      node: rust-app
+    to:
+      node: plugin-dialog
+    label: Registered plugin (native dialogs)
+  - from:
+      node: rust-app
+    to:
+      node: plugin-updater
+    label: Registered plugin (auto-update from GitHub)

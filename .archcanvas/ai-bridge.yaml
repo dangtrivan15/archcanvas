@@ -1,0 +1,60 @@
+id: ai-bridge
+type: compute/service
+displayName: AI Bridge Server
+nodes:
+  - id: bridge-server
+    type: compute/service
+    displayName: Bridge Server (HTTP + WebSocket)
+    position:
+      x: 3.3177257525083803
+      y: -144.28093645484952
+  - id: claude-code-session
+    type: ai/agent
+    displayName: Claude Code BridgeSession
+    position:
+      x: 392
+      y: 56
+  - id: mcp-tool-server
+    type: compute/function
+    displayName: MCP Tool Server (20 tools)
+    position:
+      x: 766.2118171683388
+      y: -168.88071348940915
+  - id: system-prompt
+    type: compute/function
+    displayName: System Prompt Builder
+    position:
+      x: 772
+      y: 192
+  - id: translate-tool-args
+    type: compute/function
+    displayName: Tool Arg Translator
+    position:
+      x: 1152
+      y: 12
+edges:
+  - from:
+      node: bridge-server
+    to:
+      node: claude-code-session
+    label: Creates per-connection BridgeSession (session resume via sessionId)
+  - from:
+      node: claude-code-session
+    to:
+      node: mcp-tool-server
+    label: Registers 20 MCP tools via mcpServers option
+  - from:
+      node: claude-code-session
+    to:
+      node: system-prompt
+    label: Builds context-aware prompt per message
+  - from:
+      node: mcp-tool-server
+    to:
+      node: translate-tool-args
+    label: Translates MCP args → dispatcher shape (scope→canvasId, flat→nested)
+  - from:
+      node: mcp-tool-server
+    to:
+      node: bridge-server
+    label: relayStoreAction → WebSocket → browser dispatcher

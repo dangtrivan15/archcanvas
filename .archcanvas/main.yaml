@@ -1,0 +1,117 @@
+project:
+  name: archcanvas
+  description: Read README.md for more context.
+  version: 1.0.0
+nodes:
+  - id: react-spa
+    ref: react-spa.yaml
+    position:
+      x: 193.61426978818292
+      y: -415.00111482720183
+  - id: ai-bridge
+    ref: ai-bridge.yaml
+    position:
+      x: 792.7268673355629
+      y: 434.8004459308807
+  - id: tauri-shell
+    ref: tauri-shell.yaml
+    position:
+      x: -101.93704710144931
+      y: 379.2274247491639
+  - id: anthropic-api
+    type: ai/llm-provider
+    displayName: Anthropic Claude API
+    position:
+      x: 1152
+      y: 235
+  - id: yaml-files
+    type: data/object-storage
+    displayName: .archcanvas/ YAML Files
+    position:
+      x: 1004.4370122630993
+      y: -261.8907469342252
+  - id: github-releases
+    type: integration/third-party-api
+    displayName: GitHub Releases (Auto-Update)
+    position:
+      x: 392
+      y: 30
+  - id: vite-dev-server
+    type: compute/service
+    displayName: Vite Dev Server
+    position:
+      x: -105.5023690078038
+      y: -1.878483835005575
+entities:
+  - name: ChatEvent
+    description: Streaming event from AI (text, tool_call, tool_result, permission_request, done, error). Union type flowing over WebSocket and async iterables.
+    codeRefs:
+      - src-web/core/ai/types.ts
+  - name: StoreAction
+    description: Named action + args dispatched from AI tools to Zustand stores via storeActionDispatcher (e.g., addNode, addEdge, list, describe).
+    codeRefs:
+      - src-web/core/ai/storeActionDispatcher.ts
+  - name: CanvasFile
+    description: YAML-serializable canvas with nodes, edges, entities, and project metadata. One file per scope in .archcanvas/ directory.
+    codeRefs:
+      - src-web/types/schema.ts
+  - name: NodeDef
+    description: Node type definition — shape, icon, ports, args, AI hints. ~40 built-ins across 9 namespaces. Validated with Zod schemas.
+    codeRefs:
+      - src-web/types/nodeDefSchema.ts
+  - name: EngineResult
+    description: Result of a graph mutation — ok discriminant, Immer patches for undo/redo, and warnings. Produced by engine.ts, consumed by graphStore.
+    codeRefs:
+      - src-web/core/graph/engine.ts
+edges:
+  - from:
+      node: react-spa
+    to:
+      node: ai-bridge
+    protocol: WebSocket
+    label: Chat messages & store action relay
+  - from:
+      node: react-spa
+    to:
+      node: anthropic-api
+    protocol: HTTPS
+    label: Direct API (API key provider, browser-side)
+  - from:
+      node: ai-bridge
+    to:
+      node: anthropic-api
+    protocol: HTTPS
+    label: Claude Agent SDK → Messages API
+  - from:
+      node: react-spa
+    to:
+      node: yaml-files
+    protocol: FileSystem
+    label: Open/Save projects via Platform FileSystem
+  - from:
+      node: tauri-shell
+    to:
+      node: ai-bridge
+    label: Spawns sidecar binary, discovers port via stdout
+  - from:
+      node: tauri-shell
+    to:
+      node: react-spa
+    label: Hosts webview, exposes Tauri IPC commands
+  - from:
+      node: tauri-shell
+    to:
+      node: github-releases
+    protocol: HTTPS
+    label: Auto-update check (tauri-plugin-updater)
+  - from:
+      node: vite-dev-server
+    to:
+      node: ai-bridge
+    label: Embeds bridge via Vite plugin (dev mode)
+  - from:
+      node: vite-dev-server
+    to:
+      node: react-spa
+    protocol: HTTP
+    label: Serves frontend + HMR
