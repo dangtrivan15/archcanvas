@@ -127,8 +127,7 @@ function createActionProvider(category: string, actions: ActionDef[]): PalettePr
 // ---------------------------------------------------------------------------
 
 const fileActions: ActionDef[] = [
-  { id: 'action:new-project', title: 'New Project', subtitle: '⌘N', icon: '📄', category: 'File', execute: () => useFileStore.getState().newProject() },
-  { id: 'action:open', title: 'Open Project…', subtitle: '⌘O', icon: '📂', category: 'File', execute: () => useFileStore.getState().open() },
+  { id: 'action:open', title: 'Open…', subtitle: '⌘O', icon: '📂', category: 'File', execute: () => useFileStore.getState().open() },
   { id: 'action:save', title: 'Save', subtitle: '⌘S', icon: '💾', category: 'File', execute: () => useFileStore.getState().save() },
 ];
 
