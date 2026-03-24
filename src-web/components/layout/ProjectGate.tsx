@@ -13,6 +13,7 @@ import { Shine } from '@/components/ui/shine';
  *
  * Handles URL param for multi-tab flow:
  * - ?action=open — auto-fires open() on mount
+ * - ?recent=<key> — loads project from IndexedDB handle (web Open Recent)
  */
 export function ProjectGate() {
   const status = useFileStore((s) => s.status);
@@ -25,18 +26,52 @@ export function ProjectGate() {
     if (actionFired.current) return;
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    if (!action) return;
+    const recentKey = params.get('recent');
+    if (!action && !recentKey) return;
 
     actionFired.current = true;
 
-    // Clear the param from the URL so it doesn't re-trigger on navigation
+    // Clear the params from the URL so they don't re-trigger on navigation
     params.delete('action');
+    params.delete('recent');
     const nextSearch = params.toString();
     const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
     window.history.replaceState({}, '', nextUrl);
 
     if (action === 'open') {
       useFileStore.getState().open();
+    } else if (recentKey) {
+      // Load project from IndexedDB handle (web Open Recent)
+      (async () => {
+        try {
+          const { getHandle } = await import('../../platform/handleStore');
+          const handle = await getHandle(recentKey);
+          if (!handle) {
+            useFileStore.setState({
+              status: 'error',
+              error: 'Recent project no longer accessible.',
+            });
+            return;
+          }
+          // Permission should already be granted by the original tab
+          const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') {
+            useFileStore.setState({
+              status: 'error',
+              error: 'Permission denied for this project folder.',
+            });
+            return;
+          }
+          const { WebFileSystem } = await import('../../platform/webFileSystem');
+          const fs = new WebFileSystem(handle);
+          await useFileStore.getState().openProject(fs);
+        } catch (err) {
+          useFileStore.setState({
+            status: 'error',
+            error: `Failed to open recent project: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      })();
     }
   }, []);
 
