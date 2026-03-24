@@ -41,7 +41,7 @@ function createMockPicker(fs: InMemoryFileSystem | null): FilePicker {
   };
 }
 
-describe('fileStore.newProject()', () => {
+describe('fileStore.open()', () => {
   beforeEach(() => {
     useFileStore.setState({
       project: null,
@@ -63,7 +63,7 @@ describe('fileStore.newProject()', () => {
   it('does nothing when user cancels the picker', async () => {
     setFilePicker(createMockPicker(null));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     expect(useFileStore.getState().fs).toBeNull();
     expect(useFileStore.getState().status).toBe('idle');
@@ -74,7 +74,7 @@ describe('fileStore.newProject()', () => {
     const emptyFs = new InMemoryFileSystem('NewProject');
     setFilePicker(createMockPicker(emptyFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     // Should NOT scaffold — that's now completeOnboarding's job
     const exists = await emptyFs.exists('.archcanvas/main.yaml');
@@ -92,7 +92,7 @@ describe('fileStore.newProject()', () => {
     const existingFs = createSeededFs('Existing Project');
     setFilePicker(createMockPicker(existingFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     // Should have loaded the existing project (not overwritten it)
     expect(useFileStore.getState().status).toBe('loaded');
@@ -109,7 +109,7 @@ describe('fileStore.newProject()', () => {
     const originalContent = await existingFs.readFile('.archcanvas/main.yaml');
     setFilePicker(createMockPicker(existingFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     // File content should be unchanged
     const currentContent = await existingFs.readFile('.archcanvas/main.yaml');
@@ -123,7 +123,7 @@ describe('fileStore.newProject()', () => {
     const emptyFs = new InMemoryFileSystem('NewProject');
     setFilePicker(createMockPicker(emptyFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     // Recents should NOT be updated yet — that happens in completeOnboarding
     expect(useFileStore.getState().recentProjects.length).toBe(0);
@@ -133,7 +133,7 @@ describe('fileStore.newProject()', () => {
     const emptyFs = new InMemoryFileSystem('NewProject');
     setFilePicker(createMockPicker(emptyFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     expect(useFileStore.getState().fs).toBe(emptyFs);
   });
@@ -144,7 +144,7 @@ describe('fileStore.newProject()', () => {
     const emptyFs = new InMemoryFileSystem('NewProject');
     setFilePicker(createMockPicker(emptyFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     // needs_onboarding doesn't clear dirty canvases (no project load happened)
     expect(useFileStore.getState().status).toBe('needs_onboarding');
@@ -156,7 +156,7 @@ describe('fileStore.newProject()', () => {
     const existingFs = createSeededFs('Existing');
     setFilePicker(createMockPicker(existingFs));
 
-    await useFileStore.getState().newProject();
+    await useFileStore.getState().open();
 
     expect(useFileStore.getState().status).toBe('loaded');
     expect(useFileStore.getState().dirtyCanvases.size).toBe(0);

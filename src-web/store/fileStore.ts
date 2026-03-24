@@ -151,7 +151,6 @@ interface FileStoreState {
   ) => { ok: true } | { ok: false; error: { code: 'CANVAS_ALREADY_EXISTS'; canvasId: string } };
 
   // New persistence methods (UI-only — CLI never calls these)
-  newProject: () => Promise<void>;
   open: () => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
@@ -349,26 +348,6 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // -----------------------------------------------------------------------
   // Persistence UI methods (C7)
   // -----------------------------------------------------------------------
-
-  newProject: async () => {
-    // One project per tab: if a project is already loaded, open a new tab instead
-    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(`${window.location.origin}${window.location.pathname}?action=new`, '_blank');
-      return;
-    }
-
-    const picker = getFilePicker();
-    const fs = await picker.pickDirectory();
-    if (!fs) return; // user cancelled
-
-    await get().openProject(fs);
-
-    // Update recents only on successful load (not needs_onboarding)
-    if (get().status === 'loaded') {
-      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      set({ recentProjects: addToRecent(get().recentProjects, projectName, projectName) });
-    }
-  },
 
   open: async () => {
     // One project per tab: if a project is already loaded, open a new tab instead
