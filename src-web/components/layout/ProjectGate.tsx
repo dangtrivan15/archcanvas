@@ -11,8 +11,9 @@ import { Shine } from '@/components/ui/shine';
  *
  * Shows error state if the last open attempt failed.
  *
- * Handles URL param for multi-tab flow:
- * - ?action=open — auto-fires open() on mount
+ * Handles URL params for multi-tab/window flow:
+ * - ?openPath=<path> — loads project from filesystem path (Tauri Open Recent)
+ * - ?action=open — auto-fires open() on mount (shows directory picker)
  * - ?recent=<key> — loads project from IndexedDB handle (web Open Recent)
  */
 export function ProjectGate() {
@@ -27,21 +28,37 @@ export function ProjectGate() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const recentKey = params.get('recent');
-    if (!action && !recentKey) return;
+    const openPath = params.get('openPath');
+    if (!action && !recentKey && !openPath) return;
 
     actionFired.current = true;
 
     // Clear the params from the URL so they don't re-trigger on navigation
     params.delete('action');
     params.delete('recent');
+    params.delete('openPath');
     const nextSearch = params.toString();
     const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
     window.history.replaceState({}, '', nextUrl);
 
-    if (action === 'open') {
+    if (openPath) {
+      // Tauri: open project directly from filesystem path
+      (async () => {
+        try {
+          const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(openPath);
+          await useFileStore.getState().openProject(fs);
+        } catch (err) {
+          useFileStore.setState({
+            status: 'error',
+            error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      })();
+    } else if (action === 'open') {
       useFileStore.getState().open();
     } else if (recentKey) {
-      // Load project from IndexedDB handle (web Open Recent)
+      // Web: load project from IndexedDB handle
       (async () => {
         try {
           const { getHandle } = await import('../../platform/handleStore');

@@ -430,11 +430,11 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       return;
     }
 
-    // Tauri: path is a filesystem path — open in new window
+    // Tauri: path is a filesystem path — open in new window with the path
     try {
       const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
       new WebviewWindow(`project-${Date.now()}`, {
-        url: '/?action=open',
+        url: `/?openPath=${encodeURIComponent(path)}`,
         title: 'ArchCanvas',
         width: 1280,
         height: 800,
@@ -492,7 +492,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     // 4. Update recents (only if loaded successfully)
     if (get().status === 'loaded') {
-      set({ recentProjects: addToRecent(get().recentProjects, name, name) });
+      const path = fs.getPath() ?? fs.getName();
+      set({ recentProjects: addToRecent(get().recentProjects, name, path) });
     }
 
     // 5. AI path: set projectPath from survey, open chat + send init prompt
