@@ -39,11 +39,8 @@ export function TopMenubar() {
       <MenubarMenu>
         <MenubarTrigger className="text-sm">File</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem onClick={() => useFileStore.getState().newProject()}>
-            New Project <MenubarShortcut>⌘N</MenubarShortcut>
-          </MenubarItem>
           <MenubarItem onClick={() => useFileStore.getState().open()}>
-            Open... <MenubarShortcut>⌘O</MenubarShortcut>
+            Open… <MenubarShortcut>⌘O</MenubarShortcut>
           </MenubarItem>
           <MenubarSub>
             <MenubarSubTrigger>Open Recent</MenubarSubTrigger>

@@ -58,7 +58,7 @@ test.describe("menubar", () => {
 
     // Menu items should be present
     await expect(
-      page.getByRole("menuitem", { name: /New Project/ }),
+      page.getByRole("menuitem", { name: /Open…/ }),
     ).toBeVisible();
     await expect(page.getByRole("menuitem", { name: /^Save ⌘S$/ })).toBeVisible();
   });
