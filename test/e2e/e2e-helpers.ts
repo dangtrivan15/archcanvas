@@ -39,7 +39,7 @@ export async function gotoApp(page: Page): Promise<void> {
 
 /**
  * Reset to an empty project via the store (replaces the old
- * File > New Project menu click which now opens a native dialog).
+ * File > Open… menu click which now opens a native dialog).
  */
 export async function resetToEmptyProject(page: Page): Promise<void> {
   await page.evaluate(() => {

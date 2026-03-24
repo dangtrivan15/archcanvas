@@ -58,7 +58,7 @@ test.describe("project bootstrap", () => {
     await expect(page.getByTestId('node-count')).toHaveAttribute('data-count', '3');
   });
 
-  test("New Project resets the canvas", async ({ page }) => {
+  test("Reset resets the canvas", async ({ page }) => {
     await gotoApp(page);
 
     // Add a node first
@@ -68,7 +68,7 @@ test.describe("project bootstrap", () => {
       .click();
     await expect(page.locator(".react-flow__node")).toHaveCount(1);
 
-    // Reset via store (File > New Project now opens a native dialog
+    // Reset via store (File > Open… now opens a native dialog
     // which can't be automated in Playwright)
     await resetToEmptyProject(page);
 
