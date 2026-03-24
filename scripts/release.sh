@@ -78,7 +78,7 @@ sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 echo "Synced version to $VERSION in package.json, tauri.conf.json, and Cargo.toml"
 
 # ─── Commit version bump ───────────────────────────────────────────────
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
 if ! git diff --cached --quiet; then
   git commit -m "chore: bump version to $VERSION"
 else
