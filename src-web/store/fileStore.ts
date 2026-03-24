@@ -358,7 +358,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         try {
           const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
           new WebviewWindow(`project-${Date.now()}`, {
-            url: 'index.html?action=open',
+            url: '/?action=open',
             title: 'ArchCanvas',
             width: 1280,
             height: 800,
@@ -434,7 +434,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     try {
       const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
       new WebviewWindow(`project-${Date.now()}`, {
-        url: `index.html?action=open`,
+        url: '/?action=open',
         title: 'ArchCanvas',
         width: 1280,
         height: 800,
