@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 
@@ -103,6 +104,38 @@ pub fn run() {
             // Register updater plugin (desktop only)
             #[cfg(desktop)]
             app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+
+            // Minimal native macOS menu — project actions stay in React MenuBar
+            let app_menu = SubmenuBuilder::new(app, "ArchCanvas")
+                .about(None)
+                .separator()
+                .hide()
+                .hide_others()
+                .show_all()
+                .separator()
+                .quit()
+                .build()?;
+
+            let edit_menu = SubmenuBuilder::new(app, "Edit")
+                .cut()
+                .copy()
+                .paste()
+                .select_all()
+                .build()?;
+
+            let window_menu = SubmenuBuilder::new(app, "Window")
+                .minimize()
+                .separator()
+                .close_window()
+                .build()?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&app_menu)
+                .item(&edit_menu)
+                .item(&window_menu)
+                .build()?;
+
+            app.set_menu(menu)?;
 
             let shell_path = resolve_shell_path();
 
