@@ -77,14 +77,6 @@ node -e "
 sed -i '' "s/^version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 echo "Synced version to $VERSION in package.json, tauri.conf.json, and Cargo.toml"
 
-# ─── Commit version bump ───────────────────────────────────────────────
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
-if ! git diff --cached --quiet; then
-  git commit -m "chore: bump version to $VERSION"
-else
-  echo "Version already at $VERSION, skipping commit"
-fi
-
 # ─── Build frontend (shared) ───────────────────────────────────────────
 echo "Building frontend..."
 npm run build
@@ -129,6 +121,15 @@ for i in 0 1; do
 
   echo "Artifacts collected: ${PREFIX}.dmg, ${PREFIX}.app.tar.gz, ${PREFIX}.app.tar.gz.sig"
 done
+
+# ─── Commit version bump ─────────────────────────────────────────────
+# Committed after build so Cargo.lock (updated by cargo build) is included.
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+if ! git diff --cached --quiet; then
+  git commit -m "chore: bump version to $VERSION"
+else
+  echo "Version already at $VERSION, skipping commit"
+fi
 
 # ─── Generate latest.json ──────────────────────────────────────────────
 echo ""
