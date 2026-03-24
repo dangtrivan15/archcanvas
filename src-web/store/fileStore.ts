@@ -151,8 +151,8 @@ interface FileStoreState {
   ) => { ok: true } | { ok: false; error: { code: 'CANVAS_ALREADY_EXISTS'; canvasId: string } };
 
   // New persistence methods (UI-only — CLI never calls these)
-  newProject: () => Promise<void>;
   open: () => Promise<void>;
+  openRecent: (path: string) => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
   completeOnboarding: (type: 'blank' | 'ai', survey?: SurveyData) => Promise<void>;
@@ -350,30 +350,26 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // Persistence UI methods (C7)
   // -----------------------------------------------------------------------
 
-  newProject: async () => {
-    // One project per tab: if a project is already loaded, open a new tab instead
-    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(`${window.location.origin}${window.location.pathname}?action=new`, '_blank');
-      return;
-    }
-
-    const picker = getFilePicker();
-    const fs = await picker.pickDirectory();
-    if (!fs) return; // user cancelled
-
-    await get().openProject(fs);
-
-    // Update recents only on successful load (not needs_onboarding)
-    if (get().status === 'loaded') {
-      const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      set({ recentProjects: addToRecent(get().recentProjects, projectName, projectName) });
-    }
-  },
-
   open: async () => {
-    // One project per tab: if a project is already loaded, open a new tab instead
-    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
+    // One project per tab/window: if a project is already loaded, open a new tab/window
+    if (get().fs !== null && typeof window !== 'undefined') {
+      if ('__TAURI_INTERNALS__' in window) {
+        // Desktop: create a new Tauri window
+        try {
+          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+          new WebviewWindow(`project-${Date.now()}`, {
+            url: '/?action=open',
+            title: 'ArchCanvas',
+            width: 1280,
+            height: 800,
+          });
+        } catch (err) {
+          console.error('[fileStore] Failed to create Tauri window:', err);
+        }
+      } else if (typeof window.open === 'function') {
+        // Web: open a new browser tab
+        window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
+      }
       return;
     }
 
@@ -386,10 +382,85 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     // Update recents only on successful load (not needs_onboarding)
     if (get().status === 'loaded') {
       const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      const path = projectName;
+      const path = fs.getPath() ?? fs.getName();
       set({
         recentProjects: addToRecent(get().recentProjects, projectName, path),
       });
+
+      // Persist directory handle in IndexedDB for web Open Recent
+      if ('getRootHandle' in fs) {
+        import('../platform/handleStore')
+          .then(({ storeHandle }) =>
+            storeHandle(path, (fs as { getRootHandle(): FileSystemDirectoryHandle }).getRootHandle()),
+          )
+          .catch(() => {}); // IndexedDB unavailable — ignore
+      }
+    }
+  },
+
+  openRecent: async (path: string) => {
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    const hasProject = get().fs !== null;
+
+    // --- Tauri path ---
+    if (isTauri) {
+      if (hasProject) {
+        // Project loaded — open in new window
+        try {
+          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+          new WebviewWindow(`project-${Date.now()}`, {
+            url: `/?openPath=${encodeURIComponent(path)}`,
+            title: 'ArchCanvas',
+            width: 1280,
+            height: 800,
+          });
+        } catch (err) {
+          console.error('[fileStore] Failed to create Tauri window:', err);
+        }
+      } else {
+        // No project — load in-place
+        try {
+          const { TauriFileSystem } = await import('../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(path);
+          await get().openProject(fs);
+        } catch (err) {
+          set({ error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}` });
+        }
+      }
+      return;
+    }
+
+    // --- Web path ---
+    try {
+      const { getHandle } = await import('../platform/handleStore');
+      const handle = await getHandle(path);
+      if (!handle) {
+        // Handle expired or deleted — remove from recents
+        const recents = get().recentProjects.filter((r) => r.path !== path);
+        persistRecentProjects(recents);
+        set({ recentProjects: recents, error: 'Project no longer accessible. Removed from recents.' });
+        return;
+      }
+      // Request permission (requires user gesture from the menu click)
+      const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        set({ error: 'Permission denied. Please try again.' });
+        return;
+      }
+      if (hasProject) {
+        // Project loaded — open in new tab
+        window.open(
+          `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
+          '_blank',
+        );
+      } else {
+        // No project — load in-place
+        const { WebFileSystem } = await import('../platform/webFileSystem');
+        const fs = new WebFileSystem(handle);
+        await get().openProject(fs);
+      }
+    } catch {
+      set({ error: 'Failed to open recent project.' });
     }
   },
 
@@ -441,7 +512,8 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     // 4. Update recents (only if loaded successfully)
     if (get().status === 'loaded') {
-      set({ recentProjects: addToRecent(get().recentProjects, name, name) });
+      const path = fs.getPath() ?? fs.getName();
+      set({ recentProjects: addToRecent(get().recentProjects, name, path) });
     }
 
     // 5. AI path: set projectPath from survey, open chat + send init prompt

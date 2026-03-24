@@ -13,7 +13,7 @@ function yamlOf(data: Record<string, unknown>): string {
 
 /** Create an InMemoryFileSystem seeded with a minimal valid project */
 function createSeededFs(name = 'Test'): InMemoryFileSystem {
-  const fs = new InMemoryFileSystem();
+  const fs = new InMemoryFileSystem(name);
   fs.seed({
     '.archcanvas/main.yaml': yamlOf({
       project: { name },

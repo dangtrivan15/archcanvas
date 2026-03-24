@@ -72,7 +72,7 @@ test.describe("dirty indicator", () => {
     await expect(statusBar.getByText("Modified")).toBeVisible();
   });
 
-  test("New Project resets dirty state", async ({ page }) => {
+  test("Reset resets dirty state", async ({ page }) => {
     await gotoApp(page);
 
     // Make dirty
@@ -85,7 +85,7 @@ test.describe("dirty indicator", () => {
     const statusBar = page.locator("div.h-6.border-t");
     await expect(statusBar.getByText("Modified")).toBeVisible();
 
-    // Reset via store (File > New Project now opens a native dialog
+    // Reset via store (File > Open… now opens a native dialog
     // which can't be automated in Playwright)
     await resetToEmptyProject(page);
     await page.waitForTimeout(300);
@@ -123,7 +123,7 @@ test.describe("file menu persistence items", () => {
 
     await page.getByRole("menuitem", { name: "File" }).click();
 
-    const openItem = page.getByRole("menuitem", { name: /Open\.\.\./ });
+    const openItem = page.getByRole("menuitem", { name: /Open…/ });
     await expect(openItem).toBeVisible();
     await expect(openItem).toContainText("⌘O");
   });

@@ -29,24 +29,16 @@ describe('ProjectGate', () => {
     render(<ProjectGate />);
     expect(screen.getByText('ArchCanvas')).toBeInTheDocument();
     expect(
-      screen.getByText(/open an existing project or create a new one/i),
+      screen.getByText(/open a project folder to get started/i),
     ).toBeInTheDocument();
   });
 
-  it('renders Open Project button with keyboard hint', () => {
+  it('renders Open… button with keyboard hint', () => {
     render(<ProjectGate />);
-    const openBtn = screen.getByRole('button', { name: /open project/i });
+    const openBtn = screen.getByRole('button', { name: /open…/i });
     expect(openBtn).toBeInTheDocument();
-    // Keyboard hint
     expect(openBtn.textContent).toContain('\u2318');
     expect(openBtn.textContent).toContain('O');
-  });
-
-  it('renders New Project button', () => {
-    render(<ProjectGate />);
-    expect(
-      screen.getByRole('button', { name: /new project/i }),
-    ).toBeInTheDocument();
   });
 
   // -------------------------------------------------------------------------
@@ -79,35 +71,24 @@ describe('ProjectGate', () => {
     expect(screen.getByText(/loading project/i)).toBeInTheDocument();
   });
 
-  it('disables buttons when loading', () => {
+  it('disables button when loading', () => {
     useFileStore.setState({ status: 'loading' });
 
     render(<ProjectGate />);
-    expect(screen.getByRole('button', { name: /open project/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /new project/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /open…/i })).toBeDisabled();
   });
 
   // -------------------------------------------------------------------------
   // Button clicks
   // -------------------------------------------------------------------------
 
-  it('calls fileStore.open() when Open Project is clicked', () => {
+  it('calls fileStore.open() when Open… is clicked', () => {
     const openSpy = vi.fn();
     useFileStore.setState({ open: openSpy } as any);
 
     render(<ProjectGate />);
-    fireEvent.click(screen.getByRole('button', { name: /open project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /open…/i }));
 
     expect(openSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls fileStore.newProject() when New Project is clicked', () => {
-    const newProjectSpy = vi.fn();
-    useFileStore.setState({ newProject: newProjectSpy } as any);
-
-    render(<ProjectGate />);
-    fireEvent.click(screen.getByRole('button', { name: /new project/i }));
-
-    expect(newProjectSpy).toHaveBeenCalledTimes(1);
   });
 });

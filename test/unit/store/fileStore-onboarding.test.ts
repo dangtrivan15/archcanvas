@@ -336,44 +336,6 @@ describe('fileStore — onboarding', () => {
   });
 
   // =========================================================================
-  // newProject — routes to needs_onboarding
-  // =========================================================================
-
-  describe('newProject — onboarding flow', () => {
-    it('routes to needs_onboarding for bare directory (no scaffolding)', async () => {
-      const bareFs = new InMemoryFileSystem('BareDir');
-      setFilePicker(createMockPicker(bareFs));
-
-      await useFileStore.getState().newProject();
-
-      expect(useFileStore.getState().status).toBe('needs_onboarding');
-      expect(useFileStore.getState().fs).toBe(bareFs);
-      // No main.yaml should have been created — no scaffolding
-      const exists = await bareFs.exists('.archcanvas/main.yaml');
-      expect(exists).toBe(false);
-    });
-
-    it('loads existing project if .archcanvas/main.yaml exists', async () => {
-      const seededFs = createSeededFs('Existing');
-      setFilePicker(createMockPicker(seededFs));
-
-      await useFileStore.getState().newProject();
-
-      expect(useFileStore.getState().status).toBe('loaded');
-      expect(useFileStore.getState().project?.root.data.project?.name).toBe('Existing');
-    });
-
-    it('does nothing when user cancels picker', async () => {
-      setFilePicker(createMockPicker(null));
-
-      await useFileStore.getState().newProject();
-
-      expect(useFileStore.getState().status).toBe('idle');
-      expect(useFileStore.getState().fs).toBeNull();
-    });
-  });
-
-  // =========================================================================
   // open() — routes to needs_onboarding
   // =========================================================================
 
@@ -520,28 +482,6 @@ describe('fileStore — onboarding', () => {
       await useFileStore.getState().open();
 
       expect(mockWindowOpen).toHaveBeenCalledWith('http://localhost:5173/?action=open', '_blank');
-
-      // Restore
-      if (origOpen) {
-        Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
-      }
-    });
-
-    it('newProject() calls window.open when fs is already set', async () => {
-      const seededFs = createSeededFs('Existing');
-      useFileStore.setState({ fs: seededFs, status: 'loaded' });
-
-      const mockWindowOpen = vi.fn();
-      const origOpen = globalThis.window?.open;
-      Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
-      Object.defineProperty(globalThis.window, 'location', {
-        value: { origin: 'http://localhost:5173', pathname: '/' },
-        writable: true,
-      });
-
-      await useFileStore.getState().newProject();
-
-      expect(mockWindowOpen).toHaveBeenCalledWith('http://localhost:5173/?action=new', '_blank');
 
       // Restore
       if (origOpen) {

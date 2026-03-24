@@ -172,7 +172,6 @@ const mockFileState = {
     ]),
   },
   getCanvas: (id: string) => mockFileState.project.canvases.get(id),
-  newProject: vi.fn(),
   open: vi.fn(),
   save: vi.fn(),
 };
@@ -365,7 +364,7 @@ describe('CommandPalette', () => {
 
     const fileGroup = screen.getByTestId('cmdk-group-File');
     expect(fileGroup.textContent).toContain('Save');
-    expect(fileGroup.textContent).toContain('Open Project');
+    expect(fileGroup.textContent).toContain('Open…');
 
     const editGroup = screen.getByTestId('cmdk-group-Edit');
     expect(editGroup.textContent).toContain('Undo');

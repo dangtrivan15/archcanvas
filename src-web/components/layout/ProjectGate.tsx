@@ -6,19 +6,20 @@ import { Shine } from '@/components/ui/shine';
 /**
  * Full-screen gate shown when no project is open (fileStore.fs === null).
  *
- * Provides two actions:
- * - Open Project: picks an existing directory with .archcanvas/main.yaml
- * - New Project: picks a directory and scaffolds .archcanvas/main.yaml if needed
+ * Provides a single "Open…" action that picks a directory. The system
+ * auto-detects new vs existing projects by checking for .archcanvas/main.yaml.
  *
- * Shows error state if the last open/new attempt failed.
+ * Shows error state if the last open attempt failed.
  *
- * Also handles URL params for one-project-per-tab:
- * - ?action=open — auto-fires open() on mount
- * - ?action=new  — auto-fires newProject() on mount
+ * Handles URL params for multi-tab/window flow:
+ * - ?openPath=<path> — loads project from filesystem path (Tauri Open Recent)
+ * - ?action=open — auto-fires open() on mount (shows directory picker)
+ * - ?recent=<key> — loads project from IndexedDB handle (web Open Recent)
  */
 export function ProjectGate() {
   const status = useFileStore((s) => s.status);
   const error = useFileStore((s) => s.error);
+  const recentProjects = useFileStore((s) => s.recentProjects);
   const actionFired = useRef(false);
   const prefersReduced = useReducedMotion();
 
@@ -27,20 +28,68 @@ export function ProjectGate() {
     if (actionFired.current) return;
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    if (!action) return;
+    const recentKey = params.get('recent');
+    const openPath = params.get('openPath');
+    if (!action && !recentKey && !openPath) return;
 
     actionFired.current = true;
 
-    // Clear the param from the URL so it doesn't re-trigger on navigation
+    // Clear the params from the URL so they don't re-trigger on navigation
     params.delete('action');
+    params.delete('recent');
+    params.delete('openPath');
     const nextSearch = params.toString();
     const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
     window.history.replaceState({}, '', nextUrl);
 
-    if (action === 'open') {
+    if (openPath) {
+      // Tauri: open project directly from filesystem path
+      (async () => {
+        try {
+          const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(openPath);
+          await useFileStore.getState().openProject(fs);
+        } catch (err) {
+          useFileStore.setState({
+            status: 'error',
+            error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      })();
+    } else if (action === 'open') {
       useFileStore.getState().open();
-    } else if (action === 'new') {
-      useFileStore.getState().newProject();
+    } else if (recentKey) {
+      // Web: load project from IndexedDB handle
+      (async () => {
+        try {
+          const { getHandle } = await import('../../platform/handleStore');
+          const handle = await getHandle(recentKey);
+          if (!handle) {
+            useFileStore.setState({
+              status: 'error',
+              error: 'Recent project no longer accessible.',
+            });
+            return;
+          }
+          // Permission should already be granted by the original tab
+          const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') {
+            useFileStore.setState({
+              status: 'error',
+              error: 'Permission denied for this project folder.',
+            });
+            return;
+          }
+          const { WebFileSystem } = await import('../../platform/webFileSystem');
+          const fs = new WebFileSystem(handle);
+          await useFileStore.getState().openProject(fs);
+        } catch (err) {
+          useFileStore.setState({
+            status: 'error',
+            error: `Failed to open recent project: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      })();
     }
   }, []);
 
@@ -76,7 +125,7 @@ export function ProjectGate() {
             className="text-sm text-muted-foreground"
             {...fadeUp(0.16)}
           >
-            Open an existing project or create a new one to get started.
+            Open a project folder to get started.
           </motion.p>
         </div>
 
@@ -120,23 +169,31 @@ export function ProjectGate() {
               onClick={() => useFileStore.getState().open()}
               disabled={status === 'loading'}
             >
-              <span>Open Project</span>
+              <span>Open{'\u2026'}</span>
               <span className="ml-2 text-xs text-accent-foreground/60">
                 {'\u2318'}O
               </span>
             </button>
           </Shine>
-
-          <Shine enableOnHover color="white" opacity={0.1} duration={800}>
-            <button
-              className="w-64 rounded-md border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
-              onClick={() => useFileStore.getState().newProject()}
-              disabled={status === 'loading'}
-            >
-              New Project
-            </button>
-          </Shine>
         </motion.div>
+
+        {/* Recent projects */}
+        {recentProjects.length > 0 && (
+          <motion.div className="flex flex-col gap-1 w-64" {...fadeUp(0.32)}>
+            <p className="text-xs text-muted-foreground mb-1">Recent</p>
+            {recentProjects.map((rp) => (
+              <button
+                key={rp.path}
+                className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
+                onClick={() => useFileStore.getState().openRecent(rp.path)}
+                disabled={status === 'loading'}
+              >
+                <span className="block truncate">{rp.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">{rp.path}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
       </div>
     </div>
   );
