@@ -3,6 +3,10 @@ import type { FileSystem } from './fileSystem';
 export class WebFileSystem implements FileSystem {
   constructor(private rootHandle: FileSystemDirectoryHandle) {}
 
+  getRootHandle(): FileSystemDirectoryHandle {
+    return this.rootHandle;
+  }
+
   getName(): string {
     return this.rootHandle.name;
   }

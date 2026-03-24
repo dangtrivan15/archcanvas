@@ -365,10 +365,19 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     // Update recents only on successful load (not needs_onboarding)
     if (get().status === 'loaded') {
       const projectName = get().project?.root.data.project?.name ?? 'Unknown';
-      const path = projectName;
+      const path = fs.getPath() ?? fs.getName();
       set({
         recentProjects: addToRecent(get().recentProjects, projectName, path),
       });
+
+      // Persist directory handle in IndexedDB for web Open Recent
+      if ('getRootHandle' in fs) {
+        import('../platform/handleStore')
+          .then(({ storeHandle }) =>
+            storeHandle(path, (fs as { getRootHandle(): FileSystemDirectoryHandle }).getRootHandle()),
+          )
+          .catch(() => {}); // IndexedDB unavailable — ignore
+      }
     }
   },
 
