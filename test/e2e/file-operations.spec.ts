@@ -123,7 +123,7 @@ test.describe("file menu persistence items", () => {
 
     await page.getByRole("menuitem", { name: "File" }).click();
 
-    const openItem = page.getByRole("menuitem", { name: /Open\.\.\./ });
+    const openItem = page.getByRole("menuitem", { name: /Open…/ });
     await expect(openItem).toBeVisible();
     await expect(openItem).toContainText("⌘O");
   });
