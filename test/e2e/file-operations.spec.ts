@@ -45,6 +45,33 @@ test.describe("dirty indicator", () => {
     expect(title).toContain("ArchCanvas");
   });
 
+  test("undo back to clean state removes Modified badge", async ({ page }) => {
+    await gotoApp(page);
+
+    const statusBar = page.locator("div.h-6.border-t");
+
+    // Start clean
+    await expect(statusBar.getByText("Modified")).not.toBeVisible();
+
+    // Add a node → dirty
+    await page.keyboard.press("Meta+k");
+    await page
+      .getByRole("option", { name: /Service compute\/service/ })
+      .click();
+    await page.waitForTimeout(300);
+    await expect(statusBar.getByText("Modified")).toBeVisible();
+
+    // Undo → back to clean
+    await page.keyboard.press("Meta+z");
+    await page.waitForTimeout(300);
+    await expect(statusBar.getByText("Modified")).not.toBeVisible();
+
+    // Redo → dirty again
+    await page.keyboard.press("Meta+Shift+z");
+    await page.waitForTimeout(300);
+    await expect(statusBar.getByText("Modified")).toBeVisible();
+  });
+
   test("New Project resets dirty state", async ({ page }) => {
     await gotoApp(page);
 

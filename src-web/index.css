@@ -94,6 +94,13 @@ body {
   width: 100vw;
 }
 
+/* Prevent native text selection during pointer drag (WKWebView/Tauri) */
+body.dragging,
+body.dragging * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
 /* ReactFlow controls */
 .react-flow__controls {
   background: transparent;

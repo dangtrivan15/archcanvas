@@ -77,6 +77,12 @@ vi.mock('@/lib/createNodeFromType', () => ({
   createNodeFromType: vi.fn(),
 }));
 
+const mockStartDrag = vi.fn();
+vi.mock('@/lib/pointerDrag', () => ({
+  startDrag: (...args: unknown[]) => mockStartDrag(...args),
+  isDragging: () => false,
+}));
+
 vi.mock('@/components/nodes/iconMap', () => ({
   resolveIcon: () => null,
 }));
@@ -133,25 +139,26 @@ describe('NodeTypeOverlay', () => {
     expect(createNodeFromType).toHaveBeenCalledWith('__root__', 'compute/service');
   });
 
-  it('sets correct dataTransfer on dragStart', () => {
+  it('calls startDrag with typeKey on pointerDown', () => {
     render(<NodeTypeOverlay visible={true} pinned={false} onPin={vi.fn()} />);
     const items = screen.getAllByTestId('node-type-item');
     const serviceItem = items.find((el) => el.textContent?.includes('Service'));
 
-    const setData = vi.fn();
-    const dataTransfer = { setData, effectAllowed: '' };
-    fireEvent.dragStart(serviceItem!, { dataTransfer });
-    expect(setData).toHaveBeenCalledWith('application/archcanvas-nodetype', 'compute/service');
+    fireEvent.pointerDown(serviceItem!, { button: 0 });
+    expect(mockStartDrag).toHaveBeenCalledWith(
+      'compute/service',
+      'Service',
+      expect.any(Object),
+    );
   });
 
-  it('auto-pins overlay on drag start', () => {
+  it('auto-pins overlay on pointer down', () => {
     const onPin = vi.fn();
     render(<NodeTypeOverlay visible={true} pinned={false} onPin={onPin} />);
     const items = screen.getAllByTestId('node-type-item');
     const serviceItem = items.find((el) => el.textContent?.includes('Service'));
 
-    const dataTransfer = { setData: vi.fn(), effectAllowed: '' };
-    fireEvent.dragStart(serviceItem!, { dataTransfer });
+    fireEvent.pointerDown(serviceItem!, { button: 0 });
     expect(onPin).toHaveBeenCalledWith(true);
   });
 

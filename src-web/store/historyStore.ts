@@ -15,6 +15,24 @@ interface HistoryEntry {
 // Module-level batch buffer — not reactive state, purely internal coordination
 let batchBuffer: HistoryEntry[] | null = null;
 
+// ---------------------------------------------------------------------------
+// Per-canvas version counters for dirty-state tracking
+// ---------------------------------------------------------------------------
+// Each edit increments the version, undo decrements, redo increments.
+// When the version matches the save-point version, the canvas is clean.
+const canvasVersions = new Map<string, number>();
+const savePointVersions = new Map<string, number>();
+
+function getVersion(canvasId: string): number {
+  return canvasVersions.get(canvasId) ?? 0;
+}
+
+function checkSavePoint(canvasId: string): void {
+  if (getVersion(canvasId) === (savePointVersions.get(canvasId) ?? 0)) {
+    useFileStore.getState().markClean(canvasId);
+  }
+}
+
 interface HistoryStoreState {
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
@@ -27,6 +45,8 @@ interface HistoryStoreState {
   undo(): void;
   redo(): void;
   clear(): void;
+  /** Record that the canvas was just saved — current version becomes the save point. */
+  markSavePoint(canvasId: string): void;
 }
 
 export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
@@ -50,6 +70,9 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
     if (next.length > MAX_DEPTH) {
       next.shift();
     }
+
+    // Increment per-canvas version counter
+    canvasVersions.set(canvasId, getVersion(canvasId) + 1);
 
     set({
       undoStack: next,
@@ -95,6 +118,10 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
     const patched = applyPatches(canvas.data, entry.inversePatches);
     useFileStore.getState().updateCanvasData(entry.canvasId, patched);
 
+    // Decrement per-canvas version and check if we're back at save point
+    canvasVersions.set(entry.canvasId, getVersion(entry.canvasId) - 1);
+    checkSavePoint(entry.canvasId);
+
     const nextUndo = undoStack.slice(0, -1);
     const nextRedo = [...redoStack, entry];
 
@@ -118,6 +145,10 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
     const patched = applyPatches(canvas.data, entry.patches);
     useFileStore.getState().updateCanvasData(entry.canvasId, patched);
 
+    // Increment per-canvas version and check if we're back at save point
+    canvasVersions.set(entry.canvasId, getVersion(entry.canvasId) + 1);
+    checkSavePoint(entry.canvasId);
+
     const nextRedo = redoStack.slice(0, -1);
     const nextUndo = [...undoStack, entry];
 
@@ -130,11 +161,17 @@ export const useHistoryStore = create<HistoryStoreState>((set, get) => ({
   },
 
   clear() {
+    canvasVersions.clear();
+    savePointVersions.clear();
     set({
       undoStack: [],
       redoStack: [],
       canUndo: false,
       canRedo: false,
     });
+  },
+
+  markSavePoint(canvasId) {
+    savePointVersions.set(canvasId, getVersion(canvasId));
   },
 }));

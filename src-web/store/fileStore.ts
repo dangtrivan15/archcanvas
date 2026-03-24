@@ -11,6 +11,7 @@ import {
   type ResolvedProject,
 } from '../storage/fileResolver';
 import { parseCanvas, serializeCanvas } from '../storage/yamlCodec';
+import { useHistoryStore } from './historyStore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -135,6 +136,7 @@ interface FileStoreState {
   saveCanvas: (fs: FileSystem, canvasId: string) => Promise<void>;
   saveAll: (fs: FileSystem) => Promise<void>;
   markDirty: (canvasId: string) => void;
+  markClean: (canvasId: string) => void;
   updateCanvasData: (canvasId: string, data: Canvas) => void;
   getCanvas: (canvasId: string) => LoadedCanvas | undefined;
   getRootCanvas: () => LoadedCanvas | undefined;
@@ -244,6 +246,10 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const next = new Set(dirtyCanvases);
     next.delete(canvasId);
     set({ dirtyCanvases: next });
+
+    // Record the current history version as the save point so that
+    // undo back to this state correctly clears the dirty flag.
+    useHistoryStore.getState().markSavePoint(canvasId);
   },
 
   saveAll: async (fs) => {
@@ -270,6 +276,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   markDirty: (canvasId) => {
     const next = new Set(get().dirtyCanvases);
     next.add(canvasId);
+    set({ dirtyCanvases: next });
+  },
+
+  markClean: (canvasId) => {
+    const next = new Set(get().dirtyCanvases);
+    next.delete(canvasId);
     set({ dirtyCanvases: next });
   },
 

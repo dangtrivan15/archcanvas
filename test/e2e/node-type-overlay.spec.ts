@@ -47,8 +47,15 @@ test.describe('Node Type Overlay', () => {
     const serviceItem = page.getByTestId('node-type-item').filter({ hasText: 'Service' }).first();
     const canvas = page.getByTestId('main-canvas');
 
-    // Drag from overlay to canvas center
-    await serviceItem.dragTo(canvas, { targetPosition: { x: 400, y: 300 } });
+    // Pointer-based drag: pointerdown on item, move to canvas, pointerup
+    const itemBox = await serviceItem.boundingBox();
+    const canvasBox = await canvas.boundingBox();
+    if (!itemBox || !canvasBox) throw new Error('Missing bounding boxes');
+
+    await page.mouse.move(itemBox.x + itemBox.width / 2, itemBox.y + itemBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(canvasBox.x + 400, canvasBox.y + 300, { steps: 10 });
+    await page.mouse.up();
 
     await expect(canvas.locator('.react-flow__node').filter({ hasText: 'Service' })).toBeVisible();
   });

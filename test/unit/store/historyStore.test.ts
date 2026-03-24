@@ -399,4 +399,113 @@ describe('historyStore', () => {
       expect(useHistoryStore.getState().canRedo).toBe(false);
     });
   });
+
+  describe('dirty flag tracking (save-point)', () => {
+    const isDirty = () => useFileStore.getState().dirtyCanvases.size > 0;
+
+    it('undo back to initial state clears dirty flag', () => {
+      // Fresh project — not dirty
+      expect(isDirty()).toBe(false);
+
+      // Add a node (marks dirty via updateCanvasData)
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-a',
+        type: 'compute/service',
+        displayName: 'Dirty A',
+        position: { x: 0, y: 0 },
+      });
+      expect(isDirty()).toBe(true);
+
+      // Undo — back to initial (save-point version 0)
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(false);
+    });
+
+    it('undo then redo re-marks dirty', () => {
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-b',
+        type: 'compute/service',
+        displayName: 'Dirty B',
+        position: { x: 0, y: 0 },
+      });
+
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(false);
+
+      // Redo — version moves away from save point again
+      useHistoryStore.getState().redo();
+      expect(isDirty()).toBe(true);
+    });
+
+    it('save then edit then undo clears dirty flag', async () => {
+      // Add node and save
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-c',
+        type: 'compute/service',
+        displayName: 'Dirty C',
+        position: { x: 0, y: 0 },
+      });
+
+      const fs = useFileStore.getState().fs!;
+      await useFileStore.getState().saveCanvas(fs, ROOT_CANVAS_KEY);
+      expect(isDirty()).toBe(false);
+
+      // New edit after save
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-d',
+        type: 'compute/service',
+        displayName: 'Dirty D',
+        position: { x: 0, y: 0 },
+      });
+      expect(isDirty()).toBe(true);
+
+      // Undo the post-save edit — back to save point
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(false);
+    });
+
+    it('multiple edits require matching number of undos to reach save point', () => {
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-e',
+        type: 'compute/service',
+        displayName: 'Dirty E',
+        position: { x: 0, y: 0 },
+      });
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-f',
+        type: 'compute/service',
+        displayName: 'Dirty F',
+        position: { x: 10, y: 10 },
+      });
+
+      // One undo — still dirty (one edit remains past save point)
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(true);
+
+      // Second undo — clean
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(false);
+    });
+
+    it('undo past save point marks dirty again', async () => {
+      // Add node and save (save point at version 1)
+      useGraphStore.getState().addNode(ROOT_CANVAS_KEY, {
+        id: 'dirty-g',
+        type: 'compute/service',
+        displayName: 'Dirty G',
+        position: { x: 0, y: 0 },
+      });
+      const fs = useFileStore.getState().fs!;
+      await useFileStore.getState().saveCanvas(fs, ROOT_CANVAS_KEY);
+      expect(isDirty()).toBe(false);
+
+      // Undo past the save point — data diverges from saved state
+      useHistoryStore.getState().undo();
+      expect(isDirty()).toBe(true);
+
+      // Redo back to save point — clean again
+      useHistoryStore.getState().redo();
+      expect(isDirty()).toBe(false);
+    });
+  });
 });

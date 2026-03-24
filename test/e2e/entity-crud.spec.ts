@@ -32,6 +32,10 @@ test.describe('Entity CRUD', () => {
       }
     });
     await page.waitForTimeout(100);
+
+    // Auto-layout so nodes are well-spaced (viewport-center placement may overlap)
+    await page.keyboard.press('Meta+Shift+l');
+    await page.waitForTimeout(500);
   });
 
   test('create entity in EntityPanel', async ({ page }) => {

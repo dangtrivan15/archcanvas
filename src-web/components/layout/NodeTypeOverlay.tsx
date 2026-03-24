@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { createNodeFromType } from '@/lib/createNodeFromType';
+import { startDrag, isDragging } from '@/lib/pointerDrag';
 import { resolveIcon } from '@/components/nodes/iconMap';
 
 interface NodeTypeOverlayProps {
@@ -41,17 +42,20 @@ export function NodeTypeOverlay({
 
   const handleClick = useCallback(
     (typeKey: string) => {
+      // Don't fire click after a drag gesture
+      if (isDragging()) return;
       const canvasId = useNavigationStore.getState().currentCanvasId;
       createNodeFromType(canvasId, typeKey);
     },
     [],
   );
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent, typeKey: string) => {
-      e.dataTransfer.setData('application/archcanvas-nodetype', typeKey);
-      e.dataTransfer.effectAllowed = 'copy';
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, typeKey: string, displayName: string) => {
+      if (e.button !== 0) return; // left click only
+      e.preventDefault(); // prevent native text selection (WKWebView/Tauri)
       onPin(true);
+      startDrag(typeKey, displayName, e.nativeEvent);
     },
     [onPin],
   );
@@ -118,22 +122,22 @@ export function NodeTypeOverlay({
                 <div className="grid grid-cols-2 gap-0.5">
                   {defs.map((def) => {
                     const typeKey = `${def.metadata.namespace}/${def.metadata.name}`;
+                    const displayName = def.metadata.displayName ?? def.metadata.name;
                     const Icon = resolveIcon(def.metadata.icon);
                     return (
                       <div
                         key={typeKey}
                         data-testid="node-type-item"
                         data-type={typeKey}
-                        draggable
                         onClick={() => handleClick(typeKey)}
-                        onDragStart={(e) => handleDragStart(e, typeKey)}
-                        className="flex cursor-grab items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
+                        onPointerDown={(e) => handlePointerDown(e, typeKey, displayName)}
+                        className="flex cursor-grab items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors select-none hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
                       >
                         <span className="shrink-0 text-sm" aria-hidden>
                           {Icon ? <Icon className="h-3.5 w-3.5" /> : '◻'}
                         </span>
                         <span className="truncate">
-                          {def.metadata.displayName ?? def.metadata.name}
+                          {displayName}
                         </span>
                       </div>
                     );

@@ -31,7 +31,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { computeLayout } from "@/core/layout/elk";
-import { createNodeFromType } from '@/lib/createNodeFromType';
+import { setReactFlowInstance } from '@/lib/reactFlowRef';
 import { extractInheritedEdges } from "./inheritedEdges";
 import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
 
@@ -94,6 +94,10 @@ export function Canvas() {
   // Auto-layout
   // -------------------------------------------------------------------------
   const reactFlow = useReactFlow();
+
+  useEffect(() => {
+    setReactFlowInstance(reactFlow);
+  }, [reactFlow]);
 
   const handleAutoLayout = useCallback(async () => {
     const navState = useNavigationStore.getState();
@@ -290,36 +294,10 @@ export function Canvas() {
     });
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Drag-and-drop from NodeTypeOverlay
-  // -------------------------------------------------------------------------
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes('application/archcanvas-nodetype')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-    }
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    const typeKey = e.dataTransfer.getData('application/archcanvas-nodetype');
-    if (!typeKey) return;
-    e.preventDefault();
-
-    const position = reactFlow.screenToFlowPosition({
-      x: e.clientX,
-      y: e.clientY,
-    });
-
-    const canvasId = useNavigationStore.getState().currentCanvasId;
-    createNodeFromType(canvasId, typeKey, position);
-  }, [reactFlow]);
-
   return (
     <div
       data-testid="main-canvas"
       className="relative h-full w-full"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
     >
       <Breadcrumb />
       <ReactFlow

@@ -2,11 +2,36 @@ import type { Node } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
+import { getReactFlowInstance } from './reactFlowRef';
+
+/**
+ * Compute a default position at the center of the current viewport
+ * with a small random offset so rapid consecutive adds don't stack.
+ */
+function viewportCenterPosition(): { x: number; y: number } {
+  const rf = getReactFlowInstance();
+  const el = document.querySelector<HTMLElement>('[data-testid="main-canvas"]');
+
+  if (rf && el) {
+    const rect = el.getBoundingClientRect();
+    const screenCenter = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    const flowCenter = rf.screenToFlowPosition(screenCenter);
+    return {
+      x: flowCenter.x + (Math.random() * 60 - 30),
+      y: flowCenter.y + (Math.random() * 60 - 30),
+    };
+  }
+
+  return { x: 0, y: 0 };
+}
 
 /**
  * Create a node from a NodeDef type key and add it to a canvas.
  * Generates a unique display name and either uses the provided position
- * or falls back to staggered grid placement.
+ * or places it at the viewport center with a small random offset.
  */
 export function createNodeFromType(
   canvasId: string,
@@ -14,7 +39,6 @@ export function createNodeFromType(
   position?: { x: number; y: number },
 ): void {
   const canvas = useFileStore.getState().getCanvas(canvasId);
-  const existingCount = canvas?.data.nodes?.length ?? 0;
 
   const nodeDef = useRegistryStore.getState().resolve(typeKey);
   const baseName = nodeDef?.metadata.displayName ?? typeKey.split('/').pop() ?? 'Node';
@@ -24,10 +48,7 @@ export function createNodeFromType(
   ).length;
   const displayName = sameTypeCount === 0 ? baseName : `${baseName} ${sameTypeCount + 1}`;
 
-  const finalPosition = position ?? {
-    x: (existingCount % 2) * 300,
-    y: Math.floor(existingCount / 2) * 200,
-  };
+  const finalPosition = position ?? viewportCenterPosition();
 
   const newNode: Node = {
     id: `node-${crypto.randomUUID().slice(0, 8)}`,

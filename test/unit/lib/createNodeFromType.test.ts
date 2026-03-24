@@ -35,10 +35,22 @@ vi.mock('@/store/registryStore', () => ({
   },
 }));
 
+const mockScreenToFlowPosition = vi.fn().mockReturnValue({ x: 100, y: 200 });
+vi.mock('@/lib/reactFlowRef', () => ({
+  getReactFlowInstance: () => ({
+    screenToFlowPosition: mockScreenToFlowPosition,
+  }),
+}));
+
 import { createNodeFromType } from '@/lib/createNodeFromType';
 
 describe('createNodeFromType', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Set up a mock canvas element for viewport-center calculation
+    const mockEl = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }) };
+    vi.spyOn(document, 'querySelector').mockReturnValue(mockEl as unknown as Element);
+  });
 
   it('calls graphStore.addNode with correct type and unique displayName', () => {
     createNodeFromType('__root__', 'compute/service');
@@ -51,17 +63,24 @@ describe('createNodeFromType', () => {
     );
   });
 
-  it('uses staggered position when no position provided', () => {
+  it('uses viewport center with offset when no position provided', () => {
     createNodeFromType('__root__', 'compute/service');
+    // Should have called screenToFlowPosition with screen center of the canvas
+    expect(mockScreenToFlowPosition).toHaveBeenCalledWith({ x: 400, y: 300 });
     const node = mockAddNode.mock.calls[0][1];
-    // 2 existing nodes → col=0, row=1
-    expect(node.position).toEqual({ x: 0, y: 200 });
+    // Position should be near 100,200 (mocked flow center) ± 30px offset
+    expect(node.position.x).toBeGreaterThanOrEqual(100 - 30);
+    expect(node.position.x).toBeLessThanOrEqual(100 + 30);
+    expect(node.position.y).toBeGreaterThanOrEqual(200 - 30);
+    expect(node.position.y).toBeLessThanOrEqual(200 + 30);
   });
 
   it('uses provided position when given', () => {
     createNodeFromType('__root__', 'compute/service', { x: 500, y: 300 });
     const node = mockAddNode.mock.calls[0][1];
     expect(node.position).toEqual({ x: 500, y: 300 });
+    // Should NOT call screenToFlowPosition when position is explicit
+    expect(mockScreenToFlowPosition).not.toHaveBeenCalled();
   });
 
   it('generates a node id with node- prefix', () => {
