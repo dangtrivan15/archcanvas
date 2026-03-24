@@ -350,9 +350,25 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // -----------------------------------------------------------------------
 
   open: async () => {
-    // One project per tab: if a project is already loaded, open a new tab instead
-    if (get().fs !== null && typeof window !== 'undefined' && typeof window.open === 'function') {
-      window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
+    // One project per tab/window: if a project is already loaded, open a new tab/window
+    if (get().fs !== null && typeof window !== 'undefined') {
+      if ('__TAURI_INTERNALS__' in window) {
+        // Desktop: create a new Tauri window
+        try {
+          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+          new WebviewWindow(`project-${Date.now()}`, {
+            url: 'index.html?action=open',
+            title: 'ArchCanvas',
+            width: 1280,
+            height: 800,
+          });
+        } catch (err) {
+          console.error('[fileStore] Failed to create Tauri window:', err);
+        }
+      } else if (typeof window.open === 'function') {
+        // Web: open a new browser tab
+        window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
+      }
       return;
     }
 
