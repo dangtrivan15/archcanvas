@@ -51,12 +51,7 @@ export function TopMenubar() {
                 recentProjects.map((rp) => (
                   <MenubarItem
                     key={rp.path}
-                    onClick={() => {
-                      // Recent projects are informational in web mode (C7.9) —
-                      // directory handles are not restorable. This is a placeholder
-                      // that will be wired to Tauri/Node re-open in a future task.
-                      console.log('[TopMenubar] Open recent:', rp.name, rp.path);
-                    }}
+                    onClick={() => useFileStore.getState().openRecent(rp.path)}
                   >
                     {rp.name}
                   </MenubarItem>

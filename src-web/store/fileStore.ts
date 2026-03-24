@@ -152,6 +152,7 @@ interface FileStoreState {
 
   // New persistence methods (UI-only — CLI never calls these)
   open: () => Promise<void>;
+  openRecent: (path: string) => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
   completeOnboarding: (type: 'blank' | 'ai', survey?: SurveyData) => Promise<void>;
@@ -394,6 +395,48 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
           )
           .catch(() => {}); // IndexedDB unavailable — ignore
       }
+    }
+  },
+
+  openRecent: async (path: string) => {
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+    if (!isTauri) {
+      // Web: retrieve handle from IndexedDB
+      try {
+        const { getHandle, removeHandle } = await import('../platform/handleStore');
+        const handle = await getHandle(path);
+        if (!handle) {
+          // Handle expired or deleted — remove from recents
+          const recents = get().recentProjects.filter((r) => r.path !== path);
+          persistRecentProjects(recents);
+          set({ recentProjects: recents, error: 'Project no longer accessible. Removed from recents.' });
+          return;
+        }
+        // Request permission (requires user gesture from the menu click)
+        const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          set({ error: 'Permission denied. Please try again.' });
+          return;
+        }
+        // Open in new tab — the new tab will load from IndexedDB
+        window.open(
+          `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
+          '_blank',
+        );
+      } catch {
+        set({ error: 'Failed to open recent project.' });
+      }
+      return;
+    }
+
+    // Tauri: path is a filesystem path — open in new window
+    // Task 3.2 will replace this with WebviewWindow
+    if (typeof window.open === 'function') {
+      window.open(
+        `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
+        '_blank',
+      );
     }
   },
 
