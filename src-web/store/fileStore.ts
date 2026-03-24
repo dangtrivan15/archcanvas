@@ -400,47 +400,67 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   openRecent: async (path: string) => {
     const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    const hasProject = get().fs !== null;
 
-    if (!isTauri) {
-      // Web: retrieve handle from IndexedDB
-      try {
-        const { getHandle } = await import('../platform/handleStore');
-        const handle = await getHandle(path);
-        if (!handle) {
-          // Handle expired or deleted — remove from recents
-          const recents = get().recentProjects.filter((r) => r.path !== path);
-          persistRecentProjects(recents);
-          set({ recentProjects: recents, error: 'Project no longer accessible. Removed from recents.' });
-          return;
+    // --- Tauri path ---
+    if (isTauri) {
+      if (hasProject) {
+        // Project loaded — open in new window
+        try {
+          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+          new WebviewWindow(`project-${Date.now()}`, {
+            url: `/?openPath=${encodeURIComponent(path)}`,
+            title: 'ArchCanvas',
+            width: 1280,
+            height: 800,
+          });
+        } catch (err) {
+          console.error('[fileStore] Failed to create Tauri window:', err);
         }
-        // Request permission (requires user gesture from the menu click)
-        const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') {
-          set({ error: 'Permission denied. Please try again.' });
-          return;
+      } else {
+        // No project — load in-place
+        try {
+          const { TauriFileSystem } = await import('../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(path);
+          await get().openProject(fs);
+        } catch (err) {
+          set({ error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}` });
         }
-        // Open in new tab — the new tab will load from IndexedDB
-        window.open(
-          `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
-          '_blank',
-        );
-      } catch {
-        set({ error: 'Failed to open recent project.' });
       }
       return;
     }
 
-    // Tauri: path is a filesystem path — open in new window with the path
+    // --- Web path ---
     try {
-      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-      new WebviewWindow(`project-${Date.now()}`, {
-        url: `/?openPath=${encodeURIComponent(path)}`,
-        title: 'ArchCanvas',
-        width: 1280,
-        height: 800,
-      });
-    } catch (err) {
-      console.error('[fileStore] Failed to create Tauri window:', err);
+      const { getHandle } = await import('../platform/handleStore');
+      const handle = await getHandle(path);
+      if (!handle) {
+        // Handle expired or deleted — remove from recents
+        const recents = get().recentProjects.filter((r) => r.path !== path);
+        persistRecentProjects(recents);
+        set({ recentProjects: recents, error: 'Project no longer accessible. Removed from recents.' });
+        return;
+      }
+      // Request permission (requires user gesture from the menu click)
+      const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') {
+        set({ error: 'Permission denied. Please try again.' });
+        return;
+      }
+      if (hasProject) {
+        // Project loaded — open in new tab
+        window.open(
+          `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
+          '_blank',
+        );
+      } else {
+        // No project — load in-place
+        const { WebFileSystem } = await import('../platform/webFileSystem');
+        const fs = new WebFileSystem(handle);
+        await get().openProject(fs);
+      }
+    } catch {
+      set({ error: 'Failed to open recent project.' });
     }
   },
 

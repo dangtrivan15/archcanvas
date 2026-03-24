@@ -19,6 +19,7 @@ import { Shine } from '@/components/ui/shine';
 export function ProjectGate() {
   const status = useFileStore((s) => s.status);
   const error = useFileStore((s) => s.error);
+  const recentProjects = useFileStore((s) => s.recentProjects);
   const actionFired = useRef(false);
   const prefersReduced = useReducedMotion();
 
@@ -175,6 +176,24 @@ export function ProjectGate() {
             </button>
           </Shine>
         </motion.div>
+
+        {/* Recent projects */}
+        {recentProjects.length > 0 && (
+          <motion.div className="flex flex-col gap-1 w-64" {...fadeUp(0.32)}>
+            <p className="text-xs text-muted-foreground mb-1">Recent</p>
+            {recentProjects.map((rp) => (
+              <button
+                key={rp.path}
+                className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
+                onClick={() => useFileStore.getState().openRecent(rp.path)}
+                disabled={status === 'loading'}
+              >
+                <span className="block truncate">{rp.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">{rp.path}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
       </div>
     </div>
   );
