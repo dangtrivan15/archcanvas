@@ -404,7 +404,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     if (!isTauri) {
       // Web: retrieve handle from IndexedDB
       try {
-        const { getHandle, removeHandle } = await import('../platform/handleStore');
+        const { getHandle } = await import('../platform/handleStore');
         const handle = await getHandle(path);
         if (!handle) {
           // Handle expired or deleted — remove from recents
@@ -431,12 +431,16 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     }
 
     // Tauri: path is a filesystem path — open in new window
-    // Task 3.2 will replace this with WebviewWindow
-    if (typeof window.open === 'function') {
-      window.open(
-        `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
-        '_blank',
-      );
+    try {
+      const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+      new WebviewWindow(`project-${Date.now()}`, {
+        url: `index.html?action=open`,
+        title: 'ArchCanvas',
+        width: 1280,
+        height: 800,
+      });
+    } catch (err) {
+      console.error('[fileStore] Failed to create Tauri window:', err);
     }
   },
 
