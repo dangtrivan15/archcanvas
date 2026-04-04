@@ -42,14 +42,14 @@ export const useUiStore = create<UiState>((set, get) => ({
   toggleLeftPanel: () => {
     const handle = leftPanelRef?.current;
     if (!handle) return;
-    handle.isCollapsed() ? handle.expand() : handle.collapse();
+    if (handle.isCollapsed()) handle.expand(); else handle.collapse();
   },
 
   toggleRightPanel: () => {
     const handle = rightPanelRef?.current;
     if (!handle) return;
     const wasCollapsed = handle.isCollapsed();
-    wasCollapsed ? handle.expand() : handle.collapse();
+    if (wasCollapsed) handle.expand(); else handle.collapse();
     set({ rightPanelCollapsed: !wasCollapsed });
   },
 

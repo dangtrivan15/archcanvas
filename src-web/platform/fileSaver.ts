@@ -41,9 +41,12 @@ class WebFileSaver implements FileSaver {
         await writable.write(blob);
         await writable.close();
         return true;
-      } catch {
-        // User cancelled (AbortError) or API error
-        return false;
+      } catch (err) {
+        // User cancelled → return false; actual errors → fall through to anchor
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return false;
+        }
+        // Fall through to anchor download fallback
       }
     }
 
