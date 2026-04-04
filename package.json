@@ -10,6 +10,7 @@
     "build:sidecar": "bun build --compile src-web/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri",
+    "pretest": "npm install --prefer-offline --no-audit --no-fund 2>/dev/null || true",
     "test": "vitest run && npm run test:e2e",
     "test:unit": "vitest run --project unit",
     "test:e2e": "npm run build && npm run test:e2e-no-bridge && npm run test:e2e-bridge",
