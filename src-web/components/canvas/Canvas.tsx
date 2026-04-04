@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
-import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
+import type { Node as RFNode, Edge as RFEdge, NodeChange, OnSelectionChangeParams } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
@@ -66,6 +66,22 @@ export function Canvas() {
       if (change.type === 'position' && change.position && !change.dragging && !change.id.startsWith(GHOST_NODE_PREFIX)) {
         useGraphStore.getState().updateNodePosition(canvasId, change.id, change.position);
       }
+    }
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Rubber-band selection sync: ReactFlow → Zustand (one-directional).
+  // When the user drag-selects nodes on the canvas, ReactFlow fires
+  // onSelectionChange with the currently selected nodes. We sync these IDs
+  // back to the Zustand store, filtering out ghost nodes which are render-only.
+  // ---------------------------------------------------------------------------
+  const onSelectionChange = useCallback(({ nodes }: OnSelectionChangeParams) => {
+    const ids = nodes
+      .map((n) => n.id)
+      .filter((id) => !id.startsWith(GHOST_NODE_PREFIX));
+
+    if (ids.length > 0) {
+      useCanvasStore.getState().selectNodes(ids);
     }
   }, []);
 
@@ -314,6 +330,7 @@ export function Canvas() {
         nodesConnectable={toolMode === 'select'}
         selectionOnDrag={toolMode === 'select'}
         onNodesChange={onNodesChange}
+        onSelectionChange={onSelectionChange}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onEdgeClick={onEdgeClick}

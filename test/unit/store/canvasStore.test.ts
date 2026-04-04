@@ -250,6 +250,45 @@ describe('canvasStore', () => {
     expect(ids).not.toContain('node-b');
   });
 
+  // --- mutual exclusivity ---
+
+  it('selectNodes clears selectedEdgeKeys (mutual exclusivity)', () => {
+    useCanvasStore.getState().selectEdge('node-a', 'node-b');
+    expect(useCanvasStore.getState().selectedEdgeKeys.size).toBe(1);
+
+    useCanvasStore.getState().selectNodes(['node-a']);
+    expect(useCanvasStore.getState().selectedEdgeKeys.size).toBe(0);
+    expect(useCanvasStore.getState().selectedNodeIds.size).toBe(1);
+  });
+
+  it('selectEdge clears selectedNodeIds (mutual exclusivity)', () => {
+    useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
+    expect(useCanvasStore.getState().selectedNodeIds.size).toBe(2);
+
+    useCanvasStore.getState().selectEdge('node-a', 'node-b');
+    expect(useCanvasStore.getState().selectedNodeIds.size).toBe(0);
+    expect(useCanvasStore.getState().selectedEdgeKeys.size).toBe(1);
+  });
+
+  // --- multi-select via setState (toggle-additive from useCanvasInteractions) ---
+
+  it('supports multi-node selection via selectNodes with multiple ids', () => {
+    useCanvasStore.getState().selectNodes(['node-a', 'node-b']);
+    const { selectedNodeIds } = useCanvasStore.getState();
+    expect(selectedNodeIds).toEqual(new Set(['node-a', 'node-b']));
+  });
+
+  it('supports multi-edge selection via direct setState', () => {
+    useCanvasStore.setState({
+      selectedEdgeKeys: new Set(['node-a→node-b', 'node-b→node-a']),
+      selectedNodeIds: new Set(),
+    });
+    const { selectedEdgeKeys } = useCanvasStore.getState();
+    expect(selectedEdgeKeys.size).toBe(2);
+    expect(selectedEdgeKeys.has('node-a→node-b')).toBe(true);
+    expect(selectedEdgeKeys.has('node-b→node-a')).toBe(true);
+  });
+
   // --- highlightEdges ---
 
   describe('highlightEdges', () => {
