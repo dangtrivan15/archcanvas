@@ -21,6 +21,13 @@ export function useAppKeyboard() {
         return;
       }
 
+      // Cmd+Shift+E → export dialog
+      if (mod && (e.key === 'e' || e.key === 'E') && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().openExportDialog();
+        return;
+      }
+
       // C10.5: Don't fire persistence shortcuts in input/textarea/contentEditable
       const el = document.activeElement;
       if (
