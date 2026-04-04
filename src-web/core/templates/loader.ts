@@ -30,18 +30,18 @@ let _cache: ArchTemplate[] | null = null;
 function ensureCache(): ArchTemplate[] {
   if (_cache) return _cache;
 
-  _cache = rawTemplates.map((t) => {
+  _cache = rawTemplates.reduce<ArchTemplate[]>((acc, t) => {
     const result = ArchTemplateSchema.safeParse(t);
     if (!result.success) {
       const issues = result.error.issues
         .map((i) => `${i.path.join('.')}: ${i.message}`)
         .join(', ');
-      console.error(`[templates] Invalid template "${t.id}": ${issues}`);
-      // Return as-is — schema is compile-time checked via TypeScript types
-      return t;
+      console.error(`[templates] Skipping invalid template "${t.id}": ${issues}`);
+      return acc;
     }
-    return result.data;
-  });
+    acc.push(result.data);
+    return acc;
+  }, []);
 
   return _cache;
 }

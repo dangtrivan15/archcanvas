@@ -153,6 +153,7 @@ interface FileStoreState {
   // New persistence methods (UI-only — CLI never calls these)
   open: () => Promise<void>;
   openRecent: (path: string) => Promise<void>;
+  openNewWithTemplate: (templateId: string) => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
   completeOnboarding: (type: 'blank' | 'ai' | 'template', survey?: SurveyData, template?: import('../core/templates/schema').ArchTemplate) => Promise<void>;
@@ -468,6 +469,26 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const { fs } = get();
     if (!fs) return; // No FileSystem — project guard ensures this is unreachable
     await get().saveAll(fs);
+  },
+
+  openNewWithTemplate: async (templateId: string) => {
+    const picker = getFilePicker();
+    const fs = await picker.pickDirectory();
+    if (!fs) return; // user cancelled
+
+    // Set fs in store so completeOnboarding can use it
+    set({ fs, status: 'needs_onboarding' });
+
+    const { getTemplateById } = await import('../core/templates/loader');
+    const template = getTemplateById(templateId);
+    if (template) {
+      await get().completeOnboarding('template', undefined, template);
+    } else {
+      set({
+        status: 'error',
+        error: `Template "${templateId}" not found.`,
+      });
+    }
   },
 
   isDirty: () => {
