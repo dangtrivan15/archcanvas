@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useHistoryStore } from '@/store/historyStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useClipboardStore } from '@/store/clipboardStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useFileStore } from '@/store/fileStore';
 import { listNodes } from '@/core/graph/query';
@@ -39,6 +40,34 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
       if (mod && e.key === 'z' && e.shiftKey) {
         e.preventDefault();
         useHistoryStore.getState().redo();
+        return;
+      }
+
+      // Copy — Cmd+C
+      if (mod && e.key === 'c' && !e.shiftKey) {
+        e.preventDefault();
+        useClipboardStore.getState().copy();
+        return;
+      }
+
+      // Paste — Cmd+V
+      if (mod && e.key === 'v' && !e.shiftKey) {
+        e.preventDefault();
+        useClipboardStore.getState().paste();
+        return;
+      }
+
+      // Cut — Cmd+X
+      if (mod && e.key === 'x' && !e.shiftKey) {
+        e.preventDefault();
+        useClipboardStore.getState().cut();
+        return;
+      }
+
+      // Duplicate — Cmd+D
+      if (mod && e.key === 'd' && !e.shiftKey) {
+        e.preventDefault();
+        useClipboardStore.getState().duplicate();
         return;
       }
 

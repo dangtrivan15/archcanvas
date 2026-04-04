@@ -9,6 +9,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useClipboardStore } from '@/store/clipboardStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { useUiStore } from '@/store/uiStore';
 import { useToolStore } from '@/store/toolStore';
@@ -144,6 +145,10 @@ const editActions: ActionDef[] = [
   }},
   { id: 'action:clear-selection', title: 'Clear Selection', subtitle: 'Esc', icon: '⊘', category: 'Edit', execute: () => useCanvasStore.getState().clearSelection() },
   { id: 'action:delete-selection', title: 'Delete Selection', subtitle: 'Delete', icon: '🗑', category: 'Edit', execute: () => useCanvasStore.getState().deleteSelection(useNavigationStore.getState().currentCanvasId) },
+  { id: 'action:copy', title: 'Copy', subtitle: '⌘C', icon: '⎘', category: 'Edit', execute: () => useClipboardStore.getState().copy() },
+  { id: 'action:paste', title: 'Paste', subtitle: '⌘V', icon: '⎗', category: 'Edit', execute: () => useClipboardStore.getState().paste() },
+  { id: 'action:cut', title: 'Cut', subtitle: '⌘X', icon: '✂', category: 'Edit', execute: () => useClipboardStore.getState().cut() },
+  { id: 'action:duplicate', title: 'Duplicate', subtitle: '⌘D', icon: '⧉', category: 'Edit', execute: () => useClipboardStore.getState().duplicate() },
   { id: 'action:create-subsystem', title: 'Create Subsystem...', icon: '⊞', category: 'Edit',
     execute: () => setTimeout(() => window.dispatchEvent(
       new CustomEvent('archcanvas:open-palette', { detail: { mode: 'subsystem' } }),
