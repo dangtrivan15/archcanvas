@@ -4,9 +4,10 @@ import { useChatStore } from '@/store/chatStore';
 interface InitMethodStepProps {
   onBlankCanvas: () => void;
   onAiAnalyze: () => void;
+  onTemplate: () => void;
 }
 
-export function InitMethodStep({ onBlankCanvas, onAiAnalyze }: InitMethodStepProps) {
+export function InitMethodStep({ onBlankCanvas, onAiAnalyze, onTemplate }: InitMethodStepProps) {
   const prefersReduced = useReducedMotion();
 
   const aiAvailable = useChatStore((s) => {
@@ -82,6 +83,25 @@ export function InitMethodStep({ onBlankCanvas, onAiAnalyze }: InitMethodStepPro
             <div className="font-semibold">Blank Canvas</div>
             <p className="mt-1 text-xs text-muted-foreground">
               Start with an empty canvas. Add nodes manually or ask AI later via the chat panel.
+            </p>
+          </div>
+        </motion.button>
+
+        {/* Start from Template card */}
+        <motion.button
+          onClick={onTemplate}
+          className="flex w-64 flex-col items-center gap-3 rounded-lg border border-border bg-background p-6 text-left transition-colors hover:bg-accent hover:text-accent-foreground"
+          initial={prefersReduced ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.5 }}
+          whileHover={prefersReduced ? undefined : { y: -4, boxShadow: '0 8px 25px rgba(0,0,0,0.1)' }}
+          whileTap={prefersReduced ? undefined : { scale: 0.98 }}
+        >
+          <div className="text-4xl">📐</div>
+          <div className="text-center">
+            <div className="font-semibold">Start from Template</div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choose from pre-built architecture patterns like microservices, serverless, or data pipelines.
             </p>
           </div>
         </motion.button>

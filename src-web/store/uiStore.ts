@@ -20,6 +20,9 @@ interface UiState {
   showAiSettingsDialog: boolean;
   openAiSettingsDialog: () => void;
   closeAiSettingsDialog: () => void;
+  showTemplatePickerDialog: boolean;
+  openTemplatePickerDialog: () => void;
+  closeTemplatePickerDialog: () => void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -65,6 +68,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   showAiSettingsDialog: false,
   openAiSettingsDialog: () => set({ showAiSettingsDialog: true }),
   closeAiSettingsDialog: () => set({ showAiSettingsDialog: false }),
+
+  showTemplatePickerDialog: false,
+  openTemplatePickerDialog: () => set({ showTemplatePickerDialog: true }),
+  closeTemplatePickerDialog: () => set({ showTemplatePickerDialog: false }),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {

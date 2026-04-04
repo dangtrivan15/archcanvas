@@ -120,6 +120,7 @@ describe('OnboardingWizard', () => {
     expect(screen.getByText('Welcome to ArchCanvas')).toBeInTheDocument();
     expect(screen.getByText('Blank Canvas')).toBeInTheDocument();
     expect(screen.getByText('AI Analyze')).toBeInTheDocument();
+    expect(screen.getByText('Start from Template')).toBeInTheDocument();
   });
 
   it('clicking "Blank Canvas" calls completeOnboarding("blank")', () => {
@@ -132,6 +133,12 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard />);
     fireEvent.click(screen.getByText('AI Analyze'));
     expect(screen.getByText('Configure AI Analysis')).toBeInTheDocument();
+  });
+
+  it('clicking "Start from Template" advances to template picker', () => {
+    render(<OnboardingWizard />);
+    fireEvent.click(screen.getByText('Start from Template'));
+    expect(screen.getByText('Choose a Template')).toBeInTheDocument();
   });
 
   it('Step 2 "Back" button returns to Step 1', () => {
@@ -182,7 +189,7 @@ describe('InitMethodStep', () => {
     const onBlank = vi.fn();
     const onAi = vi.fn();
 
-    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} />);
+    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
     expect(screen.getByTestId('ai-hint')).toBeInTheDocument();
     expect(screen.getByTestId('ai-hint').textContent).toContain('Requires AI connection');
   });
@@ -192,7 +199,7 @@ describe('InitMethodStep', () => {
     const onBlank = vi.fn();
     const onAi = vi.fn();
 
-    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} />);
+    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
     expect(screen.queryByTestId('ai-hint')).not.toBeInTheDocument();
   });
 });

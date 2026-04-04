@@ -155,7 +155,7 @@ interface FileStoreState {
   openRecent: (path: string) => Promise<void>;
   save: () => Promise<void>;
   isDirty: () => boolean;
-  completeOnboarding: (type: 'blank' | 'ai', survey?: SurveyData) => Promise<void>;
+  completeOnboarding: (type: 'blank' | 'ai' | 'template', survey?: SurveyData, template?: import('../core/templates/schema').ArchTemplate) => Promise<void>;
   loadProject: (fs: FileSystem) => Promise<void>;
 }
 
@@ -486,7 +486,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     }
   },
 
-  completeOnboarding: async (type, survey) => {
+  completeOnboarding: async (type, survey, template) => {
     const { fs } = get();
     if (!fs) return;
 
@@ -498,14 +498,20 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     }
 
     // 2. Write main.yaml
-    const description = type === 'ai' && survey ? survey.description : '';
-    const mainYaml = serializeCanvas({
-      project: { name, description, version: '1.0.0' },
-      nodes: [],
-      edges: [],
-      entities: [],
-    });
-    await fs.writeFile('.archcanvas/main.yaml', mainYaml);
+    if (type === 'template' && template) {
+      // Template path: write the template's canvas data as main.yaml
+      const { applyTemplate } = await import('../core/templates/apply');
+      await applyTemplate(fs, template);
+    } else {
+      const description = type === 'ai' && survey ? survey.description : '';
+      const mainYaml = serializeCanvas({
+        project: { name, description, version: '1.0.0' },
+        nodes: [],
+        edges: [],
+        entities: [],
+      });
+      await fs.writeFile('.archcanvas/main.yaml', mainYaml);
+    }
 
     // 3. Load the project (bypass onboarding checks — user already chose)
     await get().loadProject(fs);

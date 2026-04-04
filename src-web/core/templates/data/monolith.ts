@@ -1,0 +1,83 @@
+import type { ArchTemplate } from '../schema';
+
+export const monolithTemplate: ArchTemplate = {
+  id: 'monolith',
+  name: 'Monolith',
+  description: 'Traditional monolithic application with a web server, database, cache, and CDN for static assets.',
+  category: 'fullstack',
+  icon: 'Box',
+  tags: ['monolith', 'traditional', 'simple', 'fullstack', 'mvc'],
+  canvas: {
+    nodes: [
+      {
+        id: 'cdn',
+        type: 'network/cdn',
+        displayName: 'CDN',
+        description: 'Serves static assets and caches responses globally',
+        args: { provider: 'Cloudflare' },
+        position: { x: 100, y: 0 },
+      },
+      {
+        id: 'lb',
+        type: 'network/load-balancer',
+        displayName: 'Load Balancer',
+        description: 'Distributes traffic across application instances',
+        args: { algorithm: 'round-robin' },
+        position: { x: 400, y: 0 },
+      },
+      {
+        id: 'app-server',
+        type: 'compute/service',
+        displayName: 'Application Server',
+        description: 'Main monolith application handling all business logic',
+        args: { language: 'TypeScript', framework: 'Express', replicas: 3 },
+        position: { x: 400, y: 200 },
+      },
+      {
+        id: 'bg-worker',
+        type: 'compute/worker',
+        displayName: 'Background Worker',
+        description: 'Processes background jobs and scheduled tasks',
+        args: { language: 'TypeScript', concurrency: 5 },
+        position: { x: 700, y: 200 },
+      },
+      {
+        id: 'db-primary',
+        type: 'data/database',
+        displayName: 'Primary Database',
+        description: 'Main relational database for all application data',
+        args: { engine: 'PostgreSQL' },
+        position: { x: 400, y: 400 },
+      },
+      {
+        id: 'cache',
+        type: 'data/cache',
+        displayName: 'Redis Cache',
+        description: 'Session storage and query caching',
+        args: { engine: 'Redis' },
+        position: { x: 700, y: 400 },
+      },
+      {
+        id: 'storage',
+        type: 'data/object-storage',
+        displayName: 'File Storage',
+        description: 'User uploads and generated files',
+        args: { provider: 'AWS S3' },
+        position: { x: 100, y: 400 },
+      },
+    ],
+    entities: [
+      { name: 'User', description: 'Application user' },
+      { name: 'Session', description: 'User session' },
+    ],
+    edges: [
+      { from: { node: 'cdn' }, to: { node: 'lb' }, protocol: 'HTTPS', label: 'Dynamic requests' },
+      { from: { node: 'lb' }, to: { node: 'app-server', port: 'http-in' }, protocol: 'HTTP', label: 'Route traffic' },
+      { from: { node: 'app-server' }, to: { node: 'db-primary' }, protocol: 'TCP', label: 'SQL queries' },
+      { from: { node: 'app-server' }, to: { node: 'cache' }, protocol: 'TCP', label: 'Cache read/write' },
+      { from: { node: 'app-server' }, to: { node: 'storage' }, protocol: 'HTTPS', label: 'File upload' },
+      { from: { node: 'app-server' }, to: { node: 'bg-worker' }, protocol: 'TCP', label: 'Job dispatch' },
+      { from: { node: 'bg-worker' }, to: { node: 'db-primary' }, protocol: 'TCP', label: 'Process jobs' },
+    ],
+  },
+};
