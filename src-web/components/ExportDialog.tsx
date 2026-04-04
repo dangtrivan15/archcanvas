@@ -62,6 +62,7 @@ export function ExportDialog() {
             {FORMAT_OPTIONS.map(({ value, icon: Icon, label, description }) => (
               <button
                 key={value}
+                aria-pressed={format === value}
                 onClick={() => { setFormat(value); setError(null); }}
                 className={`relative flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors hover:bg-accent/50 ${
                   format === value
@@ -96,6 +97,7 @@ export function ExportDialog() {
               {SCALE_OPTIONS.map(({ value, label }) => (
                 <button
                   key={value}
+                  aria-pressed={pngScale === value}
                   onClick={() => setPngScale(value)}
                   className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
                     pngScale === value

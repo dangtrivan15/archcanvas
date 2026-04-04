@@ -1,6 +1,7 @@
 import { toPng } from 'html-to-image';
 import type { PngScale } from './types';
 import { ExportError } from './types';
+import { getCanvasBackground, filterGhostElements } from './domUtils';
 
 /**
  * Export the ReactFlow viewport as a PNG image.
@@ -35,30 +36,4 @@ export async function exportPng(scale: PngScale = 2): Promise<Blob> {
       'RENDER_FAILED',
     );
   }
-}
-
-/** Read the computed background color of the ReactFlow container */
-function getCanvasBackground(): string {
-  const container = document.querySelector('.react-flow') as HTMLElement | null;
-  if (container) {
-    const bg = getComputedStyle(container).backgroundColor;
-    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-      return bg;
-    }
-  }
-  // Fallback to the page background
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue('--color-background')
-    .trim() || '#ffffff';
-}
-
-/**
- * Filter out ghost/temporary elements from the export.
- * Nodes with `data-ghost="true"` or the minimap are excluded.
- */
-function filterGhostElements(node: HTMLElement): boolean {
-  if (node.dataset?.ghost === 'true') return false;
-  if (node.classList?.contains('react-flow__minimap')) return false;
-  if (node.classList?.contains('react-flow__controls')) return false;
-  return true;
 }

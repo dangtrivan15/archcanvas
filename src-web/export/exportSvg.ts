@@ -1,5 +1,6 @@
 import { toSvg } from 'html-to-image';
 import { ExportError } from './types';
+import { getCanvasBackground, filterGhostElements } from './domUtils';
 
 /**
  * Export the ReactFlow viewport as an SVG image.
@@ -22,8 +23,10 @@ export async function exportSvg(): Promise<Blob> {
       filter: filterGhostElements,
     });
 
-    // Convert data URL to SVG text, then to Blob
-    const svgText = decodeURIComponent(dataUrl.split(',')[1]);
+    // Convert data URL to SVG text, then to Blob.
+    // Use substring to avoid truncating SVG content that may contain commas.
+    const commaIdx = dataUrl.indexOf(',');
+    const svgText = decodeURIComponent(dataUrl.substring(commaIdx + 1));
     return new Blob([svgText], { type: 'image/svg+xml' });
   } catch (err) {
     throw new ExportError(
@@ -31,28 +34,4 @@ export async function exportSvg(): Promise<Blob> {
       'RENDER_FAILED',
     );
   }
-}
-
-/** Read the computed background color of the ReactFlow container */
-function getCanvasBackground(): string {
-  const container = document.querySelector('.react-flow') as HTMLElement | null;
-  if (container) {
-    const bg = getComputedStyle(container).backgroundColor;
-    if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
-      return bg;
-    }
-  }
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue('--color-background')
-    .trim() || '#ffffff';
-}
-
-/**
- * Filter out ghost/temporary elements from the export.
- */
-function filterGhostElements(node: HTMLElement): boolean {
-  if (node.dataset?.ghost === 'true') return false;
-  if (node.classList?.contains('react-flow__minimap')) return false;
-  if (node.classList?.contains('react-flow__controls')) return false;
-  return true;
 }
