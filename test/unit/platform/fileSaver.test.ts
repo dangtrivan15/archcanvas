@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createFileSaver } from '@/platform/fileSaver';
 import type { FileSaver } from '@/platform/fileSaver';
 
@@ -22,28 +22,39 @@ describe('createFileSaver', () => {
   });
 });
 
-describe('WebFileSaver', () => {
+describe('WebFileSaver — anchor download fallback', () => {
+  const mockUrl = 'blob:mock-url';
+  let origCreateObjectURL: typeof URL.createObjectURL;
+  let origRevokeObjectURL: typeof URL.revokeObjectURL;
+  let appendSpy: ReturnType<typeof vi.spyOn>;
+  let removeSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it('saveText creates an anchor element for download when no File System Access API', async () => {
     // Ensure showSaveFilePicker is NOT available
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).showSaveFilePicker;
 
-    const saver = createFileSaver();
-
-    // Mock URL.createObjectURL
-    const mockUrl = 'blob:mock-url';
-    const origCreateObjectURL = URL.createObjectURL;
-    const origRevokeObjectURL = URL.revokeObjectURL;
+    // Save and mock URL methods
+    origCreateObjectURL = URL.createObjectURL;
+    origRevokeObjectURL = URL.revokeObjectURL;
     URL.createObjectURL = vi.fn().mockReturnValue(mockUrl);
     URL.revokeObjectURL = vi.fn();
 
-    // Mock appendChild/removeChild/click
-    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
-    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((n) => n);
+    appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
+    removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((n) => n);
+  });
+
+  afterEach(() => {
+    // Always restore URL methods even if test throws
+    URL.createObjectURL = origCreateObjectURL;
+    URL.revokeObjectURL = origRevokeObjectURL;
+    appendSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it('saveText creates an anchor element with correct attributes and triggers click', async () => {
+    const saver = createFileSaver();
 
     const result = await saver.saveText('hello world', {
       defaultName: 'test.md',
@@ -54,35 +65,17 @@ describe('WebFileSaver', () => {
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(appendSpy).toHaveBeenCalled();
 
-    // The anchor element should have the correct attributes
+    // Verify anchor element attributes
     const anchor = appendSpy.mock.calls[0][0] as HTMLAnchorElement;
     expect(anchor.tagName).toBe('A');
     expect(anchor.download).toBe('test.md');
     expect(anchor.href).toContain(mockUrl);
-
-    // Restore
-    URL.createObjectURL = origCreateObjectURL;
-    URL.revokeObjectURL = origRevokeObjectURL;
-    appendSpy.mockRestore();
-    removeSpy.mockRestore();
   });
 
-  it('saveBlob creates an anchor element for download when no File System Access API', async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (window as any).showSaveFilePicker;
-
+  it('saveBlob creates an anchor element for blob download', async () => {
     const saver = createFileSaver();
-
-    const mockUrl = 'blob:mock-url-2';
-    const origCreateObjectURL = URL.createObjectURL;
-    const origRevokeObjectURL = URL.revokeObjectURL;
-    URL.createObjectURL = vi.fn().mockReturnValue(mockUrl);
-    URL.revokeObjectURL = vi.fn();
-
-    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
-    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((n) => n);
-
     const blob = new Blob(['data'], { type: 'image/png' });
+
     const result = await saver.saveBlob(blob, {
       defaultName: 'test.png',
       mimeType: 'image/png',
@@ -91,10 +84,20 @@ describe('WebFileSaver', () => {
     expect(result).toBe(true);
     expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
 
-    // Restore
-    URL.createObjectURL = origCreateObjectURL;
-    URL.revokeObjectURL = origRevokeObjectURL;
-    appendSpy.mockRestore();
-    removeSpy.mockRestore();
+    const anchor = appendSpy.mock.calls[0][0] as HTMLAnchorElement;
+    expect(anchor.download).toBe('test.png');
+  });
+
+  it('saveText delegates to saveBlob internally', async () => {
+    const saver = createFileSaver();
+
+    await saver.saveText('content', {
+      defaultName: 'doc.md',
+      mimeType: 'text/markdown',
+    });
+
+    // URL.createObjectURL should receive a Blob with the text content
+    const blobArg = (URL.createObjectURL as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(blobArg).toBeInstanceOf(Blob);
   });
 });

@@ -11,7 +11,9 @@ describe('getCanvasBackground', () => {
   });
 
   afterEach(() => {
-    document.body.removeChild(container);
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
   });
 
   it('returns computed background color of .react-flow element', () => {
@@ -19,22 +21,23 @@ describe('getCanvasBackground', () => {
     expect(getCanvasBackground()).toBe('rgb(255, 0, 0)');
   });
 
-  it('falls back to #ffffff when background is transparent', () => {
+  it('falls back when background is transparent', () => {
     container.style.backgroundColor = 'transparent';
-    // Since happy-dom may not compute transparent the same, we just verify
-    // the function returns a non-empty string
     const bg = getCanvasBackground();
+    // Should return a valid color string (CSS variable value or '#ffffff')
     expect(typeof bg).toBe('string');
     expect(bg.length).toBeGreaterThan(0);
+    // Should match a color format (hex, rgb, or named color)
+    expect(bg).toMatch(/^(#[0-9a-fA-F]{3,8}|rgb|[a-z]).*$/);
   });
 
-  it('falls back to #ffffff when no .react-flow element exists', () => {
+  it('falls back when no .react-flow element exists', () => {
     document.body.removeChild(container);
     const bg = getCanvasBackground();
-    // Should fallback to CSS variable or '#ffffff'
     expect(typeof bg).toBe('string');
     expect(bg.length).toBeGreaterThan(0);
-    // Re-add to avoid double-removal in afterEach
+    expect(bg).toMatch(/^(#[0-9a-fA-F]{3,8}|rgb|[a-z]).*$/);
+    // Re-create container for afterEach
     container = document.createElement('div');
     container.className = 'react-flow';
     document.body.appendChild(container);

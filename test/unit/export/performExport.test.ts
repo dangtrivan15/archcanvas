@@ -21,8 +21,20 @@ describe('performExport — markdown', () => {
     }
   });
 
+  function mockStoresWithCanvas(projectName: string, canvas: unknown) {
+    vi.spyOn(useFileStore, 'getState').mockReturnValue({
+      ...origFileStoreGetState(),
+      project: { root: { data: { project: { name: projectName } } } },
+      getCanvas: () => canvas,
+    } as ReturnType<typeof useFileStore.getState>);
+
+    vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
+      ...origNavStoreGetState(),
+      currentCanvasId: '__root__',
+    } as ReturnType<typeof useNavigationStore.getState>);
+  }
+
   it('exports markdown successfully with nodes and edges', async () => {
-    // Mock the stores
     const mockCanvas = {
       data: {
         project: { name: 'TestProject' },
@@ -36,16 +48,7 @@ describe('performExport — markdown', () => {
       },
     };
 
-    vi.spyOn(useFileStore, 'getState').mockReturnValue({
-      ...origFileStoreGetState(),
-      project: { root: { data: { project: { name: 'TestProject' } } } },
-      getCanvas: () => mockCanvas,
-    } as ReturnType<typeof useFileStore.getState>);
-
-    vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
-      ...origNavStoreGetState(),
-      currentCanvasId: '__root__',
-    } as ReturnType<typeof useNavigationStore.getState>);
+    mockStoresWithCanvas('TestProject', mockCanvas);
 
     const result = await performExport({ format: 'markdown' });
 
@@ -56,7 +59,7 @@ describe('performExport — markdown', () => {
     expect(result.data as string).toContain('API');
   });
 
-  it('throws ExportError for empty canvas', async () => {
+  it('throws ExportError for empty canvas with correct code and message', async () => {
     const mockCanvas = {
       data: {
         nodes: [],
@@ -64,19 +67,18 @@ describe('performExport — markdown', () => {
       },
     };
 
-    vi.spyOn(useFileStore, 'getState').mockReturnValue({
-      ...origFileStoreGetState(),
-      project: { root: { data: { project: { name: 'Test' } } } },
-      getCanvas: () => mockCanvas,
-    } as ReturnType<typeof useFileStore.getState>);
+    mockStoresWithCanvas('Test', mockCanvas);
 
-    vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
-      ...origNavStoreGetState(),
-      currentCanvasId: '__root__',
-    } as ReturnType<typeof useNavigationStore.getState>);
-
-    await expect(performExport({ format: 'markdown' })).rejects.toThrow(ExportError);
-    await expect(performExport({ format: 'markdown' })).rejects.toThrow('empty');
+    // Single invocation — check both type and message
+    try {
+      await performExport({ format: 'markdown' });
+      // Should not reach here
+      expect.unreachable('Expected ExportError to be thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ExportError);
+      expect((err as ExportError).message).toContain('empty');
+      expect((err as ExportError).code).toBe('EMPTY_CANVAS');
+    }
   });
 
   it('throws ExportError when no canvas is loaded', async () => {
@@ -103,11 +105,41 @@ describe('performExport — markdown', () => {
       },
     };
 
+    mockStoresWithCanvas('My Project / v2', mockCanvas);
+
+    const result = await performExport({ format: 'markdown' });
+    expect(result.filename).toBe('My_Project___v2.md');
+    expect(result.filename).not.toContain('/');
+    expect(result.filename).not.toContain(' ');
+  });
+
+  it('throws ExportError for unsupported format', async () => {
+    mockStoresWithCanvas('Test', {
+      data: { nodes: [{ id: 'a', type: 'x' }], edges: [] },
+    });
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await performExport({ format: 'pdf' as any });
+      expect.unreachable('Expected ExportError to be thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ExportError);
+      expect((err as ExportError).code).toBe('UNKNOWN');
+      expect((err as ExportError).message).toContain('Unsupported format');
+    }
+  });
+
+  it('uses "architecture" as default project name when none is set', async () => {
     vi.spyOn(useFileStore, 'getState').mockReturnValue({
       ...origFileStoreGetState(),
-      project: { root: { data: { project: { name: 'My Project / v2' } } } },
-      getCanvas: () => mockCanvas,
-    } as ReturnType<typeof useFileStore.getState>);
+      project: { root: { data: {} } },
+      getCanvas: () => ({
+        data: {
+          nodes: [{ id: 'a', type: 'x' }],
+          edges: [],
+        },
+      }),
+    } as unknown as ReturnType<typeof useFileStore.getState>);
 
     vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
       ...origNavStoreGetState(),
@@ -115,8 +147,6 @@ describe('performExport — markdown', () => {
     } as ReturnType<typeof useNavigationStore.getState>);
 
     const result = await performExport({ format: 'markdown' });
-    expect(result.filename).toBe('My_Project___v2.md');
-    expect(result.filename).not.toContain('/');
-    expect(result.filename).not.toContain(' ');
+    expect(result.filename).toBe('architecture.md');
   });
 });

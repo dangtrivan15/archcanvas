@@ -33,5 +33,7 @@ export class ExportError extends Error {
   ) {
     super(message);
     this.name = 'ExportError';
+    // Ensure proper prototype chain for instanceof checks in all environments
+    Object.setPrototypeOf(this, ExportError.prototype);
   }
 }

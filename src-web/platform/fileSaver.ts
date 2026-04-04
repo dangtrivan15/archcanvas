@@ -80,40 +80,30 @@ class WebFileSaver implements FileSaver {
  */
 class TauriFileSaver implements FileSaver {
   async saveBlob(blob: Blob, options: FileSaveOptions): Promise<boolean> {
-    try {
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const path = await save({
-        defaultPath: options.defaultName,
-        filters: options.filters,
-      });
-      if (!path) return false;
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const path = await save({
+      defaultPath: options.defaultName,
+      filters: options.filters,
+    });
+    if (!path) return false; // User cancelled
 
-      const { writeFile } = await import('@tauri-apps/plugin-fs');
-      const buffer = new Uint8Array(await blob.arrayBuffer());
-      await writeFile(path, buffer);
-      return true;
-    } catch (err) {
-      console.error('[TauriFileSaver] Save failed:', err);
-      return false;
-    }
+    const { writeFile } = await import('@tauri-apps/plugin-fs');
+    const buffer = new Uint8Array(await blob.arrayBuffer());
+    await writeFile(path, buffer);
+    return true;
   }
 
   async saveText(text: string, options: FileSaveOptions): Promise<boolean> {
-    try {
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const path = await save({
-        defaultPath: options.defaultName,
-        filters: options.filters,
-      });
-      if (!path) return false;
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const path = await save({
+      defaultPath: options.defaultName,
+      filters: options.filters,
+    });
+    if (!path) return false; // User cancelled
 
-      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-      await writeTextFile(path, text);
-      return true;
-    } catch (err) {
-      console.error('[TauriFileSaver] Save failed:', err);
-      return false;
-    }
+    const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+    await writeTextFile(path, text);
+    return true;
   }
 }
 

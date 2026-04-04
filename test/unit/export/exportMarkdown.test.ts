@@ -186,4 +186,30 @@ describe('exportMarkdown', () => {
     // Dots and slashes should be replaced with underscores
     expect(md).toContain('my_service_v2["My Service"]');
   });
+
+  it('escapes special Mermaid characters in labels', () => {
+    const canvas: Canvas = {
+      nodes: [
+        { id: 'svc', type: 'core/service', displayName: 'Auth & Auth [v2]' },
+      ],
+    };
+
+    const md = exportMarkdown(canvas);
+    // [, ], &, and other special chars should be stripped from Mermaid labels
+    expect(md).toContain('svc["Auth  Auth v2"]');
+    // But the Components section should keep the original name
+    expect(md).toContain('### Auth & Auth [v2]');
+  });
+
+  it('escapes double quotes in Mermaid labels', () => {
+    const canvas: Canvas = {
+      nodes: [
+        { id: 'svc', type: 'core/service', displayName: 'My "Service"' },
+      ],
+    };
+
+    const md = exportMarkdown(canvas);
+    // Double quotes should be replaced with single quotes in Mermaid
+    expect(md).toContain("svc[\"My 'Service'\"]");
+  });
 });
