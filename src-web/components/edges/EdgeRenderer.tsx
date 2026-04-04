@@ -29,6 +29,7 @@ export function EdgeRenderer({
   const styleCategory = data?.styleCategory ?? 'default';
   const edge = data?.edge;
   const isInherited = data?.inherited === true;
+  const isSelected = data?.isSelected === true;
   const highlightedEdgeIds = useCanvasStore((s) => s.highlightedEdgeIds);
   const isHighlighted = highlightedEdgeIds.includes(id);
 
@@ -37,6 +38,7 @@ export function EdgeRenderer({
     `edge-${styleCategory}`,
     isInherited ? 'edge-inherited' : '',
     isHighlighted ? 'edge-highlighted' : '',
+    isSelected ? 'edge-selected' : '',
   ].filter(Boolean).join(' ');
 
   return (

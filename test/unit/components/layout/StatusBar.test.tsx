@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StatusBar } from '@/components/layout/StatusBar';
+import { useCanvasStore } from '@/store/canvasStore';
 import { useUpdaterStore } from '@/store/updaterStore';
 
 // Mock motion/react — required for happy-dom test environment
@@ -43,9 +44,54 @@ vi.mock('@/store/navigationStore', () => ({
   ),
 }));
 
+describe('StatusBar selection count', () => {
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({
+      selectedNodeIds: new Set(),
+      selectedEdgeKeys: new Set(),
+    });
+  });
+
+  it('does not show selection badge when nothing is selected', () => {
+    render(<StatusBar />);
+    expect(screen.queryByTestId('selection-count')).toBeNull();
+  });
+
+  it('shows selection badge when nodes are selected', () => {
+    useCanvasStore.setState({ selectedNodeIds: new Set(['a', 'b']) });
+    render(<StatusBar />);
+    const badge = screen.getByTestId('selection-count');
+    expect(badge.textContent).toContain('2');
+    expect(badge.textContent).toContain('selected');
+  });
+
+  it('shows selection badge when an edge is selected', () => {
+    useCanvasStore.setState({ selectedEdgeKeys: new Set(['a→b']) });
+    render(<StatusBar />);
+    const badge = screen.getByTestId('selection-count');
+    expect(badge.textContent).toContain('1');
+    expect(badge.textContent).toContain('selected');
+  });
+
+  it('hides selection badge when selection is cleared', () => {
+    useCanvasStore.setState({ selectedNodeIds: new Set(['a']) });
+    const { rerender } = render(<StatusBar />);
+    expect(screen.getByTestId('selection-count')).toBeTruthy();
+
+    useCanvasStore.setState({ selectedNodeIds: new Set() });
+    rerender(<StatusBar />);
+    expect(screen.queryByTestId('selection-count')).toBeNull();
+  });
+});
+
 describe('StatusBar update indicator', () => {
   beforeEach(() => {
     useUpdaterStore.getState().reset();
+    useCanvasStore.setState({
+      selectedNodeIds: new Set(),
+      selectedEdgeKeys: new Set(),
+    });
   });
 
   it('shows nothing when idle', () => {

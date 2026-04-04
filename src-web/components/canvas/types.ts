@@ -13,6 +13,7 @@ export interface CanvasEdgeData extends Record<string, unknown> {
   edge: Edge;
   styleCategory: 'sync' | 'async' | 'default';
   inherited?: boolean;
+  isSelected: boolean;
 }
 
 export const PROTOCOL_STYLES: Record<string, 'sync' | 'async'> = {

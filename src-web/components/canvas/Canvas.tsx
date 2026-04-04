@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
-import type { Node as RFNode, Edge as RFEdge, NodeChange } from "@xyflow/react";
+import type { Node as RFNode, Edge as RFEdge, NodeChange, OnSelectionChangeFunc } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
@@ -199,6 +199,19 @@ export function Canvas() {
     onPaneClick();
   }, [onPaneClick]);
 
+  // Sync ReactFlow's internal marquee/multi-selection to the Zustand store.
+  // Filter out ghost nodes (render-only, not user-selectable).
+  const onSelectionChange = useCallback<OnSelectionChangeFunc>(({ nodes: selNodes }) => {
+    const realIds = selNodes
+      .map((n) => n.id)
+      .filter((id) => !id.startsWith(GHOST_NODE_PREFIX));
+    // Only sync when there is an active multi-selection to avoid clearing
+    // single-click selections handled by onNodeClick/onEdgeClick.
+    if (realIds.length > 0) {
+      useCanvasStore.getState().selectNodes(realIds);
+    }
+  }, []);
+
   const onPaneContextMenu = useCallback((e: React.MouseEvent | MouseEvent) => {
     e.preventDefault();
     setContextMenu({ target: { kind: 'canvas' }, x: e.clientX, y: e.clientY });
@@ -221,6 +234,7 @@ export function Canvas() {
     (e: React.MouseEvent, edge: RFEdge<CanvasEdgeData>) => {
       e.preventDefault();
       const edgeData = edge.data as CanvasEdgeData;
+      useCanvasStore.getState().selectEdge(edge.source, edge.target);
       setContextMenu({ target: { kind: 'edge', edgeData }, x: e.clientX, y: e.clientY });
     },
     [],
@@ -317,6 +331,7 @@ export function Canvas() {
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onEdgeClick={onEdgeClick}
+        onSelectionChange={onSelectionChange}
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}

@@ -67,7 +67,7 @@ export function SubsystemPreview({ canvasId }: SubsystemPreviewProps) {
   );
 
   const rfEdges = useMemo(
-    () => mapCanvasEdges(canvas?.data),
+    () => mapCanvasEdges({ canvas: canvas?.data, selectedEdgeKeys: emptySet }),
     [canvas],
   );
 

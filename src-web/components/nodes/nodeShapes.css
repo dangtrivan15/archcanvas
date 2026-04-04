@@ -109,6 +109,13 @@
   /* Actual border is drawn using a pseudo element approach */
 }
 
+.node-shape-hexagon.selected {
+  /* box-shadow is clipped by clip-path — use filter: drop-shadow instead */
+  box-shadow: none;
+  filter: drop-shadow(0 0 0 var(--color-node-selected-border))
+          drop-shadow(0 0 3px var(--color-node-selected-ring));
+}
+
 /* ---------------------------------------------------------- */
 /* Shape: parallelogram                                        */
 /* ---------------------------------------------------------- */
@@ -119,6 +126,13 @@
   border: none;
   padding: 10px 24px;
   min-width: 140px;
+}
+
+.node-shape-parallelogram.selected {
+  /* box-shadow is clipped by clip-path — use filter: drop-shadow instead */
+  box-shadow: none;
+  filter: drop-shadow(0 0 0 var(--color-node-selected-border))
+          drop-shadow(0 0 3px var(--color-node-selected-ring));
 }
 
 /* ---------------------------------------------------------- */

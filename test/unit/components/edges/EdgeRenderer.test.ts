@@ -44,6 +44,7 @@ function makeData(partial: Partial<CanvasEdgeData> = {}): CanvasEdgeData {
   return {
     edge: makeEdge(),
     styleCategory: 'default',
+    isSelected: false,
     ...partial,
   };
 }
@@ -178,6 +179,41 @@ describe('EdgeRenderer', () => {
         }),
       );
       expect(container.querySelector('.entity-pills')).toBeNull();
+    });
+  });
+
+  describe('edge selection', () => {
+    it('applies edge-selected class when isSelected is true', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: true }),
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).toContain('edge-selected');
+    });
+
+    it('does not apply edge-selected class when isSelected is false', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: false }),
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).not.toContain('edge-selected');
+    });
+
+    it('does not apply edge-selected class when data is undefined', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: undefined,
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).not.toContain('edge-selected');
     });
   });
 

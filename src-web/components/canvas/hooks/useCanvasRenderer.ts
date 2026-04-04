@@ -18,6 +18,7 @@ export function useCanvasRenderer(): {
   const canvas = useFileStore((s) => s.getCanvas(canvasId));
   const resolve = useRegistryStore((s) => s.resolve);
   const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const breadcrumb = useNavigationStore((s) => s.breadcrumb);
   const parentEdges = useNavigationStore((s) => s.parentEdges);
 
@@ -31,8 +32,8 @@ export function useCanvasRenderer(): {
   );
 
   const edges = useMemo<RFEdge<CanvasEdgeData>[]>(
-    () => mapCanvasEdges(canvas?.data),
-    [canvas],
+    () => mapCanvasEdges({ canvas: canvas?.data, selectedEdgeKeys }),
+    [canvas, selectedEdgeKeys],
   );
 
   // Inherited edges from parent scope (only when inside a child canvas)
@@ -91,6 +92,7 @@ export function useCanvasRenderer(): {
           edge: ie.edge,
           styleCategory,
           inherited: true,
+          isSelected: false,
         },
       });
     }

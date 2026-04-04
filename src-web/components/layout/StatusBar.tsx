@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useFileStore } from "@/store/fileStore";
 import { useNavigationStore } from "@/store/navigationStore";
+import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
@@ -13,6 +14,10 @@ export function StatusBar() {
   const projectFilePath = useFileStore((s) => s.project?.root.filePath ?? null);
   const fileName = projectFilePath ? projectFilePath.split('/').pop() : null;
   const prefersReduced = useReducedMotion();
+
+  const selectedNodeCount = useCanvasStore((s) => s.selectedNodeIds.size);
+  const selectedEdgeCount = useCanvasStore((s) => s.selectedEdgeKeys.size);
+  const selectionCount = selectedNodeCount + selectedEdgeCount;
 
   const updateStatus = useUpdaterStore((s) => s.status);
   const updateVersion = useUpdaterStore((s) => s.version);
@@ -79,6 +84,20 @@ export function StatusBar() {
               {updateStatus === 'downloading' && 'Downloading update\u2026'}
               {updateStatus === 'ready-to-restart' && 'Restart to update'}
             </motion.button>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {selectionCount > 0 && (
+            <motion.span
+              data-testid="selection-count"
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="rounded bg-blue-500/15 px-1.5 py-0.5 text-blue-500 font-medium"
+            >
+              <SlidingNumber number={selectionCount} /> selected
+            </motion.span>
           )}
         </AnimatePresence>
         {loaded ? (
