@@ -21,6 +21,7 @@ test.describe('Export Dialog', () => {
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText('Export Canvas');
+    await expect(dialog).toContainText('Choose a format');
   });
 
   test('Export dialog opens via Cmd+Shift+E shortcut', async ({ page }) => {

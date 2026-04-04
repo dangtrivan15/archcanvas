@@ -1,6 +1,7 @@
 import { toSvg } from 'html-to-image';
 import { ExportError } from './types';
 import { getCanvasBackground, filterGhostElements } from './domUtils';
+import { decodeDataUrl } from './dataUrlUtils';
 
 /**
  * Export the ReactFlow viewport as an SVG image.
@@ -23,12 +24,10 @@ export async function exportSvg(): Promise<Blob> {
       filter: filterGhostElements,
     });
 
-    // Convert data URL to SVG text, then to Blob.
-    // Use substring to avoid truncating SVG content that may contain commas.
-    const commaIdx = dataUrl.indexOf(',');
-    const svgText = decodeURIComponent(dataUrl.substring(commaIdx + 1));
+    const svgText = decodeDataUrl(dataUrl);
     return new Blob([svgText], { type: 'image/svg+xml' });
   } catch (err) {
+    if (err instanceof ExportError) throw err;
     throw new ExportError(
       `SVG export failed: ${err instanceof Error ? err.message : String(err)}`,
       'RENDER_FAILED',

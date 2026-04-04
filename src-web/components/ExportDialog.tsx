@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { motion, useReducedMotion } from 'motion/react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Download, Image, FileCode, FileText, Check } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { exportAndSave, ExportError } from '@/export';
@@ -53,6 +53,9 @@ export function ExportDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Export Canvas</DialogTitle>
+          <DialogDescription>
+            Choose a format and save your architecture diagram.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Format picker */}
@@ -70,17 +73,20 @@ export function ExportDialog() {
                     : 'border-border'
                 }`}
               >
-                {format === value && (
-                  <motion.div
-                    key="check"
-                    initial={prefersReduced ? false : { scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="absolute top-2 right-2"
-                  >
-                    <Check className="size-3.5 text-primary" />
-                  </motion.div>
-                )}
+                <AnimatePresence>
+                  {format === value && (
+                    <motion.div
+                      key="check"
+                      initial={prefersReduced ? false : { scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={prefersReduced ? undefined : { scale: 0 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="absolute top-2 right-2"
+                    >
+                      <Check className="size-3.5 text-primary" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <Icon className="size-5 text-muted-foreground" />
                 <span className="font-medium text-card-foreground">{label}</span>
                 <span className="text-muted-foreground">{description}</span>
