@@ -34,6 +34,8 @@ import { computeLayout } from "@/core/layout/elk";
 import { setReactFlowInstance } from '@/lib/reactFlowRef';
 import { extractInheritedEdges } from "./inheritedEdges";
 import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
+import { exportCanvas } from "@/core/export/orchestrator";
+import type { ExportFormat } from "@/core/export/orchestrator";
 
 const nodeTypes = { archNode: NodeRenderer, archGhostNode: GhostNodeRenderer };
 const edgeTypes = { archEdge: EdgeRenderer };
@@ -152,13 +154,21 @@ export function Canvas() {
       setPaletteMode((detail?.mode as 'default' | 'subsystem') ?? 'default');
       openPalette(detail?.prefix ?? '');
     };
+    const handleExport = (e: Event) => {
+      const detail = (e as CustomEvent<{ format?: ExportFormat }>).detail;
+      const format = detail?.format ?? 'png';
+      void exportCanvas({ format });
+    };
+
     window.addEventListener('archcanvas:fit-view', handleFitView);
     window.addEventListener('archcanvas:auto-layout', handleLayout);
     window.addEventListener('archcanvas:open-palette', handleOpenPalette);
+    window.addEventListener('archcanvas:export', handleExport);
     return () => {
       window.removeEventListener('archcanvas:fit-view', handleFitView);
       window.removeEventListener('archcanvas:auto-layout', handleLayout);
       window.removeEventListener('archcanvas:open-palette', handleOpenPalette);
+      window.removeEventListener('archcanvas:export', handleExport);
     };
   }, [reactFlow, handleAutoLayout, openPalette]);
 
@@ -277,6 +287,10 @@ export function Canvas() {
     });
   }, []);
 
+  const handleCanvasExportPng = useCallback(() => {
+    void exportCanvas({ format: 'png' });
+  }, []);
+
   const handleEdgeEdit = useCallback((edgeData: CanvasEdgeData) => {
     const { from, to } = edgeData.edge;
     useCanvasStore.getState().selectEdge(from.node, to.node);
@@ -334,6 +348,7 @@ export function Canvas() {
           menu={contextMenu}
           onClose={closeMenu}
           onCanvasFitView={handleCanvasFitView}
+          onCanvasExportPng={handleCanvasExportPng}
           onNodeEditProperties={handleNodeEditProperties}
           onNodeAddNote={handleNodeAddNote}
           onNodeDelete={handleNodeDelete}

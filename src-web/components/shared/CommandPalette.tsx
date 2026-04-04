@@ -165,10 +165,17 @@ const toolActions: ActionDef[] = [
   { id: 'action:tool-pan', title: 'Pan Mode', subtitle: 'Drag to pan the canvas', icon: '✋', category: 'Tool', execute: () => useToolStore.getState().setMode('pan') },
 ];
 
+const exportActions: ActionDef[] = [
+  { id: 'action:export-png', title: 'Export as PNG', subtitle: '⇧⌘E', icon: '🖼', category: 'Export', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'png' } })) },
+  { id: 'action:export-svg', title: 'Export as SVG', subtitle: 'Vector image', icon: '🎨', category: 'Export', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'svg' } })) },
+  { id: 'action:export-md', title: 'Export as Markdown', subtitle: 'Text document', icon: '📝', category: 'Export', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'markdown' } })) },
+];
+
 const FileActionProvider = createActionProvider('File', fileActions);
 const EditActionProvider = createActionProvider('Edit', editActions);
 const ViewActionProvider = createActionProvider('View', viewActions);
 const ToolActionProvider = createActionProvider('Tool', toolActions);
+const ExportActionProvider = createActionProvider('Export', exportActions);
 
 const NodeTypeProvider: PaletteProvider = {
   category: 'Node types',
@@ -281,6 +288,7 @@ const ACTION_PROVIDERS: PaletteProvider[] = [
   EditActionProvider,
   ViewActionProvider,
   ToolActionProvider,
+  ExportActionProvider,
 ];
 
 const ALL_PROVIDERS: PaletteProvider[] = [

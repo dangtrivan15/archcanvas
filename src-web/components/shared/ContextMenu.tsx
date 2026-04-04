@@ -22,6 +22,7 @@ interface ContextMenuProps {
   menu: ContextMenuState;
   onClose: () => void;
   onCanvasFitView: () => void;
+  onCanvasExportPng?: () => void;
   onNodeEditProperties: (nodeId: string) => void;
   onNodeAddNote: (nodeId: string) => void;
   onNodeDelete: (nodeId: string) => void;
@@ -74,6 +75,7 @@ export function ContextMenu({
   menu,
   onClose,
   onCanvasFitView,
+  onCanvasExportPng,
   onNodeEditProperties,
   onNodeAddNote,
   onNodeDelete,
@@ -151,6 +153,18 @@ export function ContextMenu({
               onClose();
             }}
           />
+          {onCanvasExportPng && (
+            <>
+              <MenuDivider />
+              <MenuItem
+                label="Export as PNG"
+                onClick={() => {
+                  onCanvasExportPng();
+                  onClose();
+                }}
+              />
+            </>
+          )}
         </>
       )}
 

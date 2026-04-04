@@ -67,6 +67,15 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         }
       }
 
+      // Export as PNG — Cmd+Shift+E
+      if (mod && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+        e.preventDefault();
+        window.dispatchEvent(
+          new CustomEvent('archcanvas:export', { detail: { format: 'png' } }),
+        );
+        return;
+      }
+
       // Auto layout — Cmd+Shift+L
       if (mod && e.shiftKey && (e.key === 'L' || e.key === 'l')) {
         e.preventDefault();

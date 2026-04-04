@@ -63,6 +63,27 @@ export function TopMenubar() {
           <MenubarItem onClick={() => useFileStore.getState().save()}>
             Save <MenubarShortcut>⌘S</MenubarShortcut>
           </MenubarItem>
+          <MenubarSeparator />
+          <MenubarSub>
+            <MenubarSubTrigger>Export</MenubarSubTrigger>
+            <MenubarSubContent>
+              <MenubarItem
+                onClick={() => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'png' } }))}
+              >
+                Export as PNG <MenubarShortcut>⇧⌘E</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem
+                onClick={() => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'svg' } }))}
+              >
+                Export as SVG
+              </MenubarItem>
+              <MenubarItem
+                onClick={() => window.dispatchEvent(new CustomEvent('archcanvas:export', { detail: { format: 'markdown' } }))}
+              >
+                Export as Markdown
+              </MenubarItem>
+            </MenubarSubContent>
+          </MenubarSub>
         </MenubarContent>
       </MenubarMenu>
 
