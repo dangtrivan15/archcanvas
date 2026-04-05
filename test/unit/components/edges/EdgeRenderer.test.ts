@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { Position } from '@xyflow/react';
 import type { CanvasEdgeData } from '@/components/canvas/types';
@@ -48,6 +48,11 @@ function makeData(partial: Partial<CanvasEdgeData> = {}): CanvasEdgeData {
   };
 }
 
+/** Helper: find the main edge path (the one with the edge id). */
+function getMainPath(container: HTMLElement) {
+  return container.querySelector(`path#edge-1`);
+}
+
 describe('EdgeRenderer', () => {
   describe('style categories', () => {
     it('renders path with edge-sync class for sync protocol', () => {
@@ -57,7 +62,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ styleCategory: 'sync' }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path).toBeTruthy();
       expect(path?.getAttribute('class')).toContain('edge-sync');
     });
@@ -69,7 +74,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ styleCategory: 'async' }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).toContain('edge-async');
     });
 
@@ -80,7 +85,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ styleCategory: 'default' }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).toContain('edge-default');
     });
 
@@ -91,7 +96,7 @@ describe('EdgeRenderer', () => {
           data: undefined,
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).toContain('edge-default');
     });
   });
@@ -104,7 +109,7 @@ describe('EdgeRenderer', () => {
           data: makeData(),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.id).toBe('edge-1');
     });
 
@@ -115,7 +120,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ styleCategory: 'sync' }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).toContain('react-flow__edge-path');
     });
   });
@@ -189,7 +194,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ isSelected: true }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).toContain('edge-selected');
     });
 
@@ -200,7 +205,7 @@ describe('EdgeRenderer', () => {
           data: makeData({ isSelected: false }),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).not.toContain('edge-selected');
     });
 
@@ -211,8 +216,152 @@ describe('EdgeRenderer', () => {
           data: makeData(),
         }),
       );
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path?.getAttribute('class')).not.toContain('edge-selected');
+    });
+  });
+
+  describe('selection halo', () => {
+    it('renders halo path when edge is selected', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: true }),
+        }),
+      );
+      const halo = container.querySelector('.edge-halo');
+      expect(halo).toBeTruthy();
+      expect(halo?.getAttribute('d')).toBe('M0 0 C 10 10, 20 20, 30 30');
+    });
+
+    it('does not render halo path when edge is not selected', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: false }),
+        }),
+      );
+      expect(container.querySelector('.edge-halo')).toBeNull();
+    });
+
+    it('renders halo path when edge is highlighted', async () => {
+      // Set highlighted edge IDs via the store
+      const { useCanvasStore } = await import('@/store/canvasStore');
+      useCanvasStore.setState({ highlightedEdgeIds: ['edge-1'] });
+
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData(),
+        }),
+      );
+      const halo = container.querySelector('.edge-halo');
+      expect(halo).toBeTruthy();
+
+      // Clean up
+      useCanvasStore.setState({ highlightedEdgeIds: [] });
+    });
+  });
+
+  describe('hover interaction', () => {
+    it('renders interaction zone for non-inherited edges', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ inherited: false }),
+        }),
+      );
+      expect(container.querySelector('.edge-interaction-zone')).toBeTruthy();
+    });
+
+    it('does not render interaction zone for inherited edges', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ inherited: true }),
+        }),
+      );
+      expect(container.querySelector('.edge-interaction-zone')).toBeNull();
+    });
+
+    it('applies edge-hovered class on mouseenter and removes on mouseleave', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ inherited: false }),
+        }),
+      );
+      const zone = container.querySelector('.edge-interaction-zone')!;
+      const mainPath = getMainPath(container)!;
+
+      // Initially no hover class
+      expect(mainPath.getAttribute('class')).not.toContain('edge-hovered');
+
+      // Mouse enter
+      fireEvent.mouseEnter(zone);
+      expect(mainPath.getAttribute('class')).toContain('edge-hovered');
+
+      // Mouse leave
+      fireEvent.mouseLeave(zone);
+      expect(mainPath.getAttribute('class')).not.toContain('edge-hovered');
+    });
+
+    it('does not apply edge-hovered class for inherited edges', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ inherited: true }),
+        }),
+      );
+      const mainPath = getMainPath(container)!;
+      expect(mainPath.getAttribute('class')).not.toContain('edge-hovered');
+    });
+  });
+
+  describe('edge label selection styling', () => {
+    it('applies edge-label--selected class to label when edge is selected', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({
+            isSelected: true,
+            edge: makeEdge({ label: 'calls' }),
+          }),
+        }),
+      );
+      const label = container.querySelector('.edge-label');
+      expect(label?.getAttribute('class')).toContain('edge-label--selected');
+    });
+
+    it('does not apply edge-label--selected class when edge is not selected', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({
+            isSelected: false,
+            edge: makeEdge({ label: 'calls' }),
+          }),
+        }),
+      );
+      const label = container.querySelector('.edge-label');
+      expect(label?.getAttribute('class')).not.toContain('edge-label--selected');
+    });
+
+    it('applies edge-label--highlighted class when edge is highlighted', async () => {
+      const { useCanvasStore } = await import('@/store/canvasStore');
+      useCanvasStore.setState({ highlightedEdgeIds: ['edge-1'] });
+
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ edge: makeEdge({ label: 'calls' }) }),
+        }),
+      );
+      const label = container.querySelector('.edge-label');
+      expect(label?.getAttribute('class')).toContain('edge-label--highlighted');
+
+      // Clean up
+      useCanvasStore.setState({ highlightedEdgeIds: [] });
     });
   });
 
@@ -225,7 +374,7 @@ describe('EdgeRenderer', () => {
         }),
       );
       // Should still render a path element, just with default style
-      const path = container.querySelector('path');
+      const path = getMainPath(container);
       expect(path).toBeTruthy();
     });
   });
