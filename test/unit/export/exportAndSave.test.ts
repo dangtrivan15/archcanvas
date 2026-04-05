@@ -56,7 +56,7 @@ describe('exportAndSave', () => {
           edges: [],
         },
       }),
-    } as ReturnType<typeof useFileStore.getState>);
+    } as unknown as ReturnType<typeof useFileStore.getState>);
 
     vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
       ...origNavStoreGetState(),
@@ -150,7 +150,7 @@ describe('exportAndSave', () => {
       ...origFileStoreGetState(),
       project: { root: { data: { project: { name: 'Test' } } } },
       getCanvas: () => ({ data: { nodes: [], edges: [] } }),
-    } as ReturnType<typeof useFileStore.getState>);
+    } as unknown as ReturnType<typeof useFileStore.getState>);
 
     vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
       ...origNavStoreGetState(),

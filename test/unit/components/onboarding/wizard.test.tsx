@@ -92,7 +92,7 @@ function setAiAvailable(available: boolean) {
   }
   // Re-configure the mock to pick up new state
   vi.mocked(useChatStore).mockImplementation(((sel: any) =>
-    sel({ providers: mockProviders, activeProviderId: mockActiveProviderId }),
+    sel({ providers: mockProviders, activeProviderId: mockActiveProviderId })
   ) as any);
 }
 

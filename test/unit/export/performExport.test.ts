@@ -26,7 +26,7 @@ describe('performExport — markdown', () => {
       ...origFileStoreGetState(),
       project: { root: { data: { project: { name: projectName } } } },
       getCanvas: () => canvas,
-    } as ReturnType<typeof useFileStore.getState>);
+    } as unknown as ReturnType<typeof useFileStore.getState>);
 
     vi.spyOn(useNavigationStore, 'getState').mockReturnValue({
       ...origNavStoreGetState(),
