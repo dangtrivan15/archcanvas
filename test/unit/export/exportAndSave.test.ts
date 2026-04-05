@@ -13,9 +13,15 @@ vi.mock('html-to-image', () => ({
   toSvg: vi.fn(),
 }));
 
+// Mock prepareExportClone to avoid DOM side effects
+vi.mock('@/export/prepareExportClone', () => ({
+  prepareExportClone: vi.fn(),
+}));
+
 import { exportAndSave, ExportError } from '@/export';
 import { createFileSaver } from '@/platform/fileSaver';
 import { toPng, toSvg } from 'html-to-image';
+import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportAndSave', () => {
   const origFileStoreGetState = useFileStore.getState;
@@ -34,6 +40,14 @@ describe('exportAndSave', () => {
     vi.mocked(createFileSaver).mockReturnValue(mockSaver);
     mockSaver.saveBlob.mockResolvedValue(true);
     mockSaver.saveText.mockResolvedValue(true);
+
+    // Set up prepareExportClone mock
+    const mockCloneViewport = document.createElement('div');
+    vi.mocked(prepareExportClone).mockResolvedValue({
+      wrapper: document.createElement('div'),
+      viewport: mockCloneViewport,
+      cleanup: vi.fn(),
+    });
   });
 
   afterEach(() => {
