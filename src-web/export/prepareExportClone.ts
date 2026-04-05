@@ -8,10 +8,11 @@
  * 3. Inline all computed styles (resolves CSS vars, color-mix, @layer, etc.)
  * 4. Materialize pseudo-elements as real DOM nodes
  * 5. Embed fonts as base64
- * 6. Wrap in an offscreen container for html-to-image
+ * 6. Wrap in an offscreen container for measurement
  *
- * The result is a self-contained DOM subtree that html-to-image can render
- * correctly without needing access to stylesheets, CSS variables, or fonts.
+ * The result is a self-contained DOM subtree that the custom renderer can
+ * serialize into a foreignObject SVG without needing access to stylesheets,
+ * CSS variables, or fonts.
  */
 
 import { inlineStyles } from './inlineStyles';
@@ -22,7 +23,7 @@ import { filterGhostElements } from './domUtils';
 export interface ExportClone {
   /** The wrapper element appended to document.body */
   wrapper: HTMLElement;
-  /** The cloned viewport element inside the wrapper (pass this to html-to-image) */
+  /** The cloned viewport element inside the wrapper (pass to renderToCanvas / renderToSvgString) */
   viewport: HTMLElement;
   /** Clean up: remove the wrapper from the DOM */
   cleanup: () => void;
@@ -32,7 +33,7 @@ export interface ExportClone {
  * Prepare a fully pre-processed clone of the ReactFlow viewport for export.
  *
  * The returned `viewport` element has all styles inlined, pseudo-elements
- * materialized, and fonts embedded. Pass it to `toPng()` or `toSvg()`.
+ * materialized, and fonts embedded. Pass it to `renderToCanvas()` or `renderToSvgString()`.
  *
  * **Important:** Always call `cleanup()` when done (use a `finally` block).
  */
@@ -53,7 +54,7 @@ export async function prepareExportClone(
   materializePseudos(originalViewport, clone);
 
   // 5. Create an offscreen wrapper to hold the clone
-  //    This needs to be in the document so html-to-image can measure it,
+  //    This needs to be in the document for measurement (clientWidth/Height),
   //    but positioned offscreen so it's not visible.
   const wrapper = document.createElement('div');
   wrapper.style.position = 'fixed';

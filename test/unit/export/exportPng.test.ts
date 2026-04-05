@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock html-to-image before importing the module under test
-vi.mock('html-to-image', () => ({
-  toPng: vi.fn(),
+// Mock renderToCanvas before importing the module under test
+vi.mock('@/export/renderToCanvas', () => ({
+  renderToCanvas: vi.fn(),
 }));
 
 // Mock prepareExportClone to avoid side effects in unit tests
@@ -12,12 +12,13 @@ vi.mock('@/export/prepareExportClone', () => ({
 
 import { exportPng } from '@/export/exportPng';
 import { ExportError } from '@/export/types';
-import { toPng } from 'html-to-image';
+import { renderToCanvas } from '@/export/renderToCanvas';
 import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportPng', () => {
   let viewport: HTMLElement;
   let mockCloneViewport: HTMLElement;
+  let mockWrapper: HTMLElement;
   let mockCleanup: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -31,13 +32,22 @@ describe('exportPng', () => {
     // Set up the mock clone
     mockCloneViewport = document.createElement('div');
     mockCloneViewport.className = 'react-flow__viewport';
+    mockWrapper = document.createElement('div');
     mockCleanup = vi.fn();
 
     vi.mocked(prepareExportClone).mockResolvedValue({
-      wrapper: document.createElement('div'),
+      wrapper: mockWrapper,
       viewport: mockCloneViewport,
       cleanup: mockCleanup,
     });
+
+    // Default renderToCanvas mock: returns a canvas that can toBlob
+    const mockCanvas = document.createElement('canvas');
+    // Override toBlob to return a fake PNG blob
+    mockCanvas.toBlob = vi.fn((cb: BlobCallback) => {
+      cb(new Blob(['png-data'], { type: 'image/png' }));
+    });
+    vi.mocked(renderToCanvas).mockResolvedValue(mockCanvas);
   });
 
   afterEach(() => {
@@ -47,62 +57,35 @@ describe('exportPng', () => {
   });
 
   it('calls prepareExportClone with the original viewport', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['png-data'], { type: 'image/png' })),
-    );
-
     await exportPng(2);
 
     expect(prepareExportClone).toHaveBeenCalledTimes(1);
     expect(prepareExportClone).toHaveBeenCalledWith(viewport);
   });
 
-  it('calls toPng with the cloned viewport element and correct options', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-
-    const fakeBlob = new Blob(['png-data'], { type: 'image/png' });
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(fakeBlob),
-    );
-
+  it('calls renderToCanvas with the cloned viewport element and correct options', async () => {
     const result = await exportPng(2);
 
-    expect(toPng).toHaveBeenCalledTimes(1);
-    expect(toPng).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
+    expect(renderToCanvas).toHaveBeenCalledTimes(1);
+    expect(renderToCanvas).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
       pixelRatio: 2,
       backgroundColor: expect.any(String),
     }));
-    expect(fetchSpy).toHaveBeenCalledWith(fakeDataUrl);
     expect(result).toBeInstanceOf(Blob);
   });
 
   it('respects the scale parameter', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['data'])),
-    );
-
     await exportPng(3);
 
-    expect(toPng).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
+    expect(renderToCanvas).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
       pixelRatio: 3,
     }));
   });
 
   it('defaults to scale 2', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['data'])),
-    );
-
     await exportPng();
 
-    expect(toPng).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
+    expect(renderToCanvas).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
       pixelRatio: 2,
     }));
   });
@@ -121,8 +104,8 @@ describe('exportPng', () => {
     }
   });
 
-  it('throws ExportError with RENDER_FAILED when toPng fails', async () => {
-    vi.mocked(toPng).mockRejectedValue(new Error('Canvas tainted'));
+  it('throws ExportError with RENDER_FAILED when renderToCanvas fails', async () => {
+    vi.mocked(renderToCanvas).mockRejectedValue(new Error('Canvas tainted'));
 
     try {
       await exportPng();
@@ -135,19 +118,13 @@ describe('exportPng', () => {
   });
 
   it('calls cleanup after successful export', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['data'])),
-    );
-
     await exportPng();
 
     expect(mockCleanup).toHaveBeenCalledTimes(1);
   });
 
-  it('calls cleanup even when toPng fails', async () => {
-    vi.mocked(toPng).mockRejectedValue(new Error('Failed'));
+  it('calls cleanup even when renderToCanvas fails', async () => {
+    vi.mocked(renderToCanvas).mockRejectedValue(new Error('Failed'));
 
     try {
       await exportPng();
@@ -156,18 +133,5 @@ describe('exportPng', () => {
     }
 
     expect(mockCleanup).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not pass a filter option to toPng (filtering done in clone preparation)', async () => {
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['data'])),
-    );
-
-    await exportPng();
-
-    const callArgs = vi.mocked(toPng).mock.calls[0][1];
-    expect(callArgs).not.toHaveProperty('filter');
   });
 });
