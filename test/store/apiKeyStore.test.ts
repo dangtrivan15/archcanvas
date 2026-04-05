@@ -28,7 +28,6 @@ function createMockStorage(): Storage {
 
 let mockStorage: Storage;
 let useApiKeyStore: typeof UseApiKeyStoreType;
-let DEFAULT_MODEL: string;
 let AVAILABLE_MODELS: readonly { id: string; label: string }[];
 
 describe('apiKeyStore', () => {
@@ -39,7 +38,6 @@ describe('apiKeyStore', () => {
     vi.resetModules();
     const mod = await import('../../src-web/store/apiKeyStore');
     useApiKeyStore = mod.useApiKeyStore;
-    DEFAULT_MODEL = mod.DEFAULT_MODEL;
     AVAILABLE_MODELS = mod.AVAILABLE_MODELS;
   });
 

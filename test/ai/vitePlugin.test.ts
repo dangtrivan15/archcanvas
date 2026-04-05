@@ -48,13 +48,14 @@ function createMockViteServer() {
 
 /** Create a mock SDKQueryFn that returns simple text + done. */
 function createMockSDKQueryFn(): SDKQueryFn {
-  return () => {
+  const FAKE_UUID = '00000000-0000-0000-0000-000000000000' as `${string}-${string}-${string}-${string}-${string}`;
+  return (() => {
     return (async function* () {
       yield {
         type: 'system',
         subtype: 'init',
         session_id: 'test-session',
-        uuid: 'sys-uuid',
+        uuid: FAKE_UUID,
         tools: [],
         model: 'test',
         cwd: '/tmp',
@@ -64,22 +65,22 @@ function createMockSDKQueryFn(): SDKQueryFn {
         output_style: 'text',
         skills: [],
         plugins: [],
-        apiKeySource: 'env',
+        apiKeySource: 'user' as const,
         claude_code_version: '1.0',
         agents: [],
         betas: [],
       } satisfies SDKMessage;
       yield {
         type: 'assistant',
-        uuid: 'ast-uuid',
+        uuid: FAKE_UUID,
         session_id: 'test-session',
-        message: { content: [{ type: 'text', text: 'Hello from AI' }] },
+        message: { content: [{ type: 'text' as const, text: 'Hello from AI', citations: null }] } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaMessage,
         parent_tool_use_id: null,
       } satisfies SDKMessage;
       yield {
         type: 'result',
         subtype: 'success',
-        uuid: 'res-uuid',
+        uuid: FAKE_UUID,
         session_id: 'test-session',
         duration_ms: 50,
         duration_api_ms: 40,
@@ -88,12 +89,12 @@ function createMockSDKQueryFn(): SDKQueryFn {
         result: 'done',
         stop_reason: 'end_turn',
         total_cost_usd: 0.001,
-        usage: { input_tokens: 10, output_tokens: 5 },
+        usage: { input_tokens: 10, output_tokens: 5 } as unknown as import('@anthropic-ai/claude-agent-sdk').NonNullableUsage,
         modelUsage: {},
         permission_denials: [],
       } satisfies SDKMessage;
     })();
-  };
+  }) as unknown as SDKQueryFn;
 }
 
 /** Wait for a condition to be true, with timeout. */

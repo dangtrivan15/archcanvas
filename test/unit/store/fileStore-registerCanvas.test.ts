@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useFileStore } from '@/store/fileStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import { serializeCanvas } from '@/storage/yamlCodec';
-import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
+
 
 function yamlOf(data: Record<string, unknown>): string {
   return serializeCanvas(data as any);

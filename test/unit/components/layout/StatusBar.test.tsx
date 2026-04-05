@@ -6,8 +6,8 @@ import { useUpdaterStore } from '@/store/updaterStore';
 // Mock motion/react — required for happy-dom test environment
 vi.mock('motion/react', () => ({
   motion: {
-    span: ({ children, ...props }: Record<string, unknown>) => <span {...props}>{children}</span>,
-    button: ({ children, ...props }: Record<string, unknown>) => <button {...props}>{children}</button>,
+    span: ({ children, ...props }: Record<string, unknown>) => <span {...props}>{children as React.ReactNode}</span>,
+    button: ({ children, ...props }: Record<string, unknown>) => <button {...props}>{children as React.ReactNode}</button>,
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useReducedMotion: () => false,

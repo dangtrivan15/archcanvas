@@ -21,8 +21,6 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 // any of the library's internal DOM effects (ResizeObserver, scrollIntoView).
 // ---------------------------------------------------------------------------
 vi.mock('cmdk', () => {
-  const React = require('react');
-
   // Dialog: renders children when `open` prop is true; calls onOpenChange(false) on Escape.
   const Dialog = ({
     open,
@@ -32,7 +30,7 @@ vi.mock('cmdk', () => {
   }: {
     open: boolean;
     onOpenChange?: (v: boolean) => void;
-    children?: React.ReactNode;
+    children?: import('react').ReactNode;
     label?: string;
     shouldFilter?: boolean;
     className?: string;
@@ -45,7 +43,7 @@ vi.mock('cmdk', () => {
         data-testid="cmdk-dialog"
         aria-label={label}
         role="dialog"
-        onKeyDown={(e: React.KeyboardEvent) => {
+        onKeyDown={(e: { key: string }) => {
           if (e.key === 'Escape') onOpenChange?.(false);
         }}
       >
@@ -156,7 +154,7 @@ const mockRootCanvas = {
 
 const mockFileState = {
   project: {
-    canvases: new Map([
+    canvases: new Map<string, unknown>([
       ['root', mockRootCanvas],
       [
         'subsystem-a',
