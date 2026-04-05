@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { useChatStore } from '@/store/chatStore';
 import { ChatPanel } from '@/components/panels/ChatPanel';
 import { ChatMessage } from '@/components/panels/ChatMessage';
@@ -64,7 +64,7 @@ function createMockProvider(
     available: true,
     sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
     loadHistory: vi.fn(),
-    abort: vi.fn(),
+    interrupt: vi.fn(),
     ...overrides,
   };
 }
@@ -269,7 +269,7 @@ describe('ChatPanel — Path input removed', () => {
   });
 
   it('enables chat input without requiring project path', () => {
-    mockFileStoreState.projectPath = null;
+    mockFileStoreState.projectPath = null as unknown as string;
     const provider = createMockProvider('test');
     useChatStore.setState({
       providers: new Map([['test', provider]]),

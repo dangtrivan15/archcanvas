@@ -3,6 +3,8 @@ export { InMemoryFileSystem } from './inMemoryFileSystem';
 export { WebFileSystem } from './webFileSystem';
 export type { FilePicker } from './filePicker';
 export { createFilePicker } from './filePicker';
+export type { FileSaver, FileSaveOptions } from './fileSaver';
+export { createFileSaver } from './fileSaver';
 // TauriFileSystem and NodeFileSystem are not statically exported because their
 // platform-specific dependencies (node:fs, @tauri-apps/plugin-fs) must not
 // enter the wrong bundle. Use createFileSystem() instead, which dynamically

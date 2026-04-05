@@ -22,6 +22,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
+import { ExportDialog } from '@/components/ExportDialog';
 import { checkForUpdate } from '@/core/updater';
 import '@/store/themeStore'; // side-effect: applies theme on import
 
@@ -145,6 +146,7 @@ export function App() {
           <StatusBar />
           <AppearanceDialog />
           <AiSettingsDialog />
+          <ExportDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

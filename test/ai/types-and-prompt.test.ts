@@ -9,14 +9,8 @@ import type {
   TextEvent,
   ToolCallEvent,
   ToolResultEvent,
-  ThinkingEvent,
   PermissionRequestEvent,
-  DoneEvent,
   ChatErrorEvent,
-  StatusEvent,
-  RateLimitEvent,
-  SetPermissionModeClientMessage,
-  SetEffortClientMessage,
   PermissionResponseClientMessage,
 } from '@/core/ai/types';
 import {
@@ -118,7 +112,7 @@ describe('AI types — compile-time checks', () => {
         yield { type: 'done' as const, requestId: 'r1' };
       },
       loadHistory: () => {},
-      abort: () => {},
+      interrupt: () => {},
     };
     expect(_provider.id).toBe('mock');
   });
@@ -216,7 +210,7 @@ describe('New client message types', () => {
       type: 'permission_response',
       id: 'perm-1',
       allowed: true,
-      updatedPermissions: [{ tool: 'Bash', permission: 'allow' }],
+      updatedPermissions: [{ type: 'addRules', rules: [{ toolName: 'Bash' }], behavior: 'allow', destination: 'localSettings' }],
     };
     expect(msg.updatedPermissions).toHaveLength(1);
 

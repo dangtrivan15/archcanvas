@@ -75,7 +75,6 @@ vi.mock('@/store/chatStore', () => ({
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { InitMethodStep } from '@/components/onboarding/InitMethodStep';
 import { AiSurveyStep } from '@/components/onboarding/AiSurveyStep';
-import { useFileStore } from '@/store/fileStore';
 import { useChatStore } from '@/store/chatStore';
 
 // ---------------------------------------------------------------------------
@@ -92,17 +91,8 @@ function setAiAvailable(available: boolean) {
   }
   // Re-configure the mock to pick up new state
   vi.mocked(useChatStore).mockImplementation(((sel: any) =>
-    sel({ providers: mockProviders, activeProviderId: mockActiveProviderId }),
+    sel({ providers: mockProviders, activeProviderId: mockActiveProviderId })
   ) as any);
-}
-
-/** Override the fileStore mock's fs value (null by default, or an object with getPath) */
-function setMockFs(fs: { getPath: () => string | null } | null) {
-  vi.mocked(useFileStore).mockImplementation(((sel: any) =>
-    sel({
-      completeOnboarding: mockCompleteOnboarding,
-      fs,
-    })) as any);
 }
 
 // ---------------------------------------------------------------------------

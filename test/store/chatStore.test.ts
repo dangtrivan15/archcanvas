@@ -49,7 +49,7 @@ function createMockProvider(
 } {
   const sentMessages: Array<{ content: string; context: ProjectContext }> = [];
   let interruptCalled = false;
-  let loadHistoryCalled: ChatMessage[] | null = null;
+  let loadHistoryCalled: ChatMessage[] | null = null as ChatMessage[] | null;
   let eventResolver: ((events: ChatEvent[]) => void) | null = null;
   let pendingEvents: ChatEvent[] | null = null;
 

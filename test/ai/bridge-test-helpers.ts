@@ -99,8 +99,8 @@ export function sdkAssistantText(text: string): SDKMessage {
     uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
-      content: [{ type: 'text', text }],
-    },
+      content: [{ type: 'text' as const, text, citations: null }],
+    } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaMessage,
     parent_tool_use_id: null,
   };
 }
@@ -112,7 +112,7 @@ export function sdkAssistantToolUse(name: string, input: Record<string, unknown>
     session_id: 'test-session',
     message: {
       content: [{ type: 'tool_use', name, input, id }],
-    },
+    } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaMessage,
     parent_tool_use_id: null,
   };
 }
@@ -123,6 +123,7 @@ export function sdkUserToolResult(toolUseId: string, content: string, isError = 
     uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
+      role: 'user' as const,
       content: [{ type: 'tool_result', tool_use_id: toolUseId, content, is_error: isError }],
     },
     parent_tool_use_id: null,
@@ -142,7 +143,7 @@ export function sdkResultSuccess(): SDKMessage {
     result: 'done',
     stop_reason: 'end_turn',
     total_cost_usd: 0.01,
-    usage: { input_tokens: 100, output_tokens: 50 },
+    usage: { input_tokens: 100, output_tokens: 50 } as unknown as import('@anthropic-ai/claude-agent-sdk').NonNullableUsage,
     modelUsage: {},
     permission_denials: [],
   };
@@ -163,7 +164,7 @@ export function sdkResultError(
     num_turns: 1,
     stop_reason: null,
     total_cost_usd: 0,
-    usage: { input_tokens: 100, output_tokens: 0 },
+    usage: { input_tokens: 100, output_tokens: 0 } as unknown as import('@anthropic-ai/claude-agent-sdk').NonNullableUsage,
     modelUsage: {},
     permission_denials: [],
     errors,
@@ -177,9 +178,10 @@ export function sdkStreamEvent(deltaType: string, delta: Record<string, string>)
     session_id: 'test-session',
     parent_tool_use_id: null,
     event: {
-      type: 'content_block_delta',
-      delta: { type: deltaType, ...delta },
-    },
+      type: 'content_block_delta' as const,
+      index: 0,
+      delta: { type: deltaType as 'text_delta', ...delta },
+    } as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaRawContentBlockDeltaEvent,
   };
 }
 
@@ -189,7 +191,7 @@ export function sdkStreamEventOther(eventType: string): SDKMessage {
     uuid: FAKE_UUID,
     session_id: 'test-session',
     parent_tool_use_id: null,
-    event: { type: eventType },
+    event: { type: eventType } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaRawMessageStreamEvent,
   };
 }
 
@@ -236,10 +238,10 @@ export function sdkAssistantMixed(
     session_id: 'test-session',
     message: {
       content: [
-        { type: 'text', text },
+        { type: 'text' as const, text, citations: null },
         { type: 'tool_use', name: toolName, input: toolInput, id: toolId },
       ],
-    },
+    } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaMessage,
     parent_tool_use_id: null,
   };
 }
@@ -250,8 +252,8 @@ export function sdkAssistantThinking(thinkingText: string): SDKMessage {
     uuid: FAKE_UUID,
     session_id: 'test-session',
     message: {
-      content: [{ type: 'thinking', text: thinkingText }],
-    },
+      content: [{ type: 'thinking' as const, thinking: thinkingText, signature: '' }],
+    } as unknown as import('@anthropic-ai/sdk/resources/beta/messages/messages').BetaMessage,
     parent_tool_use_id: null,
   };
 }

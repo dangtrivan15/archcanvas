@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useFileStore, setFilePicker } from '@/store/fileStore';
 import { ProjectGate } from '@/components/layout/ProjectGate';
-import type { FilePicker } from '@/platform/filePicker';
+
 
 // ---------------------------------------------------------------------------
 // Reset store between tests

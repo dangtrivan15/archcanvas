@@ -11,7 +11,6 @@ import {
   sdkAssistantText,
   sdkResultSuccess,
   setupSession,
-  toSDKQuery,
 } from './bridge-test-helpers';
 
 // ---------------------------------------------------------------------------
