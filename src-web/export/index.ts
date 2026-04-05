@@ -1,4 +1,4 @@
-import type { ExportOptions, ExportResult } from './types';
+import type { ExportFormat, ExportOptions, ExportResult } from './types';
 import { ExportError } from './types';
 import { exportPng } from './exportPng';
 import { exportSvg } from './exportSvg';
@@ -98,7 +98,7 @@ export async function exportAndSave(options: ExportOptions): Promise<boolean> {
   });
 }
 
-function getFilters(format: string): Array<{ name: string; extensions: string[] }> {
+function getFilters(format: ExportFormat): Array<{ name: string; extensions: string[] }> {
   switch (format) {
     case 'png':
       return [{ name: 'PNG Image', extensions: ['png'] }];
@@ -106,7 +106,5 @@ function getFilters(format: string): Array<{ name: string; extensions: string[] 
       return [{ name: 'SVG Image', extensions: ['svg'] }];
     case 'markdown':
       return [{ name: 'Markdown', extensions: ['md'] }];
-    default:
-      return [];
   }
 }

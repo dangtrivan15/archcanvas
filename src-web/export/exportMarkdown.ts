@@ -129,10 +129,15 @@ function getNodeLabel(node: Node): string {
 
 /** Sanitize a node ID for use as a Mermaid node identifier */
 function sanitizeMermaidId(id: string): string {
+  // Replace non-alphanumeric characters (except _ and -) with underscores
   return id.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
-/** Escape special Mermaid characters in labels */
+/**
+ * Escape special Mermaid characters in labels.
+ * Quotes are replaced with single quotes; brackets and other Mermaid
+ * syntax characters are removed to prevent rendering issues.
+ */
 function escapeMermaid(text: string): string {
   return text.replace(/"/g, "'").replace(/[[\]{}()#&]/g, '');
 }
