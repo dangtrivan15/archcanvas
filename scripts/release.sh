@@ -107,17 +107,25 @@ for i in 0 1; do
     --outfile "src-tauri/binaries/archcanvas-bridge-${RUST_TARGET}"
 
   # Build Tauri app (frontend already built — disable beforeBuildCommand)
+  # Use --bundles app only; DMG is created manually below to avoid
+  # AppleScript/Finder automation that fails without macOS Automation permission.
   echo "Building Tauri app..."
-  npx tauri build --target "$RUST_TARGET" --bundles dmg,app \
+  npx tauri build --target "$RUST_TARGET" --bundles app \
     --config '{"build":{"beforeBuildCommand":""}}'
 
-  # Collect artifacts
-  DMG_DIR="src-tauri/target/${RUST_TARGET}/release/bundle/dmg"
+  # Collect updater artifacts
   MACOS_DIR="src-tauri/target/${RUST_TARGET}/release/bundle/macos"
-
-  cp "$DMG_DIR"/*.dmg "$RELEASE_DIR/${PREFIX}.dmg"
   cp "$MACOS_DIR"/*.app.tar.gz "$RELEASE_DIR/${PREFIX}.app.tar.gz"
   cp "$MACOS_DIR"/*.app.tar.gz.sig "$RELEASE_DIR/${PREFIX}.app.tar.gz.sig"
+
+  # Create DMG manually (no AppleScript — works headless and in CI)
+  echo "Creating DMG..."
+  DMG_STAGING=$(mktemp -d)
+  cp -R "$MACOS_DIR/ArchCanvas.app" "$DMG_STAGING/"
+  ln -s /Applications "$DMG_STAGING/Applications"
+  hdiutil create -volname "ArchCanvas" -srcfolder "$DMG_STAGING" \
+    -ov -format UDZO "$RELEASE_DIR/${PREFIX}.dmg"
+  rm -rf "$DMG_STAGING"
 
   echo "Artifacts collected: ${PREFIX}.dmg, ${PREFIX}.app.tar.gz, ${PREFIX}.app.tar.gz.sig"
 done
