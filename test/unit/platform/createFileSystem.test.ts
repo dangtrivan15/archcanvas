@@ -45,7 +45,7 @@ describe('createFileSystem', () => {
       } as unknown as FileSystemDirectoryHandle;
 
       const fs = await createFileSystem(mockHandle);
-      expectFileSystemShape(fs);
+      expectFileSystemShape(fs as unknown as { [key: string]: unknown });
     });
   });
 
@@ -57,7 +57,7 @@ describe('createFileSystem', () => {
 
       const { createFileSystem } = await import('@/platform/index');
       const fs = await createFileSystem('/tmp/test-root');
-      expectFileSystemShape(fs);
+      expectFileSystemShape(fs as unknown as { [key: string]: unknown });
     });
   });
 

@@ -23,6 +23,7 @@ import { useUiStore } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
+import { ExportDialog } from '@/components/ExportDialog';
 import { checkForUpdate } from '@/core/updater';
 import '@/store/themeStore'; // side-effect: applies theme on import
 
@@ -147,6 +148,7 @@ export function App() {
           <AppearanceDialog />
           <AiSettingsDialog />
           <TemplatePickerDialogWrapper />
+          <ExportDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

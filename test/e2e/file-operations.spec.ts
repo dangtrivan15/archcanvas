@@ -202,7 +202,7 @@ test.describe("beforeunload handler", () => {
       // Make the project dirty by calling the store method directly
       // so the beforeunload handler would trigger
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const store = (window as any).__zustand_fileStore;
+      void (window as any).__zustand_fileStore;
 
       // Even if we can't access the store from evaluate, we can check
       // if the handler is wired by seeing if returnValue gets set
@@ -235,16 +235,14 @@ test.describe("beforeunload handler", () => {
     await expect(statusBar.getByText("Modified")).toBeVisible();
 
     // Set up dialog handler to verify the browser prompts on navigation
-    let dialogTriggered = false;
     page.on("dialog", async (dialog) => {
-      dialogTriggered = true;
       await dialog.dismiss();
     });
 
     // Use evaluate to check if onbeforeunload would fire.
     // Modern browsers don't show dialogs for programmatic navigation in
     // Playwright, but we can verify the handler's returnValue behavior.
-    const wouldPrevent = await page.evaluate(() => {
+    await page.evaluate(() => {
       const event = new Event("beforeunload") as BeforeUnloadEvent;
       Object.defineProperty(event, "returnValue", {
         writable: true,

@@ -130,6 +130,25 @@ const fileActions: ActionDef[] = [
   { id: 'action:open', title: 'Open…', subtitle: '⌘O', icon: '📂', category: 'File', execute: () => useFileStore.getState().open() },
   { id: 'action:save', title: 'Save', subtitle: '⌘S', icon: '💾', category: 'File', execute: () => useFileStore.getState().save() },
   { id: 'action:new-from-template', title: 'New from Template…', icon: '📐', category: 'File', execute: () => useUiStore.getState().openTemplatePickerDialog() },
+  { id: 'action:export', title: 'Export…', subtitle: '⇧⌘E', icon: '📤', category: 'File', execute: () => useUiStore.getState().openExportDialog() },
+  { id: 'action:export-png', title: 'Export as PNG', subtitle: 'Raster image', icon: '🖼', category: 'File', execute: () => {
+    import('@/export').then(({ exportAndSave }) => exportAndSave({ format: 'png' })).catch((err) => {
+      console.error('Export failed:', err);
+      window.alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  } },
+  { id: 'action:export-svg', title: 'Export as SVG', subtitle: 'Vector image', icon: '🖼', category: 'File', execute: () => {
+    import('@/export').then(({ exportAndSave }) => exportAndSave({ format: 'svg' })).catch((err) => {
+      console.error('Export failed:', err);
+      window.alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  } },
+  { id: 'action:export-md', title: 'Export as Markdown', subtitle: 'Text + Mermaid', icon: '📝', category: 'File', execute: () => {
+    import('@/export').then(({ exportAndSave }) => exportAndSave({ format: 'markdown' })).catch((err) => {
+      console.error('Export failed:', err);
+      window.alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  } },
 ];
 
 const editActions: ActionDef[] = [

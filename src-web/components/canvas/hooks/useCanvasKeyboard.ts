@@ -42,6 +42,34 @@ export function useCanvasKeyboard(options?: KeyboardOptions) {
         return;
       }
 
+      // Copy — Cmd+C
+      if (mod && e.key === 'c') {
+        e.preventDefault();
+        useCanvasStore.getState().copySelection(useNavigationStore.getState().currentCanvasId);
+        return;
+      }
+
+      // Cut — Cmd+X
+      if (mod && e.key === 'x') {
+        e.preventDefault();
+        useCanvasStore.getState().cutSelection(useNavigationStore.getState().currentCanvasId);
+        return;
+      }
+
+      // Paste — Cmd+V
+      if (mod && e.key === 'v') {
+        e.preventDefault();
+        useCanvasStore.getState().pasteFromClipboard(useNavigationStore.getState().currentCanvasId);
+        return;
+      }
+
+      // Duplicate — Cmd+D
+      if (mod && e.key === 'd') {
+        e.preventDefault();
+        useCanvasStore.getState().duplicateSelection(useNavigationStore.getState().currentCanvasId);
+        return;
+      }
+
       // Delete selection — Delete or Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   createBridgeSession,
   type SDKQueryFn,
-  type ChatEvent,
   collect,
   testContext,
   getTestCwd,
