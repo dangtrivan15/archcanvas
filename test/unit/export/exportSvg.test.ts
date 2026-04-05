@@ -5,18 +5,37 @@ vi.mock('html-to-image', () => ({
   toSvg: vi.fn(),
 }));
 
+// Mock prepareExportClone to avoid side effects in unit tests
+vi.mock('@/export/prepareExportClone', () => ({
+  prepareExportClone: vi.fn(),
+}));
+
 import { exportSvg } from '@/export/exportSvg';
 import { ExportError } from '@/export/types';
 import { toSvg } from 'html-to-image';
+import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportSvg', () => {
   let viewport: HTMLElement;
+  let mockCloneViewport: HTMLElement;
+  let mockCleanup: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
     viewport = document.createElement('div');
     viewport.className = 'react-flow__viewport';
     document.body.appendChild(viewport);
+
+    mockCloneViewport = document.createElement('div');
+    mockCloneViewport.className = 'react-flow__viewport';
+    mockCleanup = vi.fn();
+
+    vi.mocked(prepareExportClone).mockResolvedValue({
+      wrapper: document.createElement('div'),
+      viewport: mockCloneViewport,
+      cleanup: mockCleanup,
+    });
   });
 
   afterEach(() => {
@@ -25,7 +44,18 @@ describe('exportSvg', () => {
     }
   });
 
-  it('calls toSvg with the viewport element and returns an SVG blob', async () => {
+  it('calls prepareExportClone with the original viewport', async () => {
+    const svgContent = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>';
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    vi.mocked(toSvg).mockResolvedValue(dataUrl);
+
+    await exportSvg();
+
+    expect(prepareExportClone).toHaveBeenCalledTimes(1);
+    expect(prepareExportClone).toHaveBeenCalledWith(viewport);
+  });
+
+  it('calls toSvg with the cloned viewport element and returns an SVG blob', async () => {
     const svgContent = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>';
     const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
     vi.mocked(toSvg).mockResolvedValue(dataUrl);
@@ -33,9 +63,8 @@ describe('exportSvg', () => {
     const result = await exportSvg();
 
     expect(toSvg).toHaveBeenCalledTimes(1);
-    expect(toSvg).toHaveBeenCalledWith(viewport, expect.objectContaining({
+    expect(toSvg).toHaveBeenCalledWith(mockCloneViewport, expect.objectContaining({
       backgroundColor: expect.any(String),
-      filter: expect.any(Function),
     }));
     expect(result).toBeInstanceOf(Blob);
     expect(result.type).toBe('image/svg+xml');
@@ -90,5 +119,38 @@ describe('exportSvg', () => {
       expect((err as ExportError).code).toBe('RENDER_FAILED');
       expect((err as ExportError).message).toContain('Cloning failed');
     }
+  });
+
+  it('calls cleanup after successful export', async () => {
+    const svgContent = '<svg><rect/></svg>';
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    vi.mocked(toSvg).mockResolvedValue(dataUrl);
+
+    await exportSvg();
+
+    expect(mockCleanup).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls cleanup even when toSvg fails', async () => {
+    vi.mocked(toSvg).mockRejectedValue(new Error('Failed'));
+
+    try {
+      await exportSvg();
+    } catch {
+      // expected
+    }
+
+    expect(mockCleanup).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not pass a filter option to toSvg (filtering done in clone preparation)', async () => {
+    const svgContent = '<svg><rect/></svg>';
+    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+    vi.mocked(toSvg).mockResolvedValue(dataUrl);
+
+    await exportSvg();
+
+    const callArgs = vi.mocked(toSvg).mock.calls[0][1];
+    expect(callArgs).not.toHaveProperty('filter');
   });
 });
