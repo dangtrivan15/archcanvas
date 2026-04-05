@@ -129,7 +129,8 @@ function createActionProvider(category: string, actions: ActionDef[]): PalettePr
 const fileActions: ActionDef[] = [
   { id: 'action:open', title: 'Open…', subtitle: '⌘O', icon: '📂', category: 'File', execute: () => useFileStore.getState().open() },
   { id: 'action:save', title: 'Save', subtitle: '⌘S', icon: '💾', category: 'File', execute: () => useFileStore.getState().save() },
-  { id: 'action:export', title: 'Export\u2026', subtitle: '⇧⌘E', icon: '📤', category: 'File', execute: () => useUiStore.getState().openExportDialog() },
+  { id: 'action:new-from-template', title: 'New from Template…', icon: '📐', category: 'File', execute: () => useUiStore.getState().openTemplatePickerDialog() },
+  { id: 'action:export', title: 'Export…', subtitle: '⇧⌘E', icon: '📤', category: 'File', execute: () => useUiStore.getState().openExportDialog() },
   { id: 'action:export-png', title: 'Export as PNG', subtitle: 'Raster image', icon: '🖼', category: 'File', execute: () => {
     import('@/export').then(({ exportAndSave }) => exportAndSave({ format: 'png' })).catch((err) => {
       console.error('Export failed:', err);

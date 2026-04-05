@@ -20,6 +20,9 @@ interface UiState {
   showAiSettingsDialog: boolean;
   openAiSettingsDialog: () => void;
   closeAiSettingsDialog: () => void;
+  showTemplatePickerDialog: boolean;
+  openTemplatePickerDialog: () => void;
+  closeTemplatePickerDialog: () => void;
   showExportDialog: boolean;
   openExportDialog: () => void;
   closeExportDialog: () => void;
@@ -68,6 +71,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   showAiSettingsDialog: false,
   openAiSettingsDialog: () => set({ showAiSettingsDialog: true }),
   closeAiSettingsDialog: () => set({ showAiSettingsDialog: false }),
+
+  showTemplatePickerDialog: false,
+  openTemplatePickerDialog: () => set({ showTemplatePickerDialog: true }),
+  closeTemplatePickerDialog: () => set({ showTemplatePickerDialog: false }),
 
   showExportDialog: false,
   openExportDialog: () => set({ showExportDialog: true }),

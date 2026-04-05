@@ -30,7 +30,8 @@ export function ProjectGate() {
     const action = params.get('action');
     const recentKey = params.get('recent');
     const openPath = params.get('openPath');
-    if (!action && !recentKey && !openPath) return;
+    const templateId = params.get('template');
+    if (!action && !recentKey && !openPath && !templateId) return;
 
     actionFired.current = true;
 
@@ -38,6 +39,7 @@ export function ProjectGate() {
     params.delete('action');
     params.delete('recent');
     params.delete('openPath');
+    params.delete('template');
     const nextSearch = params.toString();
     const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
     window.history.replaceState({}, '', nextUrl);
@@ -58,6 +60,9 @@ export function ProjectGate() {
       })();
     } else if (action === 'open') {
       useFileStore.getState().open();
+    } else if (templateId) {
+      // New window from template: prompt user to pick a directory, then apply template
+      useFileStore.getState().openNewWithTemplate(templateId);
     } else if (recentKey) {
       // Web: load project from IndexedDB handle
       (async () => {
