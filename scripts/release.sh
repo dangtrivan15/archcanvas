@@ -124,11 +124,14 @@ done
 
 # ─── Commit version bump ─────────────────────────────────────────────
 # Committed after build so Cargo.lock (updated by cargo build) is included.
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
-if ! git diff --cached --quiet; then
-  git commit -m "chore: bump version to $VERSION"
-else
-  echo "Version already at $VERSION, skipping commit"
+# Skipped in dry-run mode — file changes are reverted at the end instead.
+if ! $DRY_RUN; then
+  git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+  if ! git diff --cached --quiet; then
+    git commit -m "chore: bump version to $VERSION"
+  else
+    echo "Version already at $VERSION, skipping commit"
+  fi
 fi
 
 # ─── Generate latest.json ──────────────────────────────────────────────
@@ -169,6 +172,11 @@ if $DRY_RUN; then
   echo ""
   echo "latest.json contents:"
   cat "$RELEASE_DIR/latest.json"
+
+  # Revert version changes so dry-run leaves the repo clean
+  echo ""
+  echo "Reverting version changes..."
+  git checkout -- package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
   exit 0
 fi
 
