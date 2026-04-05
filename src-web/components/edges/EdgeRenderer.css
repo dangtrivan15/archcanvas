@@ -69,17 +69,65 @@
   opacity: 0.6;
 }
 
-/* Selected edge — matches node selection blue */
-.edge-selected {
+/* ------------------------------------------------------------------ */
+/* Selection & highlight halo — wide semi-transparent ring behind edge */
+/* ------------------------------------------------------------------ */
+.edge-halo {
   stroke: var(--color-node-selected-border, #2563eb);
-  stroke-width: 2.5px;
-  filter: drop-shadow(0 0 4px var(--color-node-selected-ring, #2563eb40));
+  stroke-opacity: 0.25;
+  stroke-width: 8px;
+  stroke-linecap: round;
+  fill: none;
+  pointer-events: none;
 }
 
-/* Highlighted edges (entity selection) */
-.edge-highlighted {
+/* ------------------------------------------------------------------ */
+/* Invisible interaction zone — wider hit target for hover / click     */
+/* ------------------------------------------------------------------ */
+.edge-interaction-zone {
+  stroke: transparent;
+  stroke-width: 20px;
+  fill: none;
+  pointer-events: stroke;
+}
+
+/* ------------------------------------------------------------------ */
+/* Hover affordance — subtle stroke thickening on hover                */
+/* ------------------------------------------------------------------ */
+.react-flow__edge-path.edge-hovered {
   stroke-width: 3px;
-  filter: drop-shadow(0 0 4px var(--color-accent, #3b82f6));
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ */
+/* Selected edge — matches node selection blue (higher specificity)    */
+/* ------------------------------------------------------------------ */
+.react-flow__edge-path.edge-selected {
+  stroke: var(--color-node-selected-border, #2563eb);
+  stroke-width: 2.5px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Highlighted edges (entity selection) — higher specificity           */
+/* ------------------------------------------------------------------ */
+.react-flow__edge-path.edge-highlighted {
+  stroke-width: 3px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Edge label — selected state (mirrors node selection styling)        */
+/* ------------------------------------------------------------------ */
+.edge-label.edge-label--selected {
+  border-color: var(--color-node-selected-border, #2563eb);
+  box-shadow: 0 0 0 2px var(--color-node-selected-ring, #2563eb40);
+  background: color-mix(in srgb, var(--color-node-selected-border, #2563eb) 8%, var(--color-card));
+}
+
+/* Edge label — highlighted state (entity panel highlighting) */
+.edge-label.edge-label--highlighted {
+  border-color: var(--color-accent, #3b82f6);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent, #3b82f6) 25%, transparent);
+  background: color-mix(in srgb, var(--color-accent, #3b82f6) 8%, var(--color-card));
 }
 
 /* Ghost node for inherited edge endpoints */
