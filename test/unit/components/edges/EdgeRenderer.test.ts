@@ -181,6 +181,41 @@ describe('EdgeRenderer', () => {
     });
   });
 
+  describe('selected edge styling', () => {
+    it('applies edge-selected class when isSelected is true', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: true }),
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).toContain('edge-selected');
+    });
+
+    it('does not apply edge-selected class when isSelected is false', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData({ isSelected: false }),
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).not.toContain('edge-selected');
+    });
+
+    it('does not apply edge-selected class when isSelected is undefined', () => {
+      const { container } = render(
+        React.createElement(EdgeRenderer, {
+          ...defaultProps,
+          data: makeData(),
+        }),
+      );
+      const path = container.querySelector('path');
+      expect(path?.getAttribute('class')).not.toContain('edge-selected');
+    });
+  });
+
   describe('null/undefined data handling', () => {
     it('handles undefined data gracefully — renders path without crashing', () => {
       const { container } = render(

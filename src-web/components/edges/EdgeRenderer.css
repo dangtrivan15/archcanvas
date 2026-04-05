@@ -69,6 +69,13 @@
   opacity: 0.6;
 }
 
+/* Selected edge — matches node selection blue */
+.edge-selected {
+  stroke: var(--color-node-selected-border, #2563eb);
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 4px var(--color-node-selected-ring, #2563eb40));
+}
+
 /* Highlighted edges (entity selection) */
 .edge-highlighted {
   stroke-width: 3px;

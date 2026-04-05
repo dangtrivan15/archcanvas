@@ -47,7 +47,13 @@ export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] 
   });
 }
 
-export function mapCanvasEdges(canvas: Canvas | undefined): RFEdge<CanvasEdgeData>[] {
+interface MapEdgesOptions {
+  canvas: Canvas | undefined;
+  selectedEdgeKeys: ReadonlySet<string>;
+}
+
+export function mapCanvasEdges(opts: MapEdgesOptions): RFEdge<CanvasEdgeData>[] {
+  const { canvas, selectedEdgeKeys } = opts;
   const rawEdges = canvas?.edges ?? [];
   return rawEdges.map((edge) => {
     const protocol = edge.protocol;
@@ -55,7 +61,9 @@ export function mapCanvasEdges(canvas: Canvas | undefined): RFEdge<CanvasEdgeDat
       protocol !== undefined
         ? (PROTOCOL_STYLES[protocol] ?? 'default')
         : 'default';
-    const data: CanvasEdgeData = { edge, styleCategory };
+    const edgeKey = `${edge.from.node}→${edge.to.node}`;
+    const isSelected = selectedEdgeKeys.has(edgeKey);
+    const data: CanvasEdgeData = { edge, styleCategory, isSelected };
     return {
       id: `${edge.from.node}-${edge.to.node}`,
       source: edge.from.node,

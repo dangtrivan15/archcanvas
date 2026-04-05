@@ -29,6 +29,7 @@ export function EdgeRenderer({
   const styleCategory = data?.styleCategory ?? 'default';
   const edge = data?.edge;
   const isInherited = data?.inherited === true;
+  const isSelected = data?.isSelected === true;
   const highlightedEdgeIds = useCanvasStore((s) => s.highlightedEdgeIds);
   const isHighlighted = highlightedEdgeIds.includes(id);
 
@@ -36,6 +37,7 @@ export function EdgeRenderer({
     'react-flow__edge-path',
     `edge-${styleCategory}`,
     isInherited ? 'edge-inherited' : '',
+    isSelected ? 'edge-selected' : '',
     isHighlighted ? 'edge-highlighted' : '',
   ].filter(Boolean).join(' ');
 
