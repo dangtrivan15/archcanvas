@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "archcanvas"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "ctrlc",
  "serde",
