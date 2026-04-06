@@ -19,6 +19,9 @@ export interface ThemeTokens {
   accentForeground: string;
   destructive: string;
   destructiveForeground: string;
+  warning: string;
+  warningForeground: string;
+  warningBorder: string;
   // Canvas tokens
   nodeBg: string;
   nodeBorder: string;

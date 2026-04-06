@@ -43,8 +43,8 @@
 }
 
 .arch-node.unknown-type {
-  border-color: #f59e0b;
-  background-color: #fffbeb;
+  border-color: var(--color-warning-border);
+  background-color: var(--color-warning);
 }
 
 /* ---------------------------------------------------------- */
@@ -279,9 +279,9 @@
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: #d97706;
-  background-color: #fef3c7;
-  border: 1px solid #fcd34d;
+  color: var(--color-warning-foreground);
+  background-color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
   border-radius: 4px;
   padding: 2px 6px;
   margin-top: 2px;

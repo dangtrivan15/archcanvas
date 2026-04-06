@@ -73,7 +73,7 @@
 /* Selection & highlight halo — wide semi-transparent ring behind edge */
 /* ------------------------------------------------------------------ */
 .edge-halo {
-  stroke: var(--color-node-selected-border, #2563eb);
+  stroke: var(--color-node-selected-border);
   stroke-opacity: 0.25;
   stroke-width: 8px;
   stroke-linecap: round;
@@ -103,7 +103,7 @@
 /* Selected edge — matches node selection blue (higher specificity)    */
 /* ------------------------------------------------------------------ */
 .react-flow__edge-path.edge-selected {
-  stroke: var(--color-node-selected-border, #2563eb);
+  stroke: var(--color-node-selected-border);
   stroke-width: 2.5px;
 }
 
@@ -118,16 +118,16 @@
 /* Edge label — selected state (mirrors node selection styling)        */
 /* ------------------------------------------------------------------ */
 .edge-label.edge-label--selected {
-  border-color: var(--color-node-selected-border, #2563eb);
-  box-shadow: 0 0 0 2px var(--color-node-selected-ring, #2563eb40);
-  background: color-mix(in srgb, var(--color-node-selected-border, #2563eb) 8%, var(--color-card));
+  border-color: var(--color-node-selected-border);
+  box-shadow: 0 0 0 2px var(--color-node-selected-ring);
+  background: color-mix(in srgb, var(--color-node-selected-border) 8%, var(--color-card));
 }
 
 /* Edge label — highlighted state (entity panel highlighting) */
 .edge-label.edge-label--highlighted {
-  border-color: var(--color-accent, #3b82f6);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent, #3b82f6) 25%, transparent);
-  background: color-mix(in srgb, var(--color-accent, #3b82f6) 8%, var(--color-card));
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-card));
 }
 
 /* Ghost node for inherited edge endpoints */
@@ -146,18 +146,18 @@
 /* ------------------------------------------------------------------ */
 
 .react-flow__edge-path.edge-diff-added {
-  stroke: var(--color-diff-added-border, #22c55e);
+  stroke: var(--color-diff-added-border);
   stroke-width: 2.5px;
 }
 
 .react-flow__edge-path.edge-diff-removed {
-  stroke: var(--color-diff-removed-border, #ef4444);
+  stroke: var(--color-diff-removed-border);
   stroke-width: 2.5px;
   stroke-dasharray: 4, 4;
   opacity: 0.65;
 }
 
 .react-flow__edge-path.edge-diff-modified {
-  stroke: var(--color-diff-modified-border, #eab308);
+  stroke: var(--color-diff-modified-border);
   stroke-width: 2.5px;
 }

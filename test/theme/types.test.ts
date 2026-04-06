@@ -10,6 +10,7 @@ const REQUIRED_KEYS: (keyof ThemeTokens)[] = [
   'secondary', 'secondaryForeground',
   'accent', 'accentForeground',
   'destructive', 'destructiveForeground',
+  'warning', 'warningForeground', 'warningBorder',
   'nodeBg', 'nodeBorder', 'nodeShadow',
   'nodeSelectedBorder', 'nodeSelectedRing',
   'nodeRefBg', 'nodeRefBorder',
