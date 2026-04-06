@@ -20,6 +20,8 @@
     "dev:landing": "vite --config vite.config.landing.ts",
     "build:landing": "tsc --noEmit -p tsconfig.landing.json && vite build --config vite.config.landing.ts",
     "preview:landing": "vite preview --config vite.config.landing.ts",
+    "test:visual": "playwright test --config playwright.config.visual.ts",
+    "test:visual-update": "playwright test --config playwright.config.visual.ts --update-snapshots",
     "test:e2e-landing": "playwright test --config playwright.config.landing.ts",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
