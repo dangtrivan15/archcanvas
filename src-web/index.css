@@ -39,6 +39,9 @@
   --color-accent-foreground: #1a1a2e;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
+  --color-warning: #fef3c7;
+  --color-warning-foreground: #92400e;
+  --color-warning-border: #f59e0b;
   --color-popover: #ffffff;
   --color-popover-foreground: #1a1a2e;
   --color-card: #ffffff;
