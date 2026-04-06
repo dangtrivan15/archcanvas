@@ -77,4 +77,24 @@ describe('sanitizeUrlReferences', () => {
     sanitizeUrlReferences(el);
     expect(el.style.length).toBe(0);
   });
+
+  it('preserves SVG attributes like marker-end (only strips CSS inline styles)', () => {
+    // sanitizeUrlReferences only operates on el.style.getPropertyValue(),
+    // NOT on DOM attributes. SVG marker-end is an SVG attribute, not a CSS
+    // inline style, so it must survive sanitization.
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('marker-end', 'url(#arrowhead)');
+    svg.appendChild(path);
+
+    // Wrap in an HTMLElement since sanitizeUrlReferences expects HTMLElement root
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(svg);
+
+    sanitizeUrlReferences(wrapper);
+
+    // The SVG attribute should be untouched — sanitizeUrlReferences only
+    // touches el.style, not element attributes
+    expect(path.getAttribute('marker-end')).toBe('url(#arrowhead)');
+  });
 });
