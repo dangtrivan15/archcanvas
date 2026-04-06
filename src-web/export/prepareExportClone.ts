@@ -23,7 +23,7 @@ import { filterGhostElements } from './domUtils';
 export interface ExportClone {
   /** The wrapper element appended to document.body */
   wrapper: HTMLElement;
-  /** The cloned viewport element inside the wrapper (pass to renderToCanvas / renderToSvgString) */
+  /** The cloned viewport element inside the wrapper (pass to renderToSvgString) */
   viewport: HTMLElement;
   /** Clean up: remove the wrapper from the DOM */
   cleanup: () => void;
@@ -33,7 +33,7 @@ export interface ExportClone {
  * Prepare a fully pre-processed clone of the ReactFlow viewport for export.
  *
  * The returned `viewport` element has all styles inlined, pseudo-elements
- * materialized, and fonts embedded. Pass it to `renderToCanvas()` or `renderToSvgString()`.
+ * materialized, and fonts embedded. Pass it to `renderToSvgString()`.
  *
  * **Important:** Always call `cleanup()` when done (use a `finally` block).
  */

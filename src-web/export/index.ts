@@ -1,6 +1,5 @@
 import type { ExportFormat, ExportOptions, ExportResult } from './types';
 import { ExportError } from './types';
-import { exportPng } from './exportPng';
 import { exportSvg } from './exportSvg';
 import { exportMarkdown } from './exportMarkdown';
 import { createFileSaver } from '@/platform/fileSaver';
@@ -8,7 +7,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useNavigationStore } from '@/store/navigationStore';
 
 export type { ExportOptions, ExportResult } from './types';
-export type { ExportFormat, PngScale } from './types';
+export type { ExportFormat } from './types';
 export { ExportError } from './types';
 
 /**
@@ -22,15 +21,6 @@ export async function performExport(options: ExportOptions): Promise<ExportResul
   const safeName = projectName.replace(/[^a-zA-Z0-9_-]/g, '_');
 
   switch (options.format) {
-    case 'png': {
-      const blob = await exportPng(options.pngScale ?? 2);
-      return {
-        data: blob,
-        filename: `${safeName}.png`,
-        mimeType: 'image/png',
-      };
-    }
-
     case 'svg': {
       const blob = await exportSvg();
       return {
@@ -100,8 +90,6 @@ export async function exportAndSave(options: ExportOptions): Promise<boolean> {
 
 function getFilters(format: ExportFormat): Array<{ name: string; extensions: string[] }> {
   switch (format) {
-    case 'png':
-      return [{ name: 'PNG Image', extensions: ['png'] }];
     case 'svg':
       return [{ name: 'SVG Image', extensions: ['svg'] }];
     case 'markdown':

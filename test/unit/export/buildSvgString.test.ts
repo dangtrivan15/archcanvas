@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { buildSvgString, renderToSvgString } from '@/export/renderToCanvas';
+import { buildSvgString, renderToSvgString } from '@/export/buildSvgString';
 
 // Mock sanitizeUrlReferences so we can verify it's called
 vi.mock('@/export/sanitizeUrlReferences', () => ({
@@ -121,7 +121,3 @@ describe('renderToSvgString', () => {
     expect(svg).toContain('fill="#000000"');
   });
 });
-
-// Note: renderToCanvas is not unit-tested here because it depends on
-// Image loading and canvas drawing which aren't available in happy-dom.
-// It's covered by the E2E tests instead.

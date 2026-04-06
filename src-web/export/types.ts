@@ -1,19 +1,14 @@
 /** Supported export formats */
-export type ExportFormat = 'png' | 'svg' | 'markdown';
-
-/** Scale multiplier for PNG exports */
-export type PngScale = 1 | 2 | 3;
+export type ExportFormat = 'svg' | 'markdown';
 
 /** Configuration for an export operation */
 export interface ExportOptions {
   format: ExportFormat;
-  /** Only relevant for PNG exports. Defaults to 2. */
-  pngScale?: PngScale;
 }
 
 /** Successful export result */
 export interface ExportResult {
-  /** The exported data — Blob for PNG/SVG, string for Markdown */
+  /** The exported data — Blob for SVG, string for Markdown */
   data: Blob | string;
   /** Suggested file name */
   filename: string;

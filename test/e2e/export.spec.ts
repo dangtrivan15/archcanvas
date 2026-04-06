@@ -37,50 +37,14 @@ test.describe('Export Dialog', () => {
     await expect(dialog).toContainText('Export Canvas');
   });
 
-  test('Export dialog shows three format options', async ({ page }) => {
+  test('Export dialog shows two format options', async ({ page }) => {
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
 
-    // All three format options should be visible
-    await expect(dialog.getByText('PNG')).toBeVisible();
+    // Two format options should be visible (PNG has been removed)
     await expect(dialog.getByText('SVG')).toBeVisible();
     await expect(dialog.getByText('Markdown')).toBeVisible();
-  });
-
-  test('PNG resolution selector is visible when PNG is selected', async ({ page }) => {
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-
-    // PNG is selected by default — resolution picker should be visible
-    await expect(dialog.getByText('Resolution')).toBeVisible();
-    await expect(dialog.getByText('1x')).toBeVisible();
-    await expect(dialog.getByText('2x')).toBeVisible();
-    await expect(dialog.getByText('3x')).toBeVisible();
-  });
-
-  test('resolution selector hides when switching to SVG', async ({ page }) => {
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-
-    // Initially Resolution is visible (PNG default)
-    await expect(dialog.getByText('Resolution')).toBeVisible();
-
-    // Switch to SVG
-    await dialog.getByText('SVG').click();
-    await expect(dialog.getByText('Resolution')).not.toBeVisible();
-  });
-
-  test('resolution selector hides when switching to Markdown', async ({ page }) => {
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-
-    // Switch to Markdown
-    await dialog.getByText('Markdown').click();
-    await expect(dialog.getByText('Resolution')).not.toBeVisible();
   });
 
   test('Export button exists and shows correct text', async ({ page }) => {
@@ -102,7 +66,7 @@ test.describe('Export Dialog', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('Export action appears in command palette', async ({ page }) => {
+  test('Export actions appear in command palette', async ({ page }) => {
     // Open command palette
     await page.keyboard.press(`${MOD}+k`);
 
@@ -115,7 +79,6 @@ test.describe('Export Dialog', () => {
 
     // Wait for filtered results to appear (replaces waitForTimeout)
     await expect(page.getByText('Export…')).toBeVisible();
-    await expect(page.getByText('Export as PNG')).toBeVisible();
     await expect(page.getByText('Export as SVG')).toBeVisible();
     await expect(page.getByText('Export as Markdown')).toBeVisible();
   });
@@ -124,7 +87,7 @@ test.describe('Export Dialog', () => {
 /* ------------------------------------------------------------------ */
 /*  E2E Export Rendering Tests                                        */
 /*  These verify that the custom renderer actually produces valid      */
-/*  downloadable files (PNG, SVG, Markdown).                           */
+/*  downloadable files (SVG, Markdown).                                */
 /* ------------------------------------------------------------------ */
 
 test.describe('Export Rendering', () => {
@@ -158,43 +121,13 @@ test.describe('Export Rendering', () => {
     });
   }
 
-  test('PNG export produces a valid PNG file', async ({ page }) => {
-    await setupForDownload(page);
-
-    // Open export dialog and export as PNG (default)
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-
-    // Select 1x resolution to keep file size small for testing
-    await dialog.getByText('1x').click();
-
-    // Start waiting for download BEFORE clicking export
-    const downloadPromise = page.waitForEvent('download');
-    await dialog.getByRole('button', { name: 'Export' }).click();
-    const download = await downloadPromise;
-
-    // Verify filename ends with .png
-    expect(download.suggestedFilename()).toMatch(/\.png$/);
-
-    // Read the download and verify PNG magic bytes (89 50 4E 47)
-    const path = await download.path();
-    expect(path).not.toBeNull();
-    const buffer = fs.readFileSync(path!);
-    expect(buffer[0]).toBe(0x89);
-    expect(buffer[1]).toBe(0x50); // P
-    expect(buffer[2]).toBe(0x4e); // N
-    expect(buffer[3]).toBe(0x47); // G
-  });
-
   test('SVG export produces a valid SVG with foreignObject', async ({ page }) => {
     await setupForDownload(page);
 
-    // Open export dialog and switch to SVG
+    // Open export dialog — SVG is now the default
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await dialog.getByText('SVG').click();
 
     // Start waiting for download BEFORE clicking export
     const downloadPromise = page.waitForEvent('download');
@@ -238,37 +171,6 @@ test.describe('Export Rendering', () => {
     expect(content).toContain('Service'); // Contains the node we added
   });
 
-  test('PNG 3x export produces a larger file than 1x', async ({ page }) => {
-    await setupForDownload(page);
-
-    // Export at 1x
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    let dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-    await dialog.getByText('1x').click();
-
-    let downloadPromise = page.waitForEvent('download');
-    await dialog.getByRole('button', { name: 'Export' }).click();
-    const download1x = await downloadPromise;
-    const path1x = await download1x.path();
-    const size1x = fs.statSync(path1x!).size;
-
-    // Export at 3x
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-    await dialog.getByText('3x').click();
-
-    downloadPromise = page.waitForEvent('download');
-    await dialog.getByRole('button', { name: 'Export' }).click();
-    const download3x = await downloadPromise;
-    const path3x = await download3x.path();
-    const size3x = fs.statSync(path3x!).size;
-
-    // 3x should be larger than 1x (more pixels)
-    expect(size3x).toBeGreaterThan(size1x);
-  });
-
   test('export dialog closes after successful export', async ({ page }) => {
     await setupForDownload(page);
 
@@ -276,9 +178,7 @@ test.describe('Export Rendering', () => {
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
 
-    // Switch to Markdown for fast export
-    await dialog.getByText('Markdown').click();
-
+    // SVG is the default — export directly
     const downloadPromise = page.waitForEvent('download');
     await dialog.getByRole('button', { name: 'Export' }).click();
     await downloadPromise;
@@ -287,7 +187,7 @@ test.describe('Export Rendering', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('no orphaned export wrappers remain in the DOM after PNG export', async ({ page }) => {
+  test('no orphaned export wrappers remain in the DOM after SVG export', async ({ page }) => {
     await setupForDownload(page);
 
     // Count wrappers before export
@@ -298,8 +198,8 @@ test.describe('Export Rendering', () => {
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await dialog.getByText('1x').click();
 
+    // SVG is the default — export directly
     const downloadPromise = page.waitForEvent('download');
     await dialog.getByRole('button', { name: 'Export' }).click();
     await downloadPromise;
@@ -321,8 +221,8 @@ test.describe('Export Rendering', () => {
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await dialog.getByText('SVG').click();
 
+    // SVG is the default — export directly
     const downloadPromise = page.waitForEvent('download');
     await dialog.getByRole('button', { name: 'Export' }).click();
     const download = await downloadPromise;
@@ -394,43 +294,14 @@ test.describe('Export Rendering (with edges)', () => {
     });
   }
 
-  test('PNG export with edges produces a valid PNG', async ({ page }) => {
-    await setupWithEdges(page);
-
-    await page.keyboard.press(`${MOD}+Shift+e`);
-    const dialog = page.locator('[role="dialog"]');
-    await expect(dialog).toBeVisible();
-    await dialog.getByText('1x').click();
-
-    const downloadPromise = page.waitForEvent('download');
-    await dialog.getByRole('button', { name: 'Export' }).click();
-    const download = await downloadPromise;
-
-    expect(download.suggestedFilename()).toMatch(/\.png$/);
-
-    const path = await download.path();
-    expect(path).not.toBeNull();
-    const buffer = fs.readFileSync(path!);
-
-    // Verify PNG magic bytes
-    expect(buffer[0]).toBe(0x89);
-    expect(buffer[1]).toBe(0x50); // P
-    expect(buffer[2]).toBe(0x4e); // N
-    expect(buffer[3]).toBe(0x47); // G
-
-    // A multi-node graph with edges should produce a reasonably sized PNG
-    // (larger than a trivial single-node export)
-    expect(buffer.length).toBeGreaterThan(1000);
-  });
-
   test('SVG export with edges contains edge label text', async ({ page }) => {
     await setupWithEdges(page);
 
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await dialog.getByText('SVG').click();
 
+    // SVG is the default — export directly
     const downloadPromise = page.waitForEvent('download');
     await dialog.getByRole('button', { name: 'Export' }).click();
     const download = await downloadPromise;
@@ -450,8 +321,8 @@ test.describe('Export Rendering (with edges)', () => {
     await page.keyboard.press(`${MOD}+Shift+e`);
     const dialog = page.locator('[role="dialog"]');
     await expect(dialog).toBeVisible();
-    await dialog.getByText('SVG').click();
 
+    // SVG is the default — export directly
     const downloadPromise = page.waitForEvent('download');
     await dialog.getByRole('button', { name: 'Export' }).click();
     const download = await downloadPromise;
