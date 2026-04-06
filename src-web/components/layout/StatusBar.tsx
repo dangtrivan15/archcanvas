@@ -95,6 +95,19 @@ export function StatusBar() {
           )}
         </AnimatePresence>
         <AnimatePresence>
+          {diffError && !diffEnabled && (
+            <motion.span
+              data-testid="diff-error"
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-500 font-medium cursor-help"
+              title={diffError}
+            >
+              Diff failed
+            </motion.span>
+          )}
           {diffEnabled && (
             <motion.span
               data-testid="diff-indicator"
@@ -102,7 +115,8 @@ export function StatusBar() {
               animate={{ opacity: 1, scale: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-emerald-500 font-medium"
+              className={`rounded px-1.5 py-0.5 font-medium ${diffError ? 'bg-red-500/15 text-red-500 cursor-help' : 'bg-emerald-500/15 text-emerald-500'}`}
+              title={diffError ?? undefined}
             >
               {diffLoading ? 'Diffing\u2026' : diffError ? 'Diff error' : (() => {
                 if (!diffSummary) return `Diff: ${diffBaseRef}`;

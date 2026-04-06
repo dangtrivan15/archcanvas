@@ -469,6 +469,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const { fs } = get();
     if (!fs) return; // No FileSystem — project guard ensures this is unreachable
     await get().saveAll(fs);
+
+    // Recompute diff overlay if active — the saved canvas data may differ from baseline
+    const { enabled, baseCanvases } = (await import('./diffStore')).useDiffStore.getState();
+    if (enabled && baseCanvases.size > 0) {
+      (await import('./diffStore')).useDiffStore.getState().computeFromCanvases(baseCanvases);
+    }
   },
 
   openNewWithTemplate: async (templateId: string) => {

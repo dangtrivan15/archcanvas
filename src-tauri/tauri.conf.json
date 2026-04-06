@@ -54,15 +54,6 @@
     ]
   },
   "plugins": {
-    "shell": {
-      "scope": [
-        {
-          "name": "git",
-          "cmd": "git",
-          "args": true
-        }
-      ]
-    },
     "fs": {
       "requireLiteralLeadingDot": false
     },

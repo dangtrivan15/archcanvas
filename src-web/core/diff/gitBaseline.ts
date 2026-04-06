@@ -43,8 +43,10 @@ async function execGitShow(
         cwd: projectPath,
       }).execute();
       if (result.code === 0) return result.stdout;
+      // Non-zero exit = file doesn't exist in this ref (expected for new files)
       return null;
-    } catch {
+    } catch (err) {
+      console.warn(`[diff] git show failed for ${ref}:${filePath}:`, err);
       return null;
     }
   }
@@ -59,7 +61,8 @@ async function execGitShow(
         timeout: 10000,
       });
       return result;
-    } catch {
+    } catch (err) {
+      console.warn(`[diff] git show failed for ${ref}:${filePath}:`, err);
       return null;
     }
   }
@@ -70,6 +73,11 @@ async function execGitShow(
 /**
  * Check if a git repository exists at the given path.
  */
+/**
+ * Check if a git repository exists at the given path.
+ * Throws on unexpected errors (e.g. shell scope misconfiguration).
+ * Returns false only when the path genuinely isn't a git repo.
+ */
 export async function isGitRepo(projectPath: string): Promise<boolean> {
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     try {
@@ -78,8 +86,11 @@ export async function isGitRepo(projectPath: string): Promise<boolean> {
         cwd: projectPath,
       }).execute();
       return result.code === 0;
-    } catch {
-      return false;
+    } catch (err) {
+      // Shell scope misconfiguration, git not installed, etc. — don't hide this.
+      throw new Error(
+        `Failed to run git command (is the Tauri shell scope configured for "git"?): ${err instanceof Error ? err.message : err}`,
+      );
     }
   }
 
@@ -92,8 +103,14 @@ export async function isGitRepo(projectPath: string): Promise<boolean> {
         timeout: 5000,
       });
       return true;
-    } catch {
-      return false;
+    } catch (err: unknown) {
+      // Distinguish "not a repo" (exit code 128) from unexpected failures
+      if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 128) {
+        return false;
+      }
+      throw new Error(
+        `Failed to run git command: ${err instanceof Error ? err.message : err}`,
+      );
     }
   }
 
