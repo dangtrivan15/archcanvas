@@ -31,6 +31,7 @@ export function EdgeRenderer({
   const edge = data?.edge;
   const isInherited = data?.inherited === true;
   const isSelected = data?.isSelected === true;
+  const diffStatus = data?.diffStatus;
   const highlightedEdgeIds = useCanvasStore((s) => s.highlightedEdgeIds);
   const isHighlighted = highlightedEdgeIds.includes(id);
 
@@ -43,6 +44,7 @@ export function EdgeRenderer({
     isSelected ? 'edge-selected' : '',
     isHighlighted ? 'edge-highlighted' : '',
     isHovered && !isInherited ? 'edge-hovered' : '',
+    diffStatus ? `edge-diff-${diffStatus}` : '',
   ].filter(Boolean).join(' ');
 
   const showHalo = isSelected || isHighlighted;

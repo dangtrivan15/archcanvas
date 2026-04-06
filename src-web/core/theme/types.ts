@@ -31,6 +31,16 @@ export interface ThemeTokens {
   edgeAsync: string;
   edgeDefault: string;
   canvasDot: string;
+  // Diff overlay tokens
+  diffAddedBg: string;
+  diffAddedBorder: string;
+  diffAddedRing: string;
+  diffRemovedBg: string;
+  diffRemovedBorder: string;
+  diffRemovedRing: string;
+  diffModifiedBg: string;
+  diffModifiedBorder: string;
+  diffModifiedRing: string;
 }
 
 export interface ThemePalette {

@@ -3,6 +3,7 @@ import { useFileStore } from "@/store/fileStore";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
+import { useDiffStore } from "@/store/diffStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
 
@@ -21,6 +22,13 @@ export function StatusBar() {
 
   const updateStatus = useUpdaterStore((s) => s.status);
   const updateVersion = useUpdaterStore((s) => s.version);
+
+  // Diff overlay state
+  const diffEnabled = useDiffStore((s) => s.enabled);
+  const diffBaseRef = useDiffStore((s) => s.baseRef);
+  const diffSummary = useDiffStore((s) => s.projectDiff?.summary);
+  const diffError = useDiffStore((s) => s.error);
+  const diffLoading = useDiffStore((s) => s.loading);
 
   const loaded = getCanvas(currentCanvasId);
   const nodeCount = loaded?.data.nodes?.length ?? 0;
@@ -84,6 +92,31 @@ export function StatusBar() {
               {updateStatus === 'downloading' && 'Downloading update\u2026'}
               {updateStatus === 'ready-to-restart' && 'Restart to update'}
             </motion.button>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {diffEnabled && (
+            <motion.span
+              data-testid="diff-indicator"
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-emerald-500 font-medium"
+            >
+              {diffLoading ? 'Diffing\u2026' : diffError ? 'Diff error' : (() => {
+                if (!diffSummary) return `Diff: ${diffBaseRef}`;
+                const total =
+                  diffSummary.nodesAdded + diffSummary.nodesRemoved + diffSummary.nodesModified +
+                  diffSummary.edgesAdded + diffSummary.edgesRemoved + diffSummary.edgesModified;
+                if (total === 0) return `No changes vs ${diffBaseRef}`;
+                const parts: string[] = [];
+                if (diffSummary.nodesAdded > 0) parts.push(`+${diffSummary.nodesAdded}`);
+                if (diffSummary.nodesRemoved > 0) parts.push(`−${diffSummary.nodesRemoved}`);
+                if (diffSummary.nodesModified > 0) parts.push(`~${diffSummary.nodesModified}`);
+                return `Diff: ${parts.join(' ')} vs ${diffBaseRef}`;
+              })()}
+            </motion.span>
           )}
         </AnimatePresence>
         <AnimatePresence>

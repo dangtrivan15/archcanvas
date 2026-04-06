@@ -35,6 +35,16 @@ export const catppuccin: ThemePalette = {
     edgeAsync: '#7287fd',
     edgeDefault: '#9ca0b0',
     canvasDot: '#bcc0cc',
+    // Diff overlay — light (Catppuccin Latte)
+    diffAddedBg: '#dff5e1',
+    diffAddedBorder: '#40a02b',
+    diffAddedRing: '#40a02b40',
+    diffRemovedBg: '#fde2e6',
+    diffRemovedBorder: '#d20f39',
+    diffRemovedRing: '#d20f3940',
+    diffModifiedBg: '#fdf6d8',
+    diffModifiedBorder: '#df8e1d',
+    diffModifiedRing: '#df8e1d40',
   },
   dark: {
     // Catppuccin Mocha
@@ -68,5 +78,15 @@ export const catppuccin: ThemePalette = {
     edgeAsync: '#b4befe',
     edgeDefault: '#6c7086',
     canvasDot: '#45475a',
+    // Diff overlay — dark (Catppuccin Mocha)
+    diffAddedBg: '#1a2e1a',
+    diffAddedBorder: '#a6e3a1',
+    diffAddedRing: '#a6e3a140',
+    diffRemovedBg: '#2e1a1e',
+    diffRemovedBorder: '#f38ba8',
+    diffRemovedRing: '#f38ba840',
+    diffModifiedBg: '#2e2610',
+    diffModifiedBorder: '#f9e2af',
+    diffModifiedRing: '#f9e2af40',
   },
 };
