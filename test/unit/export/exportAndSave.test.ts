@@ -7,9 +7,8 @@ vi.mock('@/platform/fileSaver', () => ({
   createFileSaver: vi.fn(),
 }));
 
-// Mock renderToCanvas module for PNG/SVG tests
-vi.mock('@/export/renderToCanvas', () => ({
-  renderToCanvas: vi.fn(),
+// Mock buildSvgString module for SVG tests
+vi.mock('@/export/buildSvgString', () => ({
   renderToSvgString: vi.fn(),
 }));
 
@@ -20,7 +19,7 @@ vi.mock('@/export/prepareExportClone', () => ({
 
 import { exportAndSave, ExportError } from '@/export';
 import { createFileSaver } from '@/platform/fileSaver';
-import { renderToCanvas, renderToSvgString } from '@/export/renderToCanvas';
+import { renderToSvgString } from '@/export/buildSvgString';
 import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportAndSave', () => {
@@ -48,13 +47,6 @@ describe('exportAndSave', () => {
       viewport: mockCloneViewport,
       cleanup: vi.fn(),
     });
-
-    // Default renderToCanvas mock
-    const mockCanvas = document.createElement('canvas');
-    mockCanvas.toBlob = vi.fn((cb: BlobCallback) => {
-      cb(new Blob(['png-data'], { type: 'image/png' }));
-    });
-    vi.mocked(renderToCanvas).mockResolvedValue(mockCanvas);
 
     // Default renderToSvgString mock
     vi.mocked(renderToSvgString).mockReturnValue('<svg><rect/></svg>');
@@ -102,30 +94,6 @@ describe('exportAndSave', () => {
         filters: [{ name: 'Markdown', extensions: ['md'] }],
       }),
     );
-  });
-
-  it('saves PNG via saveBlob', async () => {
-    mockStores();
-
-    // Set up viewport element for exportPng
-    const viewport = document.createElement('div');
-    viewport.className = 'react-flow__viewport';
-    document.body.appendChild(viewport);
-
-    const result = await exportAndSave({ format: 'png', pngScale: 2 });
-
-    expect(result).toBe(true);
-    expect(mockSaver.saveBlob).toHaveBeenCalledTimes(1);
-    expect(mockSaver.saveBlob).toHaveBeenCalledWith(
-      expect.any(Blob),
-      expect.objectContaining({
-        defaultName: 'Test.png',
-        mimeType: 'image/png',
-        filters: [{ name: 'PNG Image', extensions: ['png'] }],
-      }),
-    );
-
-    document.body.removeChild(viewport);
   });
 
   it('saves SVG via saveBlob', async () => {

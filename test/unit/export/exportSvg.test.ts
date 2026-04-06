@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock renderToCanvas module before importing the module under test
-vi.mock('@/export/renderToCanvas', () => ({
+// Mock buildSvgString module before importing the module under test
+vi.mock('@/export/buildSvgString', () => ({
   renderToSvgString: vi.fn(),
 }));
 
@@ -12,14 +12,14 @@ vi.mock('@/export/prepareExportClone', () => ({
 
 import { exportSvg } from '@/export/exportSvg';
 import { ExportError } from '@/export/types';
-import { renderToSvgString } from '@/export/renderToCanvas';
+import { renderToSvgString } from '@/export/buildSvgString';
 import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportSvg', () => {
   let viewport: HTMLElement;
   let mockCloneViewport: HTMLElement;
   let mockWrapper: HTMLElement;
-  let mockCleanup: ReturnType<typeof vi.fn>;
+  let mockCleanup: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     vi.restoreAllMocks();

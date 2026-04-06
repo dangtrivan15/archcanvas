@@ -1,29 +1,21 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Download, Image, FileCode, FileText, Check } from 'lucide-react';
+import { Download, FileCode, FileText, Check } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { exportAndSave, ExportError } from '@/export';
-import type { ExportFormat, PngScale } from '@/export';
+import type { ExportFormat } from '@/export';
 
-const FORMAT_OPTIONS: Array<{ value: ExportFormat; icon: typeof Image; label: string; description: string }> = [
-  { value: 'png', icon: Image, label: 'PNG', description: 'Raster image' },
+const FORMAT_OPTIONS: Array<{ value: ExportFormat; icon: typeof FileCode; label: string; description: string }> = [
   { value: 'svg', icon: FileCode, label: 'SVG', description: 'Vector image' },
   { value: 'markdown', icon: FileText, label: 'Markdown', description: 'Text + Mermaid' },
-];
-
-const SCALE_OPTIONS: Array<{ value: PngScale; label: string }> = [
-  { value: 1, label: '1x' },
-  { value: 2, label: '2x' },
-  { value: 3, label: '3x' },
 ];
 
 export function ExportDialog() {
   const open = useUiStore((s) => s.showExportDialog);
   const close = useUiStore((s) => s.closeExportDialog);
 
-  const [format, setFormat] = useState<ExportFormat>('png');
-  const [pngScale, setPngScale] = useState<PngScale>(2);
+  const [format, setFormat] = useState<ExportFormat>('svg');
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +25,7 @@ export function ExportDialog() {
     setExporting(true);
     setError(null);
     try {
-      const saved = await exportAndSave({ format, pngScale });
+      const saved = await exportAndSave({ format });
       if (saved) {
         close();
       }
@@ -61,7 +53,7 @@ export function ExportDialog() {
         {/* Format picker */}
         <div className="space-y-2">
           <p className="text-sm font-medium text-card-foreground">Format</p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {FORMAT_OPTIONS.map(({ value, icon: Icon, label, description }) => (
               <button
                 key={value}
@@ -94,36 +86,6 @@ export function ExportDialog() {
             ))}
           </div>
         </div>
-
-        {/* PNG resolution picker — only shown when PNG is selected */}
-        {format === 'png' && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-card-foreground">Resolution</p>
-            <div className="flex gap-2">
-              {SCALE_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  aria-pressed={pngScale === value}
-                  onClick={() => setPngScale(value)}
-                  className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                    pngScale === value
-                      ? 'border-primary text-card-foreground'
-                      : 'border-border text-muted-foreground hover:bg-accent/50'
-                  }`}
-                >
-                  {pngScale === value && (
-                    <motion.div
-                      layoutId={prefersReduced ? undefined : 'scale-indicator'}
-                      className="absolute inset-0 rounded-md bg-accent/30"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Error message */}
         {error && (

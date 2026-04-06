@@ -1,7 +1,7 @@
 import { ExportError } from './types';
 import { getCanvasBackground } from './domUtils';
 import { prepareExportClone } from './prepareExportClone';
-import { renderToSvgString } from './renderToCanvas';
+import { renderToSvgString } from './buildSvgString';
 
 /**
  * Export the ReactFlow viewport as an SVG image.
