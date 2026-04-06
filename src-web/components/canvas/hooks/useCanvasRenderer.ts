@@ -4,6 +4,7 @@ import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useDiffStore } from '@/store/diffStore';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 import { extractInheritedEdges } from '../inheritedEdges';
 import { mapCanvasNodes, mapCanvasEdges } from '../mapCanvasData';
@@ -26,14 +27,27 @@ export function useCanvasRenderer(): {
   // every canvas mutation, so this re-runs auto-fit sizing when child content changes.
   const canvasesRef = useFileStore((s) => s.project?.canvases);
 
+  // Diff overlay state — only subscribe to canvas diff when enabled
+  const canvasDiff = useDiffStore((s) => s.enabled ? s.canvasDiffs.get(canvasId) : undefined);
+
   const nodes = useMemo<RFNode<CanvasNodeData>[]>(
-    () => mapCanvasNodes({ canvas: canvas?.data, resolve, selectedNodeIds, canvasesRef }),
-    [canvas, resolve, selectedNodeIds, canvasesRef],
+    () => mapCanvasNodes({
+      canvas: canvas?.data,
+      resolve,
+      selectedNodeIds,
+      canvasesRef,
+      diff: canvasDiff,
+    }),
+    [canvas, resolve, selectedNodeIds, canvasesRef, canvasDiff],
   );
 
   const edges = useMemo<RFEdge<CanvasEdgeData>[]>(
-    () => mapCanvasEdges({ canvas: canvas?.data, selectedEdgeKeys }),
-    [canvas, selectedEdgeKeys],
+    () => mapCanvasEdges({
+      canvas: canvas?.data,
+      selectedEdgeKeys,
+      diff: canvasDiff,
+    }),
+    [canvas, selectedEdgeKeys, canvasDiff],
   );
 
   // Inherited edges from parent scope (only when inside a child canvas)

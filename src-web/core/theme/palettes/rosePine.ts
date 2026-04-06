@@ -35,6 +35,16 @@ export const rosePine: ThemePalette = {
     edgeAsync: '#907aa9',
     edgeDefault: '#9893a5',
     canvasDot: '#dfdad9',
+    // Diff overlay — light (Rose Pine Dawn)
+    diffAddedBg: '#e8f5e9',
+    diffAddedBorder: '#56949f',
+    diffAddedRing: '#56949f40',
+    diffRemovedBg: '#fce4ec',
+    diffRemovedBorder: '#b4637a',
+    diffRemovedRing: '#b4637a40',
+    diffModifiedBg: '#fff8e1',
+    diffModifiedBorder: '#ea9d34',
+    diffModifiedRing: '#ea9d3440',
   },
   dark: {
     // Rose Pine (main dark variant)
@@ -68,5 +78,15 @@ export const rosePine: ThemePalette = {
     edgeAsync: '#c4a7e7',
     edgeDefault: '#6e6a86',
     canvasDot: '#393552',
+    // Diff overlay — dark (Rose Pine)
+    diffAddedBg: '#1a2e30',
+    diffAddedBorder: '#9ccfd8',
+    diffAddedRing: '#9ccfd840',
+    diffRemovedBg: '#2e1a24',
+    diffRemovedBorder: '#eb6f92',
+    diffRemovedRing: '#eb6f9240',
+    diffModifiedBg: '#2e2610',
+    diffModifiedBorder: '#f6c177',
+    diffModifiedRing: '#f6c17740',
   },
 };

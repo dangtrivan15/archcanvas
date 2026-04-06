@@ -6,15 +6,38 @@ import type { PortDef } from '@/types/nodeDefSchema';
 import { useFileStore } from '@/store/fileStore';
 import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useDiffStore } from '@/store/diffStore';
 import { resolveIcon } from './iconMap';
 import { SubsystemPreview } from './SubsystemPreview';
 import { PreviewModeContext } from './PreviewModeContext';
+import { DiffTooltip } from './DiffTooltip';
 import './nodeShapes.css';
 
 type NodeRendererProps = NodeProps<RFNode<CanvasNodeData>>;
 
+/** Compact badge showing child canvas diff summary on RefNode containers */
+function SubsystemDiffBadge({ canvasId }: { canvasId: string }) {
+  const diff = useDiffStore((s) => s.enabled ? s.canvasDiffs.get(canvasId) : undefined);
+  if (!diff) return null;
+
+  const { nodesAdded, nodesRemoved, nodesModified } = diff.summary;
+  const total = nodesAdded + nodesRemoved + nodesModified;
+  if (total === 0) return null;
+
+  const parts: string[] = [];
+  if (nodesAdded > 0) parts.push(`+${nodesAdded}`);
+  if (nodesRemoved > 0) parts.push(`−${nodesRemoved}`);
+  if (nodesModified > 0) parts.push(`~${nodesModified}`);
+
+  return (
+    <div className="arch-node-diff-badge diff-badge-modified" style={{ fontSize: '8px' }}>
+      {parts.join(' ')}
+    </div>
+  );
+}
+
 export function NodeRenderer({ data }: NodeRendererProps) {
-  const { node, nodeDef, isSelected, isRef } = data;
+  const { node, nodeDef, isSelected, isRef, diffStatus } = data;
   const isPreview = useContext(PreviewModeContext);
 
   // Determine display name
@@ -52,6 +75,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
     isSelected ? 'selected' : '',
     isRef ? 'ref-node' : '',
     nodeDef === undefined && !isRef ? 'unknown-type' : '',
+    diffStatus ? `diff-${diffStatus}` : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -110,6 +134,9 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       {/* Mini-node preview for container RefNodes (skipped in preview mode to prevent recursion) */}
       {isRef && !isPreview && <SubsystemPreview canvasId={node.id} />}
 
+      {/* Multi-scope diff badge for RefNode containers */}
+      {isRef && !isPreview && <SubsystemDiffBadge canvasId={node.id} />}
+
       {/* Type label (inline nodes only) */}
       {typeLabel !== undefined && (
         <div className="arch-node-type">{typeLabel}</div>
@@ -121,6 +148,17 @@ export function NodeRenderer({ data }: NodeRendererProps) {
           <span aria-hidden="true">⚠</span>
           Unknown type
         </div>
+      )}
+
+      {/* Diff status badge with tooltip */}
+      {diffStatus && diffStatus !== 'unchanged' && (
+        <DiffTooltip nodeId={node.id}>
+          <div className={`arch-node-diff-badge diff-badge-${diffStatus}`} role="status">
+            {diffStatus === 'added' && '+ Added'}
+            {diffStatus === 'removed' && '− Removed'}
+            {diffStatus === 'modified' && '~ Modified'}
+          </div>
+        </DiffTooltip>
       )}
 
       {/* Default source handle — always present so edges can connect */}

@@ -12,6 +12,7 @@ import { Breadcrumb } from "../shared/Breadcrumb";
 import { ContextMenu } from "../shared/ContextMenu";
 import type { ContextMenuState } from "../shared/ContextMenu";
 import { CommandPalette } from "../shared/CommandPalette";
+import { DiffFilterBar } from "./DiffFilterBar";
 import { CreateSubsystemDialog } from "@/components/CreateSubsystemDialog";
 import {
   AlertDialog,
@@ -316,6 +317,7 @@ export function Canvas() {
       className="relative h-full w-full"
     >
       <Breadcrumb />
+      <DiffFilterBar />
       <ReactFlow
         nodes={rfNodes}
         edges={edges}

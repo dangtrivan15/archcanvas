@@ -14,6 +14,7 @@ import {
   Redo2,
   LayoutGrid,
   MessageSquare,
+  GitCompareArrows,
   Sun,
   Moon,
   Monitor,
@@ -24,12 +25,15 @@ import { useToolStore } from "@/store/toolStore";
 import type { ToolMode } from "@/store/toolStore";
 import { useUiStore } from "@/store/uiStore";
 import { useThemeStore } from "@/store/themeStore";
+import { useDiffStore } from "@/store/diffStore";
+import { toggleDiffOverlay } from "@/core/diff/orchestrator";
 import { useThemeToggler } from "@/components/ui/theme-toggler";
 import { NodeTypeOverlay } from "@/components/layout/NodeTypeOverlay";
 
 export function LeftToolbar() {
   const activeMode = useToolStore((s) => s.mode);
   const rightPanelMode = useUiStore((s) => s.rightPanelMode);
+  const diffEnabled = useDiffStore((s) => s.enabled);
   const themeMode = useThemeStore((s) => s.mode);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
   const themeIcon = themeMode === 'system' ? Monitor : resolvedMode === 'dark' ? Moon : Sun;
@@ -167,6 +171,13 @@ export function LeftToolbar() {
       label: "Redo",
       shortcut: "⇧⌘Z",
       onClick: () => useHistoryStore.getState().redo(),
+    },
+    {
+      icon: GitCompareArrows,
+      label: "Diff Overlay",
+      shortcut: "⌘⇧D",
+      active: diffEnabled,
+      onClick: () => toggleDiffOverlay(),
     },
     {
       icon: MessageSquare,

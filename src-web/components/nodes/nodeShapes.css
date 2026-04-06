@@ -287,3 +287,58 @@
   margin-top: 2px;
   align-self: flex-start;
 }
+
+/* ---------------------------------------------------------- */
+/* Diff overlay state modifiers                               */
+/* ---------------------------------------------------------- */
+
+.arch-node.diff-added {
+  background-color: var(--color-diff-added-bg);
+  border-color: var(--color-diff-added-border);
+  box-shadow: 0 0 0 2px var(--color-diff-added-ring);
+}
+
+.arch-node.diff-removed {
+  background-color: var(--color-diff-removed-bg);
+  border-color: var(--color-diff-removed-border);
+  box-shadow: 0 0 0 2px var(--color-diff-removed-ring);
+  opacity: 0.65;
+}
+
+.arch-node.diff-modified {
+  background-color: var(--color-diff-modified-bg);
+  border-color: var(--color-diff-modified-border);
+  box-shadow: 0 0 0 2px var(--color-diff-modified-ring);
+}
+
+/* Diff badge inside nodes */
+.arch-node-diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-top: 2px;
+  align-self: flex-start;
+}
+
+.diff-badge-added {
+  color: var(--color-diff-added-border);
+  background-color: var(--color-diff-added-bg);
+  border: 1px solid var(--color-diff-added-border);
+}
+
+.diff-badge-removed {
+  color: var(--color-diff-removed-border);
+  background-color: var(--color-diff-removed-bg);
+  border: 1px solid var(--color-diff-removed-border);
+}
+
+.diff-badge-modified {
+  color: var(--color-diff-modified-border);
+  background-color: var(--color-diff-modified-bg);
+  border: 1px solid var(--color-diff-modified-border);
+}

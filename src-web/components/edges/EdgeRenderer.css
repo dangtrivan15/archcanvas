@@ -140,3 +140,24 @@
   font-size: 11px;
   color: var(--color-muted-foreground);
 }
+
+/* ------------------------------------------------------------------ */
+/* Diff overlay edge styles                                            */
+/* ------------------------------------------------------------------ */
+
+.react-flow__edge-path.edge-diff-added {
+  stroke: var(--color-diff-added-border, #22c55e);
+  stroke-width: 2.5px;
+}
+
+.react-flow__edge-path.edge-diff-removed {
+  stroke: var(--color-diff-removed-border, #ef4444);
+  stroke-width: 2.5px;
+  stroke-dasharray: 4, 4;
+  opacity: 0.65;
+}
+
+.react-flow__edge-path.edge-diff-modified {
+  stroke: var(--color-diff-modified-border, #eab308);
+  stroke-width: 2.5px;
+}

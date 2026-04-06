@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
+import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 
 /**
  * App-level keyboard shortcuts for persistence operations.
@@ -25,6 +26,13 @@ export function useAppKeyboard() {
       if (mod && (e.key === 'e' || e.key === 'E') && e.shiftKey) {
         e.preventDefault();
         useUiStore.getState().openExportDialog();
+        return;
+      }
+
+      // Cmd+Shift+D → toggle diff overlay
+      if (mod && (e.key === 'd' || e.key === 'D') && e.shiftKey) {
+        e.preventDefault();
+        toggleDiffOverlay();
         return;
       }
 

@@ -12,6 +12,8 @@ import { useCanvasStore } from '@/store/canvasStore';
 import { useHistoryStore } from '@/store/historyStore';
 import { useUiStore } from '@/store/uiStore';
 import { useToolStore } from '@/store/toolStore';
+import { useDiffStore } from '@/store/diffStore';
+import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 import { resolveIcon } from '@/components/nodes/iconMap';
 import { createNodeFromType } from '@/lib/createNodeFromType';
 
@@ -168,6 +170,8 @@ const editActions: ActionDef[] = [
 const viewActions: ActionDef[] = [
   { id: 'action:fit-view', title: 'Fit View', subtitle: 'Reset viewport to show all nodes', icon: '⊡', category: 'View', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:fit-view')) },
   { id: 'action:auto-layout', title: 'Auto Layout', subtitle: 'Arrange nodes automatically', icon: '⊞', category: 'View', execute: () => window.dispatchEvent(new CustomEvent('archcanvas:auto-layout')) },
+  { id: 'action:toggle-diff', title: 'Toggle Diff Overlay', subtitle: '⇧⌘D — Compare with git HEAD', icon: 'git-compare-arrows', category: 'View', execute: () => toggleDiffOverlay() },
+  { id: 'action:clear-diff', title: 'Clear Diff Overlay', subtitle: 'Remove diff highlighting', icon: '⊘', category: 'View', execute: () => useDiffStore.getState().disable() },
   { id: 'action:toggle-left-panel', title: 'Toggle Left Panel', icon: '◧', category: 'View', execute: () => useUiStore.getState().toggleLeftPanel() },
   { id: 'action:toggle-right-panel', title: 'Toggle Right Panel', icon: '◨', category: 'View', execute: () => useUiStore.getState().toggleRightPanel() },
   { id: 'action:open-chat', title: 'Open AI Chat', subtitle: '⇧⌘I', icon: '💬', category: 'View', execute: () => { useUiStore.getState().openRightPanel(); useUiStore.getState().setRightPanelMode('chat'); setTimeout(() => window.dispatchEvent(new CustomEvent('archcanvas:focus-chat')), 0); } },

@@ -34,6 +34,16 @@ export const archcanvas: ThemePalette = {
     edgeAsync: '#6366f1',
     edgeDefault: '#9ca3af',
     canvasDot: '#d1d5db',
+    // Diff overlay — light
+    diffAddedBg: '#dcfce7',
+    diffAddedBorder: '#22c55e',
+    diffAddedRing: '#22c55e40',
+    diffRemovedBg: '#fee2e2',
+    diffRemovedBorder: '#ef4444',
+    diffRemovedRing: '#ef444440',
+    diffModifiedBg: '#fef9c3',
+    diffModifiedBorder: '#eab308',
+    diffModifiedRing: '#eab30840',
   },
   dark: {
     background: '#09090b',
@@ -66,5 +76,15 @@ export const archcanvas: ThemePalette = {
     edgeAsync: '#818cf8',
     edgeDefault: '#71717a',
     canvasDot: '#333333',
+    // Diff overlay — dark
+    diffAddedBg: '#14532d',
+    diffAddedBorder: '#4ade80',
+    diffAddedRing: '#4ade8040',
+    diffRemovedBg: '#450a0a',
+    diffRemovedBorder: '#f87171',
+    diffRemovedRing: '#f8717140',
+    diffModifiedBg: '#422006',
+    diffModifiedBorder: '#facc15',
+    diffModifiedRing: '#facc1540',
   },
 };
