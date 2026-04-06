@@ -4,6 +4,7 @@ import type { CanvasNodeData, CanvasEdgeData } from './types';
 import { PROTOCOL_STYLES } from './types';
 import { computeAutoSize } from '@/lib/computeAutoSize';
 import type { CanvasDiff } from '@/core/diff/types';
+import { edgeKey } from '@/core/diff/engine';
 
 interface MapNodesOptions {
   canvas: Canvas | undefined;
@@ -82,4 +83,110 @@ export function mapCanvasEdges(opts: MapEdgesOptions): RFEdge<CanvasEdgeData>[] 
       data,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Ghost nodes/edges for removed items (visible when diff overlay is active)
+// ---------------------------------------------------------------------------
+
+interface MapRemovedNodesOptions {
+  diff: CanvasDiff | undefined;
+  baseCanvas: Canvas | undefined;
+  resolve: (type: string) => import('@/types/nodeDefSchema').NodeDef | undefined;
+}
+
+/**
+ * Create read-only ghost RFNodes for nodes that exist in the base canvas but
+ * were removed in the current canvas. These appear with `diffStatus: 'removed'`
+ * so the NodeRenderer renders them with the `diff-removed` style (faded out,
+ * dashed border, etc.).
+ */
+export function mapRemovedNodes(opts: MapRemovedNodesOptions): RFNode<CanvasNodeData>[] {
+  const { diff, baseCanvas, resolve } = opts;
+  if (!diff || !baseCanvas) return [];
+
+  const baseNodeMap = new Map(
+    (baseCanvas.nodes ?? []).map((n) => [n.id, n]),
+  );
+
+  const ghosts: RFNode<CanvasNodeData>[] = [];
+
+  for (const [nodeId, nodeDiff] of diff.nodes) {
+    if (nodeDiff.status !== 'removed') continue;
+    const baseNode = baseNodeMap.get(nodeId);
+    if (!baseNode) continue;
+
+    const isRef = 'ref' in baseNode;
+    const nodeDef = isRef
+      ? undefined
+      : resolve((baseNode as { type: string }).type);
+
+    ghosts.push({
+      id: nodeId,
+      type: 'archNode',
+      position: baseNode.position ?? { x: 0, y: 0 },
+      data: {
+        node: baseNode,
+        nodeDef,
+        isSelected: false,
+        isRef,
+        diffStatus: 'removed',
+      },
+      selectable: false,
+      draggable: false,
+      connectable: false,
+    });
+  }
+
+  return ghosts;
+}
+
+interface MapRemovedEdgesOptions {
+  diff: CanvasDiff | undefined;
+  baseCanvas: Canvas | undefined;
+}
+
+/**
+ * Create read-only ghost RFEdges for edges that exist in the base canvas but
+ * were removed in the current canvas. These appear with `diffStatus: 'removed'`
+ * so the EdgeRenderer renders them with the `edge-diff-removed` style (dashed,
+ * faded).
+ */
+export function mapRemovedEdges(opts: MapRemovedEdgesOptions): RFEdge<CanvasEdgeData>[] {
+  const { diff, baseCanvas } = opts;
+  if (!diff || !baseCanvas) return [];
+
+  // Build a lookup from edge key → base Edge object
+  const baseEdgeMap = new Map(
+    (baseCanvas.edges ?? []).map((e) => [edgeKey(e), e]),
+  );
+
+  const ghosts: RFEdge<CanvasEdgeData>[] = [];
+
+  for (const [key, edgeDiff] of diff.edges) {
+    if (edgeDiff.status !== 'removed') continue;
+    const baseEdge = baseEdgeMap.get(key);
+    if (!baseEdge) continue;
+
+    const protocol = baseEdge.protocol;
+    const styleCategory: 'sync' | 'async' | 'default' =
+      protocol !== undefined
+        ? (PROTOCOL_STYLES[protocol] ?? 'default')
+        : 'default';
+
+    ghosts.push({
+      id: `diff-removed-${baseEdge.from.node}-${baseEdge.to.node}`,
+      source: baseEdge.from.node,
+      target: baseEdge.to.node,
+      type: 'archEdge',
+      selectable: false,
+      data: {
+        edge: baseEdge,
+        styleCategory,
+        diffStatus: 'removed',
+      },
+    });
+  }
+
+  return ghosts;
 }

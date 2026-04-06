@@ -7,7 +7,7 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { useDiffStore } from '@/store/diffStore';
 import { type CanvasNodeData, type CanvasEdgeData, PROTOCOL_STYLES } from '../types';
 import { extractInheritedEdges } from '../inheritedEdges';
-import { mapCanvasNodes, mapCanvasEdges } from '../mapCanvasData';
+import { mapCanvasNodes, mapCanvasEdges, mapRemovedNodes, mapRemovedEdges } from '../mapCanvasData';
 
 export const GHOST_NODE_PREFIX = '__ghost__';
 
@@ -29,6 +29,9 @@ export function useCanvasRenderer(): {
 
   // Diff overlay state — only subscribe to canvas diff when enabled
   const canvasDiff = useDiffStore((s) => s.enabled ? s.canvasDiffs.get(canvasId) : undefined);
+  const baseCanvas = useDiffStore((s) => s.enabled ? s.baseCanvases.get(canvasId) : undefined);
+  const showRemoved = useDiffStore((s) => s.filter.showRemoved);
+  const diffEnabled = useDiffStore((s) => s.enabled);
 
   const nodes = useMemo<RFNode<CanvasNodeData>[]>(
     () => mapCanvasNodes({
@@ -49,6 +52,17 @@ export function useCanvasRenderer(): {
     }),
     [canvas, selectedEdgeKeys, canvasDiff],
   );
+
+  // Ghost nodes/edges for removed items (from the base canvas, not in current)
+  const { removedNodes, removedEdges } = useMemo(() => {
+    if (!diffEnabled || !showRemoved) {
+      return { removedNodes: [] as RFNode<CanvasNodeData>[], removedEdges: [] as RFEdge<CanvasEdgeData>[] };
+    }
+    return {
+      removedNodes: mapRemovedNodes({ diff: canvasDiff, baseCanvas, resolve }),
+      removedEdges: mapRemovedEdges({ diff: canvasDiff, baseCanvas }),
+    };
+  }, [diffEnabled, showRemoved, canvasDiff, baseCanvas, resolve]);
 
   // Inherited edges from parent scope (only when inside a child canvas)
   const { inheritedRFEdges, ghostNodes } = useMemo(() => {
@@ -113,16 +127,18 @@ export function useCanvasRenderer(): {
     return { inheritedRFEdges: rfEdges, ghostNodes: Array.from(ghostNodeMap.values()) };
   }, [breadcrumb, parentEdges, canvasId]);
 
-  // Merge inherited edges and ghost nodes with regular ones
+  // Merge inherited edges/ghost nodes and diff-removed ghosts with regular ones
   const allNodes = useMemo(() => {
-    if (ghostNodes.length === 0) return nodes;
-    return [...nodes, ...ghostNodes];
-  }, [nodes, ghostNodes]);
+    const extras = [...ghostNodes, ...removedNodes];
+    if (extras.length === 0) return nodes;
+    return [...nodes, ...extras];
+  }, [nodes, ghostNodes, removedNodes]);
 
   const allEdges = useMemo(() => {
-    if (inheritedRFEdges.length === 0) return edges;
-    return [...edges, ...inheritedRFEdges];
-  }, [edges, inheritedRFEdges]);
+    const extras = [...inheritedRFEdges, ...removedEdges];
+    if (extras.length === 0) return edges;
+    return [...edges, ...extras];
+  }, [edges, inheritedRFEdges, removedEdges]);
 
   return { nodes: allNodes, edges: allEdges };
 }

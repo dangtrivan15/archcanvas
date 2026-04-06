@@ -31,19 +31,19 @@ export function DiffFilterBar() {
           <FilterToggle
             label="Added"
             checked={filter.showAdded}
-            color="bg-green-500"
+            colorVar="var(--color-diff-added-border)"
             onChange={(v) => setFilter({ showAdded: v })}
           />
           <FilterToggle
             label="Removed"
             checked={filter.showRemoved}
-            color="bg-red-500"
+            colorVar="var(--color-diff-removed-border)"
             onChange={(v) => setFilter({ showRemoved: v })}
           />
           <FilterToggle
             label="Modified"
             checked={filter.showModified}
-            color="bg-yellow-500"
+            colorVar="var(--color-diff-modified-border)"
             onChange={(v) => setFilter({ showModified: v })}
           />
 
@@ -63,12 +63,12 @@ export function DiffFilterBar() {
 function FilterToggle({
   label,
   checked,
-  color,
+  colorVar,
   onChange,
 }: {
   label: string;
   checked: boolean;
-  color: string;
+  colorVar: string;
   onChange: (value: boolean) => void;
 }) {
   return (
@@ -80,7 +80,10 @@ function FilterToggle({
       }`}
       onClick={() => onChange(!checked)}
     >
-      <span className={`inline-block h-2 w-2 rounded-full ${color} ${checked ? '' : 'opacity-30'}`} />
+      <span
+        className="inline-block h-2 w-2 rounded-full"
+        style={{ backgroundColor: colorVar, opacity: checked ? 1 : 0.3 }}
+      />
       {label}
     </button>
   );

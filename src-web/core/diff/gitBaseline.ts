@@ -52,8 +52,8 @@ async function execGitShow(
   // Try Node.js child_process (test/CLI environments)
   if (typeof process !== 'undefined' && process.versions?.node) {
     try {
-      const { execSync } = await import('child_process');
-      const result = execSync(`git show ${ref}:${filePath}`, {
+      const { execFileSync } = await import('child_process');
+      const result = execFileSync('git', ['show', `${ref}:${filePath}`], {
         cwd: projectPath,
         encoding: 'utf-8',
         timeout: 10000,
@@ -85,8 +85,8 @@ export async function isGitRepo(projectPath: string): Promise<boolean> {
 
   if (typeof process !== 'undefined' && process.versions?.node) {
     try {
-      const { execSync } = await import('child_process');
-      execSync('git rev-parse --is-inside-work-tree', {
+      const { execFileSync } = await import('child_process');
+      execFileSync('git', ['rev-parse', '--is-inside-work-tree'], {
         cwd: projectPath,
         encoding: 'utf-8',
         timeout: 5000,

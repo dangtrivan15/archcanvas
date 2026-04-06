@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mapCanvasNodes, mapCanvasEdges } from '@/components/canvas/mapCanvasData';
+import { mapCanvasNodes, mapCanvasEdges, mapRemovedNodes, mapRemovedEdges } from '@/components/canvas/mapCanvasData';
+import { diffCanvas } from '@/core/diff/engine';
 import type { Canvas } from '@/types';
 
 function makeCanvas(partial: Partial<Canvas> = {}): Canvas {
@@ -108,5 +109,110 @@ describe('mapCanvasNodes', () => {
     });
 
     expect(result[0].data.isSelected).toBe(false);
+  });
+});
+
+describe('mapRemovedNodes', () => {
+  it('returns empty array when diff is undefined', () => {
+    const result = mapRemovedNodes({ diff: undefined, baseCanvas: undefined, resolve: () => undefined });
+    expect(result).toEqual([]);
+  });
+
+  it('creates ghost nodes for removed items', () => {
+    const baseCanvas = makeCanvas({
+      nodes: [
+        { id: 'old-node', type: 'compute/service', position: { x: 100, y: 200 } },
+        { id: 'kept-node', type: 'storage/database' },
+      ],
+    } as any);
+
+    const currentCanvas = makeCanvas({
+      nodes: [{ id: 'kept-node', type: 'storage/database' }],
+    } as any);
+
+    const diff = diffCanvas(baseCanvas, currentCanvas, 'test');
+
+    const result = mapRemovedNodes({ diff, baseCanvas, resolve: () => undefined });
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('old-node');
+    expect(result[0].data.diffStatus).toBe('removed');
+    expect(result[0].position).toEqual({ x: 100, y: 200 });
+    expect(result[0].selectable).toBe(false);
+    expect(result[0].draggable).toBe(false);
+    expect(result[0].connectable).toBe(false);
+  });
+
+  it('does not include non-removed nodes', () => {
+    const baseCanvas = makeCanvas({
+      nodes: [
+        { id: 'n1', type: 'compute/service' },
+        { id: 'n2', type: 'storage/database' },
+      ],
+    } as any);
+
+    // n1 modified (type changed), n2 still present
+    const currentCanvas = makeCanvas({
+      nodes: [
+        { id: 'n1', type: 'compute/function' },
+        { id: 'n2', type: 'storage/database' },
+      ],
+    } as any);
+
+    const diff = diffCanvas(baseCanvas, currentCanvas, 'test');
+
+    const result = mapRemovedNodes({ diff, baseCanvas, resolve: () => undefined });
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe('mapRemovedEdges', () => {
+  it('returns empty array when diff is undefined', () => {
+    const result = mapRemovedEdges({ diff: undefined, baseCanvas: undefined });
+    expect(result).toEqual([]);
+  });
+
+  it('creates ghost edges for removed edges', () => {
+    const baseCanvas = makeCanvas({
+      nodes: [
+        { id: 'a', type: 'compute/service' },
+        { id: 'b', type: 'compute/service' },
+      ],
+      edges: [
+        { from: { node: 'a' }, to: { node: 'b' }, protocol: 'HTTP' },
+      ],
+    } as any);
+
+    const currentCanvas = makeCanvas({
+      nodes: [
+        { id: 'a', type: 'compute/service' },
+        { id: 'b', type: 'compute/service' },
+      ],
+      edges: [],
+    } as any);
+
+    const diff = diffCanvas(baseCanvas, currentCanvas, 'test');
+
+    const result = mapRemovedEdges({ diff, baseCanvas });
+    expect(result).toHaveLength(1);
+    expect(result[0].data?.diffStatus).toBe('removed');
+    expect(result[0].source).toBe('a');
+    expect(result[0].target).toBe('b');
+    expect(result[0].selectable).toBe(false);
+  });
+
+  it('does not include non-removed edges', () => {
+    const baseCanvas = makeCanvas({
+      edges: [{ from: { node: 'a' }, to: { node: 'b' } }],
+    } as any);
+
+    // Same edge, but protocol changed (modified, not removed)
+    const currentCanvas = makeCanvas({
+      edges: [{ from: { node: 'a' }, to: { node: 'b' }, protocol: 'gRPC' }],
+    } as any);
+
+    const diff = diffCanvas(baseCanvas, currentCanvas, 'test');
+
+    const result = mapRemovedEdges({ diff, baseCanvas });
+    expect(result).toHaveLength(0);
   });
 });
