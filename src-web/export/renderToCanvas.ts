@@ -14,6 +14,12 @@
  * For PNG export: paints visible DOM elements directly to a Canvas 2D context
  * to avoid Chrome's foreignObject canvas taint restriction.
  *
+ * SVG images (Lucide icons, ReactFlow edge paths) are serialized to data URLs
+ * and loaded via `new Image()`. A `pendingImages` array collects these load
+ * promises so `renderToCanvas()` can `await` them all before returning the
+ * canvas — fixing the race condition where `canvas.toBlob()` could fire
+ * before icons finished loading.
+ *
  * The caller is responsible for preparing the DOM clone (inline styles,
  * materialized pseudo-elements, embedded fonts) via `prepareExportClone`.
  */
@@ -103,8 +109,16 @@ export async function renderToCanvas(
   // Get the element's offscreen position to compute relative coordinates
   const rootRect = element.getBoundingClientRect();
 
+  // Collect image-load promises so we can await them before returning.
+  // SVG icons and edge paths are drawn via Image elements; without awaiting
+  // these loads, canvas.toBlob() may fire before the images are painted.
+  const pendingImages: Promise<void>[] = [];
+
   // Paint all visible elements
-  paintElement(ctx, element, rootRect.left, rootRect.top);
+  paintElement(ctx, element, rootRect.left, rootRect.top, pendingImages);
+
+  // Wait for all SVG images to load (with safety timeout)
+  await Promise.all(pendingImages);
 
   return canvas;
 }
@@ -138,6 +152,7 @@ function paintElement(
   el: HTMLElement,
   offsetX: number,
   offsetY: number,
+  pendingImages: Promise<void>[],
 ): void {
   const style = el.style;
 
@@ -222,12 +237,12 @@ function paintElement(
     }
   }
 
-  // Handle SVG elements (e.g. Lucide icons) — draw them as Images if possible
+  // Handle SVG elements (e.g. Lucide icons, edge paths) — draw them as Images
   for (const child of el.children) {
     if (child instanceof SVGSVGElement) {
-      drawSvgElement(ctx, child, offsetX, offsetY);
+      drawSvgElement(ctx, child, offsetX, offsetY, pendingImages);
     } else if (child instanceof HTMLElement) {
-      paintElement(ctx, child, offsetX, offsetY);
+      paintElement(ctx, child, offsetX, offsetY, pendingImages);
     }
   }
 
@@ -236,17 +251,24 @@ function paintElement(
   }
 }
 
+/** Per-image safety timeout (ms) to avoid hanging on broken SVGs. */
+const IMAGE_LOAD_TIMEOUT_MS = 3_000;
+
 /**
- * Draw an inline SVG element (e.g. Lucide icon) directly to canvas.
+ * Draw an inline SVG element (e.g. Lucide icon, edge path) to canvas.
  *
- * Serializes the SVG to a data URL and draws it. Unlike foreignObject SVGs,
- * standard SVG images do NOT taint the canvas.
+ * Serializes the SVG to a data URL and draws it via `new Image()`.
+ * The load promise is pushed onto `pendingImages` so the caller can
+ * `await` all loads before calling `canvas.toBlob()`.
+ *
+ * Unlike foreignObject SVGs, standard SVG images do NOT taint the canvas.
  */
 function drawSvgElement(
   ctx: CanvasRenderingContext2D,
   svg: SVGSVGElement,
   _offsetX: number,
   _offsetY: number,
+  pendingImages: Promise<void>[],
 ): void {
   // Get the SVG's bounding rect
   const rect = svg.getBoundingClientRect();
@@ -257,43 +279,39 @@ function drawSvgElement(
 
   if (w <= 0 || h <= 0) return;
 
-  // Serialize the SVG and draw it synchronously via a temporary image
   try {
     const svgStr = new XMLSerializer().serializeToString(svg);
     const dataUrl =
       'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
 
-    // Use a synchronous draw approach: create a temporary image and draw
-    // The image might not load synchronously, so we draw a placeholder rect
-    // for the icon area with the icon's color
-    const color =
-      svg.getAttribute('stroke') ||
-      svg.style.color ||
-      ctx.fillStyle.toString();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-
-    // Draw a simple icon placeholder (circle in a square)
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-    const r = Math.min(w, h) / 3;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Try to load and draw the actual SVG icon asynchronously
-    // (this won't block — if it loads before toBlob, great; if not, we have the placeholder)
     const img = new window.Image();
-    img.onload = () => {
-      try {
-        ctx.drawImage(img, x, y, w, h);
-      } catch {
-        // Ignore draw errors for icons
-      }
-    };
+
+    const loadPromise = new Promise<void>((resolve) => {
+      const timer = setTimeout(() => {
+        // Safety timeout — resolve without drawing to avoid hanging forever
+        resolve();
+      }, IMAGE_LOAD_TIMEOUT_MS);
+
+      img.onload = () => {
+        clearTimeout(timer);
+        try {
+          ctx.drawImage(img, x, y, w, h);
+        } catch {
+          // Ignore draw errors for icons
+        }
+        resolve();
+      };
+
+      img.onerror = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+
+    pendingImages.push(loadPromise);
     img.src = dataUrl;
   } catch {
-    // SVG serialization failed — skip this icon
+    // SVG serialization failed — skip this element
   }
 }
 

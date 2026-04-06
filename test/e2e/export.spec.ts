@@ -332,3 +332,155 @@ test.describe('Export Rendering', () => {
     expect(content).not.toContain('externalResourcesRequired');
   });
 });
+
+/* ------------------------------------------------------------------ */
+/*  Export Rendering with Edges                                        */
+/*  Verifies that multi-node graphs with edges export correctly.       */
+/* ------------------------------------------------------------------ */
+
+test.describe('Export Rendering (with edges)', () => {
+  /**
+   * Helper: create a canvas with 2 nodes + 1 labeled edge, then
+   * auto-layout so they're well-spaced. Mirrors the pattern used in
+   * entity-crud.spec.ts. Also overrides showSaveFilePicker so
+   * Playwright can intercept downloads via the <a download> fallback.
+   */
+  async function setupWithEdges(page: import('@playwright/test').Page) {
+    await gotoApp(page);
+
+    // Add Service node via command palette
+    await page.keyboard.press(`${MOD}+k`);
+    await page.getByRole('option', { name: /Service compute\/service/ }).click();
+    await page.waitForTimeout(200);
+
+    // Add Database node via command palette
+    await page.keyboard.press(`${MOD}+k`);
+    await page.getByRole('option', { name: /Database data\/database/ }).click();
+    await page.waitForTimeout(200);
+
+    // Add a labeled edge between the two nodes via graphStore
+    await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fileStore = (window as any).__archcanvas_fileStore__;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const graphStore = (window as any).__archcanvas_graphStore__;
+      const canvas = fileStore.getState().getCanvas('__root__');
+      const nodes = canvas?.data.nodes ?? [];
+      if (nodes.length >= 2) {
+        graphStore.getState().addEdge('__root__', {
+          from: { node: nodes[0].id },
+          to: { node: nodes[1].id },
+          protocol: 'HTTP',
+          label: 'REST API',
+        });
+      }
+    });
+    await page.waitForTimeout(100);
+
+    // Auto-layout so nodes don't overlap
+    await page.keyboard.press(`${MOD}+Shift+l`);
+    await page.waitForTimeout(500);
+
+    // Wait for the edge to render on canvas
+    const canvas = page.getByTestId('main-canvas');
+    await expect(canvas.locator('.react-flow__edge')).toBeVisible();
+
+    // Override showSaveFilePicker to force <a download> fallback
+    await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).showSaveFilePicker = async () => {
+        throw new Error('E2E test: bypassing native file picker');
+      };
+    });
+  }
+
+  test('PNG export with edges produces a valid PNG', async ({ page }) => {
+    await setupWithEdges(page);
+
+    await page.keyboard.press(`${MOD}+Shift+e`);
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await dialog.getByText('1x').click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Export' }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(/\.png$/);
+
+    const path = await download.path();
+    expect(path).not.toBeNull();
+    const buffer = fs.readFileSync(path!);
+
+    // Verify PNG magic bytes
+    expect(buffer[0]).toBe(0x89);
+    expect(buffer[1]).toBe(0x50); // P
+    expect(buffer[2]).toBe(0x4e); // N
+    expect(buffer[3]).toBe(0x47); // G
+
+    // A multi-node graph with edges should produce a reasonably sized PNG
+    // (larger than a trivial single-node export)
+    expect(buffer.length).toBeGreaterThan(1000);
+  });
+
+  test('SVG export with edges contains edge label text', async ({ page }) => {
+    await setupWithEdges(page);
+
+    await page.keyboard.press(`${MOD}+Shift+e`);
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await dialog.getByText('SVG').click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Export' }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(/\.svg$/);
+
+    const path = await download.path();
+    const content = fs.readFileSync(path!, 'utf-8');
+
+    // SVG wraps DOM in foreignObject — edge label should be present
+    expect(content).toContain('REST API');
+  });
+
+  test('SVG export with edges contains both node names', async ({ page }) => {
+    await setupWithEdges(page);
+
+    await page.keyboard.press(`${MOD}+Shift+e`);
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await dialog.getByText('SVG').click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Export' }).click();
+    const download = await downloadPromise;
+
+    const path = await download.path();
+    const content = fs.readFileSync(path!, 'utf-8');
+
+    expect(content).toContain('Service');
+    expect(content).toContain('Database');
+  });
+
+  test('Markdown export with edges includes both node names', async ({ page }) => {
+    await setupWithEdges(page);
+
+    await page.keyboard.press(`${MOD}+Shift+e`);
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await dialog.getByText('Markdown').click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: 'Export' }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(/\.md$/);
+
+    const path = await download.path();
+    const content = fs.readFileSync(path!, 'utf-8');
+
+    expect(content).toContain('Service');
+    expect(content).toContain('Database');
+  });
+});
