@@ -1,16 +1,15 @@
-import { toSvg } from 'html-to-image';
 import { ExportError } from './types';
 import { getCanvasBackground } from './domUtils';
-import { decodeDataUrl } from './dataUrlUtils';
 import { prepareExportClone } from './prepareExportClone';
+import { renderToSvgString } from './renderToCanvas';
 
 /**
  * Export the ReactFlow viewport as an SVG image.
  *
  * Pre-processes the DOM before capture: clones the viewport, inlines all
  * computed styles (resolving CSS variables, color-mix(), Tailwind @layer),
- * materializes pseudo-elements, and embeds fonts as base64. This ensures
- * `html-to-image` produces a faithful rendering regardless of CSS complexity.
+ * materializes pseudo-elements, and embeds fonts as base64. Then wraps
+ * the self-contained clone in a foreignObject SVG document.
  */
 export async function exportSvg(): Promise<Blob> {
   const originalViewport = document.querySelector(
@@ -27,12 +26,12 @@ export async function exportSvg(): Promise<Blob> {
   const exportClone = await prepareExportClone(originalViewport);
 
   try {
-    const dataUrl = await toSvg(exportClone.viewport, {
+    const svgText = renderToSvgString(exportClone.viewport, {
+      width: exportClone.wrapper.clientWidth || originalViewport.scrollWidth,
+      height: exportClone.wrapper.clientHeight || originalViewport.scrollHeight,
       backgroundColor: getCanvasBackground(),
-      // Filtering is already done during clone preparation
     });
 
-    const svgText = decodeDataUrl(dataUrl);
     return new Blob([svgText], { type: 'image/svg+xml' });
   } catch (err) {
     if (err instanceof ExportError) throw err;

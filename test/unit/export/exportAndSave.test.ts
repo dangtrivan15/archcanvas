@@ -7,10 +7,10 @@ vi.mock('@/platform/fileSaver', () => ({
   createFileSaver: vi.fn(),
 }));
 
-// Mock html-to-image for PNG/SVG tests
-vi.mock('html-to-image', () => ({
-  toPng: vi.fn(),
-  toSvg: vi.fn(),
+// Mock renderToCanvas module for PNG/SVG tests
+vi.mock('@/export/renderToCanvas', () => ({
+  renderToCanvas: vi.fn(),
+  renderToSvgString: vi.fn(),
 }));
 
 // Mock prepareExportClone to avoid DOM side effects
@@ -20,7 +20,7 @@ vi.mock('@/export/prepareExportClone', () => ({
 
 import { exportAndSave, ExportError } from '@/export';
 import { createFileSaver } from '@/platform/fileSaver';
-import { toPng, toSvg } from 'html-to-image';
+import { renderToCanvas, renderToSvgString } from '@/export/renderToCanvas';
 import { prepareExportClone } from '@/export/prepareExportClone';
 
 describe('exportAndSave', () => {
@@ -48,6 +48,16 @@ describe('exportAndSave', () => {
       viewport: mockCloneViewport,
       cleanup: vi.fn(),
     });
+
+    // Default renderToCanvas mock
+    const mockCanvas = document.createElement('canvas');
+    mockCanvas.toBlob = vi.fn((cb: BlobCallback) => {
+      cb(new Blob(['png-data'], { type: 'image/png' }));
+    });
+    vi.mocked(renderToCanvas).mockResolvedValue(mockCanvas);
+
+    // Default renderToSvgString mock
+    vi.mocked(renderToSvgString).mockReturnValue('<svg><rect/></svg>');
   });
 
   afterEach(() => {
@@ -102,12 +112,6 @@ describe('exportAndSave', () => {
     viewport.className = 'react-flow__viewport';
     document.body.appendChild(viewport);
 
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgo=';
-    vi.mocked(toPng).mockResolvedValue(fakeDataUrl);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['png-data'], { type: 'image/png' })),
-    );
-
     const result = await exportAndSave({ format: 'png', pngScale: 2 });
 
     expect(result).toBe(true);
@@ -130,10 +134,6 @@ describe('exportAndSave', () => {
     const viewport = document.createElement('div');
     viewport.className = 'react-flow__viewport';
     document.body.appendChild(viewport);
-
-    const svgContent = '<svg><rect/></svg>';
-    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    vi.mocked(toSvg).mockResolvedValue(dataUrl);
 
     const result = await exportAndSave({ format: 'svg' });
 
