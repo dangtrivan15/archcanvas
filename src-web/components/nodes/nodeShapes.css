@@ -276,7 +276,8 @@
 /* ---------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .arch-node {
+  .arch-node,
+  .node-shape-container {
     transition: none;
   }
 }
