@@ -12,7 +12,7 @@ import { defineConfig, devices } from "@playwright/test";
  *   npm run test:visual-update   — regenerate baseline snapshots
  */
 
-process.env.SLOT_GUARD_POOL = "playwright-visual";
+process.env.SLOT_GUARD_POOL = "playwright";
 
 export default defineConfig({
   testDir: "./test/visual",
@@ -36,13 +36,12 @@ export default defineConfig({
   },
 
   use: {
+    ...devices["Desktop Chrome"],
     baseURL: "http://localhost:4173",
     /* Fixed viewport for consistent screenshots */
     viewport: { width: 1280, height: 720 },
     trace: "off",
     screenshot: "off",
-    /* Disable CSS animations/transitions for determinism */
-    ...devices["Desktop Chrome"],
   },
 
   projects: [

@@ -29,7 +29,7 @@
 /* (rectangle, cloud, stadium, document, badge)               */
 /* ---------------------------------------------------------- */
 
-.arch-node:hover:not(.selected):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+.arch-node:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
   border-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
   box-shadow: 0 2px 8px 0 color-mix(in srgb, var(--color-node-shadow) 80%, transparent);
 }
@@ -119,7 +119,7 @@
 }
 
 /* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
-.node-shape-hexagon:hover:not(.selected):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+.node-shape-hexagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
   box-shadow: none;
   filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
           drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
@@ -145,7 +145,7 @@
 }
 
 /* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
-.node-shape-parallelogram:hover:not(.selected):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+.node-shape-parallelogram:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
   box-shadow: none;
   filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
           drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
@@ -247,7 +247,7 @@
 }
 
 /* Hover for container: border + outline tint, no shadow lift */
-.node-shape-container:hover:not(.selected):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+.node-shape-container:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
   border-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
   outline-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
   box-shadow: 0 1px 3px 0 var(--color-node-shadow); /* Keep base shadow, no lift */
