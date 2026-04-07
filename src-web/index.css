@@ -60,6 +60,12 @@
   --color-edge-default: #9ca3af;
   --color-canvas-dot: #d1d5db;
 
+  /* Node minimum-size scale */
+  --node-min-width-xs: 80px;
+  --node-min-width-sm: 120px;
+  --node-min-width-md: 140px;
+  --node-min-width-lg: 180px;
+
   /* Animation keyframes for Animate UI components */
   --animate-accordion-down: accordion-down 200ms ease-out;
   --animate-accordion-up: accordion-up 200ms ease-out;
