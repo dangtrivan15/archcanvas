@@ -33,6 +33,9 @@ test-results/
 playwright-report/
 demo-videos/
 tmp/
+# Visual regression — actual/diff outputs (baselines are tracked in git)
+test/visual/**/*-actual.png
+test/visual/**/*-diff.png
 
 # Worktrees
 .worktrees/

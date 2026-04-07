@@ -21,6 +21,17 @@
   position: relative;
   cursor: default;
   user-select: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+/* ---------------------------------------------------------- */
+/* Hover state — Group A: standard bordered shapes            */
+/* (rectangle, cloud, stadium, document, badge)               */
+/* ---------------------------------------------------------- */
+
+.arch-node:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  border-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
+  box-shadow: 0 2px 8px 0 color-mix(in srgb, var(--color-node-shadow) 80%, transparent);
 }
 
 /* ---------------------------------------------------------- */
@@ -107,6 +118,13 @@
   background-color: var(--color-node-bg);
 }
 
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-hexagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
 /* Selection glow follows the clip-path contour using filter instead of box-shadow */
 .node-shape-hexagon.selected {
   box-shadow: none;
@@ -124,6 +142,13 @@
   border: none;
   padding: 10px 24px;
   min-width: 140px;
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-parallelogram:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
 }
 
 /* Selection glow follows the clip-path contour using filter instead of box-shadow */
@@ -213,11 +238,19 @@
   min-height: 80px;
   height: 100%; /* Fill ReactFlow wrapper so mini ReactFlow gets pixel height */
   background-color: color-mix(in srgb, var(--color-node-ref-bg) 70%, transparent);
+  transition: border-color 150ms ease, box-shadow 150ms ease, outline-color 150ms ease;
 }
 
 .node-shape-container.ref-node {
   border-style: dashed;
   border-width: 2px;
+}
+
+/* Hover for container: border + outline tint, no shadow lift */
+.node-shape-container:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  border-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
+  outline-color: color-mix(in srgb, var(--color-node-selected-border) 45%, var(--color-node-border));
+  box-shadow: 0 1px 3px 0 var(--color-node-shadow); /* Keep base shadow, no lift */
 }
 
 .node-shape-container.selected {
@@ -236,6 +269,16 @@
 
 .node-shape-container .react-flow__resize-control.line {
   border-color: transparent;
+}
+
+/* ---------------------------------------------------------- */
+/* Reduced motion: disable hover transitions                  */
+/* ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .arch-node {
+    transition: none;
+  }
 }
 
 /* ---------------------------------------------------------- */
