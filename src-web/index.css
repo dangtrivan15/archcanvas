@@ -84,6 +84,16 @@
   to { height: 0; }
 }
 
+/* Reduced motion: disable accordion/collapsible expand/collapse animations */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-accordion-down: none;
+    --animate-accordion-up: none;
+    --animate-collapsible-down: none;
+    --animate-collapsible-up: none;
+  }
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);

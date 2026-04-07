@@ -30,6 +30,14 @@
   }
 }
 
+/* Reduced motion: freeze async edge animation, keep static dashed pattern */
+@media (prefers-reduced-motion: reduce) {
+  .edge-async {
+    animation: none;
+    stroke-dasharray: 8, 4;
+  }
+}
+
 /* Edge label container */
 .edge-label {
   background: var(--color-card);
