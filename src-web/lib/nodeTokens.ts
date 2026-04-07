@@ -12,3 +12,11 @@ export const NODE_MIN_WIDTH_XS = 80;
 export const NODE_MIN_WIDTH_SM = 120;
 export const NODE_MIN_WIDTH_MD = 140;
 export const NODE_MIN_WIDTH_LG = 180;
+
+/**
+ * Minimum height for container (RefNode) nodes.
+ *
+ * This is a JS-only constant — no CSS counterpart needed because min-height
+ * is only consumed by NodeResizer and computeAutoSize, not by CSS shapes.
+ */
+export const NODE_MIN_HEIGHT = 120;
