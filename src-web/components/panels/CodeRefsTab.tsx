@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { FileIcon } from 'lucide-react';
 import { useGraphStore } from '@/store/graphStore';
 import { CopyButton } from '@/components/ui/copy-button';
+import { duration, ease } from '@/lib/motion';
 
 interface Props {
   codeRefs: string[];
@@ -34,7 +35,14 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
   return (
     <div className="space-y-1.5">
       {codeRefs.length === 0 && !showInput && (
-        <p className="text-xs text-gray-400">No code refs yet.</p>
+        <motion.p
+          className="text-xs text-gray-400"
+          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          No code refs yet.
+        </motion.p>
       )}
 
       <AnimatePresence>
@@ -45,7 +53,7 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
             initial={prefersReduced ? false : { opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReduced ? undefined : { opacity: 0, x: -20 }}
-            transition={{ duration: 0.15, delay: Math.min(i * 0.03, 0.2), ease: 'easeOut' }}
+            transition={{ duration: duration.normal, delay: Math.min(i * 0.03, 0.2), ease: ease.out }}
             className="group flex items-center gap-1.5 rounded border px-2 py-1 text-xs hover:bg-gray-50"
           >
             <FileIcon className="shrink-0 text-gray-400" size={12} />
@@ -79,7 +87,7 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
             initial={prefersReduced ? false : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReduced ? undefined : { opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            transition={{ duration: duration.normal, ease: ease.out }}
             className="flex gap-1 items-center"
           >
             <input

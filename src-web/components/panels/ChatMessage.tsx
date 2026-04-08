@@ -12,6 +12,7 @@ import type {
 import { ChatToolCall } from './ChatToolCall';
 import { ChatPermissionCard } from './ChatPermissionCard';
 import { ChatQuestionCard } from './ChatQuestionCard';
+import { duration, ease, spring } from '@/lib/motion';
 
 interface Props {
   message: ChatMessageType;
@@ -32,7 +33,7 @@ export function ChatMessage({ message }: Props) {
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
       initial={prefersReduced ? false : { opacity: 0, x: slideX }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
+      transition={{ duration: duration.normal, ease: ease.out }}
     >
       <div
         className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
@@ -151,7 +152,7 @@ function ThinkingBlock({ content }: { content: string }) {
         <motion.span
           className="inline-block"
           animate={{ rotate: expanded ? 0 : -90 }}
-          transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 30 }}
+          transition={prefersReduced ? { duration: 0 } : spring.snappy}
         >
           {'\u25BC'}
         </motion.span>
@@ -162,7 +163,7 @@ function ThinkingBlock({ content }: { content: string }) {
           className="mt-0.5 whitespace-pre-wrap pl-4 text-[11px] opacity-70"
           initial={prefersReduced ? false : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 0.7 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          transition={{ duration: duration.moderate, ease: ease.out }}
         >
           {content}
         </motion.p>

@@ -5,8 +5,8 @@ import { useChatStore } from '@/store/chatStore';
 import { useUiStore } from '@/store/uiStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
-
-const bannerTransition = { duration: 0.15, ease: 'easeOut' as const };
+import { AnimatedBanner } from '@/components/ui/animated-banner';
+import { duration, bannerTransition } from '@/lib/motion';
 
 export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -139,45 +139,26 @@ export function ChatPanel() {
       </div>
 
       {/* Error banner */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            key="error-banner"
-            className="overflow-hidden border-b border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300"
-            role="alert"
-            initial={prefersReduced ? false : { height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={prefersReduced ? undefined : { height: 0, opacity: 0 }}
-            transition={bannerTransition}
-          >
-            {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnimatedBanner visible={!!error} variant="error">
+        {error}
+      </AnimatedBanner>
 
       {/* Warning banner (rate-limit etc.) -- hidden when error is showing */}
-      <AnimatePresence>
-        {warning && !error && (
-          <motion.div
-            key="warning-banner"
-            className="overflow-hidden border-b border-amber-800 bg-amber-950/50 px-3 py-1.5 text-xs text-amber-300"
-            role="status"
-            initial={prefersReduced ? false : { height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={prefersReduced ? undefined : { height: 0, opacity: 0 }}
-            transition={bannerTransition}
-          >
-            {warning}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnimatedBanner visible={!!warning && !error} variant="warning">
+        {warning}
+      </AnimatedBanner>
 
       {/* Message list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 && (
-          <p className="text-center text-xs text-muted-foreground pt-8">
+          <motion.p
+            className="text-center text-xs text-muted-foreground pt-8"
+            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
             No messages yet. Type below to start a conversation.
-          </p>
+          </motion.p>
         )}
         {messages.map((msg, idx) => (
           <ChatMessage key={`${msg.role}-${msg.timestamp}-${idx}`} message={msg} />
@@ -231,7 +212,7 @@ export function ChatPanel() {
                 initial={prefersReduced ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={prefersReduced ? undefined : { opacity: 0 }}
-                transition={{ duration: 0.15 }}
+                transition={{ duration: duration.normal }}
               >
                 Stop
               </motion.button>
@@ -245,7 +226,7 @@ export function ChatPanel() {
                 initial={prefersReduced ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={prefersReduced ? undefined : { opacity: 0 }}
-                transition={{ duration: 0.15 }}
+                transition={{ duration: duration.normal }}
               >
                 Send
               </motion.button>

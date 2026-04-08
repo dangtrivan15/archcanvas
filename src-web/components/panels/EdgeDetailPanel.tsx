@@ -4,6 +4,7 @@ import type { Edge } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { NotesTab } from './NotesTab';
+import { duration, ease } from '@/lib/motion';
 
 interface Props {
   edge: Edge;
@@ -132,7 +133,7 @@ export function EdgeDetailPanel({ edge, canvasId }: Props) {
       className="flex flex-col h-full"
       initial={prefersReduced ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.15, ease: 'easeOut' }}
+      transition={{ duration: duration.normal, ease: ease.out }}
     >
       {/* Header */}
       <div className="p-3 border-b">
@@ -177,7 +178,14 @@ export function EdgeDetailPanel({ edge, canvasId }: Props) {
         <div className="text-xs">
           <label className="block font-medium text-gray-700 mb-1">Entities</label>
           {entities.length === 0 && !showEntityInput && (
-            <p className="text-gray-400 mb-1">No entities.</p>
+            <motion.p
+              className="text-gray-400 mb-1"
+              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              No entities.
+            </motion.p>
           )}
           <div className="flex flex-wrap gap-1 mb-1">
             <AnimatePresence>
@@ -188,7 +196,7 @@ export function EdgeDetailPanel({ edge, canvasId }: Props) {
                   initial={prefersReduced ? false : { scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={prefersReduced ? undefined : { scale: 0.8, opacity: 0 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  transition={{ duration: duration.normal, ease: ease.out }}
                   className="inline-flex items-center gap-0.5 bg-purple-50 text-purple-700 rounded px-1.5 py-0.5 text-[10px]"
                 >
                   {name}

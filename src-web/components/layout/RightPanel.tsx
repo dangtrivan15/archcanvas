@@ -12,6 +12,7 @@ import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { ChatPanel } from '@/components/panels/ChatPanel';
 import { EntityPanel } from '@/components/panels/EntityPanel';
+import { duration, ease } from '@/lib/motion';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
   return 'type' in node && node.ref === undefined;
@@ -132,10 +133,10 @@ export function RightPanel() {
       <AnimatePresence mode="wait">
         <motion.div
           key={contentKey}
-          initial={prefersReduced ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={prefersReduced ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.12 }}
+          initial={prefersReduced ? false : { opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={prefersReduced ? undefined : { opacity: 0, x: -12 }}
+          transition={{ duration: duration.fast, ease: ease.out }}
         >
           {content}
         </motion.div>

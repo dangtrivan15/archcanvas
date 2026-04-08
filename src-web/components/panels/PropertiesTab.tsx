@@ -4,6 +4,7 @@ import type { ArgDef, NodeDef } from '@/types/nodeDefSchema';
 import type { PropertyValue } from '@/types/schema';
 import { useGraphStore } from '@/store/graphStore';
 import { Checkbox } from '@/components/ui/checkbox';
+import { duration, ease } from '@/lib/motion';
 
 interface Props {
   node: InlineNode;
@@ -51,7 +52,7 @@ export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
           className="text-xs"
           initial={prefersReduced ? false : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15, delay: Math.min(index * 0.03, 0.2), ease: 'easeOut' }}
+          transition={{ duration: duration.normal, delay: Math.min(index * 0.03, 0.2), ease: ease.out }}
         >
           <label className="block font-medium text-gray-700 mb-0.5">
             {arg.name}
@@ -64,7 +65,14 @@ export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
         </motion.div>
       ))}
       {specArgs.length === 0 && (
-        <p className="text-xs text-gray-400">No configurable properties</p>
+        <motion.p
+          className="text-xs text-gray-400"
+          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          No configurable properties
+        </motion.p>
       )}
     </div>
   );

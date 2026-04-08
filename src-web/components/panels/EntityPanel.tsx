@@ -8,6 +8,7 @@ import { getEntitiesForCanvas, findEntityUsages } from '../../core/entity/resolv
 import type { ResolvedProject } from '../../storage/fileResolver';
 import type { Entity } from '../../types/schema';
 import type { EntityUsage } from '../../core/entity/resolver';
+import { duration, ease } from '@/lib/motion';
 
 function CreateEntityForm({
   canvasId,
@@ -47,7 +48,7 @@ function CreateEntityForm({
     <motion.div
       initial={prefersReduced ? false : { height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: duration.moderate, ease: ease.out }}
       className="overflow-hidden border-b border-gray-200 dark:border-gray-700"
     >
       <div
@@ -163,7 +164,7 @@ function EntityRow({
         <motion.span
           className="text-xs text-gray-400 ml-2 inline-block"
           animate={{ rotate: expanded ? 90 : 0 }}
-          transition={prefersReduced ? { duration: 0 } : { duration: 0.2, ease: 'easeOut' }}
+          transition={prefersReduced ? { duration: 0 } : { duration: duration.moderate, ease: ease.out }}
         >
           {'\u25B8'}
         </motion.span>
@@ -172,7 +173,7 @@ function EntityRow({
         <motion.div
           initial={prefersReduced ? false : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          transition={{ duration: duration.moderate, ease: ease.out }}
           className="overflow-hidden"
         >
           <div className="px-3 pb-2 space-y-2">
@@ -267,7 +268,7 @@ function EntityRow({
                   <motion.p
                     initial={prefersReduced ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.15, delay: 0.1, ease: 'easeOut' }}
+                    transition={{ duration: duration.normal, delay: 0.1, ease: ease.out }}
                     className="text-xs text-gray-600 dark:text-gray-300"
                   >
                     {entity.description}
@@ -325,6 +326,8 @@ export function EntityPanel() {
     return entities.filter((e) => e.name.toLowerCase().includes(q));
   }, [entities, filter]);
 
+  const prefersReduced = useReducedMotion();
+
   if (!project) {
     return <div className="p-4 text-sm text-gray-500">No project loaded</div>;
   }
@@ -357,7 +360,14 @@ export function EntityPanel() {
       )}
       <div className="flex-1 overflow-auto">
         {filtered.length === 0 ? (
-          <div className="p-4 text-sm text-gray-500">No entities in this scope</div>
+          <motion.div
+            className="p-4 text-sm text-gray-500"
+            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: duration.moderate, ease: ease.out }}
+          >
+            No entities in this scope
+          </motion.div>
         ) : (
           filtered.map((entity) => (
             <EntityRow
