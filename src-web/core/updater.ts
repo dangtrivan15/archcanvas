@@ -1,4 +1,6 @@
 import { useUpdaterStore } from '@/store/updaterStore';
+import { useFileStore } from '@/store/fileStore';
+import { persistProjectForRestore } from '@/core/restoreProject';
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -56,6 +58,7 @@ export async function downloadAndInstall(): Promise<void> {
  */
 export async function relaunch(): Promise<void> {
   if (!isTauri()) return;
+  persistProjectForRestore(useFileStore.getState().projectPath);
   const { relaunch: tauriRelaunch } = await import('@tauri-apps/plugin-process');
   await tauriRelaunch();
 }

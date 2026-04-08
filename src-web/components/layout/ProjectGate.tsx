@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
+import { consumeRestoreEntry } from '@/core/restoreProject';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { duration, ease } from '@/lib/motion';
@@ -28,6 +29,26 @@ export function ProjectGate() {
   // Auto-trigger from URL param (one-project-per-tab)
   useEffect(() => {
     if (actionFired.current) return;
+
+    // Restore project after an update-triggered relaunch (consume-on-read)
+    const restorePath = consumeRestoreEntry();
+    if (restorePath) {
+      actionFired.current = true;
+      (async () => {
+        try {
+          const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(restorePath);
+          await useFileStore.getState().openProject(fs);
+        } catch (err) {
+          useFileStore.setState({
+            status: 'error',
+            error: `Failed to restore project: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      })();
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const recentKey = params.get('recent');
