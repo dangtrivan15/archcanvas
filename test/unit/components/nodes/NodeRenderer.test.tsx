@@ -293,6 +293,83 @@ describe('NodeRenderer', () => {
     expect(container.querySelector('.node-shape-container')).toBeTruthy();
   });
 
+  it('sets data-ns attribute for inline nodes with known namespace', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ type: 'data/database' }),
+          nodeDef: makeNodeDef({ namespace: 'data' }),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBe('data');
+  });
+
+  it('does not set data-ns for ref nodes', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeRefNode({ id: 'known-canvas', ref: 'known-canvas.yaml' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: true,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBeNull();
+  });
+
+  it('does not set data-ns for unknown namespace prefix', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ type: 'custom/widget' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBeNull();
+  });
+
+  it('applies inline style when node has per-instance color', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ color: '#ff6b6b' }),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    // jsdom keeps the raw hex value rather than converting to rgb()
+    expect(node.style.backgroundColor).toBe('#ff6b6b');
+    expect(node.style.borderColor).toBe('#ff6b6b');
+  });
+
+  it('does not apply inline color style when node has no color', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.style.backgroundColor).toBe('');
+  });
+
   it('renders named port handles when nodeDef defines ports', () => {
     const nodeDef = makeNodeDef();
     nodeDef.spec = {

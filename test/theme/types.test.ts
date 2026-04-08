@@ -15,6 +15,16 @@ const REQUIRED_KEYS: (keyof ThemeTokens)[] = [
   'nodeSelectedBorder', 'nodeSelectedRing',
   'nodeRefBg', 'nodeRefBorder',
   'edgeSync', 'edgeAsync', 'edgeDefault', 'canvasDot',
+  // Namespace tint tokens
+  'nsComputeBg', 'nsComputeBorder',
+  'nsDataBg', 'nsDataBorder',
+  'nsMessagingBg', 'nsMessagingBorder',
+  'nsNetworkBg', 'nsNetworkBorder',
+  'nsClientBg', 'nsClientBorder',
+  'nsIntegrationBg', 'nsIntegrationBorder',
+  'nsSecurityBg', 'nsSecurityBorder',
+  'nsObservabilityBg', 'nsObservabilityBorder',
+  'nsAiBg', 'nsAiBorder',
 ];
 
 const HEX_RE = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;

@@ -26,6 +26,8 @@ interface UiState {
   showExportDialog: boolean;
   openExportDialog: () => void;
   closeExportDialog: () => void;
+  showColorLegend: boolean;
+  toggleColorLegend: () => void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -79,6 +81,9 @@ export const useUiStore = create<UiState>((set, get) => ({
   showExportDialog: false,
   openExportDialog: () => set({ showExportDialog: true }),
   closeExportDialog: () => set({ showExportDialog: false }),
+
+  showColorLegend: false,
+  toggleColorLegend: () => set((s) => ({ showColorLegend: !s.showColorLegend })),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {

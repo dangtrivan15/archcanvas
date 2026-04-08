@@ -34,6 +34,25 @@ export interface ThemeTokens {
   edgeAsync: string;
   edgeDefault: string;
   canvasDot: string;
+  // Namespace tint tokens (bg + border per built-in namespace)
+  nsComputeBg: string;
+  nsComputeBorder: string;
+  nsDataBg: string;
+  nsDataBorder: string;
+  nsMessagingBg: string;
+  nsMessagingBorder: string;
+  nsNetworkBg: string;
+  nsNetworkBorder: string;
+  nsClientBg: string;
+  nsClientBorder: string;
+  nsIntegrationBg: string;
+  nsIntegrationBorder: string;
+  nsSecurityBg: string;
+  nsSecurityBorder: string;
+  nsObservabilityBg: string;
+  nsObservabilityBorder: string;
+  nsAiBg: string;
+  nsAiBorder: string;
   // Diff overlay tokens
   diffAddedBg: string;
   diffAddedBorder: string;

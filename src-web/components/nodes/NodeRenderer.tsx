@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
 import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
@@ -12,6 +12,7 @@ import { SubsystemPreview } from './SubsystemPreview';
 import { PreviewModeContext } from './PreviewModeContext';
 import { DiffTooltip } from './DiffTooltip';
 import { NODE_MIN_WIDTH_LG, NODE_MIN_HEIGHT } from '@/lib/nodeTokens';
+import { extractNamespace } from '@/core/namespaceColors';
 import './nodeShapes.css';
 
 type NodeRendererProps = NodeProps<RFNode<CanvasNodeData>>;
@@ -70,6 +71,19 @@ export function NodeRenderer({ data }: NodeRendererProps) {
   const inboundPorts = ports.filter((p) => p.direction === 'inbound');
   const outboundPorts = ports.filter((p) => p.direction === 'outbound');
 
+  // Namespace tinting — only for inline nodes (not RefNodes)
+  const namespace = !isRef && 'type' in node ? extractNamespace(node.type) : undefined;
+
+  // Per-instance color override (inline style takes precedence over namespace tint)
+  const instanceColor = !isRef && 'color' in node ? (node as { color?: string }).color : undefined;
+  const colorStyle = useMemo(() => {
+    if (!instanceColor) return undefined;
+    return {
+      backgroundColor: instanceColor,
+      borderColor: instanceColor,
+    } as React.CSSProperties;
+  }, [instanceColor]);
+
   const classNames = [
     'arch-node',
     `node-shape-${shape}`,
@@ -82,7 +96,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
     .join(' ');
 
   return (
-    <div className={classNames}>
+    <div className={classNames} data-ns={namespace} style={colorStyle}>
       {/* NodeResizer for container RefNodes */}
       {isRef && (
         <NodeResizer

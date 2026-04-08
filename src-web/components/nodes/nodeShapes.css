@@ -271,6 +271,60 @@
 }
 
 /* ---------------------------------------------------------- */
+/* Namespace tints                                            */
+/* Applied via data-ns attribute. Overridden by selected,     */
+/* unknown-type, and diff overlay states.                     */
+/* ---------------------------------------------------------- */
+
+.arch-node[data-ns="compute"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-compute-bg);
+  border-color: var(--color-ns-compute-border);
+}
+
+.arch-node[data-ns="data"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-data-bg);
+  border-color: var(--color-ns-data-border);
+}
+
+.arch-node[data-ns="messaging"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-messaging-bg);
+  border-color: var(--color-ns-messaging-border);
+}
+
+.arch-node[data-ns="network"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-network-bg);
+  border-color: var(--color-ns-network-border);
+}
+
+.arch-node[data-ns="client"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-client-bg);
+  border-color: var(--color-ns-client-border);
+}
+
+.arch-node[data-ns="integration"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-integration-bg);
+  border-color: var(--color-ns-integration-border);
+}
+
+.arch-node[data-ns="security"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-security-bg);
+  border-color: var(--color-ns-security-border);
+}
+
+.arch-node[data-ns="observability"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-observability-bg);
+  border-color: var(--color-ns-observability-border);
+}
+
+.arch-node[data-ns="ai"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  background-color: var(--color-ns-ai-bg);
+  border-color: var(--color-ns-ai-border);
+}
+
+/* Per-instance color override (set via inline style on the node element) */
+/* Handled via inline style in NodeRenderer — no CSS rules needed */
+
+/* ---------------------------------------------------------- */
 /* Reduced motion: disable hover transitions                  */
 /* ---------------------------------------------------------- */
 
