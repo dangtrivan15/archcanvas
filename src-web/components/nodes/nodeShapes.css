@@ -10,7 +10,7 @@
   border: 1.5px solid var(--color-node-border);
   border-radius: 6px;
   padding: 8px 12px;
-  min-width: 120px;
+  min-width: var(--node-min-width-sm, 120px);
   min-height: 52px;
   display: flex;
   flex-direction: column;
@@ -114,7 +114,7 @@
   border-radius: 0;
   border: none;
   padding: 12px 24px;
-  min-width: 140px;
+  min-width: var(--node-min-width-md, 140px);
   background-color: var(--color-node-bg);
 }
 
@@ -141,7 +141,7 @@
   border-radius: 0;
   border: none;
   padding: 10px 24px;
-  min-width: 140px;
+  min-width: var(--node-min-width-md, 140px);
 }
 
 /* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
@@ -175,7 +175,6 @@
 .node-shape-stadium {
   border-radius: 9999px;
   padding: 10px 20px;
-  min-width: 130px;
   text-align: center;
 }
 
@@ -218,7 +217,7 @@
 .node-shape-badge {
   border-radius: 9999px;
   padding: 6px 16px;
-  min-width: 80px;
+  min-width: var(--node-min-width-xs, 80px);
   min-height: 36px;
   text-align: center;
   align-items: center;
@@ -234,7 +233,7 @@
   outline: 2px solid var(--color-node-border);
   outline-offset: 3px;
   padding: 14px 16px;
-  min-width: 180px;
+  min-width: var(--node-min-width-lg, 180px);
   min-height: 80px;
   height: 100%; /* Fill ReactFlow wrapper so mini ReactFlow gets pixel height */
   background-color: color-mix(in srgb, var(--color-node-ref-bg) 70%, transparent);

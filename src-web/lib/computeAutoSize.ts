@@ -1,7 +1,8 @@
 import type { Canvas } from '@/types';
+import { NODE_MIN_WIDTH_LG, NODE_MIN_HEIGHT } from './nodeTokens';
 
-const MIN_WIDTH = 180;
-const MIN_HEIGHT = 120;
+const MIN_WIDTH = NODE_MIN_WIDTH_LG;
+const MIN_HEIGHT = NODE_MIN_HEIGHT;
 const MAX_WIDTH = 400;
 const MAX_HEIGHT = 300;
 

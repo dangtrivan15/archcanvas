@@ -11,6 +11,7 @@ import { resolveIcon } from './iconMap';
 import { SubsystemPreview } from './SubsystemPreview';
 import { PreviewModeContext } from './PreviewModeContext';
 import { DiffTooltip } from './DiffTooltip';
+import { NODE_MIN_WIDTH_LG, NODE_MIN_HEIGHT } from '@/lib/nodeTokens';
 import './nodeShapes.css';
 
 type NodeRendererProps = NodeProps<RFNode<CanvasNodeData>>;
@@ -86,8 +87,8 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       {isRef && (
         <NodeResizer
           isVisible={isSelected}
-          minWidth={180}
-          minHeight={120}
+          minWidth={NODE_MIN_WIDTH_LG}
+          minHeight={NODE_MIN_HEIGHT}
           onResizeEnd={handleResize}
         />
       )}
