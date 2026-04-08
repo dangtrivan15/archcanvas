@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { Note } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
-import { duration, ease } from '@/lib/motion';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 interface NodeNotesTabProps {
   notes: Note[];
@@ -92,9 +92,7 @@ export function NotesTab(props: Props) {
       {notes.length === 0 && !showForm && editIndex === null && (
         <motion.p
           className="text-xs text-gray-400"
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          {...withReducedMotion(prefersReduced, entrance.fadeUp)}
         >
           No notes yet.
         </motion.p>

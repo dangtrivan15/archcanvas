@@ -140,10 +140,10 @@ export function ProjectGate() {
         <AnimatedBanner
           visible={status === 'error' && !!error}
           variant="error"
-          className="w-80 rounded-md border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          className="w-80 rounded-md border px-4 py-3 text-sm"
         >
           <p className="font-medium">Failed to load project</p>
-          <p className="mt-1 text-red-400/80">{error}</p>
+          <p className="mt-1 opacity-80">{error}</p>
         </AnimatedBanner>
 
         {/* Loading indicator */}

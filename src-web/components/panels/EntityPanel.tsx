@@ -8,7 +8,7 @@ import { getEntitiesForCanvas, findEntityUsages } from '../../core/entity/resolv
 import type { ResolvedProject } from '../../storage/fileResolver';
 import type { Entity } from '../../types/schema';
 import type { EntityUsage } from '../../core/entity/resolver';
-import { duration, ease } from '@/lib/motion';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 function CreateEntityForm({
   canvasId,
@@ -362,9 +362,7 @@ export function EntityPanel() {
         {filtered.length === 0 ? (
           <motion.div
             className="p-4 text-sm text-gray-500"
-            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: duration.moderate, ease: ease.out }}
+            {...withReducedMotion(prefersReduced, entrance.fadeUp)}
           >
             No entities in this scope
           </motion.div>

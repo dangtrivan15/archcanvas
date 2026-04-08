@@ -4,7 +4,7 @@ import type { Edge } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { NotesTab } from './NotesTab';
-import { duration, ease } from '@/lib/motion';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 interface Props {
   edge: Edge;
@@ -180,9 +180,7 @@ export function EdgeDetailPanel({ edge, canvasId }: Props) {
           {entities.length === 0 && !showEntityInput && (
             <motion.p
               className="text-gray-400 mb-1"
-              initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              {...withReducedMotion(prefersReduced, entrance.fadeUp)}
             >
               No entities.
             </motion.p>

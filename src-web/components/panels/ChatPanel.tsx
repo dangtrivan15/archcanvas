@@ -6,7 +6,8 @@ import { useUiStore } from '@/store/uiStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
-import { duration, bannerTransition } from '@/lib/motion';
+import { SkeletonLoader } from '@/components/ui/skeleton-loader';
+import { duration, entrance, bannerTransition, withReducedMotion } from '@/lib/motion';
 
 export function ChatPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -153,9 +154,7 @@ export function ChatPanel() {
         {messages.length === 0 && (
           <motion.p
             className="text-center text-xs text-muted-foreground pt-8"
-            initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            {...withReducedMotion(prefersReduced, entrance.fadeUp)}
           >
             No messages yet. Type below to start a conversation.
           </motion.p>
@@ -164,19 +163,22 @@ export function ChatPanel() {
           <ChatMessage key={`${msg.role}-${msg.timestamp}-${idx}`} message={msg} />
         ))}
 
-        {/* Streaming indicator */}
+        {/* Streaming indicator with message skeleton */}
         <AnimatePresence>
           {isStreaming && (
             <motion.div
               key="streaming-indicator"
-              className="flex items-center gap-2 text-xs text-muted-foreground"
+              className="space-y-2 text-xs text-muted-foreground"
               initial={prefersReduced ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0 }}
               transition={bannerTransition}
             >
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-foreground" />
-              <span>{statusMessage ?? 'AI is responding...'}</span>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent-foreground" />
+                <span>{statusMessage ?? 'AI is responding...'}</span>
+              </div>
+              <SkeletonLoader count={3} />
             </motion.div>
           )}
         </AnimatePresence>

@@ -4,7 +4,7 @@ import type { ArgDef, NodeDef } from '@/types/nodeDefSchema';
 import type { PropertyValue } from '@/types/schema';
 import { useGraphStore } from '@/store/graphStore';
 import { Checkbox } from '@/components/ui/checkbox';
-import { duration, ease } from '@/lib/motion';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 interface Props {
   node: InlineNode;
@@ -67,9 +67,7 @@ export function PropertiesTab({ node, nodeDef, canvasId }: Props) {
       {specArgs.length === 0 && (
         <motion.p
           className="text-xs text-gray-400"
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          {...withReducedMotion(prefersReduced, entrance.fadeUp)}
         >
           No configurable properties
         </motion.p>

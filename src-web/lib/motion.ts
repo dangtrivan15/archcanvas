@@ -111,15 +111,20 @@ export const bannerTransition: Transition = {
  * <motion.div {...withReducedMotion(prefersReduced, entrance.fadeUp)} />
  * ```
  */
-export function withReducedMotion(
+export function withReducedMotion<
+  I extends Record<string, number>,
+  A extends Record<string, number>,
+>(
   prefersReduced: boolean | null,
   preset: {
-    initial: Record<string, unknown>;
-    animate: Record<string, unknown>;
-    transition: Transition;
-    exit?: Record<string, unknown>;
+    readonly initial: I;
+    readonly animate: A;
+    readonly transition: Transition;
+    readonly exit?: Record<string, number>;
   },
-) {
+):
+  | { initial: false; animate: A; exit: undefined; transition: { duration: 0 } }
+  | { initial: I; animate: A; transition: Transition; exit?: Record<string, number> } {
   if (prefersReduced) {
     return {
       initial: false as const,

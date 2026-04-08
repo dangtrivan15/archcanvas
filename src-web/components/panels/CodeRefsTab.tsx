@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { FileIcon } from 'lucide-react';
 import { useGraphStore } from '@/store/graphStore';
 import { CopyButton } from '@/components/ui/copy-button';
-import { duration, ease } from '@/lib/motion';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 interface Props {
   codeRefs: string[];
@@ -37,9 +37,7 @@ export function CodeRefsTab({ codeRefs, canvasId, nodeId }: Props) {
       {codeRefs.length === 0 && !showInput && (
         <motion.p
           className="text-xs text-gray-400"
-          initial={prefersReduced ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
+          {...withReducedMotion(prefersReduced, entrance.fadeUp)}
         >
           No code refs yet.
         </motion.p>
