@@ -22,6 +22,7 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '@/store/chatStore';
 import type { AskUserQuestion } from '@/core/ai/types';
+import { duration, ease } from '@/lib/motion';
 
 interface Props {
   /** The tool_use ID -- correlates the response back to the bridge. */
@@ -103,7 +104,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
         className="my-1 rounded border border-border bg-card p-2"
         initial={prefersReduced ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
+        transition={{ duration: duration.normal }}
       >
         <p className="text-xs font-medium text-green-400">Answered</p>
         {questions.map((q) => (
@@ -125,7 +126,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
       className="my-1 space-y-2 rounded border border-border bg-card p-2"
       initial={prefersReduced ? false : { scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: duration.moderate, ease: ease.out }}
     >
       {questions.map((q) => (
         <div key={q.question}>
@@ -151,7 +152,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
                       }`}
                       initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.15, delay: prefersReduced ? 0 : optIdx * 0.03 }}
+                      transition={{ duration: duration.normal, delay: prefersReduced ? 0 : optIdx * 0.03 }}
                     >
                       {opt.label}
                     </motion.button>
@@ -168,7 +169,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
                   }`}
                   initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.15, delay: prefersReduced ? 0 : q.options.length * 0.03 }}
+                  transition={{ duration: duration.normal, delay: prefersReduced ? 0 : q.options.length * 0.03 }}
                 >
                   Other...
                 </motion.button>
@@ -188,7 +189,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
                     data-testid={`preview-${opt.label}`}
                     initial={prefersReduced ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    transition={{ duration: duration.moderate, ease: ease.out }}
                   >
                     <pre
                       className="overflow-y-auto p-2 text-[11px] text-muted-foreground"
@@ -204,7 +205,7 @@ export function ChatQuestionCard({ id, questions }: Props) {
                 <motion.div
                   initial={prefersReduced ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  transition={{ duration: duration.moderate, ease: ease.out }}
                 >
                   <input
                     type="text"

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slide } from '@/components/ui/slide';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
@@ -12,6 +12,7 @@ import { NodeDetailPanel } from '@/components/panels/NodeDetailPanel';
 import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { ChatPanel } from '@/components/panels/ChatPanel';
 import { EntityPanel } from '@/components/panels/EntityPanel';
+import { duration, ease } from '@/lib/motion';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
   return 'type' in node && node.ref === undefined;
@@ -25,7 +26,6 @@ export function RightPanel() {
   const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const canvas = useFileStore((s) => s.getCanvas(currentCanvasId));
   const resolve = useRegistryStore((s) => s.resolve);
-  const prefersReduced = useReducedMotion();
 
   if (rightPanelCollapsed) {
     return (
@@ -129,17 +129,14 @@ export function RightPanel() {
 
   return (
     <ScrollArea className="h-full overflow-hidden">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={contentKey}
-          initial={prefersReduced ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={prefersReduced ? undefined : { opacity: 0 }}
-          transition={{ duration: 0.12 }}
-        >
-          {content}
-        </motion.div>
-      </AnimatePresence>
+      <Slide
+        motionKey={contentKey}
+        direction="right"
+        offset={12}
+        transition={{ duration: duration.fast, ease: ease.out }}
+      >
+        {content}
+      </Slide>
     </ScrollArea>
   );
 }

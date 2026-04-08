@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '@/store/chatStore';
 import type { PermissionSuggestion } from '@/core/ai/types';
+import { duration, ease } from '@/lib/motion';
 
 interface Props {
   id: string;
@@ -175,7 +176,7 @@ export function ChatPermissionCard({
       className={`my-1 rounded border-l-4 border-yellow-500 bg-card p-2 ${isDenied ? 'opacity-70' : ''}`}
       initial={prefersReduced ? false : { scale: 0.95, opacity: 0 }}
       animate={{ scale: 1, opacity: isDenied ? 0.7 : 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: duration.moderate, ease: ease.out }}
     >
       <p className="text-xs font-medium text-card-foreground">
         &#x26A0; Permission requested: <span className="font-mono">{tool}</span>
@@ -202,7 +203,7 @@ export function ChatPermissionCard({
           className={`mt-1.5 text-xs font-medium ${statusColor}`}
           initial={prefersReduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: duration.normal }}
         >
           {statusLabel}
         </motion.p>
@@ -240,7 +241,7 @@ export function ChatPermissionCard({
           className="mt-1.5"
           initial={prefersReduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: duration.normal }}
         >
           <p className="mb-1 text-[11px] text-muted-foreground">
             Select a permission rule to always allow:
@@ -257,7 +258,7 @@ export function ChatPermissionCard({
                 }`}
                 initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.15, delay: prefersReduced ? 0 : idx * 0.05 }}
+                transition={{ duration: duration.normal, delay: prefersReduced ? 0 : idx * 0.05 }}
               >
                 {suggestionLabel(s)}
               </motion.button>
@@ -271,7 +272,7 @@ export function ChatPermissionCard({
               }`}
               initial={prefersReduced ? false : { opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15, delay: prefersReduced ? 0 : suggestions.length * 0.05 }}
+              transition={{ duration: duration.normal, delay: prefersReduced ? 0 : suggestions.length * 0.05 }}
             >
               Custom...
             </motion.button>
@@ -281,7 +282,7 @@ export function ChatPermissionCard({
             <motion.div
               initial={prefersReduced ? false : { height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
+              transition={{ duration: duration.moderate, ease: ease.out }}
             >
               <input
                 type="text"

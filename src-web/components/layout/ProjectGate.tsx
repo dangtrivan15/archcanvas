@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
 import { Shine } from '@/components/ui/shine';
+import { AnimatedBanner } from '@/components/ui/animated-banner';
+import { duration, ease } from '@/lib/motion';
 
 /**
  * Full-screen gate shown when no project is open (fileStore.fs === null).
@@ -104,7 +106,7 @@ export function ProjectGate() {
       : {
           initial: { opacity: 0, y: 12 } as const,
           animate: { opacity: 1, y: 0 } as const,
-          transition: { duration: 0.35, delay, ease: 'easeOut' as const },
+          transition: { duration: duration.slow, delay, ease: ease.out },
         };
 
   return (
@@ -135,21 +137,14 @@ export function ProjectGate() {
         </div>
 
         {/* Error banner */}
-        <AnimatePresence>
-          {status === 'error' && error && (
-            <motion.div
-              role="alert"
-              initial={prefersReduced ? false : { opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={prefersReduced ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="w-80 rounded-md border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-            >
-              <p className="font-medium">Failed to load project</p>
-              <p className="mt-1 text-red-400/80">{error}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <AnimatedBanner
+          visible={status === 'error' && !!error}
+          variant="error"
+          className="w-80 rounded-md border px-4 py-3 text-sm"
+        >
+          <p className="font-medium">Failed to load project</p>
+          <p className="mt-1 opacity-80">{error}</p>
+        </AnimatedBanner>
 
         {/* Loading indicator */}
         <AnimatePresence>
@@ -158,7 +153,7 @@ export function ProjectGate() {
               initial={prefersReduced ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: duration.moderate }}
               className="text-sm text-muted-foreground"
             >
               Loading project...

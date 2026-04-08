@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { Note } from '@/types';
 import { useGraphStore } from '@/store/graphStore';
+import { duration, ease, entrance, withReducedMotion } from '@/lib/motion';
 
 interface NodeNotesTabProps {
   notes: Note[];
@@ -89,7 +90,12 @@ export function NotesTab(props: Props) {
   return (
     <div className="space-y-2">
       {notes.length === 0 && !showForm && editIndex === null && (
-        <p className="text-xs text-gray-400">No notes yet.</p>
+        <motion.p
+          className="text-xs text-gray-400"
+          {...withReducedMotion(prefersReduced, entrance.fadeUp)}
+        >
+          No notes yet.
+        </motion.p>
       )}
 
       <AnimatePresence>
@@ -100,7 +106,7 @@ export function NotesTab(props: Props) {
             initial={prefersReduced ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReduced ? undefined : { opacity: 0, x: -20 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            transition={{ duration: duration.normal, ease: ease.out }}
             className="group rounded border p-2 text-xs space-y-1"
           >
             {editIndex === i ? (
@@ -137,7 +143,7 @@ export function NotesTab(props: Props) {
                         key={tag}
                         initial={prefersReduced ? false : { scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        transition={{ duration: duration.normal, ease: ease.out }}
                         className="bg-blue-50 text-blue-700 rounded px-1.5 py-0.5 text-[10px]"
                       >
                         {tag}
@@ -158,7 +164,7 @@ export function NotesTab(props: Props) {
             initial={prefersReduced ? false : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReduced ? undefined : { opacity: 0, y: -10 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
+            transition={{ duration: duration.normal, ease: ease.out }}
             className="rounded border p-2 text-xs"
           >
             <NoteForm

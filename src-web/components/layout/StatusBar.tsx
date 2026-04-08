@@ -6,6 +6,7 @@ import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
+import { duration, ease } from "@/lib/motion";
 
 export function StatusBar() {
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
@@ -63,7 +64,7 @@ export function StatusBar() {
               initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              transition={{ duration: duration.normal, ease: ease.out }}
               className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-500 font-medium"
             >
               Modified
@@ -79,7 +80,7 @@ export function StatusBar() {
               initial={prefersReduced ? false : { opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={prefersReduced ? undefined : { opacity: 0, x: 10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: duration.moderate, ease: ease.out }}
               onClick={handleUpdateClick}
               disabled={updateStatus === 'downloading'}
               className={`rounded px-1.5 py-0.5 font-medium transition-colors ${
@@ -101,7 +102,7 @@ export function StatusBar() {
               initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              transition={{ duration: duration.normal, ease: ease.out }}
               className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-500 font-medium cursor-help"
               title={diffError}
             >
@@ -114,7 +115,7 @@ export function StatusBar() {
               initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              transition={{ duration: duration.normal, ease: ease.out }}
               className={`rounded px-1.5 py-0.5 font-medium ${diffError ? 'bg-red-500/15 text-red-500 cursor-help' : 'bg-emerald-500/15 text-emerald-500'}`}
               title={diffError ?? undefined}
             >
@@ -140,7 +141,7 @@ export function StatusBar() {
               initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              transition={{ duration: duration.normal, ease: ease.out }}
               className="rounded-full bg-sky-500/15 px-1.5 py-0.5 text-sky-500 font-medium"
             >
               {selectionCount} selected
