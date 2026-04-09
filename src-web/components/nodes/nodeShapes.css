@@ -6,7 +6,8 @@
 /* ---------------------------------------------------------- */
 
 .arch-node {
-  background-color: var(--node-instance-bg, var(--color-node-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-node-bg));
+  background-color: var(--_node-bg);
   border: 1.5px solid var(--node-instance-border, var(--color-node-border));
   border-radius: 6px;
   padding: 8px 12px;
@@ -54,8 +55,9 @@
 }
 
 .arch-node.unknown-type {
+  --_node-bg: var(--node-instance-bg, var(--color-warning));
   border-color: var(--node-instance-border, var(--color-warning-border));
-  background-color: var(--node-instance-bg, var(--color-warning));
+  background-color: var(--_node-bg);
 }
 
 /* ---------------------------------------------------------- */
@@ -113,7 +115,6 @@
 
 .node-shape-hexagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
 .node-shape-parallelogram:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
-.node-shape-diamond:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
 .node-shape-trapezoid:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
 .node-shape-octagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
 .node-shape-pentagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified),
@@ -126,13 +127,23 @@
 
 .node-shape-hexagon.selected,
 .node-shape-parallelogram.selected,
-.node-shape-diamond.selected,
 .node-shape-trapezoid.selected,
 .node-shape-octagon.selected,
 .node-shape-pentagon.selected,
 .node-shape-arrow-right.selected,
 .node-shape-custom.selected {
   box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* Diamond hover & selection — glow targets ::before so it follows the diamond shape */
+.node-shape-diamond:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified)::before {
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+.node-shape-diamond.selected::before {
   filter: drop-shadow(0 0 3px var(--color-node-selected-border))
           drop-shadow(0 0 6px var(--color-node-selected-ring));
 }
@@ -229,14 +240,48 @@
 
 /* ---------------------------------------------------------- */
 /* Shape: diamond                                              */
+/* Clip-path lives on ::before so text is never clipped.       */
 /* ---------------------------------------------------------- */
 
 .node-shape-diamond {
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   border-radius: 0;
   border: none;
   padding: 16px 28px;
   min-width: var(--node-min-width-md, 140px);
+  background-color: transparent !important;
+  position: relative;
+  isolation: isolate;
+}
+
+.node-shape-diamond::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  background-color: var(--_node-bg);
+  z-index: -1;
+  transition: filter 150ms ease;
+}
+
+/* Diamond — center-align header text for visual harmony */
+.node-shape-diamond .arch-node-header {
+  justify-content: center;
+}
+
+/* Diamond — reposition badges to vertical center (widest point) */
+.node-shape-diamond .arch-node-badges {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Diamond — suppress rectangular box-shadow in all states (hover, selected, diff).
+   Visual glow is handled by filter on ::before instead. */
+.node-shape-diamond:hover,
+.node-shape-diamond.selected,
+.node-shape-diamond.diff-added,
+.node-shape-diamond.diff-removed,
+.node-shape-diamond.diff-modified {
+  box-shadow: none;
 }
 
 /* ---------------------------------------------------------- */
@@ -359,47 +404,56 @@
 /* ---------------------------------------------------------- */
 
 .arch-node[data-ns="compute"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-compute-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-compute-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-compute-border));
 }
 
 .arch-node[data-ns="data"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-data-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-data-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-data-border));
 }
 
 .arch-node[data-ns="messaging"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-messaging-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-messaging-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-messaging-border));
 }
 
 .arch-node[data-ns="network"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-network-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-network-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-network-border));
 }
 
 .arch-node[data-ns="client"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-client-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-client-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-client-border));
 }
 
 .arch-node[data-ns="integration"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-integration-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-integration-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-integration-border));
 }
 
 .arch-node[data-ns="security"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-security-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-security-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-security-border));
 }
 
 .arch-node[data-ns="observability"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-observability-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-observability-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-observability-border));
 }
 
 .arch-node[data-ns="ai"]:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
-  background-color: var(--node-instance-bg, var(--color-ns-ai-bg));
+  --_node-bg: var(--node-instance-bg, var(--color-ns-ai-bg));
+  background-color: var(--_node-bg);
   border-color: var(--node-instance-border, var(--color-ns-ai-border));
 }
 
@@ -476,20 +530,23 @@
 /* ---------------------------------------------------------- */
 
 .arch-node.diff-added {
-  background-color: var(--color-diff-added-bg);
+  --_node-bg: var(--color-diff-added-bg);
+  background-color: var(--_node-bg);
   border-color: var(--color-diff-added-border);
   box-shadow: 0 0 0 2px var(--color-diff-added-ring);
 }
 
 .arch-node.diff-removed {
-  background-color: var(--color-diff-removed-bg);
+  --_node-bg: var(--color-diff-removed-bg);
+  background-color: var(--_node-bg);
   border-color: var(--color-diff-removed-border);
   box-shadow: 0 0 0 2px var(--color-diff-removed-ring);
   opacity: 0.65;
 }
 
 .arch-node.diff-modified {
-  background-color: var(--color-diff-modified-bg);
+  --_node-bg: var(--color-diff-modified-bg);
+  background-color: var(--_node-bg);
   border-color: var(--color-diff-modified-border);
   box-shadow: 0 0 0 2px var(--color-diff-modified-ring);
 }
