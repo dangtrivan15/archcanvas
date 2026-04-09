@@ -74,13 +74,14 @@ export function NodeRenderer({ data }: NodeRendererProps) {
   // Namespace tinting — only for inline nodes (not RefNodes)
   const namespace = !isRef && 'type' in node ? extractNamespace(node.type) : undefined;
 
-  // Per-instance color override (inline style takes precedence over namespace tint)
+  // Per-instance color override — set via CSS custom properties so the CSS cascade
+  // can still let diff overlay classes win (inline bg/border would beat everything).
   const instanceColor = !isRef && 'color' in node ? (node as { color?: string }).color : undefined;
   const colorStyle = useMemo(() => {
     if (!instanceColor) return undefined;
     return {
-      backgroundColor: instanceColor,
-      borderColor: instanceColor,
+      '--node-instance-bg': instanceColor,
+      '--node-instance-border': instanceColor,
     } as React.CSSProperties;
   }, [instanceColor]);
 

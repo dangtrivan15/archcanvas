@@ -53,8 +53,8 @@ export const catppuccin: ThemePalette = {
     nsIntegrationBorder: '#179299',
     nsSecurityBg: '#fde2e6',
     nsSecurityBorder: '#d20f39',
-    nsObservabilityBg: '#f0ddf5',
-    nsObservabilityBorder: '#8839ef',
+    nsObservabilityBg: '#fde3f5',
+    nsObservabilityBorder: '#ea76cb',
     nsAiBg: '#dde4f8',
     nsAiBorder: '#7287fd',
     // Diff overlay — light (Catppuccin Latte)
@@ -118,8 +118,8 @@ export const catppuccin: ThemePalette = {
     nsIntegrationBorder: '#94e2d5',
     nsSecurityBg: '#2e1a1e',
     nsSecurityBorder: '#f38ba8',
-    nsObservabilityBg: '#2a1a38',
-    nsObservabilityBorder: '#cba6f7',
+    nsObservabilityBg: '#2e1a2e',
+    nsObservabilityBorder: '#f5c2e7',
     nsAiBg: '#1e1c38',
     nsAiBorder: '#b4befe',
     // Diff overlay — dark (Catppuccin Mocha)

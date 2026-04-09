@@ -338,7 +338,7 @@ describe('NodeRenderer', () => {
     expect(node.getAttribute('data-ns')).toBeNull();
   });
 
-  it('applies inline style when node has per-instance color', () => {
+  it('sets CSS custom properties when node has per-instance color', () => {
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
@@ -350,12 +350,16 @@ describe('NodeRenderer', () => {
       />,
     );
     const node = container.firstChild as HTMLElement;
-    // jsdom keeps the raw hex value rather than converting to rgb()
-    expect(node.style.backgroundColor).toBe('#ff6b6b');
-    expect(node.style.borderColor).toBe('#ff6b6b');
+    // Per-instance colors are set as CSS custom properties so the cascade
+    // lets diff overlay classes win over them (inline bg/border would beat everything).
+    expect(node.style.getPropertyValue('--node-instance-bg')).toBe('#ff6b6b');
+    expect(node.style.getPropertyValue('--node-instance-border')).toBe('#ff6b6b');
+    // Direct backgroundColor/borderColor should NOT be set
+    expect(node.style.backgroundColor).toBe('');
+    expect(node.style.borderColor).toBe('');
   });
 
-  it('does not apply inline color style when node has no color', () => {
+  it('does not set instance color custom properties when node has no color', () => {
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
@@ -367,7 +371,8 @@ describe('NodeRenderer', () => {
       />,
     );
     const node = container.firstChild as HTMLElement;
-    expect(node.style.backgroundColor).toBe('');
+    expect(node.style.getPropertyValue('--node-instance-bg')).toBe('');
+    expect(node.style.getPropertyValue('--node-instance-border')).toBe('');
   });
 
   it('renders named port handles when nodeDef defines ports', () => {
