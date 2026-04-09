@@ -4,6 +4,9 @@ import { gotoApp } from "./e2e-helpers";
 // ---------------------------------------------------------------------------
 // Auto-fit on load: verify the viewport frames all nodes when a project with
 // existing content is loaded (Canvas mounts with nodes already in the store).
+//
+// Nodes are placed far off-screen (x: 5000+) so the test truly depends on a
+// working fitView() — at the default viewport these positions are invisible.
 // ---------------------------------------------------------------------------
 
 test.describe("auto-fit on load", () => {
@@ -27,7 +30,22 @@ test.describe("auto-fit on load", () => {
 
     await expect(page.locator(".react-flow__node")).toHaveCount(2);
 
-    // Step 2: Simulate a project reload — set status to 'loading' which
+    // Step 2: Move nodes far off-screen so they're invisible at default viewport
+    await page.evaluate(() => {
+      const graphStore = (window as any).__archcanvas_graphStore__;
+      const fileStore = (window as any).__archcanvas_fileStore__;
+      const canvasId = "root";
+      const canvas = fileStore.getState().getCanvas(canvasId);
+      const nodes = canvas?.data?.nodes ?? [];
+      nodes.forEach((n: any, i: number) => {
+        graphStore
+          .getState()
+          .updateNodePosition(canvasId, n.id, { x: 5000 + i * 500, y: 5000 });
+      });
+    });
+    await page.waitForTimeout(200);
+
+    // Step 3: Simulate a project reload — set status to 'loading' which
     // unmounts the Canvas component (App renders ProjectGate instead).
     await page.evaluate(() => {
       const store = (window as any).__archcanvas_fileStore__;
@@ -38,18 +56,19 @@ test.describe("auto-fit on load", () => {
     // Canvas should be unmounted (ProjectGate shown)
     await expect(page.locator("[data-testid='main-canvas']")).toHaveCount(0);
 
-    // Step 3: Set status back to 'loaded' — Canvas remounts. Because nodes
-    // are already in the store, the Canvas mounts with nodes present,
-    // triggering the auto-fit effect.
+    // Step 4: Set status back to 'loaded' — Canvas remounts. Because nodes
+    // are already in the store (at far off-screen positions), the Canvas
+    // mounts with nodes present, triggering the auto-fit effect.
     await page.evaluate(() => {
       const store = (window as any).__archcanvas_fileStore__;
       store.setState({ status: "loaded" });
     });
 
-    // Wait for the auto-fit animation (300ms duration + rAF delay)
-    await page.waitForTimeout(600);
+    // Wait for the auto-fit animation (300ms duration + dimension measurement)
+    await page.waitForTimeout(1000);
 
-    // Step 4: Verify both nodes are visible within the ReactFlow container
+    // Step 5: Verify both nodes are visible within the ReactFlow container.
+    // Without a working fitView(), nodes at x:5000+ would be invisible.
     const container = page.locator(".react-flow");
     const containerBox = await container.boundingBox();
     expect(containerBox).not.toBeNull();
@@ -137,6 +156,21 @@ test.describe("auto-fit on load", () => {
       .click();
     await page.waitForTimeout(200);
 
+    // Move nodes far off-screen
+    await page.evaluate(() => {
+      const graphStore = (window as any).__archcanvas_graphStore__;
+      const fileStore = (window as any).__archcanvas_fileStore__;
+      const canvasId = "root";
+      const canvas = fileStore.getState().getCanvas(canvasId);
+      const nodes = canvas?.data?.nodes ?? [];
+      nodes.forEach((n: any, i: number) => {
+        graphStore
+          .getState()
+          .updateNodePosition(canvasId, n.id, { x: 6000 + i * 500, y: 6000 });
+      });
+    });
+    await page.waitForTimeout(200);
+
     // Simulate project reload cycle: loading → loaded
     await page.evaluate(() => {
       const store = (window as any).__archcanvas_fileStore__;
@@ -148,7 +182,7 @@ test.describe("auto-fit on load", () => {
       const store = (window as any).__archcanvas_fileStore__;
       store.setState({ status: "loaded" });
     });
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1000);
 
     // After remount, auto-fit should have fired again — nodes visible
     await expect(page.getByTestId("main-canvas")).toBeVisible();

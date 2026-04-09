@@ -77,22 +77,30 @@ describe('restoreProject', () => {
       expect(consumeRestoreEntry()).toBeNull();
     });
 
-    it('returns null and removes stale entries (>5 min old)', () => {
-      const sixMinutesAgo = Date.now() - 6 * 60 * 1000;
-      const entry = { path: '/stale/project', timestamp: sixMinutesAgo };
+    it('returns null and removes stale entries (>15 min old)', () => {
+      const sixteenMinutesAgo = Date.now() - 16 * 60 * 1000;
+      const entry = { path: '/stale/project', timestamp: sixteenMinutesAgo };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
 
       expect(consumeRestoreEntry()).toBeNull();
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
-    it('returns the path for an entry exactly at the 5-min boundary', () => {
-      const exactlyFiveMin = Date.now() - 5 * 60 * 1000;
-      const entry = { path: '/boundary/project', timestamp: exactlyFiveMin };
+    it('returns the path for an entry exactly at the 15-min boundary', () => {
+      const exactlyFifteenMin = Date.now() - 15 * 60 * 1000;
+      const entry = { path: '/boundary/project', timestamp: exactlyFifteenMin };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
 
-      // At exactly 5 min, Date.now() - timestamp === MAX_AGE_MS, not > MAX_AGE_MS
+      // At exactly 15 min, Date.now() - timestamp === MAX_AGE_MS, not > MAX_AGE_MS
       expect(consumeRestoreEntry()).toBe('/boundary/project');
+    });
+
+    it('returns the path for an entry within the 15-min window', () => {
+      const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+      const entry = { path: '/recent/project', timestamp: tenMinutesAgo };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+
+      expect(consumeRestoreEntry()).toBe('/recent/project');
     });
 
     it('returns null for corrupted JSON', () => {

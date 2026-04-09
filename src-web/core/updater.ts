@@ -55,10 +55,17 @@ export async function downloadAndInstall(): Promise<void> {
 
 /**
  * Restart the app to apply the downloaded update.
+ *
+ * A 200ms delay is inserted between persist and relaunch to allow
+ * localStorage writes to flush to disk. WebView2 (Windows) and
+ * WKWebView (macOS) buffer storage writes asynchronously — without
+ * the delay, tauriRelaunch() can kill the process before the write
+ * is committed.
  */
 export async function relaunch(): Promise<void> {
   if (!isTauri()) return;
   persistProjectForRestore(useFileStore.getState().projectPath);
+  await new Promise((resolve) => setTimeout(resolve, 200));
   const { relaunch: tauriRelaunch } = await import('@tauri-apps/plugin-process');
   await tauriRelaunch();
 }
