@@ -10,7 +10,7 @@
 const STORAGE_KEY = 'archcanvas:restoreProject';
 
 /** Maximum age (ms) before a restore entry is considered stale. */
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
 
 interface RestoreEntry {
   path: string;

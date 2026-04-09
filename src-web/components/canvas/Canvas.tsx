@@ -58,9 +58,39 @@ export function Canvas() {
     setRfNodes(storeNodes);
   }, [storeNodes]);
 
+  // -------------------------------------------------------------------------
+  // ReactFlow instance — needed by onNodesChange, auto-fit, auto-layout, etc.
+  // -------------------------------------------------------------------------
+  const reactFlow = useReactFlow();
+
+  useEffect(() => {
+    setReactFlowInstance(reactFlow);
+  }, [reactFlow]);
+
+  // ---------------------------------------------------------------------------
+  // Auto-fit refs — declared before onNodesChange which references pendingFitRef.
+  // See the auto-fit effect further down for the logic that populates these.
+  // ---------------------------------------------------------------------------
+  const mountedWithNodesRef = useRef(storeNodes.length > 0);
+  const hasFittedRef = useRef(false);
+  const pendingFitRef = useRef<{ type: 'fitView' } | { type: 'restoreViewport'; viewport: Viewport } | null>(null);
+
   const onNodesChange = useCallback((changes: NodeChange<RFNode<CanvasNodeData>>[]) => {
     // Apply ALL changes locally so ReactFlow can render smooth drag movement
     setRfNodes((nds) => applyNodeChanges(changes, nds));
+
+    // When ReactFlow reports dimension changes, nodes have been measured in the
+    // DOM with real width/height. If a fitView/restoreViewport action is pending,
+    // execute it now — this is the earliest safe moment.
+    if (pendingFitRef.current && changes.some((c) => c.type === 'dimensions')) {
+      const pending = pendingFitRef.current;
+      pendingFitRef.current = null;
+      if (pending.type === 'restoreViewport') {
+        reactFlow.setViewport(pending.viewport, { duration: 300 });
+      } else {
+        reactFlow.fitView({ duration: 300, padding: 0.1 });
+      }
+    }
 
     // Commit final position to the engine only when drag ends (creates undo entry)
     // Skip ghost nodes — they are render-only and never saved
@@ -70,7 +100,7 @@ export function Canvas() {
         useGraphStore.getState().updateNodePosition(canvasId, change.id, change.position);
       }
     }
-  }, []);
+  }, [reactFlow]);
 
   // ---------------------------------------------------------------------------
   // Rubber-band selection sync: ReactFlow → Zustand (one-directional).
@@ -109,29 +139,11 @@ export function Canvas() {
     setPaletteMode('default');
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Auto-layout
-  // -------------------------------------------------------------------------
-  const reactFlow = useReactFlow();
-
-  useEffect(() => {
-    setReactFlowInstance(reactFlow);
-  }, [reactFlow]);
-
   // ---------------------------------------------------------------------------
-  // Auto-fit on initial load: fit the viewport to content the first time nodes
-  // populate on project load. A ref guard ensures this fires exactly once per
-  // mount so it does not interfere with subsequent dive-in / go-up navigation.
-  //
-  // We distinguish project-load from interactive creation via mountedWithNodes:
-  // when a project loads, Canvas unmounts (status → 'loading') then remounts
-  // once the store is populated, so storeNodes.length > 0 at mount time. When
-  // a user interactively adds nodes to an empty canvas, the component was
-  // already mounted with zero nodes — mountedWithNodes stays false.
+  // Auto-fit effect: defers fitView/setViewport until onNodesChange reports
+  // 'dimensions' events (see refs + onNodesChange above). A safety timeout
+  // handles cases where dimensions are already cached.
   // ---------------------------------------------------------------------------
-  const mountedWithNodesRef = useRef(storeNodes.length > 0);
-  const hasFittedRef = useRef(false);
-
   useEffect(() => {
     const canvasId = useNavigationStore.getState().currentCanvasId;
     const saved = useNavigationStore.getState().getSavedViewport(canvasId);
@@ -145,15 +157,24 @@ export function Canvas() {
     if (action.type === 'skip') return;
     hasFittedRef.current = true;
 
-    const rafId = requestAnimationFrame(() => {
-      if (action.type === 'restoreViewport') {
-        reactFlow.setViewport(action.viewport, { duration: 300 });
+    // Store the pending action — it will be executed when onNodesChange
+    // reports 'dimensions' events (confirming real DOM measurements).
+    pendingFitRef.current = action;
+
+    // Safety timeout: if dimensions are already cached and ReactFlow does
+    // not emit new dimension changes, execute the pending action anyway.
+    const safetyTimer = setTimeout(() => {
+      const pending = pendingFitRef.current;
+      if (!pending) return;
+      pendingFitRef.current = null;
+      if (pending.type === 'restoreViewport') {
+        reactFlow.setViewport(pending.viewport, { duration: 300 });
       } else {
         reactFlow.fitView({ duration: 300, padding: 0.1 });
       }
-    });
+    }, 500);
 
-    return () => cancelAnimationFrame(rafId);
+    return () => clearTimeout(safetyTimer);
   }, [storeNodes, reactFlow]);
 
   const handleAutoLayout = useCallback(async () => {

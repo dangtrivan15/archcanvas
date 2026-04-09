@@ -21,10 +21,12 @@ vi.mock('@/core/restoreProject', () => ({
 describe('relaunch – project restore integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
     mockTauriRelaunch.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
     useFileStore.setState({ projectPath: null });
   });
@@ -33,7 +35,9 @@ describe('relaunch – project restore integration', () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     useFileStore.setState({ projectPath: '/home/user/my-project' });
 
-    await relaunch();
+    const promise = relaunch();
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
 
     expect(mockPersist).toHaveBeenCalledWith('/home/user/my-project');
     expect(mockTauriRelaunch).toHaveBeenCalled();
@@ -44,11 +48,33 @@ describe('relaunch – project restore integration', () => {
     expect(persistOrder).toBeLessThan(relaunchOrder);
   });
 
+  it('does not call tauriRelaunch until the 200ms flush delay elapses', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    useFileStore.setState({ projectPath: '/home/user/my-project' });
+
+    const promise = relaunch();
+
+    // Persist is called immediately (synchronous)
+    expect(mockPersist).toHaveBeenCalledWith('/home/user/my-project');
+
+    // tauriRelaunch should NOT have been called yet — delay hasn't elapsed
+    expect(mockTauriRelaunch).not.toHaveBeenCalled();
+
+    // Advance past the 200ms flush delay
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
+
+    // Now tauriRelaunch should have been called
+    expect(mockTauriRelaunch).toHaveBeenCalled();
+  });
+
   it('calls persistProjectForRestore with null when no project is open', async () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
     useFileStore.setState({ projectPath: null });
 
-    await relaunch();
+    const promise = relaunch();
+    await vi.advanceTimersByTimeAsync(200);
+    await promise;
 
     expect(mockPersist).toHaveBeenCalledWith(null);
     expect(mockTauriRelaunch).toHaveBeenCalled();
