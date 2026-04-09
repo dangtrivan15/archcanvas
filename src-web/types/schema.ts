@@ -73,6 +73,8 @@ export const InlineNode = z.object({
   position: Position.optional(),
   codeRefs: z.array(z.string()).optional(),
   notes: z.array(Note).optional(),
+  /** Per-instance color override (hex string, e.g. "#ff6b6b") */
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a 6-digit hex color (e.g. "#ff6b6b")').optional(),
 });
 export type InlineNode = z.infer<typeof InlineNode>;
 

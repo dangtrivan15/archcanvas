@@ -13,6 +13,7 @@ import { ContextMenu } from "../shared/ContextMenu";
 import type { ContextMenuState } from "../shared/ContextMenu";
 import { CommandPalette } from "../shared/CommandPalette";
 import { DiffFilterBar } from "./DiffFilterBar";
+import { ColorLegend } from "./ColorLegend";
 import { CreateSubsystemDialog } from "@/components/CreateSubsystemDialog";
 import {
   AlertDialog,
@@ -347,6 +348,8 @@ export function Canvas() {
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         <Controls />
       </ReactFlow>
+
+      <ColorLegend />
 
       {contextMenu && (
         <ContextMenu

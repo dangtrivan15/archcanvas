@@ -59,7 +59,7 @@ export function removeNode(
 }
 
 export type InlineNodeUpdates = Partial<
-  Pick<InlineNode, 'displayName' | 'description' | 'args' | 'position' | 'codeRefs' | 'notes'>
+  Pick<InlineNode, 'displayName' | 'description' | 'args' | 'position' | 'codeRefs' | 'notes' | 'color'>
 >;
 
 export function updateNode(

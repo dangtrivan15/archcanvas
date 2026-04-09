@@ -293,6 +293,88 @@ describe('NodeRenderer', () => {
     expect(container.querySelector('.node-shape-container')).toBeTruthy();
   });
 
+  it('sets data-ns attribute for inline nodes with known namespace', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ type: 'data/database' }),
+          nodeDef: makeNodeDef({ namespace: 'data' }),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBe('data');
+  });
+
+  it('does not set data-ns for ref nodes', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeRefNode({ id: 'known-canvas', ref: 'known-canvas.yaml' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: true,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBeNull();
+  });
+
+  it('does not set data-ns for unknown namespace prefix', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ type: 'custom/widget' }),
+          nodeDef: undefined,
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.getAttribute('data-ns')).toBeNull();
+  });
+
+  it('sets CSS custom properties when node has per-instance color', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode({ color: '#ff6b6b' }),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    // Per-instance colors are set as CSS custom properties so the cascade
+    // lets diff overlay classes win over them (inline bg/border would beat everything).
+    expect(node.style.getPropertyValue('--node-instance-bg')).toBe('#ff6b6b');
+    expect(node.style.getPropertyValue('--node-instance-border')).toBe('#ff6b6b');
+    // Direct backgroundColor/borderColor should NOT be set
+    expect(node.style.backgroundColor).toBe('');
+    expect(node.style.borderColor).toBe('');
+  });
+
+  it('does not set instance color custom properties when node has no color', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef(),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.style.getPropertyValue('--node-instance-bg')).toBe('');
+    expect(node.style.getPropertyValue('--node-instance-border')).toBe('');
+  });
+
   it('renders named port handles when nodeDef defines ports', () => {
     const nodeDef = makeNodeDef();
     nodeDef.spec = {

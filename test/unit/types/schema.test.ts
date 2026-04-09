@@ -6,6 +6,7 @@ import {
   Position,
   Entity,
   Edge,
+  InlineNode,
   Node,
   Canvas,
   RootCanvas,
@@ -155,6 +156,49 @@ describe('Edge', () => {
       to: { node: '@order-service/db-postgres', port: 'query-in' },
     };
     expect(Edge.parse(edge)).toEqual(edge);
+  });
+});
+
+describe('InlineNode color validation', () => {
+  it('accepts a valid 6-digit hex color', () => {
+    const node = { id: 'n1', type: 'compute/service', color: '#ff6b6b' };
+    const result = InlineNode.safeParse(node);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts lowercase hex color', () => {
+    const node = { id: 'n1', type: 'compute/service', color: '#abcdef' };
+    expect(InlineNode.safeParse(node).success).toBe(true);
+  });
+
+  it('accepts uppercase hex color', () => {
+    const node = { id: 'n1', type: 'compute/service', color: '#ABCDEF' };
+    expect(InlineNode.safeParse(node).success).toBe(true);
+  });
+
+  it('accepts node without color (optional)', () => {
+    const node = { id: 'n1', type: 'compute/service' };
+    expect(InlineNode.safeParse(node).success).toBe(true);
+  });
+
+  it('rejects non-hex string', () => {
+    const node = { id: 'n1', type: 'compute/service', color: 'red' };
+    expect(InlineNode.safeParse(node).success).toBe(false);
+  });
+
+  it('rejects 3-digit hex shorthand', () => {
+    const node = { id: 'n1', type: 'compute/service', color: '#f00' };
+    expect(InlineNode.safeParse(node).success).toBe(false);
+  });
+
+  it('rejects hex without # prefix', () => {
+    const node = { id: 'n1', type: 'compute/service', color: 'ff6b6b' };
+    expect(InlineNode.safeParse(node).success).toBe(false);
+  });
+
+  it('rejects empty string', () => {
+    const node = { id: 'n1', type: 'compute/service', color: '' };
+    expect(InlineNode.safeParse(node).success).toBe(false);
   });
 });
 

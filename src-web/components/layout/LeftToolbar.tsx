@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   MessageSquare,
   GitCompareArrows,
+  Palette,
   Sun,
   Moon,
   Monitor,
@@ -34,6 +35,7 @@ export function LeftToolbar() {
   const activeMode = useToolStore((s) => s.mode);
   const rightPanelMode = useUiStore((s) => s.rightPanelMode);
   const diffEnabled = useDiffStore((s) => s.enabled);
+  const colorLegendVisible = useUiStore((s) => s.showColorLegend);
   const themeMode = useThemeStore((s) => s.mode);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
   const themeIcon = themeMode === 'system' ? Monitor : resolvedMode === 'dark' ? Moon : Sun;
@@ -178,6 +180,13 @@ export function LeftToolbar() {
       shortcut: "⌘⇧D",
       active: diffEnabled,
       onClick: () => toggleDiffOverlay(),
+    },
+    {
+      icon: Palette,
+      label: "Color Legend",
+      shortcut: '',
+      active: colorLegendVisible,
+      onClick: () => useUiStore.getState().toggleColorLegend(),
     },
     {
       icon: MessageSquare,

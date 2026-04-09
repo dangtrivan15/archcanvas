@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PropertiesTab } from './PropertiesTab';
 import { NotesTab } from './NotesTab';
 import { CodeRefsTab } from './CodeRefsTab';
+import { NodeColorPicker } from './NodeColorPicker';
 
 interface Props {
   node: InlineNode;
@@ -38,30 +39,39 @@ export function NodeDetailPanel({ node, nodeDef, canvasId }: Props) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-3 border-b">
-        {editingName ? (
-          <input
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            onBlur={saveName}
-            onKeyDown={(e) => e.key === 'Enter' && saveName()}
-            autoFocus
-            className="font-medium text-sm border rounded px-1 w-full"
-          />
-        ) : (
-          <h3
-            className="font-medium text-sm cursor-pointer hover:text-blue-600 flex items-center gap-1.5"
-            onClick={() => setEditingName(true)}
-          >
-            {nodeDef?.metadata.icon && (
-              <span className="text-base" aria-hidden="true">{nodeDef.metadata.icon}</span>
+        <div className="flex items-start gap-2">
+          <div className="flex-1 min-w-0">
+            {editingName ? (
+              <input
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={saveName}
+                onKeyDown={(e) => e.key === 'Enter' && saveName()}
+                autoFocus
+                className="font-medium text-sm border rounded px-1 w-full"
+              />
+            ) : (
+              <h3
+                className="font-medium text-sm cursor-pointer hover:text-blue-600 flex items-center gap-1.5"
+                onClick={() => setEditingName(true)}
+              >
+                {nodeDef?.metadata.icon && (
+                  <span className="text-base" aria-hidden="true">{nodeDef.metadata.icon}</span>
+                )}
+                {node.displayName ?? node.id}
+              </h3>
             )}
-            {node.displayName ?? node.id}
-          </h3>
-        )}
-        <p className="text-xs text-gray-500 mt-0.5">{node.type}</p>
-        {nodeDef && (
-          <p className="text-xs text-gray-400 mt-0.5">{nodeDef.metadata.displayName}</p>
-        )}
+            <p className="text-xs text-gray-500 mt-0.5">{node.type}</p>
+            {nodeDef && (
+              <p className="text-xs text-gray-400 mt-0.5">{nodeDef.metadata.displayName}</p>
+            )}
+          </div>
+          <NodeColorPicker
+            canvasId={canvasId}
+            nodeId={node.id}
+            currentColor={node.color}
+          />
+        </div>
       </div>
 
       {/* Tabs */}
