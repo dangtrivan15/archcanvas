@@ -12,7 +12,7 @@ export const monitoringDef: NodeDef = {
       'Metrics collection and alerting platform for tracking system health, performance, and SLA compliance.',
     icon: 'Activity',
     tags: ['monitoring', 'metrics', 'alerting'],
-    shape: 'rectangle',
+    shape: 'pentagon',
   },
   spec: {
     args: [

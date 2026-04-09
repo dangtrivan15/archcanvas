@@ -12,7 +12,7 @@ export const mobileAppDef: NodeDef = {
       'A native or cross-platform mobile application for iOS and Android devices.',
     icon: 'Smartphone',
     tags: ['mobile', 'app'],
-    shape: 'rectangle',
+    shape: 'rounded-rect',
   },
   spec: {
     args: [

@@ -12,7 +12,7 @@ export const workerDef: NodeDef = {
       'A background worker that processes tasks asynchronously from queues or event streams.',
     icon: 'Cog',
     tags: ['background', 'async'],
-    shape: 'rectangle',
+    shape: 'octagon',
   },
   spec: {
     args: [

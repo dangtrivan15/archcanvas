@@ -375,6 +375,38 @@ describe('NodeRenderer', () => {
     expect(node.style.getPropertyValue('--node-instance-border')).toBe('');
   });
 
+  it('applies new built-in shape class for diamond', () => {
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef({ shape: 'diamond' }),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('node-shape-diamond');
+  });
+
+  it('applies node-shape-custom class and inline clipPath for custom shape objects', () => {
+    const customShape = { clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' };
+    const { container } = render(
+      <NodeRenderer
+        {...(makeProps({
+          node: makeInlineNode(),
+          nodeDef: makeNodeDef({ shape: customShape as any }),
+          isSelected: false,
+          isRef: false,
+        }) as Parameters<typeof NodeRenderer>[0])}
+      />,
+    );
+    const node = container.firstChild as HTMLElement;
+    expect(node.className).toContain('node-shape-custom');
+    expect(node.style.clipPath).toBe('polygon(50% 0%, 100% 100%, 0% 100%)');
+  });
+
   it('renders named port handles when nodeDef defines ports', () => {
     const nodeDef = makeNodeDef();
     nodeDef.spec = {

@@ -9,7 +9,7 @@ metadata:
   description: "Authentication and identity provider for managing user credentials, tokens, and access policies."
   icon: Shield
   tags: [auth, identity, iam]
-  shape: rectangle
+  shape: octagon
 
 spec:
   args:

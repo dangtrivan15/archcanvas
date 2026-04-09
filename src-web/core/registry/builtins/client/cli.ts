@@ -12,7 +12,7 @@ export const cliDef: NodeDef = {
       'A command-line interface tool for terminal-based interaction and automation.',
     icon: 'Terminal',
     tags: ['cli', 'terminal', 'tool'],
-    shape: 'rectangle',
+    shape: 'arrow-right',
   },
   spec: {
     args: [

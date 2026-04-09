@@ -12,7 +12,7 @@ export const cronJobDef: NodeDef = {
       'A scheduled task that runs on a cron schedule to perform periodic batch processing or maintenance.',
     icon: 'Clock',
     tags: ['scheduled', 'batch'],
-    shape: 'rectangle',
+    shape: 'trapezoid',
   },
   spec: {
     args: [

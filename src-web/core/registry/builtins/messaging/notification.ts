@@ -12,7 +12,7 @@ export const notificationDef: NodeDef = {
       'Multi-channel notification service for delivering alerts via email, SMS, push, or webhook.',
     icon: 'Bell',
     tags: ['alerts', 'notifications', 'push'],
-    shape: 'rectangle',
+    shape: 'arrow-right',
   },
   spec: {
     args: [

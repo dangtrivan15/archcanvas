@@ -18,6 +18,10 @@
  * We only strip URLs from these — background-image, list-style-image, etc.
  * are intentionally kept because they may have been inlined as data URLs.
  */
+// Note: Custom shapes with url() clip-path values are rejected at schema
+// validation time (CustomShape in nodeDefSchema.ts), so built-in NodeDefs
+// will never produce url() clip-paths. This sanitization still catches any
+// url() references injected by getComputedStyle() from the live document.
 const URL_PROPERTIES = [
   'clip-path',
   'mask',

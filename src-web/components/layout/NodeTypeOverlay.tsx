@@ -6,6 +6,7 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { createNodeFromType } from '@/lib/createNodeFromType';
 import { startDrag, isDragging } from '@/lib/pointerDrag';
 import { resolveIcon } from '@/components/nodes/iconMap';
+import { ShapePreview } from '@/components/nodes/ShapePreview';
 
 interface NodeTypeOverlayProps {
   visible: boolean;
@@ -136,6 +137,7 @@ export function NodeTypeOverlay({
                         <span className="shrink-0 text-sm" aria-hidden>
                           {Icon ? <Icon className="h-3.5 w-3.5" /> : '◻'}
                         </span>
+                        <ShapePreview shape={def.metadata.shape} size={14} className="shrink-0 opacity-60" />
                         <span className="truncate">
                           {displayName}
                         </span>
