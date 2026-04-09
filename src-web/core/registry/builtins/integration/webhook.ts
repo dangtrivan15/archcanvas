@@ -12,7 +12,7 @@ export const webhookDef: NodeDef = {
       'Event-driven callback endpoint that delivers or receives HTTP notifications.',
     icon: 'Webhook',
     tags: ['webhook', 'callback', 'event'],
-    shape: 'rectangle',
+    shape: 'arrow-right',
   },
   spec: {
     args: [

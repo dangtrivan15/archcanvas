@@ -12,7 +12,7 @@ export const functionDef: NodeDef = {
       'A serverless function that runs on-demand in response to HTTP requests or events.',
     icon: 'Zap',
     tags: ['serverless', 'lambda'],
-    shape: 'rectangle',
+    shape: 'diamond',
   },
   spec: {
     args: [

@@ -3,6 +3,8 @@ import {
   ArgType,
   PortDirection,
   Shape,
+  BuiltinShapeName,
+  CustomShape,
   ArgDef,
   PortDef,
   ChildConstraint,
@@ -87,15 +89,52 @@ describe('PortDirection', () => {
 });
 
 describe('Shape', () => {
-  const shapes = [
+  const builtinShapes = [
     'rectangle', 'cylinder', 'hexagon', 'parallelogram',
     'cloud', 'stadium', 'document', 'badge', 'container',
+    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect',
   ];
-  it.each(shapes)('accepts %s', (val) => {
+  it.each(builtinShapes)('accepts built-in shape %s', (val) => {
     expect(Shape.parse(val)).toBe(val);
   });
-  it('rejects invalid shape', () => {
+  it('rejects invalid shape string', () => {
     expect(() => Shape.parse('circle')).toThrow();
+  });
+
+  it('accepts a custom shape object with clipPath', () => {
+    const custom = { clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' };
+    expect(Shape.parse(custom)).toEqual(custom);
+  });
+
+  it('rejects custom shape object without clipPath', () => {
+    expect(() => Shape.parse({ fill: 'red' })).toThrow();
+  });
+
+  it('rejects custom shape with non-string clipPath', () => {
+    expect(() => Shape.parse({ clipPath: 42 })).toThrow();
+  });
+});
+
+describe('BuiltinShapeName', () => {
+  it.each([
+    'rectangle', 'cylinder', 'hexagon', 'parallelogram',
+    'cloud', 'stadium', 'document', 'badge', 'container',
+    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect',
+  ])('accepts %s', (val) => {
+    expect(BuiltinShapeName.parse(val)).toBe(val);
+  });
+  it('rejects unknown names', () => {
+    expect(() => BuiltinShapeName.parse('triangle')).toThrow();
+  });
+});
+
+describe('CustomShape', () => {
+  it('accepts valid custom shape', () => {
+    const custom = { clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)' };
+    expect(CustomShape.parse(custom)).toEqual(custom);
+  });
+  it('rejects missing clipPath', () => {
+    expect(() => CustomShape.parse({})).toThrow();
   });
 });
 
@@ -212,6 +251,22 @@ describe('NodeDefMetadata', () => {
     expect(() =>
       NodeDefMetadata.parse({ ...validNodeDef.metadata, shape: 'triangle' }),
     ).toThrow();
+  });
+
+  it('accepts new built-in shape names', () => {
+    for (const shape of ['diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect']) {
+      expect(NodeDefMetadata.parse({ ...validNodeDef.metadata, shape })).toEqual({
+        ...validNodeDef.metadata,
+        shape,
+      });
+    }
+  });
+
+  it('accepts custom shape object in metadata', () => {
+    const custom = { clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' };
+    expect(
+      NodeDefMetadata.parse({ ...validNodeDef.metadata, shape: custom }),
+    ).toEqual({ ...validNodeDef.metadata, shape: custom });
   });
 });
 

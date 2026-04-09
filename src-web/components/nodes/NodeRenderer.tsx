@@ -53,7 +53,10 @@ export function NodeRenderer({ data }: NodeRendererProps) {
     return ('displayName' in node && node.displayName) ? node.displayName : node.id;
   })();
 
-  const shape = isRef ? 'container' : (nodeDef?.metadata.shape ?? 'rectangle');
+  const rawShape = isRef ? 'container' : (nodeDef?.metadata.shape ?? 'rectangle');
+  const isCustomShape = typeof rawShape === 'object' && rawShape !== null && 'clipPath' in rawShape;
+  const shape = isCustomShape ? 'custom' : rawShape;
+  const customClipPath = isCustomShape ? (rawShape as { clipPath: string }).clipPath : undefined;
   const icon = nodeDef?.metadata.icon ?? (isRef ? '↗' : '□');
   const typeLabel = !isRef && 'type' in node ? node.type : undefined;
 
@@ -78,13 +81,17 @@ export function NodeRenderer({ data }: NodeRendererProps) {
   // Per-instance color override — set via CSS custom properties so the CSS cascade
   // can still let diff overlay classes win (inline bg/border would beat everything).
   const instanceColor = !isRef && 'color' in node ? (node as { color?: string }).color : undefined;
-  const colorStyle = useMemo(() => {
-    if (!instanceColor) return undefined;
-    return {
-      '--node-instance-bg': instanceColor,
-      '--node-instance-border': instanceColor,
-    } as React.CSSProperties;
-  }, [instanceColor]);
+  const nodeStyle = useMemo(() => {
+    const style: Record<string, string> = {};
+    if (instanceColor) {
+      style['--node-instance-bg'] = instanceColor;
+      style['--node-instance-border'] = instanceColor;
+    }
+    if (customClipPath) {
+      style['clipPath'] = customClipPath;
+    }
+    return Object.keys(style).length > 0 ? (style as unknown as React.CSSProperties) : undefined;
+  }, [instanceColor, customClipPath]);
 
   const classNames = [
     'arch-node',
@@ -98,7 +105,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
     .join(' ');
 
   return (
-    <div className={classNames} data-ns={namespace} style={colorStyle}>
+    <div className={classNames} data-ns={namespace} style={nodeStyle}>
       {/* NodeResizer for container RefNodes */}
       {isRef && (
         <NodeResizer

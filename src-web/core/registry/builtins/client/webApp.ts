@@ -12,7 +12,7 @@ export const webAppDef: NodeDef = {
       'A browser-based web application serving a user interface over HTTP.',
     icon: 'Monitor',
     tags: ['frontend', 'web', 'spa'],
-    shape: 'rectangle',
+    shape: 'roundedRect',
   },
   spec: {
     args: [

@@ -91,6 +91,70 @@ spec: {}
     expect('error' in result).toBe(true);
   });
 
+  it('parses YAML with new built-in shape name', () => {
+    const yaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: fn
+  namespace: compute
+  version: "1.0.0"
+  displayName: Function
+  description: A serverless function
+  icon: Zap
+  shape: diamond
+spec: {}
+`;
+    const result = parseNodeDef(yaml);
+    expect('nodeDef' in result).toBe(true);
+    if ('nodeDef' in result) {
+      expect(result.nodeDef.metadata.shape).toBe('diamond');
+    }
+  });
+
+  it('parses YAML with custom shape object', () => {
+    const yaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: custom-node
+  namespace: custom
+  version: "1.0.0"
+  displayName: Custom Node
+  description: A node with custom shape
+  icon: Box
+  shape:
+    clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)"
+spec: {}
+`;
+    const result = parseNodeDef(yaml);
+    expect('nodeDef' in result).toBe(true);
+    if ('nodeDef' in result) {
+      expect(result.nodeDef.metadata.shape).toEqual({
+        clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+      });
+    }
+  });
+
+  it('rejects YAML with invalid shape object (missing clipPath)', () => {
+    const yaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: bad-node
+  namespace: custom
+  version: "1.0.0"
+  displayName: Bad Node
+  description: A node with invalid shape
+  icon: Box
+  shape:
+    fill: red
+spec: {}
+`;
+    const result = parseNodeDef(yaml);
+    expect('error' in result).toBe(true);
+  });
+
   it('parses NodeDef with all optional fields', () => {
     const fullYaml = `
 kind: NodeDef

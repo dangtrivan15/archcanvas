@@ -224,6 +224,168 @@
 }
 
 /* ---------------------------------------------------------- */
+/* Shape: diamond                                              */
+/* ---------------------------------------------------------- */
+
+.node-shape-diamond {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  border-radius: 0;
+  border: none;
+  padding: 16px 28px;
+  min-width: var(--node-min-width-md, 140px);
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-diamond:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-diamond.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: trapezoid                                            */
+/* ---------------------------------------------------------- */
+
+.node-shape-trapezoid {
+  clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+  border-radius: 0;
+  border: none;
+  padding: 10px 20px;
+  min-width: var(--node-min-width-md, 140px);
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-trapezoid:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-trapezoid.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: octagon                                              */
+/* ---------------------------------------------------------- */
+
+.node-shape-octagon {
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+  border-radius: 0;
+  border: none;
+  padding: 12px 20px;
+  min-width: var(--node-min-width-md, 140px);
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-octagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-octagon.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: pentagon                                             */
+/* ---------------------------------------------------------- */
+
+.node-shape-pentagon {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+  border-radius: 0;
+  border: none;
+  padding: 14px 22px;
+  min-width: var(--node-min-width-md, 140px);
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-pentagon:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-pentagon.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: arrow-right                                          */
+/* ---------------------------------------------------------- */
+
+.node-shape-arrow-right {
+  clip-path: polygon(0% 0%, 75% 0%, 100% 50%, 75% 100%, 0% 100%);
+  border-radius: 0;
+  border: none;
+  padding: 10px 28px 10px 16px;
+  min-width: var(--node-min-width-md, 140px);
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-arrow-right:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-arrow-right.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: roundedRect (rounded rectangle with larger radius)   */
+/* ---------------------------------------------------------- */
+
+.node-shape-roundedRect {
+  border-radius: 16px;
+  padding: 10px 16px;
+}
+
+/* ---------------------------------------------------------- */
+/* Shape: custom (arbitrary clip-path via inline style)        */
+/* ---------------------------------------------------------- */
+
+.node-shape-custom {
+  border-radius: 0;
+  border: none;
+}
+
+/* Hover glow for clip-path shape — uses filter instead of box-shadow/border */
+.node-shape-custom:hover:not(.selected):not(.unknown-type):not(.diff-added):not(.diff-removed):not(.diff-modified) {
+  box-shadow: none;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--color-node-selected-border) 40%, transparent))
+          drop-shadow(0 0 4px color-mix(in srgb, var(--color-node-selected-ring) 30%, transparent));
+}
+
+/* Selection glow follows the clip-path contour using filter instead of box-shadow */
+.node-shape-custom.selected {
+  box-shadow: none;
+  filter: drop-shadow(0 0 3px var(--color-node-selected-border))
+          drop-shadow(0 0 6px var(--color-node-selected-ring));
+}
+
+/* ---------------------------------------------------------- */
 /* Shape: container (group / subsystem)                        */
 /* ---------------------------------------------------------- */
 

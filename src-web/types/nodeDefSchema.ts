@@ -9,7 +9,7 @@ export type ArgType = z.infer<typeof ArgType>;
 export const PortDirection = z.enum(['inbound', 'outbound']);
 export type PortDirection = z.infer<typeof PortDirection>;
 
-export const Shape = z.enum([
+export const BuiltinShapeName = z.enum([
   'rectangle',
   'cylinder',
   'hexagon',
@@ -19,7 +19,21 @@ export const Shape = z.enum([
   'document',
   'badge',
   'container',
+  'diamond',
+  'trapezoid',
+  'octagon',
+  'pentagon',
+  'arrow-right',
+  'roundedRect',
 ]);
+export type BuiltinShapeName = z.infer<typeof BuiltinShapeName>;
+
+export const CustomShape = z.object({
+  clipPath: z.string(),
+});
+export type CustomShape = z.infer<typeof CustomShape>;
+
+export const Shape = z.union([BuiltinShapeName, CustomShape]);
 export type Shape = z.infer<typeof Shape>;
 
 // --- Spec Components ---
