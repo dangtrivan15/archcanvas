@@ -141,13 +141,15 @@ export function Canvas() {
 
     const saved = useNavigationStore.getState().getSavedViewport(canvasId);
 
-    requestAnimationFrame(() => {
+    const rafId = requestAnimationFrame(() => {
       if (saved) {
         reactFlow.setViewport(saved, { duration: 300 });
       } else {
-        reactFlow.fitView({ duration: 300, padding: 0.08 });
+        reactFlow.fitView({ duration: 300, padding: 0.1 });
       }
     });
+
+    return () => cancelAnimationFrame(rafId);
   }, [storeNodes, reactFlow]);
 
   const handleAutoLayout = useCallback(async () => {
