@@ -1,10 +1,89 @@
 import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
-import type { Canvas } from '@/types';
-import type { CanvasNodeData, CanvasEdgeData } from './types';
+import type { Canvas, InlineNode } from '@/types';
+import type { CanvasNodeData, CanvasEdgeData, KeyArg, NodeBadges } from './types';
 import { PROTOCOL_STYLES } from './types';
 import { computeAutoSize } from '@/lib/computeAutoSize';
 import type { CanvasDiff } from '@/core/diff/types';
 import { edgeKey } from '@/core/diff/engine';
+import type { ArgDef } from '@/types/nodeDefSchema';
+import { extractNamespace } from '@/core/namespaceColors';
+
+// ---------------------------------------------------------------------------
+// Helpers for computing derived node data
+// ---------------------------------------------------------------------------
+
+const MAX_KEY_ARGS = 2;
+
+/**
+ * Extract the first N args whose current value differs from the ArgDef default.
+ * Uses the arg ordering from `spec.args` as implicit priority.
+ */
+function computeKeyArgs(node: InlineNode, argDefs: ArgDef[] | undefined): KeyArg[] {
+  if (!argDefs || argDefs.length === 0) return [];
+  const nodeArgs = node.args;
+  if (!nodeArgs) return [];
+
+  const result: KeyArg[] = [];
+  for (const def of argDefs) {
+    if (result.length >= MAX_KEY_ARGS) break;
+    const val = nodeArgs[def.name];
+    if (val === undefined) continue;
+    // Skip values that match the default
+    if (def.default !== undefined && val === def.default) continue;
+    result.push({ name: def.name, value: val });
+  }
+  return result;
+}
+
+/** Compute metadata badge flags from existing node data. */
+function computeBadges(
+  node: InlineNode | { id: string; ref: string },
+  isRef: boolean,
+  canvasesRef: Map<string, { data: Canvas }> | undefined,
+): NodeBadges {
+  const hasNotes = !isRef && 'notes' in node
+    ? ((node as InlineNode).notes?.length ?? 0) > 0
+    : false;
+  const hasCodeRefs = !isRef && 'codeRefs' in node
+    ? ((node as InlineNode).codeRefs?.length ?? 0) > 0
+    : false;
+  const childCount = isRef
+    ? (canvasesRef?.get(node.id)?.data.nodes?.length ?? 0)
+    : 0;
+  return { hasNotes, hasCodeRefs, childCount };
+}
+
+/**
+ * Build a namespace-grouped child summary for a RefNode container.
+ * e.g. "3 compute · 2 data"
+ */
+function computeChildSummary(
+  nodeId: string,
+  canvasesRef: Map<string, { data: Canvas }> | undefined,
+): string | undefined {
+  const childCanvas = canvasesRef?.get(nodeId);
+  const childNodes = childCanvas?.data.nodes;
+  if (!childNodes || childNodes.length === 0) return undefined;
+
+  const counts = new Map<string, number>();
+  for (const child of childNodes) {
+    let ns = 'other';
+    if ('type' in child) {
+      ns = extractNamespace(child.type) ?? 'other';
+    } else {
+      ns = 'subsystem';
+    }
+    counts.set(ns, (counts.get(ns) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .map(([ns, count]) => `${count} ${ns}`)
+    .join(' · ');
+}
+
+// ---------------------------------------------------------------------------
+// Main mapping
+// ---------------------------------------------------------------------------
 
 interface MapNodesOptions {
   canvas: Canvas | undefined;
@@ -22,12 +101,23 @@ export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] 
     const isRef = 'ref' in node;
     const nodeDef = isRef ? undefined : resolve((node as { type: string }).type);
     const nodeDiffStatus = diff?.nodes.get(node.id)?.status;
+
+    // Compute derived data for visual density
+    const keyArgs = !isRef && nodeDef
+      ? computeKeyArgs(node as InlineNode, nodeDef.spec.args)
+      : undefined;
+    const badges = computeBadges(node as any, isRef, canvasesRef);
+    const childSummary = isRef ? computeChildSummary(node.id, canvasesRef) : undefined;
+
     const data: CanvasNodeData = {
       node,
       nodeDef,
       isSelected: selectedNodeIds.has(node.id),
       isRef,
       diffStatus: nodeDiffStatus,
+      keyArgs,
+      badges,
+      childSummary,
     };
     const rfNode: RFNode<CanvasNodeData> = {
       id: node.id,

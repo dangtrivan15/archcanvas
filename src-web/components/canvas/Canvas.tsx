@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, Controls, useReactFlow, applyNodeChanges } from "@xyflow/react";
-import type { Node as RFNode, Edge as RFEdge, NodeChange, OnSelectionChangeParams } from "@xyflow/react";
+import type { Node as RFNode, Edge as RFEdge, NodeChange, OnSelectionChangeParams, Viewport } from "@xyflow/react";
 import { useCanvasRenderer } from "./hooks/useCanvasRenderer";
 import { useCanvasKeyboard } from "./hooks/useCanvasKeyboard";
 import { useCanvasInteractions } from "./hooks/useCanvasInteractions";
@@ -26,7 +26,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import type { CanvasNodeData, CanvasEdgeData } from "./types";
-import { useCanvasStore } from "@/store/canvasStore";
+import { useCanvasStore, zoomToTier } from "@/store/canvasStore";
 import { useGraphStore } from "@/store/graphStore";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useUiStore } from "@/store/uiStore";
@@ -180,6 +180,16 @@ export function Canvas() {
     };
   }, [reactFlow, handleAutoLayout, openPalette]);
 
+  // ---------------------------------------------------------------------------
+  // Zoom tier tracking — updates CSS class on the wrapper for density control
+  // ---------------------------------------------------------------------------
+  const zoomTier = useCanvasStore((s) => s.zoomTier);
+
+  const onMoveEnd = useCallback((_event: unknown, viewport: Viewport) => {
+    const tier = zoomToTier(viewport.zoom);
+    useCanvasStore.getState().setZoomTier(tier);
+  }, []);
+
   const {
     onNodeClick, onEdgeClick,
     onConnect, onConnectStart, onConnectEnd, onPaneClick,
@@ -315,7 +325,7 @@ export function Canvas() {
   return (
     <div
       data-testid="main-canvas"
-      className="relative h-full w-full"
+      className={`relative h-full w-full zoom-tier-${zoomTier}`}
     >
       <Breadcrumb />
       <DiffFilterBar />
@@ -334,6 +344,7 @@ export function Canvas() {
         selectionOnDrag={toolMode === 'select'}
         onNodesChange={onNodesChange}
         onSelectionChange={onSelectionChange}
+        onMoveEnd={onMoveEnd}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onEdgeClick={onEdgeClick}

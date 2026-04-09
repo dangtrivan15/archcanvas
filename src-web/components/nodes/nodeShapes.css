@@ -412,6 +412,113 @@
   box-shadow: 0 0 0 2px var(--color-diff-modified-ring);
 }
 
+/* ---------------------------------------------------------- */
+/* Key arguments display                                       */
+/* ---------------------------------------------------------- */
+
+.arch-node-key-args {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.arch-node-key-arg {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arch-node-key-arg-name {
+  color: var(--color-muted-foreground);
+  flex-shrink: 0;
+}
+
+.arch-node-key-arg-name::after {
+  content: ':';
+}
+
+.arch-node-key-arg-value {
+  font-family: var(--font-family-mono);
+  color: var(--color-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- */
+/* Metadata badges (notes, code refs, child count)             */
+/* ---------------------------------------------------------- */
+
+.arch-node-badges {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.arch-node-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-color: color-mix(in srgb, var(--color-muted-foreground) 15%, transparent);
+  color: var(--color-muted-foreground);
+}
+
+.arch-node-badge-count {
+  font-size: 9px;
+  font-weight: 600;
+  min-width: 18px;
+  width: auto;
+  padding: 0 3px;
+}
+
+/* ---------------------------------------------------------- */
+/* Container mini-summary (namespace-grouped child count)      */
+/* ---------------------------------------------------------- */
+
+.arch-node-child-summary {
+  font-size: 10px;
+  color: var(--color-muted-foreground);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- */
+/* Zoom tier — adaptive detail levels                          */
+/* CSS-only visibility toggling for performance                */
+/* ---------------------------------------------------------- */
+
+/* Far tier (< 0.4): hide key args, badges, child summary,
+   type label, diff badge */
+.zoom-tier-far .arch-node-key-args,
+.zoom-tier-far .arch-node-badges,
+.zoom-tier-far .arch-node-child-summary,
+.zoom-tier-far .arch-node-type,
+.zoom-tier-far .arch-node-diff-badge,
+.zoom-tier-far .arch-node-warning {
+  display: none;
+}
+
+/* Medium tier (0.4 – 0.75): hide key args only */
+.zoom-tier-medium .arch-node-key-args {
+  display: none;
+}
+
+/* Close tier (> 0.75): everything visible — no overrides needed */
+
 /* Diff badge inside nodes */
 .arch-node-diff-badge {
   display: inline-flex;
