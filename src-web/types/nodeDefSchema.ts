@@ -24,12 +24,27 @@ export const BuiltinShapeName = z.enum([
   'octagon',
   'pentagon',
   'arrow-right',
-  'roundedRect',
+  'rounded-rect',
 ]);
 export type BuiltinShapeName = z.infer<typeof BuiltinShapeName>;
 
+/**
+ * Regex for valid CSS clip-path function values.
+ * Accepts polygon(), circle(), ellipse(), inset(), and path().
+ * Rejects url() references — they are stripped during SVG export and would
+ * silently break, so we fail early at the schema level.
+ */
+const CLIP_PATH_RE = /^(polygon|circle|ellipse|inset|path)\s*\(/;
+
 export const CustomShape = z.object({
-  clipPath: z.string(),
+  clipPath: z.string().refine(
+    (v) => CLIP_PATH_RE.test(v.trim()),
+    {
+      message:
+        'clipPath must start with a valid CSS function (polygon, circle, ellipse, inset, or path). ' +
+        'url() references are not supported — they are stripped during SVG export.',
+    },
+  ),
 });
 export type CustomShape = z.infer<typeof CustomShape>;
 

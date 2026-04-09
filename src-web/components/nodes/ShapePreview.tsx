@@ -16,7 +16,7 @@ const BUILTIN_PATHS: Record<string, { points?: string; d?: string; rx?: number }
   octagon:      { points: '5,1 11,1 16,4 16,8 11,11 5,11 0,8 0,4' },
   pentagon:     { points: '8,0 16,5 13,12 3,12 0,5' },
   'arrow-right':{ points: '0,1 12,1 16,6 12,11 0,11' },
-  roundedRect:  { rx: 4 }, // rendered as rounded rect
+  'rounded-rect':{ rx: 4 }, // rendered as rounded rect
 };
 
 interface ShapePreviewProps {
@@ -40,9 +40,9 @@ export function ShapePreview({ shape, size = 16, className }: ShapePreviewProps)
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 16 12"
+      viewBox="-1 -1 18 14"
       width={size}
-      height={size * 0.75}
+      height={size * (14 / 18)}
       className={className}
       aria-hidden="true"
     >
@@ -56,7 +56,7 @@ export function ShapePreview({ shape, size = 16, className }: ShapePreviewProps)
           strokeWidth={0.8}
         />
       ) : entry?.rx !== undefined && !entry.points ? (
-        // Rounded rect shapes (cloud, stadium, badge, roundedRect)
+        // Rounded rect shapes (cloud, stadium, badge, rounded-rect)
         <rect
           x={1}
           y={1}

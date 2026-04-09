@@ -92,7 +92,7 @@ describe('Shape', () => {
   const builtinShapes = [
     'rectangle', 'cylinder', 'hexagon', 'parallelogram',
     'cloud', 'stadium', 'document', 'badge', 'container',
-    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect',
+    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'rounded-rect',
   ];
   it.each(builtinShapes)('accepts built-in shape %s', (val) => {
     expect(Shape.parse(val)).toBe(val);
@@ -119,7 +119,7 @@ describe('BuiltinShapeName', () => {
   it.each([
     'rectangle', 'cylinder', 'hexagon', 'parallelogram',
     'cloud', 'stadium', 'document', 'badge', 'container',
-    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect',
+    'diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'rounded-rect',
   ])('accepts %s', (val) => {
     expect(BuiltinShapeName.parse(val)).toBe(val);
   });
@@ -129,12 +129,30 @@ describe('BuiltinShapeName', () => {
 });
 
 describe('CustomShape', () => {
-  it('accepts valid custom shape', () => {
+  it('accepts valid custom shape with polygon()', () => {
     const custom = { clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%)' };
     expect(CustomShape.parse(custom)).toEqual(custom);
   });
+
+  it.each([
+    ['circle(50% at 50% 50%)'],
+    ['ellipse(50% 30% at 50% 50%)'],
+    ['inset(10% 20% 30% 40%)'],
+    ['path("M0,0 L100,0 L100,100 Z")'],
+  ])('accepts valid clipPath function: %s', (clipPath) => {
+    expect(CustomShape.parse({ clipPath })).toEqual({ clipPath });
+  });
+
   it('rejects missing clipPath', () => {
     expect(() => CustomShape.parse({})).toThrow();
+  });
+
+  it('rejects url() clipPath — unsupported in SVG export', () => {
+    expect(() => CustomShape.parse({ clipPath: 'url(#my-clip)' })).toThrow();
+  });
+
+  it('rejects arbitrary string clipPath', () => {
+    expect(() => CustomShape.parse({ clipPath: 'not-a-function' })).toThrow();
   });
 });
 
@@ -254,7 +272,7 @@ describe('NodeDefMetadata', () => {
   });
 
   it('accepts new built-in shape names', () => {
-    for (const shape of ['diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'roundedRect']) {
+    for (const shape of ['diamond', 'trapezoid', 'octagon', 'pentagon', 'arrow-right', 'rounded-rect']) {
       expect(NodeDefMetadata.parse({ ...validNodeDef.metadata, shape })).toEqual({
         ...validNodeDef.metadata,
         shape,
