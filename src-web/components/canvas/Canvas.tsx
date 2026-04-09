@@ -117,6 +117,29 @@ export function Canvas() {
     setReactFlowInstance(reactFlow);
   }, [reactFlow]);
 
+  // ---------------------------------------------------------------------------
+  // Auto-fit on initial load: fit the viewport to content the first time nodes
+  // populate. A ref guard ensures this fires exactly once per mount so it does
+  // not interfere with subsequent dive-in / go-up navigation.
+  // ---------------------------------------------------------------------------
+  const hasFittedRef = useRef(false);
+
+  useEffect(() => {
+    if (hasFittedRef.current || storeNodes.length === 0) return;
+    hasFittedRef.current = true;
+
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const saved = useNavigationStore.getState().getSavedViewport(canvasId);
+
+    requestAnimationFrame(() => {
+      if (saved) {
+        reactFlow.setViewport(saved, { duration: 300 });
+      } else {
+        reactFlow.fitView({ duration: 300, padding: 0.08 });
+      }
+    });
+  }, [storeNodes, reactFlow]);
+
   const handleAutoLayout = useCallback(async () => {
     const navState = useNavigationStore.getState();
     const canvasId = navState.currentCanvasId;
