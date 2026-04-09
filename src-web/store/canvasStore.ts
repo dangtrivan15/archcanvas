@@ -7,11 +7,21 @@ import { useHistoryStore } from './historyStore';
 import { useFileStore } from './fileStore';
 import { useClipboardStore } from './clipboardStore';
 
+export type ZoomTier = 'far' | 'medium' | 'close';
+
+/** Convert a raw zoom level to one of the three display density tiers. */
+export function zoomToTier(zoom: number): ZoomTier {
+  if (zoom < 0.4) return 'far';
+  if (zoom <= 0.75) return 'medium';
+  return 'close';
+}
+
 interface CanvasStoreState {
   selectedNodeIds: Set<string>;
   selectedEdgeKeys: Set<string>; // "from→to" format
   draftEdge: { from: EdgeEndpoint } | null;
   highlightedEdgeIds: string[];
+  zoomTier: ZoomTier;
 
   selectNodes(ids: string[]): void;
   selectEdge(from: string, to: string): void;
@@ -26,6 +36,7 @@ interface CanvasStoreState {
   duplicateSelection(canvasId: string): EngineResult | null;
   highlightEdges(edgeIds: string[]): void;
   clearHighlight(): void;
+  setZoomTier(tier: ZoomTier): void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
@@ -33,6 +44,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   selectedEdgeKeys: new Set(),
   draftEdge: null,
   highlightedEdgeIds: [],
+  zoomTier: 'close' as ZoomTier,
 
   selectNodes(ids) {
     set({ selectedNodeIds: new Set(ids), selectedEdgeKeys: new Set() });
@@ -198,5 +210,11 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
 
   clearHighlight() {
     set({ highlightedEdgeIds: [] });
+  },
+
+  setZoomTier(tier) {
+    if (get().zoomTier !== tier) {
+      set({ zoomTier: tier });
+    }
   },
 }));

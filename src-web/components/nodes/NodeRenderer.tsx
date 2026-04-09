@@ -8,6 +8,7 @@ import { useGraphStore } from '@/store/graphStore';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useDiffStore } from '@/store/diffStore';
 import { resolveIcon } from './iconMap';
+import { StickyNote, Code2 } from 'lucide-react';
 import { SubsystemPreview } from './SubsystemPreview';
 import { PreviewModeContext } from './PreviewModeContext';
 import { DiffTooltip } from './DiffTooltip';
@@ -39,7 +40,7 @@ function SubsystemDiffBadge({ canvasId }: { canvasId: string }) {
 }
 
 export function NodeRenderer({ data }: NodeRendererProps) {
-  const { node, nodeDef, isSelected, isRef, diffStatus } = data;
+  const { node, nodeDef, isSelected, isRef, diffStatus, keyArgs, badges, childSummary } = data;
   const isPreview = useContext(PreviewModeContext);
 
   // Determine display name
@@ -156,6 +157,44 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       {/* Type label (inline nodes only) */}
       {typeLabel !== undefined && (
         <div className="arch-node-type">{typeLabel}</div>
+      )}
+
+      {/* Key arguments — first 2 args with non-default values */}
+      {keyArgs && keyArgs.length > 0 && (
+        <div className="arch-node-key-args">
+          {keyArgs.map((arg) => (
+            <div key={arg.name} className="arch-node-key-arg">
+              <span className="arch-node-key-arg-name">{arg.name}</span>
+              <span className="arch-node-key-arg-value">{String(arg.value)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Container mini-summary — namespace-grouped child count */}
+      {isRef && childSummary && !isPreview && (
+        <div className="arch-node-child-summary">{childSummary}</div>
+      )}
+
+      {/* Metadata badges — notes, code refs, child count */}
+      {badges && (badges.hasNotes || badges.hasCodeRefs || badges.childCount > 0) && (
+        <div className="arch-node-badges">
+          {badges.hasNotes && (
+            <span className="arch-node-badge" title="Has notes">
+              <StickyNote className="h-3 w-3" />
+            </span>
+          )}
+          {badges.hasCodeRefs && (
+            <span className="arch-node-badge" title="Has code references">
+              <Code2 className="h-3 w-3" />
+            </span>
+          )}
+          {badges.childCount > 0 && (
+            <span className="arch-node-badge arch-node-badge-count" title={`${badges.childCount} children`}>
+              {badges.childCount}
+            </span>
+          )}
+        </div>
       )}
 
       {/* Warning badge for unknown types */}
