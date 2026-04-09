@@ -27,6 +27,7 @@ const SHAPE_NODES: Array<{
   { shape: "cloud", type: "network/cdn", displayName: "CDN" },
   { shape: "stadium", type: "network/api-gateway", displayName: "API Gateway" },
   { shape: "document", type: "observability/logging", displayName: "Logging" },
+  { shape: "diamond", type: "compute/function", displayName: "Transform" },
 ];
 
 /**
