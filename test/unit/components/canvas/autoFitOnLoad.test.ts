@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useNavigationStore } from '@/store/navigationStore';
+import { useFileStore } from '@/store/fileStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 
 /**
@@ -8,6 +9,9 @@ import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
  * The Canvas component uses navigationStore.getSavedViewport() to decide
  * whether to restore a saved viewport or fitView on initial load. These
  * tests verify that decision pathway at the store level.
+ *
+ * It also checks fileStore.dirtyCanvases to distinguish project-load
+ * (clean canvas → auto-fit) from interactive creation (dirty canvas → skip).
  */
 describe('auto-fit on load – viewport decision', () => {
   beforeEach(() => {
@@ -18,6 +22,7 @@ describe('auto-fit on load – viewport decision', () => {
       parentEdges: [],
       savedViewports: {},
     });
+    useFileStore.setState({ dirtyCanvases: new Set() });
   });
 
   it('getSavedViewport returns undefined for a fresh canvas (triggers fitView)', () => {
@@ -53,5 +58,18 @@ describe('auto-fit on load – viewport decision', () => {
     expect(useNavigationStore.getState().getSavedViewport(ROOT_CANVAS_KEY)).toEqual({
       x: 99, y: 88, zoom: 3,
     });
+  });
+
+  it('dirty canvas skips auto-fit (interactive node creation)', () => {
+    // When a node is added interactively, updateCanvasData marks the canvas
+    // dirty before nodes appear. The auto-fit effect checks this to skip.
+    useFileStore.setState({ dirtyCanvases: new Set([ROOT_CANVAS_KEY]) });
+    expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(true);
+  });
+
+  it('clean canvas allows auto-fit (project load from disk)', () => {
+    // When a project loads from disk, dirtyCanvases is empty. The auto-fit
+    // effect checks this to proceed.
+    expect(useFileStore.getState().dirtyCanvases.has(ROOT_CANVAS_KEY)).toBe(false);
   });
 });

@@ -119,16 +119,26 @@ export function Canvas() {
 
   // ---------------------------------------------------------------------------
   // Auto-fit on initial load: fit the viewport to content the first time nodes
-  // populate. A ref guard ensures this fires exactly once per mount so it does
-  // not interfere with subsequent dive-in / go-up navigation.
+  // populate on project load. A ref guard ensures this fires exactly once per
+  // mount so it does not interfere with subsequent dive-in / go-up navigation.
+  // We distinguish project-load from interactive creation by checking whether
+  // the canvas is clean (no dirty flag) — nodes loaded from disk arrive before
+  // any dirty mark, whereas interactive addNode marks the canvas dirty first.
   // ---------------------------------------------------------------------------
   const hasFittedRef = useRef(false);
 
   useEffect(() => {
     if (hasFittedRef.current || storeNodes.length === 0) return;
-    hasFittedRef.current = true;
 
     const canvasId = useNavigationStore.getState().currentCanvasId;
+
+    // Skip auto-fit when nodes appear from interactive creation (canvas already
+    // marked dirty by graphStore.addNode → fileStore.updateCanvasData). Only
+    // auto-fit when loading a project from disk (canvas is still clean).
+    if (useFileStore.getState().dirtyCanvases.has(canvasId)) return;
+
+    hasFittedRef.current = true;
+
     const saved = useNavigationStore.getState().getSavedViewport(canvasId);
 
     requestAnimationFrame(() => {
