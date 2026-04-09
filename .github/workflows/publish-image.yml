@@ -21,11 +21,17 @@ jobs:
         run: |
           echo "::add-mask::$PRIVATE_REGISTRY"
           echo "PRIVATE_REGISTRY=$PRIVATE_REGISTRY" >> "$GITHUB_ENV"
+          echo "::add-mask::$DOCKER_HUB_MIRROR"
+          echo "DOCKER_HUB_MIRROR=$DOCKER_HUB_MIRROR" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
           buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["${{ env.DOCKER_HUB_MIRROR }}"]
+            [registry."${{ env.DOCKER_HUB_MIRROR }}"]
+              http = true
             [registry."${{ env.PRIVATE_REGISTRY }}"]
               http = true
 
