@@ -32,6 +32,7 @@ import { useNavigationStore } from "@/store/navigationStore";
 import { useUiStore } from "@/store/uiStore";
 import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
+import { resolveAutoFitAction } from "./autoFitAction";
 import { computeLayout } from "@/core/layout/elk";
 import { setReactFlowInstance } from '@/lib/reactFlowRef';
 import { extractInheritedEdges } from "./inheritedEdges";
@@ -116,6 +117,44 @@ export function Canvas() {
   useEffect(() => {
     setReactFlowInstance(reactFlow);
   }, [reactFlow]);
+
+  // ---------------------------------------------------------------------------
+  // Auto-fit on initial load: fit the viewport to content the first time nodes
+  // populate on project load. A ref guard ensures this fires exactly once per
+  // mount so it does not interfere with subsequent dive-in / go-up navigation.
+  //
+  // We distinguish project-load from interactive creation via mountedWithNodes:
+  // when a project loads, Canvas unmounts (status → 'loading') then remounts
+  // once the store is populated, so storeNodes.length > 0 at mount time. When
+  // a user interactively adds nodes to an empty canvas, the component was
+  // already mounted with zero nodes — mountedWithNodes stays false.
+  // ---------------------------------------------------------------------------
+  const mountedWithNodesRef = useRef(storeNodes.length > 0);
+  const hasFittedRef = useRef(false);
+
+  useEffect(() => {
+    const canvasId = useNavigationStore.getState().currentCanvasId;
+    const saved = useNavigationStore.getState().getSavedViewport(canvasId);
+    const action = resolveAutoFitAction(
+      hasFittedRef.current,
+      storeNodes.length,
+      mountedWithNodesRef.current,
+      saved,
+    );
+
+    if (action.type === 'skip') return;
+    hasFittedRef.current = true;
+
+    const rafId = requestAnimationFrame(() => {
+      if (action.type === 'restoreViewport') {
+        reactFlow.setViewport(action.viewport, { duration: 300 });
+      } else {
+        reactFlow.fitView({ duration: 300, padding: 0.1 });
+      }
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [storeNodes, reactFlow]);
 
   const handleAutoLayout = useCallback(async () => {
     const navState = useNavigationStore.getState();
