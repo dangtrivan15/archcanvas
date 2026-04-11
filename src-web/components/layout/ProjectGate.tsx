@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
 import { consumeRestoreEntry } from '@/core/restoreProject';
 import { getLastActiveProject } from '@/core/lastActiveProject';
+import { focusCurrentWindow } from '@/core/focusWindow';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { duration, ease } from '@/lib/motion';
@@ -40,6 +41,8 @@ export function ProjectGate() {
           const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
           const fs = new TauriFileSystem(restorePath);
           await useFileStore.getState().openProject(fs);
+          // Best-effort: bring window to foreground after update-triggered restore
+          focusCurrentWindow();
         } catch (err) {
           useFileStore.setState({
             status: 'error',
@@ -63,6 +66,8 @@ export function ProjectGate() {
             const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
             const fs = new TauriFileSystem(lastActivePath);
             await useFileStore.getState().openProject(fs);
+            // Best-effort: bring window to foreground after last-active restore
+            focusCurrentWindow();
             return;
           }
         } catch {
