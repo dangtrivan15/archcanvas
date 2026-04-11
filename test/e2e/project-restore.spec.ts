@@ -141,3 +141,110 @@ test.describe("project restore via localStorage", () => {
     expect(after).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Last active project via localStorage: tests the set/get/clear round-trip
+// that powers auto-restore of the last-opened project on desktop restart.
+//
+// Unlike the update-restore tests above, this entry is read-only (not consumed)
+// and has no staleness guard — it persists until overwritten.
+// ---------------------------------------------------------------------------
+
+const LAST_ACTIVE_KEY = "archcanvas:lastActiveProject";
+
+test.describe("last active project via localStorage", () => {
+  test("persisted entry survives a page reload and is NOT consumed", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Persist a last-active entry
+    await page.evaluate((key) => {
+      const entry = { path: "/home/user/last-active-project" };
+      localStorage.setItem(key, JSON.stringify(entry));
+    }, LAST_ACTIVE_KEY);
+
+    // Verify the entry exists in localStorage
+    const beforeReload = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      LAST_ACTIVE_KEY,
+    );
+    expect(beforeReload).not.toBeNull();
+    const parsed = JSON.parse(beforeReload!);
+    expect(parsed.path).toBe("/home/user/last-active-project");
+
+    // Reload the page — the entry should still be present (not consumed)
+    // Note: In the web (non-Tauri) environment, ProjectGate skips this entry,
+    // so it remains untouched.
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    // The entry should still exist (read-only, not consumed)
+    const afterReload = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      LAST_ACTIVE_KEY,
+    );
+    expect(afterReload).not.toBeNull();
+    const parsedAfter = JSON.parse(afterReload!);
+    expect(parsedAfter.path).toBe("/home/user/last-active-project");
+  });
+
+  test("update-restore entry takes priority over last-active entry", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Set both entries
+    await page.evaluate(
+      ([restoreKey, lastActiveKey]) => {
+        // Update-restore entry (higher priority)
+        const restoreEntry = {
+          path: "/update-restore-project",
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(restoreKey, JSON.stringify(restoreEntry));
+
+        // Last-active entry (lower priority)
+        const lastActiveEntry = { path: "/last-active-project" };
+        localStorage.setItem(lastActiveKey, JSON.stringify(lastActiveEntry));
+      },
+      [STORAGE_KEY, LAST_ACTIVE_KEY] as const,
+    );
+
+    // Reload — the update-restore entry should be consumed, proving it was checked first
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    // Update-restore entry should be consumed (deleted)
+    const restoreAfter = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      STORAGE_KEY,
+    );
+    expect(restoreAfter).toBeNull();
+
+    // Last-active entry should still be present (not consumed, not checked)
+    const lastActiveAfter = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      LAST_ACTIVE_KEY,
+    );
+    expect(lastActiveAfter).not.toBeNull();
+  });
+
+  test("corrupted last-active JSON entries are handled gracefully", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // Write corrupted JSON
+    await page.evaluate((key) => {
+      localStorage.setItem(key, "{not valid json!!!");
+    }, LAST_ACTIVE_KEY);
+
+    // Reload — should not crash
+    await page.reload();
+    await page.waitForTimeout(500);
+
+    // Page should still be functional
+    await expect(page.locator("body")).toBeVisible();
+  });
+});

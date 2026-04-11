@@ -2,6 +2,10 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
 import { consumeRestoreEntry } from '@/core/restoreProject';
+import {
+  getLastActiveProject,
+  clearLastActiveProject,
+} from '@/core/lastActiveProject';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { duration, ease } from '@/lib/motion';
@@ -30,7 +34,7 @@ export function ProjectGate() {
   useEffect(() => {
     if (actionFired.current) return;
 
-    // Restore project after an update-triggered relaunch (consume-on-read)
+    // Priority 1: Restore project after an update-triggered relaunch (consume-on-read)
     const restorePath = consumeRestoreEntry();
     if (restorePath) {
       actionFired.current = true;
@@ -49,7 +53,38 @@ export function ProjectGate() {
       return;
     }
 
+    // Priority 2: Re-open last active project on desktop restart (Tauri only)
+    const isTauri =
+      typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    const lastActivePath = isTauri ? getLastActiveProject() : null;
     const params = new URLSearchParams(window.location.search);
+    const hasUrlAction =
+      params.has('action') ||
+      params.has('recent') ||
+      params.has('openPath') ||
+      params.has('template');
+
+    if (lastActivePath && !hasUrlAction) {
+      actionFired.current = true;
+      (async () => {
+        try {
+          const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(lastActivePath);
+          // Validate the directory still exists before attempting to open
+          const dirExists = await fs.exists('.');
+          if (!dirExists) {
+            clearLastActiveProject();
+            return; // fall through to manual open
+          }
+          await useFileStore.getState().openProject(fs);
+        } catch {
+          // Directory inaccessible — clear entry to prevent infinite retry
+          clearLastActiveProject();
+        }
+      })();
+      return;
+    }
+
     const action = params.get('action');
     const recentKey = params.get('recent');
     const openPath = params.get('openPath');

@@ -10,6 +10,7 @@ import {
   type LoadedCanvas,
   type ResolvedProject,
 } from '../storage/fileResolver';
+import { setLastActiveProject } from '../core/lastActiveProject';
 import { parseCanvas, serializeCanvas } from '../storage/yamlCodec';
 import { useHistoryStore } from './historyStore';
 
@@ -505,6 +506,9 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     try {
       const project = await loadProjectFile(fs);
       set({ project, fs, status: 'loaded', dirtyCanvases: new Set() });
+      // Persist the project path so the desktop app can auto-reopen it on restart.
+      // fs.getPath() returns null on Web/InMemory, making this a desktop-only no-op.
+      setLastActiveProject(fs.getPath());
     } catch (err) {
       set({
         status: 'error',
