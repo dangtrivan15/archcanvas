@@ -12,6 +12,7 @@ import {
 } from '../storage/fileResolver';
 import { parseCanvas, serializeCanvas } from '../storage/yamlCodec';
 import { useHistoryStore } from './historyStore';
+import { persistLastActiveProject } from '../core/lastActiveProject';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -505,6 +506,9 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     try {
       const project = await loadProjectFile(fs);
       set({ project, fs, status: 'loaded', dirtyCanvases: new Set() });
+
+      // Persist last active project for Tauri startup restore
+      persistLastActiveProject(get().projectPath);
     } catch (err) {
       set({
         status: 'error',

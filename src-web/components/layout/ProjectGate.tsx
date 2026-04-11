@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
 import { consumeRestoreEntry } from '@/core/restoreProject';
+import { getLastActiveProject } from '@/core/lastActiveProject';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { duration, ease } from '@/lib/motion';
@@ -30,7 +31,7 @@ export function ProjectGate() {
   useEffect(() => {
     if (actionFired.current) return;
 
-    // Restore project after an update-triggered relaunch (consume-on-read)
+    // Priority 1: Restore project after an update-triggered relaunch (consume-on-read)
     const restorePath = consumeRestoreEntry();
     if (restorePath) {
       actionFired.current = true;
@@ -44,6 +45,26 @@ export function ProjectGate() {
             status: 'error',
             error: `Failed to restore project: ${err instanceof Error ? err.message : String(err)}`,
           });
+        }
+      })();
+      return;
+    }
+
+    // Priority 2: Re-open last active project on Tauri startup
+    const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    const lastActivePath = isTauri ? getLastActiveProject() : null;
+    if (lastActivePath) {
+      actionFired.current = true;
+      (async () => {
+        try {
+          const { exists } = await import('@tauri-apps/plugin-fs');
+          const dirExists = await exists(lastActivePath);
+          if (!dirExists) return; // directory moved/deleted — silently skip
+          const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+          const fs = new TauriFileSystem(lastActivePath);
+          await useFileStore.getState().openProject(fs);
+        } catch {
+          // Silent failure — don't show error banner for auto-restore
         }
       })();
       return;
