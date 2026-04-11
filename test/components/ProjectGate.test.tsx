@@ -1,15 +1,42 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useFileStore, setFilePicker } from '@/store/fileStore';
 import { ProjectGate } from '@/components/layout/ProjectGate';
 import { getLastActiveProject } from '@/core/lastActiveProject';
+import { consumeRestoreEntry } from '@/core/restoreProject';
+import { focusCurrentWindow } from '@/core/focusWindow';
 
 // Mock lastActiveProject so it doesn't interfere with existing tests
 vi.mock('@/core/lastActiveProject', () => ({
   getLastActiveProject: vi.fn(() => null),
 }));
 
+// Mock restoreProject — consume-on-read for update-triggered restores
+vi.mock('@/core/restoreProject', () => ({
+  consumeRestoreEntry: vi.fn(() => null),
+}));
+
+// Mock focusCurrentWindow to verify it gets called
+vi.mock('@/core/focusWindow', () => ({
+  focusCurrentWindow: vi.fn(),
+}));
+
+// Mock Tauri filesystem — use a class so `new TauriFileSystem(path)` works
+vi.mock('@/platform/tauriFileSystem', () => ({
+  TauriFileSystem: class MockTauriFileSystem {
+    path: string;
+    constructor(path: string) { this.path = path; }
+  },
+}));
+
+// Mock Tauri fs plugin
+vi.mock('@tauri-apps/plugin-fs', () => ({
+  exists: vi.fn(() => Promise.resolve(true)),
+}));
+
 const mockGetLastActiveProject = vi.mocked(getLastActiveProject);
+const mockConsumeRestoreEntry = vi.mocked(consumeRestoreEntry);
+const mockFocusCurrentWindow = vi.mocked(focusCurrentWindow);
 
 // ---------------------------------------------------------------------------
 // Reset store between tests
@@ -27,6 +54,10 @@ beforeEach(() => {
   setFilePicker(null);
   // Reset Tauri detection
   delete (window as any).__TAURI_INTERNALS__;
+  // Reset mocks
+  mockConsumeRestoreEntry.mockReturnValue(null);
+  mockGetLastActiveProject.mockReturnValue(null);
+  mockFocusCurrentWindow.mockClear();
 });
 
 afterEach(() => {
@@ -127,5 +158,39 @@ describe('ProjectGate', () => {
     render(<ProjectGate />);
 
     expect(screen.getByText('ArchCanvas')).toBeInTheDocument();
+  });
+
+  // -------------------------------------------------------------------------
+  // Window focus after restore
+  // -------------------------------------------------------------------------
+
+  it('calls focusCurrentWindow after update-triggered restore (Priority 1)', async () => {
+    const openProjectMock = vi.fn().mockResolvedValue(undefined);
+    useFileStore.setState({ openProject: openProjectMock } as any);
+    mockConsumeRestoreEntry.mockReturnValue('/restored/project');
+
+    render(<ProjectGate />);
+
+    await waitFor(() => {
+      expect(openProjectMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockFocusCurrentWindow).toHaveBeenCalled();
+  });
+
+  it('calls focusCurrentWindow after last-active restore (Priority 2)', async () => {
+    const openProjectMock = vi.fn().mockResolvedValue(undefined);
+    useFileStore.setState({ openProject: openProjectMock } as any);
+    mockConsumeRestoreEntry.mockReturnValue(null);
+    mockGetLastActiveProject.mockReturnValue('/last/active/project');
+    (window as any).__TAURI_INTERNALS__ = {};
+
+    render(<ProjectGate />);
+
+    await waitFor(() => {
+      expect(openProjectMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockFocusCurrentWindow).toHaveBeenCalled();
   });
 });

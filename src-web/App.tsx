@@ -25,6 +25,7 @@ import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
 import { ExportDialog } from '@/components/ExportDialog';
 import { checkForUpdate } from '@/core/updater';
+import { focusCurrentWindow } from '@/core/focusWindow';
 import '@/store/themeStore'; // side-effect: applies theme on import
 
 enablePatches();
@@ -78,6 +79,11 @@ export function App() {
 
   useEffect(() => {
     checkForUpdate();
+  }, []);
+
+  // Safety-net: bring window to foreground on cold start (best-effort, fire-and-forget)
+  useEffect(() => {
+    focusCurrentWindow();
   }, []);
 
   useEffect(() => {
