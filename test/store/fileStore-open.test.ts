@@ -3,6 +3,7 @@ import { useFileStore, setFilePicker, setLocalStorage } from '@/store/fileStore'
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import type { FilePicker } from '@/platform/filePicker';
 import { serializeCanvas } from '@/storage/yamlCodec';
+import { getLastActiveProject, clearLastActiveProject } from '@/core/lastActiveProject';
 
 function yamlOf(data: Record<string, unknown>): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,5 +161,76 @@ describe('fileStore.open()', () => {
 
     expect(useFileStore.getState().status).toBe('loaded');
     expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lastActiveProject persistence via loadProject
+// ---------------------------------------------------------------------------
+
+describe('lastActiveProject persistence', () => {
+  beforeEach(() => {
+    useFileStore.setState({
+      project: null,
+      dirtyCanvases: new Set(),
+      status: 'idle',
+      error: null,
+      fs: null,
+      recentProjects: [],
+      projectPath: null,
+    });
+    setFilePicker(null);
+    setLocalStorage(null);
+    clearLastActiveProject();
+  });
+
+  afterEach(() => {
+    setFilePicker(null);
+    setLocalStorage(null);
+    clearLastActiveProject();
+  });
+
+  it('persists project path to localStorage after successful openProject', async () => {
+    const existingFs = createSeededFs('MyProject');
+    // InMemoryFileSystem.getPath() returns null, so manually set projectPath
+    useFileStore.setState({ projectPath: '/home/user/my-project' });
+
+    await useFileStore.getState().openProject(existingFs);
+
+    expect(useFileStore.getState().status).toBe('loaded');
+    expect(getLastActiveProject()).toBe('/home/user/my-project');
+  });
+
+  it('does not persist when openProject leads to needs_onboarding', async () => {
+    const emptyFs = new InMemoryFileSystem('Empty');
+    useFileStore.setState({ projectPath: '/home/user/empty' });
+
+    await useFileStore.getState().openProject(emptyFs);
+
+    expect(useFileStore.getState().status).toBe('needs_onboarding');
+    expect(getLastActiveProject()).toBeNull();
+  });
+
+  it('does not persist when projectPath is null', async () => {
+    const existingFs = createSeededFs('NoPath');
+    // projectPath stays null (InMemoryFileSystem.getPath() returns null)
+
+    await useFileStore.getState().openProject(existingFs);
+
+    expect(useFileStore.getState().status).toBe('loaded');
+    expect(getLastActiveProject()).toBeNull();
+  });
+
+  it('persists updated path when opening a different project', async () => {
+    const fs1 = createSeededFs('First');
+    useFileStore.setState({ projectPath: '/first' });
+    await useFileStore.getState().openProject(fs1);
+    expect(getLastActiveProject()).toBe('/first');
+
+    // Reset and open a different project
+    useFileStore.setState({ project: null, fs: null, status: 'idle', projectPath: '/second' });
+    const fs2 = createSeededFs('Second');
+    await useFileStore.getState().openProject(fs2);
+    expect(getLastActiveProject()).toBe('/second');
   });
 });

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useFileStore } from '@/store/fileStore';
 import { consumeRestoreEntry } from '@/core/restoreProject';
+import { getLastActiveProject } from '@/core/lastActiveProject';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { duration, ease } from '@/lib/motion';
@@ -28,13 +29,13 @@ export function ProjectGate() {
 
   // Auto-trigger from URL param (one-project-per-tab)
   useEffect(() => {
-    if (actionFired.current) return;
+    (async () => {
+      if (actionFired.current) return;
 
-    // Restore project after an update-triggered relaunch (consume-on-read)
-    const restorePath = consumeRestoreEntry();
-    if (restorePath) {
-      actionFired.current = true;
-      (async () => {
+      // Priority 1: Restore project after an update-triggered relaunch (consume-on-read)
+      const restorePath = consumeRestoreEntry();
+      if (restorePath) {
+        actionFired.current = true;
         try {
           const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
           const fs = new TauriFileSystem(restorePath);
@@ -45,31 +46,50 @@ export function ProjectGate() {
             error: `Failed to restore project: ${err instanceof Error ? err.message : String(err)}`,
           });
         }
-      })();
-      return;
-    }
+        return;
+      }
 
-    const params = new URLSearchParams(window.location.search);
-    const action = params.get('action');
-    const recentKey = params.get('recent');
-    const openPath = params.get('openPath');
-    const templateId = params.get('template');
-    if (!action && !recentKey && !openPath && !templateId) return;
+      // Priority 2: Re-open last active project on Tauri startup
+      // Awaits directory validation before committing — falls through to
+      // URL params if the saved directory no longer exists.
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      const lastActivePath = isTauri ? getLastActiveProject() : null;
+      if (lastActivePath) {
+        try {
+          const { exists } = await import('@tauri-apps/plugin-fs');
+          const dirExists = await exists(lastActivePath);
+          if (dirExists) {
+            actionFired.current = true;
+            const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
+            const fs = new TauriFileSystem(lastActivePath);
+            await useFileStore.getState().openProject(fs);
+            return;
+          }
+        } catch {
+          // Silent failure — fall through to URL params
+        }
+      }
 
-    actionFired.current = true;
+      // Priority 3: URL params
+      const params = new URLSearchParams(window.location.search);
+      const action = params.get('action');
+      const recentKey = params.get('recent');
+      const openPath = params.get('openPath');
+      const templateId = params.get('template');
+      if (!action && !recentKey && !openPath && !templateId) return;
 
-    // Clear the params from the URL so they don't re-trigger on navigation
-    params.delete('action');
-    params.delete('recent');
-    params.delete('openPath');
-    params.delete('template');
-    const nextSearch = params.toString();
-    const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
-    window.history.replaceState({}, '', nextUrl);
+      actionFired.current = true;
 
-    if (openPath) {
-      // Tauri: open project directly from filesystem path
-      (async () => {
+      // Clear the params from the URL so they don't re-trigger on navigation
+      params.delete('action');
+      params.delete('recent');
+      params.delete('openPath');
+      params.delete('template');
+      const nextSearch = params.toString();
+      const nextUrl = window.location.pathname + (nextSearch ? `?${nextSearch}` : '');
+      window.history.replaceState({}, '', nextUrl);
+
+      if (openPath) {
         try {
           const { TauriFileSystem } = await import('../../platform/tauriFileSystem');
           const fs = new TauriFileSystem(openPath);
@@ -80,15 +100,11 @@ export function ProjectGate() {
             error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}`,
           });
         }
-      })();
-    } else if (action === 'open') {
-      useFileStore.getState().open();
-    } else if (templateId) {
-      // New window from template: prompt user to pick a directory, then apply template
-      useFileStore.getState().openNewWithTemplate(templateId);
-    } else if (recentKey) {
-      // Web: load project from IndexedDB handle
-      (async () => {
+      } else if (action === 'open') {
+        useFileStore.getState().open();
+      } else if (templateId) {
+        useFileStore.getState().openNewWithTemplate(templateId);
+      } else if (recentKey) {
         try {
           const { getHandle } = await import('../../platform/handleStore');
           const handle = await getHandle(recentKey);
@@ -99,7 +115,6 @@ export function ProjectGate() {
             });
             return;
           }
-          // Permission should already be granted by the original tab
           const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
           if (perm !== 'granted') {
             useFileStore.setState({
@@ -117,8 +132,8 @@ export function ProjectGate() {
             error: `Failed to open recent project: ${err instanceof Error ? err.message : String(err)}`,
           });
         }
-      })();
-    }
+      }
+    })();
   }, []);
 
   const fadeUp = (delay: number) =>
