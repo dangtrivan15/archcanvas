@@ -14,12 +14,6 @@ const MODE_OPTIONS = [
   { value: 'system' as const, icon: Monitor, label: 'System' },
 ];
 
-const TEXT_SIZE_OPTIONS = [
-  { value: 'small' as const, label: 'S' },
-  { value: 'medium' as const, label: 'M' },
-  { value: 'large' as const, label: 'L' },
-];
-
 const DENSITY_OPTIONS = [
   { value: 'compact' as const, label: 'Compact' },
   { value: 'comfortable' as const, label: 'Comfortable' },
@@ -58,7 +52,7 @@ export function AppearanceDialog() {
 
   const currentPalette = useThemeStore((s) => s.palette);
   const currentMode = useThemeStore((s) => s.mode);
-  const currentTextSize = useThemeStore((s) => s.textSize);
+  const currentUiScale = useThemeStore((s) => s.uiScale);
   const currentDensity = useThemeStore((s) => s.statusBarDensity);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
 
@@ -66,7 +60,7 @@ export function AppearanceDialog() {
   const setSidebarWidth = useUiStore((s) => s.setSidebarWidthPreset);
 
   const setPalette = useThemeStore((s) => s.setPalette);
-  const setTextSize = useThemeStore((s) => s.setTextSize);
+  const setUiScale = useThemeStore((s) => s.setUiScale);
   const setDensity = useThemeStore((s) => s.setStatusBarDensity);
 
   const prefersReduced = useReducedMotion();
@@ -143,31 +137,25 @@ export function AppearanceDialog() {
           </div>
         </div>
 
-        {/* Text Size */}
+        {/* UI Scale */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-card-foreground">Text Size</p>
-          <div className="flex gap-2">
-            {TEXT_SIZE_OPTIONS.map(({ value, label }) => (
-              <button
-                key={value}
-                data-text-size={value}
-                onClick={() => setTextSize(value)}
-                className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
-                  currentTextSize === value
-                    ? 'border-primary text-card-foreground'
-                    : 'border-border text-muted-foreground hover:bg-accent/50'
-                }`}
-              >
-                {currentTextSize === value && (
-                  <motion.div
-                    layoutId={prefersReduced ? undefined : 'textsize-indicator'}
-                    className="absolute inset-0 rounded-md bg-accent/30"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{label}</span>
-              </button>
-            ))}
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-card-foreground">UI Scale</p>
+            <span className="text-xs text-muted-foreground">{currentUiScale}%</span>
+          </div>
+          <input
+            type="range"
+            min={80}
+            max={150}
+            step={5}
+            value={currentUiScale}
+            onChange={(e) => setUiScale(Number(e.target.value))}
+            data-testid="ui-scale-slider"
+            className="w-full accent-primary"
+          />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>80%</span>
+            <span>150%</span>
           </div>
         </div>
 

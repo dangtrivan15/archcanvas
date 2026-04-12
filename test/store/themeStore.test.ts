@@ -48,7 +48,7 @@ describe('themeStore', () => {
     const state = useThemeStore.getState();
     expect(state.palette).toBe('rose-pine');
     expect(state.mode).toBe('light');
-    expect(state.textSize).toBe('medium');
+    expect(state.uiScale).toBe(100);
     expect(state.statusBarDensity).toBe('comfortable');
   });
 
@@ -66,11 +66,21 @@ describe('themeStore', () => {
     expect(stored.mode).toBe('dark');
   });
 
-  it('setTextSize updates state and persists', () => {
-    useThemeStore.getState().setTextSize('large');
-    expect(useThemeStore.getState().textSize).toBe('large');
+  it('setUiScale updates state and persists', () => {
+    useThemeStore.getState().setUiScale(120);
+    expect(useThemeStore.getState().uiScale).toBe(120);
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    expect(stored.textSize).toBe('large');
+    expect(stored.uiScale).toBe(120);
+  });
+
+  it('setUiScale clamps below minimum to 80', () => {
+    useThemeStore.getState().setUiScale(50);
+    expect(useThemeStore.getState().uiScale).toBe(80);
+  });
+
+  it('setUiScale clamps above maximum to 150', () => {
+    useThemeStore.getState().setUiScale(200);
+    expect(useThemeStore.getState().uiScale).toBe(150);
   });
 
   it('setStatusBarDensity updates state and persists', () => {
@@ -87,22 +97,72 @@ describe('themeStore', () => {
     expect(document.documentElement.style.fontSize).toBe(fontSizeBefore);
   });
 
-  it('restores from localStorage on creation', async () => {
+  it('restores uiScale from localStorage on creation', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      palette: 'catppuccin', mode: 'light', textSize: 'small', statusBarDensity: 'expanded',
+      palette: 'catppuccin', mode: 'light', uiScale: 110, statusBarDensity: 'expanded',
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');
     const state = mod.useThemeStore.getState();
     expect(state.palette).toBe('catppuccin');
     expect(state.mode).toBe('light');
-    expect(state.textSize).toBe('small');
+    expect(state.uiScale).toBe(110);
     expect(state.statusBarDensity).toBe('expanded');
+  });
+
+  it('migrates legacy textSize large to uiScale 105', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'catppuccin', mode: 'dark', textSize: 'large',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(105);
+  });
+
+  it('migrates legacy textSize small to uiScale 80', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'small',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(80);
+  });
+
+  it('migrates legacy textSize medium to uiScale 95', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'medium',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(95);
+  });
+
+  it('migrates unknown legacy textSize to uiScale 100', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'unknown',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(100);
+  });
+
+  it('clamps out-of-range uiScale from localStorage', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', uiScale: 300,
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(150);
   });
 
   it('falls back to comfortable density when localStorage has no statusBarDensity (migration)', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      palette: 'catppuccin', mode: 'dark', textSize: 'large',
+      palette: 'catppuccin', mode: 'dark', uiScale: 100,
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');
@@ -112,7 +172,7 @@ describe('themeStore', () => {
 
   it('falls back to comfortable density when stored density is invalid', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      palette: 'rose-pine', mode: 'light', textSize: 'medium', statusBarDensity: 'nonexistent',
+      palette: 'rose-pine', mode: 'light', uiScale: 100, statusBarDensity: 'nonexistent',
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');
@@ -130,7 +190,7 @@ describe('themeStore', () => {
 
   it('falls back to rose-pine if stored palette id is unknown', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      palette: 'nonexistent', mode: 'dark', textSize: 'medium',
+      palette: 'nonexistent', mode: 'dark', uiScale: 100,
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');

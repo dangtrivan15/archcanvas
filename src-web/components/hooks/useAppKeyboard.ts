@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
+import { useThemeStore } from '@/store/themeStore';
 import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 
 /**
@@ -48,6 +49,34 @@ export function useAppKeyboard() {
         e.preventDefault();
         toggleDiffOverlay();
         return;
+      }
+
+      // UI Scale shortcuts — work globally (including in text fields).
+      // In Tauri, we intercept Cmd+=/-/0 so the app controls scaling
+      // instead of the webview. In a regular browser, we let native zoom
+      // work normally to preserve expected accessibility behavior.
+      const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+      if (isTauri) {
+        // Cmd+= or Cmd++ (Shift+=) → increase scale by 10%
+        if (mod && (e.key === '=' || e.key === '+')) {
+          e.preventDefault();
+          const { uiScale, setUiScale } = useThemeStore.getState();
+          setUiScale(uiScale + 10);
+          return;
+        }
+        // Cmd+- → decrease scale by 10%
+        if (mod && e.key === '-' && !e.shiftKey) {
+          e.preventDefault();
+          const { uiScale, setUiScale } = useThemeStore.getState();
+          setUiScale(uiScale - 10);
+          return;
+        }
+        // Cmd+0 → reset scale to 100%
+        if (mod && e.key === '0' && !e.shiftKey) {
+          e.preventDefault();
+          useThemeStore.getState().setUiScale(100);
+          return;
+        }
       }
 
       // C10.5: Don't fire persistence shortcuts in input/textarea/contentEditable
