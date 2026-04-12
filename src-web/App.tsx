@@ -145,8 +145,11 @@ export function App() {
               collapsedSize="0px"
               onResize={() => {
                 const collapsed = leftPanelRef.current?.isCollapsed() ?? false;
+                const prev = useUiStore.getState().leftPanelCollapsed;
                 useUiStore.setState({ leftPanelCollapsed: collapsed });
-                persistPanelLayout({ leftCollapsed: collapsed });
+                if (collapsed !== prev) {
+                  persistPanelLayout({ leftCollapsed: collapsed });
+                }
               }}
             >
               <LeftToolbar />
@@ -165,8 +168,11 @@ export function App() {
               collapsedSize="28px"
               onResize={() => {
                 const collapsed = rightPanelRef.current?.isCollapsed() ?? false;
+                const prev = useUiStore.getState().rightPanelCollapsed;
                 useUiStore.setState({ rightPanelCollapsed: collapsed });
-                persistPanelLayout({ rightCollapsed: collapsed });
+                if (collapsed !== prev) {
+                  persistPanelLayout({ rightCollapsed: collapsed });
+                }
               }}
             >
               <RightPanel />

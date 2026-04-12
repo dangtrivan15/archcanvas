@@ -54,9 +54,7 @@ export function useAppKeyboard() {
       // Cmd+B → toggle left toolbar (skip in contentEditable to preserve bold)
       if (mod && (e.key === 'b' || e.key === 'B') && !e.shiftKey) {
         const el = document.activeElement;
-        if (el instanceof HTMLElement && el.contentEditable === 'true') {
-          // Let browser handle Cmd+B for bold in contentEditable
-        } else {
+        if (!(el instanceof HTMLElement && el.contentEditable === 'true')) {
           e.preventDefault();
           useUiStore.getState().toggleLeftPanel();
           return;
