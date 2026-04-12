@@ -19,7 +19,7 @@ import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
-import { useUiStore } from '@/store/uiStore';
+import { useUiStore, SIDEBAR_WIDTH_PRESETS } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
@@ -97,6 +97,10 @@ export function App() {
     };
   }, []);
 
+  // Sidebar width preset — read from store for dynamic panel sizing
+  const sidebarWidthPreset = useUiStore((s) => s.sidebarWidthPreset);
+  const sidebarPresetConfig = SIDEBAR_WIDTH_PRESETS[sidebarWidthPreset];
+
   // If no filesystem is bound, show the project gate
   if (!fs) {
     return <ProjectGate />;
@@ -136,8 +140,8 @@ export function App() {
             <ResizableHandle />
             <ResizablePanel
               panelRef={rightPanelRef}
-              defaultSize="22%"
-              minSize="180px"
+              defaultSize={sidebarPresetConfig.defaultSize}
+              minSize={sidebarPresetConfig.minSize}
               maxSize="40%"
               collapsible
               collapsedSize="28px"

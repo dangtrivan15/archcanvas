@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sun, Moon, Monitor, Check } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useUiStore } from '@/store/uiStore';
+import type { SidebarWidthPreset } from '@/store/uiStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useThemeToggler } from '@/components/ui/theme-toggler';
 import { palettes } from '@/core/theme/palettes';
@@ -23,6 +24,12 @@ const DENSITY_OPTIONS = [
   { value: 'compact' as const, label: 'Compact' },
   { value: 'comfortable' as const, label: 'Comfortable' },
   { value: 'expanded' as const, label: 'Expanded' },
+];
+
+const SIDEBAR_WIDTH_OPTIONS: { value: SidebarWidthPreset; label: string }[] = [
+  { value: 'narrow', label: 'Narrow' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'wide', label: 'Wide' },
 ];
 
 /** Show 4 representative swatches from a palette */
@@ -54,6 +61,9 @@ export function AppearanceDialog() {
   const currentTextSize = useThemeStore((s) => s.textSize);
   const currentDensity = useThemeStore((s) => s.statusBarDensity);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
+
+  const currentSidebarWidth = useUiStore((s) => s.sidebarWidthPreset);
+  const setSidebarWidth = useUiStore((s) => s.setSidebarWidthPreset);
 
   const setPalette = useThemeStore((s) => s.setPalette);
   const setTextSize = useThemeStore((s) => s.setTextSize);
@@ -179,6 +189,34 @@ export function AppearanceDialog() {
                 {currentDensity === value && (
                   <motion.div
                     layoutId={prefersReduced ? undefined : 'density-indicator'}
+                    className="absolute inset-0 rounded-md bg-accent/30"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar Width */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-card-foreground">Sidebar Width</p>
+          <div className="flex gap-2">
+            {SIDEBAR_WIDTH_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                data-sidebar-width={value}
+                onClick={() => setSidebarWidth(value)}
+                className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                  currentSidebarWidth === value
+                    ? 'border-primary text-card-foreground'
+                    : 'border-border text-muted-foreground hover:bg-accent/50'
+                }`}
+              >
+                {currentSidebarWidth === value && (
+                  <motion.div
+                    layoutId={prefersReduced ? undefined : 'sidebar-width-indicator'}
                     className="absolute inset-0 rounded-md bg-accent/30"
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />

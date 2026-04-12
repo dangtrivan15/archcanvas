@@ -2,6 +2,37 @@ import { create } from 'zustand';
 import type { RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 
+export type SidebarWidthPreset = 'narrow' | 'standard' | 'wide';
+
+export const SIDEBAR_WIDTH_PRESETS: Record<SidebarWidthPreset, { defaultSize: string; minSize: string }> = {
+  narrow:   { defaultSize: '18%', minSize: '160px' },
+  standard: { defaultSize: '26%', minSize: '220px' },
+  wide:     { defaultSize: '35%', minSize: '300px' },
+};
+
+const SIDEBAR_WIDTH_STORAGE_KEY = 'archcanvas:sidebar-width';
+const SIDEBAR_WIDTH_OPTIONS: SidebarWidthPreset[] = ['narrow', 'standard', 'wide'];
+
+function loadSidebarWidthPreset(): SidebarWidthPreset {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
+    if (raw && SIDEBAR_WIDTH_OPTIONS.includes(raw as SidebarWidthPreset)) {
+      return raw as SidebarWidthPreset;
+    }
+  } catch {
+    // localStorage unavailable — ignore
+  }
+  return 'standard';
+}
+
+function persistSidebarWidthPreset(preset: SidebarWidthPreset): void {
+  try {
+    localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, preset);
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
 interface UiState {
   rightPanelMode: 'details' | 'chat' | 'entities';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
@@ -12,6 +43,9 @@ interface UiState {
   toggleRightPanel: () => void;
   openRightPanel: () => void;
   toggleChat: () => void;
+  sidebarWidthPreset: SidebarWidthPreset;
+  setSidebarWidthPreset: (preset: SidebarWidthPreset) => void;
+  cycleSidebarWidth: (direction?: 'forward' | 'backward') => void;
   detailPanelTab: 'properties' | 'notes' | 'codeRefs' | null;
   setDetailPanelTab: (tab: 'properties' | 'notes' | 'codeRefs' | null) => void;
   showAppearanceDialog: boolean;
@@ -61,6 +95,31 @@ export const useUiStore = create<UiState>((set, get) => ({
   openRightPanel: () => {
     rightPanelRef?.current?.expand();
     set({ rightPanelCollapsed: false });
+  },
+
+  sidebarWidthPreset: loadSidebarWidthPreset(),
+
+  setSidebarWidthPreset: (preset) => {
+    set({ sidebarWidthPreset: preset });
+    persistSidebarWidthPreset(preset);
+    // Imperatively resize the right panel to the new preset size
+    const handle = rightPanelRef?.current;
+    if (handle) {
+      if (handle.isCollapsed()) {
+        handle.expand();
+        set({ rightPanelCollapsed: false });
+      }
+      handle.resize(SIDEBAR_WIDTH_PRESETS[preset].defaultSize);
+    }
+  },
+
+  cycleSidebarWidth: (direction = 'forward') => {
+    const current = get().sidebarWidthPreset;
+    const idx = SIDEBAR_WIDTH_OPTIONS.indexOf(current);
+    const next = direction === 'forward'
+      ? SIDEBAR_WIDTH_OPTIONS[(idx + 1) % SIDEBAR_WIDTH_OPTIONS.length]
+      : SIDEBAR_WIDTH_OPTIONS[(idx - 1 + SIDEBAR_WIDTH_OPTIONS.length) % SIDEBAR_WIDTH_OPTIONS.length];
+    get().setSidebarWidthPreset(next);
   },
 
   detailPanelTab: null,
