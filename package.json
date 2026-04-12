@@ -10,7 +10,7 @@
     "build:sidecar": "bun build --compile src-web/bridge/index.ts --outfile src-tauri/binaries/archcanvas-bridge-aarch64-apple-darwin",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest run && npm run test:e2e",
+    "test": "npm install && vitest run && npm run test:e2e && npm run test:visual",
     "test:unit": "vitest run --project unit",
     "test:e2e": "npm run build && npm run test:e2e-no-bridge && npm run test:e2e-bridge",
     "test:e2e-no-bridge": "playwright test --config playwright.config.no-bridge.ts",
