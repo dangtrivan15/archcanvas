@@ -57,3 +57,16 @@ export function subscribeToSystemMode(onChange: () => void): () => void {
   mql.addEventListener('change', onChange);
   return () => mql.removeEventListener('change', onChange);
 }
+
+/**
+ * Apply layout sizing to CSS custom properties.
+ * Reads toolbarButtonSize and nodeTextScale from the provided state,
+ * NOT from a profile definition -- so manual tweaks are always respected.
+ */
+export function applyLayoutSizing(state: { toolbarButtonSize: number; nodeTextScale: number }): void {
+  if (typeof document === 'undefined') return;
+
+  const el = document.documentElement;
+  el.style.setProperty('--toolbar-button-size', `${state.toolbarButtonSize}px`);
+  el.style.setProperty('--node-text-scale', String(state.nodeTextScale));
+}

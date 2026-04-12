@@ -7,6 +7,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useThemeToggler } from '@/components/ui/theme-toggler';
 import { palettes } from '@/core/theme/palettes';
 import type { ThemePalette } from '@/core/theme/types';
+import { LAYOUT_PROFILES, LAYOUT_PROFILE_IDS, settingsMatchProfile } from '@/core/theme/layoutProfiles';
 
 const MODE_OPTIONS = [
   { value: 'light' as const, icon: Sun, label: 'Light' },
@@ -59,6 +60,10 @@ export function AppearanceDialog() {
   const currentSidebarWidth = useUiStore((s) => s.sidebarWidthPreset);
   const setSidebarWidth = useUiStore((s) => s.setSidebarWidthPreset);
 
+  const applyProfile = useThemeStore((s) => s.applyLayoutProfile);
+  const currentToolbarSize = useThemeStore((s) => s.toolbarButtonSize);
+  const currentNodeTextScale = useThemeStore((s) => s.nodeTextScale);
+
   const setPalette = useThemeStore((s) => s.setPalette);
   const setUiScale = useThemeStore((s) => s.setUiScale);
   const setDensity = useThemeStore((s) => s.setStatusBarDensity);
@@ -72,6 +77,52 @@ export function AppearanceDialog() {
         <DialogHeader>
           <DialogTitle>Appearance</DialogTitle>
         </DialogHeader>
+
+        {/* Layout Profile */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-card-foreground">Layout Profile</p>
+          <div className="grid grid-cols-3 gap-2">
+            {LAYOUT_PROFILE_IDS.map((profileId) => {
+              const profile = LAYOUT_PROFILES[profileId];
+              const isActive = settingsMatchProfile(profile, {
+                uiScale: currentUiScale,
+                statusBarDensity: currentDensity,
+                sidebarWidthPreset: currentSidebarWidth,
+                toolbarButtonSize: currentToolbarSize,
+                nodeTextScale: currentNodeTextScale,
+              });
+              return (
+                <button
+                  key={profileId}
+                  data-profile={profileId}
+                  onClick={() => applyProfile(profileId)}
+                  className={`relative rounded-lg border p-3 text-left text-xs transition-colors hover:bg-accent/50 ${
+                    isActive
+                      ? 'border-primary bg-accent/30'
+                      : 'border-border'
+                  }`}
+                >
+                  <AnimatePresence>
+                    {isActive && (
+                      <motion.div
+                        key="check"
+                        initial={prefersReduced ? false : { scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={prefersReduced ? undefined : { scale: 0 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className="absolute top-2 right-2"
+                      >
+                        <Check className="size-3.5 text-primary" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <span className="font-medium text-card-foreground">{profile.name}</span>
+                  <p className="text-muted-foreground mt-0.5">{profile.description}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Color Palette */}
         <div className="space-y-2">

@@ -222,7 +222,8 @@ export function LeftToolbar() {
                   <button
                     aria-label={shortcut ? `${label} (${shortcut})` : label}
                     data-active={isActive ? "true" : undefined}
-                    className="relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    className="relative flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                    style={{ width: 'var(--toolbar-button-size, 36px)', height: 'var(--toolbar-button-size, 36px)' }}
                     onClick={onClick}
                     onMouseEnter={onMouseEnter}
                     onMouseLeave={onMouseLeave}

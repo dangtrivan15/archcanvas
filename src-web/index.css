@@ -66,6 +66,10 @@
   --node-min-width-md: 140px;
   --node-min-width-lg: 180px;
 
+  /* Layout profile sizing */
+  --toolbar-button-size: 36px;
+  --node-text-scale: 1;
+
   /* Animation keyframes for Animate UI components */
   --animate-accordion-down: accordion-down 200ms ease-out;
   --animate-accordion-up: accordion-up 200ms ease-out;
