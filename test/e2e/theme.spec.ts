@@ -124,7 +124,7 @@ test.describe('Theme System', () => {
     await page.click('[data-density="expanded"]');
     await page.keyboard.press('Escape');
 
-    // Reload
+    // Reload and re-initialize the app (gotoApp sets up in-memory project to bypass ProjectGate)
     await page.reload();
     await page.waitForTimeout(200);
 
@@ -133,6 +133,9 @@ test.describe('Theme System', () => {
       JSON.parse(localStorage.getItem('archcanvas:theme') || '{}')
     );
     expect(stored.statusBarDensity).toBe('expanded');
+
+    // Re-initialize the app so the status bar is visible
+    await gotoApp(page);
 
     // Verify status bar shows expanded classes
     const bar = page.locator('[data-testid="status-bar"]');
