@@ -86,4 +86,57 @@ test.describe('Theme System', () => {
     );
     expect(stored.palette).toBe('rose-pine');
   });
+
+  test('status bar density defaults to comfortable', async ({ page }) => {
+    const bar = page.locator('[data-testid="status-bar"]');
+    await expect(bar).toBeVisible();
+    const classes = await bar.getAttribute('class');
+    expect(classes).toContain('h-6');
+  });
+
+  test('density selector changes status bar height', async ({ page }) => {
+    // Open Appearance dialog
+    await page.click('text=View');
+    await page.click('text=Appearance');
+
+    // Switch to compact density
+    await page.click('[data-density="compact"]');
+    await page.keyboard.press('Escape');
+
+    const bar = page.locator('[data-testid="status-bar"]');
+    const compactClasses = await bar.getAttribute('class');
+    expect(compactClasses).toContain('h-5');
+
+    // Switch to expanded density
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    await page.click('[data-density="expanded"]');
+    await page.keyboard.press('Escape');
+
+    const expandedClasses = await bar.getAttribute('class');
+    expect(expandedClasses).toContain('h-8');
+  });
+
+  test('density preference persists across reload', async ({ page }) => {
+    // Open dialog and switch to expanded
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    await page.click('[data-density="expanded"]');
+    await page.keyboard.press('Escape');
+
+    // Reload
+    await page.reload();
+    await page.waitForTimeout(200);
+
+    // Verify persisted in localStorage
+    const stored = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('archcanvas:theme') || '{}')
+    );
+    expect(stored.statusBarDensity).toBe('expanded');
+
+    // Verify status bar shows expanded classes
+    const bar = page.locator('[data-testid="status-bar"]');
+    const classes = await bar.getAttribute('class');
+    expect(classes).toContain('h-8');
+  });
 });

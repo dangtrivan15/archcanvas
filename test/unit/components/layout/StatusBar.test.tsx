@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { useUpdaterStore } from '@/store/updaterStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useThemeStore } from '@/store/themeStore';
 
 // Mock motion/react — required for happy-dom test environment
 vi.mock('motion/react', () => ({
@@ -22,6 +23,14 @@ vi.mock('@/components/ui/sliding-number', () => ({
 vi.mock('@/core/updater', () => ({
   downloadAndInstall: vi.fn(),
   relaunch: vi.fn(),
+}));
+
+vi.mock('@/store/themeStore', () => ({
+  useThemeStore: vi.fn((selector) =>
+    selector({
+      statusBarDensity: 'comfortable',
+    }),
+  ),
 }));
 
 // Mock stores that StatusBar depends on
@@ -129,5 +138,61 @@ describe('StatusBar update indicator', () => {
     render(<StatusBar />);
     fireEvent.click(screen.getByTestId('update-indicator'));
     expect(relaunch).toHaveBeenCalled();
+  });
+});
+
+describe('StatusBar density', () => {
+  const mockedUseThemeStore = vi.mocked(useThemeStore);
+
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({
+      selectedNodeIds: new Set(),
+      selectedEdgeKeys: new Set(),
+    });
+    mockedUseThemeStore.mockImplementation((selector) =>
+      selector({
+        statusBarDensity: 'comfortable',
+      } as ReturnType<typeof useThemeStore.getState>),
+    );
+  });
+
+  it('renders with data-testid status-bar', () => {
+    render(<StatusBar />);
+    expect(screen.getByTestId('status-bar')).toBeTruthy();
+  });
+
+  it('applies compact density classes', () => {
+    mockedUseThemeStore.mockImplementation((selector) =>
+      selector({
+        statusBarDensity: 'compact',
+      } as ReturnType<typeof useThemeStore.getState>),
+    );
+    render(<StatusBar />);
+    const bar = screen.getByTestId('status-bar');
+    expect(bar.className).toContain('h-5');
+    expect(bar.className).toContain('text-[10px]');
+    expect(bar.className).toContain('px-2');
+  });
+
+  it('applies comfortable density classes (default)', () => {
+    render(<StatusBar />);
+    const bar = screen.getByTestId('status-bar');
+    expect(bar.className).toContain('h-6');
+    expect(bar.className).toContain('text-xs');
+    expect(bar.className).toContain('px-3');
+  });
+
+  it('applies expanded density classes', () => {
+    mockedUseThemeStore.mockImplementation((selector) =>
+      selector({
+        statusBarDensity: 'expanded',
+      } as ReturnType<typeof useThemeStore.getState>),
+    );
+    render(<StatusBar />);
+    const bar = screen.getByTestId('status-bar');
+    expect(bar.className).toContain('h-8');
+    expect(bar.className).toContain('text-[13px]');
+    expect(bar.className).toContain('px-3.5');
   });
 });

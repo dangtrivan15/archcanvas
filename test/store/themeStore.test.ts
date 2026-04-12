@@ -49,6 +49,7 @@ describe('themeStore', () => {
     expect(state.palette).toBe('rose-pine');
     expect(state.mode).toBe('light');
     expect(state.textSize).toBe('medium');
+    expect(state.statusBarDensity).toBe('comfortable');
   });
 
   it('setPalette updates state and persists', () => {
@@ -72,9 +73,23 @@ describe('themeStore', () => {
     expect(stored.textSize).toBe('large');
   });
 
+  it('setStatusBarDensity updates state and persists', () => {
+    useThemeStore.getState().setStatusBarDensity('compact');
+    expect(useThemeStore.getState().statusBarDensity).toBe('compact');
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.statusBarDensity).toBe('compact');
+  });
+
+  it('setStatusBarDensity does not call applyTheme', () => {
+    // Density is component-level; changing it should not alter document styles
+    const fontSizeBefore = document.documentElement.style.fontSize;
+    useThemeStore.getState().setStatusBarDensity('expanded');
+    expect(document.documentElement.style.fontSize).toBe(fontSizeBefore);
+  });
+
   it('restores from localStorage on creation', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      palette: 'catppuccin', mode: 'light', textSize: 'small',
+      palette: 'catppuccin', mode: 'light', textSize: 'small', statusBarDensity: 'expanded',
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');
@@ -82,6 +97,27 @@ describe('themeStore', () => {
     expect(state.palette).toBe('catppuccin');
     expect(state.mode).toBe('light');
     expect(state.textSize).toBe('small');
+    expect(state.statusBarDensity).toBe('expanded');
+  });
+
+  it('falls back to comfortable density when localStorage has no statusBarDensity (migration)', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'catppuccin', mode: 'dark', textSize: 'large',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.statusBarDensity).toBe('comfortable');
+  });
+
+  it('falls back to comfortable density when stored density is invalid', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'medium', statusBarDensity: 'nonexistent',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.statusBarDensity).toBe('comfortable');
   });
 
   it('falls back to defaults on corrupt localStorage', async () => {
