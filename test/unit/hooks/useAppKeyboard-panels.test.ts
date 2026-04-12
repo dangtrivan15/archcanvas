@@ -121,6 +121,18 @@ describe('useAppKeyboard — panel shortcuts', () => {
     useUiStore.setState({ resizeRightPanelByPercent: original });
   });
 
+  it('Ctrl+Shift++ (plus key) calls resizeRightPanelByPercent(5)', () => {
+    renderKeyboard();
+    const spy = vi.fn();
+    const original = useUiStore.getState().resizeRightPanelByPercent;
+    useUiStore.setState({ resizeRightPanelByPercent: spy });
+
+    press('+', { ctrlKey: true, shiftKey: true });
+    expect(spy).toHaveBeenCalledWith(5);
+
+    useUiStore.setState({ resizeRightPanelByPercent: original });
+  });
+
   it('Ctrl+Shift+- calls resizeRightPanelByPercent(-5)', () => {
     renderKeyboard();
     const spy = vi.fn();

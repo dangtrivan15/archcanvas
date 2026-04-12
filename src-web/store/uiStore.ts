@@ -66,7 +66,7 @@ function loadPanelLayout(): PanelLayoutState {
   return { ...PANEL_LAYOUT_DEFAULTS };
 }
 
-function persistPanelLayout(state: Partial<PanelLayoutState>): void {
+export function persistPanelLayout(state: Partial<PanelLayoutState>): void {
   try {
     const existing = loadPanelLayout();
     localStorage.setItem(PANEL_LAYOUT_STORAGE_KEY, JSON.stringify({ ...existing, ...state }));

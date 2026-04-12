@@ -19,7 +19,7 @@ import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
-import { useUiStore, SIDEBAR_WIDTH_PRESETS } from '@/store/uiStore';
+import { useUiStore, SIDEBAR_WIDTH_PRESETS, persistPanelLayout } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
@@ -144,9 +144,9 @@ export function App() {
               collapsible
               collapsedSize="0px"
               onResize={() => {
-                useUiStore.setState({
-                  leftPanelCollapsed: leftPanelRef.current?.isCollapsed() ?? false,
-                });
+                const collapsed = leftPanelRef.current?.isCollapsed() ?? false;
+                useUiStore.setState({ leftPanelCollapsed: collapsed });
+                persistPanelLayout({ leftCollapsed: collapsed });
               }}
             >
               <LeftToolbar />
@@ -164,9 +164,9 @@ export function App() {
               collapsible
               collapsedSize="28px"
               onResize={() => {
-                useUiStore.setState({
-                  rightPanelCollapsed: rightPanelRef.current?.isCollapsed() ?? false,
-                });
+                const collapsed = rightPanelRef.current?.isCollapsed() ?? false;
+                useUiStore.setState({ rightPanelCollapsed: collapsed });
+                persistPanelLayout({ rightCollapsed: collapsed });
               }}
             >
               <RightPanel />
