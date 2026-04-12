@@ -6,9 +6,13 @@ type Mode = 'light' | 'dark' | 'system';
  * Convert a uiScale percentage (80–150) to a root font-size string.
  * Formula: (scale / 100) × 16px (browser default).
  * 100 → 16px, 80 → 12.8px, 150 → 24px.
+ *
+ * Defensively clamps to [80, 150] even though the store also clamps,
+ * so callers don't need to worry about out-of-range values.
  */
 export function uiScaleToFontSize(scale: number): string {
-  return `${(scale / 100) * 16}px`;
+  const clamped = Math.min(150, Math.max(80, scale));
+  return `${(clamped / 100) * 16}px`;
 }
 
 /**

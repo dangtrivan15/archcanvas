@@ -53,6 +53,12 @@ describe('uiScaleToFontSize', () => {
   it('converts 120% to 19.2px', () => {
     expect(uiScaleToFontSize(120)).toBe('19.2px');
   });
+  it('clamps below-minimum input to 80% (12.8px)', () => {
+    expect(uiScaleToFontSize(50)).toBe('12.8px');
+  });
+  it('clamps above-maximum input to 150% (24px)', () => {
+    expect(uiScaleToFontSize(200)).toBe('24px');
+  });
 });
 
 describe('applyTheme', () => {

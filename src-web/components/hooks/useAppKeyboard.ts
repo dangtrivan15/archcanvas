@@ -37,9 +37,10 @@ export function useAppKeyboard() {
         return;
       }
 
-      // UI Scale shortcuts (work globally, like browser zoom)
-      // Cmd+= / Cmd+Shift+= → increase scale by 10%
-      if (mod && (e.key === '=' || e.key === '+') && !e.shiftKey) {
+      // UI Scale shortcuts — work globally (including in text fields),
+      // intentionally intercepting browser zoom so the app controls scaling.
+      // Cmd+= or Cmd++ (Shift+=) → increase scale by 10%
+      if (mod && (e.key === '=' || e.key === '+')) {
         e.preventDefault();
         const { uiScale, setUiScale } = useThemeStore.getState();
         setUiScale(uiScale + 10);
