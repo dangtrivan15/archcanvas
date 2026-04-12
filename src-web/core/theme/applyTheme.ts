@@ -1,13 +1,15 @@
 import type { ThemePalette } from './types';
 
 type Mode = 'light' | 'dark' | 'system';
-type TextSize = 'small' | 'medium' | 'large';
 
-const TEXT_SIZE_MAP: Record<TextSize, string> = {
-  small: '13px',
-  medium: '15px',
-  large: '17px',
-};
+/**
+ * Convert a uiScale percentage (80–150) to a root font-size string.
+ * Formula: (scale / 100) × 16px (browser default).
+ * 100 → 16px, 80 → 12.8px, 150 → 24px.
+ */
+export function uiScaleToFontSize(scale: number): string {
+  return `${(scale / 100) * 16}px`;
+}
 
 /**
  * Convert camelCase token name to kebab-case CSS custom property suffix.
@@ -27,9 +29,9 @@ export function resolveMode(mode: Mode): 'light' | 'dark' {
 }
 
 /**
- * Apply palette tokens and text size to document.documentElement.
+ * Apply palette tokens and UI scale to document.documentElement.
  */
-export function applyTheme(palette: ThemePalette, resolvedMode: 'light' | 'dark', textSize: TextSize): void {
+export function applyTheme(palette: ThemePalette, resolvedMode: 'light' | 'dark', uiScale: number): void {
   if (typeof document === 'undefined') return;
 
   const tokens = resolvedMode === 'dark' ? palette.dark : palette.light;
@@ -39,7 +41,7 @@ export function applyTheme(palette: ThemePalette, resolvedMode: 'light' | 'dark'
     el.style.setProperty(`--color-${camelToKebab(key)}`, value);
   }
 
-  el.style.fontSize = TEXT_SIZE_MAP[textSize];
+  el.style.fontSize = uiScaleToFontSize(uiScale);
 }
 
 /**

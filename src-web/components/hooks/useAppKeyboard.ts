@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
+import { useThemeStore } from '@/store/themeStore';
 import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 
 /**
@@ -33,6 +34,28 @@ export function useAppKeyboard() {
       if (mod && (e.key === 'd' || e.key === 'D') && e.shiftKey) {
         e.preventDefault();
         toggleDiffOverlay();
+        return;
+      }
+
+      // UI Scale shortcuts (work globally, like browser zoom)
+      // Cmd+= / Cmd+Shift+= → increase scale by 10%
+      if (mod && (e.key === '=' || e.key === '+') && !e.shiftKey) {
+        e.preventDefault();
+        const { uiScale, setUiScale } = useThemeStore.getState();
+        setUiScale(uiScale + 10);
+        return;
+      }
+      // Cmd+- → decrease scale by 10%
+      if (mod && e.key === '-' && !e.shiftKey) {
+        e.preventDefault();
+        const { uiScale, setUiScale } = useThemeStore.getState();
+        setUiScale(uiScale - 10);
+        return;
+      }
+      // Cmd+0 → reset scale to 100%
+      if (mod && e.key === '0' && !e.shiftKey) {
+        e.preventDefault();
+        useThemeStore.getState().setUiScale(100);
         return;
       }
 

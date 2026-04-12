@@ -3,33 +3,47 @@ import { findPalette } from '@/core/theme/palettes';
 import { applyTheme, resolveMode, subscribeToSystemMode } from '@/core/theme/applyTheme';
 
 type Mode = 'light' | 'dark' | 'system';
-type TextSize = 'small' | 'medium' | 'large';
 export type StatusBarDensity = 'compact' | 'comfortable' | 'expanded';
 
 const STORAGE_KEY = 'archcanvas:theme';
 
+/** Clamp uiScale to valid range [80, 150]. */
+function clampScale(value: number): number {
+  return Math.min(150, Math.max(80, value));
+}
+
 interface ThemeState {
   palette: string;
   mode: Mode;
-  textSize: TextSize;
+  uiScale: number;
   statusBarDensity: StatusBarDensity;
   setPalette: (palette: string) => void;
   setMode: (mode: Mode) => void;
-  setTextSize: (textSize: TextSize) => void;
+  setUiScale: (uiScale: number) => void;
   setStatusBarDensity: (density: StatusBarDensity) => void;
   getResolvedMode: () => 'light' | 'dark';
 }
 
-function loadPersistedState(): { palette: string; mode: Mode; textSize: TextSize; statusBarDensity: StatusBarDensity } {
-  const defaults = { palette: 'rose-pine' as string, mode: 'light' as Mode, textSize: 'medium' as TextSize, statusBarDensity: 'comfortable' as StatusBarDensity };
+function loadPersistedState(): { palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity } {
+  const defaults = { palette: 'rose-pine' as string, mode: 'light' as Mode, uiScale: 100, statusBarDensity: 'comfortable' as StatusBarDensity };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults;
     const parsed = JSON.parse(raw);
+
+    // Legacy migration: textSize → uiScale
+    let uiScale = defaults.uiScale;
+    if (typeof parsed.uiScale === 'number') {
+      uiScale = clampScale(parsed.uiScale);
+    } else if (typeof parsed.textSize === 'string') {
+      // All legacy textSize values migrate to 100 (new default)
+      uiScale = 100;
+    }
+
     return {
       palette: typeof parsed.palette === 'string' ? parsed.palette : defaults.palette,
       mode: ['light', 'dark', 'system'].includes(parsed.mode) ? parsed.mode : defaults.mode,
-      textSize: ['small', 'medium', 'large'].includes(parsed.textSize) ? parsed.textSize : defaults.textSize,
+      uiScale,
       statusBarDensity: ['compact', 'comfortable', 'expanded'].includes(parsed.statusBarDensity) ? parsed.statusBarDensity : defaults.statusBarDensity,
     };
   } catch {
@@ -37,12 +51,12 @@ function loadPersistedState(): { palette: string; mode: Mode; textSize: TextSize
   }
 }
 
-function persistTheme(state: { palette: string; mode: Mode; textSize: TextSize; statusBarDensity: StatusBarDensity }) {
+function persistTheme(state: { palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity }) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       palette: state.palette,
       mode: state.mode,
-      textSize: state.textSize,
+      uiScale: state.uiScale,
       statusBarDensity: state.statusBarDensity,
     }));
   } catch {
@@ -50,10 +64,10 @@ function persistTheme(state: { palette: string; mode: Mode; textSize: TextSize; 
   }
 }
 
-function applyThemeFromStore(state: { palette: string; mode: Mode; textSize: TextSize }) {
+function applyThemeFromStore(state: { palette: string; mode: Mode; uiScale: number }) {
   const palette = findPalette(state.palette);
   const resolved = resolveMode(state.mode);
-  applyTheme(palette, resolved, state.textSize);
+  applyTheme(palette, resolved, state.uiScale);
 }
 
 const initial = loadPersistedState();
@@ -75,8 +89,8 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     applyThemeFromStore(s);
   },
 
-  setTextSize: (textSize) => {
-    set({ textSize });
+  setUiScale: (uiScale) => {
+    set({ uiScale: clampScale(uiScale) });
     const s = get();
     persistTheme(s);
     applyThemeFromStore(s);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { applyTheme, camelToKebab, resolveMode, subscribeToSystemMode } from '@/core/theme/applyTheme';
+import { applyTheme, camelToKebab, resolveMode, subscribeToSystemMode, uiScaleToFontSize } from '@/core/theme/applyTheme';
 import { archcanvas } from '@/core/theme/palettes/archcanvas';
 
 // jsdom doesn't provide matchMedia — stub it for all tests
@@ -40,34 +40,49 @@ describe('resolveMode', () => {
   });
 });
 
+describe('uiScaleToFontSize', () => {
+  it('converts 100% to 16px', () => {
+    expect(uiScaleToFontSize(100)).toBe('16px');
+  });
+  it('converts 80% to 12.8px', () => {
+    expect(uiScaleToFontSize(80)).toBe('12.8px');
+  });
+  it('converts 150% to 24px', () => {
+    expect(uiScaleToFontSize(150)).toBe('24px');
+  });
+  it('converts 120% to 19.2px', () => {
+    expect(uiScaleToFontSize(120)).toBe('19.2px');
+  });
+});
+
 describe('applyTheme', () => {
   beforeEach(() => {
     document.documentElement.style.cssText = '';
   });
 
   it('sets --color-background on html', () => {
-    applyTheme(archcanvas, 'dark', 'medium');
+    applyTheme(archcanvas, 'dark', 100);
     expect(document.documentElement.style.getPropertyValue('--color-background')).toBe(archcanvas.dark.background);
   });
 
   it('sets --color-node-bg on html', () => {
-    applyTheme(archcanvas, 'light', 'medium');
+    applyTheme(archcanvas, 'light', 100);
     expect(document.documentElement.style.getPropertyValue('--color-node-bg')).toBe(archcanvas.light.nodeBg);
   });
 
-  it('sets font-size for small', () => {
-    applyTheme(archcanvas, 'dark', 'small');
-    expect(document.documentElement.style.fontSize).toBe('13px');
+  it('sets font-size for scale 80', () => {
+    applyTheme(archcanvas, 'dark', 80);
+    expect(document.documentElement.style.fontSize).toBe('12.8px');
   });
 
-  it('sets font-size for medium', () => {
-    applyTheme(archcanvas, 'dark', 'medium');
-    expect(document.documentElement.style.fontSize).toBe('15px');
+  it('sets font-size for scale 100 (default)', () => {
+    applyTheme(archcanvas, 'dark', 100);
+    expect(document.documentElement.style.fontSize).toBe('16px');
   });
 
-  it('sets font-size for large', () => {
-    applyTheme(archcanvas, 'dark', 'large');
-    expect(document.documentElement.style.fontSize).toBe('17px');
+  it('sets font-size for scale 150', () => {
+    applyTheme(archcanvas, 'dark', 150);
+    expect(document.documentElement.style.fontSize).toBe('24px');
   });
 });
 

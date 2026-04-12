@@ -13,7 +13,7 @@ test.describe('Theme System', () => {
     const fontSize = await page.evaluate(() =>
       document.documentElement.style.fontSize
     );
-    expect(fontSize).toBe('15px'); // medium default
+    expect(fontSize).toBe('16px'); // uiScale 100 → 16px
   });
 
   test('Appearance dialog opens from View menu', async ({ page }) => {
@@ -50,23 +50,26 @@ test.describe('Theme System', () => {
     await page.locator('button[aria-label*="mode"], button[aria-label*="System"]').first().click();
   });
 
-  test('text size change updates html font-size', async ({ page }) => {
+  test('UI scale slider changes html font-size', async ({ page }) => {
     await page.click('text=View');
     await page.click('text=Appearance');
 
-    // Click Small text size
-    await page.click('[data-text-size="small"]');
+    const slider = page.locator('[data-testid="ui-scale-slider"]');
+    await expect(slider).toBeVisible();
+
+    // Set slider to 80%
+    await slider.fill('80');
     const smallSize = await page.evaluate(() =>
       document.documentElement.style.fontSize
     );
-    expect(smallSize).toBe('13px');
+    expect(smallSize).toBe('12.8px');
 
-    // Click Large text size
-    await page.click('[data-text-size="large"]');
+    // Set slider to 150%
+    await slider.fill('150');
     const largeSize = await page.evaluate(() =>
       document.documentElement.style.fontSize
     );
-    expect(largeSize).toBe('17px');
+    expect(largeSize).toBe('24px');
   });
 
   test('preferences persist across reload', async ({ page }) => {
@@ -85,6 +88,25 @@ test.describe('Theme System', () => {
       JSON.parse(localStorage.getItem('archcanvas:theme') || '{}')
     );
     expect(stored.palette).toBe('rose-pine');
+  });
+
+  test('uiScale preference persists across reload', async ({ page }) => {
+    // Open dialog and change scale
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    const slider = page.locator('[data-testid="ui-scale-slider"]');
+    await slider.fill('120');
+
+    // Close dialog and reload
+    await page.keyboard.press('Escape');
+    await page.reload();
+    await page.waitForTimeout(200);
+
+    // Verify persisted in localStorage
+    const stored = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('archcanvas:theme') || '{}')
+    );
+    expect(stored.uiScale).toBe(120);
   });
 
   test('status bar density defaults to comfortable', async ({ page }) => {
