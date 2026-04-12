@@ -51,6 +51,23 @@ export function useAppKeyboard() {
         return;
       }
 
+      // Cmd+Shift+1/2/3 → apply layout profile (works even from input/textarea)
+      if (mod && e.shiftKey && (e.key === '1' || e.key === '!')) {
+        e.preventDefault();
+        useThemeStore.getState().applyLayoutProfile('compact');
+        return;
+      }
+      if (mod && e.shiftKey && (e.key === '2' || e.key === '@')) {
+        e.preventDefault();
+        useThemeStore.getState().applyLayoutProfile('balanced');
+        return;
+      }
+      if (mod && e.shiftKey && (e.key === '3' || e.key === '#')) {
+        e.preventDefault();
+        useThemeStore.getState().applyLayoutProfile('spacious');
+        return;
+      }
+
       // UI Scale shortcuts — work globally (including in text fields).
       // In Tauri, we intercept Cmd+=/-/0 so the app controls scaling
       // instead of the webview. In a regular browser, we let native zoom
