@@ -19,6 +19,12 @@ const TEXT_SIZE_OPTIONS = [
   { value: 'large' as const, label: 'L' },
 ];
 
+const DENSITY_OPTIONS = [
+  { value: 'compact' as const, label: 'Compact' },
+  { value: 'comfortable' as const, label: 'Comfortable' },
+  { value: 'expanded' as const, label: 'Expanded' },
+];
+
 /** Show 4 representative swatches from a palette */
 function PaletteSwatches({ palette, resolvedMode }: { palette: ThemePalette; resolvedMode: 'light' | 'dark' }) {
   const prefersReduced = useReducedMotion();
@@ -46,10 +52,12 @@ export function AppearanceDialog() {
   const currentPalette = useThemeStore((s) => s.palette);
   const currentMode = useThemeStore((s) => s.mode);
   const currentTextSize = useThemeStore((s) => s.textSize);
+  const currentDensity = useThemeStore((s) => s.statusBarDensity);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
 
   const setPalette = useThemeStore((s) => s.setPalette);
   const setTextSize = useThemeStore((s) => s.setTextSize);
+  const setDensity = useThemeStore((s) => s.setStatusBarDensity);
 
   const prefersReduced = useReducedMotion();
   const { toggleTheme } = useThemeToggler('ltr');
@@ -143,6 +151,34 @@ export function AppearanceDialog() {
                 {currentTextSize === value && (
                   <motion.div
                     layoutId={prefersReduced ? undefined : 'textsize-indicator'}
+                    className="absolute inset-0 rounded-md bg-accent/30"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Status Bar Density */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-card-foreground">Status Bar Density</p>
+          <div className="flex gap-2">
+            {DENSITY_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                data-density={value}
+                onClick={() => setDensity(value)}
+                className={`relative flex flex-1 items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                  currentDensity === value
+                    ? 'border-primary text-card-foreground'
+                    : 'border-border text-muted-foreground hover:bg-accent/50'
+                }`}
+              >
+                {currentDensity === value && (
+                  <motion.div
+                    layoutId={prefersReduced ? undefined : 'density-indicator'}
                     className="absolute inset-0 rounded-md bg-accent/30"
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />

@@ -4,9 +4,22 @@ import { useNavigationStore } from "@/store/navigationStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
+import { useThemeStore, type StatusBarDensity } from "@/store/themeStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
 import { duration, ease } from "@/lib/motion";
+
+/** Per-density visual configuration for the status bar. */
+const DENSITY_CONFIG: Record<StatusBarDensity, {
+  height: string;
+  text: string;
+  px: string;
+  gap: string;
+}> = {
+  compact:     { height: 'h-5',  text: 'text-[10px]', px: 'px-2',   gap: 'gap-2' },
+  comfortable: { height: 'h-6',  text: 'text-xs',     px: 'px-3',   gap: 'gap-3' },
+  expanded:    { height: 'h-8',  text: 'text-[13px]', px: 'px-3.5', gap: 'gap-3.5' },
+};
 
 export function StatusBar() {
   const currentCanvasId = useNavigationStore((s) => s.currentCanvasId);
@@ -16,6 +29,8 @@ export function StatusBar() {
   const projectFilePath = useFileStore((s) => s.project?.root.filePath ?? null);
   const fileName = projectFilePath ? projectFilePath.split('/').pop() : null;
   const prefersReduced = useReducedMotion();
+  const density = useThemeStore((s) => s.statusBarDensity);
+  const dc = DENSITY_CONFIG[density];
 
   const selectedNodeCount = useCanvasStore((s) => s.selectedNodeIds.size);
   const selectedEdgeCount = useCanvasStore((s) => s.selectedEdgeKeys.size);
@@ -52,8 +67,11 @@ export function StatusBar() {
     updateStatus === 'ready-to-restart';
 
   return (
-    <div className="flex h-6 items-center justify-between border-t border-border bg-background px-3 text-xs text-muted-foreground">
-      <div className="flex items-center gap-3">
+    <div
+      data-testid="status-bar"
+      className={`flex items-center justify-between border-t border-border bg-background text-muted-foreground transition-[height] ${prefersReduced ? 'duration-0' : 'duration-200'} ${dc.height} ${dc.text} ${dc.px}`}
+    >
+      <div className={`flex items-center ${dc.gap}`}>
         <span>ArchCanvas v0.1.0</span>
         {fileName && (
           <span className="text-muted-foreground/60">{fileName}</span>
@@ -72,7 +90,7 @@ export function StatusBar() {
           )}
         </AnimatePresence>
       </div>
-      <div className="flex items-center gap-3">
+      <div className={`flex items-center ${dc.gap}`}>
         <AnimatePresence>
           {showUpdateIndicator && (
             <motion.button
