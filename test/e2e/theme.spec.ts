@@ -164,4 +164,87 @@ test.describe('Theme System', () => {
     const classes = await bar.getAttribute('class');
     expect(classes).toContain('h-8');
   });
+
+  // --- Layout Profile tests ---
+
+  test('layout profile applies all settings', async ({ page }) => {
+    // Open Appearance dialog
+    await page.click('text=View');
+    await page.click('text=Appearance');
+
+    // Click Compact profile
+    await page.click('[data-profile="compact"]');
+
+    // Verify CSS properties
+    const toolbarSize = await page.evaluate(() =>
+      document.documentElement.style.getPropertyValue('--toolbar-button-size')
+    );
+    expect(toolbarSize).toBe('36px');
+
+    const nodeScale = await page.evaluate(() =>
+      document.documentElement.style.getPropertyValue('--node-text-scale')
+    );
+    expect(nodeScale).toBe('0.833');
+
+    // Verify font size (85% -> 13.6px)
+    const fontSize = await page.evaluate(() =>
+      document.documentElement.style.fontSize
+    );
+    expect(fontSize).toBe('13.6px');
+  });
+
+  test('layout profile persists across reload', async ({ page }) => {
+    // Apply Spacious profile
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    await page.click('[data-profile="spacious"]');
+    await page.keyboard.press('Escape');
+
+    // Reload
+    await page.reload();
+    await page.waitForTimeout(200);
+
+    // Verify persisted values
+    const stored = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('archcanvas:theme') || '{}')
+    );
+    expect(stored.uiScale).toBe(120);
+    expect(stored.toolbarButtonSize).toBe(44);
+    expect(stored.nodeTextScale).toBe(1.167);
+  });
+
+  test('no snap-back: tweaking uiScale preserves toolbar size', async ({ page }) => {
+    // Apply Spacious profile (toolbar 44px)
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    await page.click('[data-profile="spacious"]');
+
+    // Change UI Scale to 110%
+    const slider = page.locator('[data-testid="ui-scale-slider"]');
+    await slider.fill('110');
+
+    // Verify toolbar stays at 44px (no snap-back to 36px)
+    const toolbarSize = await page.evaluate(() =>
+      document.documentElement.style.getPropertyValue('--toolbar-button-size')
+    );
+    expect(toolbarSize).toBe('44px');
+  });
+
+  test('profile indicator clears when individual setting changes', async ({ page }) => {
+    // Apply Balanced profile
+    await page.click('text=View');
+    await page.click('text=Appearance');
+    await page.click('[data-profile="balanced"]');
+
+    // Verify Balanced card has active styling
+    const balancedCard = page.locator('[data-profile="balanced"]');
+    await expect(balancedCard).toHaveClass(/border-primary/);
+
+    // Change UI Scale
+    const slider = page.locator('[data-testid="ui-scale-slider"]');
+    await slider.fill('110');
+
+    // Verify Balanced card no longer has active styling
+    await expect(balancedCard).not.toHaveClass(/border-primary/);
+  });
 });

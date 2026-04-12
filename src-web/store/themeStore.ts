@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { findPalette } from '@/core/theme/palettes';
-import { applyTheme, resolveMode, subscribeToSystemMode } from '@/core/theme/applyTheme';
+import { applyTheme, resolveMode, subscribeToSystemMode, applyLayoutSizing } from '@/core/theme/applyTheme';
+import { LAYOUT_PROFILES, type LayoutProfileId } from '@/core/theme/layoutProfiles';
+import { useUiStore } from '@/store/uiStore';
 
 type Mode = 'light' | 'dark' | 'system';
 export type StatusBarDensity = 'compact' | 'comfortable' | 'expanded';
@@ -17,15 +19,28 @@ interface ThemeState {
   mode: Mode;
   uiScale: number;
   statusBarDensity: StatusBarDensity;
+  toolbarButtonSize: number;
+  nodeTextScale: number;
   setPalette: (palette: string) => void;
   setMode: (mode: Mode) => void;
   setUiScale: (uiScale: number) => void;
   setStatusBarDensity: (density: StatusBarDensity) => void;
+  applyLayoutProfile: (profileId: LayoutProfileId) => void;
   getResolvedMode: () => 'light' | 'dark';
 }
 
-function loadPersistedState(): { palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity } {
-  const defaults = { palette: 'rose-pine' as string, mode: 'light' as Mode, uiScale: 100, statusBarDensity: 'comfortable' as StatusBarDensity };
+function loadPersistedState(): {
+  palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity;
+  toolbarButtonSize: number; nodeTextScale: number;
+} {
+  const defaults = {
+    palette: 'rose-pine' as string,
+    mode: 'light' as Mode,
+    uiScale: 100,
+    statusBarDensity: 'comfortable' as StatusBarDensity,
+    toolbarButtonSize: 36,
+    nodeTextScale: 1,
+  };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaults;
@@ -47,29 +62,44 @@ function loadPersistedState(): { palette: string; mode: Mode; uiScale: number; s
       mode: ['light', 'dark', 'system'].includes(parsed.mode) ? parsed.mode : defaults.mode,
       uiScale,
       statusBarDensity: ['compact', 'comfortable', 'expanded'].includes(parsed.statusBarDensity) ? parsed.statusBarDensity : defaults.statusBarDensity,
+      toolbarButtonSize: typeof parsed.toolbarButtonSize === 'number' && parsed.toolbarButtonSize > 0
+        ? parsed.toolbarButtonSize
+        : defaults.toolbarButtonSize,
+      nodeTextScale: typeof parsed.nodeTextScale === 'number' && parsed.nodeTextScale > 0
+        ? parsed.nodeTextScale
+        : defaults.nodeTextScale,
     };
   } catch {
     return defaults;
   }
 }
 
-function persistTheme(state: { palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity }) {
+function persistTheme(state: {
+  palette: string; mode: Mode; uiScale: number; statusBarDensity: StatusBarDensity;
+  toolbarButtonSize: number; nodeTextScale: number;
+}) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       palette: state.palette,
       mode: state.mode,
       uiScale: state.uiScale,
       statusBarDensity: state.statusBarDensity,
+      toolbarButtonSize: state.toolbarButtonSize,
+      nodeTextScale: state.nodeTextScale,
     }));
   } catch {
     // localStorage full or unavailable — ignore
   }
 }
 
-function applyThemeFromStore(state: { palette: string; mode: Mode; uiScale: number }) {
+function applyThemeFromStore(state: {
+  palette: string; mode: Mode; uiScale: number;
+  toolbarButtonSize: number; nodeTextScale: number;
+}) {
   const palette = findPalette(state.palette);
   const resolved = resolveMode(state.mode);
   applyTheme(palette, resolved, state.uiScale);
+  applyLayoutSizing(state);
 }
 
 const initial = loadPersistedState();
@@ -103,6 +133,21 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     const s = get();
     persistTheme(s);
     // No applyTheme call — density is component-level, not theme-level
+  },
+
+  applyLayoutProfile: (profileId) => {
+    const profile = LAYOUT_PROFILES[profileId];
+    set({
+      uiScale: profile.uiScale,
+      statusBarDensity: profile.statusBarDensity,
+      toolbarButtonSize: profile.toolbarButtonSize,
+      nodeTextScale: profile.nodeTextScale,
+    });
+    // Cross-store: update sidebar width
+    useUiStore.getState().setSidebarWidthPreset(profile.sidebarWidthPreset);
+    const s = get();
+    persistTheme(s);
+    applyThemeFromStore(s);
   },
 
   getResolvedMode: () => resolveMode(get().mode),
