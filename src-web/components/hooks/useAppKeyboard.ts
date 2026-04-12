@@ -44,10 +44,54 @@ export function useAppKeyboard() {
         return;
       }
 
+      // Cmd+Shift+B → toggle right panel
+      if (mod && (e.key === 'b' || e.key === 'B') && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().toggleRightPanel();
+        return;
+      }
+
+      // Cmd+B → toggle left toolbar (skip in contentEditable to preserve bold)
+      if (mod && (e.key === 'b' || e.key === 'B') && !e.shiftKey) {
+        const el = document.activeElement;
+        if (!(el instanceof HTMLElement && el.contentEditable === 'true')) {
+          e.preventDefault();
+          useUiStore.getState().toggleLeftPanel();
+          return;
+        }
+      }
+
+      // Cmd+J → toggle status bar
+      if (mod && (e.key === 'j' || e.key === 'J') && !e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().toggleStatusBar();
+        return;
+      }
+
+      // Cmd+Shift+F → toggle focus mode
+      if (mod && (e.key === 'f' || e.key === 'F') && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().toggleFocusMode();
+        return;
+      }
+
       // Cmd+Shift+D → toggle diff overlay
       if (mod && (e.key === 'd' || e.key === 'D') && e.shiftKey) {
         e.preventDefault();
         toggleDiffOverlay();
+        return;
+      }
+
+      // Ctrl+Shift+= → grow right panel by 5%
+      if (e.ctrlKey && e.shiftKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        useUiStore.getState().resizeRightPanelByPercent(5);
+        return;
+      }
+      // Ctrl+Shift+- → shrink right panel by 5%
+      if (e.ctrlKey && e.shiftKey && e.key === '-') {
+        e.preventDefault();
+        useUiStore.getState().resizeRightPanelByPercent(-5);
         return;
       }
 
@@ -64,7 +108,7 @@ export function useAppKeyboard() {
       }
       if (mod && e.shiftKey && (e.key === '3' || e.key === '#')) {
         e.preventDefault();
-        useThemeStore.getState().applyLayoutProfile('spacious');
+        useThemeStore.getState().applyLayoutProfile('spacious')
         return;
       }
 
@@ -75,7 +119,7 @@ export function useAppKeyboard() {
       const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
       if (isTauri) {
         // Cmd+= or Cmd++ (Shift+=) → increase scale by 10%
-        if (mod && (e.key === '=' || e.key === '+')) {
+        if (mod && !e.shiftKey && (e.key === '=' || e.key === '+')) {
           e.preventDefault();
           const { uiScale, setUiScale } = useThemeStore.getState();
           setUiScale(uiScale + 10);

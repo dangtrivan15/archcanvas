@@ -33,11 +33,54 @@ function persistSidebarWidthPreset(preset: SidebarWidthPreset): void {
   }
 }
 
+// --- Panel layout persistence ---
+
+const PANEL_LAYOUT_STORAGE_KEY = 'archcanvas:panel-layout';
+
+interface PanelLayoutState {
+  leftCollapsed: boolean;
+  rightCollapsed: boolean;
+  showStatusBar: boolean;
+}
+
+const PANEL_LAYOUT_DEFAULTS: PanelLayoutState = {
+  leftCollapsed: false,
+  rightCollapsed: false,
+  showStatusBar: true,
+};
+
+function loadPanelLayout(): PanelLayoutState {
+  try {
+    const raw = localStorage.getItem(PANEL_LAYOUT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        leftCollapsed: typeof parsed.leftCollapsed === 'boolean' ? parsed.leftCollapsed : PANEL_LAYOUT_DEFAULTS.leftCollapsed,
+        rightCollapsed: typeof parsed.rightCollapsed === 'boolean' ? parsed.rightCollapsed : PANEL_LAYOUT_DEFAULTS.rightCollapsed,
+        showStatusBar: typeof parsed.showStatusBar === 'boolean' ? parsed.showStatusBar : PANEL_LAYOUT_DEFAULTS.showStatusBar,
+      };
+    }
+  } catch {
+    // localStorage unavailable or corrupt — ignore
+  }
+  return { ...PANEL_LAYOUT_DEFAULTS };
+}
+
+export function persistPanelLayout(state: Partial<PanelLayoutState>): void {
+  try {
+    const existing = loadPanelLayout();
+    localStorage.setItem(PANEL_LAYOUT_STORAGE_KEY, JSON.stringify({ ...existing, ...state }));
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
 interface UiState {
   rightPanelMode: 'details' | 'chat' | 'entities';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   rightPanelCollapsed: boolean;
+  leftPanelCollapsed: boolean;
   setRightPanelMode: (mode: 'details' | 'chat' | 'entities') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
@@ -48,6 +91,12 @@ interface UiState {
   cycleSidebarWidth: (direction?: 'forward' | 'backward') => void;
   detailPanelTab: 'properties' | 'notes' | 'codeRefs' | null;
   setDetailPanelTab: (tab: 'properties' | 'notes' | 'codeRefs' | null) => void;
+  showStatusBar: boolean;
+  toggleStatusBar: () => void;
+  focusMode: boolean;
+  preFocusPanelState: { leftWasCollapsed: boolean; rightWasCollapsed: boolean } | null;
+  toggleFocusMode: () => void;
+  resizeRightPanelByPercent: (delta: number) => void;
   showAppearanceDialog: boolean;
   openAppearanceDialog: () => void;
   closeAppearanceDialog: () => void;
@@ -70,9 +119,12 @@ interface UiState {
 let leftPanelRef: RefObject<PanelImperativeHandle | null> | null = null;
 let rightPanelRef: RefObject<PanelImperativeHandle | null> | null = null;
 
+const initialPanelLayout = loadPanelLayout();
+
 export const useUiStore = create<UiState>((set, get) => ({
   rightPanelMode: 'details',
-  rightPanelCollapsed: false,
+  rightPanelCollapsed: initialPanelLayout.rightCollapsed,
+  leftPanelCollapsed: initialPanelLayout.leftCollapsed,
 
   setLeftPanelRef: (ref) => { leftPanelRef = ref; },
   setRightPanelRef: (ref) => { rightPanelRef = ref; },
@@ -81,7 +133,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   toggleLeftPanel: () => {
     const handle = leftPanelRef?.current;
     if (!handle) return;
-    if (handle.isCollapsed()) handle.expand(); else handle.collapse();
+    const wasCollapsed = handle.isCollapsed();
+    if (wasCollapsed) handle.expand(); else handle.collapse();
+    set({ leftPanelCollapsed: !wasCollapsed });
+    persistPanelLayout({ leftCollapsed: !wasCollapsed });
   },
 
   toggleRightPanel: () => {
@@ -90,6 +145,7 @@ export const useUiStore = create<UiState>((set, get) => ({
     const wasCollapsed = handle.isCollapsed();
     if (wasCollapsed) handle.expand(); else handle.collapse();
     set({ rightPanelCollapsed: !wasCollapsed });
+    persistPanelLayout({ rightCollapsed: !wasCollapsed });
   },
 
   openRightPanel: () => {
@@ -124,6 +180,72 @@ export const useUiStore = create<UiState>((set, get) => ({
 
   detailPanelTab: null,
   setDetailPanelTab: (tab) => set({ detailPanelTab: tab }),
+
+  // --- Status bar visibility ---
+  showStatusBar: initialPanelLayout.showStatusBar,
+
+  toggleStatusBar: () => {
+    const next = !get().showStatusBar;
+    set({ showStatusBar: next });
+    persistPanelLayout({ showStatusBar: next });
+  },
+
+  // --- Focus mode ---
+  focusMode: false,
+  preFocusPanelState: null,
+
+  toggleFocusMode: () => {
+    const { focusMode } = get();
+    if (focusMode) {
+      // Exiting focus mode — restore previous state
+      const snapshot = get().preFocusPanelState;
+      if (snapshot) {
+        const leftHandle = leftPanelRef?.current;
+        const rightHandle = rightPanelRef?.current;
+        if (leftHandle) {
+          if (snapshot.leftWasCollapsed) leftHandle.collapse(); else leftHandle.expand();
+        }
+        if (rightHandle) {
+          if (snapshot.rightWasCollapsed) rightHandle.collapse(); else rightHandle.expand();
+        }
+        set({
+          focusMode: false,
+          preFocusPanelState: null,
+          leftPanelCollapsed: snapshot.leftWasCollapsed,
+          rightPanelCollapsed: snapshot.rightWasCollapsed,
+        });
+      } else {
+        set({ focusMode: false, preFocusPanelState: null });
+      }
+    } else {
+      // Entering focus mode — snapshot and collapse all
+      const leftHandle = leftPanelRef?.current;
+      const rightHandle = rightPanelRef?.current;
+      const leftWasCollapsed = leftHandle?.isCollapsed() ?? false;
+      const rightWasCollapsed = rightHandle?.isCollapsed() ?? false;
+      set({
+        focusMode: true,
+        preFocusPanelState: { leftWasCollapsed, rightWasCollapsed },
+      });
+      if (leftHandle && !leftWasCollapsed) leftHandle.collapse();
+      if (rightHandle && !rightWasCollapsed) rightHandle.collapse();
+      set({ leftPanelCollapsed: true, rightPanelCollapsed: true });
+    }
+  },
+
+  // --- Fine-grained panel resize ---
+  resizeRightPanelByPercent: (delta: number) => {
+    const handle = rightPanelRef?.current;
+    if (!handle) return;
+    if (handle.isCollapsed()) {
+      handle.expand();
+      set({ rightPanelCollapsed: false });
+    }
+    const currentSize = handle.getSize();
+    const currentPct = currentSize.asPercentage;
+    const newPct = Math.max(5, Math.min(40, currentPct + delta));
+    handle.resize(`${newPct}%`);
+  },
 
   showAppearanceDialog: false,
   openAppearanceDialog: () => set({ showAppearanceDialog: true }),
@@ -165,4 +287,9 @@ export const useUiStore = create<UiState>((set, get) => ({
 export function _resetPanelRefs() {
   leftPanelRef = null;
   rightPanelRef = null;
+}
+
+// For testing: allow clearing panel layout persistence
+export function _resetPanelLayout() {
+  try { localStorage.removeItem(PANEL_LAYOUT_STORAGE_KEY); } catch { /* ignore */ }
 }

@@ -19,7 +19,7 @@ import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
-import { useUiStore, SIDEBAR_WIDTH_PRESETS } from '@/store/uiStore';
+import { useUiStore, SIDEBAR_WIDTH_PRESETS, persistPanelLayout } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
@@ -91,7 +91,17 @@ export function App() {
     // time — the panel library sets .current asynchronously after mount.
     useUiStore.getState().setLeftPanelRef(leftPanelRef);
     useUiStore.getState().setRightPanelRef(rightPanelRef);
+
+    // Restore persisted panel collapse states after a short delay
+    // (panel refs need time to initialize their imperative handles)
+    const timer = setTimeout(() => {
+      const { leftPanelCollapsed, rightPanelCollapsed } = useUiStore.getState();
+      if (leftPanelCollapsed) leftPanelRef.current?.collapse();
+      if (rightPanelCollapsed) rightPanelRef.current?.collapse();
+    }, 0);
+
     return () => {
+      clearTimeout(timer);
       useUiStore.getState().setLeftPanelRef(null);
       useUiStore.getState().setRightPanelRef(null);
     };
@@ -100,6 +110,9 @@ export function App() {
   // Sidebar width preset — read from store for dynamic panel sizing
   const sidebarWidthPreset = useUiStore((s) => s.sidebarWidthPreset);
   const sidebarPresetConfig = SIDEBAR_WIDTH_PRESETS[sidebarWidthPreset];
+
+  // Status bar visibility
+  const showStatusBar = useUiStore((s) => s.showStatusBar);
 
   // If no filesystem is bound, show the project gate
   if (!fs) {
@@ -130,6 +143,14 @@ export function App() {
               maxSize="12%"
               collapsible
               collapsedSize="0px"
+              onResize={() => {
+                const collapsed = leftPanelRef.current?.isCollapsed() ?? false;
+                const prev = useUiStore.getState().leftPanelCollapsed;
+                useUiStore.setState({ leftPanelCollapsed: collapsed });
+                if (collapsed !== prev) {
+                  persistPanelLayout({ leftCollapsed: collapsed });
+                }
+              }}
             >
               <LeftToolbar />
             </ResizablePanel>
@@ -146,15 +167,18 @@ export function App() {
               collapsible
               collapsedSize="28px"
               onResize={() => {
-                useUiStore.setState({
-                  rightPanelCollapsed: rightPanelRef.current?.isCollapsed() ?? false,
-                });
+                const collapsed = rightPanelRef.current?.isCollapsed() ?? false;
+                const prev = useUiStore.getState().rightPanelCollapsed;
+                useUiStore.setState({ rightPanelCollapsed: collapsed });
+                if (collapsed !== prev) {
+                  persistPanelLayout({ rightCollapsed: collapsed });
+                }
               }}
             >
               <RightPanel />
             </ResizablePanel>
           </ResizablePanelGroup>
-          <StatusBar />
+          {showStatusBar && <StatusBar />}
           <AppearanceDialog />
           <AiSettingsDialog />
           <TemplatePickerDialogWrapper />
