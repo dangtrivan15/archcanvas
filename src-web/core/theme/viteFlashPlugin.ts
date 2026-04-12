@@ -35,7 +35,7 @@ function buildPalettesJson(): string {
 function generateScript(): string {
   const palettesJson = buildPalettesJson();
   return `<script>
-(function(){var D={palette:'rose-pine',mode:'light',uiScale:100};var P=${palettesJson};try{var s=JSON.parse(localStorage.getItem('archcanvas:theme')||'{}');var p=s.palette||D.palette;var m=s.mode||D.mode;var sc=typeof s.uiScale==='number'?Math.min(150,Math.max(80,s.uiScale)):typeof s.textSize==='string'?100:D.uiScale}catch(e){var p=D.palette;var m=D.mode;var sc=D.uiScale}var r=m;if(m==='system'){try{r=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){r='light'}}document.documentElement.style.fontSize=(sc/100)*16+'px';var k=(P[p]||P['rose-pine']||{})[r];if(k){for(var n in k){document.documentElement.style.setProperty('--color-'+n,k[n])}}})();
+(function(){var D={palette:'rose-pine',mode:'light',uiScale:100};var P=${palettesJson};try{var s=JSON.parse(localStorage.getItem('archcanvas:theme')||'{}');var p=s.palette||D.palette;var m=s.mode||D.mode;var L={small:80,medium:95,large:105};var sc=typeof s.uiScale==='number'?Math.min(150,Math.max(80,s.uiScale)):typeof s.textSize==='string'?(L[s.textSize]||100):D.uiScale}catch(e){var p=D.palette;var m=D.mode;var sc=D.uiScale}var r=m;if(m==='system'){try{r=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){r='light'}}document.documentElement.style.fontSize=(sc/100)*16+'px';var k=(P[p]||P['rose-pine']||{})[r];if(k){for(var n in k){document.documentElement.style.setProperty('--color-'+n,k[n])}}})();
 </script>`;
 }
 

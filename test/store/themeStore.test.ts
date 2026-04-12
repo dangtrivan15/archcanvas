@@ -110,19 +110,39 @@ describe('themeStore', () => {
     expect(state.statusBarDensity).toBe('expanded');
   });
 
-  it('migrates legacy textSize to uiScale 100', async () => {
+  it('migrates legacy textSize large to uiScale 105', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       palette: 'catppuccin', mode: 'dark', textSize: 'large',
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');
     const state = mod.useThemeStore.getState();
-    expect(state.uiScale).toBe(100);
+    expect(state.uiScale).toBe(105);
   });
 
-  it('migrates legacy textSize small to uiScale 100', async () => {
+  it('migrates legacy textSize small to uiScale 80', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       palette: 'rose-pine', mode: 'light', textSize: 'small',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(80);
+  });
+
+  it('migrates legacy textSize medium to uiScale 95', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'medium',
+    }));
+    vi.resetModules();
+    const mod = await import('@/store/themeStore');
+    const state = mod.useThemeStore.getState();
+    expect(state.uiScale).toBe(95);
+  });
+
+  it('migrates unknown legacy textSize to uiScale 100', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      palette: 'rose-pine', mode: 'light', textSize: 'unknown',
     }));
     vi.resetModules();
     const mod = await import('@/store/themeStore');

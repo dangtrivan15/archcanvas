@@ -32,12 +32,14 @@ function loadPersistedState(): { palette: string; mode: Mode; uiScale: number; s
     const parsed = JSON.parse(raw);
 
     // Legacy migration: textSize → uiScale
+    // Map each old size to its closest uiScale so users see minimal visual change.
+    // Old sizes: small=13px, medium=15px, large=17px; formula: (px/16)*100
+    const LEGACY_TEXT_SIZE_MAP: Record<string, number> = { small: 80, medium: 95, large: 105 };
     let uiScale = defaults.uiScale;
     if (typeof parsed.uiScale === 'number') {
       uiScale = clampScale(parsed.uiScale);
     } else if (typeof parsed.textSize === 'string') {
-      // All legacy textSize values migrate to 100 (new default)
-      uiScale = 100;
+      uiScale = LEGACY_TEXT_SIZE_MAP[parsed.textSize] ?? 100;
     }
 
     return {
