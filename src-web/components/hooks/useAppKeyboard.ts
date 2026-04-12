@@ -15,6 +15,20 @@ export function useAppKeyboard() {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
 
+      // Cmd+Shift+] → cycle sidebar width forward (works even from input/textarea)
+      if (mod && e.key === ']' && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().cycleSidebarWidth('forward');
+        return;
+      }
+
+      // Cmd+Shift+[ → cycle sidebar width backward (works even from input/textarea)
+      if (mod && e.key === '[' && e.shiftKey) {
+        e.preventDefault();
+        useUiStore.getState().cycleSidebarWidth('backward');
+        return;
+      }
+
       // Cmd+Shift+I → toggle AI chat (works even from input/textarea)
       if (mod && (e.key === 'i' || e.key === 'I') && e.shiftKey) {
         e.preventDefault();
