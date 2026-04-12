@@ -96,10 +96,17 @@ export function TopMenubar() {
         <MenubarTrigger className="text-sm">View</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={() => useUiStore.getState().toggleLeftPanel()}>
-            Toggle Left Panel
+            Toggle Left Panel <MenubarShortcut>⌘B</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onClick={() => useUiStore.getState().toggleRightPanel()}>
-            Toggle Right Panel
+            Toggle Right Panel <MenubarShortcut>⇧⌘B</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onClick={() => useUiStore.getState().toggleStatusBar()}>
+            Toggle Status Bar <MenubarShortcut>⌘J</MenubarShortcut>
+          </MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem onClick={() => useUiStore.getState().toggleFocusMode()}>
+            Focus Mode <MenubarShortcut>⇧⌘F</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem
