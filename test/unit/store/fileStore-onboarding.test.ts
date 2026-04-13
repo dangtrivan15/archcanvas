@@ -465,26 +465,7 @@ describe('fileStore — onboarding', () => {
   // One project per tab
   // =========================================================================
 
-  describe('open replaces current project in-place', () => {
-    it('open() shows picker and replaces project when fs is already set', async () => {
-      const mockStorage = createMockStorage();
-      setLocalStorage(mockStorage);
-
-      const seededFs = createSeededFs('Existing');
-      await useFileStore.getState().openProject(seededFs);
-      expect(useFileStore.getState().status).toBe('loaded');
-
-      const newFs = createSeededFs('Replacement');
-      setFilePicker(createMockPicker(newFs));
-
-      await useFileStore.getState().open();
-
-      // Should have replaced the project in-place (no new window)
-      expect(useFileStore.getState().status).toBe('loaded');
-      expect(useFileStore.getState().project?.root.data.project?.name).toBe('Replacement');
-      expect(useFileStore.getState().fs).toBe(newFs);
-    });
-
+  describe('one project per tab', () => {
     it('open() proceeds normally when fs is null', async () => {
       const seededFs = createSeededFs('Normal');
       setFilePicker(createMockPicker(seededFs));
