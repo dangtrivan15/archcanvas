@@ -23,6 +23,16 @@ interface RegistryStoreState {
   listByNamespace(namespace: string): NodeDef[];
 }
 
+/** Extract override keys from registry warning messages. */
+function extractOverrideKeys(warnings: string[]): string[] {
+  return warnings
+    .map(w => {
+      const match = w.match(/^NodeDef '(.+)' overridden/);
+      return match ? match[1] : null;
+    })
+    .filter((k): k is string => k !== null);
+}
+
 export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   registry: null,
   status: 'idle',
@@ -48,13 +58,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
 
       const { registry, warnings } = createRegistry(builtins, projectLocal);
 
-      // Extract override keys from warning messages
-      const overrides = warnings
-        .map(w => {
-          const match = w.match(/^NodeDef '(.+)' overridden/);
-          return match ? match[1] : null;
-        })
-        .filter((k): k is string => k !== null);
+      const overrides = extractOverrideKeys(warnings);
 
       set({
         registry,
@@ -84,12 +88,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       const result = await loadProjectLocal(fs, projectRoot);
       const { registry, warnings } = createRegistry(builtins, result.nodeDefs);
 
-      const overrides = warnings
-        .map(w => {
-          const match = w.match(/^NodeDef '(.+)' overridden/);
-          return match ? match[1] : null;
-        })
-        .filter((k): k is string => k !== null);
+      const overrides = extractOverrideKeys(warnings);
 
       set({
         registry,
