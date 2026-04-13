@@ -13,7 +13,8 @@ export function RegistryStatusDialog() {
   const projectLocalKeys = useRegistryStore((s) => s.projectLocalKeys);
   const overrides = useRegistryStore((s) => s.overrides);
   const loadErrors = useRegistryStore((s) => s.loadErrors);
-  const allDefs = useRegistryStore((s) => s.list());
+  const registry = useRegistryStore((s) => s.registry);
+  const allDefs = registry?.list() ?? [];
 
   const fs = useFileStore((s) => s.fs);
   const projectPath = useFileStore((s) => s.projectPath);
