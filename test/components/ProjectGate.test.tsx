@@ -237,6 +237,8 @@ describe('ProjectGate', () => {
     });
 
     // Should have opened the explicit path, not the last-active one
+    expect(openProjectMock.mock.calls[0][0].path).toBe('/explicit/path');
+
     // Clean up URL
     window.history.replaceState({}, '', '/');
   });
