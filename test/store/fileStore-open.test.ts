@@ -162,6 +162,61 @@ describe('fileStore.open()', () => {
     expect(useFileStore.getState().status).toBe('loaded');
     expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
   });
+
+  it('shows picker and replaces project when one is already loaded', async () => {
+    const mockStorage = createMockStorage();
+    setLocalStorage(mockStorage);
+
+    // Load initial project
+    const initialFs = createSeededFs('Initial');
+    await useFileStore.getState().openProject(initialFs);
+    expect(useFileStore.getState().status).toBe('loaded');
+
+    // Set up picker to return a different project
+    const newFs = createSeededFs('New Project');
+    setFilePicker(createMockPicker(newFs));
+
+    await useFileStore.getState().open();
+
+    expect(useFileStore.getState().status).toBe('loaded');
+    expect(useFileStore.getState().project?.root.data.project?.name).toBe('New Project');
+    expect(useFileStore.getState().fs).toBe(newFs);
+  });
+
+  it('keeps current project when user cancels picker (with existing project)', async () => {
+    const initialFs = createSeededFs('Existing');
+    await useFileStore.getState().openProject(initialFs);
+
+    setFilePicker(createMockPicker(null)); // user cancels
+
+    await useFileStore.getState().open();
+
+    // Current project should be unchanged
+    expect(useFileStore.getState().project?.root.data.project?.name).toBe('Existing');
+    expect(useFileStore.getState().fs).toBe(initialFs);
+  });
+
+  it('aborts open when user cancels dirty-check confirmation', async () => {
+    const initialFs = createSeededFs('Dirty Project');
+    await useFileStore.getState().openProject(initialFs);
+    // Mark as dirty
+    useFileStore.setState({ dirtyCanvases: new Set(['canvas-1']) });
+
+    // User cancels the confirm dialog
+    const originalConfirm = window.confirm;
+    window.confirm = vi.fn(() => false);
+
+    const newFs = createSeededFs('Should Not Open');
+    setFilePicker(createMockPicker(newFs));
+
+    await useFileStore.getState().open();
+
+    // Current project should be unchanged
+    expect(useFileStore.getState().project?.root.data.project?.name).toBe('Dirty Project');
+    expect(useFileStore.getState().fs).toBe(initialFs);
+
+    window.confirm = originalConfirm;
+  });
 });
 
 // ---------------------------------------------------------------------------

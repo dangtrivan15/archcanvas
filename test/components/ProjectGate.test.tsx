@@ -193,4 +193,70 @@ describe('ProjectGate', () => {
 
     expect(mockFocusCurrentWindow).toHaveBeenCalled();
   });
+
+  // -------------------------------------------------------------------------
+  // URL params override last-active-project (defense-in-depth)
+  // -------------------------------------------------------------------------
+
+  it('skips last-active restore when ?action=open is present', async () => {
+    const openMock = vi.fn();
+    useFileStore.setState({ open: openMock } as any);
+    mockConsumeRestoreEntry.mockReturnValue(null);
+    mockGetLastActiveProject.mockReturnValue('/some/active/project');
+    (window as any).__TAURI_INTERNALS__ = {};
+
+    // Set URL params before rendering
+    window.history.replaceState({}, '', '/?action=open');
+
+    render(<ProjectGate />);
+
+    await waitFor(() => {
+      expect(openMock).toHaveBeenCalledTimes(1);
+    });
+
+    // Last-active restore should NOT have been called
+    // The open mock was called, meaning URL params took priority
+
+    // Clean up URL
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('skips last-active restore when ?openPath is present', async () => {
+    const openProjectMock = vi.fn().mockResolvedValue(undefined);
+    useFileStore.setState({ openProject: openProjectMock } as any);
+    mockConsumeRestoreEntry.mockReturnValue(null);
+    mockGetLastActiveProject.mockReturnValue('/different/project');
+    (window as any).__TAURI_INTERNALS__ = {};
+
+    window.history.replaceState({}, '', '/?openPath=%2Fexplicit%2Fpath');
+
+    render(<ProjectGate />);
+
+    await waitFor(() => {
+      expect(openProjectMock).toHaveBeenCalledTimes(1);
+    });
+
+    // Should have opened the explicit path, not the last-active one
+    // Clean up URL
+    window.history.replaceState({}, '', '/');
+  });
+
+  it('still restores last-active when no URL params are present', async () => {
+    const openProjectMock = vi.fn().mockResolvedValue(undefined);
+    useFileStore.setState({ openProject: openProjectMock } as any);
+    mockConsumeRestoreEntry.mockReturnValue(null);
+    mockGetLastActiveProject.mockReturnValue('/last/active/project');
+    (window as any).__TAURI_INTERNALS__ = {};
+
+    // No URL params
+    window.history.replaceState({}, '', '/');
+
+    render(<ProjectGate />);
+
+    await waitFor(() => {
+      expect(openProjectMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockFocusCurrentWindow).toHaveBeenCalled();
+  });
 });
