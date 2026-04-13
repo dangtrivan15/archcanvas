@@ -34,6 +34,7 @@ import { useToolStore } from "@/store/toolStore";
 import { useFileStore } from "@/store/fileStore";
 import { resolveAutoFitAction } from "./autoFitAction";
 import { computeLayout } from "@/core/layout/elk";
+import { remapCrossScopeEdgesForLayout } from "./layoutEdges";
 import { setReactFlowInstance } from '@/lib/reactFlowRef';
 import { extractInheritedEdges } from "./inheritedEdges";
 import { GHOST_NODE_PREFIX } from "./hooks/useCanvasRenderer";
@@ -202,7 +203,25 @@ export function Canvas() {
       }
     }
 
-    const result = await computeLayout(loaded.data, { ghostNodes, ghostEdges });
+    // Cross-scope endpoints (`@refNode/child`) don't exist in the current
+    // canvas's children list and would make ELK throw. Collapse them to the
+    // ref-node, drop self-loops, and dedupe before handing off to layout.
+    const sanitizedCanvas = {
+      ...loaded.data,
+      edges: remapCrossScopeEdgesForLayout(loaded.data.edges ?? []),
+    };
+
+    let result;
+    try {
+      result = await computeLayout(sanitizedCanvas, { ghostNodes, ghostEdges });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Auto layout failed:', err);
+      useCanvasStore.getState().setLayoutError(`Layout failed: ${message}`);
+      return;
+    }
+
+    useCanvasStore.getState().setLayoutError(null);
     const gs = useGraphStore.getState();
 
     for (const [nodeId, position] of result.positions) {

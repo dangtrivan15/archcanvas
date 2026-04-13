@@ -22,6 +22,8 @@ interface CanvasStoreState {
   draftEdge: { from: EdgeEndpoint } | null;
   highlightedEdgeIds: string[];
   zoomTier: ZoomTier;
+  /** Transient error surfaced by auto-layout; cleared on next successful run. */
+  layoutError: string | null;
 
   selectNodes(ids: string[]): void;
   selectEdge(from: string, to: string): void;
@@ -37,6 +39,7 @@ interface CanvasStoreState {
   highlightEdges(edgeIds: string[]): void;
   clearHighlight(): void;
   setZoomTier(tier: ZoomTier): void;
+  setLayoutError(error: string | null): void;
 }
 
 export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
@@ -45,6 +48,7 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
   draftEdge: null,
   highlightedEdgeIds: [],
   zoomTier: 'close' as ZoomTier,
+  layoutError: null,
 
   selectNodes(ids) {
     set({ selectedNodeIds: new Set(ids), selectedEdgeKeys: new Set() });
@@ -216,5 +220,9 @@ export const useCanvasStore = create<CanvasStoreState>((set, get) => ({
     if (get().zoomTier !== tier) {
       set({ zoomTier: tier });
     }
+  },
+
+  setLayoutError(error) {
+    set({ layoutError: error });
   },
 }));

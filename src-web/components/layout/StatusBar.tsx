@@ -35,6 +35,7 @@ export function StatusBar() {
   const selectedNodeCount = useCanvasStore((s) => s.selectedNodeIds.size);
   const selectedEdgeCount = useCanvasStore((s) => s.selectedEdgeKeys.size);
   const selectionCount = selectedNodeCount + selectedEdgeCount;
+  const layoutError = useCanvasStore((s) => s.layoutError);
 
   const updateStatus = useUpdaterStore((s) => s.status);
   const updateVersion = useUpdaterStore((s) => s.version);
@@ -149,6 +150,21 @@ export function StatusBar() {
                 if (diffSummary.nodesModified > 0) parts.push(`~${diffSummary.nodesModified}`);
                 return `Diff: ${parts.join(' ')} vs ${diffBaseRef}`;
               })()}
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {layoutError && (
+            <motion.span
+              data-testid="layout-error"
+              initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+              transition={{ duration: duration.normal, ease: ease.out }}
+              className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-500 font-medium cursor-help"
+              title={layoutError}
+            >
+              Layout failed
             </motion.span>
           )}
         </AnimatePresence>

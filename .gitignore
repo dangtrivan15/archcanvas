@@ -8,6 +8,7 @@ release/
 
 # Tauri
 src-tauri/target/
+src-tauri/gen/
 src-tauri/binaries/archcanvas-bridge-*
 src-tauri/icons/android/
 src-tauri/icons/ios/
