@@ -466,29 +466,6 @@ describe('fileStore — onboarding', () => {
   // =========================================================================
 
   describe('one project per tab', () => {
-    it('open() calls window.open when fs is already set', async () => {
-      const seededFs = createSeededFs('Existing');
-      useFileStore.setState({ fs: seededFs, status: 'loaded' });
-
-      const mockWindowOpen = vi.fn();
-      const origOpen = globalThis.window?.open;
-      globalThis.window = Object.create(globalThis.window ?? {});
-      Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
-      Object.defineProperty(globalThis.window, 'location', {
-        value: { origin: 'http://localhost:5173', pathname: '/' },
-        writable: true,
-      });
-
-      await useFileStore.getState().open();
-
-      expect(mockWindowOpen).toHaveBeenCalledWith('http://localhost:5173/?action=open', '_blank');
-
-      // Restore
-      if (origOpen) {
-        Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
-      }
-    });
-
     it('open() proceeds normally when fs is null', async () => {
       const seededFs = createSeededFs('Normal');
       setFilePicker(createMockPicker(seededFs));

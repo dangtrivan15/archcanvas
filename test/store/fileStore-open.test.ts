@@ -169,10 +169,12 @@ describe('fileStore.open()', () => {
 
     const mockWindowOpen = vi.fn();
     const origOpen = globalThis.window?.open;
+    const origLocationDescriptor = Object.getOwnPropertyDescriptor(globalThis.window, 'location');
     Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
     Object.defineProperty(globalThis.window, 'location', {
       value: { origin: 'http://localhost:5173', pathname: '/' },
       writable: true,
+      configurable: true,
     });
 
     await useFileStore.getState().open();
@@ -185,6 +187,9 @@ describe('fileStore.open()', () => {
     // Restore
     if (origOpen) {
       Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+    }
+    if (origLocationDescriptor) {
+      Object.defineProperty(globalThis.window, 'location', origLocationDescriptor);
     }
   });
 });
@@ -231,10 +236,12 @@ describe('fileStore.openRecent()', () => {
 
     const mockWindowOpen = vi.fn();
     const origOpen = globalThis.window?.open;
+    const origLocationDescriptor = Object.getOwnPropertyDescriptor(globalThis.window, 'location');
     Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
     Object.defineProperty(globalThis.window, 'location', {
       value: { origin: 'http://localhost:5173', pathname: '/' },
       writable: true,
+      configurable: true,
     });
 
     // Mock handleStore.getHandle to return a mock handle with requestPermission
@@ -257,6 +264,9 @@ describe('fileStore.openRecent()', () => {
     // Restore
     if (origOpen) {
       Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+    }
+    if (origLocationDescriptor) {
+      Object.defineProperty(globalThis.window, 'location', origLocationDescriptor);
     }
     vi.doUnmock('@/platform/handleStore');
   });
