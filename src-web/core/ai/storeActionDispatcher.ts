@@ -336,13 +336,22 @@ function dispatchCatalog(args: Record<string, unknown>): unknown {
   const registry = useRegistryStore.getState();
   const allDefs = namespace ? registry.listByNamespace(namespace) : registry.list();
 
-  const nodeTypes = allDefs.map((def) => ({
-    type: `${def.metadata.namespace}/${def.metadata.name}`,
-    displayName: def.metadata.displayName,
-    namespace: def.metadata.namespace,
-    description: def.metadata.description,
-    tags: def.metadata.tags ?? [],
-  }));
+  const projectLocalKeys = registry.projectLocalKeys ?? new Set<string>();
+  const overrideSet = new Set(registry.overrides ?? []);
+
+  const nodeTypes = allDefs.map((def) => {
+    const type = `${def.metadata.namespace}/${def.metadata.name}`;
+    return {
+      type,
+      displayName: def.metadata.displayName,
+      namespace: def.metadata.namespace,
+      description: def.metadata.description,
+      tags: def.metadata.tags ?? [],
+      source: projectLocalKeys.has(type)
+        ? (overrideSet.has(type) ? 'project-local (override)' : 'project-local')
+        : 'built-in',
+    };
+  });
 
   return { nodeTypes };
 }

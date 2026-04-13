@@ -18,12 +18,14 @@ import { Canvas } from "@/components/canvas/Canvas";
 import { useAppKeyboard } from '@/components/hooks/useAppKeyboard';
 import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
+import { createNodeDefWatcher, type NodeDefWatcher } from '@/core/registry';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore, SIDEBAR_WIDTH_PRESETS, persistPanelLayout } from '@/store/uiStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
 import { ExportDialog } from '@/components/ExportDialog';
+import { RegistryStatusDialog } from '@/components/RegistryStatusDialog';
 import { checkForUpdate } from '@/core/updater';
 import { focusCurrentWindow } from '@/core/focusWindow';
 import '@/store/themeStore'; // side-effect: applies theme on import
@@ -74,7 +76,32 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    // Fast startup: builtins only (no fs needed)
     useRegistryStore.getState().initialize();
+
+    let watcher: NodeDefWatcher | null = null;
+
+    // When a project loads, re-initialize with project-local defs and start watcher
+    const unsub = useFileStore.subscribe((state, prev) => {
+      if (state.status === 'loaded' && state.fs && state.status !== prev.status) {
+        const currentFs = state.fs;
+        const projectRoot = state.projectPath ?? '';
+
+        // Re-initialize registry with project-local defs
+        useRegistryStore.getState().initialize(currentFs, projectRoot);
+
+        // Start watching for changes
+        watcher?.stop();
+        watcher = createNodeDefWatcher(currentFs, projectRoot, () =>
+          useRegistryStore.getState().reloadProjectLocal(currentFs, projectRoot),
+        );
+      }
+    });
+
+    return () => {
+      unsub();
+      watcher?.stop();
+    };
   }, []);
 
   useEffect(() => {
@@ -183,6 +210,7 @@ export function App() {
           <AiSettingsDialog />
           <TemplatePickerDialogWrapper />
           <ExportDialog />
+          <RegistryStatusDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

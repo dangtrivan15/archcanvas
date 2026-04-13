@@ -4,9 +4,12 @@ import { useNavigationStore } from "@/store/navigationStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
+import { useRegistryStore } from "@/store/registryStore";
+import { useUiStore } from "@/store/uiStore";
 import { useThemeStore, type StatusBarDensity } from "@/store/themeStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
+import { Layers, AlertTriangle, ArrowLeftRight } from "lucide-react";
 import { duration, ease } from "@/lib/motion";
 
 /** Per-density visual configuration for the status bar. */
@@ -39,6 +42,13 @@ export function StatusBar() {
 
   const updateStatus = useUpdaterStore((s) => s.status);
   const updateVersion = useUpdaterStore((s) => s.version);
+
+  // Registry metadata
+  const builtinCount = useRegistryStore((s) => s.builtinCount);
+  const projectLocalCount = useRegistryStore((s) => s.projectLocalCount);
+  const hasOverrides = useRegistryStore((s) => s.overrides.length > 0);
+  const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
+  const openRegistryStatus = useUiStore((s) => s.openRegistryStatusDialog);
 
   // Diff overlay state
   const diffEnabled = useDiffStore((s) => s.enabled);
@@ -182,6 +192,17 @@ export function StatusBar() {
             </motion.span>
           )}
         </AnimatePresence>
+        <button
+          data-testid="registry-indicator"
+          onClick={openRegistryStatus}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent/50 transition-colors cursor-pointer"
+          title={`${builtinCount} built-in${projectLocalCount > 0 ? ` + ${projectLocalCount} project` : ''} types`}
+        >
+          <Layers className="size-3" />
+          <span>{builtinCount}{projectLocalCount > 0 && ` + ${projectLocalCount}`} types</span>
+          {hasOverrides && <ArrowLeftRight className="size-3 text-amber-500" />}
+          {hasErrors && <AlertTriangle className="size-3 text-red-500" />}
+        </button>
         {loaded ? (
           <>
             <span>{scopeName}</span>

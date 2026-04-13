@@ -8,6 +8,7 @@ import type {
 import { isInteractiveProvider } from '@/core/ai/types';
 import { useFileStore } from './fileStore';
 import { useNavigationStore } from './navigationStore';
+import { useRegistryStore } from './registryStore';
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -68,11 +69,25 @@ function assembleContext(): ProjectContext {
   const projectPath = fileState.projectPath ?? undefined;
   const currentScope = navState.currentCanvasId;
 
+  // Include project-local NodeDef summaries for AI awareness
+  const regState = useRegistryStore.getState();
+  let customNodeDefs: ProjectContext['customNodeDefs'];
+  if (regState.projectLocalCount > 0) {
+    customNodeDefs = regState.list()
+      .filter(d => regState.projectLocalKeys.has(`${d.metadata.namespace}/${d.metadata.name}`))
+      .map(d => ({
+        type: `${d.metadata.namespace}/${d.metadata.name}`,
+        displayName: d.metadata.displayName,
+        description: d.metadata.description,
+      }));
+  }
+
   return {
     projectName,
     projectDescription,
     currentScope,
     ...(projectPath ? { projectPath } : {}),
+    ...(customNodeDefs && customNodeDefs.length > 0 ? { customNodeDefs } : {}),
   };
 }
 

@@ -353,6 +353,37 @@ describe('buildSystemPrompt', () => {
     expect(prompt).not.toContain('archcanvas add-node');
     expect(prompt).not.toContain('--json');
   });
+
+  it('includes "Project Custom Node Types" section when customNodeDefs is populated', () => {
+    const ctx: ProjectContext = {
+      ...baseContext,
+      customNodeDefs: [
+        { type: 'custom/widget', displayName: 'Widget', description: 'A custom widget' },
+        { type: 'custom/db', displayName: 'Custom DB', description: 'A custom database' },
+      ],
+    };
+    const prompt = buildSystemPrompt(ctx);
+    expect(prompt).toContain('Project Custom Node Types');
+    expect(prompt).toContain('2 custom type(s)');
+    expect(prompt).toContain('custom/widget');
+    expect(prompt).toContain('Widget');
+    expect(prompt).toContain('A custom widget');
+    expect(prompt).toContain('custom/db');
+  });
+
+  it('omits "Project Custom Node Types" section when customNodeDefs is empty', () => {
+    const ctx: ProjectContext = {
+      ...baseContext,
+      customNodeDefs: [],
+    };
+    const prompt = buildSystemPrompt(ctx);
+    expect(prompt).not.toContain('Project Custom Node Types');
+  });
+
+  it('omits "Project Custom Node Types" section when customNodeDefs is undefined', () => {
+    const prompt = buildSystemPrompt(baseContext);
+    expect(prompt).not.toContain('Project Custom Node Types');
+  });
 });
 
 // ===========================================================================

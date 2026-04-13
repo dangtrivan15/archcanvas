@@ -61,6 +61,13 @@ export function buildSystemPrompt(context: ProjectContext): string {
     `- Use the catalog tool first to discover available types`,
     `- Common namespaces: compute, data, messaging, network, client, integration, security, observability, ai`,
     ``,
+    ...(context.customNodeDefs && context.customNodeDefs.length > 0 ? [
+      `## Project Custom Node Types`,
+      ``,
+      `This project defines ${context.customNodeDefs.length} custom type(s). Prefer these over generic built-ins when they match the domain:`,
+      ...context.customNodeDefs.map(d => `- **${d.type}** -- ${d.displayName}: ${d.description}`),
+      ``,
+    ] : []),
     `## Cross-Scope References`,
     `- Edges can reference nodes inside subsystems using \`@<ref-node-id>/<node-id>\` syntax`,
     `- Example: from: "@order-service/processor", to: "db-postgres"`,
