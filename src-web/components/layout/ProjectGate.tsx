@@ -52,11 +52,19 @@ export function ProjectGate() {
         return;
       }
 
+      // If URL params indicate an explicit action, skip last-active-project
+      // restore so the intended action (open picker, load specific path, etc.)
+      // can proceed.
+      const params = new URLSearchParams(window.location.search);
+      const hasExplicitAction = params.has('action') || params.has('openPath') ||
+                                params.has('recent') || params.has('template');
+
       // Priority 2: Re-open last active project on Tauri startup
       // Awaits directory validation before committing — falls through to
       // URL params if the saved directory no longer exists.
+      // Skip when URL params specify an explicit action (e.g., secondary window).
       const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-      const lastActivePath = isTauri ? getLastActiveProject() : null;
+      const lastActivePath = (isTauri && !hasExplicitAction) ? getLastActiveProject() : null;
       if (lastActivePath) {
         try {
           const { exists } = await import('@tauri-apps/plugin-fs');
@@ -75,8 +83,7 @@ export function ProjectGate() {
         }
       }
 
-      // Priority 3: URL params
-      const params = new URLSearchParams(window.location.search);
+      // Priority 3: URL params (reuse already-parsed `params`)
       const action = params.get('action');
       const recentKey = params.get('recent');
       const openPath = params.get('openPath');

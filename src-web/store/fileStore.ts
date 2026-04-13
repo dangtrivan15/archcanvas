@@ -353,26 +353,11 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // -----------------------------------------------------------------------
 
   open: async () => {
-    // One project per tab/window: if a project is already loaded, open a new tab/window
-    if (get().fs !== null && typeof window !== 'undefined') {
-      if ('__TAURI_INTERNALS__' in window) {
-        // Desktop: create a new Tauri window
-        try {
-          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-          new WebviewWindow(`project-${Date.now()}`, {
-            url: '/?action=open',
-            title: 'ArchCanvas',
-            width: 1280,
-            height: 800,
-          });
-        } catch (err) {
-          console.error('[fileStore] Failed to create Tauri window:', err);
-        }
-      } else if (typeof window.open === 'function') {
-        // Web: open a new browser tab
-        window.open(`${window.location.origin}${window.location.pathname}?action=open`, '_blank');
-      }
-      return;
+    // If there are unsaved changes, confirm before replacing the current project
+    if (get().fs !== null) {
+      const { confirmDiscardChanges } = await import('../core/confirmDiscard');
+      const confirmed = await confirmDiscardChanges();
+      if (!confirmed) return;
     }
 
     const picker = getFilePicker();
@@ -404,30 +389,21 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
     const hasProject = get().fs !== null;
 
+    // Confirm before replacing if there are unsaved changes
+    if (hasProject) {
+      const { confirmDiscardChanges } = await import('../core/confirmDiscard');
+      const confirmed = await confirmDiscardChanges();
+      if (!confirmed) return;
+    }
+
     // --- Tauri path ---
     if (isTauri) {
-      if (hasProject) {
-        // Project loaded — open in new window
-        try {
-          const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-          new WebviewWindow(`project-${Date.now()}`, {
-            url: `/?openPath=${encodeURIComponent(path)}`,
-            title: 'ArchCanvas',
-            width: 1280,
-            height: 800,
-          });
-        } catch (err) {
-          console.error('[fileStore] Failed to create Tauri window:', err);
-        }
-      } else {
-        // No project — load in-place
-        try {
-          const { TauriFileSystem } = await import('../platform/tauriFileSystem');
-          const fs = new TauriFileSystem(path);
-          await get().openProject(fs);
-        } catch (err) {
-          set({ error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}` });
-        }
+      try {
+        const { TauriFileSystem } = await import('../platform/tauriFileSystem');
+        const fs = new TauriFileSystem(path);
+        await get().openProject(fs);
+      } catch (err) {
+        set({ error: `Failed to open project: ${err instanceof Error ? err.message : String(err)}` });
       }
       return;
     }
@@ -449,18 +425,10 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         set({ error: 'Permission denied. Please try again.' });
         return;
       }
-      if (hasProject) {
-        // Project loaded — open in new tab
-        window.open(
-          `${window.location.origin}${window.location.pathname}?recent=${encodeURIComponent(path)}`,
-          '_blank',
-        );
-      } else {
-        // No project — load in-place
-        const { WebFileSystem } = await import('../platform/webFileSystem');
-        const fs = new WebFileSystem(handle);
-        await get().openProject(fs);
-      }
+      // Load in-place — replace current project
+      const { WebFileSystem } = await import('../platform/webFileSystem');
+      const fs = new WebFileSystem(handle);
+      await get().openProject(fs);
     } catch {
       set({ error: 'Failed to open recent project.' });
     }
