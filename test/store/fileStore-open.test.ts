@@ -163,64 +163,34 @@ describe('fileStore.open()', () => {
     expect(useFileStore.getState().dirtyCanvases.size).toBe(0);
   });
 
-  it('shows picker and replaces project when one is already loaded', async () => {
-    const mockStorage = createMockStorage();
-    setLocalStorage(mockStorage);
+  it('open() calls window.open when fs is already set (web path)', async () => {
+    const seededFs = createSeededFs('Existing');
+    useFileStore.setState({ fs: seededFs, status: 'loaded' });
 
-    // Load initial project
-    const initialFs = createSeededFs('Initial');
-    await useFileStore.getState().openProject(initialFs);
-    expect(useFileStore.getState().status).toBe('loaded');
-
-    // Set up picker to return a different project
-    const newFs = createSeededFs('New Project');
-    setFilePicker(createMockPicker(newFs));
-
-    await useFileStore.getState().open();
-
-    expect(useFileStore.getState().status).toBe('loaded');
-    expect(useFileStore.getState().project?.root.data.project?.name).toBe('New Project');
-    expect(useFileStore.getState().fs).toBe(newFs);
-  });
-
-  it('keeps current project when user cancels picker (with existing project)', async () => {
-    const initialFs = createSeededFs('Existing');
-    await useFileStore.getState().openProject(initialFs);
-
-    setFilePicker(createMockPicker(null)); // user cancels
+    const mockWindowOpen = vi.fn();
+    const origOpen = globalThis.window?.open;
+    Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
+    Object.defineProperty(globalThis.window, 'location', {
+      value: { origin: 'http://localhost:5173', pathname: '/' },
+      writable: true,
+    });
 
     await useFileStore.getState().open();
 
-    // Current project should be unchanged
-    expect(useFileStore.getState().project?.root.data.project?.name).toBe('Existing');
-    expect(useFileStore.getState().fs).toBe(initialFs);
-  });
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      'http://localhost:5173/?action=open',
+      '_blank',
+    );
 
-  it('aborts open when user cancels dirty-check confirmation', async () => {
-    const initialFs = createSeededFs('Dirty Project');
-    await useFileStore.getState().openProject(initialFs);
-    // Mark as dirty
-    useFileStore.setState({ dirtyCanvases: new Set(['canvas-1']) });
-
-    // User cancels the confirm dialog
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => false);
-
-    const newFs = createSeededFs('Should Not Open');
-    setFilePicker(createMockPicker(newFs));
-
-    await useFileStore.getState().open();
-
-    // Current project should be unchanged
-    expect(useFileStore.getState().project?.root.data.project?.name).toBe('Dirty Project');
-    expect(useFileStore.getState().fs).toBe(initialFs);
-
-    window.confirm = originalConfirm;
+    // Restore
+    if (origOpen) {
+      Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+    }
   });
 });
 
 // ---------------------------------------------------------------------------
-// fileStore.openRecent() — dirty-check guard
+// fileStore.openRecent() — multi-window / multi-tab behavior
 // ---------------------------------------------------------------------------
 
 describe('fileStore.openRecent()', () => {
@@ -245,68 +215,50 @@ describe('fileStore.openRecent()', () => {
     delete (window as any).__TAURI_INTERNALS__;
   });
 
-  it('aborts openRecent when user cancels dirty-check confirmation', async () => {
+  it('loads project in-place when no project is loaded (web path)', async () => {
+    // openRecent on web without existing project => attempts in-place load
+    // (will error on getHandle since no real IndexedDB, which is fine)
+    await useFileStore.getState().openRecent('/some/path');
+    // Verify it attempted to load (error from missing handle is expected)
+    expect(useFileStore.getState().error).toBeTruthy();
+  });
+
+  it('opens new tab when a project is already loaded (web path)', async () => {
     // Load an initial project
     const initialFs = createSeededFs('Current Project');
     await useFileStore.getState().openProject(initialFs);
     expect(useFileStore.getState().status).toBe('loaded');
 
-    // Mark as dirty
-    useFileStore.setState({ dirtyCanvases: new Set(['canvas-1']) });
+    const mockWindowOpen = vi.fn();
+    const origOpen = globalThis.window?.open;
+    Object.defineProperty(globalThis.window, 'open', { value: mockWindowOpen, writable: true });
+    Object.defineProperty(globalThis.window, 'location', {
+      value: { origin: 'http://localhost:5173', pathname: '/' },
+      writable: true,
+    });
 
-    // User cancels the confirm dialog
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => false);
+    // Mock handleStore.getHandle to return a mock handle with requestPermission
+    vi.doMock('@/platform/handleStore', () => ({
+      getHandle: vi.fn().mockResolvedValue({
+        requestPermission: vi.fn().mockResolvedValue('granted'),
+      }),
+    }));
 
     await useFileStore.getState().openRecent('/some/recent/path');
 
-    // Current project should be unchanged — the open was aborted
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      'http://localhost:5173/?recent=%2Fsome%2Frecent%2Fpath',
+      '_blank',
+    );
+
+    // Current project should be unchanged
     expect(useFileStore.getState().project?.root.data.project?.name).toBe('Current Project');
-    expect(useFileStore.getState().fs).toBe(initialFs);
 
-    window.confirm = originalConfirm;
-  });
-
-  it('proceeds with openRecent when user confirms dirty-check', async () => {
-    // Load an initial project
-    const initialFs = createSeededFs('Old Project');
-    await useFileStore.getState().openProject(initialFs);
-    expect(useFileStore.getState().status).toBe('loaded');
-
-    // Mark as dirty
-    useFileStore.setState({ dirtyCanvases: new Set(['canvas-1']) });
-
-    // User confirms the dialog
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => true);
-
-    // On the web path, openRecent imports handleStore.getHandle(path).
-    // Since we're not in a real browser with IndexedDB, this will throw,
-    // and the catch block sets an error — that's fine, we're testing
-    // that the dirty-check didn't block.
-    await useFileStore.getState().openRecent('/some/recent/path');
-
-    // The confirm dialog was called (dirty guard ran)
-    expect(window.confirm).toHaveBeenCalled();
-    // The project changed (or errored) — either way it wasn't blocked
-    // by the dirty-check
-    expect(useFileStore.getState().fs !== initialFs || useFileStore.getState().error !== null).toBe(true);
-
-    window.confirm = originalConfirm;
-  });
-
-  it('skips dirty-check when no project is loaded', async () => {
-    // No project loaded
-    const originalConfirm = window.confirm;
-    window.confirm = vi.fn(() => false);
-
-    // openRecent should not prompt when no project is loaded
-    await useFileStore.getState().openRecent('/some/path');
-
-    // window.confirm should NOT have been called (no existing project to discard)
-    expect(window.confirm).not.toHaveBeenCalled();
-
-    window.confirm = originalConfirm;
+    // Restore
+    if (origOpen) {
+      Object.defineProperty(globalThis.window, 'open', { value: origOpen, writable: true });
+    }
+    vi.doUnmock('@/platform/handleStore');
   });
 });
 
