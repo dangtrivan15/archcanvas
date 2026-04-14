@@ -118,16 +118,6 @@ export function versionSatisfies(
 }
 
 /**
- * Compare two SemVer values. Returns -1, 0, or 1.
- */
-export function compareSemVer(a: SemVer, b: SemVer): number {
-  if (a.major !== b.major) return a.major < b.major ? -1 : 1;
-  if (a.minor !== b.minor) return a.minor < b.minor ? -1 : 1;
-  if (a.patch !== b.patch) return a.patch < b.patch ? -1 : 1;
-  return 0;
-}
-
-/**
  * Format a SemVer as a string, e.g. '1.2.3'.
  */
 export function formatSemVer(v: SemVer): string {

@@ -102,10 +102,14 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     try {
       const builtins = loadBuiltins();
       const result = await loadProjectLocal(fs, projectRoot);
-      const { registry, warnings } = createRegistry(builtins, result.nodeDefs);
 
-      const lockfile = generateLockfile(registry, new Set(result.nodeDefs.keys()));
+      // Generate fresh lockfile from a temporary registry
+      const { registry: tempRegistry } = createRegistry(builtins, result.nodeDefs);
+      const lockfile = generateLockfile(tempRegistry, new Set(result.nodeDefs.keys()));
       await saveLockfile(fs, projectRoot, lockfile);
+
+      // Create final registry with lockfile so resolveVersioned() has locked entries
+      const { registry, warnings } = createRegistry(builtins, result.nodeDefs, lockfile);
 
       const overrides = extractOverrideKeys(warnings);
 

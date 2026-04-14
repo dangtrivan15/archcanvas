@@ -63,7 +63,7 @@ export function validateAndBuildNode(
     }
   }
 
-  // 3. If still not found, build hint message with fuzzy search
+  // 4. If still not found, build hint message with fuzzy search
   if (!nodeDef) {
     const hints: string[] = [
       `Node type '${type}' is not registered.`,
@@ -109,7 +109,7 @@ export function validateAndBuildNode(
     return { ok: false, code: 'UNKNOWN_NODE_TYPE', message: hints.join(' ') };
   }
 
-  // 4. Parse args JSON if provided
+  // 5. Parse args JSON if provided
   let parsedArgs: Record<string, string | number | boolean | string[]> | undefined;
   if (input.args) {
     try {
@@ -123,10 +123,10 @@ export function validateAndBuildNode(
     }
   }
 
-  // 5. Resolve displayName
+  // 6. Resolve displayName
   const displayName = input.name ?? nodeDef.metadata.displayName;
 
-  // 6. Construct InlineNode
+  // 7. Construct InlineNode
   const node: InlineNode = {
     id: input.id,
     type,

@@ -190,4 +190,58 @@ describe('validateAndBuildNode', () => {
       expect(result.node.displayName).toBe('Database');
     }
   });
+
+  it('resolves type with valid version constraint via @', () => {
+    const input: AddNodeInput = {
+      id: 'svc-ver',
+      type: 'compute/service@^1.0.0',
+    };
+    const result = validateAndBuildNode(input, registry);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.node.type).toBe('compute/service@^1.0.0');
+      expect(result.resolvedType).toBe('compute/service@^1.0.0');
+    }
+  });
+
+  it('silently ignores invalid version constraint after @', () => {
+    const input: AddNodeInput = {
+      id: 'svc-bad-ver',
+      type: 'compute/service@badversion',
+    };
+    const result = validateAndBuildNode(input, registry);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Invalid constraint is silently ignored — type resolves normally
+      expect(result.node.type).toBe('compute/service@badversion');
+      expect(result.resolvedType).toBe('compute/service@badversion');
+    }
+  });
+
+  it('resolves dot notation with invalid version via dot→slash substitution', () => {
+    const input: AddNodeInput = {
+      id: 'svc-dot-bad-ver',
+      type: 'compute.service@badversion',
+    };
+    const result = validateAndBuildNode(input, registry);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // dot→slash substitution works; invalid constraint has no prefix so formatConstraint isn't called
+      expect(result.node.type).toBe('compute/service');
+      expect(result.resolvedType).toBe('compute/service');
+    }
+  });
+
+  it('resolves dot notation with valid version constraint', () => {
+    const input: AddNodeInput = {
+      id: 'svc-dot-ver',
+      type: 'compute.service@^1.0.0',
+    };
+    const result = validateAndBuildNode(input, registry);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.node.type).toBe('compute/service@^1.0.0');
+      expect(result.resolvedType).toBe('compute/service@^1.0.0');
+    }
+  });
 });

@@ -4,7 +4,6 @@ import {
   parseVersionConstraint,
   parseTypeRef,
   versionSatisfies,
-  compareSemVer,
   formatSemVer,
   formatConstraint,
 } from '@/core/registry/version';
@@ -211,28 +210,6 @@ describe('versionSatisfies', () => {
       const c = { type: 'tilde' as const, version: { major: 1, minor: 2, patch: 3 } };
       expect(versionSatisfies({ major: 1, minor: 2, patch: 2 }, c)).toBe(false);
     });
-  });
-});
-
-describe('compareSemVer', () => {
-  it('returns 0 for equal versions', () => {
-    expect(compareSemVer({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 })).toBe(0);
-  });
-
-  it('returns -1 for lower major', () => {
-    expect(compareSemVer({ major: 1, minor: 0, patch: 0 }, { major: 2, minor: 0, patch: 0 })).toBe(-1);
-  });
-
-  it('returns 1 for higher major', () => {
-    expect(compareSemVer({ major: 2, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 0 })).toBe(1);
-  });
-
-  it('returns -1 for lower minor', () => {
-    expect(compareSemVer({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 1, patch: 0 })).toBe(-1);
-  });
-
-  it('returns -1 for lower patch', () => {
-    expect(compareSemVer({ major: 1, minor: 0, patch: 0 }, { major: 1, minor: 0, patch: 1 })).toBe(-1);
   });
 });
 

@@ -35,7 +35,7 @@ export function validateNode(
 
   // Version constraint check
   const typeRef = parseTypeRef(node.type);
-  if (typeRef.constraint && nodeDef) {
+  if (typeRef.constraint) {
     const actual = parseSemVer(nodeDef.metadata.version);
     if (actual && !versionSatisfies(actual, typeRef.constraint)) {
       warnings.push({

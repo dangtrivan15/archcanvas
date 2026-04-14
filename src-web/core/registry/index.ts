@@ -10,7 +10,6 @@ export {
   versionSatisfies,
   formatSemVer,
   formatConstraint,
-  compareSemVer,
   type SemVer,
   type VersionConstraint,
   type TypeRef,
