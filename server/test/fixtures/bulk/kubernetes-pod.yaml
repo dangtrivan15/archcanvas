@@ -1,0 +1,22 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: pod
+  namespace: kubernetes
+  version: "1.0.0"
+  displayName: Kubernetes Pod
+  description: "A Kubernetes pod - the smallest deployable unit in a cluster."
+  icon: Box
+  tags: [kubernetes, container, orchestration]
+  shape: rectangle
+
+spec:
+  args:
+    - name: image
+      type: string
+      required: true
+      description: "Container image to run."
+    - name: replicas
+      type: number
+      default: 1

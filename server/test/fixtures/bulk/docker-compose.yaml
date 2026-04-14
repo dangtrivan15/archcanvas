@@ -1,0 +1,18 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: compose
+  namespace: docker
+  version: "1.0.0"
+  displayName: Docker Compose
+  description: "A Docker Compose multi-container application definition."
+  icon: Layers
+  tags: [docker, container, orchestration]
+  shape: container
+
+spec:
+  children:
+    - nodedef: docker/container
+      min: 1
+      max: 50

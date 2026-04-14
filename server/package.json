@@ -1,0 +1,31 @@
+{
+  "name": "archcanvas-registry-server",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "NodeDef registry backend server for ArchCanvas",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^12.2.0",
+    "hono": "^4.7.7",
+    "jsonwebtoken": "^9.0.2",
+    "yaml": "^2.8.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+        "@types/better-sqlite3": "^7.6.13",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.3",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

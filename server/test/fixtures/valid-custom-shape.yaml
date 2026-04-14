@@ -1,0 +1,19 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: custom-node
+  namespace: testns
+  version: "1.0.0"
+  displayName: Custom Shape Node
+  description: "A NodeDef with a custom clipPath shape."
+  icon: Hexagon
+  tags: [custom, test]
+  shape:
+    clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)"
+
+spec:
+  args:
+    - name: mode
+      type: string
+      description: "Operating mode."

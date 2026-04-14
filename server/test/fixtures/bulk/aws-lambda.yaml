@@ -1,0 +1,27 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: lambda
+  namespace: aws
+  version: "1.0.0"
+  displayName: AWS Lambda
+  description: "A serverless compute function on AWS Lambda."
+  icon: Zap
+  tags: [aws, serverless, function, cloud]
+  shape: hexagon
+
+spec:
+  args:
+    - name: runtime
+      type: enum
+      required: true
+      options: [nodejs20.x, python3.12, go1.x, java17]
+    - name: memorySize
+      type: number
+      default: 128
+      description: "Memory allocation in MB."
+    - name: timeout
+      type: number
+      default: 30
+      description: "Execution timeout in seconds."

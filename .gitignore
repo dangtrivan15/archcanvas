@@ -55,3 +55,7 @@ vitest.config.d.ts
 .playwright-cli
 
 .superpowers/
+
+# Registry server
+server/data/
+server/dist/

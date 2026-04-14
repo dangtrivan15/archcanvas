@@ -1,0 +1,25 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: cloudrun
+  namespace: gcp
+  version: "1.0.0"
+  displayName: GCP Cloud Run
+  description: "Google Cloud Run fully managed serverless container platform."
+  icon: Cloud
+  tags: [gcp, serverless, container, cloud]
+  shape: cloud
+
+spec:
+  args:
+    - name: containerPort
+      type: number
+      default: 8080
+    - name: maxInstances
+      type: number
+      default: 100
+  ports:
+    - name: http
+      direction: inbound
+      protocol: [HTTP, HTTPS]

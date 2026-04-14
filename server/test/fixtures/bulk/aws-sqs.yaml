@@ -1,0 +1,26 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: sqs
+  namespace: aws
+  version: "1.0.0"
+  displayName: AWS SQS
+  description: "An AWS SQS message queue for asynchronous processing."
+  icon: MessageSquare
+  tags: [aws, messaging, queue, cloud]
+  shape: parallelogram
+
+spec:
+  args:
+    - name: fifo
+      type: boolean
+      default: false
+      description: "Whether this is a FIFO queue."
+  ports:
+    - name: messages-in
+      direction: inbound
+      protocol: [SQS]
+    - name: messages-out
+      direction: outbound
+      protocol: [SQS]

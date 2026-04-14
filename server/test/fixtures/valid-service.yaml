@@ -1,0 +1,32 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: service
+  namespace: testns
+  version: "1.0.0"
+  displayName: Test Service
+  description: "A test long-running backend service or microservice."
+  icon: Server
+  tags: [backend, microservice, test]
+  shape: rectangle
+
+spec:
+  args:
+    - name: language
+      type: enum
+      required: true
+      options: [TypeScript, Python, Go]
+      description: "Primary programming language."
+  ports:
+    - name: http-in
+      direction: inbound
+      protocol: [HTTP, HTTPS]
+  ai:
+    context: "A test compute service."
+
+variants:
+  - name: REST API
+    description: "A service exposing RESTful HTTP endpoints."
+    args:
+      framework: Express

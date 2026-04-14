@@ -23,7 +23,10 @@
     "test:visual": "playwright test --config playwright.config.visual.ts",
     "test:visual-update": "playwright test --config playwright.config.visual.ts --update-snapshots",
     "test:e2e-landing": "playwright test --config playwright.config.landing.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "dev:server": "cd server && npm run dev",
+    "build:server": "cd server && npm run build",
+    "test:server": "cd server && npm run test"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.74",

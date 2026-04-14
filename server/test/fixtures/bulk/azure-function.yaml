@@ -1,0 +1,23 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: function
+  namespace: azure
+  version: "1.0.0"
+  displayName: Azure Function
+  description: "An Azure serverless function for event-driven computing."
+  icon: Zap
+  tags: [azure, serverless, function, cloud]
+  shape: hexagon
+
+spec:
+  args:
+    - name: runtime
+      type: enum
+      required: true
+      options: [node, python, dotnet, java]
+    - name: trigger
+      type: enum
+      options: [http, timer, queue, blob]
+      default: http

@@ -1,0 +1,23 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: cosmos
+  namespace: azure
+  version: "1.0.0"
+  displayName: Azure Cosmos DB
+  description: "Azure Cosmos DB globally distributed NoSQL database."
+  icon: Database
+  tags: [azure, database, nosql, cloud]
+  shape: cylinder
+
+spec:
+  args:
+    - name: api
+      type: enum
+      required: true
+      options: [SQL, MongoDB, Cassandra, Gremlin, Table]
+  ports:
+    - name: data-in
+      direction: inbound
+      protocol: [HTTPS]

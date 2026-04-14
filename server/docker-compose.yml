@@ -1,0 +1,15 @@
+services:
+  registry:
+    build:
+      context: ../
+      dockerfile: server/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - registry-data:/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  registry-data:

@@ -1,0 +1,23 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: ingress
+  namespace: kubernetes
+  version: "1.0.0"
+  displayName: Kubernetes Ingress
+  description: "A Kubernetes ingress for HTTP/HTTPS routing to services."
+  icon: Globe
+  tags: [kubernetes, networking, ingress]
+  shape: hexagon
+
+spec:
+  args:
+    - name: host
+      type: string
+      required: true
+      description: "Hostname for routing."
+  ports:
+    - name: http
+      direction: inbound
+      protocol: [HTTP, HTTPS]

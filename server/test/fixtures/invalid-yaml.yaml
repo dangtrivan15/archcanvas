@@ -1,0 +1,6 @@
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: broken
+  invalid yaml: [unclosed bracket
+  this: is: not: valid

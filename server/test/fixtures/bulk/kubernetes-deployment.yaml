@@ -1,0 +1,27 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: deployment
+  namespace: kubernetes
+  version: "1.0.0"
+  displayName: Kubernetes Deployment
+  description: "A Kubernetes deployment for managing replicated pods."
+  icon: Layers
+  tags: [kubernetes, container, orchestration, deployment]
+  shape: rectangle
+
+spec:
+  args:
+    - name: replicas
+      type: number
+      default: 3
+      description: "Number of pod replicas."
+    - name: strategy
+      type: enum
+      options: [RollingUpdate, Recreate]
+      default: RollingUpdate
+  children:
+    - nodedef: kubernetes/pod
+      min: 1
+      max: 100

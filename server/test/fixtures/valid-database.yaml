@@ -1,0 +1,23 @@
+kind: NodeDef
+apiVersion: v1
+
+metadata:
+  name: database
+  namespace: testns
+  version: "1.0.0"
+  displayName: Test Database
+  description: "A test relational or NoSQL database engine."
+  icon: Database
+  tags: [storage, database, test]
+  shape: cylinder
+
+spec:
+  args:
+    - name: engine
+      type: enum
+      required: true
+      options: [PostgreSQL, MySQL, MongoDB, Redis]
+  ports:
+    - name: sql-in
+      direction: inbound
+      protocol: [SQL, TCP]
