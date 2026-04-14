@@ -218,13 +218,16 @@ export class NodeDefRepository implements INodeDefRepository {
 
     // Build the full NodeDef object from stored metadata + spec
     const metadata = JSON.parse(versionRow.metadata);
-    const spec = JSON.parse(versionRow.spec);
-    const nodeDef = {
+    const { spec, variants } = JSON.parse(versionRow.spec);
+    const nodeDef: Record<string, unknown> = {
       kind: 'NodeDef',
       apiVersion: 'v1',
       metadata,
       spec,
     };
+    if (variants) {
+      nodeDef.variants = variants;
+    }
 
     return {
       id: nodedef.id,

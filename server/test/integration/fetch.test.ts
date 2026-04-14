@@ -27,6 +27,17 @@ describe('GET /api/v1/nodedefs/:namespace/:name (fetch)', () => {
     expect(body.nodeDef).toBeDefined();
     expect(body.nodeDef.kind).toBe('NodeDef');
     expect(body.nodeDef.apiVersion).toBe('v1');
+
+    // Verify spec and variants are top-level fields (not nested under spec)
+    expect(body.nodeDef.spec).toBeDefined();
+    expect(body.nodeDef.spec.args).toBeDefined();
+    expect(body.nodeDef.spec.ports).toBeDefined();
+    expect(body.nodeDef.spec).not.toHaveProperty('variants');
+    expect(body.nodeDef.spec).not.toHaveProperty('spec');
+    expect(body.nodeDef.variants).toBeDefined();
+    expect(Array.isArray(body.nodeDef.variants)).toBe(true);
+    expect(body.nodeDef.variants[0].name).toBe('REST API');
+
     expect(body.registry).toBeDefined();
     expect(body.registry.publisher.username).toBe('fetcher');
     expect(body.registry.versions).toContain('1.0.0');

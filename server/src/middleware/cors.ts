@@ -5,6 +5,6 @@ export function corsMiddleware(config: Config) {
   return cors({
     origin: config.corsOrigin,
     allowHeaders: ['Authorization', 'Content-Type'],
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   });
 }
