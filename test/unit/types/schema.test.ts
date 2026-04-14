@@ -11,6 +11,7 @@ import {
   Canvas,
   RootCanvas,
   SubsystemCanvas,
+  TypeRefString,
 } from '@/types';
 
 describe('PropertyValue', () => {
@@ -274,6 +275,53 @@ describe('RootCanvas', () => {
   });
   it('rejects canvas without project metadata', () => {
     expect(() => RootCanvas.parse({})).toThrow(/project/i);
+  });
+});
+
+describe('TypeRefString', () => {
+  it('accepts bare namespace/name', () => {
+    expect(TypeRefString.parse('data/database')).toBe('data/database');
+  });
+
+  it('accepts namespace/name with hyphens', () => {
+    expect(TypeRefString.parse('ai/llm-provider')).toBe('ai/llm-provider');
+  });
+
+  it('accepts exact versioned type', () => {
+    expect(TypeRefString.parse('data/database@1.0.0')).toBe('data/database@1.0.0');
+  });
+
+  it('accepts caret versioned type', () => {
+    expect(TypeRefString.parse('data/database@^1.0.0')).toBe('data/database@^1.0.0');
+  });
+
+  it('accepts tilde versioned type', () => {
+    expect(TypeRefString.parse('data/database@~1.0.0')).toBe('data/database@~1.0.0');
+  });
+
+  it('rejects type without namespace', () => {
+    const result = TypeRefString.safeParse('database');
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects uppercase', () => {
+    const result = TypeRefString.safeParse('Data/Database');
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects empty version after @', () => {
+    const result = TypeRefString.safeParse('data/database@');
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects non-semver after @', () => {
+    const result = TypeRefString.safeParse('data/database@abc');
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects incomplete semver after @', () => {
+    const result = TypeRefString.safeParse('data/database@^1.0');
+    expect(result.success).toBe(false);
   });
 });
 

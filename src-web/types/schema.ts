@@ -62,11 +62,24 @@ export const Edge = z.object({
 });
 export type Edge = z.infer<typeof Edge>;
 
+// --- Type References ---
+
+/**
+ * Matches type references: 'namespace/name' or 'namespace/name@[~^]major.minor.patch'
+ * Namespace and name: lowercase alphanumeric + hyphens, starting with a letter.
+ */
+const TYPE_REF_RE = /^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*(@[~^]?\d+\.\d+\.\d+)?$/;
+
+export const TypeRefString = z.string().regex(
+  TYPE_REF_RE,
+  'Type reference must be namespace/name or namespace/name@version (e.g., data/database@^1.0.0)',
+);
+
 // --- Software Pillar ---
 
 export const InlineNode = z.object({
   id: z.string(),
-  type: z.string(),
+  type: TypeRefString,
   displayName: z.string().optional(),
   description: z.string().optional(),
   args: PropertyMap.optional(),
@@ -101,7 +114,7 @@ export type ProjectMetadata = z.infer<typeof ProjectMetadata>;
 
 export const Canvas = z.object({
   id: z.string().optional(),
-  type: z.string().optional(),
+  type: TypeRefString.optional(),
   displayName: z.string().optional(),
   description: z.string().optional(),
   args: PropertyMap.optional(),

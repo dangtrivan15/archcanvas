@@ -3,6 +3,8 @@ import type { FileSystem } from '../platform/fileSystem';
 import type { NodeDef } from '@/types/nodeDefSchema';
 import type { NodeDefRegistry } from '@/core/registry/core';
 import { loadBuiltins, loadProjectLocal, createRegistry } from '@/core/registry';
+import { loadLockfile, saveLockfile, generateLockfile } from '@/core/registry/lockfile';
+import type { LockfileData } from '@/core/registry/lockfile';
 
 interface RegistryStoreState {
   registry: NodeDefRegistry | null;
@@ -14,6 +16,7 @@ interface RegistryStoreState {
   projectLocalKeys: Set<string>;
   overrides: string[];
   loadErrors: Array<{ file: string; message: string }>;
+  lockfile: LockfileData | null;
 
   initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
   reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
@@ -41,6 +44,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   projectLocalKeys: new Set(),
   overrides: [],
   loadErrors: [],
+  lockfile: null,
 
   initialize: async (fs?: FileSystem, projectRoot?: string) => {
     set({ status: 'loading' });
@@ -56,7 +60,18 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         loadErrors = result.errors;
       }
 
-      const { registry, warnings } = createRegistry(builtins, projectLocal);
+      let lockfile: LockfileData | null = null;
+      if (fs && projectRoot !== undefined) {
+        lockfile = await loadLockfile(fs, projectRoot);
+      }
+
+      const { registry, warnings } = createRegistry(builtins, projectLocal, lockfile);
+
+      // Auto-generate lockfile if none existed
+      if (!lockfile && fs && projectRoot !== undefined) {
+        lockfile = generateLockfile(registry, new Set(projectLocal.keys()));
+        await saveLockfile(fs, projectRoot, lockfile);
+      }
 
       const overrides = extractOverrideKeys(warnings);
 
@@ -68,6 +83,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         projectLocalKeys: new Set(projectLocal.keys()),
         overrides,
         loadErrors,
+        lockfile,
       });
 
       if (loadErrors.length > 0) {
@@ -88,6 +104,9 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       const result = await loadProjectLocal(fs, projectRoot);
       const { registry, warnings } = createRegistry(builtins, result.nodeDefs);
 
+      const lockfile = generateLockfile(registry, new Set(result.nodeDefs.keys()));
+      await saveLockfile(fs, projectRoot, lockfile);
+
       const overrides = extractOverrideKeys(warnings);
 
       set({
@@ -98,6 +117,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         projectLocalKeys: new Set(result.nodeDefs.keys()),
         overrides,
         loadErrors: result.errors,
+        lockfile,
       });
     } catch (err) {
       // Surface the error in loadErrors so the UI can display it.

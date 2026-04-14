@@ -239,3 +239,48 @@ describe('validateCanvas', () => {
     expect(result).toEqual([]);
   });
 });
+
+// --- VERSION_MISMATCH ---
+
+describe('VERSION_MISMATCH', () => {
+  it('does not warn when version satisfies caret constraint', () => {
+    const registry = registryWith(['compute/service', serviceNodeDef]);
+    const node = makeNode({ type: 'compute/service@^1.0.0', args: { runtime: 'node' } });
+    const result = validateNode(node, registry);
+    expect(result.filter(w => w.code === 'VERSION_MISMATCH')).toHaveLength(0);
+  });
+
+  it('warns when version does not satisfy caret constraint', () => {
+    const registry = registryWith(['compute/service', serviceNodeDef]);
+    const node = makeNode({ id: 'svc-1', type: 'compute/service@^2.0.0', args: { runtime: 'node' } });
+    const result = validateNode(node, registry);
+    expect(result).toContainEqual({
+      code: 'VERSION_MISMATCH',
+      nodeId: 'svc-1',
+      type: 'compute/service@^2.0.0',
+      constraint: '^2.0.0',
+      actual: '1.0.0',
+    });
+  });
+
+  it('does not warn for bare type without version constraint', () => {
+    const registry = registryWith(['compute/service', serviceNodeDef]);
+    const node = makeNode({ type: 'compute/service', args: { runtime: 'node' } });
+    const result = validateNode(node, registry);
+    expect(result.filter(w => w.code === 'VERSION_MISMATCH')).toHaveLength(0);
+  });
+
+  it('deduplicates VERSION_MISMATCH in validateCanvas', () => {
+    const registry = registryWith(['compute/service', serviceNodeDef]);
+    const canvas = makeCanvas({
+      nodes: [
+        makeNode({ id: 'a', type: 'compute/service@^2.0.0' }),
+        makeNode({ id: 'b', type: 'compute/service@^2.0.0' }),
+      ],
+    });
+    const result = validateCanvas(canvas, registry);
+    // Two different nodeIds produce different dedup keys, so both should appear
+    const versionWarnings = result.filter(w => w.code === 'VERSION_MISMATCH');
+    expect(versionWarnings).toHaveLength(2);
+  });
+});

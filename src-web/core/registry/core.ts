@@ -1,7 +1,20 @@
 import type { NodeDef } from '@/types';
+import type { LockfileData, LockfileEntry } from './lockfile';
+import {
+  parseSemVer,
+  versionSatisfies,
+  type TypeRef,
+} from './version';
+
+export type ResolveResult = {
+  nodeDef: NodeDef | undefined;
+  versionMatch: boolean;
+  locked?: LockfileEntry;
+};
 
 export interface NodeDefRegistry {
   resolve(type: string): NodeDef | undefined;
+  resolveVersioned(typeRef: TypeRef): ResolveResult;
   list(): NodeDef[];
   search(query: string): NodeDef[];
   listByNamespace(namespace: string): NodeDef[];
@@ -10,6 +23,7 @@ export interface NodeDefRegistry {
 export function createRegistry(
   builtins: Map<string, NodeDef>,
   projectLocal: Map<string, NodeDef>,
+  lockfile?: LockfileData | null,
 ): { registry: NodeDefRegistry; warnings: string[] } {
   const warnings: string[] = [];
 
@@ -21,8 +35,36 @@ export function createRegistry(
     }
   }
 
+  function resolveByKey(typeKey: string): NodeDef | undefined {
+    return projectLocal.get(typeKey) ?? builtins.get(typeKey);
+  }
+
   function resolve(type: string): NodeDef | undefined {
-    return projectLocal.get(type) ?? builtins.get(type);
+    // Support version-qualified type strings transparently
+    const atIdx = type.indexOf('@');
+    const typeKey = atIdx === -1 ? type : type.substring(0, atIdx);
+    return resolveByKey(typeKey);
+  }
+
+  function resolveVersioned(typeRef: TypeRef): ResolveResult {
+    const nodeDef = resolveByKey(typeRef.typeKey);
+    if (!nodeDef) return { nodeDef: undefined, versionMatch: false };
+
+    const locked = lockfile?.entries[typeRef.typeKey];
+
+    if (!typeRef.constraint) {
+      // No version constraint — always matches
+      return { nodeDef, versionMatch: true, locked };
+    }
+
+    const actual = parseSemVer(nodeDef.metadata.version);
+    if (!actual) {
+      // Version field isn't valid semver — can't check, assume match
+      return { nodeDef, versionMatch: true, locked };
+    }
+
+    const match = versionSatisfies(actual, typeRef.constraint);
+    return { nodeDef, versionMatch: match, locked };
   }
 
   function allNodeDefs(): NodeDef[] {
@@ -56,7 +98,7 @@ export function createRegistry(
   }
 
   return {
-    registry: { resolve, list, search, listByNamespace },
+    registry: { resolve, resolveVersioned, list, search, listByNamespace },
     warnings,
   };
 }

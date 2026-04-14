@@ -1,5 +1,6 @@
 import type { NodeDef } from '@/types/nodeDefSchema';
 import type { InlineNode } from '@/types/schema';
+import { parseTypeRef, formatConstraint } from '@/core/registry/version';
 
 // ---------------------------------------------------------------------------
 // Public interface — minimal registry contract (no Zustand dependency)
@@ -45,15 +46,20 @@ export function validateAndBuildNode(
 ): AddNodeResult {
   let { type } = input;
 
-  // 1. Resolve type (direct match)
-  let nodeDef = registry.resolve(type);
+  // 1. Parse type ref to separate version constraint from type key
+  const typeRef = parseTypeRef(type);
 
-  // 2. Dot→slash substitution (e.g., "compute.service" → "compute/service")
-  if (!nodeDef && type.includes('.')) {
-    const slashVariant = type.replaceAll('.', '/');
+  // 2. Resolve type (direct match using type key)
+  let nodeDef = registry.resolve(typeRef.typeKey);
+
+  // 3. Dot→slash substitution (e.g., "compute.service" → "compute/service")
+  if (!nodeDef && typeRef.typeKey.includes('.')) {
+    const slashVariant = typeRef.typeKey.replaceAll('.', '/');
     nodeDef = registry.resolve(slashVariant);
     if (nodeDef) {
-      type = slashVariant;
+      type = typeRef.constraint
+        ? `${slashVariant}@${formatConstraint(typeRef.constraint)}`
+        : slashVariant;
     }
   }
 

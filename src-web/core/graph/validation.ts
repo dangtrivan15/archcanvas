@@ -1,6 +1,7 @@
 import type { Node, Edge, Canvas } from '@/types';
 import type { NodeDefRegistry } from '@/core/registry/core';
 import type { EngineWarning } from './types';
+import { parseTypeRef, parseSemVer, versionSatisfies, formatConstraint } from '@/core/registry/version';
 
 function warningKey(w: EngineWarning): string {
   switch (w.code) {
@@ -9,6 +10,7 @@ function warningKey(w: EngineWarning): string {
     case 'UNKNOWN_PORT': return `${w.code}|${w.nodeId}|${w.port}`;
     case 'INVALID_PORT_DIRECTION': return `${w.code}|${w.nodeId}|${w.port}`;
     case 'ENTITY_UNREFERENCED': return `${w.code}|${w.name}`;
+    case 'VERSION_MISMATCH': return `${w.code}|${w.nodeId}|${w.type}`;
   }
 }
 
@@ -29,6 +31,21 @@ export function validateNode(
   if (!nodeDef) {
     warnings.push({ code: 'UNKNOWN_NODE_TYPE', type: node.type });
     return warnings;
+  }
+
+  // Version constraint check
+  const typeRef = parseTypeRef(node.type);
+  if (typeRef.constraint && nodeDef) {
+    const actual = parseSemVer(nodeDef.metadata.version);
+    if (actual && !versionSatisfies(actual, typeRef.constraint)) {
+      warnings.push({
+        code: 'VERSION_MISMATCH',
+        nodeId: node.id,
+        type: node.type,
+        constraint: formatConstraint(typeRef.constraint),
+        actual: nodeDef.metadata.version,
+      });
+    }
   }
 
   // Args conformance (only if type resolves)

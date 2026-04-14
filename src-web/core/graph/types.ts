@@ -37,7 +37,8 @@ export type EngineWarning =
       port: string;
       expected: 'inbound' | 'outbound';
     }
-  | { code: 'ENTITY_UNREFERENCED'; name: string };
+  | { code: 'ENTITY_UNREFERENCED'; name: string }
+  | { code: 'VERSION_MISMATCH'; nodeId: string; type: string; constraint: string; actual: string };
 
 // --- Result Type ---
 
