@@ -87,7 +87,10 @@ describe('restoreProject', () => {
     });
 
     it('returns the path for an entry exactly at the 15-min boundary', () => {
-      const exactlyFifteenMin = Date.now() - 15 * 60 * 1000;
+      const now = Date.now();
+      vi.spyOn(Date, 'now').mockReturnValue(now);
+
+      const exactlyFifteenMin = now - 15 * 60 * 1000;
       const entry = { path: '/boundary/project', timestamp: exactlyFifteenMin };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
 

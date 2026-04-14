@@ -1,5 +1,50 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useRegistryStore } from '@/store/registryStore';
+import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
+
+const validNodeDefYaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: custom-node
+  namespace: custom
+  version: "1.0.0"
+  displayName: Custom Node
+  description: A custom node
+  icon: Box
+  shape: rectangle
+spec:
+  ports:
+    - name: in
+      direction: inbound
+      protocol: [HTTP]
+`;
+
+const invalidNodeDefYaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: bad
+spec: {}
+`;
+
+const overrideNodeDefYaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: service
+  namespace: compute
+  version: "2.0.0"
+  displayName: Custom Service
+  description: A custom service override
+  icon: Box
+  shape: rectangle
+spec:
+  ports:
+    - name: in
+      direction: inbound
+      protocol: [HTTP]
+`;
 
 describe('registryStore', () => {
   beforeEach(() => {
@@ -7,6 +52,11 @@ describe('registryStore', () => {
     useRegistryStore.setState({
       registry: null,
       status: 'idle',
+      builtinCount: 0,
+      projectLocalCount: 0,
+      projectLocalKeys: new Set(),
+      overrides: [],
+      loadErrors: [],
     });
   });
 
@@ -145,6 +195,118 @@ describe('registryStore', () => {
         );
         expect(total).toBe(all.length);
       });
+    });
+  });
+
+  describe('initialize with project-local defs', () => {
+    it('loads project-local defs when fs and projectRoot are provided', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+      });
+
+      await useRegistryStore.getState().initialize(fs, 'project');
+
+      const state = useRegistryStore.getState();
+      expect(state.status).toBe('ready');
+      expect(state.builtinCount).toBe(32);
+      expect(state.projectLocalCount).toBe(1);
+      expect(state.projectLocalKeys.has('custom/custom-node')).toBe(true);
+      expect(state.loadErrors).toHaveLength(0);
+    });
+
+    it('sets loadErrors for invalid YAML files', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+      });
+
+      await useRegistryStore.getState().initialize(fs, 'project');
+
+      const state = useRegistryStore.getState();
+      expect(state.status).toBe('ready');
+      expect(state.projectLocalCount).toBe(0);
+      expect(state.loadErrors.length).toBeGreaterThan(0);
+      expect(state.loadErrors[0].file).toBe('bad.yaml');
+    });
+
+    it('detects overrides when project-local shadows builtin', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        'project/.archcanvas/nodedefs/service.yaml': overrideNodeDefYaml,
+      });
+
+      await useRegistryStore.getState().initialize(fs, 'project');
+
+      const state = useRegistryStore.getState();
+      expect(state.overrides.length).toBeGreaterThan(0);
+    });
+
+    it('initializes cleanly when .archcanvas/nodedefs/ does not exist', async () => {
+      const fs = new InMemoryFileSystem();
+      await useRegistryStore.getState().initialize(fs, 'project');
+
+      const state = useRegistryStore.getState();
+      expect(state.status).toBe('ready');
+      expect(state.projectLocalCount).toBe(0);
+      expect(state.projectLocalKeys.size).toBe(0);
+      expect(state.loadErrors).toHaveLength(0);
+    });
+  });
+
+  describe('reloadProjectLocal', () => {
+    it('updates counts and registry', async () => {
+      const fs = new InMemoryFileSystem();
+      // Start with no project-local defs
+      await useRegistryStore.getState().initialize(fs, 'project');
+      expect(useRegistryStore.getState().projectLocalCount).toBe(0);
+
+      // Add a file and reload
+      fs.seed({
+        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+      });
+      await useRegistryStore.getState().reloadProjectLocal(fs, 'project');
+
+      expect(useRegistryStore.getState().projectLocalCount).toBe(1);
+      expect(useRegistryStore.getState().projectLocalKeys.has('custom/custom-node')).toBe(true);
+    });
+
+    it('surfaces errors in loadErrors without crashing', async () => {
+      const fs = new InMemoryFileSystem();
+      await useRegistryStore.getState().initialize(fs, 'project');
+
+      // Trigger reload with a bad file
+      fs.seed({
+        'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+      });
+      await useRegistryStore.getState().reloadProjectLocal(fs, 'project');
+
+      const state = useRegistryStore.getState();
+      // Should still be ready (previous registry preserved if partial)
+      expect(state.status).toBe('ready');
+      expect(state.loadErrors.length).toBeGreaterThan(0);
+    });
+
+    it('keeps previous registry on full failure', async () => {
+      const fs = new InMemoryFileSystem();
+      fs.seed({
+        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+      });
+      await useRegistryStore.getState().initialize(fs, 'project');
+      const prevCount = useRegistryStore.getState().list().length;
+
+      // Simulate by using a fs that throws on exists
+      const brokenFs = {
+        ...fs,
+        exists: async () => { throw new Error('disk error'); },
+      } as any;
+
+      await useRegistryStore.getState().reloadProjectLocal(brokenFs, 'project');
+
+      // Previous registry should still work
+      expect(useRegistryStore.getState().list().length).toBe(prevCount);
+      expect(useRegistryStore.getState().loadErrors).toHaveLength(1);
+      expect(useRegistryStore.getState().loadErrors[0].file).toBe('(reload)');
     });
   });
 });

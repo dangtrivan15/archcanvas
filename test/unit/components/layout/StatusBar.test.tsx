@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { useUpdaterStore } from '@/store/updaterStore';
 import { useCanvasStore } from '@/store/canvasStore';
+import { useRegistryStore } from '@/store/registryStore';
 import { useThemeStore } from '@/store/themeStore';
 
 // Mock motion/react — required for happy-dom test environment
@@ -29,6 +30,28 @@ vi.mock('@/store/themeStore', () => ({
   useThemeStore: vi.fn((selector) =>
     selector({
       statusBarDensity: 'comfortable',
+    }),
+  ),
+}));
+
+// Mock registryStore and uiStore (used by registry indicator)
+vi.mock('@/store/registryStore', () => ({
+  useRegistryStore: vi.fn((selector) =>
+    selector({
+      builtinCount: 32,
+      projectLocalCount: 0,
+      overrides: [],
+      loadErrors: [],
+    }),
+  ),
+}));
+
+const mockOpenRegistryStatusDialog = vi.fn();
+
+vi.mock('@/store/uiStore', () => ({
+  useUiStore: vi.fn((selector) =>
+    selector({
+      openRegistryStatusDialog: mockOpenRegistryStatusDialog,
     }),
   ),
 }));
@@ -194,5 +217,54 @@ describe('StatusBar density', () => {
     expect(bar.className).toContain('h-8');
     expect(bar.className).toContain('text-[13px]');
     expect(bar.className).toContain('px-3.5');
+  });
+});
+
+describe('StatusBar registry indicator', () => {
+  const mockedUseRegistryStore = vi.mocked(useRegistryStore);
+
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({
+      selectedNodeIds: new Set(),
+      selectedEdgeKeys: new Set(),
+    });
+    mockOpenRegistryStatusDialog.mockClear();
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+      } as any),
+    );
+  });
+
+  it('shows builtin count', () => {
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('registry-indicator');
+    expect(indicator.textContent).toContain('32');
+    expect(indicator.textContent).toContain('types');
+  });
+
+  it('shows "N + M types" when projectLocalCount > 0', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 3,
+        overrides: [],
+        loadErrors: [],
+      } as any),
+    );
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('registry-indicator');
+    expect(indicator.textContent).toContain('32');
+    expect(indicator.textContent).toContain('3');
+  });
+
+  it('clicking indicator calls openRegistryStatusDialog', () => {
+    render(<StatusBar />);
+    fireEvent.click(screen.getByTestId('registry-indicator'));
+    expect(mockOpenRegistryStatusDialog).toHaveBeenCalled();
   });
 });

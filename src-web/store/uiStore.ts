@@ -109,6 +109,9 @@ interface UiState {
   showExportDialog: boolean;
   openExportDialog: () => void;
   closeExportDialog: () => void;
+  showRegistryStatusDialog: boolean;
+  openRegistryStatusDialog: () => void;
+  closeRegistryStatusDialog: () => void;
   showColorLegend: boolean;
   toggleColorLegend: () => void;
 }
@@ -262,6 +265,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   showExportDialog: false,
   openExportDialog: () => set({ showExportDialog: true }),
   closeExportDialog: () => set({ showExportDialog: false }),
+
+  showRegistryStatusDialog: false,
+  openRegistryStatusDialog: () => set({ showRegistryStatusDialog: true }),
+  closeRegistryStatusDialog: () => set({ showRegistryStatusDialog: false }),
 
   showColorLegend: false,
   toggleColorLegend: () => set((s) => ({ showColorLegend: !s.showColorLegend })),

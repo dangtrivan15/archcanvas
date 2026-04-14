@@ -215,6 +215,7 @@ export interface ProjectContext {
   projectDescription?: string;
   currentScope: string;
   projectPath?: string;
+  customNodeDefs?: Array<{ type: string; displayName: string; description: string }>;
 }
 
 // --- Chat Provider ---

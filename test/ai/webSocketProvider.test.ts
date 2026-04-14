@@ -143,6 +143,8 @@ vi.mock('@/store/registryStore', () => ({
       search: mockRegistrySearch,
       listByNamespace: mockListByNamespace,
       list: mockRegistryList,
+      projectLocalKeys: new Set<string>(),
+      overrides: [],
     }),
   },
 }));
@@ -1150,6 +1152,7 @@ describe('WebSocketClaudeCodeProvider', () => {
         namespace: 'compute',
         description: 'A service',
         tags: ['core'],
+        source: 'built-in',
       });
     });
 

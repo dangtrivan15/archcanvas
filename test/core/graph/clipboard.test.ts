@@ -216,7 +216,7 @@ describe('deserializeForPaste', () => {
       sourceCanvasId: 'root',
     };
 
-    const { nodes, edges, idMap } = deserializeForPaste(payload);
+    const { nodes: _nodes, edges, idMap } = deserializeForPaste(payload);
     const newSubId = idMap.get('sub1')!;
     expect(edges).toHaveLength(1);
     expect(edges[0].from.node).toBe(`@${newSubId}/inner`);
