@@ -5,14 +5,12 @@ import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
 import type { NodeDefService } from './services/nodeDefService';
 import type { AuthService } from './services/authService';
-import type { MetricsService } from './services/metricsService';
 import type { IUserRepository } from './repositories/types';
 import type { Config } from './config';
 
 export interface AppDependencies {
   nodeDefService: NodeDefService;
   authService: AuthService;
-  metricsService: MetricsService;
   userRepo: IUserRepository;
   config: Config;
 }

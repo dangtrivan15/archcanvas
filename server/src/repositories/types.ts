@@ -88,6 +88,20 @@ export interface IUserRepository {
   createNamespace(name: string, ownerId: number): void;
 }
 
+export interface ApiTokenRecord {
+  id: number;
+  userId: number;
+  tokenHash: string;
+  prefix: string;
+}
+
+export interface IApiTokenRepository {
+  findByPrefix(prefix: string): ApiTokenRecord[];
+  create(userId: number, name: string, tokenHash: string, prefix: string): void;
+  updateLastUsed(tokenId: number): void;
+  deleteByIdAndUser(tokenId: number, userId: number): boolean;
+}
+
 export interface IMetricsRepository {
   incrementDownload(nodedefId: number, version: string, day: string): void;
   getDownloadStats(

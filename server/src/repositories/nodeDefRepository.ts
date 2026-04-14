@@ -8,6 +8,7 @@ import type {
   SearchResultItem,
   NodeDefRecord,
 } from './types';
+import { ValidationError } from '../middleware/errorHandler';
 
 interface NodeDefRow {
   id: number;
@@ -92,9 +93,19 @@ export class NodeDefRepository implements INodeDefRepository {
 
     // Count total
     const countSql = `SELECT COUNT(*) as total ${fromClause} ${whereClause}`;
-    const totalRow = this.db.prepare(countSql).get(...params) as {
-      total: number;
-    };
+    let totalRow: { total: number };
+    try {
+      totalRow = this.db.prepare(countSql).get(...params) as {
+        total: number;
+      };
+    } catch (err) {
+      // FTS5 syntax errors (e.g. unbalanced quotes, invalid operators) come through here.
+      // When we have a query, SQLite errors are most likely FTS5 syntax issues from user input.
+      if (query && err instanceof Error && (err as { code?: string }).code === 'SQLITE_ERROR') {
+        throw new ValidationError(`Invalid search query: ${err.message}`);
+      }
+      throw err;
+    }
     const total = totalRow.total;
 
     // Determine sort order
@@ -131,9 +142,7 @@ export class NodeDefRepository implements INodeDefRepository {
       LIMIT ? OFFSET ?
     `;
 
-    const rows = this.db
-      .prepare(selectSql)
-      .all(...params, pageSize, offset) as Array<
+    let rows: Array<
       NodeDefRow & {
         version: string;
         downloads: number;
@@ -141,6 +150,16 @@ export class NodeDefRepository implements INodeDefRepository {
         publisher_avatar_url: string | null;
       }
     >;
+    try {
+      rows = this.db
+        .prepare(selectSql)
+        .all(...params, pageSize, offset) as typeof rows;
+    } catch (err) {
+      if (query && err instanceof Error && (err as { code?: string }).code === 'SQLITE_ERROR') {
+        throw new ValidationError(`Invalid search query: ${err.message}`);
+      }
+      throw err;
+    }
 
     const items: SearchResultItem[] = rows.map((row) => ({
       namespace: row.namespace,

@@ -5,6 +5,7 @@ import { runMigrations } from './db/migrate';
 import { createApp } from './app';
 import { NodeDefRepository } from './repositories/nodeDefRepository';
 import { UserRepository } from './repositories/userRepository';
+import { ApiTokenRepository } from './repositories/apiTokenRepository';
 import { MetricsRepository } from './repositories/metricsRepository';
 import { AuthService } from './services/authService';
 import { MetricsService } from './services/metricsService';
@@ -37,10 +38,11 @@ runMigrations(db, migrationsDir);
 // Create repositories
 const nodeDefRepo = new NodeDefRepository(db);
 const userRepo = new UserRepository(db);
+const apiTokenRepo = new ApiTokenRepository(db);
 const metricsRepo = new MetricsRepository(db);
 
 // Create services
-const authService = new AuthService(userRepo, config);
+const authService = new AuthService(userRepo, apiTokenRepo, config);
 const metricsService = new MetricsService(metricsRepo);
 const nodeDefService = new NodeDefService(nodeDefRepo, userRepo, metricsService);
 
@@ -49,7 +51,6 @@ metricsService.startCleanup();
 const app = createApp({
   nodeDefService,
   authService,
-  metricsService,
   userRepo,
   config,
 });

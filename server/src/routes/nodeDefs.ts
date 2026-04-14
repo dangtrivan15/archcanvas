@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import type { NodeDefService } from '../services/nodeDefService';
-import type { MetricsService } from '../services/metricsService';
 import type { AuthService } from '../services/authService';
 import { requireAuth } from '../middleware/auth';
 import { SearchQuerySchema, FetchQuerySchema, validateRequest } from '../validation/querySchemas';
@@ -10,7 +9,6 @@ import type { AppEnv } from '../types';
 
 interface RoutesDeps {
   nodeDefService: NodeDefService;
-  metricsService: MetricsService;
   authService: AuthService;
 }
 
@@ -136,7 +134,12 @@ export function createNodeDefRoutes(deps: RoutesDeps): Hono<AppEnv> {
     if (contentType.includes('text/yaml') || contentType.includes('text/x-yaml')) {
       yamlContent = await c.req.text();
     } else {
-      const body = await c.req.json() as { yaml?: string };
+      let body: { yaml?: string };
+      try {
+        body = await c.req.json() as { yaml?: string };
+      } catch {
+        throw new ValidationError('Request body must be valid JSON');
+      }
       if (!body.yaml) {
         throw new ValidationError('Request body must contain a "yaml" field');
       }

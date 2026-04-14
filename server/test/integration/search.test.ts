@@ -111,6 +111,17 @@ describe('GET /api/v1/nodedefs (search)', () => {
     expect(body.total).toBe(0);
   });
 
+  it('returns 400 for invalid FTS5 query syntax', async () => {
+    // Unbalanced quotes trigger an FTS5 syntax error
+    const res = await ctx.app.request(
+      '/api/v1/nodedefs?q=' + encodeURIComponent('"unclosed'),
+    );
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('VALIDATION_FAILED');
+    expect(body.error.message).toContain('Invalid search query');
+  });
+
   it('returns correct item shape', async () => {
     const res = await ctx.app.request('/api/v1/nodedefs?pageSize=1');
     expect(res.status).toBe(200);

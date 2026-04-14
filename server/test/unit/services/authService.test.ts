@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { runMigrations } from '../../../src/db/migrate';
 import { UserRepository } from '../../../src/repositories/userRepository';
+import { ApiTokenRepository } from '../../../src/repositories/apiTokenRepository';
 import { AuthService } from '../../../src/services/authService';
 import type { Config } from '../../../src/config';
 import path from 'path';
@@ -24,6 +25,7 @@ const TEST_CONFIG: Config = {
 describe('AuthService', () => {
   let db: Database.Database;
   let userRepo: UserRepository;
+  let apiTokenRepo: ApiTokenRepository;
   let authService: AuthService;
 
   beforeEach(() => {
@@ -34,7 +36,8 @@ describe('AuthService', () => {
       path.resolve(__dirname, '../../../src/db/migrations'),
     );
     userRepo = new UserRepository(db);
-    authService = new AuthService(userRepo, TEST_CONFIG);
+    apiTokenRepo = new ApiTokenRepository(db);
+    authService = new AuthService(userRepo, apiTokenRepo, TEST_CONFIG);
   });
 
   describe('JWT', () => {
@@ -51,7 +54,7 @@ describe('AuthService', () => {
 
     it('rejects a JWT signed with wrong secret', async () => {
       const otherConfig = { ...TEST_CONFIG, jwtSecret: 'other-secret' };
-      const otherAuth = new AuthService(userRepo, otherConfig);
+      const otherAuth = new AuthService(userRepo, apiTokenRepo, otherConfig);
       const token = otherAuth.createJWT(1, 'testuser');
 
       const result = await authService.verifyToken(token);
@@ -76,6 +79,54 @@ describe('AuthService', () => {
         userId: user.id,
         username: 'tokenuser',
       });
+    });
+
+    it('revokes an API token', async () => {
+      userRepo.upsertFromGitHub(12345, 'tokenuser', 'Token User', null);
+      const user = userRepo.findByGitHubId(12345)!;
+
+      const { token } = await authService.createAPIToken(user.id, 'revoke-me');
+
+      // Verify token works before revocation
+      const beforeRevoke = await authService.verifyToken(token);
+      expect(beforeRevoke).not.toBeNull();
+
+      // Get token ID from DB
+      const tokenRow = db
+        .prepare('SELECT id FROM api_tokens WHERE user_id = ?')
+        .get(user.id) as { id: number };
+
+      // Revoke it
+      const revoked = await authService.revokeAPIToken(tokenRow.id, user.id);
+      expect(revoked).toBe(true);
+
+      // Verify token no longer works
+      const afterRevoke = await authService.verifyToken(token);
+      expect(afterRevoke).toBeNull();
+    });
+
+    it('revokeAPIToken returns false for non-existent token', async () => {
+      userRepo.upsertFromGitHub(12345, 'tokenuser', 'Token User', null);
+      const user = userRepo.findByGitHubId(12345)!;
+
+      const revoked = await authService.revokeAPIToken(999, user.id);
+      expect(revoked).toBe(false);
+    });
+
+    it('revokeAPIToken returns false for wrong user', async () => {
+      userRepo.upsertFromGitHub(12345, 'tokenuser', 'Token User', null);
+      const user = userRepo.findByGitHubId(12345)!;
+      userRepo.upsertFromGitHub(12346, 'otheruser', 'Other User', null);
+      const otherUser = userRepo.findByGitHubId(12346)!;
+
+      await authService.createAPIToken(user.id, 'my-token');
+      const tokenRow = db
+        .prepare('SELECT id FROM api_tokens WHERE user_id = ?')
+        .get(user.id) as { id: number };
+
+      // Try to revoke as another user
+      const revoked = await authService.revokeAPIToken(tokenRow.id, otherUser.id);
+      expect(revoked).toBe(false);
     });
   });
 });

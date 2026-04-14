@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import type { IUserRepository, UserRecord } from '../repositories/types';
+import type { IUserRepository, IApiTokenRepository, UserRecord } from '../repositories/types';
 import type { Config } from '../config';
 
 interface TokenPayload {
@@ -16,16 +16,10 @@ export interface AuthUser {
   username: string;
 }
 
-interface ApiTokenRow {
-  id: number;
-  user_id: number;
-  token_hash: string;
-  prefix: string;
-}
-
 export class AuthService {
   constructor(
     private userRepo: IUserRepository,
+    private apiTokenRepo: IApiTokenRepository,
     private config: Config,
     private fetchFn: typeof globalThis.fetch = globalThis.fetch,
   ) {}
@@ -50,6 +44,12 @@ export class AuthService {
       },
     );
 
+    if (!tokenRes.ok) {
+      throw new Error(
+        `GitHub OAuth token exchange failed with status ${tokenRes.status}`,
+      );
+    }
+
     const tokenData = (await tokenRes.json()) as {
       access_token?: string;
       error?: string;
@@ -67,6 +67,12 @@ export class AuthService {
         Accept: 'application/json',
       },
     });
+
+    if (!userRes.ok) {
+      throw new Error(
+        `GitHub user API failed with status ${userRes.status}`,
+      );
+    }
 
     const ghUser = (await userRes.json()) as {
       id: number;
@@ -111,8 +117,7 @@ export class AuthService {
 
     // Check if it matches an API token by prefix lookup
     const prefix = token.slice(0, 8);
-    const user = await this.verifyApiToken(token, prefix);
-    return user;
+    return this.verifyApiToken(token, prefix);
   }
 
   private async verifyApiToken(
@@ -120,27 +125,18 @@ export class AuthService {
     prefix: string,
   ): Promise<AuthUser | null> {
     // Use prefix for efficient lookup instead of O(n) bcrypt comparison
-    try {
-      const db = (this.userRepo as unknown as { db: import('better-sqlite3').Database }).db;
-      const tokenRows = db
-        .prepare('SELECT id, user_id, token_hash, prefix FROM api_tokens WHERE prefix = ?')
-        .all(prefix) as ApiTokenRow[];
+    const tokenRows = this.apiTokenRepo.findByPrefix(prefix);
 
-      for (const row of tokenRows) {
-        if (await bcrypt.compare(token, row.token_hash)) {
-          // Update last_used
-          db.prepare(
-            "UPDATE api_tokens SET last_used = datetime('now') WHERE id = ?",
-          ).run(row.id);
+    for (const row of tokenRows) {
+      if (await bcrypt.compare(token, row.tokenHash)) {
+        // Update last_used
+        this.apiTokenRepo.updateLastUsed(row.id);
 
-          const user = this.userRepo.findById(row.user_id);
-          if (user) {
-            return { userId: user.id, username: user.username };
-          }
+        const user = this.userRepo.findById(row.userId);
+        if (user) {
+          return { userId: user.id, username: user.username };
         }
       }
-    } catch {
-      // DB access failed
     }
 
     return null;
@@ -154,20 +150,12 @@ export class AuthService {
     const prefix = rawToken.slice(0, 8);
     const hash = await bcrypt.hash(rawToken, 10);
 
-    const db = (this.userRepo as unknown as { db: import('better-sqlite3').Database }).db;
-    db.prepare(
-      'INSERT INTO api_tokens (user_id, name, token_hash, prefix) VALUES (?, ?, ?, ?)',
-    ).run(userId, name, hash, prefix);
+    this.apiTokenRepo.create(userId, name, hash, prefix);
 
     return { token: rawToken, name };
   }
 
   async revokeAPIToken(tokenId: number, userId: number): Promise<boolean> {
-    const db = (this.userRepo as unknown as { db: import('better-sqlite3').Database }).db;
-    const result = db
-      .prepare('DELETE FROM api_tokens WHERE id = ? AND user_id = ?')
-      .run(tokenId, userId);
-
-    return result.changes > 0;
+    return this.apiTokenRepo.deleteByIdAndUser(tokenId, userId);
   }
 }

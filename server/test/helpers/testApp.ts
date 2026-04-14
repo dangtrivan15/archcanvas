@@ -3,6 +3,7 @@ import { runMigrations } from '../../src/db/migrate';
 import { createApp } from '../../src/app';
 import { NodeDefRepository } from '../../src/repositories/nodeDefRepository';
 import { UserRepository } from '../../src/repositories/userRepository';
+import { ApiTokenRepository } from '../../src/repositories/apiTokenRepository';
 import { MetricsRepository } from '../../src/repositories/metricsRepository';
 import { AuthService } from '../../src/services/authService';
 import { MetricsService } from '../../src/services/metricsService';
@@ -31,6 +32,7 @@ export interface TestContext {
   db: Database.Database;
   nodeDefRepo: NodeDefRepository;
   userRepo: UserRepository;
+  apiTokenRepo: ApiTokenRepository;
   metricsRepo: MetricsRepository;
   authService: AuthService;
   metricsService: MetricsService;
@@ -55,9 +57,10 @@ export function createTestApp(
 
   const nodeDefRepo = new NodeDefRepository(db);
   const userRepo = new UserRepository(db);
+  const apiTokenRepo = new ApiTokenRepository(db);
   const metricsRepo = new MetricsRepository(db);
 
-  const authService = new AuthService(userRepo, config);
+  const authService = new AuthService(userRepo, apiTokenRepo, config);
   const metricsService = new MetricsService(metricsRepo, nowFn);
   const nodeDefService = new NodeDefService(
     nodeDefRepo,
@@ -68,7 +71,6 @@ export function createTestApp(
   const app = createApp({
     nodeDefService,
     authService,
-    metricsService,
     userRepo,
     config,
   });
@@ -78,6 +80,7 @@ export function createTestApp(
     db,
     nodeDefRepo,
     userRepo,
+    apiTokenRepo,
     metricsRepo,
     authService,
     metricsService,

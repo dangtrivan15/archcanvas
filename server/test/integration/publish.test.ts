@@ -89,6 +89,20 @@ describe('POST /api/v1/nodedefs (publish)', () => {
     expect(res.status).toBe(401);
   });
 
+  it('returns 400 for malformed JSON body', async () => {
+    const res = await ctx.app.request('/api/v1/nodedefs', {
+      method: 'POST',
+      headers: {
+        ...authHeader(token),
+        'Content-Type': 'application/json',
+      },
+      body: 'not json',
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('VALIDATION_FAILED');
+  });
+
   it('returns 400 for invalid YAML', async () => {
     const yaml = loadFixture('invalid-yaml.yaml');
     const res = await ctx.app.request('/api/v1/nodedefs', {

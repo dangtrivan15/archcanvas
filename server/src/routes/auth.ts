@@ -21,7 +21,12 @@ export function createAuthRoutes(deps: AuthRoutesDeps): Hono<AppEnv> {
 
   // POST /api/v1/auth/github — GitHub OAuth code exchange
   app.post('/api/v1/auth/github', async (c) => {
-    const body = await c.req.json();
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      throw new ValidationError('Request body must be valid JSON');
+    }
     const parsed = validateRequest(GitHubAuthSchema, body);
     if ('error' in parsed) {
       throw new ValidationError(parsed.error);
@@ -48,7 +53,12 @@ export function createAuthRoutes(deps: AuthRoutesDeps): Hono<AppEnv> {
     requireAuth(authService),
     async (c) => {
       const user = c.get('user');
-      const body = await c.req.json();
+      let body: unknown;
+      try {
+        body = await c.req.json();
+      } catch {
+        throw new ValidationError('Request body must be valid JSON');
+      }
       const parsed = validateRequest(CreateTokenSchema, body);
       if ('error' in parsed) {
         throw new ValidationError(parsed.error);
@@ -63,6 +73,36 @@ export function createAuthRoutes(deps: AuthRoutesDeps): Hono<AppEnv> {
         token: result.token,
         name: result.name,
       }, 201);
+    },
+  );
+
+  // DELETE /api/v1/auth/tokens/:id — Revoke API token (authenticated)
+  app.delete(
+    '/api/v1/auth/tokens/:id',
+    requireAuth(authService),
+    async (c) => {
+      const user = c.get('user');
+      const tokenId = parseInt(c.req.param('id'), 10);
+
+      if (isNaN(tokenId) || tokenId <= 0) {
+        throw new ValidationError('Invalid token ID');
+      }
+
+      const deleted = await authService.revokeAPIToken(tokenId, user.userId);
+
+      if (!deleted) {
+        return c.json(
+          {
+            error: {
+              code: 'NOT_FOUND',
+              message: 'Token not found or does not belong to you',
+            },
+          },
+          404,
+        );
+      }
+
+      return c.json({ message: 'Token revoked successfully' });
     },
   );
 

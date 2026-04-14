@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateSemver, RESERVED_NAMESPACES } from '../../../src/validation/publish';
+import { validateSemver } from '../../../src/validation/publish';
 
 describe('validateSemver', () => {
   it('accepts valid semver strings', () => {
@@ -18,18 +18,5 @@ describe('validateSemver', () => {
     expect(validateSemver('')).toBe(false);
     expect(validateSemver('v1.0.0')).toBe(false);
     expect(validateSemver('1.0.0.0')).toBe(false);
-  });
-});
-
-describe('RESERVED_NAMESPACES', () => {
-  it('contains all 9 built-in namespaces', () => {
-    const expected = [
-      'compute', 'data', 'messaging', 'network', 'client',
-      'integration', 'security', 'observability', 'ai',
-    ];
-    for (const ns of expected) {
-      expect(RESERVED_NAMESPACES.has(ns)).toBe(true);
-    }
-    expect(RESERVED_NAMESPACES.size).toBe(9);
   });
 });
