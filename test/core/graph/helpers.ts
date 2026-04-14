@@ -53,7 +53,16 @@ export function makeMockRegistry(
 ): NodeDefRegistry {
   const defs = nodeDefs ?? new Map<string, NodeDef>();
   return {
-    resolve: (type: string) => defs.get(type),
+    resolve: (type: string) => {
+      // Strip @version suffix for lookup (mirrors real registry behavior)
+      const atIdx = type.indexOf('@');
+      const key = atIdx === -1 ? type : type.substring(0, atIdx);
+      return defs.get(key);
+    },
+    resolveVersioned: (typeRef) => {
+      const nodeDef = defs.get(typeRef.typeKey);
+      return { nodeDef, versionMatch: true };
+    },
     list: () => Array.from(defs.values()),
     search: () => [],
     listByNamespace: () => [],

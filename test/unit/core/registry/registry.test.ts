@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { createRegistry } from '@/core/registry/core';
 import type { NodeDef } from '@/types';
+import type { LockfileData } from '@/core/registry/lockfile';
+import type { TypeRef } from '@/core/registry/version';
 
 function makeNodeDef(
   namespace: string,
   name: string,
-  overrides: Partial<{ displayName: string; description: string; tags: string[] }> = {},
+  overrides: Partial<{ displayName: string; description: string; tags: string[]; version: string }> = {},
 ): NodeDef {
   return {
     kind: 'NodeDef',
@@ -13,7 +15,7 @@ function makeNodeDef(
     metadata: {
       name,
       namespace,
-      version: '1.0.0',
+      version: overrides.version ?? '1.0.0',
       displayName: overrides.displayName ?? name,
       description: overrides.description ?? `A ${name} node`,
       icon: 'Box',
@@ -149,6 +151,84 @@ describe('createRegistry', () => {
     it('returns empty for unknown namespace', () => {
       const { registry } = createRegistry(builtins(), new Map());
       expect(registry.listByNamespace('unknown')).toHaveLength(0);
+    });
+  });
+
+  describe('resolve with @ version suffix', () => {
+    it('strips version and resolves to def', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      expect(registry.resolve('data/database@1.0.0')).toBe(builtinDb);
+    });
+
+    it('strips caret version and resolves to def', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      expect(registry.resolve('data/database@^1.0.0')).toBe(builtinDb);
+    });
+
+    it('returns undefined for unknown type with version', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      expect(registry.resolve('unknown/type@1.0.0')).toBeUndefined();
+    });
+  });
+
+  describe('resolveVersioned', () => {
+    it('returns nodeDef and versionMatch: true when no constraint', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      const ref: TypeRef = { typeKey: 'data/database' };
+      const result = registry.resolveVersioned(ref);
+      expect(result.nodeDef).toBe(builtinDb);
+      expect(result.versionMatch).toBe(true);
+    });
+
+    it('returns versionMatch: true when constraint is satisfied', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      const ref: TypeRef = {
+        typeKey: 'data/database',
+        constraint: { type: 'caret', version: { major: 1, minor: 0, patch: 0 } },
+      };
+      const result = registry.resolveVersioned(ref);
+      expect(result.nodeDef).toBe(builtinDb);
+      expect(result.versionMatch).toBe(true);
+    });
+
+    it('returns versionMatch: false when constraint is not satisfied', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      const ref: TypeRef = {
+        typeKey: 'data/database',
+        constraint: { type: 'caret', version: { major: 2, minor: 0, patch: 0 } },
+      };
+      const result = registry.resolveVersioned(ref);
+      expect(result.nodeDef).toBe(builtinDb);
+      expect(result.versionMatch).toBe(false);
+    });
+
+    it('returns nodeDef: undefined for unknown type', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      const ref: TypeRef = { typeKey: 'unknown/type' };
+      const result = registry.resolveVersioned(ref);
+      expect(result.nodeDef).toBeUndefined();
+      expect(result.versionMatch).toBe(false);
+    });
+
+    it('includes lockfile entry when lockfile is provided', () => {
+      const lockfile: LockfileData = {
+        lockfileVersion: 1,
+        resolvedAt: '2026-04-14T12:00:00Z',
+        entries: {
+          'data/database': { version: '1.0.0', source: 'builtin' },
+        },
+      };
+      const { registry } = createRegistry(builtins(), new Map(), lockfile);
+      const ref: TypeRef = { typeKey: 'data/database' };
+      const result = registry.resolveVersioned(ref);
+      expect(result.locked).toEqual({ version: '1.0.0', source: 'builtin' });
+    });
+
+    it('returns locked: undefined when no lockfile', () => {
+      const { registry } = createRegistry(builtins(), new Map());
+      const ref: TypeRef = { typeKey: 'data/database' };
+      const result = registry.resolveVersioned(ref);
+      expect(result.locked).toBeUndefined();
     });
   });
 });
