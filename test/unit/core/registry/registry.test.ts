@@ -231,4 +231,99 @@ describe('createRegistry', () => {
       expect(result.locked).toBeUndefined();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // createRegistry with remoteInstalled (4th parameter)
+  // ---------------------------------------------------------------------------
+
+  describe('createRegistry with remoteInstalled', () => {
+    const remoteNode = makeNodeDef('community', 'k8s-deploy', {
+      displayName: 'K8s Deploy',
+      description: 'A community Kubernetes node',
+    });
+    const authoredNode = makeNodeDef('custom', 'widget', { displayName: 'Widget' });
+
+    function remoteInstalled(): Map<string, NodeDef> {
+      return new Map([['community/k8s-deploy', remoteNode]]);
+    }
+
+    it('resolves remote-installed def when not present in authored or builtins', () => {
+      const { registry } = createRegistry(builtins(), new Map(), null, remoteInstalled());
+      expect(registry.resolve('community/k8s-deploy')).toBe(remoteNode);
+    });
+
+    it('authored takes precedence over builtins over remoteInstalled', () => {
+      // Create a conflict: same key in all three
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
+      const authoredService = makeNodeDef('compute', 'service', { displayName: 'Authored Service' });
+
+      const ri = new Map([['compute/service', remoteService]]);
+      const authored = new Map([['compute/service', authoredService]]);
+
+      const { registry } = createRegistry(builtins(), authored, null, ri);
+      // authored wins
+      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Authored Service');
+    });
+
+    it('builtins take precedence over remoteInstalled', () => {
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
+      const ri = new Map([['compute/service', remoteService]]);
+
+      const { registry } = createRegistry(builtins(), new Map(), null, ri);
+      // builtin wins over remote
+      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Service');
+    });
+
+    it('allNodeDefs() / list() includes defs from all 3 sources', () => {
+      const authored = new Map([['custom/widget', authoredNode]]);
+      const ri = remoteInstalled();
+
+      const { registry } = createRegistry(builtins(), authored, null, ri);
+      const all = registry.list();
+      // 2 builtins + 1 authored + 1 remote = 4
+      expect(all).toHaveLength(4);
+      const keys = all.map((d) => `${d.metadata.namespace}/${d.metadata.name}`);
+      expect(keys).toContain('community/k8s-deploy');
+      expect(keys).toContain('custom/widget');
+      expect(keys).toContain('compute/service');
+      expect(keys).toContain('data/database');
+    });
+
+    it('allNodeDefs(): authored version wins for overlapping keys', () => {
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote' });
+      const authoredService = makeNodeDef('compute', 'service', { displayName: 'Authored' });
+      const ri = new Map([['compute/service', remoteService]]);
+      const authored = new Map([['compute/service', authoredService]]);
+
+      const { registry } = createRegistry(builtins(), authored, null, ri);
+      const all = registry.list();
+      // Still 2 unique entries (service deduplicated)
+      expect(all).toHaveLength(2);
+      const service = all.find((d) => d.metadata.name === 'service');
+      expect(service?.metadata.displayName).toBe('Authored');
+    });
+
+    it('search() matches across all 3 sources', () => {
+      const ri = remoteInstalled();
+      const { registry } = createRegistry(builtins(), new Map(), null, ri);
+      expect(registry.search('kubernetes')).toHaveLength(1);
+      expect(registry.search('community')).toHaveLength(1);
+    });
+
+    it('warns when authored shadows a remoteInstalled key', () => {
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
+      const authoredService = makeNodeDef('compute', 'service', { displayName: 'Authored Service' });
+      const ri = new Map([['compute/service', remoteService]]);
+      const authored = new Map([['compute/service', authoredService]]);
+
+      const { warnings } = createRegistry(builtins(), authored, null, ri);
+      // Should warn about override (of builtin and/or remote)
+      expect(warnings.some((w) => w.includes('compute/service'))).toBe(true);
+    });
+
+    it('works with undefined remoteInstalled (backwards compatible)', () => {
+      const { registry } = createRegistry(builtins(), new Map(), null, undefined);
+      expect(registry.list()).toHaveLength(2);
+    });
+  });
 });

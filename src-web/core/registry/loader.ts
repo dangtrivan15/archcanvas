@@ -2,11 +2,13 @@ import type { FileSystem } from '@/platform/fileSystem';
 import type { NodeDef } from '@/types';
 import { parseNodeDef } from './validator';
 import { builtinNodeDefs } from './builtins';
+import type { LockfileData } from './lockfile';
 
 export { builtinNodeDefs } from './builtins';
 
 export interface LoadProjectLocalResult {
-  nodeDefs: Map<string, NodeDef>;
+  nodeDefs: Map<string, NodeDef>;                // authored (non-remote) files
+  remoteInstalledNodeDefs: Map<string, NodeDef>; // remote-installed files (source:'remote' in lockfile)
   errors: Array<{ file: string; message: string }>;
 }
 
@@ -21,20 +23,21 @@ export function loadBuiltins(): Map<string, NodeDef> {
   return map;
 }
 
-const NODEDEFS_DIR = '.archcanvas/nodedefs';
+export const NODEDEFS_DIR = '.archcanvas/nodedefs';
 
 export async function loadProjectLocal(
   fs: FileSystem,
   projectRoot: string,
+  lockfile?: LockfileData | null,
 ): Promise<LoadProjectLocalResult> {
-  const nodeDefs = new Map<string, NodeDef>();
+  const allLoaded = new Map<string, NodeDef>();
   const errors: Array<{ file: string; message: string }> = [];
 
   const dir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
 
   const dirExists = await fs.exists(dir);
   if (!dirExists) {
-    return { nodeDefs, errors };
+    return { nodeDefs: new Map(), remoteInstalledNodeDefs: new Map(), errors };
   }
 
   const files = await fs.listFiles(dir);
@@ -51,7 +54,7 @@ export async function loadProjectLocal(
         errors.push({ file, message: result.error });
       } else {
         const key = `${result.nodeDef.metadata.namespace}/${result.nodeDef.metadata.name}`;
-        nodeDefs.set(key, result.nodeDef);
+        allLoaded.set(key, result.nodeDef);
       }
     } catch (e) {
       errors.push({
@@ -61,5 +64,17 @@ export async function loadProjectLocal(
     }
   }
 
-  return { nodeDefs, errors };
+  // Classification pass: split into authored vs remote-installed using lockfile source field
+  const nodeDefs = new Map<string, NodeDef>();
+  const remoteInstalledNodeDefs = new Map<string, NodeDef>();
+
+  for (const [key, def] of allLoaded) {
+    if (lockfile?.entries[key]?.source === 'remote') {
+      remoteInstalledNodeDefs.set(key, def);
+    } else {
+      nodeDefs.set(key, def);
+    }
+  }
+
+  return { nodeDefs, remoteInstalledNodeDefs, errors };
 }

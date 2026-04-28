@@ -24,9 +24,12 @@ let registryState: Record<string, unknown> = {
   builtinCount: 32,
   projectLocalCount: 0,
   projectLocalKeys: new Set<string>(),
+  remoteInstalledCount: 0,
+  remoteInstalledKeys: new Set<string>(),
   overrides: [] as string[],
   loadErrors: [] as Array<{ file: string; message: string }>,
-  list: () => [],
+  registry: null,
+  lockfile: null,
 };
 
 vi.mock('@/store/uiStore', () => ({
@@ -79,9 +82,12 @@ describe('RegistryStatusDialog', () => {
       builtinCount: 32,
       projectLocalCount: 0,
       projectLocalKeys: new Set<string>(),
+      remoteInstalledCount: 0,
+      remoteInstalledKeys: new Set<string>(),
       overrides: [],
       loadErrors: [],
-      list: () => [],
+      registry: null,
+      lockfile: null,
     };
   });
 
@@ -108,6 +114,55 @@ describe('RegistryStatusDialog', () => {
     render(<RegistryStatusDialog />);
     const desc = screen.getByTestId('dialog-description');
     expect(desc.textContent).toContain('5 project-local');
+  });
+
+  it('shows community count when present', () => {
+    registryState.remoteInstalledCount = 3;
+    render(<RegistryStatusDialog />);
+    const desc = screen.getByTestId('dialog-description');
+    expect(desc.textContent).toContain('3 community');
+  });
+
+  it('renders community badge when remoteInstalledCount > 0', () => {
+    registryState.remoteInstalledCount = 2;
+    render(<RegistryStatusDialog />);
+    // The violet community badge should appear
+    expect(screen.getByText('2 community')).toBeTruthy();
+  });
+
+  it('shows community-installed section when registry lists community defs', () => {
+    const communityKey = 'acme/widget';
+    registryState.remoteInstalledCount = 1;
+    registryState.remoteInstalledKeys = new Set<string>([communityKey]);
+    registryState.lockfile = {
+      lockfileVersion: 1,
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      entries: {
+        [communityKey]: { version: '1.2.3', source: 'remote' },
+      },
+    };
+    registryState.registry = {
+      list: () => [
+        {
+          kind: 'NodeDef',
+          apiVersion: 'v1',
+          metadata: {
+            name: 'widget',
+            namespace: 'acme',
+            version: '1.2.3',
+            displayName: 'Widget',
+            description: 'A widget',
+            icon: 'box',
+            shape: 'rectangle',
+          },
+          spec: {},
+        },
+      ],
+    };
+    render(<RegistryStatusDialog />);
+    expect(screen.getByText('Community-Installed (1)')).toBeTruthy();
+    expect(screen.getByText('acme/widget')).toBeTruthy();
+    expect(screen.getByText('v1.2.3')).toBeTruthy();
   });
 
   it('renders error section when loadErrors is non-empty', () => {

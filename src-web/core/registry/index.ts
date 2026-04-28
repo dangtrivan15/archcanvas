@@ -24,3 +24,12 @@ export {
   type LockfileData,
   type LockfileEntry,
 } from './lockfile';
+
+export {
+  searchRegistry,
+  fetchNodeDefYaml,
+  type RemoteNodeDefSummary,
+  REGISTRY_BASE_URL,
+} from './remoteRegistry';
+
+export { downloadAndInstallNodeDef } from './installer';

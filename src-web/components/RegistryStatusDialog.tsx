@@ -11,8 +11,11 @@ export function RegistryStatusDialog() {
   const builtinCount = useRegistryStore((s) => s.builtinCount);
   const projectLocalCount = useRegistryStore((s) => s.projectLocalCount);
   const projectLocalKeys = useRegistryStore((s) => s.projectLocalKeys);
+  const remoteInstalledCount = useRegistryStore((s) => s.remoteInstalledCount);
+  const remoteInstalledKeys = useRegistryStore((s) => s.remoteInstalledKeys);
   const overrides = useRegistryStore((s) => s.overrides);
   const loadErrors = useRegistryStore((s) => s.loadErrors);
+  const lockfile = useRegistryStore((s) => s.lockfile);
   const registry = useRegistryStore((s) => s.registry);
   const allDefs = registry?.list() ?? [];
 
@@ -27,11 +30,15 @@ export function RegistryStatusDialog() {
   // Group defs by source
   const builtinDefs = allDefs.filter(d => {
     const key = `${d.metadata.namespace}/${d.metadata.name}`;
-    return !projectLocalKeys.has(key);
+    return !projectLocalKeys.has(key) && !remoteInstalledKeys.has(key);
   });
   const projectLocalDefs = allDefs.filter(d => {
     const key = `${d.metadata.namespace}/${d.metadata.name}`;
     return projectLocalKeys.has(key);
+  });
+  const remoteInstalledDefs = allDefs.filter(d => {
+    const key = `${d.metadata.namespace}/${d.metadata.name}`;
+    return remoteInstalledKeys.has(key);
   });
 
   return (
@@ -40,7 +47,10 @@ export function RegistryStatusDialog() {
         <DialogHeader>
           <DialogTitle>Node Type Registry</DialogTitle>
           <DialogDescription>
-            {builtinCount} built-in{projectLocalCount > 0 ? ` + ${projectLocalCount} project-local` : ''} types
+            {`${builtinCount} built-in`}
+            {projectLocalCount > 0 && ` + ${projectLocalCount} project-local`}
+            {remoteInstalledCount > 0 && ` + ${remoteInstalledCount} community`}
+            {' types'}
           </DialogDescription>
         </DialogHeader>
 
@@ -57,6 +67,11 @@ export function RegistryStatusDialog() {
           {overrides.length > 0 && (
             <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-500">
               <ArrowLeftRight className="size-3" /> {overrides.length} override{overrides.length > 1 ? 's' : ''}
+            </span>
+          )}
+          {remoteInstalledCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-500">
+              {remoteInstalledCount} community
             </span>
           )}
           {loadErrors.length > 0 && (
@@ -101,6 +116,33 @@ export function RegistryStatusDialog() {
                         <ArrowLeftRight className="size-3" /> override
                       </span>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Community-Installed types */}
+        {remoteInstalledDefs.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-card-foreground">
+              Community-Installed ({remoteInstalledDefs.length})
+            </p>
+            <div className="space-y-0.5">
+              {remoteInstalledDefs.map(def => {
+                const key = `${def.metadata.namespace}/${def.metadata.name}`;
+                const entry = lockfile?.entries[key];
+                return (
+                  <div key={key} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent/30">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-card-foreground">{key}</span>
+                      <span className="text-muted-foreground">{def.metadata.displayName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span>registry.archcanvas.dev</span>
+                      {entry && <span className="font-mono">v{entry.version}</span>}
+                    </div>
                   </div>
                 );
               })}
