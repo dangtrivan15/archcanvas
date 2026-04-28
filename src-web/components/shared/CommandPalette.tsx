@@ -510,7 +510,7 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
         />
 
         <Command.List className="max-h-80 overflow-y-auto p-1">
-          {allGroups.length === 0 && (
+          {allGroups.length === 0 && !remoteLoading && (
             <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
               No results found.
             </Command.Empty>

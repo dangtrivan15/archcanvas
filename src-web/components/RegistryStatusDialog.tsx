@@ -47,7 +47,10 @@ export function RegistryStatusDialog() {
         <DialogHeader>
           <DialogTitle>Node Type Registry</DialogTitle>
           <DialogDescription>
-            {builtinCount} built-in{projectLocalCount > 0 ? ` + ${projectLocalCount} project-local` : ''}{remoteInstalledCount > 0 ? ` + ${remoteInstalledCount} community` : ''} types
+            {`${builtinCount} built-in`}
+            {projectLocalCount > 0 && ` + ${projectLocalCount} project-local`}
+            {remoteInstalledCount > 0 && ` + ${remoteInstalledCount} community`}
+            {' types'}
           </DialogDescription>
         </DialogHeader>
 

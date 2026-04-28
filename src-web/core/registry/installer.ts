@@ -7,10 +7,11 @@
 import type { FileSystem } from '@/platform/fileSystem';
 import { parseNodeDef } from './validator';
 import { loadLockfile, saveLockfile } from './lockfile';
+import { NODEDEFS_DIR } from './loader';
 import { fetchNodeDefYaml } from './remoteRegistry';
 import type { RemoteNodeDefSummary } from './remoteRegistry';
 
-const NODEDEFS_DIR = '.archcanvas/nodedefs';
+const ARCHCANVAS_DIR = '.archcanvas';
 
 /**
  * Download a community NodeDef from the registry, validate it, write it to
@@ -41,23 +42,30 @@ export async function downloadAndInstallNodeDef(
     throw new Error(`Invalid NodeDef from registry: ${parsed.error}`);
   }
 
-  // 3. Write to .archcanvas/nodedefs/
-  const dir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
-  await fs.mkdir(dir);
+  // 3. Write to .archcanvas/nodedefs/ — create parent dirs first
+  const archcanvasDir = projectRoot ? `${projectRoot}/${ARCHCANVAS_DIR}` : ARCHCANVAS_DIR;
+  const nodedefsDir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
+  await fs.mkdir(archcanvasDir);
+  await fs.mkdir(nodedefsDir);
   const filename = `${summary.namespace}-${summary.name}.yaml`;
-  await fs.writeFile(`${dir}/${filename}`, yaml);
+  await fs.writeFile(`${nodedefsDir}/${filename}`, yaml);
 
-  // 4. Update lockfile — null guard: create empty lockfile if none exists
+  // 4. Update lockfile — null guard: create empty lockfile if none exists.
+  //    Build a new object rather than mutating in place so that if saveLockfile
+  //    throws, the caller's reference to the original is unchanged.
   const existingLockfile = (await loadLockfile(fs, projectRoot)) ?? {
     lockfileVersion: 1,
     resolvedAt: new Date().toISOString(),
     entries: {},
   };
   const key = `${summary.namespace}/${summary.name}`;
-  existingLockfile.entries[key] = {
-    version: summary.version,
-    source: 'remote',
+  const newLockfile = {
+    ...existingLockfile,
+    resolvedAt: new Date().toISOString(),
+    entries: {
+      ...existingLockfile.entries,
+      [key]: { version: summary.version, source: 'remote' as const },
+    },
   };
-  existingLockfile.resolvedAt = new Date().toISOString();
-  await saveLockfile(fs, projectRoot, existingLockfile);
+  await saveLockfile(fs, projectRoot, newLockfile);
 }

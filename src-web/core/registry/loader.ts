@@ -23,7 +23,7 @@ export function loadBuiltins(): Map<string, NodeDef> {
   return map;
 }
 
-const NODEDEFS_DIR = '.archcanvas/nodedefs';
+export const NODEDEFS_DIR = '.archcanvas/nodedefs';
 
 export async function loadProjectLocal(
   fs: FileSystem,
