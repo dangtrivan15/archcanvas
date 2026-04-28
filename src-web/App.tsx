@@ -27,6 +27,8 @@ import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePick
 import { ExportDialog } from '@/components/ExportDialog';
 import { RegistryStatusDialog } from '@/components/RegistryStatusDialog';
 import { InstallNodeDefDialog } from '@/components/InstallNodeDefDialog';
+import { PublishNodeDefDialog } from '@/components/PublishNodeDefDialog';
+import { useAuthStore } from '@/store/authStore';
 import { checkForUpdate } from '@/core/updater';
 import { focusCurrentWindow } from '@/core/focusWindow';
 import '@/store/themeStore'; // side-effect: applies theme on import
@@ -112,6 +114,11 @@ export function App() {
   // Safety-net: bring window to foreground on cold start (best-effort, fire-and-forget)
   useEffect(() => {
     focusCurrentWindow();
+  }, []);
+
+  // Hydrate auth state from localStorage on app start
+  useEffect(() => {
+    useAuthStore.getState()._hydrate();
   }, []);
 
   useEffect(() => {
@@ -213,6 +220,7 @@ export function App() {
           <ExportDialog />
           <RegistryStatusDialog />
           <InstallNodeDefDialog />
+          <PublishNodeDefDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

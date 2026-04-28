@@ -1,7 +1,17 @@
+import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from '@/components/ui/context-menu';
 import { useUiStore } from '@/store/uiStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
+import { useAuthStore } from '@/store/authStore';
+import { isKeycloakConfigured } from '@/core/auth/config';
+import { AuthStatusSection } from '@/components/auth/AuthStatusSection';
 import { RefreshCw, AlertTriangle, ArrowLeftRight, Layers } from 'lucide-react';
 
 export function RegistryStatusDialog() {
@@ -21,6 +31,18 @@ export function RegistryStatusDialog() {
 
   const fs = useFileStore((s) => s.fs);
   const projectPath = useFileStore((s) => s.projectPath);
+
+  const { isAuthenticated } = useAuthStore();
+  const notification = useUiStore((s) => s.notification);
+  const clearNotification = useUiStore((s) => s.clearNotification);
+  const keycloakEnabled = isKeycloakConfigured();
+
+  // Auto-clear notification banner after 4 seconds
+  useEffect(() => {
+    if (!notification) return;
+    const id = setTimeout(clearNotification, 4000);
+    return () => clearTimeout(id);
+  }, [notification, clearNotification]);
 
   function handleReload() {
     if (!fs) return;
@@ -44,6 +66,19 @@ export function RegistryStatusDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <AuthStatusSection />
+        {notification && (
+          <div
+            className={`mx-3 mt-2 rounded px-3 py-2 text-xs ${
+              notification.type === 'success'
+                ? 'bg-emerald-500/15 text-emerald-400'
+                : 'bg-destructive/15 text-destructive'
+            }`}
+            role="status"
+          >
+            {notification.message}
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>Node Type Registry</DialogTitle>
           <DialogDescription>
@@ -101,12 +136,20 @@ export function RegistryStatusDialog() {
         {projectLocalDefs.length > 0 && (
           <div className="space-y-1">
             <p className="text-sm font-medium text-card-foreground">Project-Local Types</p>
+            {isAuthenticated && keycloakEnabled && (
+              <p className="px-2 pb-1 text-[10px] text-muted-foreground/60">
+                Right-click a NodeDef to publish it to the community registry
+              </p>
+            )}
             <div className="space-y-0.5">
               {projectLocalDefs.map(def => {
                 const key = `${def.metadata.namespace}/${def.metadata.name}`;
                 const isOverride = overrides.includes(key);
-                return (
-                  <div key={key} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent/30">
+
+                const rowContent = (
+                  <div
+                    className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent/30"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-card-foreground">{key}</span>
                       <span className="text-muted-foreground">{def.metadata.displayName}</span>
@@ -118,6 +161,26 @@ export function RegistryStatusDialog() {
                     )}
                   </div>
                 );
+
+                if (isAuthenticated && keycloakEnabled) {
+                  return (
+                    <ContextMenu key={key}>
+                      <ContextMenuTrigger asChild>
+                        {rowContent}
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                        <ContextMenuItem
+                          onSelect={() => useUiStore.getState().openPublishNodeDefDialog(def)}
+                        >
+                          Publish to Registry
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
+                }
+
+                // Unauthenticated: plain row, no context menu
+                return <div key={key}>{rowContent}</div>;
               })}
             </div>
           </div>

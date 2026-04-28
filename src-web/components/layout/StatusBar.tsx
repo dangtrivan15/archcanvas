@@ -6,6 +6,8 @@ import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
 import { useRegistryStore } from "@/store/registryStore";
 import { useUiStore } from "@/store/uiStore";
+import { useAuthStore } from '@/store/authStore';
+import { isKeycloakConfigured } from '@/core/auth/config';
 import { useThemeStore, type StatusBarDensity } from "@/store/themeStore";
 import { downloadAndInstall, relaunch } from "@/core/updater";
 import { SlidingNumber } from "@/components/ui/sliding-number";
@@ -49,6 +51,8 @@ export function StatusBar() {
   const hasOverrides = useRegistryStore((s) => s.overrides.length > 0);
   const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
   const openRegistryStatus = useUiStore((s) => s.openRegistryStatusDialog);
+  const { isAuthenticated, username } = useAuthStore();
+  const keycloakEnabled = isKeycloakConfigured();
 
   // Diff overlay state
   const diffEnabled = useDiffStore((s) => s.enabled);
@@ -203,6 +207,11 @@ export function StatusBar() {
           {hasOverrides && <ArrowLeftRight className="size-3 text-amber-500" />}
           {hasErrors && <AlertTriangle className="size-3 text-red-500" />}
         </button>
+        {isAuthenticated && username && keycloakEnabled && (
+          <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-primary">
+            @{username}
+          </span>
+        )}
         {loaded ? (
           <>
             <span>{scopeName}</span>

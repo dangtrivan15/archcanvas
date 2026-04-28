@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
+import type { NodeDef } from '@/types';
 
 export type SidebarWidthPreset = 'narrow' | 'standard' | 'wide';
 
@@ -76,6 +77,8 @@ export function persistPanelLayout(state: Partial<PanelLayoutState>): void {
   }
 }
 
+export type NotificationState = { message: string; type: 'success' | 'error' };
+
 interface UiState {
   rightPanelMode: 'details' | 'chat' | 'entities';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
@@ -119,6 +122,13 @@ interface UiState {
   closeInstallNodeDefDialog: () => void;
   showColorLegend: boolean;
   toggleColorLegend: () => void;
+  notification: NotificationState | null;
+  setNotification(n: NotificationState): void;
+  clearNotification(): void;
+  showPublishNodeDefDialog: boolean;
+  pendingPublish: NodeDef | null;
+  openPublishNodeDefDialog(def: NodeDef): void;
+  closePublishNodeDefDialog(): void;
 }
 
 // Ref objects stored outside Zustand state — we store the RefObject (not
@@ -282,6 +292,15 @@ export const useUiStore = create<UiState>((set, get) => ({
 
   showColorLegend: false,
   toggleColorLegend: () => set((s) => ({ showColorLegend: !s.showColorLegend })),
+
+  notification: null,
+  setNotification: (n) => set({ notification: n }),
+  clearNotification: () => set({ notification: null }),
+
+  showPublishNodeDefDialog: false,
+  pendingPublish: null,
+  openPublishNodeDefDialog: (def) => set({ showPublishNodeDefDialog: true, pendingPublish: def }),
+  closePublishNodeDefDialog: () => set({ showPublishNodeDefDialog: false, pendingPublish: null }),
 
   toggleChat: () => {
     if (get().rightPanelMode === 'chat') {

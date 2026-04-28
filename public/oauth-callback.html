@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ArchCanvas — Signing in…</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background: #0f0f10;
+        color: #a1a1aa;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Signing in… this window will close automatically.</p>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var payload = {
+          type: 'archcanvas:auth-callback',
+          code: params.get('code'),
+          state: params.get('state'),
+          error: params.get('error'),
+        };
+        if (window.opener) {
+          window.opener.postMessage(payload, window.location.origin);
+        }
+        window.close();
+      })();
+    </script>
+  </body>
+</html>

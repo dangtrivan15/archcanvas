@@ -57,3 +57,54 @@ export async function fetchNodeDefYaml(
   if (!resp.ok) throw new Error(`Failed to fetch NodeDef YAML: ${resp.status}`);
   return resp.text();
 }
+
+// ---------------------------------------------------------------------------
+// Publish API
+// ---------------------------------------------------------------------------
+
+export type PublishPayload = {
+  namespace: string;
+  name: string;
+  version: string;
+  yaml: string;
+};
+
+export class PublishError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+  ) {
+    super(message);
+    this.name = 'PublishError';
+  }
+}
+
+/**
+ * Publish a NodeDef to the community registry.
+ * Throws PublishError on non-2xx responses (includes statusCode for caller inspection).
+ */
+export async function publishNodeDef(
+  payload: PublishPayload,
+  token: string,
+): Promise<void> {
+  const url =
+    `${REGISTRY_BASE_URL}/api/v1/nodedefs/` +
+    `${encodeURIComponent(payload.namespace)}/${encodeURIComponent(payload.name)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ version: payload.version, yaml: payload.yaml }),
+  });
+  if (res.ok) return;
+  let message = `Publish failed (${res.status})`;
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (body.error) message = body.error;
+  } catch {
+    // JSON parse failed — use the default message
+  }
+  throw new PublishError(message, res.status);
+}
