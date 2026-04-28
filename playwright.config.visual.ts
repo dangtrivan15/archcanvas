@@ -55,5 +55,6 @@ export default defineConfig({
     command: "npm run build && npx vite preview",
     url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
+    timeout: 180000,
   },
 });
