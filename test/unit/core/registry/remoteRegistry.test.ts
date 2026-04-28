@@ -149,4 +149,20 @@ describe('fetchNodeDefYaml', () => {
       expect.objectContaining({ signal: controller.signal }),
     );
   });
+
+  it('encodes path segments with encodeURIComponent', async () => {
+    // SemVer build metadata like "1.0.0+build.100" contains "+" which must be encoded
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '',
+    }));
+
+    await fetchNodeDefYaml('my ns', 'my+node', '1.0.0+build.100');
+
+    const fetchMock = vi.mocked(fetch);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent('my ns')}/${encodeURIComponent('my+node')}/${encodeURIComponent('1.0.0+build.100')}/yaml`,
+      expect.objectContaining({}),
+    );
+  });
 });

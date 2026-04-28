@@ -23,6 +23,15 @@ export async function downloadAndInstallNodeDef(
   projectRoot: string,
   summary: RemoteNodeDefSummary,
 ): Promise<void> {
+  // 0. Validate namespace and name against path-unsafe characters before any
+  //    I/O — prevents directory traversal (e.g. a name containing "/" could
+  //    escape .archcanvas/nodedefs/).
+  if (/[/\\]/.test(summary.namespace) || /[/\\]/.test(summary.name)) {
+    throw new Error(
+      `Invalid NodeDef identifier: namespace and name must not contain path separators (got: "${summary.namespace}/${summary.name}")`,
+    );
+  }
+
   // 1. Fetch YAML from registry
   const yaml = await fetchNodeDefYaml(summary.namespace, summary.name, summary.version);
 

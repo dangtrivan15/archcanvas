@@ -146,4 +146,30 @@ describe('downloadAndInstallNodeDef', () => {
     const exists = await fs.exists(expected);
     expect(exists).toBe(true);
   });
+
+  it('throws if name contains a path separator "/"', async () => {
+    mockFetchYaml(VALID_YAML);
+    const fs = new InMemoryFileSystem();
+    const badSummary: RemoteNodeDefSummary = { ...summary, name: 'evil/../../escape' };
+
+    await expect(downloadAndInstallNodeDef(fs, 'myproject', badSummary)).rejects.toThrow(
+      /Invalid NodeDef identifier/,
+    );
+
+    // Must not have written any file
+    const exists = await fs.exists(
+      'myproject/.archcanvas/nodedefs/community-evil/../../escape.yaml',
+    );
+    expect(exists).toBe(false);
+  });
+
+  it('throws if namespace contains a backslash "\\"', async () => {
+    mockFetchYaml(VALID_YAML);
+    const fs = new InMemoryFileSystem();
+    const badSummary: RemoteNodeDefSummary = { ...summary, namespace: 'evil\\ns' };
+
+    await expect(downloadAndInstallNodeDef(fs, 'myproject', badSummary)).rejects.toThrow(
+      /Invalid NodeDef identifier/,
+    );
+  });
 });

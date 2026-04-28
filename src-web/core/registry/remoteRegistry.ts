@@ -15,8 +15,7 @@ export const REGISTRY_BASE_URL = 'https://registry.archcanvas.dev';
 
 /**
  * Search the community registry for NodeDefs matching the given query.
- * Returns an empty array on AbortError (signal cancelled — not an error).
- * Throws on network errors or non-OK HTTP responses.
+ * Throws on network errors, non-OK HTTP responses, or AbortError (signal cancelled).
  */
 export async function searchRegistry(
   query: string,
@@ -42,7 +41,7 @@ export async function fetchNodeDefYaml(
   version: string,
   signal?: AbortSignal,
 ): Promise<string> {
-  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${namespace}/${name}/${version}/yaml`;
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/yaml`;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Failed to fetch NodeDef YAML: ${resp.status}`);
   return resp.text();
