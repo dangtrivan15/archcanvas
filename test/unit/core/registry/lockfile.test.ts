@@ -193,6 +193,65 @@ describe('generateLockfile', () => {
     expect(result.entries['custom/widget'].source).toBe('local');
     expect(result.entries['data/database'].source).toBe('builtin');
   });
+
+  it('marks remote-installed keys with source: remote', () => {
+    const defs = [
+      makeNodeDef('community', 'k8s-deploy'),
+      makeNodeDef('data', 'database'),
+    ];
+    const registry: NodeDefRegistry = {
+      resolve: () => undefined,
+      resolveVersioned: () => ({ nodeDef: undefined, versionMatch: false }),
+      list: () => defs,
+      search: () => [],
+      listByNamespace: () => [],
+    };
+
+    const result = generateLockfile(
+      registry,
+      new Set(),
+      new Set(['community/k8s-deploy']),
+    );
+    expect(result.entries['community/k8s-deploy'].source).toBe('remote');
+    expect(result.entries['data/database'].source).toBe('builtin');
+  });
+
+  it('remote wins over projectLocal when key is in both sets', () => {
+    const defs = [makeNodeDef('custom', 'widget')];
+    const registry: NodeDefRegistry = {
+      resolve: () => undefined,
+      resolveVersioned: () => ({ nodeDef: undefined, versionMatch: false }),
+      list: () => defs,
+      search: () => [],
+      listByNamespace: () => [],
+    };
+
+    const result = generateLockfile(
+      registry,
+      new Set(['custom/widget']),     // also in projectLocalKeys
+      new Set(['custom/widget']),     // also in remoteInstalledKeys — should win
+    );
+    expect(result.entries['custom/widget'].source).toBe('remote');
+  });
+
+  it('without remoteInstalledKeys, behaviour is unchanged', () => {
+    const defs = [
+      makeNodeDef('custom', 'widget'),
+      makeNodeDef('data', 'database'),
+    ];
+    const registry: NodeDefRegistry = {
+      resolve: () => undefined,
+      resolveVersioned: () => ({ nodeDef: undefined, versionMatch: false }),
+      list: () => defs,
+      search: () => [],
+      listByNamespace: () => [],
+    };
+
+    // omit 3rd arg entirely
+    const result = generateLockfile(registry, new Set(['custom/widget']));
+    expect(result.entries['custom/widget'].source).toBe('local');
+    expect(result.entries['data/database'].source).toBe('builtin');
+  });
 });
 
 describe('loadLockfile', () => {

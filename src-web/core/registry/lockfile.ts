@@ -67,20 +67,30 @@ export function serializeLockfile(data: LockfileData): string {
 /**
  * Generate a fresh lockfile from the current registry state.
  *
- * @param registry       The fully merged NodeDef registry
- * @param projectLocalKeys  Set of type keys (namespace/name) that come from project-local defs
+ * @param registry            The fully merged NodeDef registry
+ * @param projectLocalKeys    Set of type keys (namespace/name) that come from authored project-local defs
+ * @param remoteInstalledKeys Optional set of type keys for community-installed defs (source:'remote')
  */
 export function generateLockfile(
   registry: NodeDefRegistry,
   projectLocalKeys: Set<string>,
+  remoteInstalledKeys?: Set<string>,
 ): LockfileData {
   const entries: Record<string, LockfileEntry> = {};
 
   for (const def of registry.list()) {
     const key = `${def.metadata.namespace}/${def.metadata.name}`;
+    let source: 'builtin' | 'local' | 'remote';
+    if (remoteInstalledKeys?.has(key)) {
+      source = 'remote';
+    } else if (projectLocalKeys.has(key)) {
+      source = 'local';
+    } else {
+      source = 'builtin';
+    }
     entries[key] = {
       version: def.metadata.version,
-      source: projectLocalKeys.has(key) ? 'local' : 'builtin',
+      source,
     };
   }
 

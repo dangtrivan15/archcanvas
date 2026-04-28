@@ -26,6 +26,7 @@ import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
 import { ExportDialog } from '@/components/ExportDialog';
 import { RegistryStatusDialog } from '@/components/RegistryStatusDialog';
+import { InstallNodeDefDialog } from '@/components/InstallNodeDefDialog';
 import { checkForUpdate } from '@/core/updater';
 import { focusCurrentWindow } from '@/core/focusWindow';
 import '@/store/themeStore'; // side-effect: applies theme on import
@@ -211,6 +212,7 @@ export function App() {
           <TemplatePickerDialogWrapper />
           <ExportDialog />
           <RegistryStatusDialog />
+          <InstallNodeDefDialog />
         </div>
       </ReactFlowProvider>
     </TooltipProvider>

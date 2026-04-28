@@ -16,6 +16,7 @@ import { useDiffStore } from '@/store/diffStore';
 import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 import { resolveIcon } from '@/components/nodes/iconMap';
 import { createNodeFromType } from '@/lib/createNodeFromType';
+import { searchRegistry, type RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
 
 // ---------------------------------------------------------------------------
 // Provider interfaces
@@ -345,6 +346,12 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
   const [inputValue, setInputValue] = useState('');
   const prefersReduced = useReducedMotion();
 
+  // Remote search state
+  const [remoteResults, setRemoteResults] = useState<PaletteResult[]>([]);
+  const [remoteSummaries, setRemoteSummaries] = useState<RemoteNodeDefSummary[]>([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+
   // Seed the input when the palette opens with a prefix (e.g. "@" from Add Node button)
   useEffect(() => {
     if (open) setInputValue(initialInput);
@@ -365,14 +372,95 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
   // In subsystem mode, only show NodeTypeProvider (user picks a type for the subsystem)
   const providers = mode === 'subsystem' ? [NodeTypeProvider] : resolvedProviders;
 
+  // Guard: only search community registry in node-type contexts.
+  // providers.includes(NodeTypeProvider) is the only reliable guard because
+  // resolveProviders() already strips the prefix before returning query —
+  // checking query.replace(/^[>@#+]/, '') would always be a no-op.
+  const shouldSearchRemote =
+    open &&
+    providers.includes(NodeTypeProvider) &&
+    query.trim().length >= 2;
+
+  useEffect(() => {
+    if (!shouldSearchRemote) return;
+
+    const controller = new AbortController();
+
+    const timeoutId = setTimeout(() => {
+      setRemoteLoading(true);
+      setRemoteError(null);
+
+      const installedKeys = new Set(
+        useRegistryStore.getState().list().map(
+          (d) => `${d.metadata.namespace}/${d.metadata.name}`
+        )
+      );
+
+      searchRegistry(query.trim(), controller.signal)
+        .then((summaries) => {
+          // Filter out already-installed defs
+          const fresh = summaries.filter(
+            (s) => !installedKeys.has(`${s.namespace}/${s.name}`)
+          );
+          setRemoteSummaries(fresh);
+          setRemoteResults(
+            fresh.map((s) => ({
+              id: `community:${s.namespace}/${s.name}`,
+              title: s.displayName ?? s.name,
+              subtitle: `[community] ${s.namespace}/${s.name} v${s.version}`,
+              icon: '⬡',
+              category: 'Community',
+            }))
+          );
+          setRemoteLoading(false);
+        })
+        .catch((err) => {
+          if (err instanceof Error && err.name === 'AbortError') return;
+          setRemoteError('Community registry unavailable');
+          setRemoteLoading(false);
+        });
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);   // must clear timer first to prevent stale callbacks
+      controller.abort();
+      setRemoteLoading(false);   // reset loading state on cleanup
+    };
+  }, [shouldSearchRemote, query]);
+
   // Collect grouped results — we disable cmdk's built-in filter because we
   // handle filtering ourselves per-provider to support the prefix shortcuts.
   const groups: { provider: PaletteProvider; results: PaletteResult[] }[] = providers.map(
     (p) => ({ provider: p, results: p.search(query) }),
   ).filter((g) => g.results.length > 0);
 
+  // Only show community results when search is active
+  const activeRemoteResults = shouldSearchRemote ? remoteResults : [];
+
+  // Add community results as a synthetic group after local results
+  const allGroups = [...groups];
+  if (activeRemoteResults.length > 0) {
+    allGroups.push({
+      provider: { category: 'Community', search: () => activeRemoteResults, onSelect: () => {} },
+      results: activeRemoteResults,
+    });
+  }
+
   const handleSelect = useCallback(
     (provider: PaletteProvider, result: PaletteResult) => {
+      // Intercept community results — open install confirmation dialog
+      if (result.id.startsWith('community:')) {
+        const key = result.id.replace(/^community:/, '');
+        const summary = remoteSummaries.find(
+          (s) => `${s.namespace}/${s.name}` === key
+        );
+        if (summary) {
+          onClose();
+          setInputValue('');
+          useUiStore.getState().openInstallNodeDefDialog(summary);
+        }
+        return;
+      }
       // Intercept node type selection in subsystem mode — hand off to Canvas
       if (mode === 'subsystem' && result.id.startsWith('nodetype:')) {
         const typeKey = result.id.replace(/^nodetype:/, '');
@@ -385,7 +473,7 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
       onClose();
       setInputValue('');
     },
-    [onClose, mode, onSelectSubsystemType],
+    [onClose, mode, onSelectSubsystemType, remoteSummaries],
   );
 
   return (
@@ -422,13 +510,13 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
         />
 
         <Command.List className="max-h-80 overflow-y-auto p-1">
-          {groups.length === 0 && (
+          {allGroups.length === 0 && (
             <Command.Empty className="py-6 text-center text-sm text-muted-foreground">
               No results found.
             </Command.Empty>
           )}
 
-          {groups.map(({ provider, results }) => (
+          {allGroups.map(({ provider, results }) => (
             <Command.Group
               key={provider.category}
               heading={provider.category}
@@ -462,6 +550,16 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
             </Command.Group>
           ))}
         </Command.List>
+        {shouldSearchRemote && remoteLoading && (
+          <p className="px-4 py-1 text-xs text-muted-foreground border-t border-border">
+            Searching community registry…
+          </p>
+        )}
+        {shouldSearchRemote && remoteError && !remoteLoading && (
+          <p className="px-4 py-1 text-xs text-muted-foreground border-t border-border">
+            {remoteError} — showing local types only
+          </p>
+        )}
       </motion.div>
     </Command.Dialog>
   );

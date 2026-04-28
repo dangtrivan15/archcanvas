@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
+import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
 
 export type SidebarWidthPreset = 'narrow' | 'standard' | 'wide';
 
@@ -112,6 +113,10 @@ interface UiState {
   showRegistryStatusDialog: boolean;
   openRegistryStatusDialog: () => void;
   closeRegistryStatusDialog: () => void;
+  showInstallNodeDefDialog: boolean;
+  pendingInstall: RemoteNodeDefSummary | null;
+  openInstallNodeDefDialog: (summary: RemoteNodeDefSummary) => void;
+  closeInstallNodeDefDialog: () => void;
   showColorLegend: boolean;
   toggleColorLegend: () => void;
 }
@@ -269,6 +274,11 @@ export const useUiStore = create<UiState>((set, get) => ({
   showRegistryStatusDialog: false,
   openRegistryStatusDialog: () => set({ showRegistryStatusDialog: true }),
   closeRegistryStatusDialog: () => set({ showRegistryStatusDialog: false }),
+
+  showInstallNodeDefDialog: false,
+  pendingInstall: null,
+  openInstallNodeDefDialog: (summary) => set({ showInstallNodeDefDialog: true, pendingInstall: summary }),
+  closeInstallNodeDefDialog: () => set({ showInstallNodeDefDialog: false, pendingInstall: null }),
 
   showColorLegend: false,
   toggleColorLegend: () => set((s) => ({ showColorLegend: !s.showColorLegend })),

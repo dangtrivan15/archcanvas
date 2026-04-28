@@ -5,6 +5,8 @@ import type { NodeDefRegistry } from '@/core/registry/core';
 import { loadBuiltins, loadProjectLocal, createRegistry } from '@/core/registry';
 import { loadLockfile, saveLockfile, generateLockfile } from '@/core/registry/lockfile';
 import type { LockfileData } from '@/core/registry/lockfile';
+import { downloadAndInstallNodeDef } from '@/core/registry/installer';
+import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
 
 interface RegistryStoreState {
   registry: NodeDefRegistry | null;
@@ -14,12 +16,15 @@ interface RegistryStoreState {
   builtinCount: number;
   projectLocalCount: number;
   projectLocalKeys: Set<string>;
+  remoteInstalledCount: number;
+  remoteInstalledKeys: Set<string>;
   overrides: string[];
   loadErrors: Array<{ file: string; message: string }>;
   lockfile: LockfileData | null;
 
   initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
   reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
+  installRemoteNodeDef(fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary): Promise<void>;
   resolve(type: string): NodeDef | undefined;
   list(): NodeDef[];
   search(query: string): NodeDef[];
@@ -42,6 +47,8 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   builtinCount: 0,
   projectLocalCount: 0,
   projectLocalKeys: new Set(),
+  remoteInstalledCount: 0,
+  remoteInstalledKeys: new Set(),
   overrides: [],
   loadErrors: [],
   lockfile: null,
@@ -51,25 +58,26 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     try {
       const builtins = loadBuiltins();
 
-      let projectLocal = new Map<string, NodeDef>();
+      let authored = new Map<string, NodeDef>();
+      let remoteInstalled = new Map<string, NodeDef>();
       let loadErrors: Array<{ file: string; message: string }> = [];
-
-      if (fs && projectRoot !== undefined) {
-        const result = await loadProjectLocal(fs, projectRoot);
-        projectLocal = result.nodeDefs;
-        loadErrors = result.errors;
-      }
 
       let lockfile: LockfileData | null = null;
       if (fs && projectRoot !== undefined) {
+        // Load lockfile FIRST — needed for file classification
         lockfile = await loadLockfile(fs, projectRoot);
+        // Classify files using the lockfile's source field
+        const result = await loadProjectLocal(fs, projectRoot, lockfile);
+        authored = result.nodeDefs;
+        remoteInstalled = result.remoteInstalledNodeDefs;
+        loadErrors = result.errors;
       }
 
-      const { registry, warnings } = createRegistry(builtins, projectLocal, lockfile);
+      const { registry, warnings } = createRegistry(builtins, authored, lockfile, remoteInstalled);
 
       // Auto-generate lockfile if none existed
       if (!lockfile && fs && projectRoot !== undefined) {
-        lockfile = generateLockfile(registry, new Set(projectLocal.keys()));
+        lockfile = generateLockfile(registry, new Set(authored.keys()), new Set(remoteInstalled.keys()));
         await saveLockfile(fs, projectRoot, lockfile);
       }
 
@@ -79,8 +87,10 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         registry,
         status: 'ready',
         builtinCount: builtins.size,
-        projectLocalCount: projectLocal.size,
-        projectLocalKeys: new Set(projectLocal.keys()),
+        projectLocalCount: authored.size,
+        projectLocalKeys: new Set(authored.keys()),
+        remoteInstalledCount: remoteInstalled.size,
+        remoteInstalledKeys: new Set(remoteInstalled.keys()),
         overrides,
         loadErrors,
         lockfile,
@@ -101,15 +111,30 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   reloadProjectLocal: async (fs: FileSystem, projectRoot: string) => {
     try {
       const builtins = loadBuiltins();
-      const result = await loadProjectLocal(fs, projectRoot);
 
-      // Generate fresh lockfile from a temporary registry
-      const { registry: tempRegistry } = createRegistry(builtins, result.nodeDefs);
-      const lockfile = generateLockfile(tempRegistry, new Set(result.nodeDefs.keys()));
+      // Step 1: Load existing lockfile BEFORE loadProjectLocal (for classification)
+      const existingLockfile = await loadLockfile(fs, projectRoot);
+
+      // Step 2: Classify files using existing lockfile
+      const { nodeDefs: authored, remoteInstalledNodeDefs: remoteInstalled, errors: loadErrors } =
+        await loadProjectLocal(fs, projectRoot, existingLockfile);
+
+      // Step 3: Generate fresh lockfile — pass remoteInstalled to temp registry
+      //         so generateLockfile sees ALL defs via registry.list()
+      const { registry: tempRegistry } = createRegistry(
+        builtins, authored, undefined, remoteInstalled,
+      );
+      const lockfile = generateLockfile(
+        tempRegistry,
+        new Set(authored.keys()),
+        new Set(remoteInstalled.keys()),  // preserves source:'remote' entries
+      );
       await saveLockfile(fs, projectRoot, lockfile);
 
-      // Create final registry with lockfile so resolveVersioned() has locked entries
-      const { registry, warnings } = createRegistry(builtins, result.nodeDefs, lockfile);
+      // Step 4: Final registry with lockfile for resolveVersioned()
+      const { registry, warnings } = createRegistry(
+        builtins, authored, lockfile, remoteInstalled,
+      );
 
       const overrides = extractOverrideKeys(warnings);
 
@@ -117,10 +142,12 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         registry,
         status: 'ready',
         builtinCount: builtins.size,
-        projectLocalCount: result.nodeDefs.size,
-        projectLocalKeys: new Set(result.nodeDefs.keys()),
+        projectLocalCount: authored.size,
+        projectLocalKeys: new Set(authored.keys()),
+        remoteInstalledCount: remoteInstalled.size,
+        remoteInstalledKeys: new Set(remoteInstalled.keys()),
         overrides,
-        loadErrors: result.errors,
+        loadErrors,
         lockfile,
       });
     } catch (err) {
@@ -132,6 +159,11 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       });
       console.error('[registryStore] Reload failed:', err);
     }
+  },
+
+  installRemoteNodeDef: async (fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary) => {
+    await downloadAndInstallNodeDef(fs, projectRoot, summary);
+    await get().reloadProjectLocal(fs, projectRoot);
   },
 
   resolve: (type: string): NodeDef | undefined => {

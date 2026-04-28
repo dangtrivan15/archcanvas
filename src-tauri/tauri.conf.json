@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost ws://127.0.0.1:* http://127.0.0.1:* https://api.anthropic.com https://github.com https://objects.githubusercontent.com; img-src 'self' asset: https://asset.localhost data:"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost ws://127.0.0.1:* http://127.0.0.1:* https://api.anthropic.com https://github.com https://objects.githubusercontent.com https://registry.archcanvas.dev; img-src 'self' asset: https://asset.localhost data:"
     }
   },
   "bundle": {
