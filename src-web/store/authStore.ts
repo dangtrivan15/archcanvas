@@ -9,7 +9,7 @@ import {
 const TOKEN_KEY = 'archcanvas:gh:token';
 const USERNAME_KEY = 'archcanvas:gh:username';
 
-// --- Safe localStorage helpers (match uiStore.ts convention) ---
+// --- Safe localStorage helpers ---
 
 function safeGetItem(key: string): string | null {
   try {

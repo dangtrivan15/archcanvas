@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, Fragment } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   ContextMenu,
@@ -179,8 +179,8 @@ export function RegistryStatusDialog() {
                   );
                 }
 
-                // Unauthenticated: plain row, no context menu
-                return <div key={key}>{rowContent}</div>;
+                // Unauthenticated: plain row, no context menu wrapper needed
+                return <Fragment key={key}>{rowContent}</Fragment>;
               })}
             </div>
           </div>

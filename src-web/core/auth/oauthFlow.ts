@@ -164,7 +164,9 @@ export async function exchangeCodeForToken(
 /** Decode `preferred_username` (GitHub login) from a Keycloak ID token (JWT). */
 export function extractUsername(idToken: string): string {
   try {
-    const payload = JSON.parse(atob(idToken.split('.')[1])) as {
+    // JWTs use base64url encoding; convert to standard base64 before decoding.
+    const base64 = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64)) as {
       preferred_username?: string;
       sub?: string;
     };

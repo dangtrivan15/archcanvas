@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { stringify } from 'yaml';
 import {
   Dialog,
   DialogContent,
@@ -49,8 +48,18 @@ export function PublishNodeDefDialog() {
     setIsPublishing(true);
     setError(null);
     try {
-      const yaml = stringify(displayDef);
-      await publishNodeDef({ namespace, name, version, yaml }, token);
+      await publishNodeDef(
+        {
+          namespace,
+          name,
+          displayName: displayDef.metadata.displayName,
+          description: displayDef.metadata.description,
+          tags: displayDef.metadata.tags ?? [],
+          version,
+          blob: displayDef as unknown as Record<string, unknown>,
+        },
+        token,
+      );
       setNotification({
         message: `${namespace}/${name} v${version} published to the community registry!`,
         type: 'success',
