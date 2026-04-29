@@ -17,7 +17,9 @@ vi.mock('lucide-react', () => ({
 // ---------------------------------------------------------------------------
 let authState = { isAuthenticated: false, username: null as string | null };
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: vi.fn((selector: (s: typeof authState) => unknown) => selector(authState)),
+  useAuthStore: vi.fn((selector?: (s: typeof authState) => unknown) =>
+    typeof selector === 'function' ? selector(authState) : authState
+  ),
 }));
 
 let keycloakConfigured = false;
