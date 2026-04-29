@@ -295,4 +295,22 @@ describe('InstalledTab — community-installed with update affordances', () => {
     // Resolve to clean up
     await act(async () => { resolveUpdate(); });
   });
+
+  it('does not call applyUpdate when projectPath is null', async () => {
+    // Override fileStore mock to return null projectPath for this test
+    const { useFileStore } = await import('@/store/fileStore');
+    vi.mocked(useFileStore).mockImplementation((selector) =>
+      selector({ fs: mockFs, projectPath: null }),
+    );
+    registryState.availableUpdates = new Map([[communityKey, '2.0.0']]);
+    render(<InstalledTab />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Update' }));
+    });
+    expect(mockApplyUpdate).not.toHaveBeenCalled();
+    // Restore the default mock implementation
+    vi.mocked(useFileStore).mockImplementation((selector) =>
+      selector({ fs: mockFs, projectPath: '/test/project' }),
+    );
+  });
 });

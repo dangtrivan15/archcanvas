@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { useRegistryStore } from '@/store/registryStore';
+import { useRegistryStore, computeEffectiveUpdateCount } from '@/store/registryStore';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 
 // Mock localStorage for pinned versions tests
@@ -580,8 +580,7 @@ spec:
       });
 
       const { availableUpdates, pinnedVersions } = useRegistryStore.getState();
-      const effectiveUpdateCount = [...availableUpdates.entries()]
-        .filter(([k, v]) => pinnedVersions.get(k) !== v).length;
+      const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
 
       expect(effectiveUpdateCount).toBe(1); // only ns/b is unpinned
     });
@@ -595,8 +594,7 @@ spec:
       });
 
       const { availableUpdates, pinnedVersions } = useRegistryStore.getState();
-      const effectiveUpdateCount = [...availableUpdates.entries()]
-        .filter(([k, v]) => pinnedVersions.get(k) !== v).length;
+      const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
 
       // Pin is for v2 but latest is v3, so badge should show
       expect(effectiveUpdateCount).toBe(1);

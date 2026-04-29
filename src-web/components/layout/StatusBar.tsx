@@ -4,7 +4,7 @@ import { useNavigationStore } from "@/store/navigationStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
-import { useRegistryStore } from "@/store/registryStore";
+import { useRegistryStore, computeEffectiveUpdateCount } from "@/store/registryStore";
 import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
@@ -52,8 +52,7 @@ export function StatusBar() {
   const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
   const availableUpdates = useRegistryStore((s) => s.availableUpdates);
   const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
-  const effectiveUpdateCount = [...availableUpdates.entries()]
-    .filter(([k, v]) => pinnedVersions.get(k) !== v).length;
+  const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
   const openRegistryPanel = useUiStore((s) => s.openRegistryPanel);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();

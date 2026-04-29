@@ -57,6 +57,15 @@ function savePinnedVersions(map: Map<string, string>): void {
   } catch { /* ignore */ }
 }
 
+/** Computes the number of updates that are not dismissed (pinned). */
+export function computeEffectiveUpdateCount(
+  availableUpdates: Map<string, string>,
+  pinnedVersions: Map<string, string>,
+): number {
+  return [...availableUpdates.entries()]
+    .filter(([k, v]) => pinnedVersions.get(k) !== v).length;
+}
+
 /** Extract override keys from registry warning messages. */
 function extractOverrideKeys(warnings: string[]): string[] {
   return warnings
@@ -142,7 +151,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
 
       if (remoteInstalled.size > 0) {
         // Fire-and-forget; errors are silent per spec
-        get().checkForUpdates().catch(() => {/* silent */});
+        get().checkForUpdates().catch(() => {});
       }
     } catch (err) {
       set({ status: 'error' });

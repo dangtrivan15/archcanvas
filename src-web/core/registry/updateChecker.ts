@@ -6,6 +6,19 @@
 // ---------------------------------------------------------------------------
 
 import { checkUpdatesRemote } from './remoteRegistry';
+import { parseSemVer } from './version';
+
+/** Returns true iff latest is strictly greater than current by semver. Falls back to string inequality if either version isn't parseable. */
+function isNewerVersion(latest: string, current: string): boolean {
+  const latestSv = parseSemVer(latest);
+  const currentSv = parseSemVer(current);
+  if (!latestSv || !currentSv) {
+    return latest !== current;
+  }
+  if (latestSv.major !== currentSv.major) return latestSv.major > currentSv.major;
+  if (latestSv.minor !== currentSv.minor) return latestSv.minor > currentSv.minor;
+  return latestSv.patch > currentSv.patch;
+}
 
 /**
  * Check the community registry for available updates to the given installed NodeDefs.
@@ -29,7 +42,7 @@ export async function checkNodeDefUpdates(
     for (const { namespace, name, latestVersion } of results) {
       const key = `${namespace}/${name}`;
       const current = lockedVersions.get(key);
-      if (current && latestVersion !== current) {
+      if (current && isNewerVersion(latestVersion, current)) {
         updates.set(key, latestVersion);
       }
     }

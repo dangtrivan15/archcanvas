@@ -46,6 +46,11 @@ vi.mock('@/store/registryStore', () => ({
       pinnedVersions: new Map(),
     }),
   ),
+  computeEffectiveUpdateCount: (
+    availableUpdates: Map<string, string>,
+    pinnedVersions: Map<string, string>,
+  ) =>
+    [...availableUpdates.entries()].filter(([k, v]) => pinnedVersions.get(k) !== v).length,
 }));
 
 const mockOpenRegistryPanel = vi.fn();

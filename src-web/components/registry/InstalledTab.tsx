@@ -50,17 +50,20 @@ export function InstalledTab() {
     useRegistryStore.getState().reloadProjectLocal(fs, projectPath ?? '');
   }
 
+  const nodeDefKey = (def: { metadata: { namespace: string; name: string } }) =>
+    `${def.metadata.namespace}/${def.metadata.name}`;
+
   // Group defs by source
   const builtinDefs = allDefs.filter(d => {
-    const key = `${d.metadata.namespace}/${d.metadata.name}`;
+    const key = nodeDefKey(d);
     return !projectLocalKeys.has(key) && !remoteInstalledKeys.has(key);
   });
   const projectLocalDefs = allDefs.filter(d => {
-    const key = `${d.metadata.namespace}/${d.metadata.name}`;
+    const key = nodeDefKey(d);
     return projectLocalKeys.has(key);
   });
   const remoteInstalledDefs = allDefs.filter(d => {
-    const key = `${d.metadata.namespace}/${d.metadata.name}`;
+    const key = nodeDefKey(d);
     return remoteInstalledKeys.has(key);
   });
 
@@ -134,7 +137,7 @@ export function InstalledTab() {
           )}
           <div className="space-y-0.5">
             {projectLocalDefs.map(def => {
-              const key = `${def.metadata.namespace}/${def.metadata.name}`;
+              const key = nodeDefKey(def);
               const isOverride = overrides.includes(key);
 
               const rowContent = (
@@ -184,10 +187,10 @@ export function InstalledTab() {
           </p>
           <div className="space-y-0.5">
             {remoteInstalledDefs.map(def => {
-              const key = `${def.metadata.namespace}/${def.metadata.name}`;
+              const key = nodeDefKey(def);
               const entry = lockfile?.entries[key];
               const latestVer = availableUpdates.get(key);
-              const isPinned = pinnedVersions.get(key) === latestVer;
+              const isPinned = latestVer !== undefined && pinnedVersions.get(key) === latestVer;
               const hasUpdate = !!latestVer && !isPinned;
               const isApplying = applyingKey === key;
 
@@ -249,7 +252,7 @@ export function InstalledTab() {
         <p className="text-sm font-medium text-card-foreground">Built-in Types ({builtinDefs.length})</p>
         <div className="max-h-40 overflow-y-auto space-y-0.5 rounded border border-border p-1">
           {builtinDefs.map(def => {
-            const key = `${def.metadata.namespace}/${def.metadata.name}`;
+            const key = nodeDefKey(def);
             return (
               <div key={key} className="flex items-center gap-2 px-2 py-0.5 text-xs">
                 <span className="font-mono text-card-foreground">{key}</span>

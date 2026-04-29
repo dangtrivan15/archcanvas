@@ -94,4 +94,34 @@ describe('checkNodeDefUpdates', () => {
     expect(updates.get('ns/different-version')).toBe('2.0.0');
     expect(updates.has('ns/same-version')).toBe(false);
   });
+
+  it('returns empty map when AbortSignal is aborted (cancellation treated as silent failure)', async () => {
+    const abortError = new DOMException('Aborted', 'AbortError');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abortError));
+
+    const locked = new Map([['community/my-node', '1.0.0']]);
+    const controller = new AbortController();
+    const updates = await checkNodeDefUpdates(locked, controller.signal);
+
+    expect(updates.size).toBe(0);
+  });
+
+  it('ignores server entries that are not in lockedVersions', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        updates: [
+          { namespace: 'known', name: 'node', latestVersion: '2.0.0' },
+          { namespace: 'unknown', name: 'ghost', latestVersion: '5.0.0' }, // not in lockedVersions
+        ],
+      }),
+    }));
+
+    const locked = new Map([['known/node', '1.0.0']]);
+    const updates = await checkNodeDefUpdates(locked);
+
+    expect(updates.size).toBe(1);
+    expect(updates.get('known/node')).toBe('2.0.0');
+    expect(updates.has('unknown/ghost')).toBe(false);
+  });
 });

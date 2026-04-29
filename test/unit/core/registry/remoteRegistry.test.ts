@@ -38,7 +38,7 @@ describe('searchRegistry', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs?q=kubernetes`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 
