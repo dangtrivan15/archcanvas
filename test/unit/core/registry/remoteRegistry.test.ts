@@ -109,7 +109,7 @@ describe('fetchNodeDefYaml', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs/community/my-node/1.0.0/yaml`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 
@@ -152,7 +152,7 @@ describe('fetchNodeDefYaml', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent('my ns')}/${encodeURIComponent('my+node')}/${encodeURIComponent('1.0.0+build.100')}/yaml`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 });
