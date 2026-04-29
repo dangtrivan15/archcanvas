@@ -46,12 +46,12 @@ vi.mock('@/store/registryStore', () => ({
   ),
 }));
 
-const mockOpenRegistryStatusDialog = vi.fn();
+const mockOpenRegistryPanel = vi.fn();
 
 vi.mock('@/store/uiStore', () => ({
   useUiStore: vi.fn((selector) =>
     selector({
-      openRegistryStatusDialog: mockOpenRegistryStatusDialog,
+      openRegistryPanel: mockOpenRegistryPanel,
     }),
   ),
 }));
@@ -229,7 +229,7 @@ describe('StatusBar registry indicator', () => {
       selectedNodeIds: new Set(),
       selectedEdgeKeys: new Set(),
     });
-    mockOpenRegistryStatusDialog.mockClear();
+    mockOpenRegistryPanel.mockClear();
     mockedUseRegistryStore.mockImplementation((selector) =>
       selector({
         builtinCount: 32,
@@ -262,9 +262,9 @@ describe('StatusBar registry indicator', () => {
     expect(indicator.textContent).toContain('3');
   });
 
-  it('clicking indicator calls openRegistryStatusDialog', () => {
+  it('clicking indicator calls openRegistryPanel', () => {
     render(<StatusBar />);
     fireEvent.click(screen.getByTestId('registry-indicator'));
-    expect(mockOpenRegistryStatusDialog).toHaveBeenCalled();
+    expect(mockOpenRegistryPanel).toHaveBeenCalled();
   });
 });

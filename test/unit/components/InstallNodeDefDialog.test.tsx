@@ -14,7 +14,7 @@ const mockFs = {};
 const aSummary: RemoteNodeDefSummary = {
   namespace: 'acme',
   name: 'widget',
-  version: '1.2.3',
+  latestVer: '1.2.3',
   displayName: 'Widget',
   description: 'A reusable widget component.',
 };

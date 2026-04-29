@@ -395,7 +395,7 @@ describe('registryStore', () => {
       const summary = {
         namespace: 'community',
         name: 'kubernetes-deployment',
-        version: '1.0.0',
+        latestVer: '1.0.0',
         displayName: 'Kubernetes Deployment',
       };
 
@@ -419,7 +419,7 @@ describe('registryStore', () => {
       const summary = {
         namespace: 'community',
         name: 'kubernetes-deployment',
-        version: '1.0.0',
+        latestVer: '1.0.0',
       };
 
       await useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary);
@@ -442,7 +442,7 @@ describe('registryStore', () => {
       const summary = {
         namespace: 'community',
         name: 'kubernetes-deployment',
-        version: '1.0.0',
+        latestVer: '1.0.0',
       };
 
       await expect(
