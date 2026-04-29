@@ -73,6 +73,11 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     const signal = detailAbortController.signal;
     set({ selectedKey: key, selectedDetail: null, detailLoading: true });
     const [namespace, name] = key.split('/');
+    if (!namespace || !name) {
+      detailAbortController = undefined;
+      set({ detailLoading: false, error: `Invalid node key: "${key}" — expected "namespace/name" format` });
+      return;
+    }
     fetchNodeDefDetail(namespace, name, signal)
       .then((detail) => set({ selectedDetail: detail, detailLoading: false }))
       .catch((err) => {

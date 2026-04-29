@@ -50,7 +50,7 @@ export function StatusBar() {
   const projectLocalCount = useRegistryStore((s) => s.projectLocalCount);
   const hasOverrides = useRegistryStore((s) => s.overrides.length > 0);
   const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
-  const openRegistryStatus = useUiStore((s) => s.openRegistryPanel);
+  const openRegistryPanel = useUiStore((s) => s.openRegistryPanel);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();
 
@@ -198,7 +198,7 @@ export function StatusBar() {
         </AnimatePresence>
         <button
           data-testid="registry-indicator"
-          onClick={openRegistryStatus}
+          onClick={openRegistryPanel}
           className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent/50 transition-colors cursor-pointer"
           title={`${builtinCount} built-in${projectLocalCount > 0 ? ` + ${projectLocalCount} project` : ''} types`}
         >

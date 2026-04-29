@@ -126,6 +126,14 @@ describe('communityBrowserStore', () => {
       expect(state.namespaces).toHaveLength(2);
       expect(state.namespacesLoading).toBe(false);
     });
+
+    it('clears loading and sets error when fetch fails', async () => {
+      vi.mocked(fetchNamespaces).mockRejectedValue(new Error('registry unavailable'));
+      await useCommunityBrowserStore.getState().loadNamespaces();
+      const state = useCommunityBrowserStore.getState();
+      expect(state.namespacesLoading).toBe(false);
+      expect(state.error).toBe('registry unavailable');
+    });
   });
 
   describe('_search', () => {
