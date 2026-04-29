@@ -201,3 +201,38 @@ export async function publishNodeDef(
   }
   throw new PublishError(message, res.status);
 }
+
+// ---------------------------------------------------------------------------
+// Check Updates API
+// ---------------------------------------------------------------------------
+
+const CheckUpdatesResponseSchema = z.object({
+  updates: z.array(z.object({
+    namespace: z.string(),
+    name: z.string(),
+    latestVersion: z.string(),
+  })),
+});
+
+/**
+ * Batch-check the registry for latest versions of the given entries.
+ * Throws on network errors, non-OK HTTP responses, or unexpected response shape.
+ * No download events are recorded.
+ */
+export async function checkUpdatesRemote(
+  entries: { namespace: string; name: string }[],
+  signal?: AbortSignal,
+): Promise<Array<{ namespace: string; name: string; latestVersion: string }>> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/check-updates`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entries }),
+    signal,
+  });
+  if (!resp.ok) throw new Error(`check-updates failed: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = CheckUpdatesResponseSchema.safeParse(data);
+  if (!parsed.success) throw new Error('check-updates returned unexpected shape');
+  return parsed.data.updates;
+}

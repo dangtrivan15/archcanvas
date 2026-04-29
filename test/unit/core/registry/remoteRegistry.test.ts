@@ -5,6 +5,7 @@ import {
   publishNodeDef,
   PublishError,
   REGISTRY_BASE_URL,
+  checkUpdatesRemote,
 } from '@/core/registry/remoteRegistry';
 
 afterEach(() => {
@@ -37,7 +38,7 @@ describe('searchRegistry', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs?q=kubernetes`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 
@@ -108,7 +109,7 @@ describe('fetchNodeDefYaml', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs/community/my-node/1.0.0/yaml`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 
@@ -151,7 +152,7 @@ describe('fetchNodeDefYaml', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent('my ns')}/${encodeURIComponent('my+node')}/${encodeURIComponent('1.0.0+build.100')}/yaml`,
-      expect.objectContaining({}),
+      expect.objectContaining({ signal: undefined }),
     );
   });
 });
@@ -244,5 +245,77 @@ describe('publishNodeDef', () => {
     expect(err).toBeInstanceOf(PublishError);
     expect(err.message).toContain('500');
     expect(err.statusCode).toBe(500);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// checkUpdatesRemote
+// ---------------------------------------------------------------------------
+
+describe('checkUpdatesRemote', () => {
+  it('posts to /api/v1/nodedefs/check-updates and returns updates array', async () => {
+    const mockResponse = {
+      updates: [
+        { namespace: 'community', name: 'kubernetes-deployment', latestVersion: '2.1.0' },
+        { namespace: 'alice', name: 'my-service', latestVersion: '1.0.0' },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    }));
+
+    const entries = [
+      { namespace: 'community', name: 'kubernetes-deployment' },
+      { namespace: 'alice', name: 'my-service' },
+    ];
+    const results = await checkUpdatesRemote(entries);
+
+    expect(results).toHaveLength(2);
+    expect(results[0].latestVersion).toBe('2.1.0');
+    expect(results[1].latestVersion).toBe('1.0.0');
+
+    const fetchMock = vi.mocked(fetch);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${REGISTRY_BASE_URL}/api/v1/nodedefs/check-updates`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ entries }),
+      }),
+    );
+  });
+
+  it('throws on non-OK HTTP status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    }));
+
+    await expect(checkUpdatesRemote([{ namespace: 'ns', name: 'n' }])).rejects.toThrow('check-updates failed: 503');
+  });
+
+  it('passes AbortSignal to fetch', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ updates: [] }),
+    }));
+
+    const controller = new AbortController();
+    await checkUpdatesRemote([{ namespace: 'ns', name: 'n' }], controller.signal);
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: controller.signal }),
+    );
+  });
+
+  it('throws on unexpected response shape', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ wrongField: [] }),
+    }));
+
+    await expect(checkUpdatesRemote([{ namespace: 'ns', name: 'n' }])).rejects.toThrow('unexpected shape');
   });
 });

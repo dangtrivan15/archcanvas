@@ -4,7 +4,7 @@ import { useNavigationStore } from "@/store/navigationStore";
 import { useCanvasStore } from "@/store/canvasStore";
 import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
-import { useRegistryStore } from "@/store/registryStore";
+import { useRegistryStore, computeEffectiveUpdateCount } from "@/store/registryStore";
 import { useUiStore } from "@/store/uiStore";
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
@@ -50,6 +50,9 @@ export function StatusBar() {
   const projectLocalCount = useRegistryStore((s) => s.projectLocalCount);
   const hasOverrides = useRegistryStore((s) => s.overrides.length > 0);
   const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
+  const availableUpdates = useRegistryStore((s) => s.availableUpdates);
+  const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
+  const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
   const openRegistryPanel = useUiStore((s) => s.openRegistryPanel);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();
@@ -206,6 +209,21 @@ export function StatusBar() {
           <span>{builtinCount}{projectLocalCount > 0 && ` + ${projectLocalCount}`} types</span>
           {hasOverrides && <ArrowLeftRight className="size-3 text-amber-500" />}
           {hasErrors && <AlertTriangle className="size-3 text-red-500" />}
+          <AnimatePresence>
+            {effectiveUpdateCount > 0 && (
+              <motion.span
+                data-testid="nodedef-updates-badge"
+                initial={prefersReduced ? false : { opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={prefersReduced ? undefined : { opacity: 0, scale: 0.8 }}
+                transition={{ duration: duration.normal, ease: ease.out }}
+                className="rounded bg-amber-500/15 px-1 py-0.5 text-amber-500 font-medium"
+                title="Community NodeDef updates available"
+              >
+                Updates ({effectiveUpdateCount})
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
         {isAuthenticated && username && keycloakEnabled && (
           <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-primary">

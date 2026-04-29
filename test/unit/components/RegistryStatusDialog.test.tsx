@@ -31,6 +31,8 @@ let registryState: Record<string, unknown> = {
   loadErrors: [] as Array<{ file: string; message: string }>,
   registry: null,
   lockfile: null,
+  availableUpdates: new Map<string, string>(),
+  pinnedVersions: new Map<string, string>(),
 };
 
 vi.mock('@/store/uiStore', () => ({
@@ -43,6 +45,8 @@ vi.mock('@/store/registryStore', () => ({
     {
       getState: () => ({
         reloadProjectLocal: mockReloadProjectLocal,
+        applyUpdate: vi.fn(),
+        dismissUpdate: vi.fn(),
       }),
     },
   ),
@@ -90,6 +94,8 @@ describe('RegistryStatusDialog', () => {
       loadErrors: [],
       registry: null,
       lockfile: null,
+      availableUpdates: new Map<string, string>(),
+      pinnedVersions: new Map<string, string>(),
     };
   });
 
