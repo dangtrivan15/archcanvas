@@ -49,7 +49,14 @@ export function trimHistory(messages: StoredMessage[]): StoredMessage[] {
   if (messages.length <= MAX_MESSAGES && totalChars <= MAX_CHAR_LENGTH) {
     return messages;
   }
-  const kept = messages.slice(-MAX_MESSAGES);
+  // Trim by message count first
+  let kept = messages.slice(-MAX_MESSAGES);
+  // Then further trim by char budget if still over limit (always keep at least 1 message)
+  let charCount = kept.reduce((sum, m) => sum + m.content.length, 0);
+  while (charCount > MAX_CHAR_LENGTH && kept.length > 1) {
+    charCount -= kept[0].content.length;
+    kept = kept.slice(1);
+  }
   const trimmedCount = messages.length - kept.length;
   const notice: StoredMessage = {
     role: 'assistant',

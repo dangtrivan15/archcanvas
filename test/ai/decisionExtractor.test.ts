@@ -131,6 +131,23 @@ describe('mergeIntoAdrFile', () => {
     mergeIntoAdrFile(testDir, []);
     expect(existsSync(archcanvasPath(testDir, 'decisions.yaml'))).toBe(false);
   });
+
+  it('escapes double-quote characters in title to produce valid YAML', () => {
+    mergeIntoAdrFile(testDir, [
+      {
+        title: 'use "Redis" as the cache layer',
+        date: '2026-04-29',
+        decision: 'We will use "Redis" for session caching',
+      },
+    ]);
+
+    const content = readFileSync(archcanvasPath(testDir, 'decisions.yaml'), 'utf-8');
+    // Title quotes must be escaped, not raw, to keep YAML valid
+    expect(content).toContain('\\"Redis\\"');
+    // The overall title line should not contain an unescaped bare double-quote mid-string
+    // (i.e., no   title: "use "Redis"   pattern)
+    expect(content).not.toMatch(/title: "use "Redis"/);
+  });
 });
 
 // ---------------------------------------------------------------------------

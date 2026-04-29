@@ -63,7 +63,7 @@ export function mergeIntoAdrFile(cwd: string, newDecisions: Decision[]): void {
 
   const newEntries = newDecisions
     .filter(d => !existingTitles.has(d.title.toLowerCase().trim()))
-    .map(d => `- title: "${d.title}"\n  date: "${d.date}"\n  decision: "${d.decision.replace(/"/g, '\\"')}"`)
+    .map(d => `- title: "${d.title.replace(/"/g, '\\"')}"\n  date: "${d.date}"\n  decision: "${d.decision.replace(/"/g, '\\"')}"`)
     .join('\n');
 
   if (!newEntries) return;

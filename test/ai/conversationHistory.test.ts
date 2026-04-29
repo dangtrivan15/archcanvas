@@ -124,18 +124,24 @@ describe('trimHistory', () => {
     expect(result[0].content).toContain('trimmed');
   });
 
-  it('trims when total chars exceed MAX_CHAR_LENGTH', () => {
-    // Create messages whose total length exceeds MAX_CHAR_LENGTH
-    // Use MAX_MESSAGES / 2 messages each with content > MAX_CHAR_LENGTH / (MAX_MESSAGES / 2)
-    const bigContent = 'x'.repeat(Math.ceil(MAX_CHAR_LENGTH / 2) + 1);
+  it('trims when total chars exceed MAX_CHAR_LENGTH even when message count is low', () => {
+    // 3 messages each ~30K chars → total ~90K > MAX_CHAR_LENGTH (80K)
+    // message count (3) is well below MAX_MESSAGES (40) — the old code would NOT trim
+    const bigContent = 'x'.repeat(Math.ceil(MAX_CHAR_LENGTH / 2) + 1); // ~40001 chars
     const messages: StoredMessage[] = [
-      { role: 'user', content: bigContent, timestamp: 1 },
+      { role: 'user',      content: bigContent, timestamp: 1 },
       { role: 'assistant', content: bigContent, timestamp: 2 },
+      { role: 'user',      content: bigContent, timestamp: 3 },
     ];
 
     const result = trimHistory(messages);
-    // Should have been trimmed (prepended notice)
+    // The first element should be the truncation notice
     expect(result[0].content).toContain('trimmed');
+    // At least one message must have been removed — total chars must be ≤ MAX_CHAR_LENGTH
+    const keptChars = result.slice(1).reduce((sum, m) => sum + m.content.length, 0);
+    expect(keptChars).toBeLessThanOrEqual(MAX_CHAR_LENGTH);
+    // Fewer messages than we started with (excluding notice)
+    expect(result.slice(1).length).toBeLessThan(messages.length);
   });
 
   it('prepends a truncation notice after trimming', () => {

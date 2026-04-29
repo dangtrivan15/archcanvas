@@ -252,6 +252,58 @@ describe('ChatPanel', () => {
 });
 
 // ===========================================================================
+// ChatPanel — Clear History Button
+// ===========================================================================
+
+describe('ChatPanel — Clear History button', () => {
+  it('renders the Clear history button', () => {
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Clear history')).toBeInTheDocument();
+  });
+
+  it('is disabled while streaming', () => {
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+      isStreaming: true,
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Clear history')).toBeDisabled();
+  });
+
+  it('is enabled when not streaming', () => {
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Clear history')).not.toBeDisabled();
+  });
+
+  it('clears messages from the store when clicked (integration)', () => {
+    const provider = createMockProvider('test');
+    useChatStore.setState({
+      messages: [makeUserMessage('Hello'), makeAssistantMessage('Hi')],
+      providers: new Map([['test', provider]]),
+      activeProviderId: 'test',
+    });
+
+    render(<ChatPanel />);
+    fireEvent.click(screen.getByLabelText('Clear history'));
+
+    expect(useChatStore.getState().messages).toHaveLength(0);
+  });
+
+  it('calls clearHistory on click', () => {
+    const clearHistorySpy = vi.fn();
+    useChatStore.setState({ clearHistory: clearHistorySpy } as any);
+
+    render(<ChatPanel />);
+    fireEvent.click(screen.getByLabelText('Clear history'));
+
+    expect(clearHistorySpy).toHaveBeenCalledOnce();
+  });
+});
+
+// ===========================================================================
 // ChatPanel — Path Input Bar (removed)
 // ===========================================================================
 
