@@ -80,12 +80,12 @@ export function persistPanelLayout(state: Partial<PanelLayoutState>): void {
 export type NotificationState = { message: string; type: 'success' | 'error' };
 
 interface UiState {
-  rightPanelMode: 'details' | 'chat' | 'entities';
+  rightPanelMode: 'details' | 'chat' | 'entities' | 'registry';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   rightPanelCollapsed: boolean;
   leftPanelCollapsed: boolean;
-  setRightPanelMode: (mode: 'details' | 'chat' | 'entities') => void;
+  setRightPanelMode: (mode: 'details' | 'chat' | 'entities' | 'registry') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   openRightPanel: () => void;
@@ -116,6 +116,7 @@ interface UiState {
   showRegistryStatusDialog: boolean;
   openRegistryStatusDialog: () => void;
   closeRegistryStatusDialog: () => void;
+  openRegistryPanel: () => void;
   showInstallNodeDefDialog: boolean;
   pendingInstall: RemoteNodeDefSummary | null;
   openInstallNodeDefDialog: (summary: RemoteNodeDefSummary) => void;
@@ -284,6 +285,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   showRegistryStatusDialog: false,
   openRegistryStatusDialog: () => set({ showRegistryStatusDialog: true }),
   closeRegistryStatusDialog: () => set({ showRegistryStatusDialog: false }),
+  openRegistryPanel: () => {
+    get().openRightPanel();
+    set({ rightPanelMode: 'registry' });
+  },
 
   showInstallNodeDefDialog: false,
   pendingInstall: null,

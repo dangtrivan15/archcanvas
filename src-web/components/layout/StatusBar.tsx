@@ -50,7 +50,7 @@ export function StatusBar() {
   const projectLocalCount = useRegistryStore((s) => s.projectLocalCount);
   const hasOverrides = useRegistryStore((s) => s.overrides.length > 0);
   const hasErrors = useRegistryStore((s) => s.loadErrors.length > 0);
-  const openRegistryStatus = useUiStore((s) => s.openRegistryStatusDialog);
+  const openRegistryStatus = useUiStore((s) => s.openRegistryPanel);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();
 

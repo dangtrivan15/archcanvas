@@ -16,10 +16,13 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('searchRegistry', () => {
-  it('returns RemoteNodeDefSummary[] from array response', async () => {
-    const mockData = [
-      { namespace: 'community', name: 'kubernetes-deployment', version: '1.0.0', displayName: 'K8s Deployment' },
-    ];
+  it('calls /api/v1/nodedefs?q=... and returns items array', async () => {
+    const mockData = {
+      items: [
+        { namespace: 'community', name: 'kubernetes-deployment', latestVer: '1.0.0', displayName: 'K8s Deployment', tags: [], downloadCount: 0 },
+      ],
+      total: 1,
+    };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockData,
@@ -29,38 +32,13 @@ describe('searchRegistry', () => {
     expect(results).toHaveLength(1);
     expect(results[0].namespace).toBe('community');
     expect(results[0].name).toBe('kubernetes-deployment');
+    expect(results[0].latestVer).toBe('1.0.0');
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${REGISTRY_BASE_URL}/api/v1/search?q=kubernetes`,
+      `${REGISTRY_BASE_URL}/api/v1/nodedefs?q=kubernetes`,
       expect.objectContaining({}),
     );
-  });
-
-  it('normalises { results: [...] } response shape', async () => {
-    const mockData = {
-      results: [
-        { namespace: 'community', name: 'my-node', version: '2.0.0' },
-      ],
-    };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockData,
-    }));
-
-    const results = await searchRegistry('my-node');
-    expect(results).toHaveLength(1);
-    expect(results[0].name).toBe('my-node');
-  });
-
-  it('returns empty array for { results: undefined }', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ other: 'field' }),
-    }));
-
-    const results = await searchRegistry('anything');
-    expect(results).toHaveLength(0);
   });
 
   it('throws on non-OK HTTP response', async () => {
@@ -89,7 +67,7 @@ describe('searchRegistry', () => {
   it('passes signal to fetch', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => [],
+      json: async () => ({ items: [], total: 0 }),
     }));
 
     const controller = new AbortController();
@@ -100,6 +78,15 @@ describe('searchRegistry', () => {
       expect.any(String),
       expect.objectContaining({ signal: controller.signal }),
     );
+  });
+
+  it('throws when response shape is unexpected (missing items field)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [] }),
+    }));
+
+    await expect(searchRegistry('test')).rejects.toThrow('unexpected response shape');
   });
 });
 

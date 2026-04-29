@@ -76,7 +76,7 @@ export function InstallNodeDefDialog() {
             </div>
             <div className="flex items-center gap-2">
               <span className="w-24 text-muted-foreground">Version</span>
-              <span className="font-mono">v{displaySummary.version}</span>
+              <span className="font-mono">v{displaySummary.latestVer}</span>
             </div>
             {displaySummary.displayName && (
               <div className="flex items-center gap-2">
