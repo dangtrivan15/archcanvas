@@ -28,6 +28,7 @@ interface CommunityBrowserState {
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let abortController: AbortController | undefined;
+let detailAbortController: AbortController | undefined;
 
 export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get) => ({
   query: '',
@@ -59,15 +60,23 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
   },
 
   selectNodeDef: (key: string | null) => {
+    // Cancel any in-flight detail request
+    if (detailAbortController) {
+      detailAbortController.abort();
+    }
     if (!key) {
-      set({ selectedKey: null, selectedDetail: null });
+      detailAbortController = undefined;
+      set({ selectedKey: null, selectedDetail: null, detailLoading: false });
       return;
     }
+    detailAbortController = new AbortController();
+    const signal = detailAbortController.signal;
     set({ selectedKey: key, selectedDetail: null, detailLoading: true });
     const [namespace, name] = key.split('/');
-    fetchNodeDefDetail(namespace, name)
+    fetchNodeDefDetail(namespace, name, signal)
       .then((detail) => set({ selectedDetail: detail, detailLoading: false }))
       .catch((err) => {
+        // A new selectNodeDef call aborted this request — a replacement fetch is already in flight
         if (err instanceof DOMException && err.name === 'AbortError') return;
         set({ detailLoading: false, error: err instanceof Error ? err.message : String(err) });
       });
@@ -79,8 +88,10 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       const namespaces = await fetchNamespaces();
       set({ namespaces, namespacesLoading: false });
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      set({ namespacesLoading: false });
+      set({
+        namespacesLoading: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   },
 

@@ -24,6 +24,15 @@ const BrowseResultSchema = z.object({
 
 export type BrowseResult = z.infer<typeof BrowseResultSchema>;
 
+const NamespacesResponseSchema = z.object({
+  namespaces: z.array(
+    z.object({
+      namespace: z.string(),
+      count: z.number(),
+    }),
+  ),
+});
+
 const RemoteNodeDefDetailSchema = z.object({
   nodedef: RemoteNodeDefSummarySchema,
   version: z.object({
@@ -90,8 +99,12 @@ export async function fetchNamespaces(
   const url = `${REGISTRY_BASE_URL}/api/v1/namespaces`;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Failed to fetch namespaces: ${resp.status}`);
-  const data = (await resp.json()) as { namespaces: Array<{ namespace: string; count: number }> };
-  return data.namespaces;
+  const data = (await resp.json()) as unknown;
+  const parsed = NamespacesResponseSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error('Namespaces endpoint returned unexpected response shape');
+  }
+  return parsed.data.namespaces;
 }
 
 /**
