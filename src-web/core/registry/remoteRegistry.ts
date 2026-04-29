@@ -29,7 +29,7 @@ const RemoteNodeDefDetailSchema = z.object({
   version: z.object({
     nodedefId: z.string(),
     version: z.string(),
-    blob: z.record(z.unknown()),
+    blob: z.record(z.string(), z.unknown()),
     publishedBySub: z.string().optional(),
     publishedAt: z.string(),
   }),
