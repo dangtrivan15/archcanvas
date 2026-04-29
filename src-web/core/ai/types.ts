@@ -190,10 +190,15 @@ export interface QuestionResponseClientMessage {
   answers: Record<string, string>;
 }
 
+export interface ClearHistoryClientMessage {
+  type: 'clear_history';
+}
+
 export type ClientMessage =
   | ChatClientMessage
   | InterruptClientMessage
   | LoadHistoryClientMessage
+  | ClearHistoryClientMessage
   | PermissionResponseClientMessage
   | QuestionResponseClientMessage
   | SetPermissionModeClientMessage
@@ -249,4 +254,13 @@ export interface InteractiveChatProvider extends ChatProvider {
 /** Type guard: narrows ChatProvider to InteractiveChatProvider. */
 export function isInteractiveProvider(p: ChatProvider): p is InteractiveChatProvider {
   return 'sendPermissionResponse' in p;
+}
+
+export interface ClearableProvider extends ChatProvider {
+  sendClearHistory(): void;
+}
+
+/** Type guard: narrows ChatProvider to ClearableProvider. */
+export function isClearableProvider(p: ChatProvider): p is ClearableProvider {
+  return 'sendClearHistory' in p;
 }

@@ -189,6 +189,7 @@ export function createMockSessionFactory() {
     respondToPermission() {},
     respondToQuestion() {},
     loadHistory() {},
+    clearHistory() {},
     setPermissionMode() {},
     setEffort() {},
     interrupt() {},

@@ -20,8 +20,10 @@ import type {
   PermissionUpdate,
 } from '@anthropic-ai/claude-agent-sdk';
 import { homedir } from 'os';
-import { existsSync } from 'fs';
+import { existsSync, unlinkSync } from 'fs';
 import { buildSystemPrompt } from './systemPrompt';
+import { loadHistory, saveHistory, archcanvasPath, trimHistory, buildSummary } from './conversationHistory';
+import { extractDecisions, mergeIntoAdrFile, deleteDecisions } from './decisionExtractor';
 
 function expandTilde(p: string): string {
   return p.startsWith('~') ? p.replace('~', homedir()) : p;
@@ -66,6 +68,7 @@ export interface BridgeSession {
   /** Provide the user's answers to an AskUserQuestion card. */
   respondToQuestion(id: string, answers: Record<string, string>): void;
   loadHistory(messages: ChatMessage[]): void;
+  clearHistory(): void;
   setPermissionMode(mode: string): void;
   setEffort(effort: string): void;
   /** Interrupt the current turn via the SDK's native interrupt(). Preserves session context. */
@@ -163,7 +166,11 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
   let effort: 'low' | 'medium' | 'high' | 'max' = 'high';
   const pendingPermissions = new Map<string, PendingPermission>();
   const pendingQuestions = new Map<string, PendingQuestion>();
-  // TODO: store conversation history for session context summary injection.
+  // History persistence — lazy-loaded on first sendMessage()
+  let resolvedCwd: string = expandTilde(cwd);
+  let priorHistorySummary: string | null = null;
+  let historyLoaded = false;
+  let hasPriorHistory = false;
 
   async function resolveQueryFn(): Promise<SDKQueryFn> {
     if (queryFn) return queryFn;
@@ -375,9 +382,10 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       abortController = new AbortController();
       const systemPrompt = buildSystemPrompt(context);
+      let assistantContent = '';           // ← BEFORE try{} — block-scope fix (TS let)
 
       try {
-        const resolvedCwd = expandTilde(context.projectPath || cwd);
+        resolvedCwd = expandTilde(context.projectPath || cwd);   // assign to closure var
         if (!existsSync(resolvedCwd)) {
           yield {
             type: 'error',
@@ -387,12 +395,30 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
           return;
         }
 
+        // Lazy-load history exactly once per session
+        if (!historyLoaded) {
+          historyLoaded = true;
+          const histFile = loadHistory(resolvedCwd);
+          if (histFile.messages.length > 0) {
+            hasPriorHistory = true;
+            priorHistorySummary = buildSummary(histFile.messages);
+          }
+          if (histFile.sessionId) {
+            sessionId = histFile.sessionId;
+          }
+        }
+
+        // Inject prior-session context AFTER lazy-load sets hasPriorHistory
+        const effectiveSystemPrompt = hasPriorHistory && priorHistorySummary
+          ? `${systemPrompt}\n\n## Prior Session Context\n${priorHistorySummary}`
+          : systemPrompt;
+
         const fn = await resolveQueryFn();
 
         const sdkQuery = fn({
           prompt: content,
           options: {
-            systemPrompt,
+            systemPrompt: effectiveSystemPrompt,
             cwd: resolvedCwd,
             abortController,
             settingSources: ['user', 'project', 'local'],
@@ -512,7 +538,10 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
         });
 
         activeQuery = sdkQuery;
-        yield* translateSDKStream(sdkQuery, requestId);
+        for await (const event of translateSDKStream(sdkQuery, requestId)) {
+          if (event.type === 'text') assistantContent += event.content;
+          yield event;
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         yield {
@@ -524,6 +553,25 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
       } finally {
         activeQuery = null;
         abortController = null;
+        // Persist history after each completed turn
+        if (assistantContent && !destroyed) {
+          const histFile = loadHistory(resolvedCwd);
+          histFile.messages = trimHistory([
+            ...histFile.messages,
+            { role: 'user', content, timestamp: Date.now() },
+            { role: 'assistant', content: assistantContent, timestamp: Date.now() },
+          ]);
+          histFile.sessionId = sessionId;
+          saveHistory(resolvedCwd, histFile);
+          // Extract decisions from this turn only (per-turn only — no cross-call index)
+          const decisions = extractDecisions([
+            { role: 'user', content, timestamp: Date.now() },
+            { role: 'assistant', content: assistantContent, timestamp: Date.now() },
+          ]);
+          if (decisions.length > 0) {
+            mergeIntoAdrFile(resolvedCwd, decisions);
+          }
+        }
       }
     },
 
@@ -553,8 +601,18 @@ export function createBridgeSession(options: BridgeSessionOptions): BridgeSessio
     },
 
     loadHistory(_messages: ChatMessage[]): void {
-      // The session resume mechanism handles history internally via sessionId.
-      // TODO: store messages for context summary injection.
+      // History is now managed bridge-side via conversationHistory.ts.
+      // This method is kept for interface compatibility with legacy callers.
+    },
+
+    clearHistory(): void {
+      historyLoaded = false;
+      hasPriorHistory = false;
+      priorHistorySummary = null;
+      sessionId = undefined;
+      const histPath = archcanvasPath(resolvedCwd, 'history.json');
+      if (existsSync(histPath)) unlinkSync(histPath);
+      deleteDecisions(resolvedCwd);
     },
 
     setPermissionMode(mode: string): void {
