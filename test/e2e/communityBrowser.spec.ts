@@ -96,7 +96,7 @@ test.describe('community browser panel', () => {
     await page.getByTestId('registry-indicator').click();
     await page.getByTestId('tab-community').click();
     await page.getByTestId('namespace-filter-kubernetes').click();
-    await expect(page.getByText('aws')).not.toBeVisible({ timeout: 2000 });
+    await expect(page.getByTestId('nodedef-card-aws/s3-bucket')).not.toBeVisible({ timeout: 2000 });
     await expect(page.getByText('kubernetes/deployment')).toBeVisible();
   });
 });
