@@ -274,3 +274,96 @@ describe('StatusBar registry indicator', () => {
     expect(mockOpenRegistryPanel).toHaveBeenCalled();
   });
 });
+
+describe('StatusBar nodedef updates badge', () => {
+  const mockedUseRegistryStore = vi.mocked(useRegistryStore);
+
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({
+      selectedNodeIds: new Set(),
+      selectedEdgeKeys: new Set(),
+    });
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+      } as any),
+    );
+  });
+
+  it('hides badge when no updates are available', () => {
+    render(<StatusBar />);
+    expect(screen.queryByTestId('nodedef-updates-badge')).toBeNull();
+  });
+
+  it('shows badge with count when updates are available', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map([['acme/widget', '2.0.0']]),
+        pinnedVersions: new Map(),
+      } as any),
+    );
+    render(<StatusBar />);
+    const badge = screen.getByTestId('nodedef-updates-badge');
+    expect(badge.textContent).toContain('Updates (1)');
+  });
+
+  it('hides badge when all updates are pinned (dismissed)', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map([['acme/widget', '2.0.0']]),
+        pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+      } as any),
+    );
+    render(<StatusBar />);
+    expect(screen.queryByTestId('nodedef-updates-badge')).toBeNull();
+  });
+
+  it('shows badge count excluding pinned entries', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map([
+          ['acme/widget', '2.0.0'],
+          ['acme/gadget', '3.0.0'],
+        ]),
+        pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+      } as any),
+    );
+    render(<StatusBar />);
+    const badge = screen.getByTestId('nodedef-updates-badge');
+    expect(badge.textContent).toContain('Updates (1)');
+  });
+
+  it('re-shows badge when newer version supersedes pin', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map([['acme/widget', '3.0.0']]),
+        pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+      } as any),
+    );
+    render(<StatusBar />);
+    const badge = screen.getByTestId('nodedef-updates-badge');
+    expect(badge.textContent).toContain('Updates (1)');
+  });
+});
