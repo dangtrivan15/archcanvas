@@ -27,7 +27,7 @@ const INVALID_YAML = 'kind: NotANodeDef\nsome: thing';
 const summary: RemoteNodeDefSummary = {
   namespace: 'community',
   name: 'kubernetes-deployment',
-  version: '1.0.0',
+  latestVer: '1.0.0',
   displayName: 'Kubernetes Deployment',
 };
 

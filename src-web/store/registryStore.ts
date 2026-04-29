@@ -18,6 +18,7 @@ interface RegistryStoreState {
   projectLocalKeys: Set<string>;
   remoteInstalledCount: number;
   remoteInstalledKeys: Set<string>;
+  remoteInstalledVersions: Map<string, string>;
   overrides: string[];
   loadErrors: Array<{ file: string; message: string }>;
   lockfile: LockfileData | null;
@@ -49,6 +50,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   projectLocalKeys: new Set(),
   remoteInstalledCount: 0,
   remoteInstalledKeys: new Set(),
+  remoteInstalledVersions: new Map(),
   overrides: [],
   loadErrors: [],
   lockfile: null,
@@ -91,6 +93,13 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         projectLocalKeys: new Set(authored.keys()),
         remoteInstalledCount: remoteInstalled.size,
         remoteInstalledKeys: new Set(remoteInstalled.keys()),
+        remoteInstalledVersions: lockfile
+          ? new Map(
+              Object.entries(lockfile.entries)
+                .filter(([, e]) => e.source === 'remote')
+                .map(([k, e]) => [k, e.version]),
+            )
+          : new Map(),
         overrides,
         loadErrors,
         lockfile,
@@ -146,6 +155,13 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         projectLocalKeys: new Set(authored.keys()),
         remoteInstalledCount: remoteInstalled.size,
         remoteInstalledKeys: new Set(remoteInstalled.keys()),
+        remoteInstalledVersions: lockfile
+          ? new Map(
+              Object.entries(lockfile.entries)
+                .filter(([, e]) => e.source === 'remote')
+                .map(([k, e]) => [k, e.version]),
+            )
+          : new Map(),
         overrides,
         loadErrors,
         lockfile,

@@ -407,7 +407,7 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
             fresh.map((s) => ({
               id: `community:${s.namespace}/${s.name}`,
               title: s.displayName ?? s.name,
-              subtitle: `[community] ${s.namespace}/${s.name} v${s.version}`,
+              subtitle: `[community] ${s.namespace}/${s.name} v${s.latestVer}`,
               icon: '⬡',
               category: 'Community',
             }))

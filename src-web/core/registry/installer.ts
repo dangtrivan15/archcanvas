@@ -34,7 +34,7 @@ export async function downloadAndInstallNodeDef(
   }
 
   // 1. Fetch YAML from registry
-  const yaml = await fetchNodeDefYaml(summary.namespace, summary.name, summary.version);
+  const yaml = await fetchNodeDefYaml(summary.namespace, summary.name, summary.latestVer);
 
   // 2. Validate before writing — reject malformed or schema-invalid content
   const parsed = parseNodeDef(yaml);
@@ -64,7 +64,7 @@ export async function downloadAndInstallNodeDef(
     resolvedAt: new Date().toISOString(),
     entries: {
       ...existingLockfile.entries,
-      [key]: { version: summary.version, source: 'remote' as const },
+      [key]: { version: summary.latestVer, source: 'remote' as const },
     },
   };
   await saveLockfile(fs, projectRoot, newLockfile);

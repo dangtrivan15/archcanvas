@@ -5,19 +5,24 @@ import { openCommandPalette } from './helpers/keyboard';
 test.describe('community registry install', () => {
   test.beforeEach(async ({ page }) => {
     // Intercept registry search endpoint
-    await page.route('https://registry.archcanvas.dev/api/v1/search*', async (route) => {
+    await page.route('https://registry.archcanvas.dev/api/v1/nodedefs*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([
-          {
-            namespace: 'community',
-            name: 'kubernetes-deployment',
-            version: '1.0.0',
-            displayName: 'Kubernetes Deployment',
-            description: 'A K8s Deployment node',
-          },
-        ]),
+        body: JSON.stringify({
+          items: [
+            {
+              namespace: 'community',
+              name: 'kubernetes-deployment',
+              latestVer: '1.0.0',
+              displayName: 'Kubernetes Deployment',
+              description: 'A K8s Deployment node',
+              tags: [],
+              downloadCount: 0,
+            },
+          ],
+          total: 1,
+        }),
       });
     });
 

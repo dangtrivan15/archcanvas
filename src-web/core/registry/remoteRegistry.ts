@@ -8,14 +8,43 @@ import { z } from 'zod/v4';
 const RemoteNodeDefSummarySchema = z.object({
   namespace: z.string(),
   name: z.string(),
-  version: z.string(),
+  latestVer: z.string(),
   displayName: z.string().optional(),
   description: z.string().optional(),
+  tags: z.array(z.string()).default([]),
+  downloadCount: z.number().default(0),
 });
 
 export type RemoteNodeDefSummary = z.infer<typeof RemoteNodeDefSummarySchema>;
 
-const RemoteNodeDefSummaryArraySchema = z.array(RemoteNodeDefSummarySchema);
+const BrowseResultSchema = z.object({
+  items: z.array(RemoteNodeDefSummarySchema),
+  total: z.number(),
+});
+
+export type BrowseResult = z.infer<typeof BrowseResultSchema>;
+
+const NamespacesResponseSchema = z.object({
+  namespaces: z.array(
+    z.object({
+      namespace: z.string(),
+      count: z.number(),
+    }),
+  ),
+});
+
+const RemoteNodeDefDetailSchema = z.object({
+  nodedef: RemoteNodeDefSummarySchema,
+  version: z.object({
+    nodedefId: z.string(),
+    version: z.string(),
+    blob: z.record(z.string(), z.unknown()),
+    publishedBySub: z.string().optional(),
+    publishedAt: z.string(),
+  }),
+});
+
+export type RemoteNodeDefDetail = z.infer<typeof RemoteNodeDefDetailSchema>;
 
 export const REGISTRY_BASE_URL = 'https://registry.archcanvas.dev';
 
@@ -27,15 +56,72 @@ export async function searchRegistry(
   query: string,
   signal?: AbortSignal,
 ): Promise<RemoteNodeDefSummary[]> {
-  const url = `${REGISTRY_BASE_URL}/api/v1/search?q=${encodeURIComponent(query)}`;
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs?q=${encodeURIComponent(query)}`;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Registry search failed: ${resp.status}`);
   const data = (await resp.json()) as unknown;
-  // Normalise: the registry may return an array directly or { results: [...] }
-  const raw = Array.isArray(data) ? data : ((data as { results?: unknown }).results ?? []);
-  const parsed = RemoteNodeDefSummaryArraySchema.safeParse(raw);
+  const parsed = BrowseResultSchema.safeParse(data);
   if (!parsed.success) {
     throw new Error(`Registry returned unexpected response shape`);
+  }
+  return parsed.data.items;
+}
+
+/**
+ * Browse the community registry with optional filters.
+ */
+export async function browseRegistry(
+  opts: { q?: string; namespace?: string; page?: number; pageSize?: number },
+  signal?: AbortSignal,
+): Promise<{ items: RemoteNodeDefSummary[]; total: number }> {
+  const params = new URLSearchParams();
+  if (opts.q) params.set('q', opts.q);
+  if (opts.namespace) params.set('namespace', opts.namespace);
+  if (opts.page !== undefined) params.set('page', String(opts.page));
+  if (opts.pageSize !== undefined) params.set('pageSize', String(opts.pageSize));
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs${params.toString() ? '?' + params.toString() : ''}`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Registry browse failed: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = BrowseResultSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(`Registry returned unexpected response shape`);
+  }
+  return parsed.data;
+}
+
+/**
+ * Fetch the list of namespaces with their nodedef counts.
+ */
+export async function fetchNamespaces(
+  signal?: AbortSignal,
+): Promise<Array<{ namespace: string; count: number }>> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/namespaces`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Failed to fetch namespaces: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = NamespacesResponseSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error('Namespaces endpoint returned unexpected response shape');
+  }
+  return parsed.data.namespaces;
+}
+
+/**
+ * Fetch the detail view for a specific NodeDef.
+ */
+export async function fetchNodeDefDetail(
+  namespace: string,
+  name: string,
+  signal?: AbortSignal,
+): Promise<RemoteNodeDefDetail> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Failed to fetch NodeDef detail: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = RemoteNodeDefDetailSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(`NodeDef detail returned unexpected response shape`);
   }
   return parsed.data;
 }
