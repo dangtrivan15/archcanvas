@@ -113,6 +113,30 @@ describe('communityBrowserStore', () => {
 
       expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
     });
+
+    it('sets error and does not call fetchNodeDefDetail when key has no slash', () => {
+      useCommunityBrowserStore.getState().selectNodeDef('k8s');
+      const state = useCommunityBrowserStore.getState();
+      expect(fetchNodeDefDetail).not.toHaveBeenCalled();
+      expect(state.detailLoading).toBe(false);
+      expect(state.error).toMatch(/invalid node key/i);
+    });
+
+    it('sets error and does not call fetchNodeDefDetail when name part is empty (trailing slash)', () => {
+      useCommunityBrowserStore.getState().selectNodeDef('k8s/');
+      const state = useCommunityBrowserStore.getState();
+      expect(fetchNodeDefDetail).not.toHaveBeenCalled();
+      expect(state.detailLoading).toBe(false);
+      expect(state.error).toMatch(/invalid node key/i);
+    });
+
+    it('sets error and does not call fetchNodeDefDetail when namespace part is empty (leading slash)', () => {
+      useCommunityBrowserStore.getState().selectNodeDef('/deployment');
+      const state = useCommunityBrowserStore.getState();
+      expect(fetchNodeDefDetail).not.toHaveBeenCalled();
+      expect(state.detailLoading).toBe(false);
+      expect(state.error).toMatch(/invalid node key/i);
+    });
   });
 
   describe('loadNamespaces', () => {
