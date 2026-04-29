@@ -111,7 +111,7 @@ describe('communityBrowserStore', () => {
         expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
       });
 
-      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment');
+      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
     });
   });
 
