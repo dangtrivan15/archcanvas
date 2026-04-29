@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import {
   createBridgeSession,
   type SDKQueryFn,
@@ -6,10 +8,12 @@ import {
   testContext,
   getTestCwd,
   sdkSystemInit,
+  sdkAssistantText,
   sdkResultSuccess,
   setupSession,
   toSDKQuery,
 } from './bridge-test-helpers';
+import { ARCHCANVAS_DIR } from '@/core/ai/conversationHistory';
 
 // ---------------------------------------------------------------------------
 // Session lifecycle
@@ -197,6 +201,138 @@ describe('BridgeSession — no custom hooks', () => {
     await collect(session.sendMessage('test', testContext()));
     const opts = capturedArgs[0].options as Record<string, unknown>;
     expect(opts.hooks).toBeUndefined();
+    session.destroy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Conversation history persistence
+// ---------------------------------------------------------------------------
+describe('BridgeSession — conversation history', () => {
+  it('persists history.json after a completed sendMessage() turn', async () => {
+    const testCwd = getTestCwd();
+
+    const mockQueryFn: SDKQueryFn = () => {
+      return toSDKQuery((async function* () {
+        yield sdkSystemInit('history-persist-session');
+        yield sdkAssistantText('This is the assistant reply.');
+        yield sdkResultSuccess();
+      })());
+    };
+
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
+    await collect(session.sendMessage('hello from user', testContext()));
+
+    const histPath = join(testCwd, ARCHCANVAS_DIR, 'history.json');
+    expect(existsSync(histPath)).toBe(true);
+
+    const histFile = JSON.parse(readFileSync(histPath, 'utf-8'));
+    expect(histFile.messages).toHaveLength(2);
+    expect(histFile.messages[0].role).toBe('user');
+    expect(histFile.messages[0].content).toBe('hello from user');
+    expect(histFile.messages[1].role).toBe('assistant');
+    expect(histFile.messages[1].content).toBe('This is the assistant reply.');
+
+    session.destroy();
+  });
+
+  it('passes stored sessionId as resume option on second sendMessage()', async () => {
+    const testCwd = getTestCwd();
+    const capturedArgs: Array<Record<string, unknown>> = [];
+
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return toSDKQuery((async function* () {
+        yield sdkSystemInit('stored-session-id');
+        yield sdkAssistantText('Hello there.');
+        yield sdkResultSuccess();
+      })());
+    };
+
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
+
+    // First call — no resume expected, history loaded (empty)
+    await collect(session.sendMessage('first message', testContext()));
+
+    // Second call — should pass resume with sessionId captured from init
+    await collect(session.sendMessage('second message', testContext()));
+
+    expect(capturedArgs).toHaveLength(2);
+    // First call: no resume (no prior stored history)
+    expect((capturedArgs[0].options as Record<string, unknown>)?.resume).toBeUndefined();
+    // Second call: resume with the session ID from first call's init
+    expect((capturedArgs[1].options as Record<string, unknown>)?.resume).toBe('stored-session-id');
+
+    session.destroy();
+  });
+
+  it('clearHistory() deletes history.json and resets state', async () => {
+    const testCwd = getTestCwd();
+
+    const mockQueryFn: SDKQueryFn = () => {
+      return toSDKQuery((async function* () {
+        yield sdkSystemInit('clear-test-session');
+        yield sdkAssistantText('A response.');
+        yield sdkResultSuccess();
+      })());
+    };
+
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
+    await collect(session.sendMessage('initial message', testContext()));
+
+    const histPath = join(testCwd, ARCHCANVAS_DIR, 'history.json');
+    expect(existsSync(histPath)).toBe(true);
+
+    session.clearHistory();
+    expect(existsSync(histPath)).toBe(false);
+
+    session.destroy();
+  });
+
+  it('clearHistory() causes next sendMessage() to NOT pass resume', async () => {
+    const testCwd = getTestCwd();
+    const capturedArgs: Array<Record<string, unknown>> = [];
+
+    const mockQueryFn: SDKQueryFn = (args) => {
+      capturedArgs.push(args as Record<string, unknown>);
+      return toSDKQuery((async function* () {
+        yield sdkSystemInit('resume-after-clear');
+        yield sdkAssistantText('Response.');
+        yield sdkResultSuccess();
+      })());
+    };
+
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
+
+    // First call — establishes session with sessionId
+    await collect(session.sendMessage('first', testContext()));
+
+    // Clear history — resets historyLoaded and sessionId
+    session.clearHistory();
+
+    // Second call — history re-loaded (empty), no resume
+    await collect(session.sendMessage('after clear', testContext()));
+
+    expect(capturedArgs).toHaveLength(2);
+    expect((capturedArgs[1].options as Record<string, unknown>)?.resume).toBeUndefined();
+
+    session.destroy();
+  });
+
+  it('clearHistory() is a no-op when history.json does not exist', () => {
+    const testCwd = getTestCwd();
+
+    const mockQueryFn: SDKQueryFn = () => {
+      return toSDKQuery((async function* () {
+        yield sdkResultSuccess();
+      })());
+    };
+
+    const session = createBridgeSession({ cwd: testCwd, queryFn: mockQueryFn });
+
+    // Should not throw when no history file exists
+    expect(() => session.clearHistory()).not.toThrow();
+
     session.destroy();
   });
 });

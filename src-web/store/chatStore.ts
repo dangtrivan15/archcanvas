@@ -5,7 +5,7 @@ import type {
   ProjectContext,
   PermissionSuggestion,
 } from '@/core/ai/types';
-import { isInteractiveProvider } from '@/core/ai/types';
+import { isInteractiveProvider, isClearableProvider } from '@/core/ai/types';
 import { useFileStore } from './fileStore';
 import { useNavigationStore } from './navigationStore';
 import { useRegistryStore } from './registryStore';
@@ -347,5 +347,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearHistory() {
     set({ messages: [], error: null, warning: null, statusMessage: null });
+    const { activeProviderId, providers } = get();
+    if (!activeProviderId) return;
+    const provider = providers.get(activeProviderId);
+    if (!provider) return;
+    if (isClearableProvider(provider)) {
+      if (provider.available) {
+        provider.sendClearHistory();
+      } else {
+        console.warn('[chatStore] clearHistory: provider not connected — bridge-side history not cleared. Reconnect and clear again if needed.');
+      }
+    }
   },
 }));

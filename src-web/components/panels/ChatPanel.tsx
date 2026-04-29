@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Settings } from 'lucide-react';
+import { Settings, Trash2 } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useUiStore } from '@/store/uiStore';
 import { ChatMessage } from './ChatMessage';
@@ -104,6 +104,15 @@ export function ChatPanel() {
             aria-label="AI settings"
           >
             <Settings className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => useChatStore.getState().clearHistory()}
+            disabled={isStreaming}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+            aria-label="Clear history"
+            title="Clear conversation history"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
           <select
             value={permissionMode}

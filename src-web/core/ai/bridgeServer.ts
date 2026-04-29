@@ -282,6 +282,11 @@ export function createBridgeServer(options: BridgeServerOptions = {}) {
           break;
         }
 
+        case 'clear_history': {
+          bridgeSession.clearHistory();
+          break;
+        }
+
         case 'permission_response': {
           const permMsg = clientMsg as PermissionResponseClientMessage;
           bridgeSession.respondToPermission(permMsg.id, permMsg.allowed, {

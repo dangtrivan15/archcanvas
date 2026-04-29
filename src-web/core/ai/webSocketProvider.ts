@@ -157,6 +157,11 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
     this.send({ type: 'set_effort', effort });
   }
 
+  /** Tell the bridge to clear its persisted conversation history. */
+  sendClearHistory(): void {
+    this.send({ type: 'clear_history' });
+  }
+
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------

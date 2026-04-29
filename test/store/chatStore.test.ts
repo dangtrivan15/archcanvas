@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useChatStore } from '@/store/chatStore';
 import type { ChatProvider, ChatEvent, ProjectContext, ChatMessage } from '@/core/ai/types';
-import { isInteractiveProvider } from '@/core/ai/types';
+import { isInteractiveProvider, isClearableProvider } from '@/core/ai/types';
 
 // ---------------------------------------------------------------------------
 // Mock stores that chatStore reads from
@@ -782,6 +782,57 @@ describe('chatStore', () => {
       expect(useChatStore.getState().error).toBeNull();
       expect(useChatStore.getState().warning).toBeNull();
     });
+
+    it('calls sendClearHistory() on a clearable provider when available === true', () => {
+      const sendClearHistory = vi.fn();
+      const clearableProvider: ChatProvider & { sendClearHistory: ReturnType<typeof vi.fn> } = {
+        id: 'clearable-p1',
+        displayName: 'Clearable Provider',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+        sendClearHistory,
+      };
+
+      useChatStore.getState().registerProvider(clearableProvider);
+      expect(isClearableProvider(clearableProvider)).toBe(true);
+
+      useChatStore.getState().clearHistory();
+
+      expect(sendClearHistory).toHaveBeenCalledOnce();
+    });
+
+    it('emits console.warn and does NOT call sendClearHistory() when available === false', () => {
+      const sendClearHistory = vi.fn();
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const clearableProvider: ChatProvider & { sendClearHistory: ReturnType<typeof vi.fn> } = {
+        id: 'clearable-p2',
+        displayName: 'Clearable Provider (offline)',
+        available: false,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+        sendClearHistory,
+      };
+
+      useChatStore.getState().registerProvider(clearableProvider);
+      useChatStore.getState().clearHistory();
+
+      expect(sendClearHistory).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[chatStore] clearHistory'),
+      );
+
+      warnSpy.mockRestore();
+    });
+
+    it('does not throw when no active provider is registered', () => {
+      // No provider registered — should complete without error
+      expect(() => useChatStore.getState().clearHistory()).not.toThrow();
+      expect(useChatStore.getState().messages).toHaveLength(0);
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -943,6 +994,37 @@ describe('chatStore', () => {
       expect(useChatStore.getState()._autoContinueCount).toBe(2);
       expect(useChatStore.getState().isStreaming).toBe(false);
       expect(useChatStore.getState().error).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // isClearableProvider type guard
+  // -----------------------------------------------------------------------
+
+  describe('isClearableProvider', () => {
+    it('returns true for providers with sendClearHistory method', () => {
+      const clearableProvider: ChatProvider & { sendClearHistory: () => void } = {
+        id: 'clearable',
+        displayName: 'Clearable',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+        sendClearHistory: vi.fn(),
+      };
+      expect(isClearableProvider(clearableProvider)).toBe(true);
+    });
+
+    it('returns false for bare ChatProvider without sendClearHistory', () => {
+      const bareProvider: ChatProvider = {
+        id: 'bare',
+        displayName: 'Bare',
+        available: true,
+        sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
+        loadHistory: vi.fn(),
+        interrupt: vi.fn(),
+      };
+      expect(isClearableProvider(bareProvider)).toBe(false);
     });
   });
 
