@@ -42,6 +42,8 @@ vi.mock('@/store/registryStore', () => ({
       projectLocalCount: 0,
       overrides: [],
       loadErrors: [],
+      availableUpdates: new Map(),
+      pinnedVersions: new Map(),
     }),
   ),
 }));
@@ -236,6 +238,8 @@ describe('StatusBar registry indicator', () => {
         projectLocalCount: 0,
         overrides: [],
         loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
       } as any),
     );
   });
@@ -254,6 +258,8 @@ describe('StatusBar registry indicator', () => {
         projectLocalCount: 3,
         overrides: [],
         loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
       } as any),
     );
     render(<StatusBar />);

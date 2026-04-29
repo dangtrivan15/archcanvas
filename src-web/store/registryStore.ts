@@ -7,6 +7,7 @@ import { loadLockfile, saveLockfile, generateLockfile } from '@/core/registry/lo
 import type { LockfileData } from '@/core/registry/lockfile';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
 import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
+import { checkNodeDefUpdates } from '@/core/registry/updateChecker';
 
 interface RegistryStoreState {
   registry: NodeDefRegistry | null;
@@ -23,13 +24,37 @@ interface RegistryStoreState {
   loadErrors: Array<{ file: string; message: string }>;
   lockfile: LockfileData | null;
 
+  availableUpdates: Map<string, string>;
+  updatesCheckStatus: 'idle' | 'checking' | 'done';
+  pinnedVersions: Map<string, string>;
+
   initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
   reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
   installRemoteNodeDef(fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary): Promise<void>;
+  checkForUpdates(signal?: AbortSignal): Promise<void>;
+  applyUpdate(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
+  dismissUpdate(key: string, version: string): void;
   resolve(type: string): NodeDef | undefined;
   list(): NodeDef[];
   search(query: string): NodeDef[];
   listByNamespace(namespace: string): NodeDef[];
+}
+
+const PINNED_VERSIONS_KEY = 'archcanvas:registry-pinned-versions';
+
+function loadPinnedVersions(): Map<string, string> {
+  try {
+    const raw = localStorage.getItem(PINNED_VERSIONS_KEY);
+    if (!raw) return new Map();
+    const obj = JSON.parse(raw) as Record<string, string>;
+    return new Map(Object.entries(obj));
+  } catch { return new Map(); }
+}
+
+function savePinnedVersions(map: Map<string, string>): void {
+  try {
+    localStorage.setItem(PINNED_VERSIONS_KEY, JSON.stringify(Object.fromEntries(map)));
+  } catch { /* ignore */ }
 }
 
 /** Extract override keys from registry warning messages. */
@@ -54,6 +79,9 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   overrides: [],
   loadErrors: [],
   lockfile: null,
+  availableUpdates: new Map(),
+  updatesCheckStatus: 'idle',
+  pinnedVersions: loadPinnedVersions(),
 
   initialize: async (fs?: FileSystem, projectRoot?: string) => {
     set({ status: 'loading' });
@@ -110,6 +138,11 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       }
       if (warnings.length > 0) {
         console.warn('[registryStore] Registry warnings:', warnings);
+      }
+
+      if (remoteInstalled.size > 0) {
+        // Fire-and-forget; errors are silent per spec
+        get().checkForUpdates().catch(() => {/* silent */});
       }
     } catch (err) {
       set({ status: 'error' });
@@ -180,6 +213,48 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   installRemoteNodeDef: async (fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary) => {
     await downloadAndInstallNodeDef(fs, projectRoot, summary);
     await get().reloadProjectLocal(fs, projectRoot);
+    get().checkForUpdates().catch(() => {});
+  },
+
+  checkForUpdates: async (signal?: AbortSignal) => {
+    const { remoteInstalledVersions } = get();
+    if (remoteInstalledVersions.size === 0) return;
+    set({ updatesCheckStatus: 'checking' });
+    const updates = await checkNodeDefUpdates(remoteInstalledVersions, signal);
+    set({ availableUpdates: updates, updatesCheckStatus: 'done' });
+  },
+
+  applyUpdate: async (fs: FileSystem, projectRoot: string, namespace: string, name: string) => {
+    const key = `${namespace}/${name}`;
+    const latestVersion = get().availableUpdates.get(key);
+    if (!latestVersion) return;
+
+    // Construct a RemoteNodeDefSummary that satisfies z.infer<typeof RemoteNodeDefSummarySchema>.
+    // tags and downloadCount have Zod .default() which makes them required in the inferred type.
+    const summary: RemoteNodeDefSummary = {
+      namespace,
+      name,
+      latestVer: latestVersion,  // installer reads summary.latestVer
+      tags: [],
+      downloadCount: 0,
+    };
+    await downloadAndInstallNodeDef(fs, projectRoot, summary);
+    await get().reloadProjectLocal(fs, projectRoot);
+
+    // Clear the update state for this entry
+    const newUpdates = new Map(get().availableUpdates);
+    newUpdates.delete(key);
+    const newPinned = new Map(get().pinnedVersions);
+    newPinned.delete(key);
+    savePinnedVersions(newPinned);
+    set({ availableUpdates: newUpdates, pinnedVersions: newPinned });
+  },
+
+  dismissUpdate: (key: string, version: string) => {
+    const newPinned = new Map(get().pinnedVersions);
+    newPinned.set(key, version);
+    savePinnedVersions(newPinned);
+    set({ pinnedVersions: newPinned });
   },
 
   resolve: (type: string): NodeDef | undefined => {

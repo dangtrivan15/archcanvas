@@ -1,4 +1,4 @@
-import { useEffect, Fragment } from 'react';
+import { useEffect, Fragment, useState } from 'react';
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -22,6 +22,10 @@ export function InstalledTab() {
   const overrides = useRegistryStore((s) => s.overrides);
   const loadErrors = useRegistryStore((s) => s.loadErrors);
   const lockfile = useRegistryStore((s) => s.lockfile);
+  const availableUpdates = useRegistryStore((s) => s.availableUpdates);
+  const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
+  const applyUpdate = useRegistryStore((s) => s.applyUpdate);
+  const dismissUpdate = useRegistryStore((s) => s.dismissUpdate);
   const registry = useRegistryStore((s) => s.registry);
   const allDefs = registry?.list() ?? [];
 
@@ -29,6 +33,7 @@ export function InstalledTab() {
   const projectPath = useFileStore((s) => s.projectPath);
 
   const { isAuthenticated } = useAuthStore();
+  const [applyingKey, setApplyingKey] = useState<string | null>(null);
   const notification = useUiStore((s) => s.notification);
   const clearNotification = useUiStore((s) => s.clearNotification);
   const keycloakEnabled = isKeycloakConfigured();
@@ -181,15 +186,56 @@ export function InstalledTab() {
             {remoteInstalledDefs.map(def => {
               const key = `${def.metadata.namespace}/${def.metadata.name}`;
               const entry = lockfile?.entries[key];
+              const latestVer = availableUpdates.get(key);
+              const isPinned = pinnedVersions.get(key) === latestVer;
+              const hasUpdate = !!latestVer && !isPinned;
+              const isApplying = applyingKey === key;
+
               return (
                 <div key={key} className="flex items-center justify-between rounded px-2 py-1 text-xs hover:bg-accent/30">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-card-foreground">{key}</span>
                     <span className="text-muted-foreground">{def.metadata.displayName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>registry.archcanvas.dev</span>
-                    {entry && <span className="font-mono">v{entry.version}</span>}
+                  <div className="flex items-center gap-2">
+                    {hasUpdate && (
+                      <span className="text-amber-500 font-mono">
+                        v{entry?.version} → v{latestVer}
+                      </span>
+                    )}
+                    {entry && !hasUpdate && (
+                      <span className="text-muted-foreground font-mono">v{entry.version}</span>
+                    )}
+                    {hasUpdate && (
+                      <>
+                        <button
+                          disabled={isApplying || !fs}
+                          onClick={async () => {
+                            if (!fs || !projectPath) return;
+                            setApplyingKey(key);
+                            try {
+                              await applyUpdate(fs, projectPath, def.metadata.namespace, def.metadata.name);
+                              useUiStore.getState().setNotification({ message: `${key} updated to v${latestVer}`, type: 'success' });
+                            } catch (err) {
+                              useUiStore.getState().setNotification({ message: `Update failed: ${err instanceof Error ? err.message : String(err)}`, type: 'error' });
+                            } finally {
+                              setApplyingKey(null);
+                            }
+                          }}
+                          className="rounded px-1.5 py-0.5 text-xs font-medium bg-sky-500/15 text-sky-500 hover:bg-sky-500/25 disabled:opacity-50"
+                        >
+                          {isApplying ? 'Updating…' : 'Update'}
+                        </button>
+                        <button
+                          disabled={isApplying}
+                          onClick={() => dismissUpdate(key, latestVer!)}
+                          className="rounded px-1 py-0.5 text-xs text-muted-foreground hover:bg-accent/50 disabled:opacity-50"
+                          title="Dismiss this update"
+                        >
+                          Dismiss
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
