@@ -33,6 +33,14 @@ export function NodeDefDetailView() {
   const snippet = `${nodedef.namespace}/${nodedef.name}@${nodedef.latestVer}`;
   const isOwner = username !== null && username === nodedef.namespace;
 
+  const inboundPorts = parsedSpec.success
+    ? (parsedSpec.data.spec.ports?.filter((p) => p.direction === 'inbound') ?? [])
+    : [];
+  const outboundPorts = parsedSpec.success
+    ? (parsedSpec.data.spec.ports?.filter((p) => p.direction === 'outbound') ?? [])
+    : [];
+  const specArgs = parsedSpec.success ? (parsedSpec.data.spec.args ?? []) : [];
+
   return (
     <div className="flex flex-col gap-3 p-2">
       <button
@@ -91,10 +99,10 @@ export function NodeDefDetailView() {
         <h4 className="text-xs font-semibold text-card-foreground uppercase tracking-wide">Specification</h4>
         {parsedSpec.success ? (
           <>
-            {(parsedSpec.data.spec.ports?.filter((p) => p.direction === 'inbound') ?? []).length > 0 && (
+            {inboundPorts.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Input Ports</p>
-                {parsedSpec.data.spec.ports!.filter((p) => p.direction === 'inbound').map((port) => (
+                {inboundPorts.map((port) => (
                   <div key={port.name} className="text-xs pl-2 border-l border-border mb-1">
                     <span className="font-mono font-medium">{port.name}</span>
                     <span className="text-muted-foreground ml-1">[{port.protocol.join(', ')}]</span>
@@ -103,10 +111,10 @@ export function NodeDefDetailView() {
                 ))}
               </div>
             )}
-            {(parsedSpec.data.spec.ports?.filter((p) => p.direction === 'outbound') ?? []).length > 0 && (
+            {outboundPorts.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Output Ports</p>
-                {parsedSpec.data.spec.ports!.filter((p) => p.direction === 'outbound').map((port) => (
+                {outboundPorts.map((port) => (
                   <div key={port.name} className="text-xs pl-2 border-l border-border mb-1">
                     <span className="font-mono font-medium">{port.name}</span>
                     <span className="text-muted-foreground ml-1">[{port.protocol.join(', ')}]</span>
@@ -115,10 +123,10 @@ export function NodeDefDetailView() {
                 ))}
               </div>
             )}
-            {(parsedSpec.data.spec.args ?? []).length > 0 && (
+            {specArgs.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Arguments</p>
-                {parsedSpec.data.spec.args!.map((arg) => (
+                {specArgs.map((arg) => (
                   <div key={arg.name} className="text-xs pl-2 border-l border-border mb-1">
                     <span className="font-mono font-medium">{arg.name}</span>
                     <span className="rounded bg-accent/50 px-1 py-0.5 text-xs ml-1">{arg.type}</span>
