@@ -3,8 +3,9 @@ import {
   browseRegistry,
   fetchNamespaces,
   fetchNodeDefDetail,
+  fetchNodeDefVersions,
 } from '@/core/registry/remoteRegistry';
-import type { RemoteNodeDefSummary, RemoteNodeDefDetail } from '@/core/registry/remoteRegistry';
+import type { RemoteNodeDefSummary, RemoteNodeDefDetail, RemoteVersionSummary } from '@/core/registry/remoteRegistry';
 
 interface CommunityBrowserState {
   query: string;
@@ -18,17 +19,22 @@ interface CommunityBrowserState {
   detailLoading: boolean;
   namespaces: Array<{ namespace: string; count: number }>;
   namespacesLoading: boolean;
+  versionHistory: RemoteVersionSummary[] | null;
+  versionHistoryLoading: boolean;
+  versionHistoryError: string | null;
 
   setQuery: (query: string) => void;
   setNamespace: (namespace: string | null) => void;
   selectNodeDef: (key: string | null) => void;
   loadNamespaces: () => Promise<void>;
+  loadVersionHistory: (namespace: string, name: string) => Promise<void>;
   _search: (query: string, namespace: string | null) => Promise<void>;
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let abortController: AbortController | undefined;
 let detailAbortController: AbortController | undefined;
+let versionsAbortController: AbortController | undefined;
 
 export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get) => ({
   query: '',
@@ -42,6 +48,9 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
   detailLoading: false,
   namespaces: [],
   namespacesLoading: false,
+  versionHistory: null,
+  versionHistoryLoading: false,
+  versionHistoryError: null,
 
   setQuery: (query: string) => {
     set({ query });
@@ -64,9 +73,13 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     if (detailAbortController) {
       detailAbortController.abort();
     }
+    if (versionsAbortController) {
+      versionsAbortController.abort();
+      versionsAbortController = undefined;
+    }
     if (!key) {
       detailAbortController = undefined;
-      set({ selectedKey: null, selectedDetail: null, detailLoading: false });
+      set({ selectedKey: null, selectedDetail: null, detailLoading: false, versionHistory: null, versionHistoryLoading: false, versionHistoryError: null });
       return;
     }
     detailAbortController = new AbortController();
@@ -75,9 +88,10 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     const [namespace, name] = key.split('/');
     if (!namespace || !name) {
       detailAbortController = undefined;
-      set({ detailLoading: false, error: `Invalid node key: "${key}" — expected "namespace/name" format` });
+      set({ detailLoading: false, error: `Invalid node key: "${key}" — expected "namespace/name" format`, versionHistory: null, versionHistoryLoading: false, versionHistoryError: null });
       return;
     }
+    get().loadVersionHistory(namespace, name); // fire-and-forget
     fetchNodeDefDetail(namespace, name, signal)
       .then((detail) => set({ selectedDetail: detail, detailLoading: false }))
       .catch((err) => {
@@ -96,6 +110,23 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       set({
         namespacesLoading: false,
         error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  },
+
+  loadVersionHistory: async (namespace, name) => {
+    if (versionsAbortController) versionsAbortController.abort();
+    versionsAbortController = new AbortController();
+    const signal = versionsAbortController.signal;
+    set({ versionHistoryLoading: true, versionHistory: null, versionHistoryError: null });
+    try {
+      const versions = await fetchNodeDefVersions(namespace, name, signal);
+      set({ versionHistory: versions, versionHistoryLoading: false });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      set({
+        versionHistoryLoading: false,
+        versionHistoryError: err instanceof Error ? err.message : String(err),
       });
     }
   },
