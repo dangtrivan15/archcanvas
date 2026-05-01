@@ -8,9 +8,10 @@ vi.mock('@/core/registry/remoteRegistry', () => ({
     nodedef: { namespace: 'k8s', name: 'deployment', latestVer: '1.0.0', tags: [], downloadCount: 0 },
     version: { nodedefId: 'x', version: '1.0.0', blob: {}, publishedAt: '2026-01-01T00:00:00.000Z' },
   }),
+  fetchNodeDefVersions: vi.fn().mockResolvedValue([]),
 }));
 
-import { browseRegistry, fetchNamespaces, fetchNodeDefDetail } from '@/core/registry/remoteRegistry';
+import { browseRegistry, fetchNamespaces, fetchNodeDefDetail, fetchNodeDefVersions } from '@/core/registry/remoteRegistry';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -26,6 +27,9 @@ beforeEach(() => {
     detailLoading: false,
     namespaces: [],
     namespacesLoading: false,
+    versionHistory: null,
+    versionHistoryLoading: false,
+    versionHistoryError: null,
   });
 });
 
@@ -114,6 +118,16 @@ describe('communityBrowserStore', () => {
       expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
     });
 
+    it('triggers version history load alongside detail fetch', async () => {
+      useCommunityBrowserStore.getState().selectNodeDef('k8s/deployment');
+
+      await vi.waitFor(() => {
+        expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
+      });
+
+      expect(fetchNodeDefVersions).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
+    });
+
     it('sets error and does not call fetchNodeDefDetail when key has no slash', () => {
       useCommunityBrowserStore.getState().selectNodeDef('k8s');
       const state = useCommunityBrowserStore.getState();
@@ -136,6 +150,49 @@ describe('communityBrowserStore', () => {
       expect(fetchNodeDefDetail).not.toHaveBeenCalled();
       expect(state.detailLoading).toBe(false);
       expect(state.error).toMatch(/invalid node key/i);
+    });
+  });
+
+  describe('loadVersionHistory', () => {
+    it('fetches and stores version history on success', async () => {
+      const mockVersions = [
+        { version: '1.0.0', publishedAt: '2026-01-01T00:00:00.000Z', downloadCount: 5 },
+        { version: '0.9.0', publishedAt: '2025-12-01T00:00:00.000Z', downloadCount: 2 },
+      ];
+      vi.mocked(fetchNodeDefVersions).mockResolvedValue(mockVersions);
+
+      await useCommunityBrowserStore.getState().loadVersionHistory('k8s', 'deployment');
+
+      const state = useCommunityBrowserStore.getState();
+      expect(state.versionHistory).toEqual(mockVersions);
+      expect(state.versionHistoryLoading).toBe(false);
+      expect(state.versionHistoryError).toBeNull();
+      expect(fetchNodeDefVersions).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
+    });
+
+    it('sets versionHistoryError and clears loading when fetch fails', async () => {
+      vi.mocked(fetchNodeDefVersions).mockRejectedValue(new Error('versions unavailable'));
+
+      await useCommunityBrowserStore.getState().loadVersionHistory('k8s', 'deployment');
+
+      const state = useCommunityBrowserStore.getState();
+      expect(state.versionHistoryLoading).toBe(false);
+      expect(state.versionHistoryError).toBe('versions unavailable');
+      expect(state.versionHistory).toBeNull();
+    });
+
+    it('silently ignores AbortError without updating error or loading state', async () => {
+      vi.mocked(fetchNodeDefVersions).mockRejectedValue(
+        new DOMException('The operation was aborted.', 'AbortError'),
+      );
+
+      await useCommunityBrowserStore.getState().loadVersionHistory('k8s', 'deployment');
+
+      const state = useCommunityBrowserStore.getState();
+      // AbortError must not populate versionHistoryError
+      expect(state.versionHistoryError).toBeNull();
+      // versionHistoryLoading was set true at start; an abort leaves it unchanged (no false)
+      expect(state.versionHistoryLoading).toBe(true);
     });
   });
 
