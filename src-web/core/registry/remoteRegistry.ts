@@ -46,7 +46,37 @@ const RemoteNodeDefDetailSchema = z.object({
 
 export type RemoteNodeDefDetail = z.infer<typeof RemoteNodeDefDetailSchema>;
 
+const RemoteVersionSummarySchema = z.object({
+  version: z.string(),
+  publishedAt: z.string(),
+  downloadCount: z.number(),
+});
+
+const VersionHistoryResponseSchema = z.object({
+  versions: z.array(RemoteVersionSummarySchema),
+});
+
+export type RemoteVersionSummary = z.infer<typeof RemoteVersionSummarySchema>;
+
 export const REGISTRY_BASE_URL = 'https://registry.archcanvas.dev';
+
+/**
+ * Fetch the full version history for a NodeDef, ordered newest-first.
+ * Each entry includes the publish date and deduplicated download count.
+ */
+export async function fetchNodeDefVersions(
+  namespace: string,
+  name: string,
+  signal?: AbortSignal,
+): Promise<RemoteVersionSummary[]> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/versions`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Failed to fetch version history: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = VersionHistoryResponseSchema.safeParse(data);
+  if (!parsed.success) throw new Error('Version history endpoint returned unexpected response shape');
+  return parsed.data.versions;
+}
 
 /**
  * Search the community registry for NodeDefs matching the given query.
