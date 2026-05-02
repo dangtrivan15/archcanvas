@@ -1,6 +1,8 @@
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
 import { Button } from '@/components/ui/Button';
+import { createUrlLauncher } from '@/platform/urlLauncher';
+import { REGISTRY_BASE_URL } from '@/core/registry/remoteRegistry';
 
 /**
  * Renders authentication status and sign-in/out controls.
@@ -20,14 +22,24 @@ export function AuthStatusSection() {
             Signed in as{' '}
             <span className="font-semibold text-foreground">@{username}</span>
           </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs"
-            onClick={signOut}
-          >
-            Sign out
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={() => { void createUrlLauncher().open(`${REGISTRY_BASE_URL}/publishers/${username}`); }}
+            >
+              View my profile
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={signOut}
+            >
+              Sign out
+            </Button>
+          </div>
         </>
       ) : (
         <>
