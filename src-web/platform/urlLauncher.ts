@@ -11,7 +11,11 @@ export interface UrlLauncher {
 
 class WebUrlLauncher implements UrlLauncher {
   async open(url: string): Promise<void> {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      // Popup was blocked; fall back to same-tab navigation
+      window.location.href = url;
+    }
   }
 }
 

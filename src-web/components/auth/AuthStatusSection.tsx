@@ -23,14 +23,16 @@ export function AuthStatusSection() {
             <span className="font-semibold text-foreground">@{username}</span>
           </span>
           <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 px-2 text-xs"
-              onClick={() => { void createUrlLauncher().open(`${REGISTRY_BASE_URL}/publishers/${username}`); }}
-            >
-              View my profile
-            </Button>
+            {username !== 'unknown' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-xs"
+                onClick={() => { void createUrlLauncher().open(`${REGISTRY_BASE_URL}/publishers/${encodeURIComponent(username)}`); }}
+              >
+                View my profile
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
