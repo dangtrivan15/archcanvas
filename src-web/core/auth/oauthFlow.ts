@@ -161,6 +161,9 @@ export async function exchangeCodeForToken(
   return { accessToken: data.access_token, idToken: data.id_token };
 }
 
+/** Sentinel returned when username cannot be extracted from the JWT. */
+export const UNKNOWN_USERNAME = 'unknown';
+
 /** Decode `preferred_username` (GitHub login) from a Keycloak ID token (JWT). */
 export function extractUsername(idToken: string): string {
   try {
@@ -170,8 +173,8 @@ export function extractUsername(idToken: string): string {
       preferred_username?: string;
       sub?: string;
     };
-    return payload.preferred_username ?? payload.sub ?? 'unknown';
+    return payload.preferred_username ?? payload.sub ?? UNKNOWN_USERNAME;
   } catch {
-    return 'unknown';
+    return UNKNOWN_USERNAME;
   }
 }
