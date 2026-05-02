@@ -41,6 +41,8 @@ describe('createUrlLauncher', () => {
       afterEach(() => {
         if (origLocationDescriptor) {
           Object.defineProperty(window, 'location', origLocationDescriptor);
+        } else {
+          delete (window as any).location;
         }
       });
 
@@ -70,6 +72,7 @@ describe('createUrlLauncher', () => {
 
     afterEach(() => {
       delete (window as any).__TAURI_INTERNALS__;
+      vi.restoreAllMocks();
     });
 
     it('selects TauriUrlLauncher when __TAURI_INTERNALS__ is present', async () => {
@@ -80,7 +83,6 @@ describe('createUrlLauncher', () => {
       const launcher = createUrlLauncher();
       try { await launcher.open('https://example.com'); } catch { /* tauri import fails in test — expected */ }
       expect(windowOpenSpy).not.toHaveBeenCalled();
-      windowOpenSpy.mockRestore();
     });
   });
 });
