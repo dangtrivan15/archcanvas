@@ -3,6 +3,7 @@ import { isKeycloakConfigured } from '@/core/auth/config';
 import { Button } from '@/components/ui/Button';
 import { createUrlLauncher } from '@/platform/urlLauncher';
 import { REGISTRY_BASE_URL } from '@/core/registry/remoteRegistry';
+import { UNKNOWN_USERNAME } from '@/core/auth/oauthFlow';
 
 /**
  * Renders authentication status and sign-in/out controls.
@@ -23,7 +24,7 @@ export function AuthStatusSection() {
             <span className="font-semibold text-foreground">@{username}</span>
           </span>
           <div className="flex items-center gap-1">
-            {username !== 'unknown' && (
+            {username !== UNKNOWN_USERNAME && (
               <Button
                 size="sm"
                 variant="ghost"

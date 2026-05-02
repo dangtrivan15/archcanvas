@@ -31,28 +31,35 @@ describe('createUrlLauncher', () => {
       );
     });
 
-    it('falls back to window.location.href when popup is blocked', async () => {
-      windowOpenSpy.mockReturnValue(null);
+    describe('popup blocked fallback', () => {
+      let origLocationDescriptor: PropertyDescriptor | undefined;
 
-      let assignedHref: string | undefined;
-      Object.defineProperty(window, 'location', {
-        value: {
-          ...window.location,
-          set href(url: string) {
-            assignedHref = url;
-          },
-          get href() {
-            return assignedHref ?? '';
-          },
-        },
-        writable: true,
-        configurable: true,
+      beforeEach(() => {
+        origLocationDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
       });
 
-      const launcher = createUrlLauncher();
-      await launcher.open('https://example.com');
+      afterEach(() => {
+        if (origLocationDescriptor) {
+          Object.defineProperty(window, 'location', origLocationDescriptor);
+        }
+      });
 
-      expect(assignedHref).toBe('https://example.com');
+      it('falls back to window.location.href when popup is blocked', async () => {
+        windowOpenSpy.mockReturnValue(null);
+        let assignedHref: string | undefined;
+        Object.defineProperty(window, 'location', {
+          value: {
+            ...window.location,
+            set href(url: string) { assignedHref = url; },
+            get href() { return assignedHref ?? ''; },
+          },
+          writable: true,
+          configurable: true,
+        });
+        const launcher = createUrlLauncher();
+        await launcher.open('https://example.com');
+        expect(assignedHref).toBe('https://example.com');
+      });
     });
   });
 
@@ -65,10 +72,15 @@ describe('createUrlLauncher', () => {
       delete (window as any).__TAURI_INTERNALS__;
     });
 
-    it('selects TauriUrlLauncher when __TAURI_INTERNALS__ is present', () => {
+    it('selects TauriUrlLauncher when __TAURI_INTERNALS__ is present', async () => {
+      const windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+      // TauriUrlLauncher uses dynamic import('@tauri-apps/plugin-shell') which will
+      // reject in test environment — that's fine, we just need to verify window.open
+      // was NOT called (we catch the import rejection below)
       const launcher = createUrlLauncher();
-      // The launcher is a TauriUrlLauncher — we verify via its open method
-      expect(typeof launcher.open).toBe('function');
+      try { await launcher.open('https://example.com'); } catch { /* tauri import fails in test — expected */ }
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+      windowOpenSpy.mockRestore();
     });
   });
 });

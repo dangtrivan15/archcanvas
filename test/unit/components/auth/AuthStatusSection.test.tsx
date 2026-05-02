@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { AuthStatusSection } from '@/components/auth/AuthStatusSection';
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
+import { UNKNOWN_USERNAME } from '@/core/auth/oauthFlow';
 
 // vi.mock calls (hoisted by vitest)
 vi.mock('@/core/auth/config', () => ({
@@ -58,7 +59,7 @@ describe('AuthStatusSection', () => {
     } as any);
 
     render(<AuthStatusSection />);
-    expect(screen.queryByText('View my profile')).toBeNull();
+    expect(screen.queryByText('View my profile')).not.toBeInTheDocument();
   });
 
   it('renders "View my profile" link when authenticated', () => {
@@ -120,7 +121,7 @@ describe('AuthStatusSection', () => {
     mockUseAuthStore.mockReturnValue({
       isAuthenticated: true,
       isSigningIn: false,
-      username: 'unknown',
+      username: UNKNOWN_USERNAME,
       error: null,
       startSignIn: vi.fn(),
       signOut: vi.fn(),

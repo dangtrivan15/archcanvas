@@ -151,7 +151,7 @@ describe('RegistryStatusDialog — auth integration', () => {
   it('AuthStatusSection renders when keycloak is configured', () => {
     keycloakConfigured = true;
     render(<RegistryStatusDialog />);
-    expect(screen.getByTestId('auth-status-section')).toBeTruthy();
+    expect(screen.getByTestId('auth-status-section')).toBeInTheDocument();
   });
 
   it('shows ContextMenu trigger on rows when authenticated and keycloak configured', () => {
