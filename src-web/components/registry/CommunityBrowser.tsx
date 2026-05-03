@@ -18,7 +18,7 @@ export function CommunityBrowser() {
   useEffect(() => {
     loadNamespaces();
     initFromUrl();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable Zustand actions, intentionally run once on mount
   }, []);
 
   if (selectedKey) {

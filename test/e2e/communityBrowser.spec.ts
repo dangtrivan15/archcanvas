@@ -124,27 +124,10 @@ test.describe('community browser panel', () => {
   });
 
   test('loading the page with ?sort=recent in URL pre-selects Recently updated', async ({ page }) => {
-    await page.goto('/?sort=recent');
-    await page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const store = (window as any).__archcanvas_fileStore__;
-      if (!store) throw new Error('fileStore not exposed on window');
-      store.getState().initializeEmptyProject();
-      store.setState({
-        fs: {
-          getName: () => 'test-project',
-          getPath: () => null,
-          readFile: async () => '',
-          writeFile: async () => {},
-          exists: async () => false,
-          mkdir: async () => {},
-          listFiles: async () => [],
-        },
-      });
-    });
-    await page.waitForLoadState('networkidle');
+    await gotoApp(page, '/?sort=recent');
     await page.getByTestId('registry-indicator').click();
     await page.getByTestId('tab-community').click();
+    await page.waitForResponse(r => r.url().includes('/api/v1/nodedefs'));
     await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
   });
 });

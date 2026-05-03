@@ -13,7 +13,7 @@ export function SortControl() {
   const setSort = useCommunityBrowserStore((s) => s.setSort);
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 border-b border-border">
+    <div role="group" aria-label="Sort by" className="flex items-center gap-1 px-2 py-1 border-b border-border">
       {SORT_OPTIONS.map(({ value, label }) => (
         <button
           key={value}
