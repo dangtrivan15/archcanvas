@@ -134,6 +134,43 @@ describe('browseRegistry', () => {
     const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
     expect(calledUrl).toContain('sort=name');
   });
+
+  it('includes tag param when provided', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({ tag: 'aws' });
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('tag=aws');
+  });
+
+  it('includes both tag and namespace params when provided', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({ tag: 'aws', namespace: 'cloud' });
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('tag=aws');
+    expect(calledUrl).toContain('namespace=cloud');
+  });
+
+  it('does not include tag param when not provided', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({});
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('tag=');
+  });
 });
 
 describe('fetchNamespaces', () => {
