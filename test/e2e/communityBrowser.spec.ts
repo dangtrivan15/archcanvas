@@ -126,8 +126,12 @@ test.describe('community browser panel', () => {
   test('loading the page with ?sort=recent in URL pre-selects Recently updated', async ({ page }) => {
     await gotoApp(page, '/?sort=recent');
     await page.getByTestId('registry-indicator').click();
-    await page.getByTestId('tab-community').click();
-    await page.waitForResponse(r => r.url().includes('/api/v1/nodedefs'));
+    // Pre-register the response wait BEFORE the click that triggers the request,
+    // then race them together so we never miss the response.
+    await Promise.all([
+      page.waitForResponse(r => r.url().includes('/api/v1/nodedefs')),
+      page.getByTestId('tab-community').click(),
+    ]);
     await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
   });
 });

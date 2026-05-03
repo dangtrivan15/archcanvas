@@ -37,6 +37,15 @@ describe('communityBrowserStore — sort', () => {
     expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '?sort=recent');
   });
 
+  it('setSort calls replaceState with ?sort=name', () => {
+    vi.stubGlobal('location', { search: '', pathname: '/' });
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], total: 0 }) }));
+
+    useCommunityBrowserStore.getState().setSort('name');
+    expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '?sort=name');
+  });
+
   it('setSort dispatches _search with new sort value', async () => {
     vi.stubGlobal('location', { search: '', pathname: '/' });
     vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
@@ -77,6 +86,21 @@ describe('communityBrowserStore — sort', () => {
     expect(calledUrl).toContain('sort=recent');
     expect(calledUrl).toContain('namespace=aws');
     expect(calledUrl).toContain('q=foo');
+  });
+
+  it('initFromUrl reads sort=name from URL and calls _search with sort=name', async () => {
+    vi.stubGlobal('location', { search: '?sort=name', pathname: '/' });
+    vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [], total: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    useCommunityBrowserStore.getState().initFromUrl();
+
+    expect(useCommunityBrowserStore.getState().sort).toBe('name');
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const calledUrl = fetchMock.mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort=name');
   });
 
   it('initFromUrl with invalid sort defaults to downloads', () => {
