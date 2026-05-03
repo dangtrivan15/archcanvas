@@ -5,11 +5,12 @@ import {
   fetchNodeDefDetail,
   fetchNodeDefVersions,
 } from '@/core/registry/remoteRegistry';
-import type { RemoteNodeDefSummary, RemoteNodeDefDetail, RemoteVersionSummary } from '@/core/registry/remoteRegistry';
+import type { RemoteNodeDefSummary, RemoteNodeDefDetail, RemoteVersionSummary, SortOption } from '@/core/registry/remoteRegistry';
 
 interface CommunityBrowserState {
   query: string;
   namespace: string | null;
+  sort: SortOption;
   results: RemoteNodeDefSummary[];
   total: number;
   loading: boolean;
@@ -25,10 +26,12 @@ interface CommunityBrowserState {
 
   setQuery: (query: string) => void;
   setNamespace: (namespace: string | null) => void;
+  setSort: (sort: SortOption) => void;
+  initFromUrl: () => void;
   selectNodeDef: (key: string | null) => void;
   loadNamespaces: () => Promise<void>;
   loadVersionHistory: (namespace: string, name: string) => Promise<void>;
-  _search: (query: string, namespace: string | null) => Promise<void>;
+  _search: (query: string, namespace: string | null, sort: SortOption) => Promise<void>;
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -36,9 +39,26 @@ let abortController: AbortController | undefined;
 let detailAbortController: AbortController | undefined;
 let versionsAbortController: AbortController | undefined;
 
+/** Synchronously updates the browser URL without a navigation event. */
+function _syncUrl(query: string, namespace: string | null, sort: SortOption): void {
+  const params = new URLSearchParams();
+  if (query) params.set('q', query);
+  if (namespace) params.set('namespace', namespace);
+  if (sort !== 'downloads') params.set('sort', sort); // omit default to keep URLs clean
+  const search = params.toString();
+  history.replaceState(null, '', search ? '?' + search : window.location.pathname);
+}
+
+/** Parses and validates the sort param from a raw URL search string. */
+function parseSortParam(raw: string | null): SortOption {
+  if (raw === 'recent' || raw === 'name') return raw;
+  return 'downloads'; // default and fallback for any invalid value
+}
+
 export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get) => ({
   query: '',
   namespace: null,
+  sort: 'downloads' as SortOption,
   results: [],
   total: 0,
   loading: false,
@@ -59,13 +79,33 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     }
     debounceTimer = setTimeout(() => {
       debounceTimer = undefined;
-      get()._search(query, get().namespace);
+      const { namespace, sort } = get();
+      _syncUrl(query, namespace, sort);
+      get()._search(query, namespace, sort);
     }, 300);
   },
 
   setNamespace: (namespace: string | null) => {
     set({ namespace });
-    get()._search(get().query, namespace);
+    const { query, sort } = get();
+    _syncUrl(query, namespace, sort);
+    get()._search(query, namespace, sort);
+  },
+
+  setSort: (sort: SortOption) => {
+    set({ sort });
+    const { query, namespace } = get();
+    _syncUrl(query, namespace, sort);
+    get()._search(query, namespace, sort);
+  },
+
+  initFromUrl: () => {
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('q') ?? '';
+    const namespace = params.get('namespace') ?? null;
+    const sort = parseSortParam(params.get('sort'));
+    set({ query, namespace, sort });
+    get()._search(query, namespace, sort);
   },
 
   selectNodeDef: (key: string | null) => {
@@ -131,7 +171,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     }
   },
 
-  _search: async (query: string, namespace: string | null) => {
+  _search: async (query: string, namespace: string | null, sort: SortOption) => {
     // Cancel in-flight request
     if (abortController) {
       abortController.abort();
@@ -141,7 +181,10 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
 
     set({ loading: true, error: null });
     try {
-      const result = await browseRegistry({ q: query || undefined, namespace: namespace ?? undefined }, signal);
+      const result = await browseRegistry(
+        { q: query || undefined, namespace: namespace ?? undefined, sort: sort || undefined },
+        signal,
+      );
       set({ results: result.items, total: result.total, loading: false });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;

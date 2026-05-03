@@ -220,7 +220,7 @@ describe('communityBrowserStore', () => {
   describe('_search', () => {
     it('sets loading true then false after search completes', async () => {
       vi.mocked(browseRegistry).mockResolvedValue({ items: [], total: 0 });
-      const searchPromise = useCommunityBrowserStore.getState()._search('', null);
+      const searchPromise = useCommunityBrowserStore.getState()._search('', null, 'downloads');
       // synchronously check loading
       expect(useCommunityBrowserStore.getState().loading).toBe(true);
       await searchPromise;
@@ -229,7 +229,7 @@ describe('communityBrowserStore', () => {
 
     it('sets error when search fails', async () => {
       vi.mocked(browseRegistry).mockRejectedValue(new Error('network error'));
-      await useCommunityBrowserStore.getState()._search('', null);
+      await useCommunityBrowserStore.getState()._search('', null, 'downloads');
       expect(useCommunityBrowserStore.getState().error).toBe('network error');
       expect(useCommunityBrowserStore.getState().loading).toBe(false);
     });

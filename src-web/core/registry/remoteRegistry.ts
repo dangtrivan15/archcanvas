@@ -60,6 +60,9 @@ export type RemoteVersionSummary = z.infer<typeof RemoteVersionSummarySchema>;
 
 export const REGISTRY_BASE_URL = 'https://registry.archcanvas.dev';
 
+/** The three sort options accepted by GET /api/v1/nodedefs?sort= */
+export type SortOption = 'downloads' | 'recent' | 'name';
+
 /**
  * Fetch the full version history for a NodeDef, ordered newest-first.
  * Each entry includes the publish date and deduplicated download count.
@@ -101,12 +104,13 @@ export async function searchRegistry(
  * Browse the community registry with optional filters.
  */
 export async function browseRegistry(
-  opts: { q?: string; namespace?: string; page?: number; pageSize?: number },
+  opts: { q?: string; namespace?: string; sort?: SortOption; page?: number; pageSize?: number },
   signal?: AbortSignal,
 ): Promise<{ items: RemoteNodeDefSummary[]; total: number }> {
   const params = new URLSearchParams();
   if (opts.q) params.set('q', opts.q);
   if (opts.namespace) params.set('namespace', opts.namespace);
+  if (opts.sort) params.set('sort', opts.sort);
   if (opts.page !== undefined) params.set('page', String(opts.page));
   if (opts.pageSize !== undefined) params.set('pageSize', String(opts.pageSize));
   const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs${params.toString() ? '?' + params.toString() : ''}`;

@@ -99,4 +99,52 @@ test.describe('community browser panel', () => {
     await expect(page.getByTestId('nodedef-card-aws/s3-bucket')).not.toBeVisible({ timeout: 2000 });
     await expect(page.getByText('kubernetes/deployment')).toBeVisible();
   });
+
+  test('all three sort buttons are visible in the community tab', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await expect(page.getByTestId('sort-downloads')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('sort-recent')).toBeVisible();
+    await expect(page.getByTestId('sort-name')).toBeVisible();
+  });
+
+  test('clicking "Recently updated" makes that button active', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await page.getByTestId('sort-recent').click();
+    // The active sort button has bg-muted and font-medium classes
+    await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 2000 });
+  });
+
+  test('URL contains ?sort=recent after clicking Recently updated', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await page.getByTestId('sort-recent').click();
+    await expect(page).toHaveURL(/sort=recent/, { timeout: 2000 });
+  });
+
+  test('loading the page with ?sort=recent in URL pre-selects Recently updated', async ({ page }) => {
+    await page.goto('/?sort=recent');
+    await page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const store = (window as any).__archcanvas_fileStore__;
+      if (!store) throw new Error('fileStore not exposed on window');
+      store.getState().initializeEmptyProject();
+      store.setState({
+        fs: {
+          getName: () => 'test-project',
+          getPath: () => null,
+          readFile: async () => '',
+          writeFile: async () => {},
+          exists: async () => false,
+          mkdir: async () => {},
+          listFiles: async () => [],
+        },
+      });
+    });
+    await page.waitForTimeout(100);
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
+  });
 });

@@ -4,6 +4,7 @@ import { CommunitySearchBar } from './CommunitySearchBar';
 import { NamespaceFilter } from './NamespaceFilter';
 import { NodeDefCard } from './NodeDefCard';
 import { NodeDefDetailView } from './NodeDefDetailView';
+import { SortControl } from './SortControl';
 
 export function CommunityBrowser() {
   const results = useCommunityBrowserStore((s) => s.results);
@@ -11,14 +12,12 @@ export function CommunityBrowser() {
   const error = useCommunityBrowserStore((s) => s.error);
   const selectedKey = useCommunityBrowserStore((s) => s.selectedKey);
   const selectNodeDef = useCommunityBrowserStore((s) => s.selectNodeDef);
-  const _search = useCommunityBrowserStore((s) => s._search);
   const loadNamespaces = useCommunityBrowserStore((s) => s.loadNamespaces);
-  const query = useCommunityBrowserStore((s) => s.query);
-  const namespace = useCommunityBrowserStore((s) => s.namespace);
+  const initFromUrl = useCommunityBrowserStore((s) => s.initFromUrl);
 
   useEffect(() => {
     loadNamespaces();
-    _search(query, namespace);
+    initFromUrl();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -30,6 +29,7 @@ export function CommunityBrowser() {
     <div className="flex flex-col gap-0">
       <CommunitySearchBar />
       <NamespaceFilter />
+      <SortControl />
       {loading && (
         <div className="flex items-center justify-center p-4 text-xs text-muted-foreground">
           Searching…
