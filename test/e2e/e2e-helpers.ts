@@ -8,8 +8,8 @@ import type { Page } from '@playwright/test';
  * sets up the Zustand store directly via page.evaluate. The store is
  * exposed on `window.__archcanvas_fileStore__` by fileStore.ts.
  */
-export async function gotoApp(page: Page): Promise<void> {
-  await page.goto('/');
+export async function gotoApp(page: Page, path: string = '/'): Promise<void> {
+  await page.goto(path);
   await page.evaluate(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const store = (window as any).__archcanvas_fileStore__;

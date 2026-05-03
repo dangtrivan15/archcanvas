@@ -99,4 +99,39 @@ test.describe('community browser panel', () => {
     await expect(page.getByTestId('nodedef-card-aws/s3-bucket')).not.toBeVisible({ timeout: 2000 });
     await expect(page.getByText('kubernetes/deployment')).toBeVisible();
   });
+
+  test('all three sort buttons are visible in the community tab', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await expect(page.getByTestId('sort-downloads')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('sort-recent')).toBeVisible();
+    await expect(page.getByTestId('sort-name')).toBeVisible();
+  });
+
+  test('clicking "Recently updated" makes that button active', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await page.getByTestId('sort-recent').click();
+    // The active sort button has bg-muted and font-medium classes
+    await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 2000 });
+  });
+
+  test('URL contains ?sort=recent after clicking Recently updated', async ({ page }) => {
+    await page.getByTestId('registry-indicator').click();
+    await page.getByTestId('tab-community').click();
+    await page.getByTestId('sort-recent').click();
+    await expect(page).toHaveURL(/sort=recent/, { timeout: 2000 });
+  });
+
+  test('loading the page with ?sort=recent in URL pre-selects Recently updated', async ({ page }) => {
+    await gotoApp(page, '/?sort=recent');
+    await page.getByTestId('registry-indicator').click();
+    // Pre-register the response wait BEFORE the click that triggers the request,
+    // then race them together so we never miss the response.
+    await Promise.all([
+      page.waitForResponse(r => r.url().includes('/api/v1/nodedefs')),
+      page.getByTestId('tab-community').click(),
+    ]);
+    await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
+  });
 });

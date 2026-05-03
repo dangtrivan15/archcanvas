@@ -8,6 +8,7 @@ import {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('browseRegistry', () => {
@@ -22,7 +23,7 @@ describe('browseRegistry', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs`,
-      expect.objectContaining({}),
+      { signal: undefined },
     );
   });
 
@@ -84,6 +85,54 @@ describe('browseRegistry', () => {
     }));
 
     await expect(browseRegistry({})).rejects.toThrow('unexpected response shape');
+  });
+
+  it('includes sort param when sort is provided', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({ sort: 'recent' });
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort=recent');
+  });
+
+  it('does not include sort param when sort is not provided', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({});
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).not.toContain('sort');
+  });
+
+  it('includes sort param when sort is downloads', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({ sort: 'downloads' });
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort=downloads');
+  });
+
+  it('includes sort param when sort is name', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], total: 0 }),
+    }));
+
+    await browseRegistry({ sort: 'name' });
+
+    const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(calledUrl).toContain('sort=name');
   });
 });
 

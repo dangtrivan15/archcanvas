@@ -18,6 +18,7 @@ beforeEach(() => {
   useCommunityBrowserStore.setState({
     query: '',
     namespace: null,
+    sort: 'downloads' as const,
     results: [],
     total: 0,
     loading: false,
@@ -35,6 +36,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('communityBrowserStore', () => {
@@ -217,21 +219,24 @@ describe('communityBrowserStore', () => {
     });
   });
 
-  describe('_search', () => {
+  describe('_search (via setNamespace)', () => {
     it('sets loading true then false after search completes', async () => {
       vi.mocked(browseRegistry).mockResolvedValue({ items: [], total: 0 });
-      const searchPromise = useCommunityBrowserStore.getState()._search('', null);
+      useCommunityBrowserStore.getState().setNamespace('k8s');
       // synchronously check loading
       expect(useCommunityBrowserStore.getState().loading).toBe(true);
-      await searchPromise;
-      expect(useCommunityBrowserStore.getState().loading).toBe(false);
+      await vi.waitFor(() => {
+        expect(useCommunityBrowserStore.getState().loading).toBe(false);
+      });
     });
 
     it('sets error when search fails', async () => {
       vi.mocked(browseRegistry).mockRejectedValue(new Error('network error'));
-      await useCommunityBrowserStore.getState()._search('', null);
+      useCommunityBrowserStore.getState().setNamespace('k8s');
+      await vi.waitFor(() => {
+        expect(useCommunityBrowserStore.getState().loading).toBe(false);
+      });
       expect(useCommunityBrowserStore.getState().error).toBe('network error');
-      expect(useCommunityBrowserStore.getState().loading).toBe(false);
     });
   });
 });
