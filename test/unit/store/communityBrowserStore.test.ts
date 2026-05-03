@@ -18,6 +18,7 @@ beforeEach(() => {
   useCommunityBrowserStore.setState({
     query: '',
     namespace: null,
+    sort: 'downloads' as const,
     results: [],
     total: 0,
     loading: false,

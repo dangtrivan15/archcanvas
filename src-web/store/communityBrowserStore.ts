@@ -46,7 +46,7 @@ function _syncUrl(query: string, namespace: string | null, sort: SortOption): vo
   if (namespace) params.set('namespace', namespace);
   if (sort !== 'downloads') params.set('sort', sort); // omit default to keep URLs clean
   const search = params.toString();
-  history.replaceState(null, '', search ? '?' + search : window.location.pathname);
+  history.replaceState(null, '', search ? '?' + search : (window.location.pathname ?? '/'));
 }
 
 /** Parses and validates the sort param from a raw URL search string. */
@@ -182,7 +182,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     set({ loading: true, error: null });
     try {
       const result = await browseRegistry(
-        { q: query || undefined, namespace: namespace ?? undefined, sort: sort || undefined },
+        { q: query || undefined, namespace: namespace ?? undefined, sort: sort !== 'downloads' ? sort : undefined },
         signal,
       );
       set({ results: result.items, total: result.total, loading: false });
