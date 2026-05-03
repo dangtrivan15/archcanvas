@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   browseRegistry,
   fetchNamespaces,
+  fetchTags,
   fetchNodeDefDetail,
   fetchNodeDefVersions,
 } from '@/core/registry/remoteRegistry';
@@ -20,6 +21,9 @@ interface CommunityBrowserState {
   detailLoading: boolean;
   namespaces: Array<{ namespace: string; count: number }>;
   namespacesLoading: boolean;
+  tag: string | null;
+  tags: Array<{ tag: string; count: number }>;
+  tagsLoading: boolean;
   versionHistory: RemoteVersionSummary[] | null;
   versionHistoryLoading: boolean;
   versionHistoryError: string | null;
@@ -27,9 +31,11 @@ interface CommunityBrowserState {
   setQuery: (query: string) => void;
   setNamespace: (namespace: string | null) => void;
   setSort: (sort: SortOption) => void;
+  setTag: (tag: string | null) => void;
   initFromUrl: () => void;
   selectNodeDef: (key: string | null) => void;
   loadNamespaces: () => Promise<void>;
+  loadTags: () => Promise<void>;
   loadVersionHistory: (namespace: string, name: string) => Promise<void>;
 }
 
@@ -41,11 +47,12 @@ let detailAbortController: AbortController | undefined;
 let versionsAbortController: AbortController | undefined;
 
 /** Synchronously updates the browser URL without a navigation event. */
-function _syncUrl(query: string, namespace: string | null, sort: SortOption): void {
+function _syncUrl(query: string, namespace: string | null, sort: SortOption, tag: string | null): void {
   const params = new URLSearchParams();
   if (query) params.set('q', query);
   if (namespace) params.set('namespace', namespace);
   if (sort !== DEFAULT_SORT) params.set('sort', sort); // omit default to keep URLs clean
+  if (tag) params.set('tag', tag);
   const search = params.toString();
   history.replaceState(null, '', search ? '?' + search : window.location.pathname);
 }
@@ -57,7 +64,7 @@ function parseSortParam(raw: string | null): SortOption {
 }
 
 export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get) => {
-  const _search = async (query: string, namespace: string | null, sort: SortOption): Promise<void> => {
+  const _search = async (query: string, namespace: string | null, sort: SortOption, tag: string | null): Promise<void> => {
     // Cancel in-flight request
     if (abortController) {
       abortController.abort();
@@ -68,7 +75,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     set({ loading: true, error: null });
     try {
       const result = await browseRegistry(
-        { q: query || undefined, namespace: namespace ?? undefined, sort: sort !== DEFAULT_SORT ? sort : undefined },
+        { q: query || undefined, namespace: namespace ?? undefined, tag: tag ?? undefined, sort: sort !== DEFAULT_SORT ? sort : undefined },
         signal,
       );
       set({ results: result.items, total: result.total, loading: false });
@@ -94,6 +101,9 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     detailLoading: false,
     namespaces: [],
     namespacesLoading: false,
+    tag: null,
+    tags: [],
+    tagsLoading: false,
     versionHistory: null,
     versionHistoryLoading: false,
     versionHistoryError: null,
@@ -105,24 +115,31 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       }
       debounceTimer = setTimeout(() => {
         debounceTimer = undefined;
-        const { namespace, sort } = get();
-        _syncUrl(query, namespace, sort);
-        _search(query, namespace, sort);
+        const { namespace, sort, tag } = get();
+        _syncUrl(query, namespace, sort, tag);
+        _search(query, namespace, sort, tag);
       }, 300);
     },
 
     setNamespace: (namespace: string | null) => {
       set({ namespace });
-      const { query, sort } = get();
-      _syncUrl(query, namespace, sort);
-      _search(query, namespace, sort);
+      const { query, sort, tag } = get();
+      _syncUrl(query, namespace, sort, tag);
+      _search(query, namespace, sort, tag);
     },
 
     setSort: (sort: SortOption) => {
       set({ sort });
-      const { query, namespace } = get();
-      _syncUrl(query, namespace, sort);
-      _search(query, namespace, sort);
+      const { query, namespace, tag } = get();
+      _syncUrl(query, namespace, sort, tag);
+      _search(query, namespace, sort, tag);
+    },
+
+    setTag: (tag: string | null) => {
+      set({ tag });
+      const { query, namespace, sort } = get();
+      _syncUrl(query, namespace, sort, tag);
+      _search(query, namespace, sort, tag);
     },
 
     initFromUrl: () => {
@@ -130,8 +147,9 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       const query = params.get('q') ?? '';
       const namespace = params.get('namespace') ?? null;
       const sort = parseSortParam(params.get('sort'));
-      set({ query, namespace, sort });
-      _search(query, namespace, sort);
+      const tag = params.get('tag') ?? null;
+      set({ query, namespace, sort, tag });
+      _search(query, namespace, sort, tag);
     },
 
     selectNodeDef: (key: string | null) => {
@@ -177,6 +195,19 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
           namespacesLoading: false,
           error: err instanceof Error ? err.message : String(err),
         });
+      }
+    },
+
+    loadTags: async () => {
+      set({ tagsLoading: true });
+      try {
+        const tags = await fetchTags();
+        set({ tags, tagsLoading: false });
+      } catch {
+        // Silent degradation: do NOT set shared `error` state.
+        // TagFilter renders null when tags.length === 0, so a missing
+        // /api/v1/tags endpoint simply hides the filter with no user-visible error.
+        set({ tagsLoading: false });
       }
     },
 

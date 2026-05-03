@@ -33,6 +33,10 @@ const NamespacesResponseSchema = z.object({
   ),
 });
 
+const TagsResultSchema = z.object({
+  tags: z.array(z.object({ tag: z.string(), count: z.number() })),
+});
+
 const RemoteNodeDefDetailSchema = z.object({
   nodedef: RemoteNodeDefSummarySchema,
   version: z.object({
@@ -104,12 +108,13 @@ export async function searchRegistry(
  * Browse the community registry with optional filters.
  */
 export async function browseRegistry(
-  opts: { q?: string; namespace?: string; sort?: SortOption; page?: number; pageSize?: number },
+  opts: { q?: string; namespace?: string; tag?: string; sort?: SortOption; page?: number; pageSize?: number },
   signal?: AbortSignal,
 ): Promise<{ items: RemoteNodeDefSummary[]; total: number }> {
   const params = new URLSearchParams();
   if (opts.q) params.set('q', opts.q);
   if (opts.namespace) params.set('namespace', opts.namespace);
+  if (opts.tag) params.set('tag', opts.tag);
   if (opts.sort) params.set('sort', opts.sort);
   if (opts.page !== undefined) params.set('page', String(opts.page));
   if (opts.pageSize !== undefined) params.set('pageSize', String(opts.pageSize));
@@ -140,6 +145,23 @@ export async function fetchNamespaces(
     throw new Error('Namespaces endpoint returned unexpected response shape');
   }
   return parsed.data.namespaces;
+}
+
+/**
+ * Fetch the list of tags with their nodedef counts.
+ */
+export async function fetchTags(
+  signal?: AbortSignal,
+): Promise<Array<{ tag: string; count: number }>> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/tags`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Failed to fetch tags: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = TagsResultSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error('Tags endpoint returned unexpected response shape');
+  }
+  return parsed.data.tags;
 }
 
 /**

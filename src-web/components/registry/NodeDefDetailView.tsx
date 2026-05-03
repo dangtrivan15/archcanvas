@@ -10,6 +10,7 @@ export function NodeDefDetailView() {
   const detailLoading = useCommunityBrowserStore((s) => s.detailLoading);
   const selectNodeDef = useCommunityBrowserStore((s) => s.selectNodeDef);
   const setNamespace = useCommunityBrowserStore((s) => s.setNamespace);
+  const setTag = useCommunityBrowserStore((s) => s.setTag);
   const versionHistory = useCommunityBrowserStore((s) => s.versionHistory);
   const versionHistoryLoading = useCommunityBrowserStore((s) => s.versionHistoryLoading);
   const versionHistoryError = useCommunityBrowserStore((s) => s.versionHistoryError);
@@ -79,9 +80,13 @@ export function NodeDefDetailView() {
       {nodedef.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {nodedef.tags.map((tag) => (
-            <span key={tag} className="rounded bg-accent/50 px-1.5 py-0.5 text-xs text-muted-foreground">
+            <button
+              key={tag}
+              onClick={() => { setTag(tag); selectNodeDef(null); }}
+              className="rounded bg-accent/50 px-1.5 py-0.5 text-xs text-muted-foreground cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
               {tag}
-            </span>
+            </button>
           ))}
         </div>
       )}
