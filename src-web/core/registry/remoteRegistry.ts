@@ -113,7 +113,8 @@ export async function browseRegistry(
   if (opts.sort) params.set('sort', opts.sort);
   if (opts.page !== undefined) params.set('page', String(opts.page));
   if (opts.pageSize !== undefined) params.set('pageSize', String(opts.pageSize));
-  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs${params.toString() ? '?' + params.toString() : ''}`;
+  const qs = params.toString();
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs${qs ? '?' + qs : ''}`;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Registry browse failed: ${resp.status}`);
   const data = (await resp.json()) as unknown;

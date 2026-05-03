@@ -8,6 +8,7 @@ import {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('browseRegistry', () => {
@@ -22,7 +23,7 @@ describe('browseRegistry', () => {
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
       `${REGISTRY_BASE_URL}/api/v1/nodedefs`,
-      expect.objectContaining({}),
+      { signal: undefined },
     );
   });
 

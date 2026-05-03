@@ -41,7 +41,7 @@ export function CommunityBrowser() {
       {!loading && !error && results.length === 0 && (
         <div className="p-4 text-xs text-muted-foreground">No results found.</div>
       )}
-      {!loading && results.length > 0 && (
+      {!loading && !error && results.length > 0 && (
         <div className="flex flex-col gap-1 p-2">
           {results.map((item) => (
             <NodeDefCard

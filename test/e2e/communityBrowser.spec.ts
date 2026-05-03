@@ -142,7 +142,7 @@ test.describe('community browser panel', () => {
         },
       });
     });
-    await page.waitForTimeout(100);
+    await page.waitForLoadState('networkidle');
     await page.getByTestId('registry-indicator').click();
     await page.getByTestId('tab-community').click();
     await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });

@@ -17,6 +17,8 @@ export function SortControl() {
       {SORT_OPTIONS.map(({ value, label }) => (
         <button
           key={value}
+          type="button"
+          aria-pressed={sort === value}
           onClick={() => setSort(value)}
           data-testid={`sort-${value}`}
           className={cn(
