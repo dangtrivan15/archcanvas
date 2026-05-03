@@ -130,7 +130,7 @@ test.describe('tag filter', () => {
     await expect(page.getByTestId('nodedef-card-kubernetes/deployment')).toBeVisible({ timeout: 3000 });
     // The card for kubernetes/deployment should show its tags as chips
     const card = page.getByTestId('nodedef-card-kubernetes/deployment');
-    await expect(card.getByText('k8s')).toBeVisible();
+    await expect(card.getByRole('button', { name: 'k8s' })).toBeVisible();
   });
 
   test('tag filter is hidden when tags endpoint returns empty', async ({ page }) => {
