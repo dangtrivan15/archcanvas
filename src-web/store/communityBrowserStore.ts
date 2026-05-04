@@ -186,7 +186,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
         return;
       }
       get().loadVersionHistory(namespace, name); // fire-and-forget
-      fetchNodeDefDetail(namespace, name, signal, initialVersion)
+      fetchNodeDefDetail(namespace, name, initialVersion, signal)
         .then((detail) => {
           set({ selectedDetail: detail, detailLoading: false });
           _syncUrl(get().query, get().namespace, get().sort, get().tag, key, initialVersion ?? null);
@@ -199,6 +199,8 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     },
 
     selectVersion: (version: string) => {
+      const key = get().selectedKey;
+      if (!key) return; // no node selected, nothing to do
       // Cancel any in-flight detail request
       if (detailAbortController) {
         detailAbortController.abort();
@@ -206,9 +208,8 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       detailAbortController = new AbortController();
       const signal = detailAbortController.signal;
       set({ selectedVersion: version, detailLoading: true });
-      const key = get().selectedKey!;
       const [namespace, name] = key.split('/');
-      fetchNodeDefDetail(namespace, name, signal, version)
+      fetchNodeDefDetail(namespace, name, version, signal)
         .then((detail) => {
           set({ selectedDetail: detail, detailLoading: false });
           _syncUrl(get().query, get().namespace, get().sort, get().tag, key, version);

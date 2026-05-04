@@ -26,6 +26,7 @@ beforeEach(() => {
     selectedKey: null,
     selectedDetail: null,
     detailLoading: false,
+    selectedVersion: null,
     namespaces: [],
     namespacesLoading: false,
     versionHistory: null,
@@ -99,11 +100,12 @@ describe('communityBrowserStore', () => {
 
   describe('selectNodeDef', () => {
     it('clears selection when called with null', () => {
-      useCommunityBrowserStore.setState({ selectedKey: 'k8s/deployment', selectedDetail: {} as any });
+      useCommunityBrowserStore.setState({ selectedKey: 'k8s/deployment', selectedDetail: {} as any, selectedVersion: '2.0.0' });
       useCommunityBrowserStore.getState().selectNodeDef(null);
       const state = useCommunityBrowserStore.getState();
       expect(state.selectedKey).toBeNull();
       expect(state.selectedDetail).toBeNull();
+      expect(state.selectedVersion).toBeNull();
     });
 
     it('sets selectedKey and triggers detail fetch', async () => {
@@ -117,7 +119,7 @@ describe('communityBrowserStore', () => {
         expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
       });
 
-      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal), undefined);
+      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', undefined, expect.any(AbortSignal));
     });
 
     it('triggers version history load alongside detail fetch', async () => {
@@ -195,6 +197,116 @@ describe('communityBrowserStore', () => {
       expect(state.versionHistoryError).toBeNull();
       // versionHistoryLoading was set true at start; an abort leaves it unchanged (no false)
       expect(state.versionHistoryLoading).toBe(true);
+    });
+  });
+
+  describe('selectVersion', () => {
+    it('sets selectedVersion and triggers detail fetch with that version', async () => {
+      // Pre-set a selected node so selectVersion has a key to work with
+      useCommunityBrowserStore.setState({ selectedKey: 'k8s/deployment' });
+      const mockDetail = {
+        nodedef: { namespace: 'k8s', name: 'deployment', latestVer: '1.0.0', tags: [], downloadCount: 0 },
+        version: { nodedefId: 'x', version: '0.9.0', blob: {}, publishedAt: '2026-01-01T00:00:00.000Z' },
+      };
+      vi.mocked(fetchNodeDefDetail).mockResolvedValue(mockDetail);
+
+      useCommunityBrowserStore.getState().selectVersion('0.9.0');
+
+      expect(useCommunityBrowserStore.getState().selectedVersion).toBe('0.9.0');
+      expect(useCommunityBrowserStore.getState().detailLoading).toBe(true);
+
+      await vi.waitFor(() => {
+        expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
+      });
+
+      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', '0.9.0', expect.any(AbortSignal));
+      expect(useCommunityBrowserStore.getState().selectedDetail).toEqual(mockDetail);
+    });
+
+    it('sets error when fetch fails', async () => {
+      useCommunityBrowserStore.setState({ selectedKey: 'k8s/deployment' });
+      vi.mocked(fetchNodeDefDetail).mockRejectedValue(new Error('version fetch failed'));
+
+      useCommunityBrowserStore.getState().selectVersion('0.9.0');
+
+      await vi.waitFor(() => {
+        expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
+      });
+
+      expect(useCommunityBrowserStore.getState().error).toBe('version fetch failed');
+    });
+
+    it('silently ignores AbortError', async () => {
+      useCommunityBrowserStore.setState({ selectedKey: 'k8s/deployment' });
+      vi.mocked(fetchNodeDefDetail).mockRejectedValue(
+        new DOMException('The operation was aborted.', 'AbortError'),
+      );
+
+      useCommunityBrowserStore.getState().selectVersion('0.9.0');
+
+      await vi.waitFor(() => {
+        // After abort, loading stays true (no state update from AbortError path)
+        // but selectedVersion is set
+        expect(useCommunityBrowserStore.getState().selectedVersion).toBe('0.9.0');
+      });
+
+      expect(useCommunityBrowserStore.getState().error).toBeNull();
+    });
+
+    it('does nothing when selectedKey is null', () => {
+      useCommunityBrowserStore.setState({ selectedKey: null });
+      useCommunityBrowserStore.getState().selectVersion('1.0.0');
+      // No fetch should be triggered
+      expect(fetchNodeDefDetail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('initFromUrl', () => {
+    it('restores query, namespace, sort, tag from URL params', () => {
+      vi.stubGlobal('window', {
+        location: { search: '?q=nginx&namespace=k8s&sort=recent&tag=web' },
+      });
+
+      useCommunityBrowserStore.getState().initFromUrl();
+
+      const state = useCommunityBrowserStore.getState();
+      expect(state.query).toBe('nginx');
+      expect(state.namespace).toBe('k8s');
+      expect(state.sort).toBe('recent');
+      expect(state.tag).toBe('web');
+    });
+
+    it('calls selectNodeDef with nodedef and version when both are in URL', () => {
+      vi.stubGlobal('window', {
+        location: { search: '?nodedef=k8s%2Fdeployment&version=2.0.0' },
+      });
+
+      const spy = vi.spyOn(useCommunityBrowserStore.getState(), 'selectNodeDef');
+      useCommunityBrowserStore.getState().initFromUrl();
+
+      expect(spy).toHaveBeenCalledWith('k8s/deployment', '2.0.0');
+    });
+
+    it('calls selectNodeDef with undefined version when only nodedef is in URL', () => {
+      vi.stubGlobal('window', {
+        location: { search: '?nodedef=k8s%2Fdeployment' },
+      });
+
+      const spy = vi.spyOn(useCommunityBrowserStore.getState(), 'selectNodeDef');
+      useCommunityBrowserStore.getState().initFromUrl();
+
+      expect(spy).toHaveBeenCalledWith('k8s/deployment', undefined);
+    });
+
+    it('does not call selectNodeDef when no nodedef param', () => {
+      vi.stubGlobal('window', {
+        location: { search: '?q=nginx' },
+      });
+
+      const spy = vi.spyOn(useCommunityBrowserStore.getState(), 'selectNodeDef');
+      useCommunityBrowserStore.getState().initFromUrl();
+
+      expect(spy).not.toHaveBeenCalled();
     });
   });
 

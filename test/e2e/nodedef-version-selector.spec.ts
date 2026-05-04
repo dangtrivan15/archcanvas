@@ -148,8 +148,11 @@ test.describe('NodeDef version selector', () => {
   test('clicking a version row fetches that version\'s spec', async ({ page }) => {
     await openNodeDefDetail(page);
     await expect(page.getByTestId('version-history-section')).toBeVisible({ timeout: 5000 });
-    await page.getByTestId('version-row-1.0.0').click();
-    await page.waitForResponse((resp) => resp.url().includes('?version=1.0.0'));
+    const [response] = await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('?version=1.0.0')),
+      page.getByTestId('version-row-1.0.0').click(),
+    ]);
+    expect(response.ok()).toBe(true);
     await expect(page.getByTestId('detail-back-btn')).toBeVisible();
   });
 
@@ -165,8 +168,10 @@ test.describe('NodeDef version selector', () => {
     await openNodeDefDetail(page);
     await expect(page.getByTestId('version-history-section')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('code').filter({ hasText: 'kubernetes/deployment@3.0.0' })).toBeVisible();
-    await page.getByTestId('version-row-1.0.0').click();
-    await page.waitForResponse((resp) => resp.url().includes('?version=1.0.0'));
+    await Promise.all([
+      page.waitForResponse((resp) => resp.url().includes('?version=1.0.0')),
+      page.getByTestId('version-row-1.0.0').click(),
+    ]);
     await expect(page.locator('code').filter({ hasText: 'kubernetes/deployment@1.0.0' })).toBeVisible({ timeout: 5000 });
   });
 

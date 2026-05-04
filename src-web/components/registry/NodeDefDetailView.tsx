@@ -75,7 +75,7 @@ export function NodeDefDetailView() {
       )}
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>v{nodedef.latestVer}</span>
+        <span>v{selectedDetail.version.version}</span>
         <span>{nodedef.downloadCount} downloads</span>
       </div>
 
@@ -94,7 +94,7 @@ export function NodeDefDetailView() {
       )}
 
       <button
-        onClick={() => openInstallNodeDefDialog(nodedef)}
+        onClick={() => openInstallNodeDefDialog({ ...nodedef, latestVer: selectedDetail.version.version })}
         className="mt-2 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         data-testid="detail-install-btn"
       >
@@ -220,7 +220,7 @@ export function NodeDefDetailView() {
             your local workspace and use the Publish command from the node's context menu.
           </p>
           <button
-            onClick={() => openInstallNodeDefDialog(nodedef)}
+            onClick={() => openInstallNodeDefDialog({ ...nodedef, latestVer: selectedDetail.version.version })}
             className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
             data-testid="detail-manage-install-btn"
           >
