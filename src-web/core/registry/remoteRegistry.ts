@@ -171,8 +171,9 @@ export async function fetchNodeDefDetail(
   namespace: string,
   name: string,
   signal?: AbortSignal,
+  version?: string,
 ): Promise<RemoteNodeDefDetail> {
-  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`;
+  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}${version ? '?version=' + encodeURIComponent(version) : ''}`;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Failed to fetch NodeDef detail: ${resp.status}`);
   const data = (await resp.json()) as unknown;

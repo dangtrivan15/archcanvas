@@ -19,6 +19,7 @@ interface CommunityBrowserState {
   selectedKey: string | null;
   selectedDetail: RemoteNodeDefDetail | null;
   detailLoading: boolean;
+  selectedVersion: string | null;
   namespaces: Array<{ namespace: string; count: number }>;
   namespacesLoading: boolean;
   tag: string | null;
@@ -33,7 +34,8 @@ interface CommunityBrowserState {
   setSort: (sort: SortOption) => void;
   setTag: (tag: string | null) => void;
   initFromUrl: () => void;
-  selectNodeDef: (key: string | null) => void;
+  selectNodeDef: (key: string | null, initialVersion?: string) => void;
+  selectVersion: (version: string) => void;
   loadNamespaces: () => Promise<void>;
   loadTags: () => Promise<void>;
   loadVersionHistory: (namespace: string, name: string) => Promise<void>;
@@ -47,12 +49,14 @@ let detailAbortController: AbortController | undefined;
 let versionsAbortController: AbortController | undefined;
 
 /** Synchronously updates the browser URL without a navigation event. */
-function _syncUrl(query: string, namespace: string | null, sort: SortOption, tag: string | null): void {
+function _syncUrl(query: string, namespace: string | null, sort: SortOption, tag: string | null, selectedKey: string | null, selectedVersion: string | null): void {
   const params = new URLSearchParams();
   if (query) params.set('q', query);
   if (namespace) params.set('namespace', namespace);
   if (sort !== DEFAULT_SORT) params.set('sort', sort); // omit default to keep URLs clean
   if (tag) params.set('tag', tag);
+  if (selectedKey) params.set('nodedef', selectedKey);
+  if (selectedVersion) params.set('version', selectedVersion);
   const search = params.toString();
   history.replaceState(null, '', search ? '?' + search : window.location.pathname);
 }
@@ -99,6 +103,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     selectedKey: null,
     selectedDetail: null,
     detailLoading: false,
+    selectedVersion: null,
     namespaces: [],
     namespacesLoading: false,
     tag: null,
@@ -116,7 +121,7 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       debounceTimer = setTimeout(() => {
         debounceTimer = undefined;
         const { namespace, sort, tag } = get();
-        _syncUrl(query, namespace, sort, tag);
+        _syncUrl(query, namespace, sort, tag, get().selectedKey, get().selectedVersion);
         _search(query, namespace, sort, tag);
       }, 300);
     },
@@ -124,21 +129,21 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
     setNamespace: (namespace: string | null) => {
       set({ namespace });
       const { query, sort, tag } = get();
-      _syncUrl(query, namespace, sort, tag);
+      _syncUrl(query, namespace, sort, tag, get().selectedKey, get().selectedVersion);
       _search(query, namespace, sort, tag);
     },
 
     setSort: (sort: SortOption) => {
       set({ sort });
       const { query, namespace, tag } = get();
-      _syncUrl(query, namespace, sort, tag);
+      _syncUrl(query, namespace, sort, tag, get().selectedKey, get().selectedVersion);
       _search(query, namespace, sort, tag);
     },
 
     setTag: (tag: string | null) => {
       set({ tag });
       const { query, namespace, sort } = get();
-      _syncUrl(query, namespace, sort, tag);
+      _syncUrl(query, namespace, sort, tag, get().selectedKey, get().selectedVersion);
       _search(query, namespace, sort, tag);
     },
 
@@ -148,11 +153,16 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       const namespace = params.get('namespace') ?? null;
       const sort = parseSortParam(params.get('sort'));
       const tag = params.get('tag') ?? null;
+      const nodedef = params.get('nodedef') ?? null;
+      const version = params.get('version') ?? null;
       set({ query, namespace, sort, tag });
       _search(query, namespace, sort, tag);
+      if (nodedef) {
+        get().selectNodeDef(nodedef, version ?? undefined);
+      }
     },
 
-    selectNodeDef: (key: string | null) => {
+    selectNodeDef: (key: string | null, initialVersion?: string) => {
       // Cancel any in-flight detail request
       if (detailAbortController) {
         detailAbortController.abort();
@@ -163,12 +173,12 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
       }
       if (!key) {
         detailAbortController = undefined;
-        set({ selectedKey: null, selectedDetail: null, detailLoading: false, versionHistory: null, versionHistoryLoading: false, versionHistoryError: null });
+        set({ selectedKey: null, selectedDetail: null, detailLoading: false, selectedVersion: null, versionHistory: null, versionHistoryLoading: false, versionHistoryError: null });
         return;
       }
       detailAbortController = new AbortController();
       const signal = detailAbortController.signal;
-      set({ selectedKey: key, selectedDetail: null, detailLoading: true });
+      set({ selectedKey: key, selectedDetail: null, detailLoading: true, selectedVersion: initialVersion ?? null });
       const [namespace, name] = key.split('/');
       if (!namespace || !name) {
         detailAbortController = undefined;
@@ -176,10 +186,34 @@ export const useCommunityBrowserStore = create<CommunityBrowserState>((set, get)
         return;
       }
       get().loadVersionHistory(namespace, name); // fire-and-forget
-      fetchNodeDefDetail(namespace, name, signal)
-        .then((detail) => set({ selectedDetail: detail, detailLoading: false }))
+      fetchNodeDefDetail(namespace, name, signal, initialVersion)
+        .then((detail) => {
+          set({ selectedDetail: detail, detailLoading: false });
+          _syncUrl(get().query, get().namespace, get().sort, get().tag, key, initialVersion ?? null);
+        })
         .catch((err) => {
           // A new selectNodeDef call aborted this request — a replacement fetch is already in flight
+          if (err instanceof DOMException && err.name === 'AbortError') return;
+          set({ detailLoading: false, error: err instanceof Error ? err.message : String(err) });
+        });
+    },
+
+    selectVersion: (version: string) => {
+      // Cancel any in-flight detail request
+      if (detailAbortController) {
+        detailAbortController.abort();
+      }
+      detailAbortController = new AbortController();
+      const signal = detailAbortController.signal;
+      set({ selectedVersion: version, detailLoading: true });
+      const key = get().selectedKey!;
+      const [namespace, name] = key.split('/');
+      fetchNodeDefDetail(namespace, name, signal, version)
+        .then((detail) => {
+          set({ selectedDetail: detail, detailLoading: false });
+          _syncUrl(get().query, get().namespace, get().sort, get().tag, key, version);
+        })
+        .catch((err) => {
           if (err instanceof DOMException && err.name === 'AbortError') return;
           set({ detailLoading: false, error: err instanceof Error ? err.message : String(err) });
         });
