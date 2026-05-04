@@ -5,7 +5,10 @@ import { useState } from 'react';
 type TabId = 'installed' | 'community';
 
 export function RegistryPanel() {
-  const [activeTab, setActiveTab] = useState<TabId>('installed');
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('nodedef') ? 'community' : 'installed';
+  });
 
   return (
     <div className="flex h-full flex-col">
