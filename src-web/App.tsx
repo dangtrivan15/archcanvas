@@ -121,6 +121,14 @@ export function App() {
     useAuthStore.getState()._hydrate();
   }, []);
 
+  // Auto-open the registry panel (community tab) when URL contains ?nodedef=
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('nodedef')) {
+      useUiStore.getState().openRegistryPanel();
+    }
+  }, []);
+
   useEffect(() => {
     // Pass ref objects (not .current) so the store reads .current at call
     // time — the panel library sets .current asynchronously after mount.

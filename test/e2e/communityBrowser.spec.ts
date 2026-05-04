@@ -34,6 +34,17 @@ test.describe('community browser panel', () => {
   };
 
   test.beforeEach(async ({ page }) => {
+    await page.route(
+      'https://registry.archcanvas.dev/api/v1/nodedefs/kubernetes/deployment/versions',
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ versions: [{ version: '2.1.0', publishedAt: '2026-01-01T00:00:00.000Z', downloadCount: 1543 }] }),
+        });
+      }
+    );
+
     await page.route('https://registry.archcanvas.dev/api/v1/nodedefs*', async (route) => {
       const url = new URL(route.request().url());
       const ns = url.searchParams.get('namespace');

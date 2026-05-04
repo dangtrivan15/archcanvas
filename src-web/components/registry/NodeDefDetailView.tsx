@@ -9,6 +9,8 @@ export function NodeDefDetailView() {
   const selectedDetail = useCommunityBrowserStore((s) => s.selectedDetail);
   const detailLoading = useCommunityBrowserStore((s) => s.detailLoading);
   const selectNodeDef = useCommunityBrowserStore((s) => s.selectNodeDef);
+  const selectVersion = useCommunityBrowserStore((s) => s.selectVersion);
+  const selectedVersion = useCommunityBrowserStore((s) => s.selectedVersion);
   const setNamespace = useCommunityBrowserStore((s) => s.setNamespace);
   const setTag = useCommunityBrowserStore((s) => s.setTag);
   const versionHistory = useCommunityBrowserStore((s) => s.versionHistory);
@@ -31,7 +33,7 @@ export function NodeDefDetailView() {
 
   const { nodedef } = selectedDetail;
   const parsedSpec = NodeDef.safeParse(selectedDetail.version.blob);
-  const snippet = `${nodedef.namespace}/${nodedef.name}@${nodedef.latestVer}`;
+  const snippet = `${nodedef.namespace}/${nodedef.name}@${selectedDetail.version.version}`;
   const isOwner = username !== null && username === nodedef.namespace;
 
   const inboundPorts = parsedSpec.success
@@ -73,7 +75,7 @@ export function NodeDefDetailView() {
       )}
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>v{nodedef.latestVer}</span>
+        <span>v{selectedDetail.version.version}</span>
         <span>{nodedef.downloadCount} downloads</span>
       </div>
 
@@ -92,7 +94,7 @@ export function NodeDefDetailView() {
       )}
 
       <button
-        onClick={() => openInstallNodeDefDialog(nodedef)}
+        onClick={() => openInstallNodeDefDialog({ ...nodedef, latestVer: selectedDetail.version.version })}
         className="mt-2 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         data-testid="detail-install-btn"
       >
@@ -174,26 +176,40 @@ export function NodeDefDetailView() {
       </div>
 
       {/* Version history section */}
-      <div className="flex flex-col gap-2">
-        <h4 className="text-xs font-semibold text-card-foreground uppercase tracking-wide">Version History</h4>
-        {versionHistoryLoading && (
-          <p className="text-xs text-muted-foreground">Loading…</p>
-        )}
-        {versionHistoryError && !versionHistoryLoading && (
-          <p className="text-xs text-destructive">{versionHistoryError}</p>
-        )}
-        {versionHistory && !versionHistoryLoading && (
-          <ol className="flex flex-col gap-1">
-            {versionHistory.map((v) => (
-              <li key={v.version} className="flex items-center gap-2 text-xs">
-                <span className="font-mono font-medium">{v.version}</span>
-                <span className="text-muted-foreground">{new Date(v.publishedAt).toLocaleDateString()}</span>
-                <span className="text-muted-foreground ml-auto">{v.downloadCount} ↓</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+      {(versionHistoryLoading || versionHistoryError || (versionHistory && versionHistory.length > 1)) && (
+        <div className="flex flex-col gap-2" data-testid="version-history-section">
+          <h4 className="text-xs font-semibold text-card-foreground uppercase tracking-wide">Version History</h4>
+          {versionHistoryLoading && (
+            <p className="text-xs text-muted-foreground">Loading…</p>
+          )}
+          {versionHistoryError && !versionHistoryLoading && (
+            <p className="text-xs text-destructive">{versionHistoryError}</p>
+          )}
+          {versionHistory && versionHistory.length > 1 && !versionHistoryLoading && (
+            <ol className="flex flex-col gap-1">
+              {versionHistory.map((v) => {
+                const isActive =
+                  v.version === (selectedVersion ?? selectedDetail.version.version);
+                return (
+                  <li
+                    key={v.version}
+                    onClick={() => selectVersion(v.version)}
+                    data-testid={`version-row-${v.version}`}
+                    className={`flex items-center gap-2 text-xs cursor-pointer rounded px-1
+                      hover:bg-accent/50 transition-colors
+                      ${isActive ? 'font-semibold text-primary' : 'text-muted-foreground'}`}
+                  >
+                    <span className="font-mono font-medium">{v.version}</span>
+                    <span>{new Date(v.publishedAt).toLocaleDateString()}</span>
+                    <span className="ml-auto">{v.downloadCount} ↓</span>
+                    {isActive && <span className="sr-only">(current)</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+      )}
 
       {/* Manage section — owner only */}
       {isOwner && (
@@ -204,7 +220,7 @@ export function NodeDefDetailView() {
             your local workspace and use the Publish command from the node's context menu.
           </p>
           <button
-            onClick={() => openInstallNodeDefDialog(nodedef)}
+            onClick={() => openInstallNodeDefDialog({ ...nodedef, latestVer: selectedDetail.version.version })}
             className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
             data-testid="detail-manage-install-btn"
           >

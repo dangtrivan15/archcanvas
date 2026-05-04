@@ -170,9 +170,14 @@ export async function fetchTags(
 export async function fetchNodeDefDetail(
   namespace: string,
   name: string,
+  version?: string,
   signal?: AbortSignal,
 ): Promise<RemoteNodeDefDetail> {
-  const url = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`;
+  const base = `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`;
+  const params = new URLSearchParams();
+  if (version) params.set('version', version);
+  const qs = params.toString();
+  const url = qs ? `${base}?${qs}` : base;
   const resp = await fetch(url, { signal });
   if (!resp.ok) throw new Error(`Failed to fetch NodeDef detail: ${resp.status}`);
   const data = (await resp.json()) as unknown;
