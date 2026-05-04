@@ -176,7 +176,7 @@ export function NodeDefDetailView() {
       </div>
 
       {/* Version history section */}
-      {(versionHistoryLoading || (versionHistory && versionHistory.length > 1)) && (
+      {(versionHistoryLoading || versionHistoryError || (versionHistory && versionHistory.length > 1)) && (
         <div className="flex flex-col gap-2" data-testid="version-history-section">
           <h4 className="text-xs font-semibold text-card-foreground uppercase tracking-wide">Version History</h4>
           {versionHistoryLoading && (

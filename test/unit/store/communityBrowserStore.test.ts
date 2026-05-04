@@ -117,7 +117,7 @@ describe('communityBrowserStore', () => {
         expect(useCommunityBrowserStore.getState().detailLoading).toBe(false);
       });
 
-      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal));
+      expect(fetchNodeDefDetail).toHaveBeenCalledWith('k8s', 'deployment', expect.any(AbortSignal), undefined);
     });
 
     it('triggers version history load alongside detail fetch', async () => {
