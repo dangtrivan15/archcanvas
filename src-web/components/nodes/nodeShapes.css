@@ -361,8 +361,7 @@
   outline-offset: 3px;
   padding: 14px 16px;
   min-width: var(--node-min-width-lg, 180px);
-  min-height: 80px;
-  height: 100%; /* Fill ReactFlow wrapper so mini ReactFlow gets pixel height */
+  min-height: 52px;
   background-color: color-mix(in srgb, var(--color-node-ref-bg) 70%, transparent);
   transition: border-color 150ms ease, box-shadow 150ms ease, outline-color 150ms ease;
 }

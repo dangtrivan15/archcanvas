@@ -2,7 +2,6 @@ import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react';
 import type { Canvas, InlineNode } from '@/types';
 import type { CanvasNodeData, CanvasEdgeData, KeyArg, NodeBadges } from './types';
 import { PROTOCOL_STYLES } from './types';
-import { computeAutoSize } from '@/lib/computeAutoSize';
 import type { CanvasDiff } from '@/core/diff/types';
 import { edgeKey } from '@/core/diff/engine';
 import type { ArgDef } from '@/types/nodeDefSchema';
@@ -125,19 +124,6 @@ export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] 
       position: node.position ?? { x: 0, y: 0 },
       data,
     };
-
-    if (isRef) {
-      const childCanvas = canvasesRef?.get(node.id);
-      const pos = node.position;
-      if (pos?.autoSize === false) {
-        rfNode.width = pos.width ?? 240;
-        rfNode.height = pos.height ?? 160;
-      } else {
-        const { width, height } = computeAutoSize(childCanvas?.data);
-        rfNode.width = width;
-        rfNode.height = height;
-      }
-    }
 
     return rfNode;
   });
