@@ -60,20 +60,22 @@ describe('NodeRenderer container mode', () => {
     expect(node?.classList.contains('node-shape-container')).toBe(false);
   });
 
-  it('renders SubsystemPreview for ref-nodes', () => {
+  it('does not render SubsystemPreview for ref-nodes (compact mode)', () => {
     const { container } = render(
       <NodeRenderer {...makeProps({
         node: { id: 'test-ref', ref: 'test-ref.yaml', position: { x: 0, y: 0 } },
         isRef: true,
       }) as any} />
     );
-    // SubsystemPreview renders an SVG (or null if empty canvas)
-    // Since there's no canvas data, it should render null, but the container class should still be there
+    // SubsystemPreview mini-canvas was removed; only compact styling remains
+    const preview = container.querySelector('.subsystem-preview');
+    expect(preview).toBeNull();
+    // Container shape class is still present
     const node = container.querySelector('.arch-node');
     expect(node?.classList.contains('node-shape-container')).toBe(true);
   });
 
-  it('renders NodeResizer for ref-nodes when selected', () => {
+  it('does not render NodeResizer for ref-nodes even when selected', () => {
     const { container } = render(
       <NodeRenderer {...makeProps({
         node: { id: 'test-ref', ref: 'test-ref.yaml', position: { x: 0, y: 0 } },
@@ -81,9 +83,9 @@ describe('NodeRenderer container mode', () => {
         isSelected: true,
       }) as any} />
     );
+    // NodeResizer was removed along with auto-sizing; ref-nodes are now compact fixed-size
     const resizer = container.querySelector('[data-testid="node-resizer"]');
-    expect(resizer).toBeTruthy();
-    expect(resizer?.getAttribute('data-visible')).toBe('true');
+    expect(resizer).toBeNull();
   });
 
   it('does not render NodeResizer for inline nodes', () => {
