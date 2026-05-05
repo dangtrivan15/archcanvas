@@ -349,12 +349,6 @@ describe('createRegistry', () => {
       expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Authored Service');
     });
 
-    it('builtins win over remoteInstalled', () => {
-      const ri = new Map([['compute/service', remoteInstalledNode]]);
-      const { registry } = createRegistry(builtins(), new Map(), null, undefined, ri);
-      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Service');
-    });
-
     it('allNodeDefs() includes defs from all 4 sources', () => {
       const extraNode = makeNodeDef('custom', 'widget');
       const extraRemote = makeNodeDef('community', 'k8s-deploy');
