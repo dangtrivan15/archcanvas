@@ -57,13 +57,9 @@ test.describe('subsystem creation', () => {
     await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
 
     // Go back — root should still have just the RefNode
-    // (mini-preview inside RefNode also renders ReactFlow nodes, so filter them out)
     await page.locator('[data-testid="breadcrumb"]').getByText('Root').click();
     await page.waitForTimeout(700);
-    const mainNodeCount = await page.locator('.react-flow__node').evaluateAll(
-      (nodes) => nodes.filter((n) => !n.closest('.subsystem-preview')).length,
-    );
-    expect(mainNodeCount).toBe(1);
+    await expect(page.locator('[data-testid="main-canvas"] .react-flow__node')).toHaveCount(1);
   });
 
   test('collision error shown when duplicate name', async ({ page }) => {
@@ -185,7 +181,7 @@ test.describe('subsystem container', () => {
     await gotoApp(page);
   });
 
-  test('subsystem renders as container with preview', async ({ page }) => {
+  test('subsystem renders as compact styled container', async ({ page }) => {
     // Create subsystem
     await createSubsystem(page, 'Order Service', /Service compute\/service/);
 
@@ -206,42 +202,9 @@ test.describe('subsystem container', () => {
     const refNode = page.locator('.react-flow__node').first();
     await expect(refNode.locator('.node-shape-container')).toBeVisible();
 
-    // SubsystemPreview should be present (mini ReactFlow instance)
-    const preview = refNode.locator('.subsystem-preview');
-    await expect(preview).toBeVisible();
-    // The mini ReactFlow should render the same number of nodes as the subsystem has
-    const miniNodes = preview.locator('.react-flow__node');
-    await expect(miniNodes).toHaveCount(2);
+    // childSummary text should be visible (namespace-grouped child count)
+    await expect(refNode.locator('.arch-node-child-summary')).toBeVisible();
   });
 
-  test('subsystem container is larger than regular nodes', async ({ page }) => {
-    // Add a regular node
-    await page.keyboard.press('Meta+k');
-    await page.getByRole('option', { name: /API Gateway network\/api-gateway/ }).click();
-    await page.waitForTimeout(200);
-
-    // Create a subsystem
-    await createSubsystem(page, 'Order Service', /Service compute\/service/);
-
-    // Compare sizes
-    const nodes = page.locator('.react-flow__node');
-    await expect(nodes).toHaveCount(2);
-
-    // Get bounding boxes
-    const sizes = await nodes.evaluateAll((elements) =>
-      elements.map((el) => ({
-        width: el.getBoundingClientRect().width,
-        height: el.getBoundingClientRect().height,
-        isContainer: el.querySelector('.node-shape-container') !== null,
-      })),
-    );
-
-    const container = sizes.find((s) => s.isContainer);
-    const regular = sizes.find((s) => !s.isContainer);
-    expect(container).toBeDefined();
-    expect(regular).toBeDefined();
-    expect(container!.width).toBeGreaterThan(regular!.width);
-    expect(container!.height).toBeGreaterThan(regular!.height);
-  });
 });
 

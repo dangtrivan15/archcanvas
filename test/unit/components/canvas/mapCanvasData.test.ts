@@ -110,6 +110,20 @@ describe('mapCanvasNodes', () => {
 
     expect(result[0].data.isSelected).toBe(false);
   });
+
+  it('does not set width or height on a RefNode — leaves them undefined for natural CSS sizing', () => {
+    const canvas = makeCanvas({
+      nodes: [{ id: 'sys-1', ref: 'subsystem.yml', position: { x: 0, y: 0 } }],
+    } as any);
+    const result = mapCanvasNodes({
+      canvas,
+      resolve: () => undefined,
+      selectedNodeIds: new Set(),
+      canvasesRef: undefined,
+    });
+    expect(result[0].width).toBeUndefined();
+    expect(result[0].height).toBeUndefined();
+  });
 });
 
 describe('mapRemovedNodes', () => {
