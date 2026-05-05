@@ -1,18 +1,13 @@
-import { useContext, useMemo } from 'react';
-import { Handle, Position, NodeResizer, type NodeProps } from '@xyflow/react';
+import { useMemo } from 'react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
 import type { PortDef } from '@/types/nodeDefSchema';
 import { useFileStore } from '@/store/fileStore';
-import { useGraphStore } from '@/store/graphStore';
-import { useNavigationStore } from '@/store/navigationStore';
 import { useDiffStore } from '@/store/diffStore';
 import { resolveIcon } from './iconMap';
 import { StickyNote, Code2 } from 'lucide-react';
-import { SubsystemPreview } from './SubsystemPreview';
-import { PreviewModeContext } from './PreviewModeContext';
 import { DiffTooltip } from './DiffTooltip';
-import { NODE_MIN_WIDTH_LG, NODE_MIN_HEIGHT } from '@/lib/nodeTokens';
 import { extractNamespace } from '@/core/namespaceColors';
 import './nodeShapes.css';
 
@@ -41,8 +36,6 @@ function SubsystemDiffBadge({ canvasId }: { canvasId: string }) {
 
 export function NodeRenderer({ data }: NodeRendererProps) {
   const { node, nodeDef, isSelected, isRef, diffStatus, keyArgs, badges, childSummary } = data;
-  const isPreview = useContext(PreviewModeContext);
-
   // Determine display name
   const displayName = (() => {
     if (isRef && 'ref' in node) {
@@ -59,17 +52,6 @@ export function NodeRenderer({ data }: NodeRendererProps) {
   const customClipPath = isCustomShape ? (rawShape as { clipPath: string }).clipPath : undefined;
   const icon = nodeDef?.metadata.icon ?? (isRef ? '↗' : '□');
   const typeLabel = !isRef && 'type' in node ? node.type : undefined;
-
-  const handleResize = (_: unknown, params: { width: number; height: number }) => {
-    const canvasId = useNavigationStore.getState().currentCanvasId;
-    const existingPos = node.position ?? { x: 0, y: 0 };
-    useGraphStore.getState().updateNodePosition(canvasId, node.id, {
-      ...existingPos,
-      width: params.width,
-      height: params.height,
-      autoSize: false,
-    });
-  };
 
   const ports: PortDef[] = nodeDef?.spec.ports ?? [];
   const inboundPorts = ports.filter((p) => p.direction === 'inbound');
@@ -106,16 +88,6 @@ export function NodeRenderer({ data }: NodeRendererProps) {
 
   return (
     <div className={classNames} data-ns={namespace} style={nodeStyle}>
-      {/* NodeResizer for container RefNodes */}
-      {isRef && (
-        <NodeResizer
-          isVisible={isSelected}
-          minWidth={NODE_MIN_WIDTH_LG}
-          minHeight={NODE_MIN_HEIGHT}
-          onResizeEnd={handleResize}
-        />
-      )}
-
       {/* Default target handle — always present so edges can connect */}
       {inboundPorts.length === 0 && (
         <Handle
@@ -155,11 +127,8 @@ export function NodeRenderer({ data }: NodeRendererProps) {
         </span>
       </div>
 
-      {/* Mini-node preview for container RefNodes (skipped in preview mode to prevent recursion) */}
-      {isRef && !isPreview && <SubsystemPreview canvasId={node.id} />}
-
       {/* Multi-scope diff badge for RefNode containers */}
-      {isRef && !isPreview && <SubsystemDiffBadge canvasId={node.id} />}
+      {isRef && <SubsystemDiffBadge canvasId={node.id} />}
 
       {/* Type label (inline nodes only) */}
       {typeLabel !== undefined && (
@@ -179,7 +148,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       )}
 
       {/* Container mini-summary — namespace-grouped child count */}
-      {isRef && childSummary && !isPreview && (
+      {isRef && childSummary && (
         <div className="arch-node-child-summary">{childSummary}</div>
       )}
 

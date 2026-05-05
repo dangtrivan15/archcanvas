@@ -23,11 +23,10 @@ vi.mock('@xyflow/react', () => ({
     />
   ),
   Position: { Left: 'left', Right: 'right' },
-  NodeResizer: (props: any) => <div data-testid="node-resizer" data-visible={props.isVisible} />,
 }));
 
 // Mock fileStore so tests don't depend on a loaded project.
-// useFileStore is used as both getState() (NodeRenderer) and as a hook with selector (SubsystemPreview).
+// useFileStore is used as both getState() and as a hook with selector.
 vi.mock('@/store/fileStore', () => {
   const state = {
     project: { canvases: new Map() },
@@ -46,17 +45,19 @@ vi.mock('@/store/fileStore', () => {
   return { useFileStore: hook };
 });
 
-// Mock graphStore and navigationStore (used by NodeResizer resize handler)
-vi.mock('@/store/graphStore', () => ({
-  useGraphStore: { getState: () => ({ updateNodePosition: vi.fn() }) },
-}));
-vi.mock('@/store/navigationStore', () => ({
-  useNavigationStore: { getState: () => ({ currentCanvasId: '__root__' }) },
-}));
+// Mock diffStore — NodeRenderer uses useDiffStore for SubsystemDiffBadge
+vi.mock('@/store/diffStore', () => {
+  const hook = (selector?: (s: any) => any) => {
+    const state = { enabled: false, canvasDiffs: new Map() };
+    if (selector) return selector(state);
+    return state;
+  };
+  hook.getState = () => ({ enabled: false, canvasDiffs: new Map() });
+  return { useDiffStore: hook };
+});
 
 // Import AFTER mocks are registered
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';
-import { PreviewModeContext } from '@/components/nodes/PreviewModeContext';
 
 // ------------------------------------------------------------------ helpers
 
@@ -273,7 +274,7 @@ describe('NodeRenderer', () => {
     expect(screen.getByTestId('handle-target')).toBeDefined();
   });
 
-  it('skips SubsystemPreview when PreviewModeContext is true', () => {
+  it('does not render .subsystem-preview for a ref node', () => {
     const data: CanvasNodeData = {
       node: makeRefNode({ id: 'sub-1' }) as any,
       nodeDef: undefined,
@@ -282,14 +283,47 @@ describe('NodeRenderer', () => {
     };
 
     const { container } = render(
-      <PreviewModeContext.Provider value={true}>
-        <NodeRenderer {...makeProps(data) as Parameters<typeof NodeRenderer>[0]} />
-      </PreviewModeContext.Provider>,
+      <NodeRenderer {...makeProps(data) as Parameters<typeof NodeRenderer>[0]} />,
     );
 
-    // Should render the node header but NOT SubsystemPreview
-    expect(container.querySelector('.arch-node-header')).toBeTruthy();
+    // SubsystemPreview was removed; no .subsystem-preview element should exist
+    expect(container.querySelector('.subsystem-preview')).toBeNull();
     // The node should still have the container shape class
+    expect(container.querySelector('.node-shape-container')).toBeTruthy();
+  });
+
+  it('does not render NodeResizer for a ref node', () => {
+    const data: CanvasNodeData = {
+      node: makeRefNode({ id: 'sub-1' }) as any,
+      nodeDef: undefined,
+      isSelected: true,
+      isRef: true,
+    };
+
+    const { container } = render(
+      <NodeRenderer {...makeProps(data) as Parameters<typeof NodeRenderer>[0]} />,
+    );
+
+    // NodeResizer was removed; neither the testid nor the class should appear
+    expect(container.querySelector('[data-testid="node-resizer"]')).toBeNull();
+    expect(container.querySelector('.react-flow__node-resizer')).toBeNull();
+  });
+
+  it('renders SubsystemDiffBadge for a ref node when not in preview mode', () => {
+    const data: CanvasNodeData = {
+      node: makeRefNode({ id: 'sub-1' }) as any,
+      nodeDef: undefined,
+      isSelected: false,
+      isRef: true,
+    };
+
+    const { container } = render(
+      <NodeRenderer {...makeProps(data) as Parameters<typeof NodeRenderer>[0]} />,
+    );
+
+    // The ref-node container renders correctly; diffStore has no data so the
+    // badge returns null — but the arch-node with ref-node class is present.
+    expect(container.querySelector('.arch-node.ref-node')).toBeTruthy();
     expect(container.querySelector('.node-shape-container')).toBeTruthy();
   });
 
