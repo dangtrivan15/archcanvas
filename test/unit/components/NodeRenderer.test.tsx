@@ -7,6 +7,17 @@ vi.mock('@xyflow/react', () => ({
   Position: { Left: 'left', Right: 'right', Top: 'top', Bottom: 'bottom' },
 }));
 
+// Mock diffStore — SubsystemDiffBadge (rendered inside ref-nodes) uses useDiffStore
+vi.mock('@/store/diffStore', () => {
+  const hook = (selector?: (s: any) => any) => {
+    const state = { enabled: false, canvasDiffs: new Map() };
+    if (selector) return selector(state);
+    return state;
+  };
+  hook.getState = () => ({ enabled: false, canvasDiffs: new Map() });
+  return { useDiffStore: hook };
+});
+
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';
 import { useFileStore } from '@/store/fileStore';
 

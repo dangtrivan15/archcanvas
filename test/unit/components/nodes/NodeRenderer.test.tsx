@@ -58,7 +58,6 @@ vi.mock('@/store/diffStore', () => {
 
 // Import AFTER mocks are registered
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';
-import { PreviewModeContext } from '@/components/nodes/PreviewModeContext';
 
 // ------------------------------------------------------------------ helpers
 

@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
@@ -7,7 +7,6 @@ import { useFileStore } from '@/store/fileStore';
 import { useDiffStore } from '@/store/diffStore';
 import { resolveIcon } from './iconMap';
 import { StickyNote, Code2 } from 'lucide-react';
-import { PreviewModeContext } from './PreviewModeContext';
 import { DiffTooltip } from './DiffTooltip';
 import { extractNamespace } from '@/core/namespaceColors';
 import './nodeShapes.css';
@@ -37,8 +36,6 @@ function SubsystemDiffBadge({ canvasId }: { canvasId: string }) {
 
 export function NodeRenderer({ data }: NodeRendererProps) {
   const { node, nodeDef, isSelected, isRef, diffStatus, keyArgs, badges, childSummary } = data;
-  const isPreview = useContext(PreviewModeContext);
-
   // Determine display name
   const displayName = (() => {
     if (isRef && 'ref' in node) {
@@ -131,7 +128,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       </div>
 
       {/* Multi-scope diff badge for RefNode containers */}
-      {isRef && !isPreview && <SubsystemDiffBadge canvasId={node.id} />}
+      {isRef && <SubsystemDiffBadge canvasId={node.id} />}
 
       {/* Type label (inline nodes only) */}
       {typeLabel !== undefined && (
@@ -151,7 +148,7 @@ export function NodeRenderer({ data }: NodeRendererProps) {
       )}
 
       {/* Container mini-summary — namespace-grouped child count */}
-      {isRef && childSummary && !isPreview && (
+      {isRef && childSummary && (
         <div className="arch-node-child-summary">{childSummary}</div>
       )}
 
