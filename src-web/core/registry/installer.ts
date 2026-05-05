@@ -1,7 +1,6 @@
 // ---------------------------------------------------------------------------
-// Community NodeDef installer
-// Downloads a NodeDef from the remote registry, validates it, writes it to
-// disk, and updates the lockfile with source:'remote'.
+// NodeDef installer — downloads from the remote registry, validates the
+// content, writes it to disk, and updates the lockfile.
 // ---------------------------------------------------------------------------
 
 import type { FileSystem } from '@/platform/fileSystem';

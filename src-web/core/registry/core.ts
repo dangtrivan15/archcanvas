@@ -30,9 +30,13 @@ export function createRegistry(
   const warnings: string[] = [];
 
   for (const key of authored.keys()) {
-    if (builtins.has(key) || remoteOfficial?.has(key)) {
+    if (remoteOfficial?.has(key)) {
       warnings.push(
-        `NodeDef '${key}' overridden by project-local definition`,
+        `NodeDef '${key}' overridden by project-local definition (shadows official registry version)`,
+      );
+    } else if (builtins.has(key)) {
+      warnings.push(
+        `NodeDef '${key}' overridden by project-local definition (shadows builtin)`,
       );
     } else if (remoteInstalled?.has(key)) {
       warnings.push(

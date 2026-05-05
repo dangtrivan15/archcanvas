@@ -33,4 +33,3 @@ export {
 } from './remoteRegistry';
 
 export { downloadAndInstallNodeDef } from './installer';
-export { syncOfficialNodeDefs } from './officialSync';

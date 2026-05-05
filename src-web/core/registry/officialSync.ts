@@ -6,7 +6,7 @@
 import type { FileSystem } from '@/platform/fileSystem';
 import type { LockfileData } from './lockfile';
 import { downloadAndInstallNodeDef } from './installer';
-import { browseRegistry, checkUpdatesRemote } from './remoteRegistry';
+import { browseRegistry, checkUpdatesRemote, fetchNodeDefDetail } from './remoteRegistry';
 
 const OFFICIAL_NAMESPACES = [
   'compute', 'data', 'messaging', 'network', 'client',
@@ -20,21 +20,23 @@ const OFFICIAL_NAMESPACES = [
  * Branch B (remote-official entries exist): delta-checks and downloads only updates.
  *
  * All network errors are swallowed — offline/network-down is silent.
- * Caller is responsible for calling reloadProjectLocal after this resolves.
+ * Returns true if any downloads happened, false if nothing changed.
+ * Caller should call reloadProjectLocal only if this returns true.
  */
 export async function syncOfficialNodeDefs(
   fs: FileSystem,
   projectRoot: string,
   lockfile: LockfileData | null,
   signal?: AbortSignal,
-): Promise<void> {
+): Promise<boolean> {
+  let anyDownloaded = false;
   try {
     const officialEntries = lockfile
       ? Object.entries(lockfile.entries)
-          .filter(([, e]) => e.source === 'remote-official')
+          .filter(([key, e]) => e.source === 'remote-official' && key.split('/').length === 2)
           .map(([key]) => {
             const [namespace, name] = key.split('/');
-            return { namespace, name };
+            return { namespace: namespace!, name: name! };
           })
       : [];
 
@@ -44,7 +46,12 @@ export async function syncOfficialNodeDefs(
         try {
           const { items } = await browseRegistry({ namespace }, signal);
           for (const summary of items) {
-            await downloadAndInstallNodeDef(fs, projectRoot, summary, 'remote-official');
+            try {
+              await downloadAndInstallNodeDef(fs, projectRoot, summary, 'remote-official');
+              anyDownloaded = true;
+            } catch {
+              // Per-item errors are swallowed — continue with remaining items
+            }
           }
         } catch {
           // Per-namespace errors are swallowed — continue with remaining namespaces
@@ -55,13 +62,11 @@ export async function syncOfficialNodeDefs(
       const changed = await checkUpdatesRemote(officialEntries, signal);
       for (const update of changed) {
         try {
-          const { items } = await browseRegistry({ namespace: update.namespace }, signal);
-          const summary = items.find(
-            (item) => item.namespace === update.namespace && item.name === update.name,
-          );
-          if (summary) {
-            await downloadAndInstallNodeDef(fs, projectRoot, summary, 'remote-official');
-          }
+          const installedVersion = lockfile?.entries[`${update.namespace}/${update.name}`]?.version;
+          if (installedVersion && update.latestVersion === installedVersion) continue; // already up-to-date
+          const detail = await fetchNodeDefDetail(update.namespace, update.name, undefined, signal);
+          await downloadAndInstallNodeDef(fs, projectRoot, detail.nodedef, 'remote-official');
+          anyDownloaded = true;
         } catch {
           // Per-entry errors are swallowed
         }
@@ -70,4 +75,5 @@ export async function syncOfficialNodeDefs(
   } catch {
     // Top-level catch — swallow all errors (offline/network-down is silent)
   }
+  return anyDownloaded;
 }
