@@ -172,4 +172,27 @@ describe('downloadAndInstallNodeDef', () => {
       /Invalid NodeDef identifier/,
     );
   });
+
+  it('writes source: remote-official to lockfile when source param is remote-official', async () => {
+    mockFetchYaml(VALID_YAML);
+    const fs = new InMemoryFileSystem();
+
+    await downloadAndInstallNodeDef(fs, 'myproject', summary, 'remote-official');
+
+    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    expect(lockContent).toContain('community/kubernetes-deployment');
+    expect(lockContent).toContain('source: remote-official');
+    expect(lockContent).toContain('version: 1.0.0');
+  });
+
+  it('writes source: remote to lockfile when no source param is given (default)', async () => {
+    mockFetchYaml(VALID_YAML);
+    const fs = new InMemoryFileSystem();
+
+    await downloadAndInstallNodeDef(fs, 'myproject', summary);
+
+    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    expect(lockContent).toContain('source: remote');
+    expect(lockContent).not.toContain('source: remote-official');
+  });
 });

@@ -225,4 +225,86 @@ spec:
     const result = await loadProjectLocal(fs, 'project', null);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
   });
+
+  it('classifies file as remoteOfficialNodeDefs when lockfile has source: remote-official', async () => {
+    const fs = new InMemoryFileSystem();
+    fs.seed({
+      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+    });
+
+    const lockfile: LockfileData = {
+      lockfileVersion: 1,
+      resolvedAt: '2026-04-14T12:00:00Z',
+      entries: {
+        'custom/custom-node': { version: '1.0.0', source: 'remote-official' },
+      },
+    };
+
+    const result = await loadProjectLocal(fs, 'project', lockfile);
+    expect(result.nodeDefs.size).toBe(0);
+    expect(result.remoteInstalledNodeDefs.size).toBe(0);
+    expect(result.remoteOfficialNodeDefs.size).toBe(1);
+    expect(result.remoteOfficialNodeDefs.has('custom/custom-node')).toBe(true);
+  });
+
+  it('returns empty remoteOfficialNodeDefs when directory does not exist', async () => {
+    const fs = new InMemoryFileSystem();
+    const result = await loadProjectLocal(fs, 'project', null);
+    expect(result.remoteOfficialNodeDefs.size).toBe(0);
+  });
+
+  it('splits files across all three categories by lockfile source', async () => {
+    const officialNodeDefYaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: official-node
+  namespace: official
+  version: "1.0.0"
+  displayName: Official Node
+  description: An official node
+  icon: Box
+  shape: rectangle
+spec:
+  ports: []
+`;
+    const remoteNodeDefYaml = `
+kind: NodeDef
+apiVersion: v1
+metadata:
+  name: remote-node
+  namespace: community
+  version: "2.0.0"
+  displayName: Remote Node
+  description: A community node
+  icon: Box
+  shape: rectangle
+spec:
+  ports: []
+`;
+    const fs = new InMemoryFileSystem();
+    fs.seed({
+      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      'project/.archcanvas/nodedefs/official-node.yaml': officialNodeDefYaml,
+      'project/.archcanvas/nodedefs/community-remote-node.yaml': remoteNodeDefYaml,
+    });
+
+    const lockfile: LockfileData = {
+      lockfileVersion: 1,
+      resolvedAt: '2026-04-14T12:00:00Z',
+      entries: {
+        'custom/custom-node': { version: '1.0.0', source: 'local' },
+        'official/official-node': { version: '1.0.0', source: 'remote-official' },
+        'community/remote-node': { version: '2.0.0', source: 'remote' },
+      },
+    };
+
+    const result = await loadProjectLocal(fs, 'project', lockfile);
+    expect(result.nodeDefs.size).toBe(1);
+    expect(result.remoteOfficialNodeDefs.size).toBe(1);
+    expect(result.remoteInstalledNodeDefs.size).toBe(1);
+    expect(result.nodeDefs.has('custom/custom-node')).toBe(true);
+    expect(result.remoteOfficialNodeDefs.has('official/official-node')).toBe(true);
+    expect(result.remoteInstalledNodeDefs.has('community/remote-node')).toBe(true);
+  });
 });

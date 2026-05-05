@@ -9,6 +9,7 @@ export { builtinNodeDefs } from './builtins';
 export interface LoadProjectLocalResult {
   nodeDefs: Map<string, NodeDef>;                // authored (non-remote) files
   remoteInstalledNodeDefs: Map<string, NodeDef>; // remote-installed files (source:'remote' in lockfile)
+  remoteOfficialNodeDefs: Map<string, NodeDef>;  // official registry files (source:'remote-official' in lockfile)
   errors: Array<{ file: string; message: string }>;
 }
 
@@ -37,7 +38,7 @@ export async function loadProjectLocal(
 
   const dirExists = await fs.exists(dir);
   if (!dirExists) {
-    return { nodeDefs: new Map(), remoteInstalledNodeDefs: new Map(), errors };
+    return { nodeDefs: new Map(), remoteInstalledNodeDefs: new Map(), remoteOfficialNodeDefs: new Map(), errors };
   }
 
   const files = await fs.listFiles(dir);
@@ -64,17 +65,20 @@ export async function loadProjectLocal(
     }
   }
 
-  // Classification pass: split into authored vs remote-installed using lockfile source field
+  // Classification pass: split into authored vs remote-official vs remote-installed using lockfile source field
   const nodeDefs = new Map<string, NodeDef>();
   const remoteInstalledNodeDefs = new Map<string, NodeDef>();
+  const remoteOfficialNodeDefs = new Map<string, NodeDef>();
 
   for (const [key, def] of allLoaded) {
-    if (lockfile?.entries[key]?.source === 'remote') {
+    if (lockfile?.entries[key]?.source === 'remote-official') {
+      remoteOfficialNodeDefs.set(key, def);
+    } else if (lockfile?.entries[key]?.source === 'remote') {
       remoteInstalledNodeDefs.set(key, def);
     } else {
       nodeDefs.set(key, def);
     }
   }
 
-  return { nodeDefs, remoteInstalledNodeDefs, errors };
+  return { nodeDefs, remoteInstalledNodeDefs, remoteOfficialNodeDefs, errors };
 }

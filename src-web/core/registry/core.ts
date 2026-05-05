@@ -24,14 +24,19 @@ export function createRegistry(
   builtins: Map<string, NodeDef>,
   authored: Map<string, NodeDef>,
   lockfile?: LockfileData | null,
+  remoteOfficial?: Map<string, NodeDef>,
   remoteInstalled?: Map<string, NodeDef>,
 ): { registry: NodeDefRegistry; warnings: string[] } {
   const warnings: string[] = [];
 
   for (const key of authored.keys()) {
-    if (builtins.has(key)) {
+    if (remoteOfficial?.has(key)) {
       warnings.push(
-        `NodeDef '${key}' overridden by project-local definition`,
+        `NodeDef '${key}' overridden by project-local definition (shadows official registry version)`,
+      );
+    } else if (builtins.has(key)) {
+      warnings.push(
+        `NodeDef '${key}' overridden by project-local definition (shadows builtin)`,
       );
     } else if (remoteInstalled?.has(key)) {
       warnings.push(
@@ -41,7 +46,7 @@ export function createRegistry(
   }
 
   function resolveByKey(typeKey: string): NodeDef | undefined {
-    return authored.get(typeKey) ?? builtins.get(typeKey) ?? remoteInstalled?.get(typeKey);
+    return authored.get(typeKey) ?? remoteOfficial?.get(typeKey) ?? builtins.get(typeKey) ?? remoteInstalled?.get(typeKey);
   }
 
   function resolve(type: string): NodeDef | undefined {
@@ -74,9 +79,10 @@ export function createRegistry(
 
   function allNodeDefs(): NodeDef[] {
     // Build from lowest-to-highest priority so that last write wins:
-    // remoteInstalled (lowest) → builtins (mid) → authored (highest)
+    // remoteInstalled (lowest) → builtins → remoteOfficial → authored (highest)
     const merged = new Map(remoteInstalled ?? []);
     for (const [key, def] of builtins) merged.set(key, def);
+    for (const [key, def] of (remoteOfficial ?? [])) merged.set(key, def);
     for (const [key, def] of authored) merged.set(key, def);
     return Array.from(merged.values());
   }
