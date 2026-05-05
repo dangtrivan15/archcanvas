@@ -14,8 +14,8 @@ import type { RemoteNodeDefSummary } from './remoteRegistry';
 const ARCHCANVAS_DIR = '.archcanvas';
 
 /**
- * Download a community NodeDef from the registry, validate it, write it to
- * `.archcanvas/nodedefs/`, and record it in the lockfile as source:'remote'.
+ * Download a NodeDef from the registry, validate it, write it to
+ * `.archcanvas/nodedefs/`, and record it in the lockfile with the given source.
  *
  * Throws if the download fails, the YAML is invalid, or the file cannot be written.
  */
@@ -23,6 +23,7 @@ export async function downloadAndInstallNodeDef(
   fs: FileSystem,
   projectRoot: string,
   summary: RemoteNodeDefSummary,
+  source: 'remote' | 'remote-official' = 'remote',
 ): Promise<void> {
   // 0. Validate namespace and name against path-unsafe characters before any
   //    I/O — prevents directory traversal (e.g. a name containing "/" could
@@ -64,7 +65,7 @@ export async function downloadAndInstallNodeDef(
     resolvedAt: new Date().toISOString(),
     entries: {
       ...existingLockfile.entries,
-      [key]: { version: summary.latestVer, source: 'remote' as const },
+      [key]: { version: summary.latestVer, source },
     },
   };
   await saveLockfile(fs, projectRoot, newLockfile);

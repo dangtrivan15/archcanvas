@@ -8,6 +8,7 @@ import type { LockfileData } from '@/core/registry/lockfile';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
 import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
 import { checkNodeDefUpdates } from '@/core/registry/updateChecker';
+import { syncOfficialNodeDefs as syncOfficialNodeDefsFn } from '@/core/registry/officialSync';
 
 interface RegistryStoreState {
   registry: NodeDefRegistry | null;
@@ -20,6 +21,9 @@ interface RegistryStoreState {
   remoteInstalledCount: number;
   remoteInstalledKeys: Set<string>;
   remoteInstalledVersions: Map<string, string>;
+  remoteOfficialCount: number;
+  remoteOfficialKeys: Set<string>;
+  remoteOfficialVersions: Map<string, string>;
   overrides: string[];
   loadErrors: Array<{ file: string; message: string }>;
   lockfile: LockfileData | null;
@@ -34,6 +38,7 @@ interface RegistryStoreState {
   checkForUpdates(signal?: AbortSignal): Promise<void>;
   applyUpdate(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
   dismissUpdate(key: string, version: string): void;
+  syncOfficialNodeDefs(fs: FileSystem, projectRoot: string, signal?: AbortSignal): Promise<void>;
   resolve(type: string): NodeDef | undefined;
   list(): NodeDef[];
   search(query: string): NodeDef[];
@@ -85,6 +90,9 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   remoteInstalledCount: 0,
   remoteInstalledKeys: new Set(),
   remoteInstalledVersions: new Map(),
+  remoteOfficialCount: 0,
+  remoteOfficialKeys: new Set(),
+  remoteOfficialVersions: new Map(),
   overrides: [],
   loadErrors: [],
   lockfile: null,
@@ -99,6 +107,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
 
       let authored = new Map<string, NodeDef>();
       let remoteInstalled = new Map<string, NodeDef>();
+      let remoteOfficialNodeDefs = new Map<string, NodeDef>();
       let loadErrors: Array<{ file: string; message: string }> = [];
 
       let lockfile: LockfileData | null = null;
@@ -109,14 +118,15 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         const result = await loadProjectLocal(fs, projectRoot, lockfile);
         authored = result.nodeDefs;
         remoteInstalled = result.remoteInstalledNodeDefs;
+        remoteOfficialNodeDefs = result.remoteOfficialNodeDefs;
         loadErrors = result.errors;
       }
 
-      const { registry, warnings } = createRegistry(builtins, authored, lockfile, remoteInstalled);
+      const { registry, warnings } = createRegistry(builtins, authored, lockfile, remoteOfficialNodeDefs, remoteInstalled);
 
       // Auto-generate lockfile if none existed
       if (!lockfile && fs && projectRoot !== undefined) {
-        lockfile = generateLockfile(registry, new Set(authored.keys()), new Set(remoteInstalled.keys()));
+        lockfile = generateLockfile(registry, new Set(authored.keys()), new Set(remoteInstalled.keys()), new Set(remoteOfficialNodeDefs.keys()));
         await saveLockfile(fs, projectRoot, lockfile);
       }
 
@@ -137,6 +147,15 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
                 .map(([k, e]) => [k, e.version]),
             )
           : new Map(),
+        remoteOfficialCount: remoteOfficialNodeDefs.size,
+        remoteOfficialKeys: new Set(remoteOfficialNodeDefs.keys()),
+        remoteOfficialVersions: lockfile
+          ? new Map(
+              Object.entries(lockfile.entries)
+                .filter(([, e]) => e.source === 'remote-official')
+                .map(([k, e]) => [k, e.version]),
+            )
+          : new Map(),
         overrides,
         loadErrors,
         lockfile,
@@ -153,6 +172,10 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         // Fire-and-forget; errors are silent per spec
         get().checkForUpdates().catch(() => {});
       }
+
+      if (fs && projectRoot !== undefined) {
+        get().syncOfficialNodeDefs(fs, projectRoot).catch(() => {});
+      }
     } catch (err) {
       set({ status: 'error' });
       throw err;
@@ -167,24 +190,25 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       const existingLockfile = await loadLockfile(fs, projectRoot);
 
       // Step 2: Classify files using existing lockfile
-      const { nodeDefs: authored, remoteInstalledNodeDefs: remoteInstalled, errors: loadErrors } =
+      const { nodeDefs: authored, remoteInstalledNodeDefs: remoteInstalled, remoteOfficialNodeDefs, errors: loadErrors } =
         await loadProjectLocal(fs, projectRoot, existingLockfile);
 
-      // Step 3: Generate fresh lockfile — pass remoteInstalled to temp registry
+      // Step 3: Generate fresh lockfile — pass remoteInstalled and remoteOfficialNodeDefs to temp registry
       //         so generateLockfile sees ALL defs via registry.list()
       const { registry: tempRegistry } = createRegistry(
-        builtins, authored, undefined, remoteInstalled,
+        builtins, authored, undefined, remoteOfficialNodeDefs, remoteInstalled,
       );
       const lockfile = generateLockfile(
         tempRegistry,
         new Set(authored.keys()),
         new Set(remoteInstalled.keys()),  // preserves source:'remote' entries
+        new Set(remoteOfficialNodeDefs.keys()),  // preserves source:'remote-official' entries
       );
       await saveLockfile(fs, projectRoot, lockfile);
 
       // Step 4: Final registry with lockfile for resolveVersioned()
       const { registry, warnings } = createRegistry(
-        builtins, authored, lockfile, remoteInstalled,
+        builtins, authored, lockfile, remoteOfficialNodeDefs, remoteInstalled,
       );
 
       const overrides = extractOverrideKeys(warnings);
@@ -201,6 +225,15 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
           ? new Map(
               Object.entries(lockfile.entries)
                 .filter(([, e]) => e.source === 'remote')
+                .map(([k, e]) => [k, e.version]),
+            )
+          : new Map(),
+        remoteOfficialCount: remoteOfficialNodeDefs.size,
+        remoteOfficialKeys: new Set(remoteOfficialNodeDefs.keys()),
+        remoteOfficialVersions: lockfile
+          ? new Map(
+              Object.entries(lockfile.entries)
+                .filter(([, e]) => e.source === 'remote-official')
                 .map(([k, e]) => [k, e.version]),
             )
           : new Map(),
@@ -257,6 +290,11 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     newPinned.delete(key);
     savePinnedVersions(newPinned);
     set({ availableUpdates: newUpdates, pinnedVersions: newPinned });
+  },
+
+  syncOfficialNodeDefs: async (fs: FileSystem, projectRoot: string, signal?: AbortSignal) => {
+    await syncOfficialNodeDefsFn(fs, projectRoot, get().lockfile, signal);
+    await get().reloadProjectLocal(fs, projectRoot);
   },
 
   dismissUpdate: (key: string, version: string) => {

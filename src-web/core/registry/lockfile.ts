@@ -22,7 +22,7 @@ const LOCKFILE_HEADER = [
 
 const LockfileEntrySchema = z.object({
   version: z.string(),
-  source: z.enum(['builtin', 'local', 'remote']),
+  source: z.enum(['builtin', 'local', 'remote', 'remote-official']),
   constraint: z.string().optional(),
 });
 
@@ -70,18 +70,22 @@ export function serializeLockfile(data: LockfileData): string {
  * @param registry            The fully merged NodeDef registry
  * @param projectLocalKeys    Set of type keys (namespace/name) that come from authored project-local defs
  * @param remoteInstalledKeys Optional set of type keys for community-installed defs (source:'remote')
+ * @param remoteOfficialKeys  Optional set of type keys for official registry defs (source:'remote-official')
  */
 export function generateLockfile(
   registry: NodeDefRegistry,
   projectLocalKeys: Set<string>,
   remoteInstalledKeys?: Set<string>,
+  remoteOfficialKeys?: Set<string>,
 ): LockfileData {
   const entries: Record<string, LockfileEntry> = {};
 
   for (const def of registry.list()) {
     const key = `${def.metadata.namespace}/${def.metadata.name}`;
-    let source: 'builtin' | 'local' | 'remote';
-    if (remoteInstalledKeys?.has(key)) {
+    let source: 'builtin' | 'local' | 'remote' | 'remote-official';
+    if (remoteOfficialKeys?.has(key)) {
+      source = 'remote-official';
+    } else if (remoteInstalledKeys?.has(key)) {
       source = 'remote';
     } else if (projectLocalKeys.has(key)) {
       source = 'local';

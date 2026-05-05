@@ -252,6 +252,79 @@ describe('generateLockfile', () => {
     expect(result.entries['custom/widget'].source).toBe('local');
     expect(result.entries['data/database'].source).toBe('builtin');
   });
+
+  it('marks remoteOfficialKeys with source: remote-official', () => {
+    const defs = [
+      makeNodeDef('compute', 'service'),
+      makeNodeDef('data', 'database'),
+    ];
+    const registry: NodeDefRegistry = {
+      resolve: () => undefined,
+      resolveVersioned: () => ({ nodeDef: undefined, versionMatch: false }),
+      list: () => defs,
+      search: () => [],
+      listByNamespace: () => [],
+    };
+
+    const result = generateLockfile(
+      registry,
+      new Set(),
+      new Set(),
+      new Set(['compute/service']),
+    );
+    expect(result.entries['compute/service'].source).toBe('remote-official');
+    expect(result.entries['data/database'].source).toBe('builtin');
+  });
+
+  it('remoteOfficialKeys wins over remoteInstalledKeys when key is in both', () => {
+    const defs = [makeNodeDef('compute', 'service')];
+    const registry: NodeDefRegistry = {
+      resolve: () => undefined,
+      resolveVersioned: () => ({ nodeDef: undefined, versionMatch: false }),
+      list: () => defs,
+      search: () => [],
+      listByNamespace: () => [],
+    };
+
+    const result = generateLockfile(
+      registry,
+      new Set(),
+      new Set(['compute/service']),  // also in remoteInstalledKeys
+      new Set(['compute/service']),  // also in remoteOfficialKeys — should win
+    );
+    expect(result.entries['compute/service'].source).toBe('remote-official');
+  });
+});
+
+describe('parseLockfile with remote-official source', () => {
+  it("parses 'remote-official' source correctly", () => {
+    const yaml = [
+      'lockfileVersion: 1',
+      "resolvedAt: '2026-04-14T12:00:00Z'",
+      'entries:',
+      '  compute/service:',
+      "    version: '1.0.0'",
+      '    source: remote-official',
+    ].join('\n');
+
+    const result = parseLockfile(yaml);
+    expect(result).not.toBeNull();
+    expect(result!.entries['compute/service'].source).toBe('remote-official');
+  });
+
+  it("rejects an unknown source value", () => {
+    const yaml = [
+      'lockfileVersion: 1',
+      "resolvedAt: '2026-04-14T12:00:00Z'",
+      'entries:',
+      '  compute/service:',
+      "    version: '1.0.0'",
+      '    source: unknown-source',
+    ].join('\n');
+
+    const result = parseLockfile(yaml);
+    expect(result).toBeNull();
+  });
 });
 
 describe('loadLockfile', () => {
