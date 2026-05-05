@@ -23,11 +23,10 @@ vi.mock('@xyflow/react', () => ({
     />
   ),
   Position: { Left: 'left', Right: 'right' },
-  NodeResizer: (props: any) => <div data-testid="node-resizer" data-visible={props.isVisible} />,
 }));
 
 // Mock fileStore so tests don't depend on a loaded project.
-// useFileStore is used as both getState() (NodeRenderer) and as a hook with selector (SubsystemPreview).
+// useFileStore is used as both getState() and as a hook with selector.
 vi.mock('@/store/fileStore', () => {
   const state = {
     project: { canvases: new Map() },

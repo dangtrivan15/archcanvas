@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 
 /**
- * When true, NodeRenderer skips rendering SubsystemPreview inside RefNodes.
- * Used by the mini ReactFlow preview to prevent recursive ReactFlow instances.
+ * When true, NodeRenderer is being rendered inside a preview context.
+ * Used to prevent recursive ReactFlow instances in nested canvas views.
  */
 export const PreviewModeContext = createContext(false);

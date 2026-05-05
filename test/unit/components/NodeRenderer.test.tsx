@@ -5,7 +5,6 @@ import { render } from '@testing-library/react';
 vi.mock('@xyflow/react', () => ({
   Handle: (props: any) => <div data-testid={`handle-${props.id}`} />,
   Position: { Left: 'left', Right: 'right', Top: 'top', Bottom: 'bottom' },
-  NodeResizer: (props: any) => <div data-testid="node-resizer" data-visible={props.isVisible} />,
 }));
 
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';

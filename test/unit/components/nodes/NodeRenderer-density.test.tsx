@@ -21,7 +21,6 @@ vi.mock('@xyflow/react', () => ({
     />
   ),
   Position: { Left: 'left', Right: 'right' },
-  NodeResizer: (props: any) => <div data-testid="node-resizer" data-visible={props.isVisible} />,
 }));
 
 // Mock fileStore
