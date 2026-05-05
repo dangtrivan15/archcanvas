@@ -358,7 +358,8 @@ describe('syncOfficialNodeDefs', () => {
       };
 
       const fs = new InMemoryFileSystem();
-      await expect(syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials)).resolves.not.toThrow();
+      const result = await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      expect(result).toBe(false);
     });
 
     it('continues downloading remaining items in Branch A when per-namespace install throws', async () => {
