@@ -26,7 +26,6 @@ interface ContextMenuProps {
   onNodeAddNote: (nodeId: string) => void;
   onNodeDelete: (nodeId: string) => void;
   onRefNodeDiveIn: (nodeId: string) => void;
-  onRefNodeFitContent?: (nodeId: string) => void;
   onEdgeEdit: (edgeData: CanvasEdgeData) => void;
   onEdgeDelete: (edgeData: CanvasEdgeData) => void;
 }
@@ -78,7 +77,6 @@ export function ContextMenu({
   onNodeAddNote,
   onNodeDelete,
   onRefNodeDiveIn,
-  onRefNodeFitContent,
   onEdgeEdit,
   onEdgeDelete,
 }: ContextMenuProps) {
@@ -191,15 +189,6 @@ export function ContextMenu({
               onClose();
             }}
           />
-          {target.nodeData.node.position?.autoSize === false && onRefNodeFitContent && (
-            <MenuItem
-              label="Fit to content"
-              onClick={() => {
-                onRefNodeFitContent(target.nodeId);
-                onClose();
-              }}
-            />
-          )}
           <MenuDivider />
           <MenuItem
             label="Delete"
