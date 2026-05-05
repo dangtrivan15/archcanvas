@@ -218,7 +218,7 @@ describe('syncOfficialNodeDefs', () => {
       await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
 
       expect(fetchNodeDefDetail).toHaveBeenCalledTimes(1);
-      expect(fetchNodeDefDetail).toHaveBeenCalledWith('compute', 'service', undefined, undefined);
+      expect(fetchNodeDefDetail).toHaveBeenCalledWith('compute', 'service', '2.0.0', undefined);
       expect(downloadAndInstallNodeDef).toHaveBeenCalledWith(
         fs, 'project', detail.nodedef, 'remote-official',
       );
@@ -250,7 +250,7 @@ describe('syncOfficialNodeDefs', () => {
 
       expect(checkUpdatesRemote).toHaveBeenCalledWith(expect.anything(), controller.signal);
       expect(fetchNodeDefDetail).toHaveBeenCalledWith(
-        expect.anything(), expect.anything(), undefined, controller.signal,
+        expect.anything(), expect.anything(), '2.0.0', controller.signal,
       );
     });
 
@@ -303,8 +303,9 @@ describe('syncOfficialNodeDefs', () => {
       });
 
       const fs = new InMemoryFileSystem();
-      await expect(syncOfficialNodeDefs(fs, 'project', lockfileMultiple)).resolves.not.toThrow();
+      const result = await syncOfficialNodeDefs(fs, 'project', lockfileMultiple);
 
+      expect(result).toBe(true); // data/database was downloaded successfully even though compute failed
       // Both entries should have been attempted
       expect(fetchNodeDefDetail).toHaveBeenCalledTimes(2);
       expect(downloadAndInstallNodeDef).toHaveBeenCalledTimes(2);

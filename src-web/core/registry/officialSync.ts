@@ -64,7 +64,7 @@ export async function syncOfficialNodeDefs(
         try {
           const installedVersion = lockfile?.entries[`${update.namespace}/${update.name}`]?.version;
           if (installedVersion && update.latestVersion === installedVersion) continue; // already up-to-date
-          const detail = await fetchNodeDefDetail(update.namespace, update.name, undefined, signal);
+          const detail = await fetchNodeDefDetail(update.namespace, update.name, update.latestVersion, signal);
           await downloadAndInstallNodeDef(fs, projectRoot, detail.nodedef, 'remote-official');
           anyDownloaded = true;
         } catch {
