@@ -55,7 +55,7 @@ describe('mapCanvasNodes — keyArgs', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => nodeDef,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -83,7 +83,7 @@ describe('mapCanvasNodes — keyArgs', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => nodeDef,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -106,7 +106,7 @@ describe('mapCanvasNodes — keyArgs', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => nodeDef,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -133,7 +133,7 @@ describe('mapCanvasNodes — keyArgs', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => nodeDef,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -148,7 +148,7 @@ describe('mapCanvasNodes — keyArgs', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -171,7 +171,7 @@ describe('mapCanvasNodes — badges', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -193,7 +193,7 @@ describe('mapCanvasNodes — badges', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -218,7 +218,7 @@ describe('mapCanvasNodes — badges', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef,
     });
 
@@ -233,7 +233,7 @@ describe('mapCanvasNodes — badges', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -262,7 +262,7 @@ describe('mapCanvasNodes — childSummary', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef,
     });
 
@@ -277,7 +277,7 @@ describe('mapCanvasNodes — childSummary', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef: undefined,
     });
 
@@ -295,7 +295,7 @@ describe('mapCanvasNodes — childSummary', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef,
     });
 
@@ -318,7 +318,7 @@ describe('mapCanvasNodes — childSummary', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
+    
       canvasesRef,
     });
 

@@ -56,6 +56,21 @@ vi.mock('@/store/diffStore', () => {
   return { useDiffStore: hook };
 });
 
+// Mock canvasStore — NodeRenderer subscribes to its own selection state.
+// `selectedIdsForTest` is mutated per-test to drive `isSelected`.
+const selectedIdsForTest = new Set<string>();
+vi.mock('@/store/canvasStore', () => {
+  const state = {
+    get selectedNodeIds() { return selectedIdsForTest; },
+  };
+  const hook = (selector?: (s: typeof state) => any) => {
+    if (selector) return selector(state);
+    return state;
+  };
+  hook.getState = () => state;
+  return { useCanvasStore: hook };
+});
+
 // Import AFTER mocks are registered
 import { NodeRenderer } from '@/components/nodes/NodeRenderer';
 
@@ -109,6 +124,7 @@ function makeProps(data: CanvasNodeData): { data: CanvasNodeData } {
 describe('NodeRenderer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    selectedIdsForTest.clear();
   });
 
   it('renders the displayName for an InlineNode', () => {
@@ -117,7 +133,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode({ displayName: 'My API Service' }),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -131,7 +146,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode({ displayName: undefined }),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -145,7 +159,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef({ shape: 'cylinder' }),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -160,7 +173,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: undefined,
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -169,13 +181,13 @@ describe('NodeRenderer', () => {
     expect(node.className).toContain('node-shape-rectangle');
   });
 
-  it('applies selected class when isSelected is true', () => {
+  it('applies selected class when the node id is in canvasStore.selectedNodeIds', () => {
+    selectedIdsForTest.add('node-1');
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef(),
-          isSelected: true,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -184,13 +196,12 @@ describe('NodeRenderer', () => {
     expect(node.className).toContain('selected');
   });
 
-  it('does not apply selected class when isSelected is false', () => {
+  it('does not apply selected class when the node id is not in canvasStore.selectedNodeIds', () => {
     const { container } = render(
       <NodeRenderer
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -205,7 +216,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeRefNode({ id: 'known-canvas', ref: 'known-canvas.yaml' }),
           nodeDef: undefined,
-          isSelected: false,
           isRef: true,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -222,7 +232,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeRefNode({ id: 'unknown-canvas', ref: 'unknown-canvas.yaml' }),
           nodeDef: undefined,
-          isSelected: false,
           isRef: true,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -236,7 +245,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: undefined,
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -251,7 +259,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -265,7 +272,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -278,7 +284,6 @@ describe('NodeRenderer', () => {
     const data: CanvasNodeData = {
       node: makeRefNode({ id: 'sub-1' }) as any,
       nodeDef: undefined,
-      isSelected: false,
       isRef: true,
     };
 
@@ -293,10 +298,10 @@ describe('NodeRenderer', () => {
   });
 
   it('does not render NodeResizer for a ref node', () => {
+    selectedIdsForTest.add('sub-1');
     const data: CanvasNodeData = {
       node: makeRefNode({ id: 'sub-1' }) as any,
       nodeDef: undefined,
-      isSelected: true,
       isRef: true,
     };
 
@@ -313,7 +318,6 @@ describe('NodeRenderer', () => {
     const data: CanvasNodeData = {
       node: makeRefNode({ id: 'sub-1' }) as any,
       nodeDef: undefined,
-      isSelected: false,
       isRef: true,
     };
 
@@ -333,7 +337,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode({ type: 'data/database' }),
           nodeDef: makeNodeDef({ namespace: 'data' }),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -348,7 +351,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeRefNode({ id: 'known-canvas', ref: 'known-canvas.yaml' }),
           nodeDef: undefined,
-          isSelected: false,
           isRef: true,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -363,7 +365,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode({ type: 'custom/widget' }),
           nodeDef: undefined,
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -378,7 +379,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode({ color: '#ff6b6b' }),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -399,7 +399,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef(),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -415,7 +414,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef({ shape: 'diamond' }),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -431,7 +429,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef: makeNodeDef({ shape: customShape as any }),
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,
@@ -456,7 +453,6 @@ describe('NodeRenderer', () => {
         {...(makeProps({
           node: makeInlineNode(),
           nodeDef,
-          isSelected: false,
           isRef: false,
         }) as Parameters<typeof NodeRenderer>[0])}
       />,

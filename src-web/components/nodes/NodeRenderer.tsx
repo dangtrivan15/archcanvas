@@ -4,6 +4,7 @@ import type { Node as RFNode } from '@xyflow/react';
 import type { CanvasNodeData } from '../canvas/types';
 import type { PortDef } from '@/types/nodeDefSchema';
 import { useFileStore } from '@/store/fileStore';
+import { useCanvasStore } from '@/store/canvasStore';
 import { useDiffStore } from '@/store/diffStore';
 import { resolveIcon } from './iconMap';
 import { StickyNote, Code2 } from 'lucide-react';
@@ -35,7 +36,12 @@ function SubsystemDiffBadge({ canvasId }: { canvasId: string }) {
 }
 
 export function NodeRenderer({ data }: NodeRendererProps) {
-  const { node, nodeDef, isSelected, isRef, diffStatus, keyArgs, badges, childSummary } = data;
+  const { node, nodeDef, isRef, diffStatus, keyArgs, badges, childSummary } = data;
+  // Subscribe to selection state directly. Lifting this out of `data` keeps
+  // mapCanvasNodes independent of selection — selecting a node only re-renders
+  // the affected NodeRenderer(s), never the entire rfNodes array. See the
+  // disappearing-node bug for context.
+  const isSelected = useCanvasStore((s) => s.selectedNodeIds.has(node.id));
   // Determine display name
   const displayName = (() => {
     if (isRef && 'ref' in node) {

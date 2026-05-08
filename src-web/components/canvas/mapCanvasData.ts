@@ -87,14 +87,13 @@ function computeChildSummary(
 interface MapNodesOptions {
   canvas: Canvas | undefined;
   resolve: (type: string) => import('@/types/nodeDefSchema').NodeDef | undefined;
-  selectedNodeIds: ReadonlySet<string>;
   canvasesRef: Map<string, { data: Canvas }> | undefined;
   /** Active canvas diff (undefined when diff overlay is off) */
   diff?: CanvasDiff;
 }
 
 export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] {
-  const { canvas, resolve, selectedNodeIds, canvasesRef, diff } = opts;
+  const { canvas, resolve, canvasesRef, diff } = opts;
   const rawNodes = canvas?.nodes ?? [];
   return rawNodes.map((node) => {
     const isRef = 'ref' in node;
@@ -111,7 +110,6 @@ export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] 
     const data: CanvasNodeData = {
       node,
       nodeDef,
-      isSelected: selectedNodeIds.has(node.id),
       isRef,
       diffStatus: nodeDiffStatus,
       keyArgs,
@@ -204,7 +202,6 @@ export function mapRemovedNodes(opts: MapRemovedNodesOptions): RFNode<CanvasNode
       data: {
         node: baseNode,
         nodeDef,
-        isSelected: false,
         isRef,
         diffStatus: 'removed',
       },

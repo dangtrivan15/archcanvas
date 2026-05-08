@@ -22,7 +22,6 @@ export type ChildSummary = string | undefined;
 export interface CanvasNodeData extends Record<string, unknown> {
   node: Node;
   nodeDef: NodeDef | undefined;
-  isSelected: boolean;
   isRef: boolean;
   /** Diff overlay status — undefined when diff is inactive */
   diffStatus?: DiffStatus;

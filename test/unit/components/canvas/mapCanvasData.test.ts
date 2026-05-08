@@ -74,43 +74,6 @@ describe('mapCanvasEdges', () => {
 });
 
 describe('mapCanvasNodes', () => {
-  it('sets isSelected=true for nodes in selectedNodeIds', () => {
-    const canvas = makeCanvas({
-      nodes: [
-        { id: 'a', type: 'compute/service' },
-        { id: 'b', type: 'compute/service' },
-      ],
-    } as any);
-
-    const result = mapCanvasNodes({
-      canvas,
-      resolve: () => undefined,
-      selectedNodeIds: new Set(['a']),
-      canvasesRef: undefined,
-    });
-
-    expect(result).toHaveLength(2);
-    const nodeA = result.find((n) => n.id === 'a');
-    const nodeB = result.find((n) => n.id === 'b');
-    expect(nodeA?.data.isSelected).toBe(true);
-    expect(nodeB?.data.isSelected).toBe(false);
-  });
-
-  it('sets isSelected=false when selectedNodeIds is empty', () => {
-    const canvas = makeCanvas({
-      nodes: [{ id: 'a', type: 'compute/service' }],
-    } as any);
-
-    const result = mapCanvasNodes({
-      canvas,
-      resolve: () => undefined,
-      selectedNodeIds: new Set(),
-      canvasesRef: undefined,
-    });
-
-    expect(result[0].data.isSelected).toBe(false);
-  });
-
   it('does not set width or height on a RefNode — leaves them undefined for natural CSS sizing', () => {
     const canvas = makeCanvas({
       nodes: [{ id: 'sys-1', ref: 'subsystem.yml', position: { x: 0, y: 0 } }],
@@ -118,7 +81,6 @@ describe('mapCanvasNodes', () => {
     const result = mapCanvasNodes({
       canvas,
       resolve: () => undefined,
-      selectedNodeIds: new Set(),
       canvasesRef: undefined,
     });
     expect(result[0].width).toBeUndefined();

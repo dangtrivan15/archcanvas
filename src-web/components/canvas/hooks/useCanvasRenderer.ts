@@ -18,7 +18,13 @@ export function useCanvasRenderer(): {
   const canvasId = useNavigationStore((s) => s.currentCanvasId);
   const canvas = useFileStore((s) => s.getCanvas(canvasId));
   const resolve = useRegistryStore((s) => s.resolve);
-  const selectedNodeIds = useCanvasStore((s) => s.selectedNodeIds);
+  // NOTE: selectedNodeIds is intentionally NOT subscribed here. Each
+  // NodeRenderer subscribes to its own selection state directly from
+  // canvasStore. This keeps the rfNodes array stable across selection
+  // changes — otherwise the entire array gets fresh object references on
+  // every click, ReactFlow loses internal `measured` state during the
+  // re-sync, and a fast click→drag races into ReactFlow error #015 (the
+  // disappearing-node bug, particularly on WebKit/Tauri).
   const selectedEdgeKeys = useCanvasStore((s) => s.selectedEdgeKeys);
   const breadcrumb = useNavigationStore((s) => s.breadcrumb);
   const parentEdges = useNavigationStore((s) => s.parentEdges);
@@ -37,11 +43,10 @@ export function useCanvasRenderer(): {
     () => mapCanvasNodes({
       canvas: canvas?.data,
       resolve,
-      selectedNodeIds,
       canvasesRef,
       diff: canvasDiff,
     }),
-    [canvas, resolve, selectedNodeIds, canvasesRef, canvasDiff],
+    [canvas, resolve, canvasesRef, canvasDiff],
   );
 
   const edges = useMemo<RFEdge<CanvasEdgeData>[]>(
@@ -90,7 +95,6 @@ export function useCanvasRenderer(): {
           data: {
             node: { id: ghostId, type: 'ghost', displayName: ie.ghostEndpoint },
             nodeDef: undefined,
-            isSelected: false,
             isRef: false,
           },
           selectable: false,

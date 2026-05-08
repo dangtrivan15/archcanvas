@@ -401,6 +401,13 @@ export function Canvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={{ hideAttribution: true }}
+        // Disable ReactFlow's internal Backspace/Delete handler. Our own
+        // useCanvasKeyboard hook handles deletion with a confirmation dialog;
+        // ReactFlow's default would dispatch 'remove' NodeChanges that would
+        // visually remove a node from rfNodes without committing through the
+        // engine — exactly the symptom of the disappearing-node bug if a stray
+        // Backspace fires (e.g., WKWebView synthesizing it from gestures).
+        deleteKeyCode={null}
         panOnDrag={toolMode === 'pan' ? true : [1, 2]}
         panOnScroll
         zoomOnScroll={false}
