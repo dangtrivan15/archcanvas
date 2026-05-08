@@ -104,6 +104,7 @@ export function App() {
     return () => {
       unsub();
       watcher?.stop();
+      useRegistryStore.getState().disposeRemoteStatus();
     };
   }, []);
 

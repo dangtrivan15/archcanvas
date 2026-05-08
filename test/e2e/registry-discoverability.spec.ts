@@ -35,14 +35,21 @@ test.describe('registry discoverability', () => {
   });
 
   test('clicking Browse Community Registry opens registry panel', async ({ page }) => {
+    // First open the panel via toolbar so it's mounted (smart default = community with no installs)
+    await page.getByRole('button', { name: /Open Registry/ }).first().click();
+    // Switch to installed tab manually to prove the panel is not already on community
+    await page.getByTestId('tab-installed').click();
+    await expect(page.getByTestId('tab-installed')).toHaveAttribute('aria-selected', 'true');
+    // Now click "Browse Community Registry" from the menu
     await page.getByRole('menubar').getByText('Registry').click();
     await page.getByRole('menuitem', { name: 'Browse Community Registry' }).click();
-    // The right panel should open in registry mode showing the community tab
-    await expect(page.getByTestId('tab-community')).toBeVisible();
+    // The community tab should now be active
+    await expect(page.getByTestId('tab-community')).toHaveAttribute('aria-selected', 'true');
   });
 
   test('clicking Left Toolbar registry button opens registry panel', async ({ page }) => {
     await page.getByRole('button', { name: /Open Registry/ }).first().click();
-    await expect(page.getByTestId('tab-installed')).toBeVisible();
+    // Smart default with no installs = community tab
+    await expect(page.getByTestId('tab-community')).toHaveAttribute('aria-selected', 'true');
   });
 });

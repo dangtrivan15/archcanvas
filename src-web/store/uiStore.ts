@@ -294,6 +294,8 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ rightPanelMode: 'registry' });
     if (tab) {
       set({ registryInitialTab: tab });
+    } else {
+      set({ registryInitialTab: 'installed' });  // reset any stale hint
     }
   },
 

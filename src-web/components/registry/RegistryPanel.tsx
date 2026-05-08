@@ -46,6 +46,7 @@ export function RegistryPanel() {
               : 'text-muted-foreground hover:text-foreground'
           }`}
           data-testid="tab-installed"
+          aria-selected={activeTab === 'installed'}
         >
           Installed
         </button>
@@ -57,6 +58,7 @@ export function RegistryPanel() {
               : 'text-muted-foreground hover:text-foreground'
           }`}
           data-testid="tab-community"
+          aria-selected={activeTab === 'community'}
         >
           Community
           {remoteStatus !== 'unknown' && (

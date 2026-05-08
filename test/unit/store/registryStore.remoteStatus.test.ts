@@ -49,7 +49,28 @@ describe('registryStore remoteStatus', () => {
     expect(useRegistryStore.getState().remoteStatus).toBe('offline');
   });
 
-  it('disposeRemoteStatus clears interval without throwing', () => {
+  it('disposeRemoteStatus stops polling interval', async () => {
+    vi.useFakeTimers();
+    vi.mocked(fetchRegistryStats).mockResolvedValue({ totalNodeDefs: 10, totalNamespaces: 2, totalDownloads: 100 });
+
+    // Start the polling interval
+    useRegistryStore.getState().initialize();
+    await vi.runAllMicrotasksAsync();
+
+    const callCountAfterInit = vi.mocked(fetchRegistryStats).mock.calls.length;
+
+    // Dispose the polling interval
+    useRegistryStore.getState().disposeRemoteStatus();
+
+    // Advance timers by 6 minutes — no additional calls should occur
+    await vi.advanceTimersByTimeAsync(6 * 60 * 1000);
+
+    expect(vi.mocked(fetchRegistryStats).mock.calls.length).toBe(callCountAfterInit);
+
+    vi.useRealTimers();
+  });
+
+  it('disposeRemoteStatus does not throw when no interval exists', () => {
     expect(() => useRegistryStore.getState().disposeRemoteStatus()).not.toThrow();
   });
 });
