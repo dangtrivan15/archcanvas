@@ -13,6 +13,7 @@ import {
   Undo2,
   Redo2,
   LayoutGrid,
+  Library,
   MessageSquare,
   GitCompareArrows,
   Palette,
@@ -25,6 +26,7 @@ import { useHistoryStore } from "@/store/historyStore";
 import { useToolStore } from "@/store/toolStore";
 import type { ToolMode } from "@/store/toolStore";
 import { useUiStore } from "@/store/uiStore";
+import { useRegistryStore, computeEffectiveUpdateCount } from '@/store/registryStore';
 import { useThemeStore } from "@/store/themeStore";
 import { useDiffStore } from "@/store/diffStore";
 import { toggleDiffOverlay } from "@/core/diff/orchestrator";
@@ -34,6 +36,9 @@ import { NodeTypeOverlay } from "@/components/layout/NodeTypeOverlay";
 export function LeftToolbar() {
   const activeMode = useToolStore((s) => s.mode);
   const rightPanelMode = useUiStore((s) => s.rightPanelMode);
+  const availableUpdates = useRegistryStore((s) => s.availableUpdates);
+  const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
+  const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
   const diffEnabled = useDiffStore((s) => s.enabled);
   const colorLegendVisible = useUiStore((s) => s.showColorLegend);
   const themeMode = useThemeStore((s) => s.mode);
@@ -122,6 +127,7 @@ export function LeftToolbar() {
     shortcut: string;
     mode?: ToolMode;
     active?: boolean;
+    badge?: number;
     tooltipSide?: 'right' | 'top';
     onClick?: () => void;
     onMouseEnter?: () => void;
@@ -155,6 +161,14 @@ export function LeftToolbar() {
       label: "Search",
       shortcut: "⌘K",
       onClick: () => window.dispatchEvent(new CustomEvent('archcanvas:open-palette')),
+    },
+    {
+      icon: Library,
+      label: "Open Registry",
+      shortcut: "⌘⇧R",
+      active: rightPanelMode === 'registry',
+      badge: effectiveUpdateCount > 0 ? effectiveUpdateCount : undefined,
+      onClick: () => useUiStore.getState().openRegistryPanel(),
     },
     {
       icon: LayoutGrid,
@@ -213,7 +227,7 @@ export function LeftToolbar() {
     <div ref={toolbarRef} className="relative h-full">
       <ScrollArea className="h-full">
         <div className="flex flex-col items-center gap-1 p-2">
-          {tools.map(({ icon: Icon, label, shortcut, mode, active, tooltipSide, onClick, onMouseEnter, onMouseLeave }) => {
+          {tools.map(({ icon: Icon, label, shortcut, mode, active, badge, tooltipSide, onClick, onMouseEnter, onMouseLeave }) => {
             const isActive = active || (mode && activeMode === mode);
 
             return (
@@ -236,6 +250,11 @@ export function LeftToolbar() {
                       />
                     )}
                     <Icon className="relative z-10 h-4 w-4" style={isActive ? { color: 'var(--color-accent-foreground)' } : undefined} />
+                    {badge !== undefined && badge > 0 && (
+                      <span className="absolute -top-1 -right-1 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">
+                        {badge}
+                      </span>
+                    )}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side={tooltipSide ?? "right"}>

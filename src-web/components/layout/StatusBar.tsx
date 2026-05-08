@@ -53,6 +53,8 @@ export function StatusBar() {
   const availableUpdates = useRegistryStore((s) => s.availableUpdates);
   const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
   const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
+  const remoteStatus = useRegistryStore((s) => s.remoteStatus);
+  const communityTotalCount = useRegistryStore((s) => s.communityTotalCount);
   const openRegistryPanel = useUiStore((s) => s.openRegistryPanel);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();
@@ -201,12 +203,24 @@ export function StatusBar() {
         </AnimatePresence>
         <button
           data-testid="registry-indicator"
-          onClick={openRegistryPanel}
+          onClick={() => openRegistryPanel()}
           className="flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-accent/50 transition-colors cursor-pointer"
           title={`${builtinCount} built-in${projectLocalCount > 0 ? ` + ${projectLocalCount} project` : ''} types`}
         >
           <Layers className="size-3" />
+          <span
+            data-testid="registry-status-dot"
+            className={`inline-block w-2 h-2 rounded-full ${
+              remoteStatus === 'online' ? 'bg-green-500' :
+              remoteStatus === 'offline' ? 'bg-red-500' :
+              remoteStatus === 'checking' ? 'bg-yellow-400' :
+              'bg-gray-400'
+            }`}
+          />
           <span>{builtinCount}{projectLocalCount > 0 && ` + ${projectLocalCount}`} types</span>
+          {remoteStatus === 'online' && communityTotalCount > 0 && (
+            <span>· {communityTotalCount} community</span>
+          )}
           {hasOverrides && <ArrowLeftRight className="size-3 text-amber-500" />}
           {hasErrors && <AlertTriangle className="size-3 text-red-500" />}
           <AnimatePresence>

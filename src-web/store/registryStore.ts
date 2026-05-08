@@ -7,6 +7,7 @@ import { loadLockfile, saveLockfile, generateLockfile } from '@/core/registry/lo
 import type { LockfileData } from '@/core/registry/lockfile';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
 import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
+import { fetchRegistryStats } from '@/core/registry/remoteRegistry';
 import { checkNodeDefUpdates } from '@/core/registry/updateChecker';
 import { syncOfficialNodeDefs as syncOfficialNodeDefsFn } from '@/core/registry/officialSync';
 
@@ -28,6 +29,10 @@ interface RegistryStoreState {
   availableUpdates: Map<string, string>;
   updatesCheckStatus: 'idle' | 'checking' | 'done';
   pinnedVersions: Map<string, string>;
+  remoteStatus: 'online' | 'offline' | 'checking' | 'unknown';
+  communityTotalCount: number;
+  fetchRemoteRegistryStatus(signal?: AbortSignal): Promise<void>;
+  disposeRemoteStatus(): void;
 
   initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
   reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
@@ -41,6 +46,8 @@ interface RegistryStoreState {
   search(query: string): NodeDef[];
   listByNamespace(namespace: string): NodeDef[];
 }
+
+let remoteStatusIntervalId: ReturnType<typeof setInterval> | null = null;
 
 const PINNED_VERSIONS_KEY = 'archcanvas:registry-pinned-versions';
 
@@ -93,6 +100,25 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   availableUpdates: new Map(),
   updatesCheckStatus: 'idle',
   pinnedVersions: loadPinnedVersions(),
+  remoteStatus: 'unknown',
+  communityTotalCount: 0,
+
+  fetchRemoteRegistryStatus: async (signal?: AbortSignal) => {
+    set({ remoteStatus: 'checking' });
+    try {
+      const stats = await fetchRegistryStats(signal);
+      set({ remoteStatus: 'online', communityTotalCount: stats.totalNodeDefs });
+    } catch {
+      set({ remoteStatus: 'offline' });
+    }
+  },
+
+  disposeRemoteStatus: () => {
+    if (remoteStatusIntervalId !== null) {
+      clearInterval(remoteStatusIntervalId);
+      remoteStatusIntervalId = null;
+    }
+  },
 
   initialize: async (fs?: FileSystem, projectRoot?: string) => {
     set({ status: 'loading' });
@@ -161,6 +187,12 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       if (fs && projectRoot !== undefined) {
         get().syncOfficialNodeDefs(fs, projectRoot).catch(() => {});
       }
+
+      // Fetch remote registry status and start polling
+      get().fetchRemoteRegistryStatus().catch(() => {});
+      remoteStatusIntervalId = setInterval(() => {
+        get().fetchRemoteRegistryStatus().catch(() => {});
+      }, 5 * 60 * 1000);
     } catch (err) {
       set({ status: 'error' });
       throw err;

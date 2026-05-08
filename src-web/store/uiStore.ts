@@ -116,7 +116,9 @@ interface UiState {
   showRegistryStatusDialog: boolean;
   openRegistryStatusDialog: () => void;
   closeRegistryStatusDialog: () => void;
-  openRegistryPanel: () => void;
+  registryInitialTab: 'installed' | 'community';
+  setRegistryInitialTab(tab: 'installed' | 'community'): void;
+  openRegistryPanel(tab?: 'installed' | 'community'): void;
   showInstallNodeDefDialog: boolean;
   pendingInstall: RemoteNodeDefSummary | null;
   openInstallNodeDefDialog: (summary: RemoteNodeDefSummary) => void;
@@ -285,9 +287,14 @@ export const useUiStore = create<UiState>((set, get) => ({
   showRegistryStatusDialog: false,
   openRegistryStatusDialog: () => set({ showRegistryStatusDialog: true }),
   closeRegistryStatusDialog: () => set({ showRegistryStatusDialog: false }),
-  openRegistryPanel: () => {
+  registryInitialTab: 'installed',
+  setRegistryInitialTab: (tab) => set({ registryInitialTab: tab }),
+  openRegistryPanel: (tab?: 'installed' | 'community') => {
     get().openRightPanel();
     set({ rightPanelMode: 'registry' });
+    if (tab) {
+      set({ registryInitialTab: tab });
+    }
   },
 
   showInstallNodeDefDialog: false,

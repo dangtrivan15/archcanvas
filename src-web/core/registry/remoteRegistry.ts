@@ -207,6 +207,35 @@ export async function fetchNodeDefYaml(
 }
 
 // ---------------------------------------------------------------------------
+// Registry Stats API
+// ---------------------------------------------------------------------------
+
+export const RegistryStatsSchema = z.object({
+  totalNodeDefs: z.number(),
+  totalNamespaces: z.number(),
+  totalDownloads: z.number(),
+});
+
+export type RegistryStats = z.infer<typeof RegistryStatsSchema>;
+
+/**
+ * Fetch aggregate registry statistics from the platform API.
+ * Returns total NodeDef count, namespace count, and download count.
+ * Throws on network errors, non-OK HTTP responses, or unexpected response shape.
+ */
+export async function fetchRegistryStats(signal?: AbortSignal): Promise<RegistryStats> {
+  const url = `${REGISTRY_BASE_URL}/api/v1/stats`;
+  const resp = await fetch(url, { signal });
+  if (!resp.ok) throw new Error(`Failed to fetch registry stats: ${resp.status}`);
+  const data = (await resp.json()) as unknown;
+  const parsed = RegistryStatsSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error('Registry stats endpoint returned unexpected response shape');
+  }
+  return parsed.data;
+}
+
+// ---------------------------------------------------------------------------
 // Publish API
 // ---------------------------------------------------------------------------
 
