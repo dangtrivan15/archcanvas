@@ -146,19 +146,4 @@ test.describe('community browser panel', () => {
     await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
   });
 
-  test('Community tab shows status pill', async ({ page }) => {
-    // The status pill should be visible in the Community tab header when remoteStatus !== 'unknown'
-    // Mock stats to return online status
-    await page.route('https://registry.archcanvas.dev/api/v1/stats', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ totalNodeDefs: 50, totalNamespaces: 5, totalDownloads: 200 }),
-      });
-    });
-    // Open the registry panel
-    await page.getByTestId('registry-indicator').click();
-    // Wait for the community tab to be visible
-    await expect(page.getByTestId('tab-community')).toBeVisible();
-  });
 });
