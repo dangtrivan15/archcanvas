@@ -53,9 +53,9 @@ describe('registryStore remoteStatus', () => {
     vi.useFakeTimers();
     vi.mocked(fetchRegistryStats).mockResolvedValue({ totalNodeDefs: 10, totalNamespaces: 2, totalDownloads: 100 });
 
-    // Start the polling interval
-    useRegistryStore.getState().initialize();
-    await vi.runAllMicrotasksAsync();
+    // Start the polling interval (no fs/projectRoot → no awaits inside initialize,
+    // so fetchRemoteRegistryStatus() — and thus fetchRegistryStats — is called synchronously)
+    await useRegistryStore.getState().initialize();
 
     const callCountAfterInit = vi.mocked(fetchRegistryStats).mock.calls.length;
 
