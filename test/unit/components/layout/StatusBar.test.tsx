@@ -433,6 +433,42 @@ describe('StatusBar registry remote status dot', () => {
     expect(dot.className).toContain('bg-red-500');
   });
 
+  it('shows yellow dot when remoteStatus is checking', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'checking',
+        communityTotalCount: 0,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-yellow-400');
+  });
+
+  it('shows gray dot when remoteStatus is unknown', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-gray-400');
+  });
+
   it('shows community count when online', () => {
     mockedUseRegistryStore.mockImplementation((selector) =>
       selector({
