@@ -266,3 +266,44 @@ describe('uiStore', () => {
     useUiStore.getState().resizeRightPanelByPercent(5);
   });
 });
+
+describe('uiStore registryInitialTab and openRegistryPanel', () => {
+  beforeEach(() => {
+    _resetPanelRefs();
+    useUiStore.setState({
+      rightPanelCollapsed: false,
+      leftPanelCollapsed: false,
+      registryInitialTab: 'installed',
+      rightPanelMode: 'details',
+    });
+  });
+
+  it('registryInitialTab defaults to installed', () => {
+    expect(useUiStore.getState().registryInitialTab).toBe('installed');
+  });
+
+  it('setRegistryInitialTab("community") updates state to community', () => {
+    useUiStore.getState().setRegistryInitialTab('community');
+    expect(useUiStore.getState().registryInitialTab).toBe('community');
+  });
+
+  it('setRegistryInitialTab("installed") updates state back to installed', () => {
+    useUiStore.getState().setRegistryInitialTab('community');
+    useUiStore.getState().setRegistryInitialTab('installed');
+    expect(useUiStore.getState().registryInitialTab).toBe('installed');
+  });
+
+  it('openRegistryPanel("community") sets registryInitialTab to community and rightPanelMode to registry', () => {
+    useUiStore.getState().openRegistryPanel('community');
+    expect(useUiStore.getState().registryInitialTab).toBe('community');
+    expect(useUiStore.getState().rightPanelMode).toBe('registry');
+  });
+
+  it('openRegistryPanel() with no arg sets registryInitialTab to installed and rightPanelMode to registry', () => {
+    // First set a stale community hint
+    useUiStore.getState().setRegistryInitialTab('community');
+    useUiStore.getState().openRegistryPanel();
+    expect(useUiStore.getState().registryInitialTab).toBe('installed');
+    expect(useUiStore.getState().rightPanelMode).toBe('registry');
+  });
+});

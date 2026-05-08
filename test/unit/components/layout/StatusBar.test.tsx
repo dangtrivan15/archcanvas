@@ -44,6 +44,8 @@ vi.mock('@/store/registryStore', () => ({
       loadErrors: [],
       availableUpdates: new Map(),
       pinnedVersions: new Map(),
+      remoteStatus: 'unknown',
+      communityTotalCount: 0,
     }),
   ),
   computeEffectiveUpdateCount: (
@@ -245,6 +247,8 @@ describe('StatusBar registry indicator', () => {
         loadErrors: [],
         availableUpdates: new Map(),
         pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
   });
@@ -265,6 +269,8 @@ describe('StatusBar registry indicator', () => {
         loadErrors: [],
         availableUpdates: new Map(),
         pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
     render(<StatusBar />);
@@ -297,6 +303,8 @@ describe('StatusBar nodedef updates badge', () => {
         loadErrors: [],
         availableUpdates: new Map(),
         pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
   });
@@ -315,6 +323,8 @@ describe('StatusBar nodedef updates badge', () => {
         loadErrors: [],
         availableUpdates: new Map([['acme/widget', '2.0.0']]),
         pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
     render(<StatusBar />);
@@ -331,6 +341,8 @@ describe('StatusBar nodedef updates badge', () => {
         loadErrors: [],
         availableUpdates: new Map([['acme/widget', '2.0.0']]),
         pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
     render(<StatusBar />);
@@ -349,6 +361,8 @@ describe('StatusBar nodedef updates badge', () => {
           ['acme/gadget', '3.0.0'],
         ]),
         pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
     render(<StatusBar />);
@@ -365,10 +379,129 @@ describe('StatusBar nodedef updates badge', () => {
         loadErrors: [],
         availableUpdates: new Map([['acme/widget', '3.0.0']]),
         pinnedVersions: new Map([['acme/widget', '2.0.0']]),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
       } as any),
     );
     render(<StatusBar />);
     const badge = screen.getByTestId('nodedef-updates-badge');
     expect(badge.textContent).toContain('Updates (1)');
+  });
+});
+
+describe('StatusBar registry remote status dot', () => {
+  const mockedUseRegistryStore = vi.mocked(useRegistryStore);
+
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({ selectedNodeIds: new Set(), selectedEdgeKeys: new Set() });
+  });
+
+  it('shows green dot when remoteStatus is online', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'online',
+        communityTotalCount: 42,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-green-500');
+  });
+
+  it('shows red dot when remoteStatus is offline', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'offline',
+        communityTotalCount: 0,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-red-500');
+  });
+
+  it('shows yellow dot when remoteStatus is checking', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'checking',
+        communityTotalCount: 0,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-yellow-400');
+  });
+
+  it('shows gray dot when remoteStatus is unknown', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'unknown',
+        communityTotalCount: 0,
+      } as any),
+    );
+    render(<StatusBar />);
+    const dot = screen.getByTestId('registry-status-dot');
+    expect(dot.className).toContain('bg-gray-400');
+  });
+
+  it('shows community count when online', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'online',
+        communityTotalCount: 99,
+      } as any),
+    );
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('registry-indicator');
+    expect(indicator.textContent).toContain('99 community');
+  });
+
+  it('does not show community count when offline', () => {
+    mockedUseRegistryStore.mockImplementation((selector) =>
+      selector({
+        builtinCount: 32,
+        projectLocalCount: 0,
+        overrides: [],
+        loadErrors: [],
+        availableUpdates: new Map(),
+        pinnedVersions: new Map(),
+        remoteStatus: 'offline',
+        communityTotalCount: 99,
+      } as any),
+    );
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('registry-indicator');
+    expect(indicator.textContent).not.toContain('community');
   });
 });

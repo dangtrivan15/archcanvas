@@ -15,6 +15,7 @@ import { useCanvasStore } from "@/store/canvasStore";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useFileStore } from "@/store/fileStore";
 import { useUiStore } from "@/store/uiStore";
+import { useRegistryStore } from "@/store/registryStore";
 
 export function TopMenubar() {
   const projectName = useFileStore((s) => s.project?.root.data.project?.name ?? null);
@@ -128,6 +129,20 @@ export function TopMenubar() {
           <MenubarSeparator />
           <MenubarItem onClick={() => useUiStore.getState().openAppearanceDialog()}>
             Appearance…
+          </MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+      {/* ------------------------------------------------------------------ */}
+      {/* Registry                                                            */}
+      {/* ------------------------------------------------------------------ */}
+      <MenubarMenu>
+        <MenubarTrigger className="text-sm">Registry</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem onClick={() => useUiStore.getState().openRegistryPanel('community')}>
+            Browse Community Registry
+          </MenubarItem>
+          <MenubarItem onClick={() => useRegistryStore.getState().checkForUpdates()}>
+            Check for Updates
           </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
