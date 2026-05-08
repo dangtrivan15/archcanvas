@@ -3,20 +3,20 @@ import { gotoApp } from './e2e-helpers';
 
 test.describe('registry discoverability', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock the stats endpoint so it doesn't make real network calls
-    await page.route('https://registry.archcanvas.dev/api/v1/stats', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ totalNodeDefs: 150, totalNamespaces: 12, totalDownloads: 5000 }),
-      });
-    });
-    // Mock other registry endpoints that might be called
+    // Register wildcard FIRST — Playwright uses LIFO, so this is checked last.
     await page.route('https://registry.archcanvas.dev/**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ items: [], total: 0, namespaces: [], tags: [], updates: [] }),
+      });
+    });
+    // Register specific stats route SECOND — checked first by Playwright (LIFO).
+    await page.route('https://registry.archcanvas.dev/api/v1/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ totalNodeDefs: 150, totalNamespaces: 12, totalDownloads: 5000 }),
       });
     });
     await gotoApp(page);

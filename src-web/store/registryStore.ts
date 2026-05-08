@@ -190,6 +190,9 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
 
       // Fetch remote registry status and start polling
       get().fetchRemoteRegistryStatus().catch(() => {});
+      if (remoteStatusIntervalId !== null) {
+        clearInterval(remoteStatusIntervalId);
+      }
       remoteStatusIntervalId = setInterval(() => {
         get().fetchRemoteRegistryStatus().catch(() => {});
       }, 5 * 60 * 1000);

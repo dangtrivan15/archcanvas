@@ -26,10 +26,14 @@ export function RegistryPanel() {
     return 'installed';
   });
 
-  // Reset the store hint after mount so subsequent opens use smart default or hard default
+  // React to store hint changes: applies tab switch even when panel is already mounted,
+  // then resets the hint so subsequent opens use smart default or hard default.
   useEffect(() => {
-    setRegistryInitialTab('installed');
-  }, []);
+    if (registryInitialTab !== 'installed') {
+      setActiveTab(registryInitialTab);
+      setRegistryInitialTab('installed');
+    }
+  }, [registryInitialTab]);
 
   return (
     <div className="flex h-full flex-col">
