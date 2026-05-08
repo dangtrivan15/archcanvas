@@ -136,12 +136,12 @@ test.describe('community browser panel', () => {
 
   test('loading the page with ?sort=recent in URL pre-selects Recently updated', async ({ page }) => {
     await gotoApp(page, '/?sort=recent');
-    await page.getByTestId('registry-indicator').click();
-    // Pre-register the response wait BEFORE the click that triggers the request,
-    // then race them together so we never miss the response.
+    // With the smart default, community tab is shown immediately when no types are installed,
+    // so the nodedefs request fires when the panel opens (not when tab-community is clicked).
+    // Pre-register the response wait BEFORE opening the panel to avoid missing the request.
     await Promise.all([
       page.waitForResponse(r => r.url().includes('/api/v1/nodedefs')),
-      page.getByTestId('tab-community').click(),
+      page.getByTestId('registry-indicator').click(),
     ]);
     await expect(page.getByTestId('sort-recent')).toHaveClass(/font-medium/, { timeout: 3000 });
   });
