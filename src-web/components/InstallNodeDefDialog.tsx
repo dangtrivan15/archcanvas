@@ -18,8 +18,11 @@ export function InstallNodeDefDialog() {
   const close = useUiStore((s) => s.closeInstallNodeDefDialog);
   const fs = useFileStore((s) => s.fs);
   const projectPath = useFileStore((s) => s.projectPath);
+  const builtinKeys = useRegistryStore((s) => s.builtinKeys);
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const collidesWithBuiltin = !!summary && builtinKeys.has(`${summary.namespace}/${summary.name}`);
 
   // Keep a ref to the last non-null summary so the dialog content remains
   // visible during the close animation (Radix animates open→false before
@@ -90,6 +93,23 @@ export function InstallNodeDefDialog() {
           </div>
         )}
 
+        {collidesWithBuiltin && displaySummary && (
+          <div
+            className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-500"
+            role="alert"
+            data-testid="install-override-warning"
+          >
+            <p className="font-medium">
+              Overrides built-in <span className="font-mono">{displaySummary.namespace}/{displaySummary.name}</span>
+            </p>
+            <p className="mt-1 text-amber-500/80">
+              ArchCanvas ships a built-in <span className="font-mono">{displaySummary.namespace}/{displaySummary.name}</span>.
+              Installing this community version will replace it on this canvas. The built-in remains available —
+              uninstall the community version to restore it.
+            </p>
+          </div>
+        )}
+
         {error && (
           <p className="text-xs text-destructive" role="alert">
             {error}
@@ -106,7 +126,11 @@ export function InstallNodeDefDialog() {
             onClick={handleConfirm}
             disabled={installing || !fs}
           >
-            {installing ? 'Installing…' : 'Install'}
+            {installing
+              ? 'Installing…'
+              : collidesWithBuiltin
+                ? 'Override and Install'
+                : 'Install'}
           </Button>
         </DialogFooter>
       </DialogContent>

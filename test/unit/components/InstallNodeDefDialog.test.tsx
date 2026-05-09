@@ -34,9 +34,19 @@ vi.mock('@/store/uiStore', () => ({
   useUiStore: vi.fn((selector: (s: typeof uiState) => unknown) => selector(uiState)),
 }));
 
+let registryState = {
+  builtinKeys: new Set<string>(),
+};
+
+function setRegistryState(patch: Partial<typeof registryState>) {
+  registryState = { ...registryState, ...patch };
+}
+
 vi.mock('@/store/registryStore', () => ({
   useRegistryStore: Object.assign(
-    vi.fn(),
+    vi.fn((selector?: (s: typeof registryState) => unknown) =>
+      selector ? selector(registryState) : registryState,
+    ),
     {
       getState: () => ({
         installRemoteNodeDef: mockInstallRemoteNodeDef,
@@ -114,6 +124,7 @@ describe('InstallNodeDefDialog', () => {
       fs: mockFs,
       projectPath: '/test/project',
     };
+    registryState = { builtinKeys: new Set<string>() };
   });
 
   // ----- Open / close rendering -----
@@ -259,5 +270,28 @@ describe('InstallNodeDefDialog', () => {
     render(<InstallNodeDefDialog />);
     const btn = screen.getByTestId('install-nodedef-confirm') as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
+  });
+
+  // ----- Built-in override warning -----
+
+  it('does NOT show override warning when key does not collide with a built-in', () => {
+    setRegistryState({ builtinKeys: new Set() });
+    render(<InstallNodeDefDialog />);
+    expect(screen.queryByTestId('install-override-warning')).toBeNull();
+  });
+
+  it('shows override warning when key collides with a built-in', () => {
+    setRegistryState({ builtinKeys: new Set(['acme/widget']) });
+    render(<InstallNodeDefDialog />);
+    const warning = screen.getByTestId('install-override-warning');
+    expect(warning).toBeTruthy();
+    expect(warning.textContent).toMatch(/built-in/i);
+    expect(warning.textContent).toMatch(/override/i);
+  });
+
+  it('confirm button label changes to "Override and Install" on collision', () => {
+    setRegistryState({ builtinKeys: new Set(['acme/widget']) });
+    render(<InstallNodeDefDialog />);
+    expect(screen.getByTestId('install-nodedef-confirm').textContent).toBe('Override and Install');
   });
 });

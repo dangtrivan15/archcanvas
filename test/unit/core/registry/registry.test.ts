@@ -252,7 +252,7 @@ describe('createRegistry', () => {
       expect(registry.resolve('community/k8s-deploy')).toBe(remoteNode);
     });
 
-    it('authored takes precedence over builtins over remoteInstalled', () => {
+    it('authored takes precedence over remoteInstalled over builtins', () => {
       // Create a conflict: same key in all three
       const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
       const authoredService = makeNodeDef('compute', 'service', { displayName: 'Authored Service' });
@@ -265,13 +265,13 @@ describe('createRegistry', () => {
       expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Authored Service');
     });
 
-    it('builtins take precedence over remoteInstalled', () => {
+    it('remoteInstalled takes precedence over builtins (deliberate user install)', () => {
       const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
       const ri = new Map([['compute/service', remoteService]]);
 
       const { registry } = createRegistry(builtins(), new Map(), null, undefined, ri);
-      // builtin wins over remote
-      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Service');
+      // community install wins over builtin — explicit user action outranks shipped default
+      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Remote Service');
     });
 
     it('allNodeDefs() / list() includes defs from all 3 sources', () => {
@@ -287,6 +287,42 @@ describe('createRegistry', () => {
       expect(keys).toContain('custom/widget');
       expect(keys).toContain('compute/service');
       expect(keys).toContain('data/database');
+    });
+
+    it('list(): remoteInstalled version wins over builtin for overlapping keys', () => {
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote' });
+      const ri = new Map([['compute/service', remoteService]]);
+
+      const { registry } = createRegistry(builtins(), new Map(), null, undefined, ri);
+      const all = registry.list();
+      // Still 2 unique entries (service deduplicated)
+      expect(all).toHaveLength(2);
+      const service = all.find((d) => d.metadata.name === 'service');
+      expect(service?.metadata.displayName).toBe('Remote');
+    });
+
+    it('warns when remoteInstalled shadows a builtin', () => {
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote Service' });
+      const ri = new Map([['compute/service', remoteService]]);
+
+      const { warnings } = createRegistry(builtins(), new Map(), null, undefined, ri);
+      expect(warnings.some((w) => w.includes('compute/service') && w.includes('community install'))).toBe(true);
+    });
+
+    it('does not warn when authored covers the same key as remoteInstalled-vs-builtin', () => {
+      // authored takes precedence and emits its own override warning;
+      // the community-vs-builtin loop should skip this key to avoid duplicate warnings.
+      const remoteService = makeNodeDef('compute', 'service', { displayName: 'Remote' });
+      const authoredService = makeNodeDef('compute', 'service', { displayName: 'Authored' });
+      const ri = new Map([['compute/service', remoteService]]);
+      const authored = new Map([['compute/service', authoredService]]);
+
+      const { warnings } = createRegistry(builtins(), authored, null, undefined, ri);
+      // only the authored-override warning should appear, not the community-vs-builtin one
+      const communityOverridesBuiltin = warnings.filter(
+        (w) => w.startsWith("NodeDef 'compute/service' overridden by community install"),
+      );
+      expect(communityOverridesBuiltin).toHaveLength(0);
     });
 
     it('allNodeDefs(): authored version wins for overlapping keys', () => {
@@ -369,6 +405,23 @@ describe('createRegistry', () => {
       const authored = new Map([['compute/service', authoredNode]]);
       const { warnings } = createRegistry(builtins(), authored, null, ro);
       expect(warnings.some((w) => w.includes('compute/service'))).toBe(true);
+    });
+
+    it('remoteInstalled wins over remoteOfficial (deliberate user install)', () => {
+      const ro = new Map([['compute/service', officialNode]]);
+      const ri = new Map([['compute/service', remoteInstalledNode]]);
+      const { registry } = createRegistry(builtins(), new Map(), null, ro, ri);
+      // explicit user install outranks passive auto-sync
+      expect(registry.resolve('compute/service')?.metadata.displayName).toBe('Remote Service');
+    });
+
+    it('warns when remoteInstalled shadows remoteOfficial', () => {
+      const ro = new Map([['compute/service', officialNode]]);
+      const ri = new Map([['compute/service', remoteInstalledNode]]);
+      const { warnings } = createRegistry(builtins(), new Map(), null, ro, ri);
+      expect(warnings.some(
+        (w) => w.includes('compute/service') && w.includes('community install') && w.includes('official'),
+      )).toBe(true);
     });
   });
 });

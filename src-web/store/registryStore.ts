@@ -17,6 +17,7 @@ interface RegistryStoreState {
 
   // Metadata for status dashboard and AI awareness
   builtinCount: number;
+  builtinKeys: Set<string>;
   projectLocalCount: number;
   projectLocalKeys: Set<string>;
   remoteInstalledCount: number;
@@ -37,6 +38,7 @@ interface RegistryStoreState {
   initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
   reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
   installRemoteNodeDef(fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary): Promise<void>;
+  uninstallRemoteNodeDef(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
   checkForUpdates(signal?: AbortSignal): Promise<void>;
   applyUpdate(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
   dismissUpdate(key: string, version: string): void;
@@ -89,6 +91,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
   registry: null,
   status: 'idle',
   builtinCount: 0,
+  builtinKeys: new Set(),
   projectLocalCount: 0,
   projectLocalKeys: new Set(),
   remoteInstalledCount: 0,
@@ -156,6 +159,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         registry,
         status: 'ready',
         builtinCount: builtins.size,
+        builtinKeys: new Set(builtins.keys()),
         projectLocalCount: authored.size,
         projectLocalKeys: new Set(authored.keys()),
         remoteInstalledCount: remoteInstalled.size,
@@ -237,6 +241,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         registry,
         status: 'ready',
         builtinCount: builtins.size,
+        builtinKeys: new Set(builtins.keys()),
         projectLocalCount: authored.size,
         projectLocalKeys: new Set(authored.keys()),
         remoteInstalledCount: remoteInstalled.size,
@@ -267,6 +272,39 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     await downloadAndInstallNodeDef(fs, projectRoot, summary);
     await get().reloadProjectLocal(fs, projectRoot);
     get().checkForUpdates().catch(() => {});
+  },
+
+  uninstallRemoteNodeDef: async (fs: FileSystem, projectRoot: string, namespace: string, name: string) => {
+    const filename = `${namespace}-${name}.yaml`;
+    const filePath = projectRoot
+      ? `${projectRoot}/.archcanvas/nodedefs/${filename}`
+      : `.archcanvas/nodedefs/${filename}`;
+    try {
+      await fs.deleteFile(filePath);
+    } catch {
+      // File may already be gone (external removal) — proceed with lockfile cleanup.
+    }
+
+    const key = `${namespace}/${name}`;
+    const existingLockfile = await loadLockfile(fs, projectRoot);
+    if (existingLockfile && key in existingLockfile.entries) {
+      const { [key]: _removed, ...rest } = existingLockfile.entries;
+      void _removed;
+      await saveLockfile(fs, projectRoot, {
+        ...existingLockfile,
+        resolvedAt: new Date().toISOString(),
+        entries: rest,
+      });
+    }
+
+    await get().reloadProjectLocal(fs, projectRoot);
+
+    // Drop any pending update notification for this key
+    if (get().availableUpdates.has(key)) {
+      const newUpdates = new Map(get().availableUpdates);
+      newUpdates.delete(key);
+      set({ availableUpdates: newUpdates });
+    }
   },
 
   checkForUpdates: async (signal?: AbortSignal) => {

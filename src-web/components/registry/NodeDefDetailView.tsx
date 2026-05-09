@@ -2,8 +2,25 @@ import { useState } from 'react';
 import { useCommunityBrowserStore } from '@/store/communityBrowserStore';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useRegistryStore } from '@/store/registryStore';
+import { useFileStore } from '@/store/fileStore';
 import { NodeDef } from '@/types/nodeDefSchema';
-import { ChevronLeft, Copy, Check } from 'lucide-react';
+import { parseSemVer, type SemVer } from '@/core/registry/version';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ChevronLeft, Copy, Check, Trash2, AlertTriangle } from 'lucide-react';
+
+function compareSemVer(a: SemVer, b: SemVer): number {
+  if (a.major !== b.major) return a.major - b.major;
+  if (a.minor !== b.minor) return a.minor - b.minor;
+  return a.patch - b.patch;
+}
 
 export function NodeDefDetailView() {
   const selectedDetail = useCommunityBrowserStore((s) => s.selectedDetail);
@@ -18,8 +35,16 @@ export function NodeDefDetailView() {
   const versionHistoryError = useCommunityBrowserStore((s) => s.versionHistoryError);
   const openInstallNodeDefDialog = useUiStore((s) => s.openInstallNodeDefDialog);
   const username = useAuthStore((s) => s.username);
+  const remoteInstalledKeys = useRegistryStore((s) => s.remoteInstalledKeys);
+  const remoteInstalledVersions = useRegistryStore((s) => s.remoteInstalledVersions);
+  const builtinKeys = useRegistryStore((s) => s.builtinKeys);
+  const uninstallRemoteNodeDef = useRegistryStore((s) => s.uninstallRemoteNodeDef);
+  const fs = useFileStore((s) => s.fs);
+  const projectPath = useFileStore((s) => s.projectPath);
 
   const [copied, setCopied] = useState(false);
+  const [uninstallOpen, setUninstallOpen] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
 
   if (detailLoading) {
     return (
@@ -35,6 +60,34 @@ export function NodeDefDetailView() {
   const parsedSpec = NodeDef.safeParse(selectedDetail.version.blob);
   const snippet = `${nodedef.namespace}/${nodedef.name}@${selectedDetail.version.version}`;
   const isOwner = username !== null && username === nodedef.namespace;
+
+  const key = `${nodedef.namespace}/${nodedef.name}`;
+  const isInstalled = remoteInstalledKeys.has(key);
+  const installedVersion = remoteInstalledVersions.get(key);
+  const viewedVersion = selectedVersion ?? selectedDetail.version.version;
+  const collidesWithBuiltin = builtinKeys.has(key);
+
+  let installLabel = 'Install';
+  let installDisabled = false;
+  if (isInstalled && installedVersion) {
+    if (viewedVersion === installedVersion) {
+      installLabel = 'Installed ✓';
+      installDisabled = true;
+    } else {
+      const viewedSv = parseSemVer(viewedVersion);
+      const installedSv = parseSemVer(installedVersion);
+      if (viewedSv && installedSv) {
+        const cmp = compareSemVer(viewedSv, installedSv);
+        installLabel = cmp > 0
+          ? `Update to v${viewedVersion}`
+          : `Install v${viewedVersion} (downgrade)`;
+      } else {
+        installLabel = `Install v${viewedVersion}`;
+      }
+    }
+  } else if (collidesWithBuiltin) {
+    installLabel = 'Install (overrides built-in)';
+  }
 
   const inboundPorts = parsedSpec.success
     ? (parsedSpec.data.spec.ports?.filter((p) => p.direction === 'inbound') ?? [])
@@ -93,13 +146,79 @@ export function NodeDefDetailView() {
         </div>
       )}
 
-      <button
-        onClick={() => openInstallNodeDefDialog({ ...nodedef, latestVer: selectedDetail.version.version })}
-        className="mt-2 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        data-testid="detail-install-btn"
-      >
-        Install
-      </button>
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          onClick={() => {
+            if (installDisabled) return;
+            openInstallNodeDefDialog({ ...nodedef, latestVer: viewedVersion });
+          }}
+          disabled={installDisabled}
+          className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:hover:bg-primary disabled:cursor-not-allowed"
+          data-testid="detail-install-btn"
+        >
+          {installLabel}
+        </button>
+        {isInstalled && (
+          <button
+            onClick={() => setUninstallOpen(true)}
+            className="inline-flex items-center gap-1 rounded border border-border bg-background px-3 py-1.5 text-xs font-medium text-card-foreground hover:bg-accent/50 transition-colors"
+            data-testid="detail-uninstall-btn"
+          >
+            <Trash2 className="size-3" /> Uninstall
+          </button>
+        )}
+      </div>
+
+      <Dialog open={uninstallOpen} onOpenChange={(v) => !v && !uninstalling && setUninstallOpen(false)}>
+        <DialogContent className="max-w-md" data-testid="uninstall-confirm-dialog">
+          <DialogHeader>
+            <DialogTitle>Uninstall {key}?</DialogTitle>
+            <DialogDescription>
+              The file{' '}
+              <span className="font-mono text-xs">.archcanvas/nodedefs/{nodedef.namespace}-{nodedef.name}.yaml</span>{' '}
+              will be removed and the lockfile entry cleared.
+              {collidesWithBuiltin && (
+                <>
+                  {' '}The built-in <span className="font-mono text-xs">{key}</span> will be used instead.
+                </>
+              )}{' '}
+              You can re-install from the Community tab at any time.
+            </DialogDescription>
+          </DialogHeader>
+          {collidesWithBuiltin && (
+            <p className="flex items-start gap-1.5 text-xs text-amber-500">
+              <AlertTriangle className="size-3 mt-0.5 shrink-0" />
+              <span>This will restore the built-in version.</span>
+            </p>
+          )}
+          <DialogFooter>
+            <button
+              onClick={() => setUninstallOpen(false)}
+              disabled={uninstalling}
+              className="rounded border border-border px-3 py-1.5 text-xs font-medium text-card-foreground hover:bg-accent/50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!fs) return;
+                setUninstalling(true);
+                try {
+                  await uninstallRemoteNodeDef(fs, projectPath ?? '', nodedef.namespace, nodedef.name);
+                  setUninstallOpen(false);
+                } finally {
+                  setUninstalling(false);
+                }
+              }}
+              disabled={uninstalling || !fs}
+              className="rounded bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              data-testid="uninstall-confirm-btn"
+            >
+              {uninstalling ? 'Uninstalling…' : 'Uninstall'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Specification section */}
       <div className="flex flex-col gap-2">

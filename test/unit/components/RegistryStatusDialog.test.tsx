@@ -8,6 +8,9 @@ vi.mock('lucide-react', () => ({
   AlertTriangle: ({ className }: { className?: string }) => <span data-testid="icon-alert" className={className} />,
   ArrowLeftRight: ({ className }: { className?: string }) => <span data-testid="icon-override" className={className} />,
   Layers: ({ className }: { className?: string }) => <span data-testid="icon-layers" className={className} />,
+  Trash2: ({ className }: { className?: string }) => <span data-testid="icon-trash" className={className} />,
+  X: ({ className }: { className?: string }) => <span data-testid="icon-x" className={className} />,
+  XIcon: ({ className }: { className?: string }) => <span data-testid="icon-x" className={className} />,
 }));
 
 // Store mocks

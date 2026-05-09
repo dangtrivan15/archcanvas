@@ -5,13 +5,21 @@ import {
   ContextMenuContent,
   ContextMenuItem,
 } from '@/components/ui/context-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useUiStore } from '@/store/uiStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useFileStore } from '@/store/fileStore';
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
 import { AuthStatusSection } from '@/components/auth/AuthStatusSection';
-import { RefreshCw, AlertTriangle, ArrowLeftRight, Layers } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ArrowLeftRight, Layers, Trash2 } from 'lucide-react';
 
 export function InstalledTab() {
   const builtinCount = useRegistryStore((s) => s.builtinCount);
@@ -26,6 +34,8 @@ export function InstalledTab() {
   const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
   const applyUpdate = useRegistryStore((s) => s.applyUpdate);
   const dismissUpdate = useRegistryStore((s) => s.dismissUpdate);
+  const uninstallRemoteNodeDef = useRegistryStore((s) => s.uninstallRemoteNodeDef);
+  const builtinKeys = useRegistryStore((s) => s.builtinKeys);
   const registry = useRegistryStore((s) => s.registry);
   const allDefs = registry?.list() ?? [];
 
@@ -34,6 +44,8 @@ export function InstalledTab() {
 
   const { isAuthenticated } = useAuthStore();
   const [applyingKey, setApplyingKey] = useState<string | null>(null);
+  const [uninstallTarget, setUninstallTarget] = useState<{ namespace: string; name: string } | null>(null);
+  const [uninstalling, setUninstalling] = useState(false);
   const notification = useUiStore((s) => s.notification);
   const clearNotification = useUiStore((s) => s.clearNotification);
   const keycloakEnabled = isKeycloakConfigured();
@@ -239,6 +251,14 @@ export function InstalledTab() {
                         </button>
                       </>
                     )}
+                    <button
+                      onClick={() => setUninstallTarget({ namespace: def.metadata.namespace, name: def.metadata.name })}
+                      className="rounded p-1 text-muted-foreground hover:bg-accent/50 hover:text-destructive transition-colors"
+                      title={`Uninstall ${key}`}
+                      data-testid={`uninstall-btn-${key}`}
+                    >
+                      <Trash2 className="size-3" />
+                    </button>
                   </div>
                 </div>
               );
@@ -246,6 +266,62 @@ export function InstalledTab() {
           </div>
         </div>
       )}
+
+      <Dialog open={!!uninstallTarget} onOpenChange={(v) => !v && !uninstalling && setUninstallTarget(null)}>
+        <DialogContent className="max-w-md" data-testid="uninstall-confirm-dialog">
+          {uninstallTarget && (() => {
+            const tk = `${uninstallTarget.namespace}/${uninstallTarget.name}`;
+            const collidesWithBuiltin = builtinKeys.has(tk);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Uninstall {tk}?</DialogTitle>
+                  <DialogDescription>
+                    The file{' '}
+                    <span className="font-mono text-xs">.archcanvas/nodedefs/{uninstallTarget.namespace}-{uninstallTarget.name}.yaml</span>{' '}
+                    will be removed and the lockfile entry cleared.
+                    {collidesWithBuiltin && (
+                      <>
+                        {' '}The built-in <span className="font-mono text-xs">{tk}</span> will be used instead.
+                      </>
+                    )}{' '}
+                    You can re-install from the Community tab at any time.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <button
+                    onClick={() => setUninstallTarget(null)}
+                    disabled={uninstalling}
+                    className="rounded border border-border px-3 py-1.5 text-xs font-medium text-card-foreground hover:bg-accent/50 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!fs) return;
+                      setUninstalling(true);
+                      try {
+                        await uninstallRemoteNodeDef(fs, projectPath ?? '', uninstallTarget.namespace, uninstallTarget.name);
+                        useUiStore.getState().setNotification({ message: `${tk} uninstalled`, type: 'success' });
+                        setUninstallTarget(null);
+                      } catch (err) {
+                        useUiStore.getState().setNotification({ message: `Uninstall failed: ${err instanceof Error ? err.message : String(err)}`, type: 'error' });
+                      } finally {
+                        setUninstalling(false);
+                      }
+                    }}
+                    disabled={uninstalling || !fs}
+                    className="rounded bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                    data-testid="uninstall-confirm-btn"
+                  >
+                    {uninstalling ? 'Uninstalling…' : 'Uninstall'}
+                  </button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Built-in types (scrollable for brevity) */}
       <div className="space-y-1">

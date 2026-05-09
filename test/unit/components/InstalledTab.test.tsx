@@ -10,6 +10,9 @@ vi.mock('lucide-react', () => ({
   AlertTriangle: ({ className }: { className?: string }) => <span data-testid="icon-alert" className={className} />,
   ArrowLeftRight: ({ className }: { className?: string }) => <span data-testid="icon-override" className={className} />,
   Layers: ({ className }: { className?: string }) => <span data-testid="icon-layers" className={className} />,
+  Trash2: ({ className }: { className?: string }) => <span data-testid="icon-trash" className={className} />,
+  X: ({ className }: { className?: string }) => <span data-testid="icon-x" className={className} />,
+  XIcon: ({ className }: { className?: string }) => <span data-testid="icon-x" className={className} />,
 }));
 
 // ---------------------------------------------------------------------------
@@ -48,9 +51,11 @@ vi.mock('@/components/ui/context-menu', () => ({
 const mockApplyUpdate = vi.fn();
 const mockDismissUpdate = vi.fn();
 const mockReloadProjectLocal = vi.fn();
+const mockUninstallRemoteNodeDef = vi.fn();
 
 let registryState: Record<string, unknown> = {
   builtinCount: 5,
+  builtinKeys: new Set<string>(),
   projectLocalCount: 0,
   projectLocalKeys: new Set<string>(),
   remoteInstalledCount: 0,
@@ -63,6 +68,7 @@ let registryState: Record<string, unknown> = {
   pinnedVersions: new Map<string, string>(),
   applyUpdate: mockApplyUpdate,
   dismissUpdate: mockDismissUpdate,
+  uninstallRemoteNodeDef: mockUninstallRemoteNodeDef,
 };
 
 vi.mock('@/store/registryStore', () => ({
@@ -147,6 +153,8 @@ describe('InstalledTab — basic rendering', () => {
       pinnedVersions: new Map<string, string>(),
       applyUpdate: mockApplyUpdate,
       dismissUpdate: mockDismissUpdate,
+      uninstallRemoteNodeDef: mockUninstallRemoteNodeDef,
+      builtinKeys: new Set<string>(),
     };
     uiState = { notification: null, clearNotification: vi.fn() };
   });
@@ -213,6 +221,8 @@ describe('InstalledTab — community-installed with update affordances', () => {
       pinnedVersions: new Map<string, string>(),
       applyUpdate: mockApplyUpdate,
       dismissUpdate: mockDismissUpdate,
+      uninstallRemoteNodeDef: mockUninstallRemoteNodeDef,
+      builtinKeys: new Set<string>(),
     };
   });
 
@@ -312,5 +322,52 @@ describe('InstalledTab — community-installed with update affordances', () => {
     vi.mocked(useFileStore).mockImplementation((selector) =>
       selector({ fs: mockFs, projectPath: '/test/project' }),
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Uninstall affordance
+  // -------------------------------------------------------------------------
+
+  it('shows Uninstall button on community-installed rows', () => {
+    render(<InstalledTab />);
+    expect(screen.getByTestId(`uninstall-btn-${communityKey}`)).toBeTruthy();
+  });
+
+  it('clicking Uninstall opens confirm dialog with the key', () => {
+    render(<InstalledTab />);
+    fireEvent.click(screen.getByTestId(`uninstall-btn-${communityKey}`));
+    const dialog = screen.getByTestId('uninstall-confirm-dialog');
+    expect(dialog.textContent).toContain(communityKey);
+  });
+
+  it('confirm in dialog calls uninstallRemoteNodeDef with namespace + name', async () => {
+    mockUninstallRemoteNodeDef.mockResolvedValue(undefined);
+    render(<InstalledTab />);
+    fireEvent.click(screen.getByTestId(`uninstall-btn-${communityKey}`));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('uninstall-confirm-btn'));
+    });
+    expect(mockUninstallRemoteNodeDef).toHaveBeenCalledWith(
+      mockFs, '/test/project', 'acme', 'widget',
+    );
+  });
+
+  it('shows success notification after successful uninstall', async () => {
+    mockUninstallRemoteNodeDef.mockResolvedValue(undefined);
+    render(<InstalledTab />);
+    fireEvent.click(screen.getByTestId(`uninstall-btn-${communityKey}`));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('uninstall-confirm-btn'));
+    });
+    expect(mockSetNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'success' }),
+    );
+  });
+
+  it('confirm dialog mentions built-in restoration when key collides with a built-in', () => {
+    registryState.builtinKeys = new Set([communityKey]);
+    render(<InstalledTab />);
+    fireEvent.click(screen.getByTestId(`uninstall-btn-${communityKey}`));
+    expect(screen.getByTestId('uninstall-confirm-dialog').textContent).toMatch(/built-in/i);
   });
 });

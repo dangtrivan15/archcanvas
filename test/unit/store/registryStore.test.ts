@@ -271,6 +271,8 @@ describe('registryStore', () => {
       const state = useRegistryStore.getState();
       expect(state.status).toBe('ready');
       expect(state.builtinCount).toBe(32);
+      expect(state.builtinKeys.size).toBe(32);
+      expect(state.builtinKeys.has('compute/service')).toBe(true);
       expect(state.projectLocalCount).toBe(1);
       expect(state.projectLocalKeys.has('custom/custom-node')).toBe(true);
       expect(state.loadErrors).toHaveLength(0);
@@ -486,6 +488,87 @@ describe('registryStore', () => {
       await expect(
         useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary),
       ).rejects.toThrow('Failed to fetch NodeDef detail: 503');
+    });
+  });
+
+  describe('uninstallRemoteNodeDef', () => {
+    async function installFixture() {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => makeDetailResponse(remoteNodeDefBlob),
+      }));
+      const fs = new InMemoryFileSystem();
+      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().installRemoteNodeDef(fs, 'project', {
+        namespace: 'community',
+        name: 'kubernetes-deployment',
+        latestVer: '1.0.0',
+      });
+      return fs;
+    }
+
+    it('removes the file from disk', async () => {
+      const fs = await installFixture();
+      const filePath = 'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
+      expect(await fs.exists(filePath)).toBe(true);
+
+      await useRegistryStore.getState().uninstallRemoteNodeDef(
+        fs, 'project', 'community', 'kubernetes-deployment',
+      );
+
+      expect(await fs.exists(filePath)).toBe(false);
+    });
+
+    it('removes the lockfile entry', async () => {
+      const fs = await installFixture();
+      expect(useRegistryStore.getState().lockfile?.entries['community/kubernetes-deployment']).toBeDefined();
+
+      await useRegistryStore.getState().uninstallRemoteNodeDef(
+        fs, 'project', 'community', 'kubernetes-deployment',
+      );
+
+      expect(useRegistryStore.getState().lockfile?.entries['community/kubernetes-deployment']).toBeUndefined();
+    });
+
+    it('reloads registry so the def is no longer resolvable', async () => {
+      const fs = await installFixture();
+      expect(useRegistryStore.getState().resolve('community/kubernetes-deployment')).toBeDefined();
+
+      await useRegistryStore.getState().uninstallRemoteNodeDef(
+        fs, 'project', 'community', 'kubernetes-deployment',
+      );
+
+      expect(useRegistryStore.getState().resolve('community/kubernetes-deployment')).toBeUndefined();
+      expect(useRegistryStore.getState().remoteInstalledKeys.has('community/kubernetes-deployment')).toBe(false);
+    });
+
+    it('clears any availableUpdates entry for the uninstalled key', async () => {
+      const fs = await installFixture();
+      // Simulate an in-flight update notification for this key
+      useRegistryStore.setState({
+        availableUpdates: new Map([['community/kubernetes-deployment', '1.1.0']]),
+      });
+
+      await useRegistryStore.getState().uninstallRemoteNodeDef(
+        fs, 'project', 'community', 'kubernetes-deployment',
+      );
+
+      expect(useRegistryStore.getState().availableUpdates.has('community/kubernetes-deployment')).toBe(false);
+    });
+
+    it('is tolerant of an already-missing file (lockfile cleanup still runs)', async () => {
+      const fs = await installFixture();
+      const filePath = 'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
+      // External actor removed the file; lockfile still references it
+      await fs.deleteFile(filePath);
+
+      await expect(
+        useRegistryStore.getState().uninstallRemoteNodeDef(
+          fs, 'project', 'community', 'kubernetes-deployment',
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(useRegistryStore.getState().lockfile?.entries['community/kubernetes-deployment']).toBeUndefined();
     });
   });
 

@@ -12,6 +12,10 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => <span data-testid="icon-chevron-left" />,
   Copy: () => <span data-testid="icon-copy" />,
   Check: () => <span data-testid="icon-check" />,
+  X: () => <span data-testid="icon-x" />,
+  XIcon: () => <span data-testid="icon-x" />,
+  Trash2: () => <span data-testid="icon-trash" />,
+  AlertTriangle: () => <span data-testid="icon-alert" />,
 }));
 
 // ---------------------------------------------------------------------------
@@ -21,6 +25,9 @@ vi.mock('lucide-react', () => ({
 const mockSelectNodeDef = vi.fn();
 const mockSetNamespace = vi.fn();
 const mockOpenInstallNodeDefDialog = vi.fn();
+const mockUninstallRemoteNodeDef = vi.fn();
+const mockSelectVersion = vi.fn();
+const mockSetTag = vi.fn();
 
 // A valid NodeDef blob
 const validBlob = {
@@ -75,7 +82,10 @@ let communityState = {
   selectedDetail: mockDetail as RemoteNodeDefDetail | null,
   detailLoading: false,
   selectNodeDef: mockSelectNodeDef,
+  selectVersion: mockSelectVersion,
+  selectedVersion: null as string | null,
   setNamespace: mockSetNamespace,
+  setTag: mockSetTag,
   versionHistory: null as RemoteVersionSummary[] | null,
   versionHistoryLoading: false,
   versionHistoryError: null as string | null,
@@ -87,6 +97,18 @@ let uiState = {
 
 let authState = {
   username: null as string | null,
+};
+
+let registryState = {
+  remoteInstalledKeys: new Set<string>(),
+  remoteInstalledVersions: new Map<string, string>(),
+  builtinKeys: new Set<string>(),
+  uninstallRemoteNodeDef: mockUninstallRemoteNodeDef,
+};
+
+let fileState = {
+  fs: {} as object,
+  projectPath: 'project' as string | null,
 };
 
 vi.mock('@/store/communityBrowserStore', () => ({
@@ -101,6 +123,14 @@ vi.mock('@/store/uiStore', () => ({
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: vi.fn((selector: (s: typeof authState) => unknown) => selector(authState)),
+}));
+
+vi.mock('@/store/registryStore', () => ({
+  useRegistryStore: vi.fn((selector: (s: typeof registryState) => unknown) => selector(registryState)),
+}));
+
+vi.mock('@/store/fileStore', () => ({
+  useFileStore: vi.fn((selector: (s: typeof fileState) => unknown) => selector(fileState)),
 }));
 
 // ---------------------------------------------------------------------------
@@ -119,6 +149,10 @@ function setCommunityState(patch: Partial<typeof communityState>) {
 
 function setAuthState(patch: Partial<typeof authState>) {
   authState = { ...authState, ...patch };
+}
+
+function setRegistryState(patch: Partial<typeof registryState>) {
+  registryState = { ...registryState, ...patch };
 }
 
 // ---------------------------------------------------------------------------
@@ -143,13 +177,28 @@ describe('NodeDefDetailView', () => {
       selectedDetail: mockDetail,
       detailLoading: false,
       selectNodeDef: mockSelectNodeDef,
+      selectVersion: mockSelectVersion,
+      selectedVersion: null,
       setNamespace: mockSetNamespace,
+      setTag: mockSetTag,
       versionHistory: null,
       versionHistoryLoading: false,
       versionHistoryError: null,
     };
 
     authState = { username: null };
+
+    registryState = {
+      remoteInstalledKeys: new Set<string>(),
+      remoteInstalledVersions: new Map<string, string>(),
+      builtinKeys: new Set<string>(),
+      uninstallRemoteNodeDef: mockUninstallRemoteNodeDef,
+    };
+    mockUninstallRemoteNodeDef.mockClear();
+    mockSelectVersion.mockClear();
+    mockSetTag.mockClear();
+
+    fileState = { fs: {}, projectPath: 'project' };
   });
 
   afterEach(() => {
@@ -323,5 +372,129 @@ describe('NodeDefDetailView', () => {
     setCommunityState({ selectedDetail: null, detailLoading: false });
     const { container } = render(<NodeDefDetailView />);
     expect(container.firstChild).toBeNull();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Install button state machine
+  // ---------------------------------------------------------------------------
+
+  describe('install button states', () => {
+    it('renders "Install" when not installed and no built-in collision', () => {
+      render(<NodeDefDetailView />);
+      const btn = screen.getByTestId('detail-install-btn');
+      expect(btn.textContent).toBe('Install');
+      expect((btn as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('renders "Install (overrides built-in)" when key collides with a built-in', () => {
+      setRegistryState({ builtinKeys: new Set(['acme/widget']) });
+      render(<NodeDefDetailView />);
+      const btn = screen.getByTestId('detail-install-btn');
+      expect(btn.textContent).toContain('overrides built-in');
+    });
+
+    it('renders "Installed" (disabled) when viewed version equals installed version', () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+      });
+      render(<NodeDefDetailView />);
+      const btn = screen.getByTestId('detail-install-btn');
+      expect(btn.textContent).toContain('Installed');
+      expect((btn as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('renders "Update to v1.2.3" when viewed version is newer than installed', () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.0.0']]),
+      });
+      render(<NodeDefDetailView />);
+      const btn = screen.getByTestId('detail-install-btn');
+      expect(btn.textContent).toBe('Update to v1.2.3');
+    });
+
+    it('renders "Install v1.0.0 (downgrade)" when viewed version is older than installed', () => {
+      // viewed is selectedVersion, falls back to mockDetail.version.version (1.2.3)
+      // To test downgrade, set selectedVersion to an older version + version history
+      setCommunityState({
+        selectedVersion: '1.0.0',
+        versionHistory: [
+          { version: '1.2.3', publishedAt: '2025-03-01T00:00:00Z', downloadCount: 30 },
+          { version: '1.0.0', publishedAt: '2025-01-01T00:00:00Z', downloadCount: 10 },
+        ],
+        selectedDetail: {
+          ...mockDetail,
+          version: { ...mockDetail.version, version: '1.0.0' },
+        },
+      });
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+      });
+      render(<NodeDefDetailView />);
+      const btn = screen.getByTestId('detail-install-btn');
+      expect(btn.textContent).toContain('1.0.0');
+      expect(btn.textContent).toContain('downgrade');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Uninstall button + confirm dialog
+  // ---------------------------------------------------------------------------
+
+  describe('uninstall flow', () => {
+    it('does NOT render Uninstall button when not installed', () => {
+      render(<NodeDefDetailView />);
+      expect(screen.queryByTestId('detail-uninstall-btn')).toBeNull();
+    });
+
+    it('renders Uninstall button when installed', () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+      });
+      render(<NodeDefDetailView />);
+      expect(screen.getByTestId('detail-uninstall-btn')).toBeTruthy();
+    });
+
+    it('clicking Uninstall opens a confirm dialog', () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+      });
+      render(<NodeDefDetailView />);
+      fireEvent.click(screen.getByTestId('detail-uninstall-btn'));
+      expect(screen.getByTestId('uninstall-confirm-dialog')).toBeTruthy();
+      expect(screen.getByTestId('uninstall-confirm-btn')).toBeTruthy();
+    });
+
+    it('confirming uninstall calls uninstallRemoteNodeDef with namespace + name', async () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+      });
+      mockUninstallRemoteNodeDef.mockResolvedValue(undefined);
+      render(<NodeDefDetailView />);
+      fireEvent.click(screen.getByTestId('detail-uninstall-btn'));
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('uninstall-confirm-btn'));
+      });
+      expect(mockUninstallRemoteNodeDef).toHaveBeenCalledWith(
+        expect.anything(), 'project', 'acme', 'widget',
+      );
+    });
+
+    it('confirm dialog mentions builtin restoration when key collides with built-in', () => {
+      setRegistryState({
+        remoteInstalledKeys: new Set(['acme/widget']),
+        remoteInstalledVersions: new Map([['acme/widget', '1.2.3']]),
+        builtinKeys: new Set(['acme/widget']),
+      });
+      render(<NodeDefDetailView />);
+      fireEvent.click(screen.getByTestId('detail-uninstall-btn'));
+      const dialog = screen.getByTestId('uninstall-confirm-dialog');
+      expect(dialog.textContent).toMatch(/built-in/i);
+    });
   });
 });

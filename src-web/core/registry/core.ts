@@ -30,7 +30,11 @@ export function createRegistry(
   const warnings: string[] = [];
 
   for (const key of authored.keys()) {
-    if (remoteOfficial?.has(key)) {
+    if (remoteInstalled?.has(key)) {
+      warnings.push(
+        `NodeDef '${key}' overridden by project-local definition (shadows community install)`,
+      );
+    } else if (remoteOfficial?.has(key)) {
       warnings.push(
         `NodeDef '${key}' overridden by project-local definition (shadows official registry version)`,
       );
@@ -38,15 +42,24 @@ export function createRegistry(
       warnings.push(
         `NodeDef '${key}' overridden by project-local definition (shadows builtin)`,
       );
-    } else if (remoteInstalled?.has(key)) {
+    }
+  }
+
+  for (const key of remoteInstalled?.keys() ?? []) {
+    if (authored.has(key)) continue;
+    if (remoteOfficial?.has(key)) {
       warnings.push(
-        `NodeDef '${key}' overridden by project-local definition (shadows community install)`,
+        `NodeDef '${key}' overridden by community install (shadows official registry version)`,
+      );
+    } else if (builtins.has(key)) {
+      warnings.push(
+        `NodeDef '${key}' overridden by community install (shadows builtin)`,
       );
     }
   }
 
   function resolveByKey(typeKey: string): NodeDef | undefined {
-    return authored.get(typeKey) ?? remoteOfficial?.get(typeKey) ?? builtins.get(typeKey) ?? remoteInstalled?.get(typeKey);
+    return authored.get(typeKey) ?? remoteInstalled?.get(typeKey) ?? remoteOfficial?.get(typeKey) ?? builtins.get(typeKey);
   }
 
   function resolve(type: string): NodeDef | undefined {
@@ -79,10 +92,10 @@ export function createRegistry(
 
   function allNodeDefs(): NodeDef[] {
     // Build from lowest-to-highest priority so that last write wins:
-    // remoteInstalled (lowest) → builtins → remoteOfficial → authored (highest)
-    const merged = new Map(remoteInstalled ?? []);
-    for (const [key, def] of builtins) merged.set(key, def);
+    // builtins (lowest) → remoteOfficial → remoteInstalled → authored (highest)
+    const merged = new Map(builtins);
     for (const [key, def] of (remoteOfficial ?? [])) merged.set(key, def);
+    for (const [key, def] of (remoteInstalled ?? [])) merged.set(key, def);
     for (const [key, def] of authored) merged.set(key, def);
     return Array.from(merged.values());
   }
