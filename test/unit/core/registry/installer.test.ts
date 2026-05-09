@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { parse } from 'yaml';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
 import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
@@ -7,22 +8,22 @@ import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const VALID_YAML = [
-  'kind: NodeDef',
-  'apiVersion: v1',
-  'metadata:',
-  '  name: kubernetes-deployment',
-  '  namespace: community',
-  '  version: "1.0.0"',
-  '  displayName: Kubernetes Deployment',
-  '  description: A K8s Deployment node',
-  '  icon: Box',
-  '  shape: rectangle',
-  'spec:',
-  '  ports: []',
-].join('\n');
+const VALID_BLOB = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'kubernetes-deployment',
+    namespace: 'community',
+    version: '1.0.0',
+    displayName: 'Kubernetes Deployment',
+    description: 'A K8s Deployment node',
+    icon: 'Box',
+    shape: 'rectangle',
+  },
+  spec: { ports: [] },
+};
 
-const INVALID_YAML = 'kind: NotANodeDef\nsome: thing';
+const INVALID_BLOB = { kind: 'NotANodeDef', some: 'thing' };
 
 const summary: RemoteNodeDefSummary = {
   namespace: 'community',
@@ -31,10 +32,25 @@ const summary: RemoteNodeDefSummary = {
   displayName: 'Kubernetes Deployment',
 };
 
-function mockFetchYaml(yaml: string): void {
+// The platform's detail endpoint returns the NodeDef contents in version.blob;
+// fetchNodeDefYaml serializes that locally. The mock mirrors the production
+// shape so the validator path is exercised end-to-end.
+function mockFetchDetail(blob: unknown): void {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
     ok: true,
-    text: async () => yaml,
+    json: async () => ({
+      nodedef: {
+        namespace: summary.namespace,
+        name: summary.name,
+        latestVer: summary.latestVer,
+      },
+      version: {
+        nodedefId: 'mock-id',
+        version: summary.latestVer,
+        blob,
+        publishedAt: '2026-01-01T00:00:00.000Z',
+      },
+    }),
   }));
 }
 
@@ -55,18 +71,20 @@ afterEach(() => {
 
 describe('downloadAndInstallNodeDef', () => {
   it('writes file to .archcanvas/nodedefs/{namespace}-{name}.yaml', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await downloadAndInstallNodeDef(fs, 'myproject', summary);
 
     const expected = 'myproject/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
     const content = await fs.readFile(expected);
-    expect(content).toBe(VALID_YAML);
+    // Compare semantically — yaml.stringify formatting may differ from any
+    // hand-written reference, but the parsed structure must match the blob.
+    expect(parse(content)).toEqual(VALID_BLOB);
   });
 
   it('updates lockfile with source: remote for installed key', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await downloadAndInstallNodeDef(fs, 'myproject', summary);
@@ -78,7 +96,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('null guard: creates new lockfile if none exists', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
     // No lockfile pre-seeded — installer must create one from scratch
 
@@ -89,7 +107,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('preserves existing lockfile entries when adding a new one', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     // Pre-seed a lockfile with an existing entry
@@ -112,8 +130,8 @@ describe('downloadAndInstallNodeDef', () => {
     expect(lockContent).toContain('community/kubernetes-deployment');
   });
 
-  it('throws and writes no file for invalid YAML from registry', async () => {
-    mockFetchYaml(INVALID_YAML);
+  it('throws and writes no file for invalid blob from registry', async () => {
+    mockFetchDetail(INVALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await expect(downloadAndInstallNodeDef(fs, 'myproject', summary)).rejects.toThrow(
@@ -132,12 +150,12 @@ describe('downloadAndInstallNodeDef', () => {
     const fs = new InMemoryFileSystem();
 
     await expect(downloadAndInstallNodeDef(fs, 'myproject', summary)).rejects.toThrow(
-      'Failed to fetch NodeDef YAML: 404',
+      'Failed to fetch NodeDef detail: 404',
     );
   });
 
   it('works with empty projectRoot', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await downloadAndInstallNodeDef(fs, '', summary);
@@ -148,7 +166,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('throws if name contains a path separator "/"', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
     const badSummary: RemoteNodeDefSummary = { ...summary, name: 'evil/../../escape' };
 
@@ -164,7 +182,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('throws if namespace contains a backslash "\\"', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
     const badSummary: RemoteNodeDefSummary = { ...summary, namespace: 'evil\\ns' };
 
@@ -174,7 +192,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('writes source: remote-official to lockfile when source param is remote-official', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await downloadAndInstallNodeDef(fs, 'myproject', summary, 'remote-official');
@@ -186,7 +204,7 @@ describe('downloadAndInstallNodeDef', () => {
   });
 
   it('writes source: remote to lockfile when no source param is given (default)', async () => {
-    mockFetchYaml(VALID_YAML);
+    mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
     await downloadAndInstallNodeDef(fs, 'myproject', summary);

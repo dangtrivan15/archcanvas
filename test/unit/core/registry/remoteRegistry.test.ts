@@ -93,45 +93,84 @@ describe('searchRegistry', () => {
 
 // ---------------------------------------------------------------------------
 // fetchNodeDefYaml
+//
+// The registry has no /yaml endpoint — fetchNodeDefYaml fetches the detail
+// JSON and serializes version.blob locally. These tests exercise that
+// delegation and the resulting YAML output.
 // ---------------------------------------------------------------------------
 
 describe('fetchNodeDefYaml', () => {
-  it('returns text from mocked fetch', async () => {
-    const yamlContent = 'kind: NodeDef\napiVersion: v1';
+  const blob = {
+    kind: 'NodeDef',
+    apiVersion: 'v1',
+    metadata: {
+      name: 'my-node',
+      namespace: 'community',
+      version: '1.0.0',
+      displayName: 'My Node',
+      description: 'desc',
+      icon: 'Box',
+      shape: 'rectangle',
+    },
+    spec: { ports: [] },
+  };
+
+  function mockDetailResponse(): void {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      text: async () => yamlContent,
+      json: async () => ({
+        nodedef: { namespace: 'community', name: 'my-node', latestVer: '1.0.0' },
+        version: {
+          nodedefId: 'mock-id',
+          version: '1.0.0',
+          blob,
+          publishedAt: '2026-01-01T00:00:00.000Z',
+        },
+      }),
     }));
+  }
+
+  it('serializes version.blob to YAML that round-trips back to the original object', async () => {
+    mockDetailResponse();
 
     const result = await fetchNodeDefYaml('community', 'my-node', '1.0.0');
-    expect(result).toBe(yamlContent);
+
+    expect(typeof result).toBe('string');
+    expect(result).toContain('kind: NodeDef');
+    expect(result).toContain('apiVersion: v1');
+    // Round-trip parse must equal the original blob — proves the YAML is loadable
+    const { parse } = await import('yaml');
+    expect(parse(result)).toEqual(blob);
+  });
+
+  it('hits the detail endpoint with the requested version as a query param', async () => {
+    mockDetailResponse();
+
+    await fetchNodeDefYaml('community', 'my-node', '1.0.0');
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${REGISTRY_BASE_URL}/api/v1/nodedefs/community/my-node/1.0.0/yaml`,
+      `${REGISTRY_BASE_URL}/api/v1/nodedefs/community/my-node?version=1.0.0`,
       expect.objectContaining({ signal: undefined }),
     );
   });
 
-  it('throws on non-OK response', async () => {
+  it('throws on non-OK response from the detail endpoint', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
       status: 404,
     }));
 
     await expect(fetchNodeDefYaml('ns', 'name', '1.0.0')).rejects.toThrow(
-      'Failed to fetch NodeDef YAML: 404',
+      'Failed to fetch NodeDef detail: 404',
     );
   });
 
-  it('passes signal to fetch', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => '',
-    }));
+  it('passes signal through to the underlying fetch', async () => {
+    mockDetailResponse();
 
     const controller = new AbortController();
-    await fetchNodeDefYaml('ns', 'name', '1.0.0', controller.signal);
+    await fetchNodeDefYaml('community', 'my-node', '1.0.0', controller.signal);
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -140,18 +179,27 @@ describe('fetchNodeDefYaml', () => {
     );
   });
 
-  it('encodes path segments with encodeURIComponent', async () => {
-    // SemVer build metadata like "1.0.0+build.100" contains "+" which must be encoded
+  it('encodes path segments and version query param', async () => {
+    // SemVer build metadata like "1.0.0+build.100" contains "+", which in
+    // form-urlencoded means space — URLSearchParams must encode it as %2B.
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      text: async () => '',
+      json: async () => ({
+        nodedef: { namespace: 'my ns', name: 'my+node', latestVer: '1.0.0+build.100' },
+        version: {
+          nodedefId: 'mock-id',
+          version: '1.0.0+build.100',
+          blob,
+          publishedAt: '2026-01-01T00:00:00.000Z',
+        },
+      }),
     }));
 
     await fetchNodeDefYaml('my ns', 'my+node', '1.0.0+build.100');
 
     const fetchMock = vi.mocked(fetch);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent('my ns')}/${encodeURIComponent('my+node')}/${encodeURIComponent('1.0.0+build.100')}/yaml`,
+      `${REGISTRY_BASE_URL}/api/v1/nodedefs/${encodeURIComponent('my ns')}/${encodeURIComponent('my+node')}?version=${encodeURIComponent('1.0.0+build.100')}`,
       expect.objectContaining({ signal: undefined }),
     );
   });

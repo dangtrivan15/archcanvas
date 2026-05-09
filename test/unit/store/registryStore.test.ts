@@ -73,6 +73,30 @@ spec:
   ports: []
 `;
 
+// JS-object form of remoteNodeDefYaml — used to mock the registry detail
+// endpoint, which serves NodeDef contents as a JSON blob (not raw YAML).
+const remoteNodeDefBlob = {
+  kind: 'NodeDef',
+  apiVersion: 'v1',
+  metadata: {
+    name: 'kubernetes-deployment',
+    namespace: 'community',
+    version: '1.0.0',
+    displayName: 'Kubernetes Deployment',
+    description: 'A K8s Deployment node',
+    icon: 'Box',
+    shape: 'rectangle',
+  },
+  spec: { ports: [] },
+};
+
+function makeDetailResponse(blob: unknown, version = '1.0.0') {
+  return {
+    nodedef: { namespace: 'community', name: 'kubernetes-deployment', latestVer: version },
+    version: { nodedefId: 'mock-id', version, blob, publishedAt: '2026-01-01T00:00:00.000Z' },
+  };
+}
+
 describe('registryStore', () => {
   beforeEach(() => {
     // Reset store state between tests
@@ -398,10 +422,9 @@ describe('registryStore', () => {
 
   describe('installRemoteNodeDef', () => {
     it('downloads, writes, and reloads so the def is resolvable', async () => {
-      // Mock fetch to return valid YAML
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: true,
-        text: async () => remoteNodeDefYaml,
+        json: async () => makeDetailResponse(remoteNodeDefBlob),
       }));
 
       const fs = new InMemoryFileSystem();
@@ -425,7 +448,7 @@ describe('registryStore', () => {
     it('after install, remoteInstalledKeys contains the installed key', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
         ok: true,
-        text: async () => remoteNodeDefYaml,
+        json: async () => makeDetailResponse(remoteNodeDefBlob),
       }));
 
       const fs = new InMemoryFileSystem();
@@ -462,7 +485,7 @@ describe('registryStore', () => {
 
       await expect(
         useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary),
-      ).rejects.toThrow('Failed to fetch NodeDef YAML: 503');
+      ).rejects.toThrow('Failed to fetch NodeDef detail: 503');
     });
   });
 
@@ -534,10 +557,11 @@ spec:
         'project/.archcanvas/registry.lock.yaml': lockfileYaml,
       });
 
-      // Mock fetch: first call returns yaml (for downloadAndInstallNodeDef),
-      // subsequent calls (checkForUpdates) can return empty updates
+      // Mock fetch: first call hits the detail endpoint (for downloadAndInstallNodeDef),
+      // subsequent calls (checkForUpdates) return empty updates
+      const remoteBlob = { ...remoteNodeDefBlob, metadata: { ...remoteNodeDefBlob.metadata, version: '2.0.0' } };
       vi.stubGlobal('fetch', vi.fn()
-        .mockResolvedValueOnce({ ok: true, text: async () => remoteYaml })
+        .mockResolvedValueOnce({ ok: true, json: async () => makeDetailResponse(remoteBlob, '2.0.0') })
         .mockResolvedValue({ ok: true, json: async () => ({ updates: [] }) })
       );
 

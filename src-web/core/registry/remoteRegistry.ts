@@ -3,6 +3,7 @@
 // All network calls to registry.archcanvas.dev are isolated here.
 // ---------------------------------------------------------------------------
 
+import { stringify } from 'yaml';
 import { z } from 'zod/v4';
 
 const RemoteNodeDefSummarySchema = z.object({
@@ -189,8 +190,13 @@ export async function fetchNodeDefDetail(
 }
 
 /**
- * Fetch the raw YAML for a specific NodeDef version from the registry.
- * Throws on network errors or non-OK HTTP responses.
+ * Fetch the YAML for a specific NodeDef version from the registry.
+ *
+ * The registry stores NodeDef contents as JSONB and exposes them through the
+ * detail endpoint as `version.blob` — there is no raw-YAML endpoint. We fetch
+ * the detail and serialize the blob locally; the on-disk bytes are identical
+ * to anything the server could produce because the original YAML formatting
+ * was already lost at publish time.
  */
 export async function fetchNodeDefYaml(
   namespace: string,
@@ -198,12 +204,13 @@ export async function fetchNodeDefYaml(
   version: string,
   signal?: AbortSignal,
 ): Promise<string> {
-  const url =
-    `${REGISTRY_BASE_URL}/api/v1/nodedefs/` +
-    `${encodeURIComponent(namespace)}/${encodeURIComponent(name)}/${encodeURIComponent(version)}/yaml`;
-  const resp = await fetch(url, { signal });
-  if (!resp.ok) throw new Error(`Failed to fetch NodeDef YAML: ${resp.status}`);
-  return resp.text();
+  const detail = await fetchNodeDefDetail(namespace, name, version, signal);
+  return stringify(detail.version.blob, {
+    indent: 2,
+    lineWidth: 0,
+    defaultKeyType: 'PLAIN',
+    defaultStringType: 'PLAIN',
+  });
 }
 
 // ---------------------------------------------------------------------------
