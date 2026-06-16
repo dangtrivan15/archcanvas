@@ -188,6 +188,6 @@ describe('RegistryStatusDialog', () => {
     render(<RegistryStatusDialog />);
     const btn = screen.getByTestId('registry-reload-btn');
     fireEvent.click(btn);
-    expect(mockReloadProjectLocal).toHaveBeenCalledWith(mockFs, '/test/project');
+    expect(mockReloadProjectLocal).toHaveBeenCalledWith(mockFs);
   });
 });

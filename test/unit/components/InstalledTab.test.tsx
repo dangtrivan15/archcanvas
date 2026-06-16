@@ -274,7 +274,7 @@ describe('InstalledTab — community-installed with update affordances', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Update' }));
     });
-    expect(mockApplyUpdate).toHaveBeenCalledWith(mockFs, '/test/project', 'acme', 'widget');
+    expect(mockApplyUpdate).toHaveBeenCalledWith(mockFs, 'acme', 'widget');
     expect(mockSetNotification).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'success' }),
     );
@@ -348,7 +348,7 @@ describe('InstalledTab — community-installed with update affordances', () => {
       fireEvent.click(screen.getByTestId('uninstall-confirm-btn'));
     });
     expect(mockUninstallRemoteNodeDef).toHaveBeenCalledWith(
-      mockFs, '/test/project', 'acme', 'widget',
+      mockFs, 'acme', 'widget',
     );
   });
 

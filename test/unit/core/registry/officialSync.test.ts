@@ -47,7 +47,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(browseRegistry).mockResolvedValue({ items: [], total: 0 });
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', null);
+      await syncOfficialNodeDefs(fs, null);
 
       expect(browseRegistry).toHaveBeenCalledTimes(9);
       for (const ns of OFFICIAL_NAMESPACES) {
@@ -67,7 +67,7 @@ describe('syncOfficialNodeDefs', () => {
       };
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfile);
+      await syncOfficialNodeDefs(fs, lockfile);
 
       expect(browseRegistry).toHaveBeenCalledTimes(9);
     });
@@ -83,13 +83,13 @@ describe('syncOfficialNodeDefs', () => {
       });
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', null);
+      await syncOfficialNodeDefs(fs, null);
 
       expect(downloadAndInstallNodeDef).toHaveBeenCalledWith(
-        fs, 'project', computeSummary, 'remote-official',
+        fs, computeSummary, 'remote-official',
       );
       expect(downloadAndInstallNodeDef).toHaveBeenCalledWith(
-        fs, 'project', dataSummary, 'remote-official',
+        fs, dataSummary, 'remote-official',
       );
     });
 
@@ -102,7 +102,7 @@ describe('syncOfficialNodeDefs', () => {
       });
 
       const fs = new InMemoryFileSystem();
-      await expect(syncOfficialNodeDefs(fs, 'project', null)).resolves.not.toThrow();
+      await expect(syncOfficialNodeDefs(fs, null)).resolves.not.toThrow();
 
       // All 9 namespaces should have been attempted
       expect(callCount).toBe(9);
@@ -113,7 +113,7 @@ describe('syncOfficialNodeDefs', () => {
 
       const controller = new AbortController();
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', null, controller.signal);
+      await syncOfficialNodeDefs(fs, null, controller.signal);
 
       expect(browseRegistry).toHaveBeenCalledWith(expect.anything(), controller.signal);
     });
@@ -122,7 +122,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(browseRegistry).mockResolvedValue({ items: [], total: 0 });
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', null);
+      const result = await syncOfficialNodeDefs(fs, null);
 
       expect(result).toBe(false);
     });
@@ -135,7 +135,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(downloadAndInstallNodeDef).mockResolvedValue(undefined);
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', null);
+      const result = await syncOfficialNodeDefs(fs, null);
 
       expect(result).toBe(true);
     });
@@ -156,7 +156,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(checkUpdatesRemote).mockResolvedValue([]);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(checkUpdatesRemote).toHaveBeenCalledTimes(1);
       expect(checkUpdatesRemote).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(checkUpdatesRemote).mockResolvedValue([]);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithMixed);
+      await syncOfficialNodeDefs(fs, lockfileWithMixed);
 
       const [entries] = vi.mocked(checkUpdatesRemote).mock.calls[0];
       // Only the 2 remote-official entries should be passed, not the 2 remote entries
@@ -200,7 +200,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(checkUpdatesRemote).mockResolvedValue([]);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(browseRegistry).not.toHaveBeenCalled();
       expect(fetchNodeDefDetail).not.toHaveBeenCalled();
@@ -215,12 +215,12 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(fetchNodeDefDetail).mockResolvedValue(detail);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(fetchNodeDefDetail).toHaveBeenCalledTimes(1);
       expect(fetchNodeDefDetail).toHaveBeenCalledWith('compute', 'service', '2.0.0', undefined);
       expect(downloadAndInstallNodeDef).toHaveBeenCalledWith(
-        fs, 'project', detail.nodedef, 'remote-official',
+        fs, detail.nodedef, 'remote-official',
       );
     });
 
@@ -231,7 +231,7 @@ describe('syncOfficialNodeDefs', () => {
       ]);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(fetchNodeDefDetail).not.toHaveBeenCalled();
       expect(downloadAndInstallNodeDef).not.toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe('syncOfficialNodeDefs', () => {
 
       const controller = new AbortController();
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials, controller.signal);
+      await syncOfficialNodeDefs(fs, lockfileWithOfficials, controller.signal);
 
       expect(checkUpdatesRemote).toHaveBeenCalledWith(expect.anything(), controller.signal);
       expect(fetchNodeDefDetail).toHaveBeenCalledWith(
@@ -258,7 +258,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(checkUpdatesRemote).mockResolvedValue([]);
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      const result = await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(result).toBe(false);
     });
@@ -272,7 +272,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(downloadAndInstallNodeDef).mockResolvedValue(undefined);
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      const result = await syncOfficialNodeDefs(fs, lockfileWithOfficials);
 
       expect(result).toBe(true);
     });
@@ -298,12 +298,12 @@ describe('syncOfficialNodeDefs', () => {
         if (ns === 'compute') return detail1;
         return detail2;
       });
-      vi.mocked(downloadAndInstallNodeDef).mockImplementation(async (_fs, _root, summary) => {
+      vi.mocked(downloadAndInstallNodeDef).mockImplementation(async (_fs, summary) => {
         if (summary.namespace === 'compute') throw new Error('Install failed');
       });
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', lockfileMultiple);
+      const result = await syncOfficialNodeDefs(fs, lockfileMultiple);
 
       expect(result).toBe(true); // data/database was downloaded successfully even though compute failed
       // Both entries should have been attempted
@@ -334,13 +334,13 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(downloadAndInstallNodeDef).mockResolvedValue(undefined);
 
       const fs = new InMemoryFileSystem();
-      await expect(syncOfficialNodeDefs(fs, 'project', lockfileMultiple)).resolves.not.toThrow();
+      await expect(syncOfficialNodeDefs(fs, lockfileMultiple)).resolves.not.toThrow();
 
       // fetchNodeDefDetail was called for both; downloadAndInstallNodeDef only for the successful one
       expect(fetchNodeDefDetail).toHaveBeenCalledTimes(2);
       expect(downloadAndInstallNodeDef).toHaveBeenCalledTimes(1);
       expect(downloadAndInstallNodeDef).toHaveBeenCalledWith(
-        expect.anything(), expect.anything(), detail2.nodedef, 'remote-official',
+        expect.anything(), detail2.nodedef, 'remote-official',
       );
     });
   });
@@ -358,7 +358,7 @@ describe('syncOfficialNodeDefs', () => {
       };
 
       const fs = new InMemoryFileSystem();
-      const result = await syncOfficialNodeDefs(fs, 'project', lockfileWithOfficials);
+      const result = await syncOfficialNodeDefs(fs, lockfileWithOfficials);
       expect(result).toBe(false);
     });
 
@@ -367,13 +367,13 @@ describe('syncOfficialNodeDefs', () => {
         return { items: [makeSummary(opts.namespace!, 'node')], total: 1 };
       });
       let installCount = 0;
-      vi.mocked(downloadAndInstallNodeDef).mockImplementation(async (_fs, _root, summary) => {
+      vi.mocked(downloadAndInstallNodeDef).mockImplementation(async (_fs, summary) => {
         installCount++;
         if (summary.namespace === 'compute') throw new Error('Install failed');
       });
 
       const fs = new InMemoryFileSystem();
-      await expect(syncOfficialNodeDefs(fs, 'project', null)).resolves.not.toThrow();
+      await expect(syncOfficialNodeDefs(fs, null)).resolves.not.toThrow();
 
       // All 9 namespaces should have been attempted
       expect(installCount).toBe(9);
@@ -392,7 +392,7 @@ describe('syncOfficialNodeDefs', () => {
       vi.mocked(checkUpdatesRemote).mockResolvedValue([]);
 
       const fs = new InMemoryFileSystem();
-      await syncOfficialNodeDefs(fs, 'project', lockfileWithMalformed);
+      await syncOfficialNodeDefs(fs, lockfileWithMalformed);
 
       const [entries] = vi.mocked(checkUpdatesRemote).mock.calls[0];
       // Only the valid key should be passed

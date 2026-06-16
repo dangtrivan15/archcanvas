@@ -174,7 +174,7 @@ describe('InstallNodeDefDialog', () => {
       fireEvent.click(screen.getByTestId('install-nodedef-confirm'));
     });
 
-    expect(mockInstallRemoteNodeDef).toHaveBeenCalledWith(mockFs, '/test/project', aSummary);
+    expect(mockInstallRemoteNodeDef).toHaveBeenCalledWith(mockFs, aSummary);
   });
 
   it('calls close after successful install', async () => {

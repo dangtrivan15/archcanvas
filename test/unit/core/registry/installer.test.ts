@@ -74,9 +74,9 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await downloadAndInstallNodeDef(fs, 'myproject', summary);
+    await downloadAndInstallNodeDef(fs, summary);
 
-    const expected = 'myproject/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
+    const expected = '.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
     const content = await fs.readFile(expected);
     // Compare semantically — yaml.stringify formatting may differ from any
     // hand-written reference, but the parsed structure must match the blob.
@@ -87,9 +87,9 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await downloadAndInstallNodeDef(fs, 'myproject', summary);
+    await downloadAndInstallNodeDef(fs, summary);
 
-    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    const lockContent = await fs.readFile('.archcanvas/registry.lock.yaml');
     expect(lockContent).toContain('community/kubernetes-deployment');
     expect(lockContent).toContain("source: remote");
     expect(lockContent).toContain('version: 1.0.0');
@@ -100,9 +100,9 @@ describe('downloadAndInstallNodeDef', () => {
     const fs = new InMemoryFileSystem();
     // No lockfile pre-seeded — installer must create one from scratch
 
-    await expect(downloadAndInstallNodeDef(fs, 'myproject', summary)).resolves.not.toThrow();
+    await expect(downloadAndInstallNodeDef(fs, summary)).resolves.not.toThrow();
 
-    const lockExists = await fs.exists('myproject/.archcanvas/registry.lock.yaml');
+    const lockExists = await fs.exists('.archcanvas/registry.lock.yaml');
     expect(lockExists).toBe(true);
   });
 
@@ -120,11 +120,11 @@ describe('downloadAndInstallNodeDef', () => {
       "    version: '2.0.0'",
       '    source: local',
     ].join('\n');
-    fs.seed({ 'myproject/.archcanvas/registry.lock.yaml': existingLockYaml });
+    fs.seed({ '.archcanvas/registry.lock.yaml': existingLockYaml });
 
-    await downloadAndInstallNodeDef(fs, 'myproject', summary);
+    await downloadAndInstallNodeDef(fs, summary);
 
-    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    const lockContent = await fs.readFile('.archcanvas/registry.lock.yaml');
     // Both old and new entries should be present
     expect(lockContent).toContain('compute/service');
     expect(lockContent).toContain('community/kubernetes-deployment');
@@ -134,13 +134,13 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(INVALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await expect(downloadAndInstallNodeDef(fs, 'myproject', summary)).rejects.toThrow(
+    await expect(downloadAndInstallNodeDef(fs, summary)).rejects.toThrow(
       /Invalid NodeDef from registry/,
     );
 
     // File must NOT have been written
     const fileExists = await fs.exists(
-      'myproject/.archcanvas/nodedefs/community-kubernetes-deployment.yaml',
+      '.archcanvas/nodedefs/community-kubernetes-deployment.yaml',
     );
     expect(fileExists).toBe(false);
   });
@@ -149,7 +149,7 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchError(404);
     const fs = new InMemoryFileSystem();
 
-    await expect(downloadAndInstallNodeDef(fs, 'myproject', summary)).rejects.toThrow(
+    await expect(downloadAndInstallNodeDef(fs, summary)).rejects.toThrow(
       'Failed to fetch NodeDef detail: 404',
     );
   });
@@ -158,7 +158,7 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await downloadAndInstallNodeDef(fs, '', summary);
+    await downloadAndInstallNodeDef(fs, summary);
 
     const expected = '.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
     const exists = await fs.exists(expected);
@@ -170,13 +170,13 @@ describe('downloadAndInstallNodeDef', () => {
     const fs = new InMemoryFileSystem();
     const badSummary: RemoteNodeDefSummary = { ...summary, name: 'evil/../../escape' };
 
-    await expect(downloadAndInstallNodeDef(fs, 'myproject', badSummary)).rejects.toThrow(
+    await expect(downloadAndInstallNodeDef(fs, badSummary)).rejects.toThrow(
       /Invalid NodeDef identifier/,
     );
 
     // Must not have written any file
     const exists = await fs.exists(
-      'myproject/.archcanvas/nodedefs/community-evil/../../escape.yaml',
+      '.archcanvas/nodedefs/community-evil/../../escape.yaml',
     );
     expect(exists).toBe(false);
   });
@@ -186,7 +186,7 @@ describe('downloadAndInstallNodeDef', () => {
     const fs = new InMemoryFileSystem();
     const badSummary: RemoteNodeDefSummary = { ...summary, namespace: 'evil\\ns' };
 
-    await expect(downloadAndInstallNodeDef(fs, 'myproject', badSummary)).rejects.toThrow(
+    await expect(downloadAndInstallNodeDef(fs, badSummary)).rejects.toThrow(
       /Invalid NodeDef identifier/,
     );
   });
@@ -195,9 +195,9 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await downloadAndInstallNodeDef(fs, 'myproject', summary, 'remote-official');
+    await downloadAndInstallNodeDef(fs, summary, 'remote-official');
 
-    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    const lockContent = await fs.readFile('.archcanvas/registry.lock.yaml');
     expect(lockContent).toContain('community/kubernetes-deployment');
     expect(lockContent).toContain('source: remote-official');
     expect(lockContent).toContain('version: 1.0.0');
@@ -207,9 +207,9 @@ describe('downloadAndInstallNodeDef', () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
 
-    await downloadAndInstallNodeDef(fs, 'myproject', summary);
+    await downloadAndInstallNodeDef(fs, summary);
 
-    const lockContent = await fs.readFile('myproject/.archcanvas/registry.lock.yaml');
+    const lockContent = await fs.readFile('.archcanvas/registry.lock.yaml');
     expect(lockContent).toContain('source: remote');
     expect(lockContent).not.toContain('source: remote-official');
   });

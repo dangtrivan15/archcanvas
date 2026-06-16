@@ -40,7 +40,6 @@ export function NodeDefDetailView() {
   const builtinKeys = useRegistryStore((s) => s.builtinKeys);
   const uninstallRemoteNodeDef = useRegistryStore((s) => s.uninstallRemoteNodeDef);
   const fs = useFileStore((s) => s.fs);
-  const projectPath = useFileStore((s) => s.projectPath);
 
   const [copied, setCopied] = useState(false);
   const [uninstallOpen, setUninstallOpen] = useState(false);
@@ -204,7 +203,7 @@ export function NodeDefDetailView() {
                 if (!fs) return;
                 setUninstalling(true);
                 try {
-                  await uninstallRemoteNodeDef(fs, projectPath ?? '', nodedef.namespace, nodedef.name);
+                  await uninstallRemoteNodeDef(fs, nodedef.namespace, nodedef.name);
                   setUninstallOpen(false);
                 } finally {
                   setUninstalling(false);

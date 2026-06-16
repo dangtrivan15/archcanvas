@@ -481,7 +481,7 @@ describe('NodeDefDetailView', () => {
         fireEvent.click(screen.getByTestId('uninstall-confirm-btn'));
       });
       expect(mockUninstallRemoteNodeDef).toHaveBeenCalledWith(
-        expect.anything(), 'project', 'acme', 'widget',
+        expect.anything(), 'acme', 'widget',
       );
     });
 

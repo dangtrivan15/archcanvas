@@ -13,16 +13,16 @@ describe('createNodeDefWatcher (polling fallback)', () => {
 
   it('calls onReload when a file is added', async () => {
     const fs = new InMemoryFileSystem();
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'content-a' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'content-a' });
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     // Wait for initial snapshot to build
     await vi.advanceTimersByTimeAsync(100);
 
     // Add a new file
-    fs.seed({ 'project/.archcanvas/nodedefs/b.yaml': 'content-b' });
+    fs.seed({ '.archcanvas/nodedefs/b.yaml': 'content-b' });
 
     // Advance past poll interval
     await vi.advanceTimersByTimeAsync(3100);
@@ -37,15 +37,15 @@ describe('createNodeDefWatcher (polling fallback)', () => {
 
   it('calls onReload when file content changes', async () => {
     const fs = new InMemoryFileSystem();
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'version-1' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'version-1' });
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     await vi.advanceTimersByTimeAsync(100);
 
     // Modify existing file content
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'version-2' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'version-2' });
 
     await vi.advanceTimersByTimeAsync(3100);
     await vi.advanceTimersByTimeAsync(600);
@@ -57,10 +57,10 @@ describe('createNodeDefWatcher (polling fallback)', () => {
 
   it('does NOT call onReload when files are unchanged', async () => {
     const fs = new InMemoryFileSystem();
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'content-a' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'content-a' });
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     await vi.advanceTimersByTimeAsync(100);
 
@@ -74,18 +74,18 @@ describe('createNodeDefWatcher (polling fallback)', () => {
 
   it('debounces multiple rapid changes into one onReload call', async () => {
     const fs = new InMemoryFileSystem();
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'v1' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'v1' });
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     await vi.advanceTimersByTimeAsync(100);
 
     // Simulate rapid changes across consecutive polls
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'v2' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'v2' });
     await vi.advanceTimersByTimeAsync(3100);
 
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'v3' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'v3' });
     await vi.advanceTimersByTimeAsync(200); // Within debounce window
 
     // Let debounce fire
@@ -99,16 +99,16 @@ describe('createNodeDefWatcher (polling fallback)', () => {
 
   it('stop() prevents further onReload calls', async () => {
     const fs = new InMemoryFileSystem();
-    fs.seed({ 'project/.archcanvas/nodedefs/a.yaml': 'content' });
+    fs.seed({ '.archcanvas/nodedefs/a.yaml': 'content' });
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     await vi.advanceTimersByTimeAsync(100);
     watcher.stop();
 
     // Add file and advance past poll interval
-    fs.seed({ 'project/.archcanvas/nodedefs/b.yaml': 'new' });
+    fs.seed({ '.archcanvas/nodedefs/b.yaml': 'new' });
     await vi.advanceTimersByTimeAsync(10000);
 
     expect(onReload).not.toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe('createNodeDefWatcher (polling fallback)', () => {
     // No .archcanvas/nodedefs/ directory
 
     const onReload = vi.fn().mockResolvedValue(undefined);
-    const watcher = createNodeDefWatcher(fs, 'project', onReload);
+    const watcher = createNodeDefWatcher(fs, onReload);
 
     // Should not throw
     await vi.advanceTimersByTimeAsync(10000);

@@ -28,13 +28,13 @@ export const NODEDEFS_DIR = '.archcanvas/nodedefs';
 
 export async function loadProjectLocal(
   fs: FileSystem,
-  projectRoot: string,
   lockfile?: LockfileData | null,
 ): Promise<LoadProjectLocalResult> {
   const allLoaded = new Map<string, NodeDef>();
   const errors: Array<{ file: string; message: string }> = [];
 
-  const dir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
+  // Path is relative to the FileSystem root — the platform layer resolves it.
+  const dir = NODEDEFS_DIR;
 
   const dirExists = await fs.exists(dir);
   if (!dirExists) {

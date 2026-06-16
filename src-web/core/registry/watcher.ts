@@ -41,10 +41,11 @@ function simpleHash(str: string): number {
  */
 export function createNodeDefWatcher(
   fs: FileSystem,
-  projectRoot: string,
   onReload: () => Promise<void>,
 ): NodeDefWatcher {
-  const dir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
+  // `dir` is relative to the FileSystem root — used for all fs.* calls below,
+  // which the platform layer resolves against the project directory.
+  const dir = NODEDEFS_DIR;
   const debouncedReload = debounce(() => { onReload(); }, DEBOUNCE_MS);
   let stopped = false;
 
@@ -52,9 +53,14 @@ export function createNodeDefWatcher(
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     let unwatch: (() => void) | null = null;
 
+    // The Tauri plugin's watchImmediate bypasses the FileSystem abstraction,
+    // so it needs a real absolute path — derive it from the FS root.
+    const root = fs.getPath();
+    const nativeDir = root ? `${root.replace(/\/+$/, '')}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
+
     import('@tauri-apps/plugin-fs').then(({ watchImmediate }) => {
       if (stopped) return;
-      watchImmediate(dir, () => {
+      watchImmediate(nativeDir, () => {
         debouncedReload.trigger();
       }, { recursive: false }).then(unwatchFn => {
         if (stopped) { unwatchFn(); return; }

@@ -263,10 +263,10 @@ describe('registryStore', () => {
     it('loads project-local defs when fs and projectRoot are provided', async () => {
       const fs = new InMemoryFileSystem();
       fs.seed({
-        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+        '.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
       });
 
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const state = useRegistryStore.getState();
       expect(state.status).toBe('ready');
@@ -281,10 +281,10 @@ describe('registryStore', () => {
     it('sets loadErrors for invalid YAML files', async () => {
       const fs = new InMemoryFileSystem();
       fs.seed({
-        'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+        '.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
       });
 
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const state = useRegistryStore.getState();
       expect(state.status).toBe('ready');
@@ -296,10 +296,10 @@ describe('registryStore', () => {
     it('detects overrides when project-local shadows builtin', async () => {
       const fs = new InMemoryFileSystem();
       fs.seed({
-        'project/.archcanvas/nodedefs/service.yaml': overrideNodeDefYaml,
+        '.archcanvas/nodedefs/service.yaml': overrideNodeDefYaml,
       });
 
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const state = useRegistryStore.getState();
       expect(state.overrides.length).toBeGreaterThan(0);
@@ -307,7 +307,7 @@ describe('registryStore', () => {
 
     it('initializes cleanly when .archcanvas/nodedefs/ does not exist', async () => {
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const state = useRegistryStore.getState();
       expect(state.status).toBe('ready');
@@ -321,14 +321,14 @@ describe('registryStore', () => {
     it('updates counts and registry', async () => {
       const fs = new InMemoryFileSystem();
       // Start with no project-local defs
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
       expect(useRegistryStore.getState().projectLocalCount).toBe(0);
 
       // Add a file and reload
       fs.seed({
-        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+        '.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
       });
-      await useRegistryStore.getState().reloadProjectLocal(fs, 'project');
+      await useRegistryStore.getState().reloadProjectLocal(fs);
 
       expect(useRegistryStore.getState().projectLocalCount).toBe(1);
       expect(useRegistryStore.getState().projectLocalKeys.has('custom/custom-node')).toBe(true);
@@ -336,13 +336,13 @@ describe('registryStore', () => {
 
     it('surfaces errors in loadErrors without crashing', async () => {
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       // Trigger reload with a bad file
       fs.seed({
-        'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+        '.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
       });
-      await useRegistryStore.getState().reloadProjectLocal(fs, 'project');
+      await useRegistryStore.getState().reloadProjectLocal(fs);
 
       const state = useRegistryStore.getState();
       // Should still be ready (previous registry preserved if partial)
@@ -353,9 +353,9 @@ describe('registryStore', () => {
     it('keeps previous registry on full failure', async () => {
       const fs = new InMemoryFileSystem();
       fs.seed({
-        'project/.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
+        '.archcanvas/nodedefs/custom.yaml': validNodeDefYaml,
       });
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
       const prevCount = useRegistryStore.getState().list().length;
 
       // Simulate by using a fs that throws on exists
@@ -364,7 +364,7 @@ describe('registryStore', () => {
         exists: async () => { throw new Error('disk error'); },
       } as any;
 
-      await useRegistryStore.getState().reloadProjectLocal(brokenFs, 'project');
+      await useRegistryStore.getState().reloadProjectLocal(brokenFs);
 
       // Previous registry should still work
       expect(useRegistryStore.getState().list().length).toBe(prevCount);
@@ -386,15 +386,15 @@ describe('registryStore', () => {
         '    source: remote',
       ].join('\n');
       fs.seed({
-        'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteNodeDefYaml,
-        'project/.archcanvas/registry.lock.yaml': lockfileYaml,
+        '.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteNodeDefYaml,
+        '.archcanvas/registry.lock.yaml': lockfileYaml,
       });
 
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
       expect(useRegistryStore.getState().remoteInstalledCount).toBe(1);
 
       // Reload should preserve the remote classification
-      await useRegistryStore.getState().reloadProjectLocal(fs, 'project');
+      await useRegistryStore.getState().reloadProjectLocal(fs);
       expect(useRegistryStore.getState().remoteInstalledCount).toBe(1);
       expect(useRegistryStore.getState().remoteInstalledKeys.has('community/kubernetes-deployment')).toBe(true);
     });
@@ -411,11 +411,11 @@ describe('registryStore', () => {
         '    source: remote',
       ].join('\n');
       fs.seed({
-        'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteNodeDefYaml,
-        'project/.archcanvas/registry.lock.yaml': lockfileYaml,
+        '.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteNodeDefYaml,
+        '.archcanvas/registry.lock.yaml': lockfileYaml,
       });
 
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const state = useRegistryStore.getState();
       expect(state.remoteInstalledVersions.get('community/kubernetes-deployment')).toBe('1.0.0');
@@ -430,7 +430,7 @@ describe('registryStore', () => {
       }));
 
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const summary = {
         namespace: 'community',
@@ -439,7 +439,7 @@ describe('registryStore', () => {
         displayName: 'Kubernetes Deployment',
       };
 
-      await useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary);
+      await useRegistryStore.getState().installRemoteNodeDef(fs, summary);
 
       // Should now be resolvable
       const def = useRegistryStore.getState().resolve('community/kubernetes-deployment');
@@ -454,7 +454,7 @@ describe('registryStore', () => {
       }));
 
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const summary = {
         namespace: 'community',
@@ -462,7 +462,7 @@ describe('registryStore', () => {
         latestVer: '1.0.0',
       };
 
-      await useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary);
+      await useRegistryStore.getState().installRemoteNodeDef(fs, summary);
 
       const state = useRegistryStore.getState();
       expect(state.remoteInstalledKeys.has('community/kubernetes-deployment')).toBe(true);
@@ -477,7 +477,7 @@ describe('registryStore', () => {
       }));
 
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
+      await useRegistryStore.getState().initialize(fs);
 
       const summary = {
         namespace: 'community',
@@ -486,7 +486,7 @@ describe('registryStore', () => {
       };
 
       await expect(
-        useRegistryStore.getState().installRemoteNodeDef(fs, 'project', summary),
+        useRegistryStore.getState().installRemoteNodeDef(fs, summary),
       ).rejects.toThrow('Failed to fetch NodeDef detail: 503');
     });
   });
@@ -498,8 +498,8 @@ describe('registryStore', () => {
         json: async () => makeDetailResponse(remoteNodeDefBlob),
       }));
       const fs = new InMemoryFileSystem();
-      await useRegistryStore.getState().initialize(fs, 'project');
-      await useRegistryStore.getState().installRemoteNodeDef(fs, 'project', {
+      await useRegistryStore.getState().initialize(fs);
+      await useRegistryStore.getState().installRemoteNodeDef(fs, {
         namespace: 'community',
         name: 'kubernetes-deployment',
         latestVer: '1.0.0',
@@ -509,11 +509,11 @@ describe('registryStore', () => {
 
     it('removes the file from disk', async () => {
       const fs = await installFixture();
-      const filePath = 'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
+      const filePath = '.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
       expect(await fs.exists(filePath)).toBe(true);
 
       await useRegistryStore.getState().uninstallRemoteNodeDef(
-        fs, 'project', 'community', 'kubernetes-deployment',
+        fs, 'community', 'kubernetes-deployment',
       );
 
       expect(await fs.exists(filePath)).toBe(false);
@@ -524,7 +524,7 @@ describe('registryStore', () => {
       expect(useRegistryStore.getState().lockfile?.entries['community/kubernetes-deployment']).toBeDefined();
 
       await useRegistryStore.getState().uninstallRemoteNodeDef(
-        fs, 'project', 'community', 'kubernetes-deployment',
+        fs, 'community', 'kubernetes-deployment',
       );
 
       expect(useRegistryStore.getState().lockfile?.entries['community/kubernetes-deployment']).toBeUndefined();
@@ -535,7 +535,7 @@ describe('registryStore', () => {
       expect(useRegistryStore.getState().resolve('community/kubernetes-deployment')).toBeDefined();
 
       await useRegistryStore.getState().uninstallRemoteNodeDef(
-        fs, 'project', 'community', 'kubernetes-deployment',
+        fs, 'community', 'kubernetes-deployment',
       );
 
       expect(useRegistryStore.getState().resolve('community/kubernetes-deployment')).toBeUndefined();
@@ -550,7 +550,7 @@ describe('registryStore', () => {
       });
 
       await useRegistryStore.getState().uninstallRemoteNodeDef(
-        fs, 'project', 'community', 'kubernetes-deployment',
+        fs, 'community', 'kubernetes-deployment',
       );
 
       expect(useRegistryStore.getState().availableUpdates.has('community/kubernetes-deployment')).toBe(false);
@@ -558,13 +558,13 @@ describe('registryStore', () => {
 
     it('is tolerant of an already-missing file (lockfile cleanup still runs)', async () => {
       const fs = await installFixture();
-      const filePath = 'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
+      const filePath = '.archcanvas/nodedefs/community-kubernetes-deployment.yaml';
       // External actor removed the file; lockfile still references it
       await fs.deleteFile(filePath);
 
       await expect(
         useRegistryStore.getState().uninstallRemoteNodeDef(
-          fs, 'project', 'community', 'kubernetes-deployment',
+          fs, 'community', 'kubernetes-deployment',
         ),
       ).resolves.toBeUndefined();
 
@@ -636,8 +636,8 @@ spec:
   ports: []
 `;
       fs.seed({
-        'project/.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteYaml.replace('2.0.0', '1.0.0'),
-        'project/.archcanvas/registry.lock.yaml': lockfileYaml,
+        '.archcanvas/nodedefs/community-kubernetes-deployment.yaml': remoteYaml.replace('2.0.0', '1.0.0'),
+        '.archcanvas/registry.lock.yaml': lockfileYaml,
       });
 
       // Mock fetch: first call hits the detail endpoint (for downloadAndInstallNodeDef),
@@ -653,7 +653,7 @@ spec:
         pinnedVersions: new Map(),
       });
 
-      await useRegistryStore.getState().applyUpdate(fs, 'project', 'community', 'kubernetes-deployment');
+      await useRegistryStore.getState().applyUpdate(fs, 'community', 'kubernetes-deployment');
 
       const state = useRegistryStore.getState();
       expect(state.availableUpdates.has('community/kubernetes-deployment')).toBe(false);

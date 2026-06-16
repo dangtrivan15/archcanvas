@@ -39,7 +39,7 @@ describe('loadBuiltins', () => {
 describe('loadProjectLocal', () => {
   it('returns empty result when nodedefs directory does not exist', async () => {
     const fs = new InMemoryFileSystem();
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(0);
     expect(result.errors).toHaveLength(0);
   });
@@ -47,10 +47,10 @@ describe('loadProjectLocal', () => {
   it('loads valid YAML files', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.nodeDefs.has('custom/custom-node')).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -59,10 +59,10 @@ describe('loadProjectLocal', () => {
   it('collects errors for invalid YAML files without throwing', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+      '.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(0);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].file).toBe('bad.yaml');
@@ -71,11 +71,11 @@ describe('loadProjectLocal', () => {
   it('loads valid files and collects errors for invalid ones', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/good.yaml': validNodeDefYaml,
-      'project/.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
+      '.archcanvas/nodedefs/good.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/bad.yaml': invalidNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.errors).toHaveLength(1);
   });
@@ -83,11 +83,11 @@ describe('loadProjectLocal', () => {
   it('ignores non-YAML files', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/readme.md': '# NodeDefs',
-      'project/.archcanvas/nodedefs/good.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/readme.md': '# NodeDefs',
+      '.archcanvas/nodedefs/good.yaml': validNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.errors).toHaveLength(0);
   });
@@ -97,7 +97,7 @@ describe('loadProjectLocal', () => {
     // Create the directory by seeding a file in a parent, then check
     // InMemoryFileSystem.exists checks for prefix, so we need a file
     // Actually, with no files the directory won't "exist" — which is the correct behavior
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(0);
     expect(result.errors).toHaveLength(0);
   });
@@ -105,10 +105,10 @@ describe('loadProjectLocal', () => {
   it('works with .yml extension', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom.yml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom.yml': validNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(1);
   });
 
@@ -119,7 +119,7 @@ describe('loadProjectLocal', () => {
   it('classifies file as remoteInstalledNodeDefs when lockfile has source: remote', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -130,7 +130,7 @@ describe('loadProjectLocal', () => {
       },
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(0);
     expect(result.remoteInstalledNodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.has('custom/custom-node')).toBe(true);
@@ -139,7 +139,7 @@ describe('loadProjectLocal', () => {
   it('classifies file as nodeDefs (authored) when lockfile has source: local', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -150,7 +150,7 @@ describe('loadProjectLocal', () => {
       },
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
   });
@@ -158,10 +158,10 @@ describe('loadProjectLocal', () => {
   it('classifies file as nodeDefs when no lockfile provided (backwards compatible)', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
-    const result = await loadProjectLocal(fs, 'project');
+    const result = await loadProjectLocal(fs);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
   });
@@ -169,7 +169,7 @@ describe('loadProjectLocal', () => {
   it('classifies file as nodeDefs when lockfile has no entry for that key', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -178,7 +178,7 @@ describe('loadProjectLocal', () => {
       entries: {},   // empty — no entry for custom/custom-node
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
   });
@@ -200,8 +200,8 @@ spec:
 `;
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
-      'project/.archcanvas/nodedefs/community-remote-node.yaml': remoteNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/community-remote-node.yaml': remoteNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -213,7 +213,7 @@ spec:
       },
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.size).toBe(1);
     expect(result.nodeDefs.has('custom/custom-node')).toBe(true);
@@ -222,14 +222,14 @@ spec:
 
   it('returns empty remoteInstalledNodeDefs when directory does not exist', async () => {
     const fs = new InMemoryFileSystem();
-    const result = await loadProjectLocal(fs, 'project', null);
+    const result = await loadProjectLocal(fs, null);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
   });
 
   it('classifies file as remoteOfficialNodeDefs when lockfile has source: remote-official', async () => {
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -240,7 +240,7 @@ spec:
       },
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(0);
     expect(result.remoteInstalledNodeDefs.size).toBe(0);
     expect(result.remoteOfficialNodeDefs.size).toBe(1);
@@ -249,7 +249,7 @@ spec:
 
   it('returns empty remoteOfficialNodeDefs when directory does not exist', async () => {
     const fs = new InMemoryFileSystem();
-    const result = await loadProjectLocal(fs, 'project', null);
+    const result = await loadProjectLocal(fs, null);
     expect(result.remoteOfficialNodeDefs.size).toBe(0);
   });
 
@@ -284,9 +284,9 @@ spec:
 `;
     const fs = new InMemoryFileSystem();
     fs.seed({
-      'project/.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
-      'project/.archcanvas/nodedefs/official-node.yaml': officialNodeDefYaml,
-      'project/.archcanvas/nodedefs/community-remote-node.yaml': remoteNodeDefYaml,
+      '.archcanvas/nodedefs/custom-node.yaml': validNodeDefYaml,
+      '.archcanvas/nodedefs/official-node.yaml': officialNodeDefYaml,
+      '.archcanvas/nodedefs/community-remote-node.yaml': remoteNodeDefYaml,
     });
 
     const lockfile: LockfileData = {
@@ -299,7 +299,7 @@ spec:
       },
     };
 
-    const result = await loadProjectLocal(fs, 'project', lockfile);
+    const result = await loadProjectLocal(fs, lockfile);
     expect(result.nodeDefs.size).toBe(1);
     expect(result.remoteOfficialNodeDefs.size).toBe(1);
     expect(result.remoteInstalledNodeDefs.size).toBe(1);

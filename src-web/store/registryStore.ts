@@ -35,14 +35,14 @@ interface RegistryStoreState {
   fetchRemoteRegistryStatus(signal?: AbortSignal): Promise<void>;
   disposeRemoteStatus(): void;
 
-  initialize(fs?: FileSystem, projectRoot?: string): Promise<void>;
-  reloadProjectLocal(fs: FileSystem, projectRoot: string): Promise<void>;
-  installRemoteNodeDef(fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary): Promise<void>;
-  uninstallRemoteNodeDef(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
+  initialize(fs?: FileSystem): Promise<void>;
+  reloadProjectLocal(fs: FileSystem): Promise<void>;
+  installRemoteNodeDef(fs: FileSystem, summary: RemoteNodeDefSummary): Promise<void>;
+  uninstallRemoteNodeDef(fs: FileSystem, namespace: string, name: string): Promise<void>;
   checkForUpdates(signal?: AbortSignal): Promise<void>;
-  applyUpdate(fs: FileSystem, projectRoot: string, namespace: string, name: string): Promise<void>;
+  applyUpdate(fs: FileSystem, namespace: string, name: string): Promise<void>;
   dismissUpdate(key: string, version: string): void;
-  syncOfficialNodeDefs(fs: FileSystem, projectRoot: string, signal?: AbortSignal): Promise<void>;
+  syncOfficialNodeDefs(fs: FileSystem, signal?: AbortSignal): Promise<void>;
   resolve(type: string): NodeDef | undefined;
   list(): NodeDef[];
   search(query: string): NodeDef[];
@@ -123,7 +123,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     }
   },
 
-  initialize: async (fs?: FileSystem, projectRoot?: string) => {
+  initialize: async (fs?: FileSystem) => {
     set({ status: 'loading' });
     try {
       const builtins = loadBuiltins();
@@ -134,11 +134,11 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       let loadErrors: Array<{ file: string; message: string }> = [];
 
       let lockfile: LockfileData | null = null;
-      if (fs && projectRoot !== undefined) {
+      if (fs) {
         // Load lockfile FIRST — needed for file classification
-        lockfile = await loadLockfile(fs, projectRoot);
+        lockfile = await loadLockfile(fs);
         // Classify files using the lockfile's source field
-        const result = await loadProjectLocal(fs, projectRoot, lockfile);
+        const result = await loadProjectLocal(fs, lockfile);
         authored = result.nodeDefs;
         remoteInstalled = result.remoteInstalledNodeDefs;
         remoteOfficialNodeDefs = result.remoteOfficialNodeDefs;
@@ -148,9 +148,9 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       const { registry, warnings } = createRegistry(builtins, authored, lockfile, remoteOfficialNodeDefs, remoteInstalled);
 
       // Auto-generate lockfile if none existed
-      if (!lockfile && fs && projectRoot !== undefined) {
+      if (!lockfile && fs) {
         lockfile = generateLockfile(registry, new Set(authored.keys()), new Set(remoteInstalled.keys()), new Set(remoteOfficialNodeDefs.keys()));
-        await saveLockfile(fs, projectRoot, lockfile);
+        await saveLockfile(fs, lockfile);
       }
 
       const overrides = extractOverrideKeys(warnings);
@@ -188,8 +188,8 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         get().checkForUpdates().catch(() => {});
       }
 
-      if (fs && projectRoot !== undefined) {
-        get().syncOfficialNodeDefs(fs, projectRoot).catch(() => {});
+      if (fs) {
+        get().syncOfficialNodeDefs(fs).catch(() => {});
       }
 
       // Fetch remote registry status and start polling
@@ -206,16 +206,16 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     }
   },
 
-  reloadProjectLocal: async (fs: FileSystem, projectRoot: string) => {
+  reloadProjectLocal: async (fs: FileSystem) => {
     try {
       const builtins = loadBuiltins();
 
       // Step 1: Load existing lockfile BEFORE loadProjectLocal (for classification)
-      const existingLockfile = await loadLockfile(fs, projectRoot);
+      const existingLockfile = await loadLockfile(fs);
 
       // Step 2: Classify files using existing lockfile
       const { nodeDefs: authored, remoteInstalledNodeDefs: remoteInstalled, remoteOfficialNodeDefs, errors: loadErrors } =
-        await loadProjectLocal(fs, projectRoot, existingLockfile);
+        await loadProjectLocal(fs, existingLockfile);
 
       // Step 3: Generate fresh lockfile — pass remoteInstalled and remoteOfficialNodeDefs to temp registry
       //         so generateLockfile sees ALL defs via registry.list()
@@ -228,7 +228,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
         new Set(remoteInstalled.keys()),  // preserves source:'remote' entries
         new Set(remoteOfficialNodeDefs.keys()),  // preserves source:'remote-official' entries
       );
-      await saveLockfile(fs, projectRoot, lockfile);
+      await saveLockfile(fs, lockfile);
 
       // Step 4: Final registry with lockfile for resolveVersioned()
       const { registry, warnings } = createRegistry(
@@ -268,17 +268,16 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     }
   },
 
-  installRemoteNodeDef: async (fs: FileSystem, projectRoot: string, summary: RemoteNodeDefSummary) => {
-    await downloadAndInstallNodeDef(fs, projectRoot, summary);
-    await get().reloadProjectLocal(fs, projectRoot);
+  installRemoteNodeDef: async (fs: FileSystem, summary: RemoteNodeDefSummary) => {
+    await downloadAndInstallNodeDef(fs, summary);
+    await get().reloadProjectLocal(fs);
     get().checkForUpdates().catch(() => {});
   },
 
-  uninstallRemoteNodeDef: async (fs: FileSystem, projectRoot: string, namespace: string, name: string) => {
+  uninstallRemoteNodeDef: async (fs: FileSystem, namespace: string, name: string) => {
     const filename = `${namespace}-${name}.yaml`;
-    const filePath = projectRoot
-      ? `${projectRoot}/.archcanvas/nodedefs/${filename}`
-      : `.archcanvas/nodedefs/${filename}`;
+    // Path is relative to the FileSystem root (resolved by the platform layer).
+    const filePath = `.archcanvas/nodedefs/${filename}`;
     try {
       await fs.deleteFile(filePath);
     } catch {
@@ -286,18 +285,18 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     }
 
     const key = `${namespace}/${name}`;
-    const existingLockfile = await loadLockfile(fs, projectRoot);
+    const existingLockfile = await loadLockfile(fs);
     if (existingLockfile && key in existingLockfile.entries) {
       const { [key]: _removed, ...rest } = existingLockfile.entries;
       void _removed;
-      await saveLockfile(fs, projectRoot, {
+      await saveLockfile(fs, {
         ...existingLockfile,
         resolvedAt: new Date().toISOString(),
         entries: rest,
       });
     }
 
-    await get().reloadProjectLocal(fs, projectRoot);
+    await get().reloadProjectLocal(fs);
 
     // Drop any pending update notification for this key
     if (get().availableUpdates.has(key)) {
@@ -315,7 +314,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     set({ availableUpdates: updates, updatesCheckStatus: 'done' });
   },
 
-  applyUpdate: async (fs: FileSystem, projectRoot: string, namespace: string, name: string) => {
+  applyUpdate: async (fs: FileSystem, namespace: string, name: string) => {
     const key = `${namespace}/${name}`;
     const latestVersion = get().availableUpdates.get(key);
     if (!latestVersion) return;
@@ -329,8 +328,8 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
       tags: [],
       downloadCount: 0,
     };
-    await downloadAndInstallNodeDef(fs, projectRoot, summary);
-    await get().reloadProjectLocal(fs, projectRoot);
+    await downloadAndInstallNodeDef(fs, summary);
+    await get().reloadProjectLocal(fs);
 
     // Clear the update state for this entry
     const newUpdates = new Map(get().availableUpdates);
@@ -341,10 +340,10 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     set({ availableUpdates: newUpdates, pinnedVersions: newPinned });
   },
 
-  syncOfficialNodeDefs: async (fs: FileSystem, projectRoot: string, signal?: AbortSignal) => {
-    const changed = await syncOfficialNodeDefsFn(fs, projectRoot, get().lockfile, signal);
+  syncOfficialNodeDefs: async (fs: FileSystem, signal?: AbortSignal) => {
+    const changed = await syncOfficialNodeDefsFn(fs, get().lockfile, signal);
     if (changed) {
-      await get().reloadProjectLocal(fs, projectRoot);
+      await get().reloadProjectLocal(fs);
     }
   },
 

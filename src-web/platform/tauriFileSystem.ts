@@ -1,4 +1,5 @@
 import type { FileSystem } from './fileSystem';
+import { resolveTauriPath } from './tauriPath';
 import {
   readTextFile,
   writeTextFile,
@@ -21,9 +22,7 @@ export class TauriFileSystem implements FileSystem {
   }
 
   private resolve(path: string): string {
-    const root = this.rootPath.replace(/\/+$/, '');
-    const rel = path.replace(/^\/+/, '');
-    return `${root}/${rel}`;
+    return resolveTauriPath(this.rootPath, path);
   }
 
   async readFile(path: string): Promise<string> {

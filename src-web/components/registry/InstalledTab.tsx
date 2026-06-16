@@ -59,7 +59,7 @@ export function InstalledTab() {
 
   function handleReload() {
     if (!fs) return;
-    useRegistryStore.getState().reloadProjectLocal(fs, projectPath ?? '');
+    useRegistryStore.getState().reloadProjectLocal(fs);
   }
 
   const nodeDefKey = (def: { metadata: { namespace: string; name: string } }) =>
@@ -229,7 +229,7 @@ export function InstalledTab() {
                             if (!fs || !projectPath) return;
                             setApplyingKey(key);
                             try {
-                              await applyUpdate(fs, projectPath, def.metadata.namespace, def.metadata.name);
+                              await applyUpdate(fs, def.metadata.namespace, def.metadata.name);
                               useUiStore.getState().setNotification({ message: `${key} updated to v${latestVer}`, type: 'success' });
                             } catch (err) {
                               useUiStore.getState().setNotification({ message: `Update failed: ${err instanceof Error ? err.message : String(err)}`, type: 'error' });
@@ -301,7 +301,7 @@ export function InstalledTab() {
                       if (!fs) return;
                       setUninstalling(true);
                       try {
-                        await uninstallRemoteNodeDef(fs, projectPath ?? '', uninstallTarget.namespace, uninstallTarget.name);
+                        await uninstallRemoteNodeDef(fs, uninstallTarget.namespace, uninstallTarget.name);
                         useUiStore.getState().setNotification({ message: `${tk} uninstalled`, type: 'success' });
                         setUninstallTarget(null);
                       } catch (err) {

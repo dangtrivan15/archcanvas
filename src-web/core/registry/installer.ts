@@ -20,7 +20,6 @@ const ARCHCANVAS_DIR = '.archcanvas';
  */
 export async function downloadAndInstallNodeDef(
   fs: FileSystem,
-  projectRoot: string,
   summary: RemoteNodeDefSummary,
   source: 'remote' | 'remote-official' = 'remote',
 ): Promise<void> {
@@ -42,18 +41,17 @@ export async function downloadAndInstallNodeDef(
     throw new Error(`Invalid NodeDef from registry: ${parsed.error}`);
   }
 
-  // 3. Write to .archcanvas/nodedefs/ — create parent dirs first
-  const archcanvasDir = projectRoot ? `${projectRoot}/${ARCHCANVAS_DIR}` : ARCHCANVAS_DIR;
-  const nodedefsDir = projectRoot ? `${projectRoot}/${NODEDEFS_DIR}` : NODEDEFS_DIR;
-  await fs.mkdir(archcanvasDir);
-  await fs.mkdir(nodedefsDir);
+  // 3. Write to .archcanvas/nodedefs/ — create parent dirs first.
+  //    Paths are relative to the FileSystem root (resolved by the platform layer).
+  await fs.mkdir(ARCHCANVAS_DIR);
+  await fs.mkdir(NODEDEFS_DIR);
   const filename = `${summary.namespace}-${summary.name}.yaml`;
-  await fs.writeFile(`${nodedefsDir}/${filename}`, yaml);
+  await fs.writeFile(`${NODEDEFS_DIR}/${filename}`, yaml);
 
   // 4. Update lockfile — null guard: create empty lockfile if none exists.
   //    Build a new object rather than mutating in place so that if saveLockfile
   //    throws, the caller's reference to the original is unchanged.
-  const existingLockfile = (await loadLockfile(fs, projectRoot)) ?? {
+  const existingLockfile = (await loadLockfile(fs)) ?? {
     lockfileVersion: 1,
     resolvedAt: new Date().toISOString(),
     entries: {},
@@ -67,5 +65,5 @@ export async function downloadAndInstallNodeDef(
       [key]: { version: summary.latestVer, source },
     },
   };
-  await saveLockfile(fs, projectRoot, newLockfile);
+  await saveLockfile(fs, newLockfile);
 }

@@ -330,24 +330,24 @@ describe('parseLockfile with remote-official source', () => {
 describe('loadLockfile', () => {
   it('returns null when file does not exist', async () => {
     const fs = makeMockFs();
-    const result = await loadLockfile(fs, '/project');
+    const result = await loadLockfile(fs);
     expect(result).toBeNull();
   });
 
   it('parses valid lockfile from disk', async () => {
     const fs = makeMockFs({
-      '/project/.archcanvas/registry.lock.yaml': validLockfileYaml(),
+      '.archcanvas/registry.lock.yaml': validLockfileYaml(),
     });
-    const result = await loadLockfile(fs, '/project');
+    const result = await loadLockfile(fs);
     expect(result).not.toBeNull();
     expect(result!.lockfileVersion).toBe(1);
   });
 
   it('returns null for corrupt file', async () => {
     const fs = makeMockFs({
-      '/project/.archcanvas/registry.lock.yaml': '{{{invalid',
+      '.archcanvas/registry.lock.yaml': '{{{invalid',
     });
-    const result = await loadLockfile(fs, '/project');
+    const result = await loadLockfile(fs);
     expect(result).toBeNull();
   });
 });
@@ -360,10 +360,10 @@ describe('saveLockfile', () => {
       resolvedAt: '2026-04-14T12:00:00Z',
       entries: {},
     };
-    await saveLockfile(fs, '/project', data);
-    expect(fs.mkdir).toHaveBeenCalledWith('/project/.archcanvas');
+    await saveLockfile(fs, data);
+    expect(fs.mkdir).toHaveBeenCalledWith('.archcanvas');
     expect(fs.writeFile).toHaveBeenCalledWith(
-      '/project/.archcanvas/registry.lock.yaml',
+      '.archcanvas/registry.lock.yaml',
       expect.stringContaining('lockfileVersion: 1'),
     );
   });
@@ -375,7 +375,7 @@ describe('saveLockfile', () => {
       resolvedAt: '2026-04-14T12:00:00Z',
       entries: {},
     };
-    await saveLockfile(fs, '/project', data);
+    await saveLockfile(fs, data);
     // mkdir called before writeFile
     const mkdirOrder = (fs.mkdir as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0];
     const writeOrder = (fs.writeFile as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0];

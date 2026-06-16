@@ -25,7 +25,6 @@ const OFFICIAL_NAMESPACES = [
  */
 export async function syncOfficialNodeDefs(
   fs: FileSystem,
-  projectRoot: string,
   lockfile: LockfileData | null,
   signal?: AbortSignal,
 ): Promise<boolean> {
@@ -47,7 +46,7 @@ export async function syncOfficialNodeDefs(
           const { items } = await browseRegistry({ namespace }, signal);
           for (const summary of items) {
             try {
-              await downloadAndInstallNodeDef(fs, projectRoot, summary, 'remote-official');
+              await downloadAndInstallNodeDef(fs, summary, 'remote-official');
               anyDownloaded = true;
             } catch {
               // Per-item errors are swallowed — continue with remaining items
@@ -65,7 +64,7 @@ export async function syncOfficialNodeDefs(
           const installedVersion = lockfile?.entries[`${update.namespace}/${update.name}`]?.version;
           if (installedVersion && update.latestVersion === installedVersion) continue; // already up-to-date
           const detail = await fetchNodeDefDetail(update.namespace, update.name, update.latestVersion, signal);
-          await downloadAndInstallNodeDef(fs, projectRoot, detail.nodedef, 'remote-official');
+          await downloadAndInstallNodeDef(fs, detail.nodedef, 'remote-official');
           anyDownloaded = true;
         } catch {
           // Per-entry errors are swallowed

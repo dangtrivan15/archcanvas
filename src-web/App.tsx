@@ -88,15 +88,16 @@ export function App() {
     const unsub = useFileStore.subscribe((state, prev) => {
       if (state.status === 'loaded' && state.fs && state.status !== prev.status) {
         const currentFs = state.fs;
-        const projectRoot = state.projectPath ?? '';
 
-        // Re-initialize registry with project-local defs
-        useRegistryStore.getState().initialize(currentFs, projectRoot);
+        // Re-initialize registry with project-local defs.
+        // Paths are resolved by the FileSystem against its own root, so no
+        // project path needs to be threaded through here.
+        useRegistryStore.getState().initialize(currentFs);
 
         // Start watching for changes
         watcher?.stop();
-        watcher = createNodeDefWatcher(currentFs, projectRoot, () =>
-          useRegistryStore.getState().reloadProjectLocal(currentFs, projectRoot),
+        watcher = createNodeDefWatcher(currentFs, () =>
+          useRegistryStore.getState().reloadProjectLocal(currentFs),
         );
       }
     });

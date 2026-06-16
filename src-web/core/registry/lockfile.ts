@@ -109,23 +109,20 @@ export function generateLockfile(
 // File I/O
 // ---------------------------------------------------------------------------
 
-function lockfilePath(projectRoot: string): string {
-  return projectRoot ? `${projectRoot}/${LOCKFILE_PATH}` : LOCKFILE_PATH;
-}
-
 /**
  * Load and parse an existing lockfile from disk.
  * Returns null if the file is missing or corrupt.
+ *
+ * Paths are relative to the FileSystem root — the platform layer resolves them
+ * against the project directory.
  */
 export async function loadLockfile(
   fs: FileSystem,
-  projectRoot: string,
 ): Promise<LockfileData | null> {
-  const path = lockfilePath(projectRoot);
   try {
-    const fileExists = await fs.exists(path);
+    const fileExists = await fs.exists(LOCKFILE_PATH);
     if (!fileExists) return null;
-    const content = await fs.readFile(path);
+    const content = await fs.readFile(LOCKFILE_PATH);
     return parseLockfile(content);
   } catch {
     return null;
@@ -137,11 +134,8 @@ export async function loadLockfile(
  */
 export async function saveLockfile(
   fs: FileSystem,
-  projectRoot: string,
   data: LockfileData,
 ): Promise<void> {
-  const dir = projectRoot ? `${projectRoot}/.archcanvas` : '.archcanvas';
-  const path = lockfilePath(projectRoot);
-  await fs.mkdir(dir);
-  await fs.writeFile(path, serializeLockfile(data));
+  await fs.mkdir('.archcanvas');
+  await fs.writeFile(LOCKFILE_PATH, serializeLockfile(data));
 }

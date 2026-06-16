@@ -17,7 +17,6 @@ export function InstallNodeDefDialog() {
   const summary = useUiStore((s) => s.pendingInstall);
   const close = useUiStore((s) => s.closeInstallNodeDefDialog);
   const fs = useFileStore((s) => s.fs);
-  const projectPath = useFileStore((s) => s.projectPath);
   const builtinKeys = useRegistryStore((s) => s.builtinKeys);
   const [installing, setInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +47,7 @@ export function InstallNodeDefDialog() {
     try {
       await useRegistryStore
         .getState()
-        .installRemoteNodeDef(fs, projectPath ?? '', displaySummary);
+        .installRemoteNodeDef(fs, displaySummary);
       close();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Install failed');
