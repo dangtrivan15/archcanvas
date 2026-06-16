@@ -26,27 +26,46 @@ test.describe('community registry install', () => {
       });
     });
 
-    // Intercept YAML download endpoint
+    // Intercept the NodeDef detail endpoint. Install reads the NodeDef body from
+    // `version.blob` on this endpoint (there is no raw-YAML route). Registered
+    // after the search route above so it wins for this specific path; the regex
+    // matches the optional `?version=` query but not the `/versions` sub-path.
     await page.route(
-      'https://registry.archcanvas.dev/api/v1/nodedefs/community/kubernetes-deployment/1.0.0/yaml',
+      /\/api\/v1\/nodedefs\/community\/kubernetes-deployment(\?.*)?$/,
       async (route) => {
         await route.fulfill({
           status: 200,
-          contentType: 'text/yaml',
-          body: [
-            'kind: NodeDef',
-            'apiVersion: v1',
-            'metadata:',
-            '  name: kubernetes-deployment',
-            '  namespace: community',
-            '  version: "1.0.0"',
-            '  displayName: Kubernetes Deployment',
-            '  description: A K8s Deployment node',
-            '  icon: Box',
-            '  shape: rectangle',
-            'spec:',
-            '  ports: []',
-          ].join('\n'),
+          contentType: 'application/json',
+          body: JSON.stringify({
+            nodedef: {
+              namespace: 'community',
+              name: 'kubernetes-deployment',
+              latestVer: '1.0.0',
+              displayName: 'Kubernetes Deployment',
+              description: 'A K8s Deployment node',
+              tags: [],
+              downloadCount: 0,
+            },
+            version: {
+              nodedefId: 'community-kubernetes-deployment',
+              version: '1.0.0',
+              publishedAt: '2026-01-01T00:00:00Z',
+              blob: {
+                kind: 'NodeDef',
+                apiVersion: 'v1',
+                metadata: {
+                  name: 'kubernetes-deployment',
+                  namespace: 'community',
+                  version: '1.0.0',
+                  displayName: 'Kubernetes Deployment',
+                  description: 'A K8s Deployment node',
+                  icon: 'Box',
+                  shape: 'rectangle',
+                },
+                spec: { ports: [] },
+              },
+            },
+          }),
         });
       }
     );
