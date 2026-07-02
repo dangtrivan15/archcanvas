@@ -18,6 +18,17 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+      // Honor the codebase's `_`-prefix convention for intentionally-unused
+      // bindings (unused params, discarded destructure siblings, caught errors).
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
+        },
+      ],
     },
   },
 );

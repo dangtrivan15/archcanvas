@@ -31,7 +31,6 @@ export interface StoreActionError {
  * Dispatch a named store action with the given args.
  * Returns the action result (shape varies per action), or an error object.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function dispatchStoreAction(action: string, args: Record<string, unknown>): Promise<unknown> {
   switch (action) {
     // --- Write actions ---

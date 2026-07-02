@@ -109,7 +109,6 @@ export class ApiKeyProvider implements ChatProvider {
     maxTokens: number,
     requestId: string,
   ): AsyncIterable<ChatEvent> {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const stream = client.messages.stream({
         model,
