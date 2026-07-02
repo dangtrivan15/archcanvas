@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useChatStore } from '@/store/chatStore';
 import type { SurveyData } from '@/store/fileStore';
-import { ApiKeySettings, ClaudeCodeSettings } from '@/components/ai/AiProviderSettings';
+import { getProviderDescriptor } from '@/components/ai/providerRegistry';
 
 interface AiSurveyStepProps {
   onBack: () => void;
@@ -39,6 +39,8 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
 
   const aiAvailable = providerList.some((p) => p.id === activeProviderId && p.available);
   const canStart = description.trim().length > 0 && aiAvailable;
+
+  const settingsDescriptor = getProviderDescriptor(activeProviderId);
 
   function toggleTech(tech: string) {
     setTechStack((prev) =>
@@ -115,9 +117,9 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
 
         {/* Provider-specific settings */}
         <AnimatePresence mode="wait">
-          {activeProviderId === 'claude-api-key' && (
+          {settingsDescriptor && (
             <motion.div
-              key="api-key-settings"
+              key={settingsDescriptor.id}
               initial={prefersReduced ? false : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={prefersReduced ? undefined : { opacity: 0, height: 0 }}
@@ -125,21 +127,7 @@ export function AiSurveyStep({ onBack, onStart }: AiSurveyStepProps) {
               className="overflow-hidden"
             >
               <div className="rounded-md border border-border bg-surface/50 p-4">
-                <ApiKeySettings />
-              </div>
-            </motion.div>
-          )}
-          {activeProviderId && activeProviderId !== 'claude-api-key' && (
-            <motion.div
-              key="claude-code-settings"
-              initial={prefersReduced ? false : { opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={prefersReduced ? undefined : { opacity: 0, height: 0 }}
-              transition={{ duration: 0.15 }}
-              className="overflow-hidden"
-            >
-              <div className="rounded-md border border-border bg-surface/50 p-4">
-                <ClaudeCodeSettings />
+                <settingsDescriptor.SettingsComponent />
               </div>
             </motion.div>
           )}

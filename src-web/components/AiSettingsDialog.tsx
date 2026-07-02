@@ -2,12 +2,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Settings } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useChatStore } from '@/store/chatStore';
-import { ApiKeySettings, ClaudeCodeSettings } from '@/components/ai/AiProviderSettings';
+import { getProviderDescriptor } from '@/components/ai/providerRegistry';
 
 export function AiSettingsDialog() {
   const open = useUiStore((s) => s.showAiSettingsDialog);
   const close = useUiStore((s) => s.closeAiSettingsDialog);
   const activeProviderId = useChatStore((s) => s.activeProviderId);
+
+  const descriptor = getProviderDescriptor(activeProviderId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && close()}>
@@ -19,9 +21,9 @@ export function AiSettingsDialog() {
           </DialogTitle>
         </DialogHeader>
 
-        {activeProviderId === 'claude-api-key' && <ApiKeySettings />}
-        {activeProviderId && activeProviderId !== 'claude-api-key' && <ClaudeCodeSettings />}
-        {!activeProviderId && (
+        {descriptor ? (
+          <descriptor.SettingsComponent />
+        ) : (
           <p className="py-4 text-center text-sm text-muted-foreground">
             Select an AI provider to configure settings.
           </p>

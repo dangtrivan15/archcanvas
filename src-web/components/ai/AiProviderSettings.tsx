@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useApiKeyStore, AVAILABLE_MODELS } from '@/store/apiKeyStore';
 import { useChatStore } from '@/store/chatStore';
 import { useFileStore } from '@/store/fileStore';
+import { CLAUDE_API_KEY_PROVIDER_ID } from '@/core/ai/apiKeyProvider';
 
 function maskKey(key: string): string {
   if (key.length <= 12) return key;
@@ -39,7 +40,7 @@ export function ApiKeySettings() {
   const handleTestConnection = async () => {
     const success = await useApiKeyStore.getState().validateKey();
     if (success) {
-      useChatStore.getState().setActiveProvider('claude-api-key');
+      useChatStore.getState().setActiveProvider(CLAUDE_API_KEY_PROVIDER_ID);
     }
   };
 

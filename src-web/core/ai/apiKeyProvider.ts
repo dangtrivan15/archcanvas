@@ -40,8 +40,10 @@ function buildToolParams(): Anthropic.Messages.Tool[] {
   }));
 }
 
+export const CLAUDE_API_KEY_PROVIDER_ID = 'claude-api-key';
+
 export class ApiKeyProvider implements ChatProvider {
-  readonly id = 'claude-api-key';
+  readonly id = CLAUDE_API_KEY_PROVIDER_ID;
   readonly displayName = 'Claude (API Key)';
 
   private messages: Anthropic.Messages.MessageParam[] = [];
