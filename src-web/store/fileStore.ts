@@ -162,10 +162,9 @@ interface FileStoreState {
 }
 
 // Expose store on window for E2E test access (Playwright can't import bundled modules)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const exposeStore = (store: any) => {
+const exposeStore = (store: unknown) => {
   if (typeof window !== 'undefined') {
-    (window as any).__archcanvas_fileStore__ = store;
+    (window as unknown as Record<string, unknown>).__archcanvas_fileStore__ = store;
   }
 };
 
@@ -434,7 +433,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
     // --- Web path ---
     try {
-      const { getHandle } = await import('../platform/handleStore');
+      const { getHandle, requestHandlePermission } = await import('../platform/handleStore');
       const handle = await getHandle(path);
       if (!handle) {
         // Handle expired or deleted — remove from recents
@@ -444,7 +443,7 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         return;
       }
       // Request permission (requires user gesture from the menu click)
-      const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+      const perm = await requestHandlePermission(handle);
       if (perm !== 'granted') {
         set({ error: 'Permission denied. Please try again.' });
         return;

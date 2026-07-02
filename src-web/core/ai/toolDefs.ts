@@ -12,7 +12,7 @@ import { z } from 'zod/v4';
 export interface ToolDef {
   name: string;
   description: string;
-  inputSchema: z.ZodObject<any>;
+  inputSchema: z.ZodObject<z.ZodRawShape>;
 }
 
 export const archCanvasToolDefs: ToolDef[] = [

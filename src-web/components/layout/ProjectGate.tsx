@@ -118,7 +118,7 @@ export function ProjectGate() {
         useFileStore.getState().openNewWithTemplate(templateId);
       } else if (recentKey) {
         try {
-          const { getHandle } = await import('../../platform/handleStore');
+          const { getHandle, requestHandlePermission } = await import('../../platform/handleStore');
           const handle = await getHandle(recentKey);
           if (!handle) {
             useFileStore.setState({
@@ -127,7 +127,7 @@ export function ProjectGate() {
             });
             return;
           }
-          const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+          const perm = await requestHandlePermission(handle);
           if (perm !== 'granted') {
             useFileStore.setState({
               status: 'error',

@@ -47,3 +47,20 @@ export async function removeHandle(key: string): Promise<void> {
     tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
+
+/**
+ * Request permission for a stored directory handle.
+ *
+ * `requestPermission` is part of the File System Access API but is not yet in
+ * the default TypeScript DOM lib, so the non-standard shape is narrowed here
+ * in one place rather than with `any` casts at every call site.
+ */
+export async function requestHandlePermission(
+  handle: FileSystemDirectoryHandle,
+  mode: 'read' | 'readwrite' = 'readwrite',
+): Promise<PermissionState> {
+  const h = handle as FileSystemDirectoryHandle & {
+    requestPermission(descriptor: { mode: 'read' | 'readwrite' }): Promise<PermissionState>;
+  };
+  return h.requestPermission({ mode });
+}

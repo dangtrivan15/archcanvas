@@ -18,6 +18,7 @@ import type {
   Options as SDKOptions,
   PermissionMode,
   PermissionUpdate,
+  McpServerConfig,
 } from '@anthropic-ai/claude-agent-sdk';
 import { homedir } from 'os';
 import { existsSync, unlinkSync } from 'fs';
@@ -146,7 +147,7 @@ export interface BridgeSessionOptions {
   /** Called when Claude calls AskUserQuestion and needs user input. */
   onAskUserQuestion?: OnAskUserQuestion;
   /** MCP servers to make available to the SDK (e.g., ArchCanvas tools). */
-  mcpServers?: Record<string, any>;
+  mcpServers?: Record<string, McpServerConfig>;
   /** Tool names to auto-approve (skip canUseTool). Used for MCP tools. */
   allowedTools?: string[];
 }

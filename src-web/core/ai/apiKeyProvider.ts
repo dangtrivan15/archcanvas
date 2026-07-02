@@ -137,7 +137,7 @@ export class ApiKeyProvider implements ChatProvider {
 
         switch (event.type) {
           case 'content_block_start': {
-            const block = (event as any).content_block;
+            const block = event.content_block;
             if (block?.type === 'tool_use') {
               currentToolId = block.id;
               currentToolName = block.name;
@@ -147,7 +147,7 @@ export class ApiKeyProvider implements ChatProvider {
           }
 
           case 'content_block_delta': {
-            const delta = (event as any).delta;
+            const delta = event.delta;
             if (delta?.type === 'text_delta') {
               yield { type: 'text', requestId, content: delta.text };
             } else if (delta?.type === 'input_json_delta') {

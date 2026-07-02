@@ -140,8 +140,8 @@ export const useGraphStore = create<GraphStoreState>(() => ({
       id: input.id,
       type: input.type,
       displayName,
-      nodes: [] as any[],
-      edges: [] as any[],
+      nodes: [] as Node[],
+      edges: [] as Edge[],
     };
     const regResult = useFileStore.getState().registerCanvas(
       input.id,
@@ -169,5 +169,5 @@ export const useGraphStore = create<GraphStoreState>(() => ({
 }));
 
 if (typeof window !== 'undefined') {
-  (window as any).__archcanvas_graphStore__ = useGraphStore;
+  (window as unknown as Record<string, unknown>).__archcanvas_graphStore__ = useGraphStore;
 }

@@ -37,7 +37,7 @@ export async function dispatchStoreAction(action: string, args: Record<string, u
     case 'addNode':
       return dispatchAddNode(args);
     case 'addEdge':
-      return useGraphStore.getState().addEdge(args.canvasId as string, args.edge as any);
+      return useGraphStore.getState().addEdge(args.canvasId as string, args.edge as Edge);
     case 'removeNode':
       return useGraphStore.getState().removeNode(args.canvasId as string, args.nodeId as string);
     case 'removeEdge':

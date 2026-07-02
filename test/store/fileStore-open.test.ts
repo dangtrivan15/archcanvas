@@ -244,11 +244,10 @@ describe('fileStore.openRecent()', () => {
       configurable: true,
     });
 
-    // Mock handleStore.getHandle to return a mock handle with requestPermission
+    // Mock handleStore: a resolvable handle plus granted permission
     vi.doMock('@/platform/handleStore', () => ({
-      getHandle: vi.fn().mockResolvedValue({
-        requestPermission: vi.fn().mockResolvedValue('granted'),
-      }),
+      getHandle: vi.fn().mockResolvedValue({}),
+      requestHandlePermission: vi.fn().mockResolvedValue('granted'),
     }));
 
     await useFileStore.getState().openRecent('/some/recent/path');

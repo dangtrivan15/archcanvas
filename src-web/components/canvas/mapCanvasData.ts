@@ -104,7 +104,7 @@ export function mapCanvasNodes(opts: MapNodesOptions): RFNode<CanvasNodeData>[] 
     const keyArgs = !isRef && nodeDef
       ? computeKeyArgs(node as InlineNode, nodeDef.spec.args)
       : undefined;
-    const badges = computeBadges(node as any, isRef, canvasesRef);
+    const badges = computeBadges(node, isRef, canvasesRef);
     const childSummary = isRef ? computeChildSummary(node.id, canvasesRef) : undefined;
 
     const data: CanvasNodeData = {

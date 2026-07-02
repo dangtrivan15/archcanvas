@@ -80,8 +80,9 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         try {
           const { action, translatedArgs } = translateToolArgs('import_yaml', a);
           return toCallToolResult(await relay(action, translatedArgs));
-        } catch (err: any) {
-          return { content: [{ type: 'text' as const, text: `YAML parse error: ${err.message}` }], isError: true };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          return { content: [{ type: 'text' as const, text: `YAML parse error: ${message}` }], isError: true };
         }
       }),
 
