@@ -17,6 +17,8 @@ const aSummary: RemoteNodeDefSummary = {
   latestVer: '1.2.3',
   displayName: 'Widget',
   description: 'A reusable widget component.',
+  tags: [],
+  downloadCount: 0,
 };
 
 let uiState = {

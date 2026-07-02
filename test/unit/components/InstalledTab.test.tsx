@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { InstalledTab } from '@/components/registry/InstalledTab';
+import type { FileSystem } from '@/platform/fileSystem';
 
 // ---------------------------------------------------------------------------
 // Icon mocks
@@ -100,7 +101,10 @@ vi.mock('@/store/uiStore', () => ({
   ),
 }));
 
-const mockFs = { exists: vi.fn(), readFile: vi.fn(), writeFile: vi.fn() };
+// Minimal FileSystem stand-in: InstalledTab only forwards `fs` to store
+// actions (which are themselves mocked here), so the three methods it may
+// touch are enough. Cast because we deliberately omit the rest of the interface.
+const mockFs = { exists: vi.fn(), readFile: vi.fn(), writeFile: vi.fn() } as unknown as FileSystem;
 vi.mock('@/store/fileStore', () => ({
   useFileStore: vi.fn((selector) =>
     selector({
@@ -310,7 +314,7 @@ describe('InstalledTab — community-installed with update affordances', () => {
     // Override fileStore mock to return null projectPath for this test
     const { useFileStore } = await import('@/store/fileStore');
     vi.mocked(useFileStore).mockImplementation((selector) =>
-      selector({ fs: mockFs, projectPath: null }),
+      selector({ fs: mockFs, projectPath: null } as Parameters<typeof selector>[0]),
     );
     registryState.availableUpdates = new Map([[communityKey, '2.0.0']]);
     render(<InstalledTab />);
@@ -320,7 +324,7 @@ describe('InstalledTab — community-installed with update affordances', () => {
     expect(mockApplyUpdate).not.toHaveBeenCalled();
     // Restore the default mock implementation
     vi.mocked(useFileStore).mockImplementation((selector) =>
-      selector({ fs: mockFs, projectPath: '/test/project' }),
+      selector({ fs: mockFs, projectPath: '/test/project' } as Parameters<typeof selector>[0]),
     );
   });
 

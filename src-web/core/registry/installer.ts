@@ -8,7 +8,7 @@ import { parseNodeDef } from './validator';
 import { loadLockfile, saveLockfile } from './lockfile';
 import { NODEDEFS_DIR } from './loader';
 import { fetchNodeDefYaml } from './remoteRegistry';
-import type { RemoteNodeDefSummary } from './remoteRegistry';
+import type { RemoteNodeDefRef } from './remoteRegistry';
 
 const ARCHCANVAS_DIR = '.archcanvas';
 
@@ -20,7 +20,7 @@ const ARCHCANVAS_DIR = '.archcanvas';
  */
 export async function downloadAndInstallNodeDef(
   fs: FileSystem,
-  summary: RemoteNodeDefSummary,
+  summary: RemoteNodeDefRef,
   source: 'remote' | 'remote-official' = 'remote',
 ): Promise<void> {
   // 0. Validate namespace and name against path-unsafe characters before any

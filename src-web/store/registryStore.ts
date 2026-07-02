@@ -6,7 +6,7 @@ import { loadBuiltins, loadProjectLocal, createRegistry } from '@/core/registry'
 import { loadLockfile, saveLockfile, generateLockfile } from '@/core/registry/lockfile';
 import type { LockfileData } from '@/core/registry/lockfile';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
-import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
+import type { RemoteNodeDefRef } from '@/core/registry/remoteRegistry';
 import { fetchRegistryStats } from '@/core/registry/remoteRegistry';
 import { checkNodeDefUpdates } from '@/core/registry/updateChecker';
 import { syncOfficialNodeDefs as syncOfficialNodeDefsFn } from '@/core/registry/officialSync';
@@ -37,7 +37,7 @@ interface RegistryStoreState {
 
   initialize(fs?: FileSystem): Promise<void>;
   reloadProjectLocal(fs: FileSystem): Promise<void>;
-  installRemoteNodeDef(fs: FileSystem, summary: RemoteNodeDefSummary): Promise<void>;
+  installRemoteNodeDef(fs: FileSystem, summary: RemoteNodeDefRef): Promise<void>;
   uninstallRemoteNodeDef(fs: FileSystem, namespace: string, name: string): Promise<void>;
   checkForUpdates(signal?: AbortSignal): Promise<void>;
   applyUpdate(fs: FileSystem, namespace: string, name: string): Promise<void>;
@@ -268,7 +268,7 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     }
   },
 
-  installRemoteNodeDef: async (fs: FileSystem, summary: RemoteNodeDefSummary) => {
+  installRemoteNodeDef: async (fs: FileSystem, summary: RemoteNodeDefRef) => {
     await downloadAndInstallNodeDef(fs, summary);
     await get().reloadProjectLocal(fs);
     get().checkForUpdates().catch(() => {});
@@ -319,14 +319,10 @@ export const useRegistryStore = create<RegistryStoreState>((set, get) => ({
     const latestVersion = get().availableUpdates.get(key);
     if (!latestVersion) return;
 
-    // Construct a RemoteNodeDefSummary that satisfies z.infer<typeof RemoteNodeDefSummarySchema>.
-    // tags and downloadCount have Zod .default() which makes them required in the inferred type.
-    const summary: RemoteNodeDefSummary = {
+    const summary: RemoteNodeDefRef = {
       namespace,
       name,
-      latestVer: latestVersion,  // installer reads summary.latestVer
-      tags: [],
-      downloadCount: 0,
+      latestVer: latestVersion,
     };
     await downloadAndInstallNodeDef(fs, summary);
     await get().reloadProjectLocal(fs);

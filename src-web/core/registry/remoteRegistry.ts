@@ -18,6 +18,18 @@ const RemoteNodeDefSummarySchema = z.object({
 
 export type RemoteNodeDefSummary = z.infer<typeof RemoteNodeDefSummarySchema>;
 
+/**
+ * The subset of a summary needed to locate and install a specific NodeDef
+ * version: its identity (namespace/name/latestVer) plus optional display
+ * fields. Excludes catalog metadata (`tags`, `downloadCount`) that the
+ * installer never reads — so callers constructing an install target don't
+ * have to supply dummy values for fields they don't have.
+ */
+export type RemoteNodeDefRef = Omit<
+  RemoteNodeDefSummary,
+  'tags' | 'downloadCount'
+>;
+
 const BrowseResultSchema = z.object({
   items: z.array(RemoteNodeDefSummarySchema),
   total: z.number(),

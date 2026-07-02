@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { parse } from 'yaml';
 import { downloadAndInstallNodeDef } from '@/core/registry/installer';
 import { InMemoryFileSystem } from '@/platform/inMemoryFileSystem';
-import type { RemoteNodeDefSummary } from '@/core/registry/remoteRegistry';
+import type { RemoteNodeDefRef } from '@/core/registry/remoteRegistry';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,7 +25,7 @@ const VALID_BLOB = {
 
 const INVALID_BLOB = { kind: 'NotANodeDef', some: 'thing' };
 
-const summary: RemoteNodeDefSummary = {
+const summary: RemoteNodeDefRef = {
   namespace: 'community',
   name: 'kubernetes-deployment',
   latestVer: '1.0.0',
@@ -168,7 +168,7 @@ describe('downloadAndInstallNodeDef', () => {
   it('throws if name contains a path separator "/"', async () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
-    const badSummary: RemoteNodeDefSummary = { ...summary, name: 'evil/../../escape' };
+    const badSummary: RemoteNodeDefRef = { ...summary, name: 'evil/../../escape' };
 
     await expect(downloadAndInstallNodeDef(fs, badSummary)).rejects.toThrow(
       /Invalid NodeDef identifier/,
@@ -184,7 +184,7 @@ describe('downloadAndInstallNodeDef', () => {
   it('throws if namespace contains a backslash "\\"', async () => {
     mockFetchDetail(VALID_BLOB);
     const fs = new InMemoryFileSystem();
-    const badSummary: RemoteNodeDefSummary = { ...summary, namespace: 'evil\\ns' };
+    const badSummary: RemoteNodeDefRef = { ...summary, namespace: 'evil\\ns' };
 
     await expect(downloadAndInstallNodeDef(fs, badSummary)).rejects.toThrow(
       /Invalid NodeDef identifier/,
