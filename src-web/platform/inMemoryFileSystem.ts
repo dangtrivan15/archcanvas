@@ -1,5 +1,11 @@
 import type { FileSystem } from './fileSystem';
 
+function enoent(path: string): Error {
+  const err = new Error(`ENOENT: no such file or directory, '${path}'`) as Error & { code: string };
+  err.code = 'ENOENT';
+  return err;
+}
+
 export class InMemoryFileSystem implements FileSystem {
   private files = new Map<string, string>();
   private _failPaths = new Set<string>();
@@ -25,6 +31,32 @@ export class InMemoryFileSystem implements FileSystem {
       throw new Error(`File not found: ${path}`);
     }
     return content;
+  }
+
+  async readFileBytes(path: string): Promise<Uint8Array> {
+    const content = this.files.get(this.normalize(path));
+    if (content === undefined) {
+      throw enoent(path);
+    }
+    return new TextEncoder().encode(content);
+  }
+
+  async stat(path: string): Promise<{ type: 'file' | 'directory'; size: number; mtimeMs: number }> {
+    if (path === '.' || path === '') {
+      return { type: 'directory', size: 0, mtimeMs: 0 };
+    }
+    const norm = this.normalize(path);
+    const content = this.files.get(norm);
+    if (content !== undefined) {
+      return { type: 'file', size: new TextEncoder().encode(content).length, mtimeMs: 0 };
+    }
+    const prefix = norm + '/';
+    for (const key of this.files.keys()) {
+      if (key.startsWith(prefix)) {
+        return { type: 'directory', size: 0, mtimeMs: 0 };
+      }
+    }
+    throw enoent(path);
   }
 
   async writeFile(path: string, content: string): Promise<void> {

@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { InMemoryFileSystem } from '../../src-web/platform/inMemoryFileSystem';
+import { NodeFileSystem } from '../../src-web/platform/nodeFileSystem';
 
 describe('FileSystem extensions — InMemoryFileSystem', () => {
   let fs: InMemoryFileSystem;
@@ -67,6 +71,80 @@ describe('FileSystem extensions — InMemoryFileSystem', () => {
       expect(files).not.toContain('node_modules/lodash/index.js');
       expect(files).not.toContain('.git/config');
       expect(files).toContain('src/app.ts');
+    });
+  });
+
+  describe('readFileBytes', () => {
+    it('returns the file content as UTF-8 bytes', async () => {
+      const bytes = await fs.readFileBytes('README.md');
+      expect(bytes).toBeInstanceOf(Uint8Array);
+      expect(new TextDecoder().decode(bytes)).toBe('# Test Project');
+    });
+
+    it('throws for a missing file', async () => {
+      await expect(fs.readFileBytes('nope.txt')).rejects.toThrow();
+    });
+  });
+
+  describe('stat', () => {
+    it('reports a file with its byte size', async () => {
+      const s = await fs.stat('README.md');
+      expect(s.type).toBe('file');
+      expect(s.size).toBe('# Test Project'.length);
+    });
+
+    it('reports a directory', async () => {
+      const s = await fs.stat('src');
+      expect(s.type).toBe('directory');
+    });
+
+    it('throws ENOENT for a missing path', async () => {
+      await expect(fs.stat('nope')).rejects.toMatchObject({ code: 'ENOENT' });
+    });
+  });
+});
+
+describe('FileSystem extensions — NodeFileSystem', () => {
+  let root: string;
+  let fs: NodeFileSystem;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'archcanvas-fs-ext-'));
+    await mkdir(join(root, 'src'), { recursive: true });
+    await writeFile(join(root, 'README.md'), '# Test Project', 'utf-8');
+    fs = new NodeFileSystem(root);
+  });
+
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  describe('readFileBytes', () => {
+    it('round-trips file content as UTF-8 bytes', async () => {
+      const bytes = await fs.readFileBytes('README.md');
+      expect(bytes).toBeInstanceOf(Uint8Array);
+      expect(new TextDecoder().decode(bytes)).toBe('# Test Project');
+    });
+
+    it('throws for a missing file', async () => {
+      await expect(fs.readFileBytes('nope.txt')).rejects.toThrow();
+    });
+  });
+
+  describe('stat', () => {
+    it('reports a file with its byte size', async () => {
+      const s = await fs.stat('README.md');
+      expect(s.type).toBe('file');
+      expect(s.size).toBe('# Test Project'.length);
+    });
+
+    it('reports a directory', async () => {
+      const s = await fs.stat('src');
+      expect(s.type).toBe('directory');
+    });
+
+    it('throws ENOENT for a missing path', async () => {
+      await expect(fs.stat('missing')).rejects.toMatchObject({ code: 'ENOENT' });
     });
   });
 });

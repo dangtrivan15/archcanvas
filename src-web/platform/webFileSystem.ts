@@ -22,6 +22,47 @@ export class WebFileSystem implements FileSystem {
     return file.text();
   }
 
+  async readFileBytes(path: string): Promise<Uint8Array> {
+    const { dir, fileName } = await this.resolve(path);
+    const fileHandle = await dir.getFileHandle(fileName);
+    const file = await fileHandle.getFile();
+    return new Uint8Array(await file.arrayBuffer());
+  }
+
+  async stat(path: string): Promise<{ type: 'file' | 'directory'; size: number; mtimeMs: number }> {
+    const parts = path.split('/').filter((p) => p && p !== '.');
+    const name = parts.pop();
+    let dir = this.rootHandle;
+    for (const part of parts) {
+      dir = await dir.getDirectoryHandle(part);
+    }
+    if (name === undefined) {
+      return { type: 'directory', size: 0, mtimeMs: 0 };
+    }
+    try {
+      const fileHandle = await dir.getFileHandle(name);
+      const file = await fileHandle.getFile();
+      return { type: 'file', size: file.size, mtimeMs: file.lastModified };
+    } catch (fileErr) {
+      // Only fall through to the directory attempt when the file genuinely does
+      // not exist. Any other failure (e.g. NotAllowedError) must propagate.
+      if ((fileErr as { name?: string })?.name !== 'NotFoundError') {
+        throw fileErr;
+      }
+      try {
+        await dir.getDirectoryHandle(name);
+        return { type: 'directory', size: 0, mtimeMs: 0 };
+      } catch (dirErr) {
+        if ((dirErr as { name?: string })?.name !== 'NotFoundError') {
+          throw dirErr;
+        }
+        const err = new Error(`ENOENT: '${path}'`) as Error & { code: string };
+        err.code = 'ENOENT';
+        throw err;
+      }
+    }
+  }
+
   async writeFile(path: string, content: string): Promise<void> {
     const { dir, fileName } = await this.resolve(path, true);
     const fileHandle = await dir.getFileHandle(fileName, { create: true });
