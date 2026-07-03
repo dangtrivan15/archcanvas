@@ -28,8 +28,9 @@ import type { ToolMode } from "@/store/toolStore";
 import { useUiStore } from "@/store/uiStore";
 import { useRegistryStore, computeEffectiveUpdateCount } from '@/store/registryStore';
 import { useThemeStore } from "@/store/themeStore";
+import { useFileStore } from "@/store/fileStore";
 import { useDiffStore } from "@/store/diffStore";
-import { toggleDiffOverlay } from "@/core/diff/orchestrator";
+import { toggleDiffOverlay, refreshDiffAvailability } from "@/core/diff/orchestrator";
 import { useThemeToggler } from "@/components/ui/theme-toggler";
 import { NodeTypeOverlay } from "@/components/layout/NodeTypeOverlay";
 
@@ -40,6 +41,8 @@ export function LeftToolbar() {
   const pinnedVersions = useRegistryStore((s) => s.pinnedVersions);
   const effectiveUpdateCount = computeEffectiveUpdateCount(availableUpdates, pinnedVersions);
   const diffEnabled = useDiffStore((s) => s.enabled);
+  const diffAvailable = useDiffStore((s) => s.available);
+  const fs = useFileStore((s) => s.fs);
   const colorLegendVisible = useUiStore((s) => s.showColorLegend);
   const themeMode = useThemeStore((s) => s.mode);
   const resolvedMode = useThemeStore((s) => s.getResolvedMode());
@@ -118,6 +121,13 @@ export function LeftToolbar() {
     return () => window.removeEventListener('click', handler);
   }, [pinned]);
 
+  // Recompute git-diff availability whenever the bound filesystem changes
+  // (project open/close/switch) so the Diff Overlay control stays in sync
+  // with whether a `.git` directory is actually exposed.
+  useEffect(() => {
+    void refreshDiffAvailability();
+  }, [fs]);
+
   // ---------------------------------------------------------------------------
   // Tool definitions
   // ---------------------------------------------------------------------------
@@ -188,13 +198,19 @@ export function LeftToolbar() {
       shortcut: "⇧⌘Z",
       onClick: () => useHistoryStore.getState().redo(),
     },
-    {
-      icon: GitCompareArrows,
-      label: "Diff Overlay",
-      shortcut: "⌘⇧D",
-      active: diffEnabled,
-      onClick: () => toggleDiffOverlay(),
-    },
+    // Hidden entirely (not just disabled) when no git repo is exposed —
+    // see refreshDiffAvailability() above.
+    ...(diffAvailable
+      ? [
+          {
+            icon: GitCompareArrows,
+            label: "Diff Overlay",
+            shortcut: "⌘⇧D",
+            active: diffEnabled,
+            onClick: () => toggleDiffOverlay(),
+          },
+        ]
+      : []),
     {
       icon: Palette,
       label: "Color Legend",

@@ -3,6 +3,10 @@ export interface FileSystem {
   /** Return the absolute filesystem path to the project root, or null if unavailable (Web/InMemory). */
   getPath(): string | null;
   readFile(path: string): Promise<string>;
+  /** Read raw bytes at `path` (binary content, e.g. git objects). */
+  readFileBytes(path: string): Promise<Uint8Array>;
+  /** Metadata for `path`. Throws an ENOENT-coded error when the path does not exist. */
+  stat(path: string): Promise<{ type: 'file' | 'directory'; size: number; mtimeMs: number }>;
   writeFile(path: string, content: string): Promise<void>;
   listFiles(path: string): Promise<string[]>;
   exists(path: string): Promise<boolean>;

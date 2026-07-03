@@ -45,6 +45,11 @@ const PREFIX_NODES = '@';
 const PREFIX_ENTITIES = '#';
 const PREFIX_ADD = '+';
 
+// Action ids that belong to the git-diff surface. Filtered out of rendered
+// results (not just the underlying action list) whenever diffStore.available
+// is false, so the feature is hidden entirely — not merely unreachable.
+const GIT_DIFF_ACTION_IDS = new Set(['action:toggle-diff', 'action:clear-diff']);
+
 // ---------------------------------------------------------------------------
 // Provider implementations
 // ---------------------------------------------------------------------------
@@ -345,6 +350,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, onClose, initialInput = '', mode = 'default', onSelectSubsystemType }: CommandPaletteProps) {
   const [inputValue, setInputValue] = useState('');
   const prefersReduced = useReducedMotion();
+  const diffAvailable = useDiffStore((s) => s.available);
 
   // Remote search state
   const [remoteResults, setRemoteResults] = useState<PaletteResult[]>([]);
@@ -430,8 +436,14 @@ export function CommandPalette({ open, onClose, initialInput = '', mode = 'defau
 
   // Collect grouped results — we disable cmdk's built-in filter because we
   // handle filtering ourselves per-provider to support the prefix shortcuts.
+  // The git-diff actions are filtered out at this consumption point (rather
+  // than removed from the underlying action list) so gating stays reactive
+  // to diffStore.available without restructuring the provider definitions.
   const groups: { provider: PaletteProvider; results: PaletteResult[] }[] = providers.map(
-    (p) => ({ provider: p, results: p.search(query) }),
+    (p) => ({
+      provider: p,
+      results: p.search(query).filter((r) => diffAvailable || !GIT_DIFF_ACTION_IDS.has(r.id)),
+    }),
   ).filter((g) => g.results.length > 0);
 
   // Only show community results when search is active

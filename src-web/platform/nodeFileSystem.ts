@@ -29,6 +29,20 @@ export class NodeFileSystem implements FileSystem {
     return readFile(this.resolvePath(path), 'utf-8');
   }
 
+  async readFileBytes(path: string): Promise<Uint8Array> {
+    const buf = await readFile(this.resolvePath(path));
+    return new Uint8Array(buf);
+  }
+
+  async stat(path: string): Promise<{ type: 'file' | 'directory'; size: number; mtimeMs: number }> {
+    const s = await stat(this.resolvePath(path));
+    return {
+      type: s.isDirectory() ? 'directory' : 'file',
+      size: s.size,
+      mtimeMs: s.mtimeMs,
+    };
+  }
+
   async writeFile(path: string, content: string): Promise<void> {
     const fullPath = this.resolvePath(path);
     const dir = resolve(fullPath, '..');

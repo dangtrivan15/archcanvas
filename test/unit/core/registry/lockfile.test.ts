@@ -41,6 +41,18 @@ function makeMockFs(files: Record<string, string> = {}): FileSystem {
       if (!(path in store)) throw new Error(`File not found: ${path}`);
       return store[path];
     }),
+    readFileBytes: vi.fn(async (path: string) => {
+      if (!(path in store)) throw new Error(`File not found: ${path}`);
+      return new TextEncoder().encode(store[path]);
+    }),
+    stat: vi.fn(async (path: string) => {
+      if (!(path in store)) {
+        const err = new Error(`ENOENT: '${path}'`) as Error & { code: string };
+        err.code = 'ENOENT';
+        throw err;
+      }
+      return { type: 'file' as const, size: new TextEncoder().encode(store[path]).length, mtimeMs: 0 };
+    }),
     writeFile: vi.fn(async (path: string, content: string) => {
       store[path] = content;
     }),
