@@ -17,6 +17,25 @@ function norm(path: string): string {
 }
 
 /**
+ * isomorphic-git's `FileSystem.read` wraps every binary read in `Buffer.from()`
+ * and swallows any throw into `return null`. Browser bundles (web + the Tauri
+ * webview) have no `Buffer` global, so every git *object* read silently becomes
+ * null — the loose-object lookup fails, the packfile fallback runs, and
+ * `GitPackIndex.fromIdx(null)` throws "Cannot read properties of null (reading
+ * 'slice')". Ref reads are strings and skip `Buffer.from`, which is why
+ * resolveRef appears to work while object reads fail. Node has a global Buffer,
+ * so this is invisible in unit/CI runs — hence the lazy, browser-only polyfill.
+ * Loaded here (right before the isomorphic-git import) to stay out of the
+ * initial bundle until a diff actually runs.
+ */
+async function ensureBuffer(): Promise<void> {
+  const g = globalThis as { Buffer?: unknown };
+  if (g.Buffer) return;
+  const { Buffer } = await import('buffer');
+  g.Buffer = Buffer;
+}
+
+/**
  * Build an isomorphic-git FsClient backed by a FileSystem (read-only paths only).
  *
  * isomorphic-git's internal `bindFs` unconditionally binds all ten of
@@ -96,6 +115,7 @@ class IsomorphicGitProvider implements GitProvider {
   }
 
   async readFileAtRef(ref: string, filepath: string): Promise<string | null> {
+    await ensureBuffer();
     const git = await import('isomorphic-git');
     const fsClient = createFsClient(this.fs);
     // Deliberately NOT wrapped in the try/catch below: resolveRef throws the
