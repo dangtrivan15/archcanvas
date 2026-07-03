@@ -36,7 +36,7 @@ describe('createFileSystem', () => {
 
   describe('Branch 1: WebFileSystem (FileSystemDirectoryHandle)', () => {
     it('returns WebFileSystem when given a FileSystemDirectoryHandle-like object', async () => {
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
       const mockHandle = {
         getFileHandle: vi.fn(),
         getDirectoryHandle: vi.fn(),
@@ -55,7 +55,7 @@ describe('createFileSystem', () => {
       // @ts-expect-error — removing window to simulate Node.js
       delete globalThis.window;
 
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
       const fs = await createFileSystem('/tmp/test-root');
       expectFileSystemShape(fs as unknown as { [key: string]: unknown });
     });
@@ -67,7 +67,7 @@ describe('createFileSystem', () => {
       // @ts-expect-error — adding Tauri marker for detection
       globalThis.window.__TAURI_INTERNALS__ = {};
 
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
 
       // @tauri-apps/plugin-fs is installed, so the import succeeds
       // and returns a TauriFileSystem instance.
@@ -79,7 +79,7 @@ describe('createFileSystem', () => {
   describe('Branch 4: Unknown environment (error)', () => {
     it('throws when window exists but no Tauri internals', async () => {
       // In jsdom, window is defined. Ensure __TAURI_INTERNALS__ is absent.
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
       await expect(createFileSystem('/some/path')).rejects.toThrow(
         /unable to detect platform/i,
       );
@@ -88,7 +88,7 @@ describe('createFileSystem', () => {
 
   describe('input validation', () => {
     it('throws on non-string non-handle argument', async () => {
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
       // @ts-expect-error — testing invalid input
       await expect(createFileSystem(42)).rejects.toThrow(
         /expected a string path or FileSystemDirectoryHandle/i,
@@ -96,7 +96,7 @@ describe('createFileSystem', () => {
     });
 
     it('throws on null argument', async () => {
-      const { createFileSystem } = await import('@/platform/index');
+      const { createFileSystem } = await import('@/platform/createFileSystem');
       // @ts-expect-error — testing null input
       await expect(createFileSystem(null)).rejects.toThrow();
     });

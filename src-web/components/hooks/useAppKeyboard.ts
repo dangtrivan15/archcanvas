@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore } from '@/store/uiStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useDiffStore } from '@/store/diffStore';
 import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 
 /**
@@ -75,9 +76,13 @@ export function useAppKeyboard() {
         return;
       }
 
-      // Cmd+Shift+D → toggle diff overlay
+      // Cmd+Shift+D → toggle diff overlay (belt-and-suspenders: the control is
+      // hidden from the UI when unavailable, and toggleDiffOverlay() already
+      // no-ops in that case, but the shortcut is guarded here too so it never
+      // even attempts the call).
       if (mod && (e.key === 'd' || e.key === 'D') && e.shiftKey) {
         e.preventDefault();
+        if (!useDiffStore.getState().available) return;
         toggleDiffOverlay();
         return;
       }
