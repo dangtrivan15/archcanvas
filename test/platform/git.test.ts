@@ -50,4 +50,16 @@ describe('IsomorphicGitProvider', () => {
     const content = await provider.readFileAtRef('HEAD', '.archcanvas/missing.yaml');
     expect(content).toBeNull();
   });
+
+  // Regression guard: an unresolvable ref must PROPAGATE, not collapse to null.
+  // resolveRef and readBlob both throw NotFoundError, so if resolveRef were ever
+  // moved back inside readFileAtRef's readBlob try/catch, a bad ref would be
+  // swallowed into `null` and this test would fail (promise resolves instead of
+  // rejecting). Keeping resolveRef outside that catch is what makes this pass.
+  it('propagates an error for an unresolvable ref', async () => {
+    const provider = createGitProvider(new NodeFileSystem(repoDir));
+    await expect(
+      provider.readFileAtRef('refs/heads/does-not-exist', '.archcanvas/main.yaml'),
+    ).rejects.toThrow();
+  });
 });
