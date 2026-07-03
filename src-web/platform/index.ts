@@ -1,4 +1,6 @@
 export type { FileSystem } from './fileSystem';
+export type { GitProvider } from './git';
+export { createGitProvider } from './git';
 export { InMemoryFileSystem } from './inMemoryFileSystem';
 export { WebFileSystem } from './webFileSystem';
 export type { FilePicker } from './filePicker';
