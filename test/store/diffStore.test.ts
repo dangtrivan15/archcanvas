@@ -186,4 +186,11 @@ entities: []
 
     expect(diffMod.useDiffStore.getState().error).toBe('No project loaded');
   });
+
+  it('defaults available to false and setAvailable toggles it', () => {
+    const store = useDiffStore.getState();
+    expect(useDiffStore.getState().available).toBe(false);
+    store.setAvailable(true);
+    expect(useDiffStore.getState().available).toBe(true);
+  });
 });

@@ -32,11 +32,14 @@ interface DiffStoreState {
   error: string | null;
   /** Base canvas data used for diffing (stored for tooltip lookups) */
   baseCanvases: Map<string, Canvas>;
+  /** Whether a git repo is available for diffing (i.e. .git is exposed) */
+  available: boolean;
 
   // Actions
   toggle: () => void;
   enable: () => void;
   disable: () => void;
+  setAvailable: (v: boolean) => void;
   setFilter: (filter: Partial<DiffFilter>) => void;
   /** Compute diff from raw YAML strings keyed by canvas ID */
   computeFromYaml: (baseYamls: Map<string, string>, ref?: string) => void;
@@ -71,6 +74,7 @@ export const useDiffStore = create<DiffStoreState>((set, get) => ({
   loading: false,
   error: null,
   baseCanvases: new Map(),
+  available: false,
 
   toggle: () => {
     const { enabled } = get();
@@ -94,6 +98,8 @@ export const useDiffStore = create<DiffStoreState>((set, get) => ({
       baseCanvases: new Map(),
     });
   },
+
+  setAvailable: (v) => set({ available: v }),
 
   setFilter: (partial) => {
     set({ filter: { ...get().filter, ...partial } });
