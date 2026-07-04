@@ -2,12 +2,13 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useChatStore } from '@/store/chatStore';
 
 interface InitMethodStepProps {
+  onExit: () => void;
   onBlankCanvas: () => void;
   onAiAnalyze: () => void;
   onTemplate: () => void;
 }
 
-export function InitMethodStep({ onBlankCanvas, onAiAnalyze, onTemplate }: InitMethodStepProps) {
+export function InitMethodStep({ onExit, onBlankCanvas, onAiAnalyze, onTemplate }: InitMethodStepProps) {
   const prefersReduced = useReducedMotion();
 
   const aiAvailable = useChatStore((s) => {
@@ -19,6 +20,21 @@ export function InitMethodStep({ onBlankCanvas, onAiAnalyze, onTemplate }: InitM
 
   return (
     <div className="flex flex-col items-center gap-6">
+      {/* Escape hatch: opened the wrong folder? Return to the ProjectGate,
+          which offers Open Folder, Open Recent, and templates. */}
+      <motion.button
+        type="button"
+        onClick={onExit}
+        data-testid="onboarding-exit"
+        className="self-start text-sm text-muted-foreground transition-colors hover:text-foreground"
+        initial={prefersReduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        whileHover={prefersReduced ? undefined : { x: -3 }}
+      >
+        ← Open a different project
+      </motion.button>
+
       <div className="text-center">
         <motion.h1
           className="text-3xl font-bold tracking-tight"

@@ -57,6 +57,21 @@ test.describe('onboarding wizard', () => {
     await expect(page.getByText('Blank Canvas')).toBeVisible();
   });
 
+  test('escape hatch returns to the project gate without loading a project', async ({ page }) => {
+    await gotoEmptyProject(page);
+
+    // Wizard is up.
+    await expect(page.getByText('Welcome to ArchCanvas')).toBeVisible();
+
+    // Bail out via the "open a different project" escape link.
+    await page.getByTestId('onboarding-exit').click();
+
+    // Back at the ProjectGate: wizard gone, gate's Open button present.
+    await expect(page.getByText('Welcome to ArchCanvas')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /Open/ })).toBeVisible();
+    await expect(page.locator('.react-flow')).not.toBeVisible();
+  });
+
   test('existing project skips wizard', async ({ page }) => {
     await gotoApp(page);
 

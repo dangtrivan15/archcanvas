@@ -179,7 +179,7 @@ describe('InitMethodStep', () => {
     const onBlank = vi.fn();
     const onAi = vi.fn();
 
-    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
+    render(<InitMethodStep onExit={vi.fn()} onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
     expect(screen.getByTestId('ai-hint')).toBeInTheDocument();
     expect(screen.getByTestId('ai-hint').textContent).toContain('Requires AI connection');
   });
@@ -189,8 +189,17 @@ describe('InitMethodStep', () => {
     const onBlank = vi.fn();
     const onAi = vi.fn();
 
-    render(<InitMethodStep onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
+    render(<InitMethodStep onExit={vi.fn()} onBlankCanvas={onBlank} onAiAnalyze={onAi} onTemplate={vi.fn()} />);
     expect(screen.queryByTestId('ai-hint')).not.toBeInTheDocument();
+  });
+
+  it('fires onExit when the "open a different project" escape link is clicked', () => {
+    const onExit = vi.fn();
+
+    render(<InitMethodStep onExit={onExit} onBlankCanvas={vi.fn()} onAiAnalyze={vi.fn()} onTemplate={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('onboarding-exit'));
+
+    expect(onExit).toHaveBeenCalledTimes(1);
   });
 });
 

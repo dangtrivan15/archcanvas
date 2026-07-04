@@ -159,6 +159,13 @@ interface FileStoreState {
   isDirty: () => boolean;
   completeOnboarding: (type: 'blank' | 'ai' | 'template', survey?: SurveyData, template?: import('../core/templates/schema').ArchTemplate) => Promise<void>;
   loadProject: (fs: FileSystem) => Promise<void>;
+  /**
+   * Abandon onboarding and return to the ProjectGate. Used when the user
+   * opened the wrong folder and wants to pick a different project. Because
+   * nothing is written to disk until an onboarding option is chosen, this is
+   * a pure in-memory reset — no `.archcanvas` cleanup is needed.
+   */
+  cancelOnboarding: () => void;
 }
 
 // Expose store on window for E2E test access (Playwright can't import bundled modules)
@@ -514,6 +521,21 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
         error: err instanceof Error ? err.message : String(err),
       });
     }
+  },
+
+  cancelOnboarding: () => {
+    // Return to the ProjectGate (App renders it whenever fs === null).
+    // recentProjects is deliberately preserved so the gate still shows
+    // history. No disk cleanup: the misclicked folder was only bound in
+    // memory — .archcanvas is created lazily in completeOnboarding().
+    set({
+      fs: null,
+      status: 'idle',
+      projectPath: null,
+      error: null,
+      project: null,
+      dirtyCanvases: new Set(),
+    });
   },
 
   completeOnboarding: async (type, survey, template) => {

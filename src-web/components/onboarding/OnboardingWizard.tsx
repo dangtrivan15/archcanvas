@@ -41,6 +41,7 @@ export function OnboardingWizard() {
         >
           {step === 'init-method' && (
             <InitMethodStep
+              onExit={() => useFileStore.getState().cancelOnboarding()}
               onBlankCanvas={() => useFileStore.getState().completeOnboarding('blank')}
               onAiAnalyze={() => goForward('ai-survey')}
               onTemplate={() => goForward('template-picker')}
