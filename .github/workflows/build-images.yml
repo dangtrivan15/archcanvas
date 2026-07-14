@@ -62,7 +62,7 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.PRIVATE_REGISTRY }}/archcanvas/web:latest
-            ${{ env.PRIVATE_REGISTRY }}/archcanvas/web:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.PRIVATE_REGISTRY }}/archcanvas/web:buildcache
-          cache-to: type=registry,ref=${{ env.PRIVATE_REGISTRY }}/archcanvas/web:buildcache,mode=max
+            ${{ env.PRIVATE_REGISTRY }}/archcanvas-platform/web:latest
+            ${{ env.PRIVATE_REGISTRY }}/archcanvas-platform/web:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.PRIVATE_REGISTRY }}/archcanvas-platform/web:buildcache
+          cache-to: type=registry,ref=${{ env.PRIVATE_REGISTRY }}/archcanvas-platform/web:buildcache,mode=max
