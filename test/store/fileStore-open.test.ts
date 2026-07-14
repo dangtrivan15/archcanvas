@@ -195,6 +195,65 @@ describe('fileStore.open()', () => {
 });
 
 // ---------------------------------------------------------------------------
+// fileStore.open() — directory picker unsupported guard (non-Chromium web)
+// ---------------------------------------------------------------------------
+
+describe('fileStore.open() — directory picker unsupported guard', () => {
+  const originalPickerDescriptor = Object.getOwnPropertyDescriptor(window, 'showDirectoryPicker');
+
+  beforeEach(() => {
+    useFileStore.setState({
+      project: null,
+      dirtyCanvases: new Set(),
+      status: 'idle',
+      error: null,
+      fs: null,
+      recentProjects: [],
+    });
+    setFilePicker(null);
+    setLocalStorage(null);
+    delete (window as any).__TAURI_INTERNALS__;
+  });
+
+  afterEach(() => {
+    setFilePicker(null);
+    setLocalStorage(null);
+    delete (window as any).__TAURI_INTERNALS__;
+    if (originalPickerDescriptor) {
+      Object.defineProperty(window, 'showDirectoryPicker', originalPickerDescriptor);
+    } else {
+      delete (window as any).showDirectoryPicker;
+    }
+  });
+
+  it('is a safe no-op when showDirectoryPicker is unsupported and not Tauri', async () => {
+    delete (window as any).showDirectoryPicker;
+
+    const pickDirectory = vi.fn().mockResolvedValue(createSeededFs('Should Not Load'));
+    setFilePicker({ pickDirectory });
+
+    await expect(useFileStore.getState().open()).resolves.not.toThrow();
+
+    expect(pickDirectory).not.toHaveBeenCalled();
+    expect(useFileStore.getState().status).toBe('idle');
+    expect(useFileStore.getState().error).toBeNull();
+    expect(useFileStore.getState().fs).toBeNull();
+  });
+
+  it('still calls the picker when showDirectoryPicker is supported', async () => {
+    (window as any).showDirectoryPicker = () => Promise.resolve();
+
+    const pickDirectory = vi.fn().mockResolvedValue(createSeededFs('Loaded'));
+    setFilePicker({ pickDirectory });
+
+    await useFileStore.getState().open();
+
+    expect(pickDirectory).toHaveBeenCalled();
+    expect(useFileStore.getState().status).toBe('loaded');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // fileStore.openRecent() — multi-window / multi-tab behavior
 // ---------------------------------------------------------------------------
 

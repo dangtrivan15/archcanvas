@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { FileSystem } from '../platform/fileSystem';
 import type { FilePicker } from '../platform/filePicker';
-import { createFilePicker } from '../platform/filePicker';
+import { createFilePicker, isDirectoryPickerSupported, isTauriRuntime } from '../platform/filePicker';
 import type { Canvas } from '../types';
 import {
   loadProject as loadProjectFile,
@@ -359,6 +359,14 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
   // -----------------------------------------------------------------------
 
   open: async () => {
+    // ProjectGate already hides the "Open…" affordance when the browser has no
+    // directory picker (non-Chromium web). Without this guard, other entry
+    // points into open() — the Cmd/Ctrl+O shortcut, the ?action=open deep
+    // link — would still reach the picker, throw, and silently no-op. Make
+    // that a deliberate no-op instead of an exception-swallow. Tauri always
+    // has its own native picker, so it's exempt from this gate.
+    if (!isDirectoryPickerSupported() && !isTauriRuntime()) return;
+
     // One project per tab/window: if a project is already loaded, open a new tab/window
     if (get().fs !== null && typeof window !== 'undefined') {
       if ('__TAURI_INTERNALS__' in window) {

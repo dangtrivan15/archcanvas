@@ -54,6 +54,14 @@ export function isDirectoryPickerSupported(): boolean {
 }
 
 /**
+ * True when running inside the Tauri desktop shell, which uses its own
+ * native directory picker (not gated by showDirectoryPicker support).
+ */
+export function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+/**
  * Detect environment and return the appropriate FilePicker implementation.
  * Accepts an override for testability (dependency injection).
  */
