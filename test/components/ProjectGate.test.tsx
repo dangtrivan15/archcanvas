@@ -42,6 +42,12 @@ const mockFocusCurrentWindow = vi.mocked(focusCurrentWindow);
 // Reset store between tests
 // ---------------------------------------------------------------------------
 
+// Preserve any real descriptor so we can restore it after the suite.
+const originalPickerDescriptor = Object.getOwnPropertyDescriptor(
+  window,
+  'showDirectoryPicker',
+);
+
 beforeEach(() => {
   useFileStore.setState({
     project: null,
@@ -54,6 +60,9 @@ beforeEach(() => {
   setFilePicker(null);
   // Reset Tauri detection
   delete (window as any).__TAURI_INTERNALS__;
+  // Default to the SUPPORTED (Chromium) path so the gate renders the
+  // Open button + Recent list — the assumption every test below relies on.
+  (window as any).showDirectoryPicker = () => Promise.resolve();
   // Reset mocks
   mockConsumeRestoreEntry.mockReturnValue(null);
   mockGetLastActiveProject.mockReturnValue(null);
@@ -62,6 +71,11 @@ beforeEach(() => {
 
 afterEach(() => {
   delete (window as any).__TAURI_INTERNALS__;
+  if (originalPickerDescriptor) {
+    Object.defineProperty(window, 'showDirectoryPicker', originalPickerDescriptor);
+  } else {
+    delete (window as any).showDirectoryPicker;
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -260,5 +274,23 @@ describe('ProjectGate', () => {
     });
 
     expect(mockFocusCurrentWindow).toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Browser-support gate
+  // -------------------------------------------------------------------------
+
+  describe('browser-support gate', () => {
+    it('shows the unsupported panel and hides Open when the File System Access API is missing', () => {
+      // Simulate a non-Chromium browser (Safari/Firefox/mobile) with no picker.
+      delete (window as any).showDirectoryPicker;
+
+      render(<ProjectGate />);
+
+      expect(screen.getByText(/Chromium-based browser/i)).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /open…/i }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

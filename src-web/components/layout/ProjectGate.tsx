@@ -6,6 +6,7 @@ import { getLastActiveProject } from '@/core/lastActiveProject';
 import { focusCurrentWindow } from '@/core/focusWindow';
 import { Shine } from '@/components/ui/shine';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
+import { isDirectoryPickerSupported } from '@/platform/filePicker';
 import { duration, ease } from '@/lib/motion';
 
 /**
@@ -148,6 +149,10 @@ export function ProjectGate() {
     })();
   }, []);
 
+  // Tauri always supports its own native picker, so only gate the web case.
+  const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  const pickerUnsupported = !isTauri && !isDirectoryPickerSupported();
+
   const fadeUp = (delay: number) =>
     prefersReduced
       ? {}
@@ -209,38 +214,61 @@ export function ProjectGate() {
           )}
         </AnimatePresence>
 
-        {/* Action buttons */}
-        <motion.div className="flex flex-col gap-3" {...fadeUp(0.24)}>
-          <Shine enableOnHover color="white" opacity={0.15} duration={800}>
-            <button
-              className="w-64 rounded-md bg-accent px-4 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/80 disabled:opacity-50"
-              onClick={() => useFileStore.getState().open()}
-              disabled={status === 'loading'}
+        {pickerUnsupported ? (
+          <motion.div
+            className="w-80 rounded-md border px-4 py-4 text-sm text-foreground"
+            {...fadeUp(0.24)}
+          >
+            <p className="font-medium">This browser isn&apos;t supported</p>
+            <p className="mt-1 text-muted-foreground">
+              ArchCanvas web needs a Chromium-based browser (Chrome, Edge, or Brave).
+              Or download the desktop app.
+            </p>
+            <a
+              href="https://github.com/dangtrivan15/archcanvas/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block rounded-md bg-accent px-4 py-2 text-xs font-medium text-accent-foreground hover:bg-accent/80"
             >
-              <span>Open{'\u2026'}</span>
-              <span className="ml-2 text-xs text-accent-foreground/60">
-                {'\u2318'}O
-              </span>
-            </button>
-          </Shine>
-        </motion.div>
-
-        {/* Recent projects */}
-        {recentProjects.length > 0 && (
-          <motion.div className="flex flex-col gap-1 w-64" {...fadeUp(0.32)}>
-            <p className="text-xs text-muted-foreground mb-1">Recent</p>
-            {recentProjects.map((rp) => (
-              <button
-                key={rp.path}
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
-                onClick={() => useFileStore.getState().openRecent(rp.path)}
-                disabled={status === 'loading'}
-              >
-                <span className="block truncate">{rp.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">{rp.path}</span>
-              </button>
-            ))}
+              Download desktop app
+            </a>
           </motion.div>
+        ) : (
+          <>
+            {/* Action buttons */}
+            <motion.div className="flex flex-col gap-3" {...fadeUp(0.24)}>
+              <Shine enableOnHover color="white" opacity={0.15} duration={800}>
+                <button
+                  className="w-64 rounded-md bg-accent px-4 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/80 disabled:opacity-50"
+                  onClick={() => useFileStore.getState().open()}
+                  disabled={status === 'loading'}
+                >
+                  <span>Open{'\u2026'}</span>
+                  <span className="ml-2 text-xs text-accent-foreground/60">
+                    {'\u2318'}O
+                  </span>
+                </button>
+              </Shine>
+            </motion.div>
+
+            {/* Recent projects */}
+            {recentProjects.length > 0 && (
+              <motion.div className="flex flex-col gap-1 w-64" {...fadeUp(0.32)}>
+                <p className="text-xs text-muted-foreground mb-1">Recent</p>
+                {recentProjects.map((rp) => (
+                  <button
+                    key={rp.path}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-accent/40 disabled:opacity-50"
+                    onClick={() => useFileStore.getState().openRecent(rp.path)}
+                    disabled={status === 'loading'}
+                  >
+                    <span className="block truncate">{rp.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{rp.path}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </>
         )}
       </div>
     </div>

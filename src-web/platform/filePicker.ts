@@ -46,6 +46,14 @@ class TauriFilePicker implements FilePicker {
 }
 
 /**
+ * True when the File System Access API (showDirectoryPicker) is available.
+ * Chromium-only; absent in Safari, Firefox, and mobile browsers.
+ */
+export function isDirectoryPickerSupported(): boolean {
+  return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+}
+
+/**
  * Detect environment and return the appropriate FilePicker implementation.
  * Accepts an override for testability (dependency injection).
  */
