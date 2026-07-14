@@ -1,0 +1,41 @@
+name: Trigger Web Image Build
+
+# The ArchCanvas web image is built and pushed from the archcanvas-platform repo's
+# PRIVATE runner (which holds the Harbor push robot). This repo's CI runner is
+# credential-free by design — it cannot push images. So on changes to the web app
+# we DISPATCH a build to archcanvas-platform instead of building here; that repo's
+# build-web job checks out this repo @main and pushes archcanvas-platform/web.
+#
+# Requires repo secret PLATFORM_DISPATCH_TOKEN: a fine-grained PAT with
+# Contents: Read and write on dangtrivan15/archcanvas-platform. Until it is set,
+# this workflow no-ops with a warning (no failing runs).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src-web/**'
+      - 'Dockerfile'
+      - 'nginx.conf'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: arc-runner-archcanvas
+    steps:
+      - name: Dispatch build-web to archcanvas-platform
+        env:
+          TOKEN: ${{ secrets.PLATFORM_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::warning::PLATFORM_DISPATCH_TOKEN not set — skipping web build dispatch. Add the secret to enable auto-rebuild."
+            exit 0
+          fi
+          curl -sS -f -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/dangtrivan15/archcanvas-platform/dispatches \
+            -d '{"event_type":"build-web"}'
+          echo "Dispatched build-web to archcanvas-platform."
