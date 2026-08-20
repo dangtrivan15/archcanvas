@@ -48,7 +48,11 @@ import {
   CLAUDE_CODE_PROVIDER_ID,
 } from '@/core/ai/webSocketProvider';
 import { ApiKeyProvider, CLAUDE_API_KEY_PROVIDER_ID } from '@/core/ai/apiKeyProvider';
+import { OpenAiProvider, OPENAI_PROVIDER_ID } from '@/core/ai/providers/openai';
+import { OllamaProvider, OLLAMA_PROVIDER_ID } from '@/core/ai/providers/ollama';
+import { GeminiProvider, GEMINI_PROVIDER_ID } from '@/core/ai/providers/gemini';
 import { ApiKeySettings, ClaudeCodeSettings } from '@/components/ai/AiProviderSettings';
+import { useAiSettingsStore } from '@/store/aiSettingsStore';
 
 describe('providerRegistry', () => {
   beforeEach(() => {
@@ -56,12 +60,16 @@ describe('providerRegistry', () => {
     subscribeListener = null;
     mockApiKeyState.apiKey = null;
     mockApiKeyState.isValidated = false;
+    useAiSettingsStore.setState({ selectedProviderId: null, byProvider: {} });
   });
 
-  it('registers Claude Code first so chatStore auto-selects it as active', () => {
+  it('registers Claude Code first so chatStore auto-selects it as active, followed by the API-key and Phase-2 providers', () => {
     expect(providerDescriptors.map((d) => d.id)).toEqual([
       CLAUDE_CODE_PROVIDER_ID,
       CLAUDE_API_KEY_PROVIDER_ID,
+      OPENAI_PROVIDER_ID,
+      OLLAMA_PROVIDER_ID,
+      GEMINI_PROVIDER_ID,
     ]);
   });
 
@@ -87,6 +95,54 @@ describe('providerRegistry', () => {
     expect(
       getProviderDescriptor(CLAUDE_CODE_PROVIDER_ID)?.opensSettingsWhenUnavailable,
     ).toBeUndefined();
+  });
+
+  it.each([OPENAI_PROVIDER_ID, OLLAMA_PROVIDER_ID, GEMINI_PROVIDER_ID])(
+    '%s descriptor has a SettingsComponent and opens settings when unavailable',
+    (id) => {
+      const descriptor = getProviderDescriptor(id);
+      expect(descriptor?.SettingsComponent).toBeTypeOf('function');
+      expect(descriptor?.opensSettingsWhenUnavailable).toBe(true);
+    },
+  );
+
+  describe('openai / ollama / gemini setup', () => {
+    it.each([
+      [OPENAI_PROVIDER_ID, OpenAiProvider],
+      [OLLAMA_PROVIDER_ID, OllamaProvider],
+      [GEMINI_PROVIDER_ID, GeminiProvider],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ])('%s registers exactly one provider instance on setup', (id, Ctor: any) => {
+      const register = vi.fn();
+      const cleanup = getProviderDescriptor(id)!.setup(register);
+
+      expect(register).toHaveBeenCalledTimes(1);
+      expect(register.mock.calls[0][0]).toBeInstanceOf(Ctor);
+
+      cleanup();
+    });
+
+    it('re-registers openai when aiSettingsStore validation state for that id flips', () => {
+      const register = vi.fn();
+      const cleanup = getProviderDescriptor(OPENAI_PROVIDER_ID)!.setup(register);
+      expect(register).toHaveBeenCalledTimes(1);
+
+      useAiSettingsStore.setState({
+        byProvider: { [OPENAI_PROVIDER_ID]: { isValidated: true, isValidating: false } },
+      });
+      expect(register).toHaveBeenCalledTimes(2);
+
+      // An unrelated provider's validation state does not re-register openai.
+      useAiSettingsStore.setState({
+        byProvider: {
+          [OPENAI_PROVIDER_ID]: { isValidated: true, isValidating: false },
+          [OLLAMA_PROVIDER_ID]: { isValidated: true, isValidating: false },
+        },
+      });
+      expect(register).toHaveBeenCalledTimes(2);
+
+      cleanup();
+    });
   });
 
   describe('claude-code setup', () => {

@@ -72,6 +72,20 @@ function createMockProvider(
   };
 }
 
+/** Interactive mock provider — satisfies isInteractiveProvider() (sendPermissionResponse etc.). */
+function createInteractiveMockProvider(
+  id: string,
+  overrides: Partial<ChatProvider> = {},
+): ChatProvider {
+  return createMockProvider(id, {
+    sendPermissionResponse: vi.fn(),
+    sendQuestionResponse: vi.fn(),
+    sendSetPermissionMode: vi.fn(),
+    sendSetEffort: vi.fn(),
+    ...overrides,
+  } as Partial<ChatProvider>);
+}
+
 function makeUserMessage(content: string, ts = 1000): ChatMessageType {
   return { role: 'user', content, timestamp: ts };
 }
@@ -341,6 +355,20 @@ describe('ChatPanel — Path input removed', () => {
 // ===========================================================================
 
 describe('ChatPanel — Permission Mode Selector', () => {
+  // ChatPanel.tsx now gates these controls behind
+  // `activeProvider != null && isInteractiveProvider(activeProvider)`
+  // (Decision 6) — give every test in this block an interactive active
+  // provider so the selects render and these assertions keep exercising
+  // real behavior. See the "Interactive controls gating" block below for
+  // the absent-controls cases this change introduces.
+  beforeEach(() => {
+    const provider = createInteractiveMockProvider('interactive');
+    useChatStore.setState({
+      providers: new Map([['interactive', provider]]),
+      activeProviderId: 'interactive',
+    });
+  });
+
   it('renders permission mode dropdown with default value', () => {
     render(<ChatPanel />);
     const select = screen.getByLabelText('Permission mode') as HTMLSelectElement;
@@ -373,12 +401,7 @@ describe('ChatPanel — Permission Mode Selector', () => {
   });
 
   it('is disabled during streaming', () => {
-    const provider = createMockProvider('test');
-    useChatStore.setState({
-      providers: new Map([['test', provider]]),
-      activeProviderId: 'test',
-      isStreaming: true,
-    });
+    useChatStore.setState({ isStreaming: true });
 
     render(<ChatPanel />);
     expect(screen.getByLabelText('Permission mode')).toBeDisabled();
@@ -399,6 +422,14 @@ describe('ChatPanel — Permission Mode Selector', () => {
 });
 
 describe('ChatPanel — Effort Selector', () => {
+  beforeEach(() => {
+    const provider = createInteractiveMockProvider('interactive');
+    useChatStore.setState({
+      providers: new Map([['interactive', provider]]),
+      activeProviderId: 'interactive',
+    });
+  });
+
   it('renders effort dropdown with default value', () => {
     render(<ChatPanel />);
     const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
@@ -431,12 +462,7 @@ describe('ChatPanel — Effort Selector', () => {
   });
 
   it('is disabled during streaming', () => {
-    const provider = createMockProvider('test');
-    useChatStore.setState({
-      providers: new Map([['test', provider]]),
-      activeProviderId: 'test',
-      isStreaming: true,
-    });
+    useChatStore.setState({ isStreaming: true });
 
     render(<ChatPanel />);
     expect(screen.getByLabelText('Effort level')).toBeDisabled();
@@ -453,6 +479,74 @@ describe('ChatPanel — Effort Selector', () => {
     render(<ChatPanel />);
     const select = screen.getByLabelText('Effort level') as HTMLSelectElement;
     expect(select.value).toBe('low');
+  });
+});
+
+describe('ChatPanel — Interactive controls gating (Decision 6)', () => {
+  it('hides permission-mode and effort selects when no active provider', () => {
+    render(<ChatPanel />);
+    expect(screen.queryByLabelText('Permission mode')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Effort level')).not.toBeInTheDocument();
+  });
+
+  it('hides permission-mode and effort selects for a non-interactive active provider (ApiKeyProvider-shaped)', () => {
+    // No sendPermissionResponse/sendQuestionResponse/sendSetPermissionMode/sendSetEffort —
+    // matches the already-shipped ApiKeyProvider, which isInteractiveProvider() rejects.
+    const provider = createMockProvider('claude-api-key');
+    useChatStore.setState({
+      providers: new Map([['claude-api-key', provider]]),
+      activeProviderId: 'claude-api-key',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.queryByLabelText('Permission mode')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Effort level')).not.toBeInTheDocument();
+  });
+
+  it('shows permission-mode and effort selects for an interactive active provider', () => {
+    const provider = createInteractiveMockProvider('claude-code');
+    useChatStore.setState({
+      providers: new Map([['claude-code', provider]]),
+      activeProviderId: 'claude-code',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByLabelText('Permission mode')).toBeInTheDocument();
+    expect(screen.getByLabelText('Effort level')).toBeInTheDocument();
+  });
+
+  it('renders the active provider capability badge', () => {
+    const provider = createMockProvider('claude-api-key', {
+      capabilities: { tools: true, streaming: true },
+      supportsTools: () => true,
+    });
+    useChatStore.setState({
+      providers: new Map([['claude-api-key', provider]]),
+      activeProviderId: 'claude-api-key',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByTestId('capability-badge')).toBeInTheDocument();
+    expect(screen.getByText('Tools')).toBeInTheDocument();
+  });
+
+  it('does not render a capability badge when no active provider', () => {
+    render(<ChatPanel />);
+    expect(screen.queryByTestId('capability-badge')).not.toBeInTheDocument();
+  });
+
+  it('shows a "Conversation-only" badge when the active provider cannot call tools', () => {
+    const provider = createMockProvider('ollama', {
+      capabilities: { tools: true, streaming: true },
+      supportsTools: () => false,
+    });
+    useChatStore.setState({
+      providers: new Map([['ollama', provider]]),
+      activeProviderId: 'ollama',
+    });
+
+    render(<ChatPanel />);
+    expect(screen.getByText('Conversation-only')).toBeInTheDocument();
   });
 });
 

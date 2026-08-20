@@ -3,10 +3,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Settings, Trash2 } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useUiStore } from '@/store/uiStore';
+import { isInteractiveProvider } from '@/core/ai/types';
 import { ChatMessage } from './ChatMessage';
 import { ChatProviderSelector } from './ChatProviderSelector';
 import { AnimatedBanner } from '@/components/ui/animated-banner';
 import { SkeletonLoader } from '@/components/ui/skeleton-loader';
+import { CapabilityBadge } from '@/components/ai/CapabilityBadge';
 import { duration, entrance, bannerTransition, withReducedMotion } from '@/lib/motion';
 
 export function ChatPanel() {
@@ -63,6 +65,14 @@ export function ChatPanel() {
     : undefined;
   const canSend = !isStreaming && !!activeProvider?.available && input.trim().length > 0;
 
+  // Decision 6: permission-mode/effort controls are Claude-bridge-only —
+  // hide (not just disable) them for any non-interactive or absent active
+  // provider, including the already-shipped ApiKeyProvider.
+  const showInteractiveControls = activeProvider != null && isInteractiveProvider(activeProvider);
+  const effectiveCapabilities = activeProvider
+    ? { tools: activeProvider.supportsTools(), streaming: activeProvider.capabilities.streaming }
+    : null;
+
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed || !canSend) return;
@@ -114,30 +124,34 @@ export function ChatPanel() {
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
-          <select
-            value={permissionMode}
-            onChange={(e) => useChatStore.getState().setPermissionMode(e.target.value)}
-            disabled={isStreaming}
-            className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
-            aria-label="Permission mode"
-          >
-            <option value="default">Default</option>
-            <option value="acceptEdits">Auto-edit</option>
-            <option value="plan">Plan only</option>
-            <option value="dontAsk">Strict</option>
-          </select>
-          <select
-            value={effort}
-            onChange={(e) => useChatStore.getState().setEffort(e.target.value)}
-            disabled={isStreaming}
-            className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
-            aria-label="Effort level"
-          >
-            <option value="low">Quick</option>
-            <option value="medium">Medium</option>
-            <option value="high">Thorough</option>
-            <option value="max">Maximum</option>
-          </select>
+          {showInteractiveControls && (
+            <>
+              <select
+                value={permissionMode}
+                onChange={(e) => useChatStore.getState().setPermissionMode(e.target.value)}
+                disabled={isStreaming}
+                className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
+                aria-label="Permission mode"
+              >
+                <option value="default">Default</option>
+                <option value="acceptEdits">Auto-edit</option>
+                <option value="plan">Plan only</option>
+                <option value="dontAsk">Strict</option>
+              </select>
+              <select
+                value={effort}
+                onChange={(e) => useChatStore.getState().setEffort(e.target.value)}
+                disabled={isStreaming}
+                className="rounded border border-border bg-popover px-2 py-0.5 text-xs text-popover-foreground outline-none disabled:opacity-50"
+                aria-label="Effort level"
+              >
+                <option value="low">Quick</option>
+                <option value="medium">Medium</option>
+                <option value="high">Thorough</option>
+                <option value="max">Maximum</option>
+              </select>
+            </>
+          )}
           <button
             onClick={handleClose}
             className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -147,6 +161,13 @@ export function ChatPanel() {
           </button>
         </div>
       </div>
+
+      {/* Active provider capability badge (Decision 6) */}
+      {effectiveCapabilities && (
+        <div className="border-b border-border px-3 py-1.5">
+          <CapabilityBadge {...effectiveCapabilities} />
+        </div>
+      )}
 
       {/* Error banner */}
       <AnimatedBanner visible={!!error} variant="error">
