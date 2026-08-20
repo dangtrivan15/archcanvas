@@ -1,7 +1,7 @@
 /**
  * MCP tool server for ArchCanvas.
  *
- * Registers 20 tools with the Claude Agent SDK MCP server.
+ * Registers 21 tools with the Claude Agent SDK MCP server.
  * Handler bodies use shared translateToolArgs() for arg translation.
  *
  * This is a Node.js-only module. It must NEVER be bundled into the browser build.
@@ -22,7 +22,7 @@ function toCallToolResult(result: { ok: boolean; data?: unknown; error?: { code:
 }
 
 /**
- * Create an MCP server with 20 ArchCanvas tools.
+ * Create an MCP server with 21 ArchCanvas tools.
  * Each tool handler translates MCP args to dispatcher shape and relays via the provided function.
  */
 export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
@@ -157,6 +157,13 @@ export function createArchCanvasMcpServer(relay: RelayStoreActionFn) {
         return toCallToolResult(await relay(action, translatedArgs));
       }),
 
+      tool('validate_architecture', 'Validate the architecture in a canvas scope for anti-patterns, missing components, and NodeDef review hints. Returns soft warnings, not blocking errors.', {
+        scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
+      }, async (a) => {
+        const { action, translatedArgs } = translateToolArgs('validate_architecture', a);
+        return toCallToolResult(await relay(action, translatedArgs));
+      }),
+
       // --- Project File Tools ---
       tool('read_project_file', 'Read a text file in the opened project. Binary files are not supported.', {
         path: z.string().describe('File path relative to project root'),
@@ -224,7 +231,7 @@ export const MCP_TOOL_NAMES = [
   'mcp__archcanvas__add_entity', 'mcp__archcanvas__remove_entity', 'mcp__archcanvas__update_entity',
   'mcp__archcanvas__list',
   'mcp__archcanvas__describe', 'mcp__archcanvas__search',
-  'mcp__archcanvas__catalog',
+  'mcp__archcanvas__catalog', 'mcp__archcanvas__validate_architecture',
   'mcp__archcanvas__read_project_file', 'mcp__archcanvas__write_project_file',
   'mcp__archcanvas__update_project_file', 'mcp__archcanvas__list_project_files',
   'mcp__archcanvas__glob_project_files', 'mcp__archcanvas__search_project_files',

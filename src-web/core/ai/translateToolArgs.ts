@@ -23,6 +23,7 @@ export const TOOL_TO_ACTION: Record<string, string> = {
   describe: 'describe',
   search: 'search',
   catalog: 'catalog',
+  validate_architecture: 'validateArchitecture',
   read_project_file: 'readProjectFile',
   write_project_file: 'writeProjectFile',
   update_project_file: 'updateProjectFile',

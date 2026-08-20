@@ -115,7 +115,7 @@ function httpRequest(
 ): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
     const req = http.request(
-      { hostname: 'localhost', port, method, path, headers: { 'Content-Type': 'application/json' } },
+      { hostname: '127.0.0.1', port, method, path, headers: { 'Content-Type': 'application/json' } },
       (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
@@ -139,7 +139,7 @@ function setupServer(mockQueryFn?: SDKQueryFn) {
 
 async function startServer(server: ReturnType<typeof createMockViteServer>): Promise<number> {
   await new Promise<void>((resolve) => {
-    server.httpServer.listen(0, 'localhost', () => resolve());
+    server.httpServer.listen(0, '127.0.0.1', () => resolve());
   });
   return (server.httpServer.address() as import('net').AddressInfo).port;
 }
@@ -193,7 +193,7 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
   });
 
   it('accepts WebSocket connections on /__archcanvas_ai', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve, reject) => {
       ws.on('open', resolve);
       ws.on('error', reject);
@@ -204,7 +204,7 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
   });
 
   it('streams ChatEvents back when receiving a chat message', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     const received: unknown[] = [];
@@ -239,7 +239,7 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
   });
 
   it('handles interrupt message without crashing', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     ws.send(JSON.stringify({ type: 'interrupt' }));
@@ -251,7 +251,7 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
   });
 
   it('handles load_history message without crashing', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     ws.send(JSON.stringify({
@@ -270,13 +270,13 @@ describe('aiBridgePlugin — WebSocket lifecycle', () => {
   });
 
   it('cleans up session on disconnect and allows reconnection', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
     ws.close();
     await new Promise<void>(r => ws.on('close', r));
 
     // Reconnect
-    const ws2 = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws2 = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws2.on('open', resolve));
     expect(ws2.readyState).toBe(WebSocket.OPEN);
     ws2.close();
@@ -299,7 +299,7 @@ describe('aiBridgePlugin — permission relay', () => {
   });
 
   it('permission_response message does not crash the server', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
 
     // Send permission response for nonexistent permission — should not crash
@@ -331,7 +331,7 @@ describe('aiBridgePlugin — new client messages', () => {
   });
 
   it('set_permission_mode message does not crash the server', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
     ws.send(JSON.stringify({ type: 'set_permission_mode', mode: 'acceptEdits' }));
     await new Promise(r => setTimeout(r, 50));
@@ -341,7 +341,7 @@ describe('aiBridgePlugin — new client messages', () => {
   });
 
   it('set_effort message does not crash the server', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
     ws.send(JSON.stringify({ type: 'set_effort', effort: 'low' }));
     await new Promise(r => setTimeout(r, 50));
@@ -351,7 +351,7 @@ describe('aiBridgePlugin — new client messages', () => {
   });
 
   it('permission_response with updatedPermissions and interrupt does not crash', async () => {
-    const ws = new WebSocket(`ws://localhost:${port}/__archcanvas_ai`);
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/__archcanvas_ai`);
     await new Promise<void>((resolve) => ws.on('open', resolve));
     ws.send(JSON.stringify({
       type: 'permission_response',

@@ -16,6 +16,7 @@ describe('TOOL_TO_ACTION', () => {
     expect(TOOL_TO_ACTION.describe).toBe('describe');
     expect(TOOL_TO_ACTION.search).toBe('search');
     expect(TOOL_TO_ACTION.catalog).toBe('catalog');
+    expect(TOOL_TO_ACTION.validate_architecture).toBe('validateArchitecture');
   });
 });
 
@@ -158,6 +159,20 @@ describe('translateToolArgs', () => {
     expect(action).toBe('catalog');
     expect(translatedArgs.namespace).toBe('compute');
     expect(translatedArgs.canvasId).toBe('__root__');
+  });
+
+  it('translates validate_architecture: scope → canvasId (falls through to default case like catalog/list/describe/search)', () => {
+    const { action, translatedArgs } = translateToolArgs('validate_architecture', {
+      scope: 'sub-a',
+    });
+    expect(action).toBe('validateArchitecture');
+    expect(translatedArgs).toEqual({ canvasId: 'sub-a' });
+  });
+
+  it('defaults validate_architecture scope to __root__', () => {
+    const { action, translatedArgs } = translateToolArgs('validate_architecture', {});
+    expect(action).toBe('validateArchitecture');
+    expect(translatedArgs).toEqual({ canvasId: '__root__' });
   });
 
   // --- Project File Tools ---

@@ -13,6 +13,7 @@ import { EdgeDetailPanel } from '@/components/panels/EdgeDetailPanel';
 import { ChatPanel } from '@/components/panels/ChatPanel';
 import { EntityPanel } from '@/components/panels/EntityPanel';
 import { RegistryPanel } from '@/components/registry/RegistryPanel';
+import { ValidationPanel } from '@/components/panels/ValidationPanel';
 import { duration, ease } from '@/lib/motion';
 
 function isInlineNode(node: { id: string; ref?: string; type?: string }): node is InlineNode {
@@ -50,6 +51,10 @@ export function RightPanel() {
 
   if (rightPanelMode === 'registry') {
     return <RegistryPanel />;
+  }
+
+  if (rightPanelMode === 'validation') {
+    return <ValidationPanel />;
   }
 
   const allNodes = canvas?.data.nodes ?? [];

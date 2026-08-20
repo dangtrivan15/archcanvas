@@ -13,6 +13,7 @@ import { useHistoryStore } from '@/store/historyStore';
 import { useUiStore } from '@/store/uiStore';
 import { useToolStore } from '@/store/toolStore';
 import { useDiffStore } from '@/store/diffStore';
+import { useValidationStore } from '@/store/validationStore';
 import { toggleDiffOverlay } from '@/core/diff/orchestrator';
 import { resolveIcon } from '@/components/nodes/iconMap';
 import { createNodeFromType } from '@/lib/createNodeFromType';
@@ -182,6 +183,10 @@ const viewActions: ActionDef[] = [
   { id: 'action:toggle-right-panel', title: 'Toggle Right Panel', icon: '◨', category: 'View', execute: () => useUiStore.getState().toggleRightPanel() },
   { id: 'action:open-chat', title: 'Open AI Chat', subtitle: '⇧⌘I', icon: '💬', category: 'View', execute: () => { useUiStore.getState().openRightPanel(); useUiStore.getState().setRightPanelMode('chat'); setTimeout(() => window.dispatchEvent(new CustomEvent('archcanvas:focus-chat')), 0); } },
   { id: 'action:appearance', title: 'Appearance\u2026', subtitle: 'Theme, mode, text size', icon: '🎨', category: 'View', execute: () => useUiStore.getState().openAppearanceDialog() },
+  { id: 'action:validate-architecture', title: 'Validate Architecture', subtitle: 'Check for anti-patterns and review hints', icon: 'ShieldCheck', category: 'View', execute: () => {
+    useValidationStore.getState().runValidation();
+    useUiStore.getState().openValidationPanel();
+  } },
 ];
 
 const toolActions: ActionDef[] = [
