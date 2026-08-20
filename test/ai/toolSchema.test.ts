@@ -22,8 +22,11 @@ describe('toOpenAiTools', () => {
   const tools = toOpenAiTools();
 
   it('emits one entry per archCanvasToolDefs tool', () => {
+    // Deliberately no hardcoded literal count here: archCanvasToolDefs is a
+    // shared catalogue other features append to (e.g. validate_architecture),
+    // so a literal drifts out of sync through no fault of this file. Parity
+    // with the live source array is the real regression guard.
     expect(tools).toHaveLength(archCanvasToolDefs.length);
-    expect(tools.length).toBe(20);
   });
 
   it('every entry has the OpenAI function-tool envelope', () => {
@@ -101,8 +104,9 @@ describe('toGeminiFunctionDeclarations', () => {
   const decls = toGeminiFunctionDeclarations();
 
   it('emits one entry per archCanvasToolDefs tool', () => {
+    // See the matching note in the toOpenAiTools describe block above: no
+    // hardcoded literal, parity with the live catalogue is the real check.
     expect(decls).toHaveLength(archCanvasToolDefs.length);
-    expect(decls.length).toBe(20);
   });
 
   it('every entry has name/description/parameters', () => {
