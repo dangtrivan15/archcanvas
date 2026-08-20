@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ChatEvent, ProjectContext } from '../../src-web/core/ai/types';
+import { OPENAI_MODELS } from '../../src-web/core/ai/providers/models';
 
 // --- SDK Mock ---
 
@@ -491,6 +492,73 @@ describe('ChatCompletionsProviderBase (via OpenAiProvider)', () => {
 
     expect(mockCreate.mock.calls[1][0].model).toBe('gpt-4o');
     expect(constructorCalls[1].apiKey).toBe('sk-test-2');
+  });
+
+  describe('listModels()', () => {
+    function pageOf(ids: string[]) {
+      return {
+        [Symbol.asyncIterator]: async function* () {
+          for (const id of ids) yield { id };
+        },
+      };
+    }
+
+    it('falls back to the static list when no API key is configured', async () => {
+      const provider = new OpenAiProvider();
+      const models = await provider.listModels();
+      expect(models).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'gpt-4o' })]));
+      expect(mockModelsList).not.toHaveBeenCalled();
+    });
+
+    it('filters out o-series, embedding, audio, image, moderation, and legacy-completions models', async () => {
+      setProviderApiKey('openai', 'sk-test');
+      mockModelsList.mockResolvedValue(
+        pageOf([
+          'gpt-4o',
+          'gpt-4.1-mini',
+          'o1',
+          'o3-mini',
+          'o4-mini',
+          'text-embedding-3-small',
+          'whisper-1',
+          'tts-1',
+          'dall-e-3',
+          'text-moderation-latest',
+          'omni-moderation-latest',
+          'babbage-002',
+          'davinci-002',
+          'gpt-3.5-turbo-instruct',
+          'gpt-4o-realtime-preview',
+          'gpt-4o-audio-preview',
+          'gpt-4o-transcribe',
+        ]),
+      );
+
+      const provider = new OpenAiProvider();
+      const models = await provider.listModels();
+
+      expect(models.map((m) => m.id)).toEqual(['gpt-4o', 'gpt-4.1-mini']);
+    });
+
+    it('falls back to the static list when the filtered live list is empty', async () => {
+      setProviderApiKey('openai', 'sk-test');
+      mockModelsList.mockResolvedValue(pageOf(['o1', 'whisper-1', 'dall-e-3']));
+
+      const provider = new OpenAiProvider();
+      const models = await provider.listModels();
+
+      expect(models).toEqual(OPENAI_MODELS);
+    });
+
+    it('falls back to the static list when the API call throws', async () => {
+      setProviderApiKey('openai', 'sk-test');
+      mockModelsList.mockRejectedValue(new Error('network error'));
+
+      const provider = new OpenAiProvider();
+      const models = await provider.listModels();
+
+      expect(models).toEqual(OPENAI_MODELS);
+    });
   });
 });
 

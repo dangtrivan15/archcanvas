@@ -7,7 +7,13 @@ import OpenAI from 'openai';
 import { ChatCompletionsProviderBase, type LiveProviderConfig } from './chatCompletionsProvider';
 import { getProviderApiKey } from './keyStorage';
 import { useAiSettingsStore } from '../../../store/aiSettingsStore';
-import { OPENAI_MODELS, OPENAI_MAX_TOKENS, OPENAI_DEFAULT_MAX_TOKENS, OPENAI_DEFAULT_MODEL } from './models';
+import {
+  OPENAI_MODELS,
+  OPENAI_MAX_TOKENS,
+  OPENAI_DEFAULT_MAX_TOKENS,
+  OPENAI_DEFAULT_MODEL,
+  isChatCompletionsModel,
+} from './models';
 import type { ModelInfo, ProviderCapabilities } from '../types';
 
 export const OPENAI_PROVIDER_ID = 'openai';
@@ -49,7 +55,13 @@ export class OpenAiProvider extends ChatCompletionsProviderBase {
       const page = await client.models.list();
       const models: ModelInfo[] = [];
       for await (const m of page) {
-        models.push({ id: m.id, label: m.id });
+        // Exclude models the shared tool loop can't actually drive (see
+        // models.ts's isChatCompletionsModel doc comment) — o-series/
+        // embedding/audio/image/moderation/legacy-completions ids would
+        // otherwise populate the dropdown and 400 on selection.
+        if (isChatCompletionsModel(m.id)) {
+          models.push({ id: m.id, label: m.id });
+        }
       }
       return models.length > 0 ? models : OPENAI_MODELS;
     } catch {

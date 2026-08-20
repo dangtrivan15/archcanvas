@@ -58,6 +58,30 @@ export const OPENAI_MAX_TOKENS: Record<string, number> = {
 export const OPENAI_DEFAULT_MAX_TOKENS = 4096;
 export const OPENAI_DEFAULT_MODEL = 'gpt-4o-mini';
 
+// `client.models.list()` (OpenAiProvider.listModels()'s live path) returns
+// EVERY model visible to the account — chat, text-embedding, whisper/tts
+// (audio), dall-e (image), moderation, the realtime API family, and the
+// legacy completions-only babbage/davinci-002 + gpt-3.5-turbo-instruct
+// models — with no built-in filter for "usable via chat.completions.create()
+// with a classic max_tokens param". Feeding that raw list straight into the
+// Settings model dropdown would let a user pick e.g. `text-embedding-3-small`
+// or `dall-e-3` and get an opaque 400 on the next message, or pick an
+// o-series reasoning model and hit exactly the max_tokens incompatibility
+// documented above for the static OPENAI_MODELS list — just reached via the
+// live path (the "Test Connection" flow every user is steered toward) rather
+// than the default one. Filter live results down to the same "Chat
+// Completions models that accept classic max_tokens" contract the static
+// list already promises.
+const OPENAI_NON_CHAT_MODEL_PREFIXES =
+  /^(o1|o3|o4|whisper|tts|dall-e|text-embedding|text-moderation|omni-moderation|babbage|davinci|gpt-3\.5-turbo-instruct)/;
+const OPENAI_NON_CHAT_MODEL_SUBSTRINGS = ['realtime', 'audio', 'transcribe'];
+
+/** True if `modelId` is usable via Chat Completions with a classic `max_tokens` param. */
+export function isChatCompletionsModel(modelId: string): boolean {
+  if (OPENAI_NON_CHAT_MODEL_PREFIXES.test(modelId)) return false;
+  return !OPENAI_NON_CHAT_MODEL_SUBSTRINGS.some((s) => modelId.includes(s));
+}
+
 // ---------------------------------------------------------------------------
 // Gemini
 // ---------------------------------------------------------------------------
