@@ -146,6 +146,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return;
     }
 
+    // Guard: don't dispatch to a provider that hasn't been explicitly
+    // validated/connected. ChatPanel's `canSend` already enforces this for
+    // its own text input, but it is NOT the only caller of sendMessage() —
+    // fileStore.ts's "New Project (AI)" onboarding flow calls
+    // useChatStore.getState().sendMessage(prompt) directly, bypassing any
+    // component-level gate. That matters specifically because of
+    // OllamaProvider: unlike every other provider it has no API key to
+    // gate on (requiresApiKey() === false), and its baseUrl/activeProviderId
+    // can both arrive unattended from a project's committed
+    // `.archcanvas/settings.yaml` via hydrateFromSettings (see
+    // aiSettingsStore.ts / App.tsx). Without this check, opening a project
+    // that ships such a file — then later using the unrelated AI-onboarding
+    // flow for a *different* project in the same session, since
+    // activeProviderId persists across project switches — would silently
+    // POST the new project's survey prompt (and honor any tool_calls in the
+    // response against the new project's files) to an attacker-chosen host
+    // with zero explicit "Test Connection" step taken. Checking `available`
+    // here — the same flag ChatPanel already gates on, and the same flag
+    // clearHistory() below already checks before calling into a provider —
+    // closes that gap for every current and future caller, not just this
+    // one call site.
+    if (!provider.available) {
+      set({ error: `Provider "${provider.displayName}" is not connected — open AI Settings and validate it first.` });
+      return;
+    }
+
     // Add user message
     const userMessage: ChatMessage = {
       role: 'user',

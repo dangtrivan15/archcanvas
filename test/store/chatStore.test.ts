@@ -428,6 +428,27 @@ describe('chatStore', () => {
       expect(useChatStore.getState().error).toBe('No active AI provider');
     });
 
+    it('sets error and never calls sendMessage() on an unavailable (unvalidated) provider', async () => {
+      // Regression test: chatStore.sendMessage() is not only reached via
+      // ChatPanel's `canSend` gate (which already checks `available`) — the
+      // "New Project (AI)" onboarding flow in fileStore.ts calls
+      // useChatStore.getState().sendMessage() directly. A provider like
+      // OllamaProvider has no API key to gate its own network call on, and
+      // its `available` (isValidated) flag, baseUrl, and even which
+      // provider is *active* can all be set unattended from a project's
+      // `.archcanvas/settings.yaml`. Without this store-level guard, an
+      // unvalidated/attacker-configured provider would still receive the
+      // full outgoing message.
+      const provider = createMockProvider('p1', { available: false });
+      useChatStore.getState().registerProvider(provider);
+
+      await useChatStore.getState().sendMessage('Should not be sent');
+
+      expect(useChatStore.getState().error).toBe('Provider "Mock p1" is not connected — open AI Settings and validate it first.');
+      expect(provider.sentMessages).toHaveLength(0);
+      expect(useChatStore.getState().isStreaming).toBe(false);
+    });
+
     it('clears error on new sendMessage', async () => {
       const provider = createMockProvider('p1');
       useChatStore.getState().registerProvider(provider);
