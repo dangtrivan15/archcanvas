@@ -21,6 +21,7 @@ import { useRegistryStore } from '@/store/registryStore';
 import { createNodeDefWatcher, type NodeDefWatcher } from '@/core/registry';
 import { useFileStore } from '@/store/fileStore';
 import { useUiStore, SIDEBAR_WIDTH_PRESETS, persistPanelLayout } from '@/store/uiStore';
+import { subscribeValidationAutoRun } from '@/store/validationStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
 import { AiSettingsDialog } from '@/components/AiSettingsDialog';
 import { TemplatePickerDialogWrapper } from '@/components/templates/TemplatePickerDialogWrapper';
@@ -112,6 +113,8 @@ export function App() {
   useEffect(() => {
     checkForUpdate();
   }, []);
+
+  useEffect(() => subscribeValidationAutoRun(), []);
 
   // Safety-net: bring window to foreground on cold start (best-effort, fire-and-forget)
   useEffect(() => {

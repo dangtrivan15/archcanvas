@@ -6,6 +6,7 @@ import { useUpdaterStore } from "@/store/updaterStore";
 import { useDiffStore } from "@/store/diffStore";
 import { useRegistryStore, computeEffectiveUpdateCount } from "@/store/registryStore";
 import { useUiStore } from "@/store/uiStore";
+import { useValidationStore } from "@/store/validationStore";
 import { useAuthStore } from '@/store/authStore';
 import { isKeycloakConfigured } from '@/core/auth/config';
 import { useThemeStore, type StatusBarDensity } from "@/store/themeStore";
@@ -56,6 +57,8 @@ export function StatusBar() {
   const remoteStatus = useRegistryStore((s) => s.remoteStatus);
   const communityTotalCount = useRegistryStore((s) => s.communityTotalCount);
   const openRegistryPanel = useUiStore((s) => s.openRegistryPanel);
+  const openValidationPanel = useUiStore((s) => s.openValidationPanel);
+  const validationSummary = useValidationStore((s) => s.report?.summary);
   const { isAuthenticated, username } = useAuthStore();
   const keycloakEnabled = isKeycloakConfigured();
 
@@ -201,6 +204,19 @@ export function StatusBar() {
             </motion.span>
           )}
         </AnimatePresence>
+        {validationSummary && validationSummary.critical + validationSummary.warning > 0 && (
+          <button
+            data-testid="validation-indicator"
+            onClick={openValidationPanel}
+            className={`rounded px-1.5 py-0.5 font-medium transition-colors cursor-pointer ${
+              validationSummary.critical > 0
+                ? 'bg-red-500/15 text-red-500 hover:bg-red-500/25'
+                : 'bg-amber-500/15 text-amber-500 hover:bg-amber-500/25'
+            }`}
+          >
+            {validationSummary.critical + validationSummary.warning} architecture {validationSummary.critical + validationSummary.warning === 1 ? 'issue' : 'issues'}
+          </button>
+        )}
         <button
           data-testid="registry-indicator"
           onClick={() => openRegistryPanel()}

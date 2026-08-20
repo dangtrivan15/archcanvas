@@ -41,6 +41,7 @@ export function buildSystemPrompt(context: ProjectContext): string {
     `- **describe** — Describe a node or full architecture: id? (string), scope?`,
     `- **search** — Search across canvases: query (string), type? (nodes|edges|entities)`,
     `- **catalog** — List available node types: namespace? (string)`,
+    `- **validate_architecture** — Run architecture validation over a canvas scope: scope? (string). Returns soft warnings (anti-patterns, missing components) and NodeDef review hints — never blocking errors.`,
     ``,
     `### Project File Tools (preferred for project files)`,
     ``,

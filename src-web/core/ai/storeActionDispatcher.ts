@@ -13,9 +13,11 @@
 import { useGraphStore } from '@/store/graphStore';
 import { useFileStore } from '@/store/fileStore';
 import { useRegistryStore } from '@/store/registryStore';
+import { useValidationStore } from '@/store/validationStore';
 import { ROOT_CANVAS_KEY } from '@/storage/fileResolver';
 import type { Node, Edge, Entity } from '@/types/schema';
 import { validateAndBuildNode } from '@/core/validation/addNodeValidation';
+import { validateArchitecture } from '@/core/validation';
 import { validateRelativePath, isBinaryContent, truncateLines, globToRegex, DEFAULT_IGNORE } from './fileToolUtils';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +71,8 @@ export async function dispatchStoreAction(action: string, args: Record<string, u
       return dispatchSearch(args);
     case 'catalog':
       return dispatchCatalog(args);
+    case 'validateArchitecture':
+      return dispatchValidateArchitecture(args);
 
     // --- Project file actions ---
     case 'readProjectFile':
@@ -353,6 +357,25 @@ function dispatchCatalog(args: Record<string, unknown>): unknown {
   });
 
   return { nodeTypes };
+}
+
+/**
+ * Run the architecture validation engine against a canvas scope and cache
+ * the result in `validationStore` (so an AI-triggered run also lights the
+ * badge and panel), returning the report.
+ */
+function dispatchValidateArchitecture(args: Record<string, unknown>): unknown {
+  const canvasId = (args.canvasId as string | undefined) ?? ROOT_CANVAS_KEY;
+
+  const canvas = useFileStore.getState().getCanvas(canvasId)?.data;
+  const registry = useRegistryStore.getState().registry;
+  if (!canvas || !registry) {
+    return { ok: false, error: { code: 'CANVAS_NOT_FOUND', message: `Canvas '${canvasId}' not found.` } };
+  }
+
+  const report = validateArchitecture(canvas, registry, { canvasId });
+  useValidationStore.setState({ report, status: 'done' });
+  return report;
 }
 
 // ---------------------------------------------------------------------------

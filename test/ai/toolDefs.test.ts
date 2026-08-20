@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { archCanvasToolDefs } from '../../src-web/core/ai/toolDefs';
+import { MCP_TOOL_NAMES } from '../../src-web/core/ai/mcpTools';
 
 describe('archCanvasToolDefs', () => {
   it('exports an array of tool definitions', () => {
@@ -37,6 +38,22 @@ describe('archCanvasToolDefs', () => {
     expect(names).toContain('list_project_files');
     expect(names).toContain('glob_project_files');
     expect(names).toContain('search_project_files');
+    expect(names).toContain('validate_architecture');
+  });
+
+  it('validate_architecture is present in archCanvasToolDefs and its MCP name is registered in MCP_TOOL_NAMES', () => {
+    // Guards the three-declaration-site contract (Decision 6 / §8 rollout notes):
+    // a tool added to only one of toolDefs.ts / mcpTools.ts is silently invisible
+    // on the other provider path, with no error.
+    const def = archCanvasToolDefs.find((d) => d.name === 'validate_architecture');
+    expect(def).toBeDefined();
+    expect(MCP_TOOL_NAMES).toContain('mcp__archcanvas__validate_architecture');
+  });
+
+  it('validate_architecture schema accepts an optional scope', () => {
+    const def = archCanvasToolDefs.find((d) => d.name === 'validate_architecture')!;
+    expect(def.inputSchema.safeParse({}).success).toBe(true);
+    expect(def.inputSchema.safeParse({ scope: 'sub-a' }).success).toBe(true);
   });
 
   it('does not import Node.js-only modules', async () => {

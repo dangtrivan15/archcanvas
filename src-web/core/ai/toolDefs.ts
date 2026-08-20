@@ -139,6 +139,13 @@ export const archCanvasToolDefs: ToolDef[] = [
       namespace: z.string().optional().describe('Filter by namespace (e.g., compute, data)'),
     }),
   },
+  {
+    name: 'validate_architecture',
+    description: 'Validate the architecture in a canvas scope for anti-patterns, missing components, and NodeDef review hints. Returns soft warnings, not blocking errors.',
+    inputSchema: z.object({
+      scope: z.string().optional().describe('Canvas scope ID (omit for root)'),
+    }),
+  },
   // --- Project File Tools ---
   {
     name: 'read_project_file',

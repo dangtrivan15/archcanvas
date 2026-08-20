@@ -5,6 +5,7 @@ import { useUpdaterStore } from '@/store/updaterStore';
 import { useCanvasStore } from '@/store/canvasStore';
 import { useRegistryStore } from '@/store/registryStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useValidationStore } from '@/store/validationStore';
 
 // Mock motion/react — required for happy-dom test environment
 vi.mock('motion/react', () => ({
@@ -56,11 +57,13 @@ vi.mock('@/store/registryStore', () => ({
 }));
 
 const mockOpenRegistryPanel = vi.fn();
+const mockOpenValidationPanel = vi.fn();
 
 vi.mock('@/store/uiStore', () => ({
   useUiStore: vi.fn((selector) =>
     selector({
       openRegistryPanel: mockOpenRegistryPanel,
+      openValidationPanel: mockOpenValidationPanel,
     }),
   ),
 }));
@@ -386,6 +389,56 @@ describe('StatusBar nodedef updates badge', () => {
     render(<StatusBar />);
     const badge = screen.getByTestId('nodedef-updates-badge');
     expect(badge.textContent).toContain('Updates (1)');
+  });
+});
+
+describe('StatusBar validation indicator', () => {
+  beforeEach(() => {
+    useUpdaterStore.getState().reset();
+    useCanvasStore.setState({ selectedNodeIds: new Set(), selectedEdgeKeys: new Set() });
+    useValidationStore.setState({ report: null, status: 'idle' });
+    mockOpenValidationPanel.mockClear();
+  });
+
+  function setSummary(summary: { critical: number; warning: number; info: number; total: number }) {
+    useValidationStore.setState({
+      report: { canvasId: '__root__', findings: [], summary, ranAt: 0 },
+      status: 'done',
+    });
+  }
+
+  it('hides the badge when there is no report', () => {
+    render(<StatusBar />);
+    expect(screen.queryByTestId('validation-indicator')).toBeNull();
+  });
+
+  it('hides the badge when critical + warning counts are zero', () => {
+    setSummary({ critical: 0, warning: 0, info: 3, total: 3 });
+    render(<StatusBar />);
+    expect(screen.queryByTestId('validation-indicator')).toBeNull();
+  });
+
+  it('shows the badge with combined critical+warning count, tinted amber when no critical findings', () => {
+    setSummary({ critical: 0, warning: 2, info: 0, total: 2 });
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('validation-indicator');
+    expect(indicator.textContent).toContain('2');
+    expect(indicator.className).toContain('amber');
+  });
+
+  it('tints the badge red when there is at least one critical finding', () => {
+    setSummary({ critical: 1, warning: 1, info: 0, total: 2 });
+    render(<StatusBar />);
+    const indicator = screen.getByTestId('validation-indicator');
+    expect(indicator.textContent).toContain('2');
+    expect(indicator.className).toContain('red');
+  });
+
+  it('calls openValidationPanel when clicked', () => {
+    setSummary({ critical: 1, warning: 0, info: 0, total: 1 });
+    render(<StatusBar />);
+    fireEvent.click(screen.getByTestId('validation-indicator'));
+    expect(mockOpenValidationPanel).toHaveBeenCalled();
   });
 });
 

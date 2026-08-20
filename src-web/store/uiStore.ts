@@ -80,12 +80,12 @@ export function persistPanelLayout(state: Partial<PanelLayoutState>): void {
 export type NotificationState = { message: string; type: 'success' | 'error' };
 
 interface UiState {
-  rightPanelMode: 'details' | 'chat' | 'entities' | 'registry';
+  rightPanelMode: 'details' | 'chat' | 'entities' | 'registry' | 'validation';
   setLeftPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   setRightPanelRef: (ref: RefObject<PanelImperativeHandle | null> | null) => void;
   rightPanelCollapsed: boolean;
   leftPanelCollapsed: boolean;
-  setRightPanelMode: (mode: 'details' | 'chat' | 'entities' | 'registry') => void;
+  setRightPanelMode: (mode: 'details' | 'chat' | 'entities' | 'registry' | 'validation') => void;
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   openRightPanel: () => void;
@@ -119,6 +119,7 @@ interface UiState {
   registryInitialTab: 'installed' | 'community';
   setRegistryInitialTab(tab: 'installed' | 'community'): void;
   openRegistryPanel(tab?: 'installed' | 'community'): void;
+  openValidationPanel(): void;
   showInstallNodeDefDialog: boolean;
   pendingInstall: RemoteNodeDefSummary | null;
   openInstallNodeDefDialog: (summary: RemoteNodeDefSummary) => void;
@@ -297,6 +298,11 @@ export const useUiStore = create<UiState>((set, get) => ({
     } else {
       set({ registryInitialTab: 'installed' });  // reset any stale hint
     }
+  },
+
+  openValidationPanel: () => {
+    get().openRightPanel();
+    set({ rightPanelMode: 'validation' });
   },
 
   showInstallNodeDefDialog: false,
