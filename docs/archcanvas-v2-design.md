@@ -699,10 +699,13 @@ The app acts as the agent for all four in-browser providers:
 
 Tool definitions mirror the 20 tools in `toolDefs.ts` (`core/ai/toolDefs.ts` is the single
 neutral, provider-agnostic catalogue). `OpenAiProvider` and `OllamaProvider` share a
-`ChatCompletionsProviderBase` (Ollama speaks OpenAI's Chat Completions API on a local host);
-`GeminiProvider` and `ApiKeyProvider` each convert the catalogue to their own tool-schema
-shape via `core/ai/providers/toolSchema.ts`. The shared `storeActionDispatcher` handles all
-tool → store execution regardless of provider.
+`ChatCompletionsProviderBase` (Ollama speaks OpenAI's Chat Completions API on a local host)
+and convert the catalogue with `toOpenAiTools` from `core/ai/providers/toolSchema.ts`;
+`GeminiProvider` converts it with the same module's `toGeminiFunctionDeclarations`, which
+sanitizes the schema down to Gemini's OpenAPI-3.0 subset. `ApiKeyProvider` converts the
+catalogue inline in `apiKeyProvider.ts` (`z.toJSONSchema` into Anthropic's tool shape),
+since Anthropic accepts full JSON Schema and needs no separate converter. The shared
+`storeActionDispatcher` handles all tool → store execution regardless of provider.
 
 ### ClaudeCodeProvider (implemented)
 

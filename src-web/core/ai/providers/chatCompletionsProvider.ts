@@ -93,8 +93,15 @@ export abstract class ChatCompletionsProviderBase implements ChatProvider {
     const maxTokens = this.getMaxTokens(model);
     const useTools = this.supportsTools();
 
+    // Refresh the system prompt every turn (it embeds context-dependent fields
+    // such as context.currentScope). Mirrors apiKeyProvider.ts / gemini.ts,
+    // which rebuild the system prompt on every sendMessage — the base must not
+    // freeze the turn-1 context for the rest of the session.
+    const systemPrompt = buildSystemPrompt(context);
     if (this.messages.length === 0) {
-      this.messages.push({ role: 'system', content: buildSystemPrompt(context) });
+      this.messages.push({ role: 'system', content: systemPrompt });
+    } else if (this.messages[0]?.role === 'system') {
+      this.messages[0] = { role: 'system', content: systemPrompt };
     }
     this.messages.push({ role: 'user', content });
 
@@ -145,7 +152,6 @@ export abstract class ChatCompletionsProviderBase implements ChatProvider {
 
       let textContent = '';
       const toolCallAccum = new Map<number, AccumulatedToolCall>();
-      let finishReason: string | null = null;
 
       for await (const chunk of stream) {
         if (this.abortController?.signal.aborted) {
@@ -170,10 +176,6 @@ export abstract class ChatCompletionsProviderBase implements ChatProvider {
             toolCallAccum.set(tc.index, existing);
           }
         }
-
-        if (choice.finish_reason) {
-          finishReason = choice.finish_reason;
-        }
       }
 
       const toolCalls = Array.from(toolCallAccum.values());
@@ -192,7 +194,16 @@ export abstract class ChatCompletionsProviderBase implements ChatProvider {
           : {}),
       });
 
-      if (finishReason === 'tool_calls' && toolCalls.length > 0) {
+      // Execute tools whenever any tool call was produced — NOT only when
+      // finishReason === 'tool_calls'. OpenAI-compatible local servers
+      // (llama.cpp, vLLM, Ollama's /v1 endpoint — a first-class target of
+      // this base) routinely emit tool calls while ending the stream with
+      // finish_reason 'stop' (or no finish_reason at all). The assistant
+      // message above is appended with `tool_calls` whenever toolCalls is
+      // non-empty, so the two must gate on the same condition: otherwise the
+      // history carries a `tool_calls` message with no following `tool`
+      // messages, which the API rejects with a 400 on the next turn.
+      if (toolCalls.length > 0) {
         for (const tc of toolCalls) {
           let parsedArgs: Record<string, unknown> = {};
           try {
@@ -203,18 +214,30 @@ export abstract class ChatCompletionsProviderBase implements ChatProvider {
 
           yield { type: 'tool_call', requestId, name: tc.name, args: parsedArgs, id: tc.id };
 
-          const { action, translatedArgs } = translateToolArgs(tc.name, parsedArgs);
-          const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
-          const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
-
+          // A tool result MUST be appended for every tool_call id, even when
+          // translation/dispatch throws (e.g. import_yaml with malformed YAML,
+          // which parseCanvas rejects). Otherwise the assistant `tool_calls`
+          // message is left dangling and every subsequent turn 400s until the
+          // session is reset.
           let resultContent: string;
           let isError = false;
-          if (resultObj && typeof resultObj === 'object' && resultObj.ok === false) {
-            resultContent = JSON.stringify(resultObj.error) || 'Unknown error';
+          try {
+            const { action, translatedArgs } = translateToolArgs(tc.name, parsedArgs);
+            const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
+            const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
+
+            if (resultObj && typeof resultObj === 'object' && resultObj.ok === false) {
+              resultContent = JSON.stringify(resultObj.error) || 'Unknown error';
+              isError = true;
+            } else {
+              const data = resultObj && typeof resultObj === 'object' && 'ok' in resultObj ? resultObj.data : result;
+              resultContent = JSON.stringify(data, null, 2) ?? '{}';
+            }
+          } catch (err) {
+            resultContent = JSON.stringify({
+              message: err instanceof Error ? err.message : 'Tool execution failed',
+            });
             isError = true;
-          } else {
-            const data = resultObj && typeof resultObj === 'object' && 'ok' in resultObj ? resultObj.data : result;
-            resultContent = JSON.stringify(data, null, 2) ?? '{}';
           }
 
           yield {

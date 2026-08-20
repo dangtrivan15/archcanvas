@@ -179,6 +179,23 @@ describe('GeminiProvider', () => {
 
     expect(dispatchStoreAction).toHaveBeenCalledTimes(1);
     expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
+
+    // The fed-back history must record the model's functionCall (role 'model')
+    // AND a well-formed functionResponse (role 'function') for it — the exact
+    // reason this provider hand-rolls its own loop. A wrong role or missing
+    // `response` object would malform the next generateContentStream request.
+    const history = mockGenerateContentStream.mock.calls[1][0].contents as Array<any>;
+    const fnCallEntry = history.find(
+      (c) => c.role === 'model' && c.parts?.some((p: any) => p.functionCall),
+    );
+    expect(fnCallEntry).toBeDefined();
+    const fnResponseEntry = history.find(
+      (c) => c.role === 'function' && c.parts?.some((p: any) => p.functionResponse),
+    );
+    expect(fnResponseEntry).toBeDefined();
+    const fnResponse = fnResponseEntry.parts.find((p: any) => p.functionResponse).functionResponse;
+    expect(fnResponse.name).toBe('add_node');
+    expect(fnResponse.response).toBeTypeOf('object');
   });
 
   it('surfaces tool execution errors with isError', async () => {
@@ -264,6 +281,12 @@ describe('GeminiProvider', () => {
     expect(modelConstructorCalls[0].model).toBe('gemini-2.0-flash');
     const tools = modelConstructorCalls[0].tools as Array<{ functionDeclarations: Array<{ name: string }> }>;
     expect(tools[0].functionDeclarations.length).toBeGreaterThan(0);
+    // Prove these are the SANITIZED declarations, not raw z.toJSONSchema output:
+    // no Gemini-rejected keyword ($schema / additionalProperties) survives, so a
+    // regression to the raw converter (or toOpenAiTools) would fail here.
+    const serialized = JSON.stringify(tools[0].functionDeclarations);
+    expect(serialized).not.toContain('$schema');
+    expect(serialized).not.toContain('additionalProperties');
   });
 
   it('live-config regression: model/key edits apply without reconstruction', async () => {

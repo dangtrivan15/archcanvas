@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod/v4';
 import { toOpenAiTools, toGeminiFunctionDeclarations } from '../../src-web/core/ai/providers/toolSchema';
-import { archCanvasToolDefs } from '../../src-web/core/ai/toolDefs';
+import { archCanvasToolDefs, type ToolDef } from '../../src-web/core/ai/toolDefs';
 
 // ---------------------------------------------------------------------------
 // Recursively collect every key present anywhere in a JSON-schema-ish value.
@@ -169,6 +170,41 @@ describe('toGeminiFunctionDeclarations', () => {
         expect(nestedKeys.has('additionalProperties')).toBe(false);
       }
     }
+  });
+
+  it('strips unsupported keywords from GENUINELY NESTED schemas (recursion), preserving enum', () => {
+    // The real tool catalogue is entirely flat, so the "sanitizes nested
+    // properties" test above can pass even if the sanitizer never recursed.
+    // This uses a synthetic def with a nested object + array-of-object schema,
+    // where z.toJSONSchema emits `additionalProperties` DEEP inside the tree.
+    const nestedSchema = z.object({
+      config: z.object({ level: z.enum(['low', 'high']) }),
+      items: z.array(z.object({ label: z.string() })),
+    });
+    const nestedDef = {
+      name: 'nested_probe',
+      description: 'A tool whose schema is genuinely nested',
+      inputSchema: nestedSchema,
+    } as unknown as ToolDef;
+
+    // Precondition (guards against a vacuous pass): the RAW schema really does
+    // carry an unsupported keyword nested inside `config`.
+    const raw = z.toJSONSchema(nestedSchema) as { properties: Record<string, unknown> };
+    expect(collectKeys(raw.properties.config).has('additionalProperties')).toBe(true);
+
+    const [decl] = toGeminiFunctionDeclarations([nestedDef]);
+    const params = decl.parameters as {
+      properties: { config: { type: string; properties: { level: { enum: string[] } } }; items: { items: unknown } };
+    };
+
+    // Every nested occurrence of an unsupported key is gone…
+    expect(collectKeys(params).has('additionalProperties')).toBe(false);
+    expect(collectKeys(params).has('$schema')).toBe(false);
+    // …including inside the array's item object (a second level of nesting)…
+    expect(collectKeys(params.properties.items.items).has('additionalProperties')).toBe(false);
+    // …while a valid, nested `enum` keyword is preserved.
+    expect(params.properties.config.type).toBe('object');
+    expect(params.properties.config.properties.level.enum).toEqual(['low', 'high']);
   });
 
   it('snapshot: add_node function declaration shape', () => {

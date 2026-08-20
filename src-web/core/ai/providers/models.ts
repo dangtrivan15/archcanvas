@@ -33,12 +33,19 @@ export const CLAUDE_DEFAULT_MODEL = 'claude-sonnet-4-6-20250919';
 // OpenAI
 // ---------------------------------------------------------------------------
 
+// NOTE: only Chat Completions models that accept the classic `max_tokens`
+// parameter belong in this default list. The shared ChatCompletionsProviderBase
+// always sends `max_tokens`, which OpenAI's o-series reasoning models (o1/o3/o4)
+// reject with a 400 ("Unsupported parameter: 'max_tokens' … use
+// 'max_completion_tokens'"). o-series models are therefore intentionally
+// excluded from the default list; supporting them would require the base to
+// switch parameters per model family (and to confirm Ollama's OpenAI-compat
+// endpoint accepts the newer parameter first).
 export const OPENAI_MODELS: ModelInfo[] = [
   { id: 'gpt-4o', label: 'GPT-4o' },
   { id: 'gpt-4o-mini', label: 'GPT-4o mini' },
   { id: 'gpt-4.1', label: 'GPT-4.1' },
   { id: 'gpt-4.1-mini', label: 'GPT-4.1 mini' },
-  { id: 'o3-mini', label: 'o3-mini' },
 ];
 
 export const OPENAI_MAX_TOKENS: Record<string, number> = {
@@ -46,7 +53,6 @@ export const OPENAI_MAX_TOKENS: Record<string, number> = {
   'gpt-4o-mini': 16384,
   'gpt-4.1': 32768,
   'gpt-4.1-mini': 32768,
-  'o3-mini': 65536,
 };
 
 export const OPENAI_DEFAULT_MAX_TOKENS = 4096;

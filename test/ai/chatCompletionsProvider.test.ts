@@ -219,6 +219,105 @@ describe('ChatCompletionsProviderBase (via OpenAiProvider)', () => {
     expect(toolResult.isError).toBe(true);
   });
 
+  it('executes tool calls even when finish_reason is "stop" (local OpenAI-compat servers)', async () => {
+    setProviderApiKey('openai', 'sk-test');
+    useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');
+
+    // Tool call is accumulated but the stream ends with finish_reason 'stop'
+    // (not 'tool_calls') — the documented behavior of llama.cpp/vLLM/Ollama.
+    mockCreate.mockReturnValueOnce(
+      createMockStream([
+        toolCallStartChunk(0, 'call_1', 'add_node'),
+        toolCallArgsChunk(0, '{"id":"svc-1","type":"compute/service"}'),
+        finishChunk('stop'),
+      ]),
+    );
+    mockCreate.mockReturnValueOnce(
+      createMockStream([textChunk('Added node svc-1'), finishChunk('stop')]),
+    );
+
+    const provider = new OpenAiProvider();
+    const events: ChatEvent[] = [];
+    for await (const event of provider.sendMessage('Add a service', mockContext)) {
+      events.push(event);
+    }
+
+    // Tool was executed despite finish_reason !== 'tool_calls'.
+    expect(dispatchStoreAction).toHaveBeenCalledTimes(1);
+    expect(events.some((e) => e.type === 'tool_call')).toBe(true);
+    expect(events.some((e) => e.type === 'tool_result')).toBe(true);
+    // Loop continued to feed the tool result back (second create call).
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+    // The follow-up request must carry the assistant `tool_calls` message AND a
+    // matching `tool` message — otherwise OpenAI 400s "an assistant message
+    // with tool_calls must be followed by tool messages".
+    const secondCallMessages = mockCreate.mock.calls[1][0].messages;
+    const assistantMsg = secondCallMessages.find((m: any) => m.role === 'assistant' && m.tool_calls);
+    expect(assistantMsg?.tool_calls?.[0]?.id).toBe('call_1');
+    const toolMsg = secondCallMessages.find((m: any) => m.role === 'tool');
+    expect(toolMsg?.tool_call_id).toBe('call_1');
+  });
+
+  it('keeps history consistent (a tool result per call) when tool dispatch throws', async () => {
+    setProviderApiKey('openai', 'sk-test');
+    useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');
+
+    // Simulate translateToolArgs/dispatch throwing (e.g. import_yaml on
+    // malformed YAML, which parseCanvas rejects).
+    dispatchStoreAction.mockRejectedValueOnce(new Error('store exploded'));
+
+    mockCreate.mockReturnValueOnce(
+      createMockStream([
+        toolCallStartChunk(0, 'call_1', 'add_node'),
+        toolCallArgsChunk(0, '{"id":"svc-1","type":"compute/service"}'),
+        finishChunk('tool_calls'),
+      ]),
+    );
+    mockCreate.mockReturnValueOnce(
+      createMockStream([textChunk('Recovered'), finishChunk('stop')]),
+    );
+
+    const provider = new OpenAiProvider();
+    const events: ChatEvent[] = [];
+    for await (const event of provider.sendMessage('Add a service', mockContext)) {
+      events.push(event);
+    }
+
+    // The throw is surfaced as an error tool_result, not an unhandled crash.
+    const toolResult = events.find((e) => e.type === 'tool_result') as any;
+    expect(toolResult).toBeDefined();
+    expect(toolResult.isError).toBe(true);
+    expect(toolResult.result).toContain('store exploded');
+    // The loop still terminates cleanly, and the follow-up request carries a
+    // matching `tool` message so it wouldn't 400.
+    expect(events.some((e) => e.type === 'done')).toBe(true);
+    const secondCallMessages = mockCreate.mock.calls[1][0].messages;
+    expect(secondCallMessages.some((m: any) => m.role === 'tool' && m.tool_call_id === 'call_1')).toBe(true);
+  });
+
+  it('refreshes the system prompt on every turn (not frozen at turn 1)', async () => {
+    setProviderApiKey('openai', 'sk-test');
+    useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');
+
+    mockCreate.mockReturnValueOnce(createMockStream([textChunk('one'), finishChunk('stop')]));
+    mockCreate.mockReturnValueOnce(createMockStream([textChunk('two'), finishChunk('stop')]));
+
+    const provider = new OpenAiProvider();
+    for await (const _ of provider.sendMessage('First', { ...mockContext, currentScope: '__root__' })) {
+      // drain
+    }
+    for await (const _ of provider.sendMessage('Second', { ...mockContext, currentScope: 'billing' })) {
+      // drain
+    }
+
+    // Both requests carry exactly one system message at position 0 (it is
+    // replaced, not duplicated, on the second turn).
+    const secondMessages = mockCreate.mock.calls[1][0].messages;
+    const systemMessages = secondMessages.filter((m: any) => m.role === 'system');
+    expect(systemMessages).toHaveLength(1);
+    expect(secondMessages[0].role).toBe('system');
+  });
+
   it('emits ChatErrorEvent on API error', async () => {
     setProviderApiKey('openai', 'sk-test');
     useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');

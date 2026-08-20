@@ -162,18 +162,30 @@ export class GeminiProvider implements ChatProvider {
           const id = ulid();
           yield { type: 'tool_call', requestId, name: call.name, args: call.args, id };
 
-          const { action, translatedArgs } = translateToolArgs(call.name, call.args);
-          const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
-          const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
-
+          // Every functionCall must get a matching functionResponse pushed to
+          // history, even when translation/dispatch throws (e.g. import_yaml
+          // with malformed YAML, which parseCanvas rejects). Otherwise the
+          // model's turn is left with an unanswered function call and the next
+          // generateContentStream request is malformed.
           let resultContent: string;
           let isError = false;
-          if (resultObj && typeof resultObj === 'object' && resultObj.ok === false) {
-            resultContent = JSON.stringify(resultObj.error) || 'Unknown error';
+          try {
+            const { action, translatedArgs } = translateToolArgs(call.name, call.args);
+            const result = await dispatchStoreAction(action, translatedArgs as Record<string, unknown>);
+            const resultObj = result as { ok: boolean; data?: unknown; error?: { code: string; message: string } };
+
+            if (resultObj && typeof resultObj === 'object' && resultObj.ok === false) {
+              resultContent = JSON.stringify(resultObj.error) || 'Unknown error';
+              isError = true;
+            } else {
+              const data = resultObj && typeof resultObj === 'object' && 'ok' in resultObj ? resultObj.data : result;
+              resultContent = JSON.stringify(data, null, 2) ?? '{}';
+            }
+          } catch (err) {
+            resultContent = JSON.stringify({
+              message: err instanceof Error ? err.message : 'Tool execution failed',
+            });
             isError = true;
-          } else {
-            const data = resultObj && typeof resultObj === 'object' && 'ok' in resultObj ? resultObj.data : result;
-            resultContent = JSON.stringify(data, null, 2) ?? '{}';
           }
 
           yield {
