@@ -60,11 +60,25 @@ export function ProviderKeySettings({ providerId }: { providerId: string }) {
   const storedKey = isOllama ? null : getProviderApiKey(providerId);
   const prefersReduced = useReducedMotion();
 
-  // Populate the model dropdown from listModels() when a provider instance
-  // is available; fall back to the static list from models.ts otherwise.
+  // Populate the model dropdown from listModels() once this provider has
+  // been explicitly validated ("Test Connection"); otherwise show the
+  // static list from models.ts. Deliberately NOT calling listModels() on
+  // every mount: `key`/`baseUrl` are per-provider config that can arrive
+  // via `.archcanvas/settings.yaml` (hydrateFromSettings), which may be
+  // synced through a shared repo — for Ollama that config is fetched
+  // unauthenticated (`fetch(`${host}/api/tags`)`), so firing it merely
+  // because this settings panel happened to mount (e.g. the dialog opened
+  // on this provider because it was the file-configured `selectedProviderId`,
+  // not because the user chose to interact with it) would let a
+  // repo-supplied host receive a request with no user action taken toward
+  // it at all. Gating on `isValidated` — which only ever flips true via an
+  // explicit local `validate()` call (see handleTestConnection below) and
+  // is never itself persisted or hydrated from settings.yaml — keeps the
+  // live dropdown but requires the same explicit "Test Connection" click
+  // this file's `canTest`/button already gate the network call behind.
   useEffect(() => {
     let cancelled = false;
-    if (!provider) {
+    if (!provider || !isValidated) {
       setModels(staticDefaults.models);
       return;
     }
@@ -80,7 +94,7 @@ export function ProviderKeySettings({ providerId }: { providerId: string }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerId, provider]);
+  }, [providerId, provider, isValidated]);
 
   const handleSaveKey = () => {
     if (inputKey.trim()) {

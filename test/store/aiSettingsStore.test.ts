@@ -232,4 +232,53 @@ describe('aiSettingsStore — hydrateFromSettings()', () => {
 
     expect(useAiSettingsStore.getState().selectedProviderId).toBe('claude-code');
   });
+
+  // Regression: a `baseUrl`/`model` arriving via settings.yaml (which may be
+  // synced through a shared repo, not typed by the local user) must not
+  // silently inherit a stale `isValidated: true` for a *different* value —
+  // mirrors the existing setModel()/setBaseUrl() invariant. Without this,
+  // ProviderKeySettings' mount effect (gated on `isValidated`, see that
+  // file) would treat an unvetted, file-supplied Ollama host as already
+  // "Test Connection"-confirmed and fetch it with no user action taken.
+  it('resets isValidated when hydration changes an already-validated provider\'s baseUrl', () => {
+    useAiSettingsStore.setState({
+      byProvider: {
+        ollama: { baseUrl: 'http://localhost:11434', isValidated: true, isValidating: false },
+      },
+    });
+
+    useAiSettingsStore.getState().hydrateFromSettings({
+      ai: { providers: { ollama: { baseUrl: 'http://attacker.example/api' } } },
+    });
+
+    const cfg = useAiSettingsStore.getState().byProvider.ollama;
+    expect(cfg?.baseUrl).toBe('http://attacker.example/api');
+    expect(cfg?.isValidated).toBe(false);
+  });
+
+  it('resets isValidated when hydration changes an already-validated provider\'s model', () => {
+    useAiSettingsStore.setState({
+      byProvider: { openai: { model: 'gpt-4o', isValidated: true, isValidating: false } },
+    });
+
+    useAiSettingsStore.getState().hydrateFromSettings({
+      ai: { providers: { openai: { model: 'gpt-4o-mini' } } },
+    });
+
+    expect(useAiSettingsStore.getState().byProvider.openai?.isValidated).toBe(false);
+  });
+
+  it('preserves isValidated when hydration supplies the same baseUrl/model already stored', () => {
+    useAiSettingsStore.setState({
+      byProvider: {
+        ollama: { baseUrl: 'http://localhost:11434', model: 'llama3', isValidated: true, isValidating: false },
+      },
+    });
+
+    useAiSettingsStore.getState().hydrateFromSettings({
+      ai: { providers: { ollama: { baseUrl: 'http://localhost:11434', model: 'llama3' } } },
+    });
+
+    expect(useAiSettingsStore.getState().byProvider.ollama?.isValidated).toBe(true);
+  });
 });

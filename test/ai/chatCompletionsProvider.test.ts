@@ -295,6 +295,69 @@ describe('ChatCompletionsProviderBase (via OpenAiProvider)', () => {
     expect(secondCallMessages.some((m: any) => m.role === 'tool' && m.tool_call_id === 'call_1')).toBe(true);
   });
 
+  it('falls back to empty args (does not crash) when accumulated tool-call arguments are malformed JSON', async () => {
+    setProviderApiKey('openai', 'sk-test');
+    useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');
+
+    // Truncated/invalid JSON — e.g. a stream cut short mid-argument.
+    mockCreate.mockReturnValueOnce(
+      createMockStream([
+        toolCallStartChunk(0, 'call_1', 'add_node'),
+        toolCallArgsChunk(0, '{"id":"svc-1", "type":'),
+        finishChunk('tool_calls'),
+      ]),
+    );
+    mockCreate.mockReturnValueOnce(createMockStream([textChunk('Recovered'), finishChunk('stop')]));
+
+    const provider = new OpenAiProvider();
+    const events: ChatEvent[] = [];
+    for await (const event of provider.sendMessage('Add a service', mockContext)) {
+      events.push(event);
+    }
+
+    // No crash: the tool call still executes with `{}` args, and dispatch
+    // (and thus the rest of the loop) still runs.
+    const toolCallEvent = events.find((e) => e.type === 'tool_call') as any;
+    expect(toolCallEvent).toBeDefined();
+    expect(toolCallEvent.args).toEqual({});
+    expect(dispatchStoreAction).toHaveBeenCalledTimes(1);
+    expect(events.some((e) => e.type === 'tool_result')).toBe(true);
+    expect(events.some((e) => e.type === 'done')).toBe(true);
+  });
+
+  it('executes and records a result for every call when multiple tool calls arrive in one turn', async () => {
+    setProviderApiKey('openai', 'sk-test');
+    useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');
+
+    mockCreate.mockReturnValueOnce(
+      createMockStream([
+        toolCallStartChunk(0, 'call_1', 'add_node'),
+        toolCallArgsChunk(0, '{"id":"svc-1","type":"compute/service"}'),
+        toolCallStartChunk(1, 'call_2', 'add_node'),
+        toolCallArgsChunk(1, '{"id":"svc-2","type":"compute/service"}'),
+        finishChunk('tool_calls'),
+      ]),
+    );
+    mockCreate.mockReturnValueOnce(createMockStream([textChunk('Added both'), finishChunk('stop')]));
+
+    const provider = new OpenAiProvider();
+    const events: ChatEvent[] = [];
+    for await (const event of provider.sendMessage('Add two services', mockContext)) {
+      events.push(event);
+    }
+
+    expect(dispatchStoreAction).toHaveBeenCalledTimes(2);
+    const toolResults = events.filter((e) => e.type === 'tool_result') as any[];
+    expect(toolResults).toHaveLength(2);
+    expect(toolResults.map((r) => r.id).sort()).toEqual(['call_1', 'call_2']);
+
+    // Both calls' results must be present in the follow-up request, or the
+    // API would 400 on the dangling second `tool_calls` entry.
+    const secondCallMessages = mockCreate.mock.calls[1][0].messages;
+    const toolMsgs = secondCallMessages.filter((m: any) => m.role === 'tool');
+    expect(toolMsgs.map((m: any) => m.tool_call_id).sort()).toEqual(['call_1', 'call_2']);
+  });
+
   it('refreshes the system prompt on every turn (not frozen at turn 1)', async () => {
     setProviderApiKey('openai', 'sk-test');
     useAiSettingsStore.getState().setModel('openai', 'gpt-4o-mini');

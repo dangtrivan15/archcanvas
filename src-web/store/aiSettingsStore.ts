@@ -220,9 +220,21 @@ export const useAiSettingsStore = create<AiSettingsState>((set, get) => ({
     set((state) => {
       let byProvider = state.byProvider;
       for (const [id, cfg] of Object.entries(settings.ai.providers)) {
+        const existing = byProvider[id];
+        // Mirror setModel()/setBaseUrl()'s invariant: a config value that
+        // actually changes invalidates any prior "Test Connection" result
+        // for this provider. Without this, a `baseUrl`/`model` arriving
+        // from `.archcanvas/settings.yaml` (which may be synced through a
+        // shared repo, i.e. not something the local user typed) could
+        // silently inherit `isValidated: true` from a still-live session
+        // that had validated a *different* value — letting the UI treat an
+        // unvetted, file-supplied host as already-confirmed.
+        const baseUrlChanged = cfg.baseUrl !== undefined && cfg.baseUrl !== existing?.baseUrl;
+        const modelChanged = cfg.model !== undefined && cfg.model !== existing?.model;
         byProvider = withProvider(byProvider, id, {
           ...(cfg.model !== undefined ? { model: cfg.model } : {}),
           ...(cfg.baseUrl !== undefined ? { baseUrl: cfg.baseUrl } : {}),
+          ...(baseUrlChanged || modelChanged ? { isValidated: false } : {}),
         });
       }
       return {
