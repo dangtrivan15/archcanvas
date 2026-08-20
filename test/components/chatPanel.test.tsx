@@ -62,9 +62,12 @@ function createMockProvider(
     id,
     displayName: `Mock ${id}`,
     available: true,
+    capabilities: { tools: true, streaming: true },
     sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
     loadHistory: vi.fn(),
     interrupt: vi.fn(),
+    supportsTools: () => true,
+    listModels: async () => [],
     ...overrides,
   };
 }

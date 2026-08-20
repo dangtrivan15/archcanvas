@@ -3,9 +3,12 @@ import type {
   ChatProvider,
   ChatEvent,
   ChatMessage,
+  ModelInfo,
   ProjectContext,
+  ProviderCapabilities,
 } from './types';
 import { dispatchStoreAction } from './storeActionDispatcher';
+import { CLAUDE_MODELS } from './providers/models';
 
 // ---------------------------------------------------------------------------
 // Internal message types (bridge <-> browser, not part of public ChatEvent)
@@ -81,6 +84,7 @@ export type ConnectionChangeCallback = (connected: boolean) => void;
 export class WebSocketClaudeCodeProvider implements ChatProvider {
   readonly id = CLAUDE_CODE_PROVIDER_ID;
   readonly displayName = 'Claude Code';
+  readonly capabilities: ProviderCapabilities = { tools: true, streaming: true };
 
   private ws: WebSocket | null = null;
   private url: string | null = null;
@@ -97,6 +101,14 @@ export class WebSocketClaudeCodeProvider implements ChatProvider {
 
   get available(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  supportsTools(): boolean {
+    return true;
+  }
+
+  async listModels(): Promise<ModelInfo[]> {
+    return CLAUDE_MODELS;
   }
 
   /** Register a callback that fires when connection status changes. */

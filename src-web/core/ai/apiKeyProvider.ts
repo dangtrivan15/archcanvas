@@ -16,20 +16,15 @@ import { translateToolArgs } from './translateToolArgs';
 import { dispatchStoreAction } from './storeActionDispatcher';
 import { buildSystemPrompt } from './systemPrompt';
 import { useApiKeyStore } from '../../store/apiKeyStore';
+import { CLAUDE_MODELS, CLAUDE_MAX_TOKENS, CLAUDE_DEFAULT_MAX_TOKENS } from './providers/models';
 import type {
   ChatProvider,
   ChatEvent,
   ChatMessage,
   ProjectContext,
+  ModelInfo,
+  ProviderCapabilities,
 } from './types';
-
-const MODEL_MAX_TOKENS: Record<string, number> = {
-  'claude-opus-4-6-20250919': 16384,
-  'claude-sonnet-4-6-20250919': 16384,
-  'claude-haiku-4-5-20251001': 8192,
-};
-
-const DEFAULT_MAX_TOKENS = 16384;
 
 /** Convert Zod schemas to Anthropic tool format using Zod 4's built-in JSON Schema converter */
 function buildToolParams(): Anthropic.Messages.Tool[] {
@@ -45,6 +40,7 @@ export const CLAUDE_API_KEY_PROVIDER_ID = 'claude-api-key';
 export class ApiKeyProvider implements ChatProvider {
   readonly id = CLAUDE_API_KEY_PROVIDER_ID;
   readonly displayName = 'Claude (API Key)';
+  readonly capabilities: ProviderCapabilities = { tools: true, streaming: true };
 
   private messages: Anthropic.Messages.MessageParam[] = [];
   private abortController: AbortController | null = null;
@@ -52,6 +48,14 @@ export class ApiKeyProvider implements ChatProvider {
 
   get available(): boolean {
     return useApiKeyStore.getState().isValidated;
+  }
+
+  supportsTools(): boolean {
+    return true;
+  }
+
+  async listModels(): Promise<ModelInfo[]> {
+    return CLAUDE_MODELS;
   }
 
   async *sendMessage(
@@ -68,7 +72,7 @@ export class ApiKeyProvider implements ChatProvider {
 
     const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
     const systemPrompt = buildSystemPrompt(context);
-    const maxTokens = MODEL_MAX_TOKENS[model] ?? DEFAULT_MAX_TOKENS;
+    const maxTokens = CLAUDE_MAX_TOKENS[model] ?? CLAUDE_DEFAULT_MAX_TOKENS;
 
     // Append user message to history
     this.messages.push({ role: 'user', content });

@@ -57,12 +57,21 @@ function createMockProvider(
     id,
     displayName: `Mock ${id}`,
     available: true,
+    capabilities: { tools: true, streaming: true },
     sentMessages,
     interruptCalled,
     loadHistoryCalled,
     sendPermissionResponse: vi.fn(),
     sendSetPermissionMode: vi.fn(),
     sendSetEffort: vi.fn(),
+
+    supportsTools() {
+      return true;
+    },
+
+    async listModels() {
+      return [];
+    },
 
     emitEvents(events: ChatEvent[]) {
       if (eventResolver) {
@@ -127,6 +136,7 @@ function createSequentialMockProvider(
     id,
     displayName: `Sequential ${id}`,
     available: true,
+    capabilities: { tools: true, streaming: true },
     sentMessages,
 
     sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent> {
@@ -144,6 +154,12 @@ function createSequentialMockProvider(
 
     loadHistory() {},
     interrupt() {},
+    supportsTools() {
+      return true;
+    },
+    async listModels() {
+      return [];
+    },
   };
 }
 
@@ -431,6 +447,7 @@ describe('chatStore', () => {
         id: 'thrower',
         displayName: 'Thrower',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage(): AsyncIterable<ChatEvent> {
           // eslint-disable-next-line require-yield
           async function* gen(): AsyncGenerator<ChatEvent> {
@@ -440,6 +457,8 @@ describe('chatStore', () => {
         },
         loadHistory() {},
         interrupt() {},
+        supportsTools: () => true,
+        listModels: async () => [],
       };
 
       useChatStore.getState().registerProvider(throwingProvider);
@@ -590,9 +609,12 @@ describe('chatStore', () => {
         id: 'bare',
         displayName: 'Bare',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
       };
       useChatStore.getState().registerProvider(bareProvider);
 
@@ -634,9 +656,12 @@ describe('chatStore', () => {
         id: 'bare',
         displayName: 'Bare',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
       };
       useChatStore.getState().registerProvider(bareProvider);
 
@@ -789,9 +814,12 @@ describe('chatStore', () => {
         id: 'clearable-p1',
         displayName: 'Clearable Provider',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
         sendClearHistory,
       };
 
@@ -811,9 +839,12 @@ describe('chatStore', () => {
         id: 'clearable-p2',
         displayName: 'Clearable Provider (offline)',
         available: false,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
         sendClearHistory,
       };
 
@@ -1007,9 +1038,12 @@ describe('chatStore', () => {
         id: 'clearable',
         displayName: 'Clearable',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
         sendClearHistory: vi.fn(),
       };
       expect(isClearableProvider(clearableProvider)).toBe(true);
@@ -1020,9 +1054,12 @@ describe('chatStore', () => {
         id: 'bare',
         displayName: 'Bare',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
       };
       expect(isClearableProvider(bareProvider)).toBe(false);
     });
@@ -1043,9 +1080,12 @@ describe('chatStore', () => {
         id: 'bare',
         displayName: 'Bare',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
       };
       expect(isInteractiveProvider(bareProvider)).toBe(false);
     });
@@ -1063,9 +1103,12 @@ describe('chatStore', () => {
         id: 'bare',
         displayName: 'Bare',
         available: true,
+        capabilities: { tools: true, streaming: true },
         sendMessage: vi.fn() as unknown as ChatProvider['sendMessage'],
         loadHistory: vi.fn(),
         interrupt: vi.fn(),
+        supportsTools: () => true,
+        listModels: async () => [],
       };
       useChatStore.getState().registerProvider(bareProvider);
 
