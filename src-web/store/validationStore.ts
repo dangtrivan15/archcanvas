@@ -56,15 +56,18 @@ const AUTO_RUN_DEBOUNCE_MS = 400;
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let unsubscribed = false;
+let activeUnsubscribe: (() => void) | undefined;
 
 /**
  * Subscribe to canvas-data mutations and active-scope changes, re-running
  * validation after a short debounce so the panel/badge stay current without
- * recomputing on every render. Guards against duplicate subscription (only
- * one live subscription is ever active at a time). Returns an unsubscribe
- * function.
+ * recomputing on every render. Guards against duplicate subscription: if a
+ * subscription is already live, the existing unsubscribe is returned and no
+ * second set of store listeners is registered. Returns an unsubscribe
+ * function (itself idempotent — calling it more than once is a no-op).
  */
 export function subscribeValidationAutoRun(): () => void {
+  if (activeUnsubscribe) return activeUnsubscribe;
   unsubscribed = false;
 
   const scheduleRun = () => {
@@ -86,7 +89,8 @@ export function subscribeValidationAutoRun(): () => void {
     }
   });
 
-  return () => {
+  activeUnsubscribe = () => {
+    if (unsubscribed) return;
     unsubscribed = true;
     if (debounceTimer !== undefined) {
       clearTimeout(debounceTimer);
@@ -94,7 +98,9 @@ export function subscribeValidationAutoRun(): () => void {
     }
     unsubFile();
     unsubNav();
+    activeUnsubscribe = undefined;
   };
+  return activeUnsubscribe;
 }
 
 // Expose for E2E tests

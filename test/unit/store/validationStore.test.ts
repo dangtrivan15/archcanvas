@@ -106,4 +106,21 @@ describe('subscribeValidationAutoRun', () => {
     vi.advanceTimersByTime(500);
     expect(useValidationStore.getState().report).toBeNull();
   });
+
+  it('is idempotent: a second subscribe returns the same unsubscribe without adding listeners', () => {
+    const unsub1 = subscribeValidationAutoRun();
+    const unsub2 = subscribeValidationAutoRun();
+    try {
+      expect(unsub2).toBe(unsub1);
+      // A single mutation still yields a single debounced run (one live subscription).
+      useFileStore.getState().updateCanvasData(ROOT_CANVAS_KEY, {
+        nodes: [{ id: 'svc-x', type: 'compute/service' }],
+        edges: [],
+      });
+      vi.advanceTimersByTime(500);
+      expect(useValidationStore.getState().report).not.toBeNull();
+    } finally {
+      unsub1();
+    }
+  });
 });

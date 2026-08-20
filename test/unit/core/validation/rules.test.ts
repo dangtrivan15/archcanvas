@@ -83,6 +83,19 @@ describe('databaseBackupRule', () => {
     const ctx = buildRuleContext(canvas, registry, '__root__');
     expect(databaseBackupRule.evaluate(ctx)).toHaveLength(0);
   });
+
+  it('does not misclassify a data/object-storage node as a database via its `storage` tag', () => {
+    // Regression: object-storage carries a `storage` tag but NOT `persistence`;
+    // the rule's tag fallback is `persistence`-only, so the backup target itself
+    // must never be flagged as needing a backup.
+    const canvas = makeCanvas({
+      nodes: [makeNode({ id: 'os-a', type: 'data/object-storage' })],
+      edges: [],
+    });
+    const registry = registryWith(['data/object-storage', objectStorageDef]);
+    const ctx = buildRuleContext(canvas, registry, '__root__');
+    expect(databaseBackupRule.evaluate(ctx)).toHaveLength(0);
+  });
 });
 
 describe('healthCheckRule', () => {
