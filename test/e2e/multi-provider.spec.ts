@@ -104,7 +104,12 @@ test.describe('Multi-provider AI Settings', () => {
     await expect(page.getByText('Connected')).toBeVisible();
 
     // Capability badge reflects the effective (tool-capable) capabilities.
-    await expect(page.getByTestId('capability-badge').getByText('Tools')).toBeVisible();
+    // Scoped to the settings dialog: the same badge also renders in the chat
+    // header (ChatPanel), which stays mounted behind the dialog overlay, so
+    // an unscoped getByTestId resolves to both and violates strict mode.
+    await expect(
+      page.getByRole('dialog').getByTestId('capability-badge').getByText('Tools'),
+    ).toBeVisible();
 
     // Chat header now shows OpenAI as the active, available provider.
     const providerTrigger = page.getByLabel('AI provider');
