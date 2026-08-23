@@ -225,14 +225,41 @@ export interface ProjectContext {
 
 // --- Chat Provider ---
 
+/**
+ * Static, transport-level description of what a provider's API/SDK can do
+ * in principle (e.g. the Claude bridge always supports tool-calling). This
+ * is distinct from `ChatProvider.supportsTools()`, which is the dynamic,
+ * currently-selected-model check that actually gates the tool loop — a
+ * provider can support tool-calling in general while a specific loaded
+ * model does not (e.g. an embedding-only Ollama model).
+ */
+export interface ProviderCapabilities {
+  tools: boolean;
+  streaming: boolean;
+}
+
+/** A model offered by a provider, as surfaced by listModels() / a static default list. */
+export interface ModelInfo {
+  id: string;
+  label: string;
+  /** Whether this specific model can call tools. Undefined = assume tool-capable (coarse default). */
+  supportsTools?: boolean;
+}
+
 export interface ChatProvider {
   readonly id: string;
   readonly displayName: string;
   readonly available: boolean;
+  /** Static per-provider capability descriptor (see ProviderCapabilities). */
+  readonly capabilities: ProviderCapabilities;
   sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent>;
   loadHistory(messages: ChatMessage[]): void;
   /** Interrupt the current turn. Stops streaming but preserves session context. */
   interrupt(): void;
+  /** Whether the currently selected model can call tools (dynamic; see ProviderCapabilities doc). */
+  supportsTools(): boolean;
+  /** List models available for this provider (from a live API call or a static default list). */
+  listModels(): Promise<ModelInfo[]>;
 }
 
 /**

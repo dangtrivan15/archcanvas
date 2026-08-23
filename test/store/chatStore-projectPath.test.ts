@@ -46,7 +46,16 @@ function createMockProvider(id: string): ChatProvider & {
     id,
     displayName: `Mock ${id}`,
     available: true,
+    capabilities: { tools: true, streaming: true },
     sentMessages,
+
+    supportsTools() {
+      return true;
+    },
+
+    async listModels() {
+      return [];
+    },
 
     emitEvents(events: ChatEvent[]) {
       if (eventResolver) {

@@ -108,11 +108,14 @@ describe('AI types — compile-time checks', () => {
       id: 'mock',
       displayName: 'Mock Provider',
       available: true,
+      capabilities: { tools: true, streaming: true },
       sendMessage: async function* (_content, _ctx) {
         yield { type: 'done' as const, requestId: 'r1' };
       },
       loadHistory: () => {},
       interrupt: () => {},
+      supportsTools: () => true,
+      listModels: async () => [],
     };
     expect(_provider.id).toBe('mock');
   });

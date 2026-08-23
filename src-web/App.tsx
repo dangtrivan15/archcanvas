@@ -20,6 +20,9 @@ import { useAiProvider } from '@/components/hooks/useAiProvider';
 import { useRegistryStore } from '@/store/registryStore';
 import { createNodeDefWatcher, type NodeDefWatcher } from '@/core/registry';
 import { useFileStore } from '@/store/fileStore';
+import { useAiSettingsStore } from '@/store/aiSettingsStore';
+import { useChatStore } from '@/store/chatStore';
+import { loadSettings } from '@/storage/settingsCodec';
 import { useUiStore, SIDEBAR_WIDTH_PRESETS, persistPanelLayout } from '@/store/uiStore';
 import { subscribeValidationAutoRun } from '@/store/validationStore';
 import { AppearanceDialog } from '@/components/AppearanceDialog';
@@ -100,6 +103,20 @@ export function App() {
         watcher = createNodeDefWatcher(currentFs, () =>
           useRegistryStore.getState().reloadProjectLocal(currentFs),
         );
+
+        // Hydrate AI provider/model preferences from .archcanvas/settings.yaml
+        // (task 16) — read-only load + store hydration; the store's own
+        // setters (not this effect) are what persist future edits back out.
+        loadSettings(currentFs)
+          .then((settings) => {
+            useAiSettingsStore.getState().hydrateFromSettings(settings);
+            if (settings.ai.selectedProviderId) {
+              useChatStore.getState().setActiveProvider(settings.ai.selectedProviderId);
+            }
+          })
+          .catch((err) => {
+            console.error('[App] Failed to load .archcanvas/settings.yaml:', err);
+          });
       }
     });
 

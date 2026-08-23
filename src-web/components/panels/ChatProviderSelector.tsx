@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, Wrench, MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/store/chatStore';
 import { useUiStore } from '@/store/uiStore';
 import { getProviderDescriptor } from '@/components/ai/providerRegistry';
@@ -8,6 +8,17 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import type { ChatProvider } from '@/core/ai/types';
+
+/** Small per-provider capability indicator for the dropdown list (tools vs conversation-only). */
+function ProviderCapabilityIndicator({ provider }: { provider: ChatProvider }) {
+  const canUseTools = provider.supportsTools();
+  return canUseTools ? (
+    <Wrench className="h-3 w-3 text-muted-foreground" aria-label="Tools" />
+  ) : (
+    <MessageSquare className="h-3 w-3 text-muted-foreground" aria-label="Conversation-only" />
+  );
+}
 
 export function ChatProviderSelector() {
   const providers = useChatStore((s) => s.providers);
@@ -59,7 +70,8 @@ export function ChatProviderSelector() {
                 p.available ? 'bg-green-500' : 'bg-muted-foreground'
               }`}
             />
-            <span>{p.displayName}</span>
+            <span className="flex-1">{p.displayName}</span>
+            <ProviderCapabilityIndicator provider={p} />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

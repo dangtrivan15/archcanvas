@@ -519,7 +519,7 @@ core/
     types.ts           ← ChatProvider interface + ChatEvent types
     bridgeServer.ts    ← WebSocket + health endpoint server (Node.js only)
     claudeCodeBridge.ts ← Claude Code SDK session wrapper (Node.js only)
-    mcpTools.ts        ← 9 MCP tools for architecture CRUD (Node.js only)
+    mcpTools.ts        ← 20 MCP tools for architecture CRUD (Node.js only)
     storeActionDispatcher.ts ← provider-agnostic tool → store dispatch
     webSocketProvider.ts     ← browser-side WebSocket ChatProvider
     systemPrompt.ts    ← AI system prompt builder
@@ -591,7 +591,7 @@ bridge/
 core/ai/
   bridgeServer.ts   ← HTTP health + WebSocket server (embeddable or standalone)
   claudeCodeBridge.ts ← wraps Claude Agent SDK, manages session lifecycle
-  mcpTools.ts       ← 9 MCP tools with Zod schemas + arg translation
+  mcpTools.ts       ← 20 MCP tools with Zod schemas + arg translation
   storeActionDispatcher.ts ← shared tool → Zustand store dispatch (provider-agnostic)
   vitePlugin.ts     ← thin Vite plugin wrapper around bridgeServer
 ```
@@ -614,26 +614,35 @@ Some modules from the current v1 codebase may be stable enough to reuse in the r
 
 ## 7. AI Integration
 
-### Two Backends, One Chat UI
+### Five Providers, One Chat UI
 
 ```
 ┌──────────────────────────────────┐
 │         Chat Panel (UI)          │
-│  Same UI regardless of backend   │
+│  Same UI regardless of provider  │
 └──────────────┬───────────────────┘
                │
        ChatProvider interface
                │
-       ┌───────┴────────┐
-       │                 │
-  ApiKeyProvider    ClaudeCodeProvider
-       │                 │
-  Anthropic API     Claude Code SDK
-  (app manages       (SDK manages
-   tool loop)         tool loop)
+   ┌───────┬───────┬────────┬────────┐
+   │       │       │        │        │
+ClaudeCode ApiKey OpenAi  Ollama   Gemini
+Provider  Provider Provider Provider Provider
+   │       │       │        │        │
+Claude   Anthropic OpenAI  local    Google
+Code SDK  API      API   Ollama    Generative
+(SDK      (app     (app   server   AI API
+ manages  manages  manages (app     (app
+ tool     tool     tool    manages  manages
+ loop)    loop)    loop)   tool     tool
+                            loop)    loop)
 ```
 
-User selects their preferred backend in settings. The chat experience is identical.
+User selects their preferred provider + model in Settings. The chat experience is
+identical regardless of provider; a capability badge shows when a model can't call
+tools (see "Capability Model" below). `ClaudeCodeProvider` is the only bridge-backed
+provider (runs the Claude Agent SDK in the Node sidecar); the other four run their own
+manual tool loop directly in the browser, driving the same `storeActionDispatcher`.
 
 ### ChatProvider Interface
 
@@ -646,24 +655,57 @@ type ChatEvent =
   | { type: 'done' }
   | { type: 'error'; message: string }
 
+interface ProviderCapabilities {
+  tools: boolean       // can this provider's API/SDK call tools at all?
+  streaming: boolean
+}
+
+interface ModelInfo {
+  id: string
+  label: string
+  supportsTools?: boolean  // undefined = assume tool-capable
+}
+
 interface ChatProvider {
+  readonly capabilities: ProviderCapabilities
   sendMessage(content: string, context: ProjectContext): AsyncIterable<ChatEvent>
   interrupt(): void
+  supportsTools(): boolean            // dynamic: does the *selected model* support tools?
+  listModels(): Promise<ModelInfo[]>
 }
 ```
 
-### ApiKeyProvider (future)
+### Capability Model
 
-The app acts as the agent:
+`capabilities` is a static, per-provider descriptor (e.g. the Claude bridge is always
+`{ tools: true, streaming: true }`). `supportsTools()` is the dynamic check that actually
+gates the tool loop for the *currently selected model* — some Ollama models (embedding-only,
+or older bases without function-calling) can't call tools even though the Ollama provider
+itself can. When `supportsTools()` is false, a provider sends the turn with no tool schemas
+and runs no tool loop; the chat panel shows a "Conversation-only" badge instead of "Tools"
+and suppresses AI-driven canvas edits, but the model still answers conversationally. This
+degrades gracefully per-model rather than disabling a provider outright.
 
-1. Sends user message + tool definitions to Anthropic API
-2. Receives response with text + `tool_use` blocks
+### ApiKeyProvider, OpenAiProvider, OllamaProvider, GeminiProvider (implemented)
+
+The app acts as the agent for all four in-browser providers:
+
+1. Sends user message + tool definitions to the provider's API (skipped when `supportsTools()` is false)
+2. Receives response with text + tool-call blocks
 3. Executes tools via `storeActionDispatcher` (in-browser, no bridge needed)
-4. Sends tool results back to API
+4. Sends tool results back to the API
 5. Loops until the model is done
 6. Emits all steps as `ChatEvent`s to the UI
 
-Tool definitions mirror the 9 MCP tools. The shared `storeActionDispatcher` handles all tool → store execution.
+Tool definitions mirror the 20 tools in `toolDefs.ts` (`core/ai/toolDefs.ts` is the single
+neutral, provider-agnostic catalogue). `OpenAiProvider` and `OllamaProvider` share a
+`ChatCompletionsProviderBase` (Ollama speaks OpenAI's Chat Completions API on a local host)
+and convert the catalogue with `toOpenAiTools` from `core/ai/providers/toolSchema.ts`;
+`GeminiProvider` converts it with the same module's `toGeminiFunctionDeclarations`, which
+sanitizes the schema down to Gemini's OpenAPI-3.0 subset. `ApiKeyProvider` converts the
+catalogue inline in `apiKeyProvider.ts` (`z.toJSONSchema` into Anthropic's tool shape),
+since Anthropic accepts full JSON Schema and needs no separate converter. The shared
+`storeActionDispatcher` handles all tool → store execution regardless of provider.
 
 ### ClaudeCodeProvider (implemented)
 
@@ -671,7 +713,7 @@ Claude Code SDK is the agent:
 
 1. Browser connects to the AI bridge server via WebSocket
 2. Bridge creates a session using `@anthropic-ai/claude-agent-sdk`
-3. SDK receives 9 auto-approved MCP tools (add_node, add_edge, remove_node, remove_edge, import_yaml, list, describe, search, catalog)
+3. SDK receives 20 auto-approved MCP tools spanning architecture CRUD (`add_node`, `add_edge`, `remove_node`, `remove_edge`, `create_subsystem`, `import_yaml`), entities (`add_entity`, `remove_entity`, `update_entity`), discovery (`list`, `describe`, `search`, `catalog`), and project files (`read_project_file`, `write_project_file`, `update_project_file`, `list_project_files`, `glob_project_files`, `search_project_files`, `delete_project_file`)
 4. MCP tool handlers relay store actions to the browser via WebSocket correlation
 5. Browser's `storeActionDispatcher` executes the action against Zustand stores
 6. Results flow back through the bridge to the SDK
@@ -681,7 +723,8 @@ The app doesn't manage the tool loop — the SDK handles it autonomously.
 
 ### What AI Can Do
 
-Both backends have access to 9 architecture tools:
+All five providers have access to the same 20 architecture tools (subject to the capability
+model above — a provider only sends the subset the currently selected model can use):
 
 | MCP Tool | AI Use Case |
 |----------|------------|
@@ -693,9 +736,15 @@ Both backends have access to 9 architecture tools:
 | `add_edge` | Connect components |
 | `remove_node` | Remove components |
 | `remove_edge` | Remove connections |
+| `create_subsystem` | Create a nestable subsystem scope |
 | `import_yaml` | Bulk-create from YAML |
+| `add_entity` / `remove_entity` / `update_entity` | Manage logical domain objects on edges |
+| `read_project_file` / `write_project_file` / `update_project_file` | Read/edit project files |
+| `list_project_files` / `glob_project_files` / `search_project_files` | Discover project files |
+| `delete_project_file` | Remove a project file |
 
-All tools are auto-approved via the SDK's `allowedTools` — the user is never prompted for ArchCanvas tool permissions.
+All tools are auto-approved via the SDK's `allowedTools` (Claude Code) or the provider's own
+tool loop (the other four) — the user is never prompted for ArchCanvas tool permissions.
 
 ### Tool Execution Architecture
 
@@ -846,7 +895,7 @@ New categories are added by registering new providers, not by modifying the pale
 | YAML file format | `.archcanvas/` folder, one file per canvas, flat directory |
 | Built-in NodeDefs | ~40 types across 9 namespaces |
 | Project-local NodeDefs | Custom types in `.archcanvas/nodedefs/` |
-| MCP tools | 9 in-process tools for architecture CRUD, search, describe, bulk import |
+| MCP tools | 20 in-process tools for architecture CRUD, entities, discovery, project files |
 | AI chat (API key) | Direct Anthropic API via ChatProvider (future) |
 | AI chat (Claude Code SDK) | Claude Agent SDK via WebSocket bridge |
 | Onboarding wizard | Guided init with AI architecture proposal |
@@ -865,7 +914,7 @@ New categories are added by registering new providers, not by modifying the pale
 | **Visual git diff** | Parse YAML diffs → highlight added/removed/modified nodes on canvas. Killer feature for PR reviews. |
 | **Remote NodeDef registry** | HTTP API for community-shared NodeDefs. Search, install, publish. |
 | **iPad app** | Tauri 2.0 mobile build. Same codebase. |
-| **Additional AI models** | OpenAI, Ollama providers via ChatProvider interface. |
+| **Additional AI models** *(delivered)* | OpenAI, Ollama, and Gemini providers via the `ChatProvider` interface (`core/ai/providers/`), each with per-model capability degradation — see §7 "Capability Model". |
 | **Templates** | Starter architectures for onboarding Option C. |
 
 ### v3+ — Long-Term Roadmap
